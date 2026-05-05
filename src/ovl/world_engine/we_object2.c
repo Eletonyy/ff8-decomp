@@ -114,8 +114,7 @@ INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009D2D8);
 
 extern SceneState D_80082C8C;
 extern u8 D_800C4D38;
-extern u8 *D_800D226C;
-extern void func_800B3FD4(u8 *a0, s32 a1);
+extern void func_800B3FD4(Slot *a0, s32 a1);
 
 /**
  * @brief Reset the scene state block and kick off the scene loader.
