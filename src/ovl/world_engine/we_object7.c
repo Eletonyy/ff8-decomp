@@ -248,12 +248,6 @@ INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B8230);
 
 INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B83B4);
 
-/** @brief Two-halfword script opcode entry. */
-typedef struct {
-    u16 op;
-    u16 param;
-} ScriptOp;
-
 /** @brief Slot-state record at *D_800D226C (used by 0xFF28 / 0xFF2E handlers). */
 typedef struct {
     /* 0x00 */ u8 pad00[0x74];
@@ -266,7 +260,6 @@ extern u8 *D_800C96C8;
 extern Slot *D_800D226C;
 extern s32 D_800C4DBC;
 
-extern ScriptOp *func_800AF004(u8 *base, s32 arg1);
 extern void func_8009B358(s32 a0, s32 a1, s32 a2);
 extern void func_8009B550(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5, s32 a6);
 extern void func_8009D8A8(s32 a0);

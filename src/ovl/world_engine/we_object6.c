@@ -1,4 +1,5 @@
 #include "common.h"
+#include "world.h"
 
 INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object6", func_800ACC68);
 

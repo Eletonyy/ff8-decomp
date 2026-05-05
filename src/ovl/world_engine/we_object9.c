@@ -393,7 +393,6 @@ void func_800BC44C(void) {
 
 extern CmdDesc *D_800C4D64;
 extern u8      *D_800C96D0;
-extern u16     *func_800AF004(u8 *base, s32 arg1);
 
 /**
  * @brief Walk the cmd-stream at @c D_800C96D0 to extract a halfword into @p out.
@@ -408,7 +407,7 @@ extern u16     *func_800AF004(u8 *base, s32 arg1);
  * Returns 1 if any value was recorded, 0 otherwise.
  */
 s32 func_800BC46C(u16 *out) {
-    u16 *stream;
+    ScriptOp *stream;
     s32 found = 0;
 
     if ((D_800C4D64->flag & 0x8) == 0) return 0;
@@ -416,14 +415,13 @@ s32 func_800BC46C(u16 *out) {
     stream = func_800AF004(D_800C96D0, 0);
     if (stream != 0) {
         while (1) {
-            u16 op = stream[0];
-            if (op == 0xFF05) break;
-            if (op == 0xFF0E) {
-                stream = (u16 *)(D_800C96D0 + stream[1]);
+            if (stream->op == 0xFF05) break;
+            if (stream->op == 0xFF0E) {
+                stream = (ScriptOp *)(D_800C96D0 + stream->param);
             } else {
                 found = 1;
-                *out = stream[1];
-                stream += 2;
+                *out = stream->param;
+                stream++;
             }
         }
     }

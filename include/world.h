@@ -172,4 +172,20 @@ extern s16 D_800C987C;
 extern u8  D_800D23D8[];
 extern s32 D_800DCB48;
 
+/**
+ * @brief Two-halfword script opcode entry (4 bytes).
+ *
+ * The world-engine script consists of a u32 array of segment offsets
+ * (terminated by a zero offset), followed by ScriptOp entries pointed-to
+ * by those offsets. Markers in the 0xFFxx range gate sub-states; non-FF
+ * codes are dispatched to handlers.
+ */
+typedef struct {
+    u16 op;
+    u16 param;
+} ScriptOp;
+
+extern ScriptOp *func_800AF004(u8 *base, s32 flag);
+extern s32 func_800AF28C(ScriptOp *p);
+
 #endif /* WORLD_H */
