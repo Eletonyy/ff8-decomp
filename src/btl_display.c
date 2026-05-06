@@ -191,6 +191,56 @@ void initBattleEntity(s32 idx) {
 }
 
 
+/**
+ * @brief Compute the rectangular intersection of two RECTs.
+ *
+ * Reads each RECT as two packed s32 words (xy at +0, wh at +4), sign-extracts
+ * the four halves, then takes max(r1.x, r2.x) / max(r1.y, r2.y) for the top-left
+ * and min(r1.right, r2.right) / min(r1.bottom, r2.bottom) for the bottom-right.
+ * If either dimension collapses to <= 0 the intersection is empty: width or
+ * height is forced to 0 and the function returns 0; otherwise returns 1.
+ *
+ * @param out Output RECT receiving the clipped rectangle.
+ * @param r1  First input RECT.
+ * @param r2  Second input RECT.
+ * @return 1 if @p r1 and @p r2 overlap (positive area), 0 otherwise.
+ *
+ * Best clean attempt (~68.73%; same instruction count as target, only
+ * register allocation diverges — gcc 2.7.2 picks `lh` for r1.w/r1.h instead
+ * of `lw + sll/sra` extract that target uses):
+ * @code
+ * s32 func_8002B080(RECT *out, RECT *r1, RECT *r2) {
+ *     s32 result = 1;
+ *     s32 r1xy = *(s32 *)&r1->x;
+ *     s32 r2xy = *(s32 *)&r2->x;
+ *     s32 r1wh = *(s32 *)&r1->w;
+ *     s32 r2wh = *(s32 *)&r2->w;
+ *     s32 r1y = r1xy >> 16;
+ *     s32 r2y = r2xy >> 16;
+ *     s32 r1_right = (s16)r1wh + (s16)r1xy;
+ *     s32 r1_bottom = (r1wh >> 16) + r1y;
+ *     s32 left, top, right, bottom;
+ *
+ *     left = (s16)r2xy;
+ *     if ((s16)r1xy >= left) left = (s16)r1xy;
+ *     top = r2y;
+ *     if (r1y >= top) top = r1y;
+ *     right = (s16)r2wh + (s16)r2xy;
+ *     if (right >= r1_right) right = r1_right;
+ *     bottom = (r2wh >> 16) + r2y;
+ *     if (bottom >= r1_bottom) bottom = r1_bottom;
+ *
+ *     if (left >= right) { right = left; result = 0; }
+ *     if (top >= bottom) { bottom = top; result = 0; }
+ *
+ *     out->w = right - left;
+ *     out->h = bottom - top;
+ *     out->x = left;
+ *     out->y = top;
+ *     return result;
+ * }
+ * @endcode
+ */
 INCLUDE_ASM("asm/nonmatchings/btl_display", func_8002B080);
 
 
