@@ -20,35 +20,107 @@
 #include "battle.h"
 #include "gf.h"
 
+/** @brief Three-element u16 vector (e.g. position). */
+typedef struct {
+    u16 x;
+    u16 y;
+    u16 z;
+} Vec3u;
+
 /** @brief Single battle unit entry (stride 0xD0), used for array access. */
 typedef struct {
-    u8 pad0[0x8C];
+    u8 pad0[0x7];
+    u8 type;            /* 0x7  — pending-trigger type code */
+    u8 key;             /* 0x8  — pending-trigger key (matched against arg) */
+    u8 pad9[0xF];
+    s32 unk18;          /* 0x18 */
+    u8 pad1C[0xC];
+    s32 unk28;          /* 0x28 */
+    u8 pad2C[0x58];
+    Vec3u pos;          /* 0x84 — position (x, y, z) */
+    u8 pad8A[0x2];
     s32 flags;          /* 0x8C */
-    u8 pad90[0x40];
+    u16 status;         /* 0x90 — status flags (bit 0 suppresses type-2 trigger) */
+    u8 pad92[0x29];
+    u8 unkBB;           /* 0xBB — hit-type byte (sound parameter) */
+    u8 padBC[0xF];
+    u8 unkCB;           /* 0xCB — linked entity index (0xFF = unlinked) */
+    u8 padCC[0x4];
 } BattleUnit; /* 0xD0 bytes */
 
 /** @brief Battle state structure (D_800ED148). */
 typedef struct {
-    u8 pad0[0x4];
+    s32 unk0;
     s32 unk4;
     u8 pad8[0x4];
     u8 unkC;
-    u8 padD[0x5B6];
+    u8 unkD;
+    u8 padE[0x1];
+    u8 unkF;
+    u8 pad10[0x5B2];
+    u8 unk5C2;
     u8 unk5C3;
     u8 pad5C4[0x719];
     u8 unkCDD;
-    u8 padCDE[0x60E];
+    u8 padCDE[0x6];
+    Vec3u unkCE4[0x8];          /* 0xCE4 — table of (x, y, z) position triples */
+    u8 unkD14[0x8];             /* 0xD14 — hit-type byte table */
+    u8 padD1C[0x40];
+    u8 unkD5C[0x8];
+    u8 padD64[0x528];
+    s32 unk128C;
+    u8 pad1290[0x48];
+    s32 unk12D8;
+    u8 pad12DC[0xC];
+    u8 unk12E8;
+    u8 unk12E9;
+    u8 unk12EA;
+    u8 pad12EB[0x1];
     u8 unk12EC;
-    u8 pad12ED[0x2C];
+    u8 unk12ED;
+    u8 unk12EE;
+    u8 pad12EF[0x9];
+    u8 unk12F8;
+    u8 unk12F9;
+    u8 pad12FA[0x3];
+    u8 unk12FD;
+    u8 pad12FE[0x1B];
     u8 unk1319;
 } BattleState;
 
 
-extern BattleState D_800ED148;
+extern volatile BattleState D_800ED148;
 extern BattleConfig g_battleConfig;
 extern u8 D_800ED157[];
-extern u8 D_800ED158[];
-extern u8 D_800E19BC[];
+typedef struct {
+    BattleUnit slots[7];
+    u8 pad5B0[0x754];
+    u8 unkD04[8];
+} BattleSlotData;
+
+/** @brief Sound-command queue slot returned by func_8009B134.
+ *
+ * The two parameter bytes at +2/+3 are sometimes written as a single u16
+ * and sometimes as two separate u8s (callers vary by command id), so they
+ * are exposed via U16Split to keep both views available. */
+typedef struct {
+    u16 unk0;
+    U16Split unk2;
+} SoundCmd;
+
+extern BattleSlotData D_800ED158;
+
+/* FIXME: D_800E19BC is conceptually an array of (s32 sector, s32 length)
+   pairs (8-byte stride, two s32s per entry) used as CdRead arguments by
+   the music/sound loader. The two callers below index it with `idx * 2`
+   and `idx * 2 + 1` rather than `entries[idx].sector` / `.length`,
+   because gcc 2.7.2 only emits the original binary's dual-pointer
+   addressing pattern from the flat s32[] form — every typed-struct or
+   typedef'd-2D-array variant we tried collapsed to a single pointer
+   with two offsets and broke the match. The magic 2 / +1 should go
+   away if/when a struct-typed access form that produces the same
+   codegen is found. */
+extern s32 D_800E19BC[];
 extern u16 D_800E3CA4[];
 extern u16 D_800E3CA8[];
 extern u16 D_800E3CB0[];
@@ -103,7 +175,7 @@ void func_8009AF98(s32);
 s32 func_8009AFF0(s32);
 void func_8009B088(s32, s32, s32, s32);
 void func_8009B0F8(s32);
-s32 func_8009B134(s32, s32, s32);
+SoundCmd *func_8009B134(s32, s32, s32);
 s32 func_8009B15C(void);
 void func_8009B198(s32);
 void func_8009B208(u8 *, u8 *, s32);
@@ -169,7 +241,7 @@ void func_800B2024(void);
 void func_800B2084(void);
 void func_800B25E4(void);
 void func_800B26B8(void);
-s32 func_800B8564(s32, s32);
+SoundCmd *func_800B8564(s32, s32);
 s32 func_800CEDA4(void);
 void setCameraVibrateIntensity(s32);
 void setCameraVibrateState(s32);
@@ -303,9 +375,7 @@ void func_8009A254(void) {
  * @return The byte at offset 0x12E9 in the battle state array.
  */
 u32 func_8009A2E0(void) {
-    s32 base = (s32)&D_800ED148;
-    REGALLOC_BARRIER(base);
-    return *(u8 *)(base + 0x12E9);
+    return D_800ED148.unk12E9;
 }
 
 /**
@@ -313,40 +383,28 @@ u32 func_8009A2E0(void) {
  * @return The byte at offset 0x12EA in the battle state array.
  */
 u32 func_8009A2F4(void) {
-    s32 base = (s32)&D_800ED148;
-    REGALLOC_BARRIER(base);
-    return *(u8 *)(base + 0x12EA);
+    return D_800ED148.unk12EA;
 }
 
 /**
- * @brief Process pending animation commands.
+ * @brief Drain pending animation commands while the sequence flag is set.
  *
- * While 0x12EA is set and func_800CEDA4 returns nonzero, sets 0x12E9
- * to 1 and yields via func_8009B690. On exit, clears 0x12E9 and
- * yields again, then calls func_800B26B8.
+ * If unk12EA is set, repeatedly checks func_800CEDA4 (returns nonzero while
+ * commands remain): sets unk12E9 to 1 and yields via func_8009B690 each
+ * iteration. On loop exit, clears unk12E9, yields once more, then runs
+ * func_800B26B8 to finalize the animation phase.
  */
-/**
- *
- * Best attempt:
- * @code
- * void func_8009A308(void) {
- *     s32 base = (s32)&D_800ED148;
- *     s32 one;
- *     if (*(u8 *)(base + 0x12EA) == 0) goto skip;
- *     one = 1;
- * loop:
- *     if (func_800CEDA4() == 0) goto done;
- *     *(u8 *)(base + 0x12E9) = one;
- *     func_8009B690();
- *     goto loop;
- * skip: done:
- *     *(u8 *)((s32)&D_800ED148 + 0x12E9) = 0;
- *     func_8009B690();
- *     func_800B26B8();
- * }
- * @endcode
- */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A308);
+void func_8009A308(void) {
+    if (D_800ED148.unk12EA != 0) {
+        while (func_800CEDA4() != 0) {
+            D_800ED148.unk12E9 = 1;
+            func_8009B690();
+        }
+    }
+    D_800ED148.unk12E9 = 0;
+    func_8009B690();
+    func_800B26B8();
+}
 
 /**
  * @brief Queue a battle music command.
@@ -355,8 +413,8 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A308);
  * into the returned command buffer.
  */
 void func_8009A38C(void) {
-    s16 *result = (s16 *)func_8009B134(0x3EA, 0x80, 0);
-    *result = *(u8 *)D_800EDE24;
+    SoundCmd *cmd = func_8009B134(0x3EA, 0x80, 0);
+    cmd->unk0 = D_800EDE24[0];
 }
 
 /**
@@ -384,31 +442,22 @@ void func_8009A3F4(void) {
 
 /**
  * @brief Queue a hit-reaction sound for a specific entity.
- *
- * Computes entity offset (a0 * 0xD0), plays sound ID 0x66 at volume 0x80
- * targeting that entity, then stores entity index and hit type from
- * D_800ED158 + offset 0xD04.
- * @param a0 Entity slot index.
- * @param a1 Offset into entity data for hit type lookup.
- */
 /**
+ * @brief Queue an attack-hit sound for a slot with a custom hit-type lookup.
  *
- * Best attempt:
- * @code
- * void func_8009A42C(s32 a0, s32 a1) {
- *     s32 idx = a0;
- *     s32 off = a1;
- *     s32 offset = ((idx * 2 + idx) * 4 + idx) * 16;
- *     s32 base = (s32)D_800ED158;
- *     u8 *buf;
- *     buf = (u8 *)func_8009B134(0x66, 0x80, offset + base);
- *     base += off;
- *     *(u16 *)buf = idx;
- *     *(u16 *)(buf + 0x2) = *(u8 *)(base + 0xD04);
- * }
- * @endcode
+ * Plays sound 0x66 (channel 0x80) anchored at the battle unit in slot @p idx
+ * and writes both the slot index and the @p off-th entry of the hit-type
+ * table at @c D_800ED158+0xD04 into the returned command buffer.
+ *
+ * @param idx Battle-unit slot index.
+ * @param off Hit-type table index.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A42C);
+void func_8009A42C(s32 idx, s32 off) {
+    SoundCmd *cmd = func_8009B134(0x66, 0x80, (s32)&D_800ED158.slots[idx]);
+    u8 *hitType = &D_800ED158.unkD04[off];
+    cmd->unk0 = idx;
+    cmd->unk2.hword = *hitType;
+}
 
 /**
  * @brief Queue hit-reaction sounds for all active party members.
@@ -418,11 +467,10 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A42C);
  */
 void func_8009A4A4(void) {
     s32 cmdId = 3;
-    s32 i = 0;
-    s32 base = (s32)&D_800ED148;
+    s32 i;
 
-    for (; i < 8; i++) {
-        if (*(u8 *)(i + base + 0xD5C)) {
+    for (i = 0; i < 8; i++) {
+        if (D_800ED148.unkD5C[i]) {
             func_8009A42C(cmdId, i);
             cmdId++;
         }
@@ -442,40 +490,36 @@ s32 func_8009A514(s32 a0, s32 a1) {
 }
 
 /**
- * @brief Queue an attack animation command for an entity.
+ * @brief Stage an entity attack: snapshot, play sound 0x67, set hit type and position.
  *
- * Calls func_8009AFF0 to snapshot entity state, then plays sound 0x67
- * targeting the entity. Stores entity index, sets flag based on entity
- * flags bit 1, and copies position data from D_800ED148 tables.
- * @param a0 Entity slot index.
- * @param a1 Source entity index for position lookup.
+ * Snapshots entity state via func_8009AFF0 and func_800A1CFC, then plays
+ * sound 0x67 targeting the entity. Stores idx + flag (cmd->unk2.b.lo = 1,
+ * .b.hi = 1 if entity flags bit 1 set, else 0). Then copies the @p off-th
+ * hit-type byte (D_800ED148.unkD14) into entity->unkCB and the @p off-th
+ * position (D_800ED148.unkCE4) into entity->pos.
+ * @param idx Entity slot index.
+ * @param off Source entity index for the hit-type / position lookup.
  *
- * Best attempt:
+ * Best clean (struct-only) attempt:
  * @code
- * void func_8009A528(s32 a0, s32 a1) {
- *     s32 idx = a0;
- *     s32 src = a1;
- *     s32 offset, base;
- *     u8 *buf;
+ * void func_8009A528(s32 idx, s32 off) {
+ *     BattleUnit *units = (BattleUnit *)&D_800ED148;
+ *     BattleUnit *entity = &units[idx];
+ *     SoundCmd *cmd;
  *     func_8009AFF0(idx);
  *     func_800A1CFC(idx);
- *     offset = ((idx * 2 + idx) * 4 + idx) * 16;
- *     base = (s32)D_800ED158;
- *     buf = (u8 *)func_8009B134(0x67, 0x80, offset + base);
- *     base += offset - 0x10;
- *     *(u16 *)buf = idx;
- *     buf[2] = 1;
- *     if (*(s32 *)(base + 0x8C) & 2) buf[3] = 1;
- *     else buf[3] = 0;
- *     { s32 b = (s32)&D_800ED148;
- *       s32 o1 = ((idx * 2 + idx) * 4 + idx) * 16;
- *       *(u8 *)(o1 + b + 0xCB) = *(u8 *)(src + b + 0xD14);
- *       s32 o2 = (src * 2 + src) * 2;
- *       *(u16 *)(o1 + b + 0x84) = *(u16 *)(o2 + b + 0xCE4);
- *       *(u16 *)(o1 + b + 0x86) = *(u16 *)(o2 + b + 0xCE6);
- *       *(u16 *)(o1 + b + 0x88) = *(u16 *)(o2 + b + 0xCE8); }
+ *     cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED158.slots[idx]);
+ *     cmd->unk0 = idx;
+ *     cmd->unk2.b.lo = 1;
+ *     cmd->unk2.b.hi = (entity->flags & 2) ? 1 : 0;
+ *     entity->unkCB = D_800ED148.unkD14[off];
+ *     entity->pos.x = D_800ED148.unkCE4[off].x;
+ *     entity->pos.y = D_800ED148.unkCE4[off].y;
+ *     entity->pos.z = D_800ED148.unkCE4[off].z;
  * }
  * @endcode
+ * Permuter ~67% — same gcc-combine and `s1 -= 0x10` / split-across-call
+ * issues as func_8009A6A8.
  */
 INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A528);
 
@@ -487,11 +531,10 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A528);
  */
 void func_8009A638(void) {
     s32 cmdId = 3;
-    s32 i = 0;
-    s32 base = (s32)&D_800ED148;
+    s32 i;
 
-    for (; i < 8; i++) {
-        if (*(u8 *)(i + base + 0xD5C)) {
+    for (i = 0; i < 8; i++) {
+        if (D_800ED148.unkD5C[i]) {
             func_8009A528(cmdId, i);
             cmdId++;
         }
@@ -501,64 +544,94 @@ void func_8009A638(void) {
 /**
  * @brief Queue a return-to-position animation for an entity.
  *
- * Computes entity offset, calls animation handler and state snapshot,
- * then plays sound 0x67 targeting the entity with position data cleared.
- * @param a0 Entity slot index.
+ * Snapshots animation state via func_800A240C / func_8009AFF0 / func_800A1AB8
+ * with the entity's status / unk18 / unk28 fields, then plays sound 0x67
+ * with position bytes cleared.
+ * @param idx Entity slot index.
  *
- * Best attempt:
+ * Best clean (struct-only) attempt — 84.24% match:
  * @code
- * void func_8009A6A8(s32 a0) {
- *     s32 idx = a0;
- *     s32 base = (s32)&D_800ED148;
- *     s32 offset = ((idx * 2 + idx) * 4 + idx) * 16;
- *     s32 entity = offset + base;
- *     func_800A240C(*(s32 *)(entity + 0x28), offset + base + 0x90);
+ * void func_8009A6A8(s32 idx) {
+ *     BattleUnit *units = (BattleUnit *)&D_800ED148;
+ *     BattleUnit *entity = &units[idx];
+ *     SoundCmd *cmd;
+ *     func_800A240C(idx, entity->unk28, (s32)&entity->status);
  *     func_8009AFF0(idx);
- *     func_800A1AB8(idx, *(u16 *)(entity + 0x90), *(s32 *)(entity + 0x18));
- *     { u8 *buf = (u8 *)func_8009B134(0x67, 0x80, offset + base + 0x10);
- *       *(u16 *)buf = idx;
- *       buf[2] = 0;
- *       buf[3] = 0; }
+ *     func_800A1AB8(idx, entity->status, entity->unk18);
+ *     cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED158.slots[idx]);
+ *     cmd->unk0 = idx;
+ *     cmd->unk2.b.lo = 0;
+ *     cmd->unk2.b.hi = 0;
  * }
  * @endcode
+ * Mismatches: gcc collapses entity into a single saved register where the
+ * original keeps base + offset separate (4 saved s-regs in target), and
+ * the target reuses `addiu s1, s1, 0x10` to derive &D_800ED158 from
+ * &D_800ED148 — both differences require magic byte offsets in the C to
+ * reproduce.
  */
 INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A6A8);
 
 /**
- * @brief Complex battle scene setup — positions, animations, and sound.
+ * @brief Lay out party-side battle slots and play the start-of-encounter sound.
  *
- * Counts active entities (those with CB != 0xFF), plays sound 0xD,
- * then iterates entities calling func_8009A6A8 for each active one.
- * Sets position data based on entity count using lookup tables
- * D_800E3CA4, D_800E3CA8, and D_800E3CB0.
+ * Counts active entities in the first 3 slots (those with @c unkCB != 0xFF),
+ * plays sound 0xD at volume 0x80, then iterates the same 3 slots calling
+ * func_8009A6A8 for each active one. For each, clears @c pos.y and sets
+ * @c pos.x / @c pos.z from a lookup table chosen by the active count:
+ * @c D_800E3CA4 (count == 1), @c D_800E3CA8 (count == 2),
+ * @c D_800E3CB0 (count == 3). Other counts leave the position fields alone.
+ *
+ * Best clean (struct-only) attempt:
+ * @code
+ * void func_8009A74C(void) {
+ *     BattleUnit *units = (BattleUnit *)&D_800ED148;
+ *     s32 active_count = 0;
+ *     s32 pos_idx;
+ *     s32 i;
+ *     for (i = 0; i < 3; i++) {
+ *         if (units[i].unkCB != 0xFF) active_count++;
+ *     }
+ *     func_8009B134(0xD, 0x80, 0);
+ *     pos_idx = 0;
+ *     for (i = 0; i < 3; i++) {
+ *         if (units[i].unkCB != 0xFF) {
+ *             func_8009A6A8(i);
+ *             units[i].pos.y = 0;
+ *             if (active_count == 2) {
+ *                 units[i].pos.x = D_800E3CA8[pos_idx * 2];
+ *                 units[i].pos.z = D_800E3CA8[pos_idx * 2 + 1];
+ *                 pos_idx++;
+ *             } else if (active_count == 1) {
+ *                 units[i].pos.x = D_800E3CA4[0];
+ *                 units[i].pos.z = D_800E3CA4[1];
+ *             } else if (active_count == 3) {
+ *                 units[i].pos.x = D_800E3CB0[pos_idx * 2];
+ *                 units[i].pos.z = D_800E3CB0[pos_idx * 2 + 1];
+ *                 pos_idx++;
+ *             }
+ *         }
+ *     }
+ * }
+ * @endcode
+ * Permuter ~69%; depends on func_8009A6A8 matching first.
  */
 INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A74C);
 
 /**
- * @brief Queue a damage/heal visual effect sound for an entity.
+ * @brief Queue a damage/heal visual effect sound for an entity slot.
  *
- * Computes entity offset, plays sound 0x66 at volume 0x80 targeting
- * the entity, and stores the linked entity index (offset 0xBB) as
- * parameter.
- * @param a0 Entity slot index.
- */
-/**
+ * Plays sound 0x66 (channel 0x80) targeting the entity at slot @p idx
+ * (208-byte stride into @c D_800ED158) and stores the slot index plus
+ * the linked-entity byte at +0xBB as the sound's command parameters.
  *
- * Best attempt:
- * @code
- * void func_8009A8B4(s32 a0) {
- *     s32 idx = a0;
- *     s32 offset = ((idx * 2 + idx) * 4 + idx) * 16;
- *     s32 base = (s32)D_800ED158;
- *     u8 *buf;
- *     buf = (u8 *)func_8009B134(0x66, 0x80, offset + base);
- *     base += offset;
- *     *(u16 *)buf = idx;
- *     *(u16 *)(buf + 0x2) = *(u8 *)(base + 0xBB);
- * }
- * @endcode
+ * @param idx Entity slot index.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A8B4);
+void func_8009A8B4(s32 idx) {
+    SoundCmd *cmd = func_8009B134(0x66, 0x80, (s32)&D_800ED158.slots[idx]);
+    cmd->unk0 = idx;
+    cmd->unk2.hword = *(u8 *)&D_800ED158.slots[idx].unkBB;
+}
 
 /**
  * @brief Queue damage sounds for all entities with linked targets.
@@ -567,27 +640,51 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A8B4);
  * func_8009A8B4 to queue the damage sound.
  */
 void func_8009A928(void) {
-    s32 i = 0;
-    s32 sentinel = 0xFF;
-    s32 base = (s32)&D_800ED148;
+    volatile BattleUnit *units = (volatile BattleUnit *)&D_800ED148;
+    s32 i;
 
-    for (; i < 3; i++, base += 0xD0) {
-        if (*(u8 *)(base + 0xCB) != sentinel) {
+    for (i = 0; i < 3; i++) {
+        if (units[i].unkCB != 0xFF) {
             func_8009A8B4(i);
         }
     }
 }
 
 /**
- * @brief Process a deferred damage/effect trigger for a specific type.
+ * @brief Drain a single pending trigger keyed against the given target.
  *
- * Iterates up to 7 entities (stride 0xD0). When entity D7/D8 fields
- * match the given type, triggers the effect via func_800A59AC and
- * clears the D7/D8 fields. Special handling for type 2 with bit 0
- * of status (0x90).
- * @param a0 Effect type to process.
+ * Walks the battle-unit slots looking for the next slot whose `key`
+ * field matches `target`. When found, dispatches func_800A59AC with
+ * the slot's `type` (skipping the call when type == 2 and the previous
+ * slot's status bit 0 is set), then clears the slot's type/key fields
+ * and exits. Slot 0 is the "self" slot and is never matched against.
+ * @param target Trigger key to find and clear.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A990);
+void func_8009A990(s32 target) {
+    s32 i;
+    BattleUnit *p;
+
+    i = 0;
+    p = (BattleUnit *)&D_800ED148;
+top:
+    if (p[1].key == target) {
+        if (p[1].type != 0) {
+            if (p[1].type == 2) {
+                if (!(p[0].status & 1)) {
+                    func_800A59AC(i, p[1].type, 0);
+                }
+            } else {
+                func_800A59AC(i, p[1].type, 0);
+            }
+            p[1].key = 0;
+            p[1].type = 0;
+            return;
+        }
+    }
+    p++;
+    i++;
+    if (i < 7) goto top;
+}
 
 /**
  * @brief Process all pending deferred damage triggers.
@@ -596,16 +693,14 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A990);
  * pending trigger type via func_8009A990.
  */
 void func_8009AA2C(void) {
-    s32 base;
     s32 sentinel;
     s32 i;
 
-    if (*(u8 *)D_80082C0F != 0) {
+    if (D_80082C0F[0] != 0) {
         return;
     }
-    base = (s32)&D_800ED148;
 
-    if (*(u8 *)(base + 0x12F9) != 1) {
+    if (D_800ED148.unk12F9 != 1) {
         sentinel = 0xFF;
         if (func_800AE730() == sentinel) {
             return;
@@ -615,12 +710,12 @@ void func_8009AA2C(void) {
         }
     }
     {
-        s32 count = *(u8 *)(base + 0x12F8);
+        s32 count = D_800ED148.unk12F8;
         if (count != 0) {
             i = 0;
             do {
                 func_8009A990(i);
-                count = *(u8 *)(base + 0x12F8);
+                count = D_800ED148.unk12F8;
                 i++;
             } while (i < count);
         }
@@ -674,7 +769,7 @@ void func_8009AB54(s32 a0) {
  * func_800AED9C, func_800AEB50.
  */
 void func_8009AB98(void) {
-    if (*(s32 *)&D_800ED148 == 0) {
+    if (D_800ED148.unk0 == 0) {
         func_800AECD4();
         func_800AED30();
         func_800AEC04();
@@ -689,8 +784,7 @@ void func_8009AB98(void) {
  * Writes value 3 to D_800ED148 offset 0x4 (entity state field).
  */
 void func_8009ABE4(void) {
-    volatile s32 *f = (volatile s32 *)&D_800ED148;
-    f[1] = 3;
+    D_800ED148.unk4 = 3;
 }
 
 /**
@@ -700,8 +794,7 @@ void func_8009ABE4(void) {
  *
  */
 void func_8009ABFC(void) {
-    volatile s32 *f = (volatile s32 *)&D_800ED148;
-    f[1] = 1;
+    D_800ED148.unk4 = 1;
 }
 
 /**
@@ -720,7 +813,7 @@ void func_8009AC14(void) {
  * func_800A30E4 (animation), and func_800A79A0 (state reset).
  */
 void func_8009AC34(void) {
-    *(s32 *)&D_800ED148 = 0;
+    *(s32 *)&D_800ED148.unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
@@ -734,12 +827,11 @@ void func_8009AC34(void) {
  * calls func_800AF8A4 with it.
  */
 void func_8009AC68(void) {
-    s32 base = (s32)&D_800ED148;
-    *(s32 *)base = 0;
+    D_800ED148.unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
-    func_800AF8A4(*(u8 *)(base + 0xF));
+    func_800AF8A4(D_800ED148.unkF);
 }
 
 /**
@@ -749,7 +841,7 @@ void func_8009AC68(void) {
  * If inactive, calls func_8009AC68 for full reset.
  */
 void func_8009ACB4(void) {
-    s32 a0 = *(u8 *)D_800ED157;
+    s32 a0 = D_800ED157[0];
     if (func_800B1930(a0) == 0) {
         func_8009AC68();
     }
@@ -787,48 +879,83 @@ void func_8009ACEC(void) {
 /**
  * @brief Set battle round timer based on speed setting.
  *
- * Reads D_800EE449 (speed setting 0-3), maps to frame counts:
- * 0 or 3 -> 0x3C (60), 1 -> 0x1E (30), 2 -> 0x28 (40).
- * Schedules timer via func_8009AB54 and stores to entity timer field.
+ * Reads D_800EE449 (speed setting 0-3) and maps to frame counts:
+ * 0 or 3 -> 60, 1 -> 30, 2 -> 40. Schedules a timer via func_8009AB54
+ * (passing frames - 15) and stores the frame count into D_800ED148.unkC.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009AD7C);
+void func_8009AD7C(void) {
+    s32 frames;
+    switch (D_800EE449[0]) {
+        case 0:
+            frames = 60;
+            break;
+        case 1:
+            frames = 30;
+            break;
+        case 2:
+            frames = 40;
+            break;
+        case 3:
+            frames = 60;
+            break;
+    }
+    func_8009AB54(frames - 15);
+    D_800ED148.unkC = frames;
+}
 
 /**
- * @brief State machine dispatch for battle transitions.
+ * @brief Dispatch a battle transition command.
  *
- * Switch on (a0 - 5) with 6 cases:
- * - case 5: Set D_800ED148 word 0 to 1
- * - case 6: Schedule func_8009AC14
- * - case 7: Schedule func_8009AC34
- * - case 8: Schedule func_8009ACB4
- * - case 9: Schedule func_8009AC68
- * - case 10: Schedule func_8009ACEC
- * @param a0 State transition command (5-10).
- *
- * Best attempt:
- * @code
- * void func_8009AE08(s32 a0) {
- *     switch (a0) {
- *     case 5:  *(s32 *)&D_800ED148 = 1; break;
- *     case 6:  func_8009AF14((s32)func_8009AC14); break;
- *     case 7:  func_8009AF14((s32)func_8009AC34); break;
- *     case 8:  func_8009AF14((s32)func_8009ACB4); break;
- *     case 9:  func_8009AF14((s32)func_8009AC68); break;
- *     case 10: func_8009AF14((s32)func_8009ACEC); break;
- *     }
- * }
- * @endcode
+ * Codes 5..10 map to a fixed set of transition entry points. Code 5 marks
+ * the battle state field at offset 0 with value 1 (signalling a primed
+ * transition); codes 6..10 each schedule one of five callbacks via
+ * func_8009AF14 to be run as the next phase. Out-of-range codes are
+ * silently ignored.
+ * @param cmd Transition code in the range 5..10.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009AE08);
+void func_8009AE08(s32 cmd) {
+    switch (cmd) {
+        case 5:
+            *(s32 *)&D_800ED148.unk0 = 1;
+            break;
+        case 6:
+            func_8009AF14((s32)func_8009AC14);
+            break;
+        case 7:
+            func_8009AF14((s32)func_8009AC34);
+            break;
+        case 8:
+            func_8009AF14((s32)func_8009ACB4);
+            break;
+        case 9:
+            func_8009AF14((s32)func_8009AC68);
+            break;
+        case 10:
+            func_8009AF14((s32)func_8009ACEC);
+            break;
+    }
+}
 
 /**
  * @brief Update battle phase transition sound.
  *
- * Checks 0x12E8 for phase 2 and compares 0x12ED with 0x12EE.
- * If different, plays sound 0x6D (or 0x6C if 0x12ED == 1) at
- * volume 0xF0. Copies 0x12ED to 0x12EE.
+ * If not in phase 2 and the current sound flag (unk12ED) differs from the
+ * last played flag (unk12EE), plays one of two phase transition sounds at
+ * volume 0xF0: sound 0x6C if unk12ED == 1, else sound 0x6D. Always copies
+ * the current flag into the last-played slot.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009AE9C);
+void func_8009AE9C(void) {
+    if (D_800ED148.unk12E8 != 2) {
+        if (D_800ED148.unk12ED != D_800ED148.unk12EE) {
+            if (D_800ED148.unk12ED == 1) {
+                func_8009B134(0x6C, 0xF0, 0);
+            } else {
+                func_8009B134(0x6D, 0xF0, 0);
+            }
+        }
+    }
+    D_800ED148.unk12EE = D_800ED148.unk12ED;
+}
 
 /**
  * @brief Schedule a callback function as a battle task.
@@ -855,13 +982,13 @@ void func_8009AF14(s32 a0) {
 s32 func_8009AF3C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stack_arg) {
     s32 entity_id = a1;
     s32 flag1 = a2;
-    u8 *buf;
+    SoundCmd *cmd;
     s32 flag2 = stack_arg;
 
-    buf = (u8 *)func_8009B134(8, a3, a0);
-    *(u16 *)buf = entity_id;
-    *(u8 *)(buf + 2) = flag1;
-    *(u8 *)(buf + 3) = flag2;
+    cmd = func_8009B134(8, a3, a0);
+    cmd->unk0 = entity_id;
+    cmd->unk2.b.lo = flag1;
+    cmd->unk2.b.hi = flag2;
 }
 
 /**
@@ -874,12 +1001,12 @@ s32 func_8009AF3C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stack_arg) {
 void func_8009AF98(s32 a0) {
     s32 idx = a0;
     s32 offset;
-    u8 *buf;
+    SoundCmd *cmd;
 
     func_8009AFF0(idx);
     offset = ((idx * 2 + idx) * 4 + idx) * 16;
-    buf = (u8 *)func_8009B134(0x75, 0x80, offset + (s32)D_800ED158);
-    *(u16 *)buf = idx;
+    cmd = func_8009B134(0x75, 0x80, offset + (s32)&D_800ED158);
+    cmd->unk0 = idx;
 }
 
 /**
@@ -932,17 +1059,17 @@ void func_8009B088(s32 a0, s32 a1, s32 a2, s32 a3) {
     s32 flag1 = a2;
     s32 flag2 = a3;
     s32 snd;
-    u8 *buf;
+    SoundCmd *cmd;
 
     func_8009AFF0(idx);
     snd = 0x77;
     if (dir == 0) {
         snd = 0x76;
     }
-    buf = (u8 *)func_8009B134(snd, 0xF0, 0);
-    *(u16 *)buf = idx;
-    buf[2] = flag1;
-    buf[3] = flag2;
+    cmd = func_8009B134(snd, 0xF0, 0);
+    cmd->unk0 = idx;
+    cmd->unk2.b.lo = flag1;
+    cmd->unk2.b.hi = flag2;
 }
 
 /**
@@ -959,17 +1086,20 @@ void func_8009B0F8(s32 a0) {
 }
 
 /**
- * @brief Play a sound effect with sign-extended ID and masked volume.
+ * @brief Queue a sound command and return a buffer for caller to fill.
  *
- * Sign-extends a0 from 16 bits, masks a1 to 8 bits, then calls
- * func_800B8564 to play the sound.
- * @param a0 Sound effect ID (16-bit, sign-extended).
- * @param a1 Volume (masked to 8 bits).
- * @param a2 Target entity data pointer (passed through).
- * @return Result from func_800B8564.
+ * Sign-extends @p cmd from 16 bits, masks @p vol to 8 bits, then dispatches
+ * via func_800B8564 to allocate a slot in the sound-command queue. The
+ * returned pointer addresses a small command buffer whose layout depends on
+ * @p cmd; the caller fills in entity / parameter words as appropriate.
+ *
+ * @param cmd Sound-command id (sign-extended s16).
+ * @param vol Volume (low 8 bits).
+ * @param entry Caller-supplied context pointer / value.
+ * @return Pointer to the command buffer, or NULL if the queue is full.
  */
-s32 func_8009B134(s32 a0, s32 a1, s32 a2) {
-    return func_800B8564((s16)a0, a1 & 0xFF);
+SoundCmd *func_8009B134(s32 cmd, s32 vol, s32 entry) {
+    return func_800B8564((s16)cmd, vol & 0xFF);
 }
 
 /**
@@ -981,11 +1111,11 @@ s32 func_8009B134(s32 a0, s32 a1, s32 a2) {
  * @return Random byte value from the lookup table.
  */
 s32 func_8009B15C(void) {
-    s32 idx = *(u8 *)D_800EEBB0;
+    s32 idx = D_800EEBB0[0];
     u8 *entry = D_800EEBA8 + idx;
     s32 val = *entry;
     *entry = val + 1;
-    return *(u8 *)(D_80098030 + val);
+    return D_80098030[val];
 }
 
 /**
@@ -1000,7 +1130,7 @@ void func_8009B198(s32 a0) {
     s32 buf;
     s32 i;
 
-    *(u8 *)D_800EEBB0 = 0;
+    D_800EEBB0[0] = 0;
     i = 0;
     buf = (s32)D_800EEBA8;
 
@@ -1010,7 +1140,7 @@ void func_8009B198(s32 a0) {
         i++;
     } while (i < 8);
 
-    *(u8 *)D_800EEBB0 = func_8009B15C() & 7;
+    D_800EEBB0[0] = func_8009B15C() & 7;
 }
 
 /**
@@ -1273,40 +1403,51 @@ top:
 }
 
 /**
- * @brief Read a pair of values from a lookup table.
+ * @brief Read a pair of s32 values from the @c D_800E19BC lookup table.
  *
- * Indexes into D_800E19BC at offset a0*8, reads two consecutive
- * s32 values and stores them to the output pointers.
- * @param a0 Table index.
- * @param a1 Output pointer for first value.
- * @param a2 Output pointer for second value.
+ * The table holds (sector, size) or similar word pairs; this helper
+ * fetches the pair at index @p idx into the caller's output pointers.
  *
- * Best attempt:
- * @code
- * void func_8009B59C(s32 a0, s32 *a1, s32 *a2) {
- *     s32 base = (s32)D_800E19BC;
- *     REGALLOC_BARRIER(base);
- *     a0 <<= 3;
- *     *a1 = *(s32 *)(a0 + base);
- *     *a2 = *(s32 *)(base + a0 + 4);
- * }
- * @endcode
+ * @param idx Table index.
+ * @param out1 Output pointer for the first word.
+ * @param out2 Output pointer for the second word.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009B59C);
+void func_8009B59C(s32 idx, s32 *out1, s32 *out2) {
+    /* FIXME: magic `* 2` / `+ 1` — D_800E19BC is logically an array of
+       (sector, length) pairs; see decl above for why we can't use a
+       struct-typed access here without breaking the match. */
+    *out1 = D_800E19BC[idx * 2];
+    *out2 = D_800E19BC[idx * 2 + 1];
+}
 
 /**
- * @brief Start music/sound playback with callback.
+ * @brief Issue a CD or memory read for a track and arm the completion callback.
  *
- * Reads source parameters from D_800E19BC, calls either
- * cdRead or func_80038868 based on direction flag (a2),
- * passing func_8009B654 as callback. Stores callback pointer
- * and data pointer into D_800ED148+0x128C/0x12D8.
- * @param a0 Sound table index.
- * @param a1 Sound bank ID.
- * @param a2 Direction flag (0 = cdRead, else func_80038868).
- * @param a3 Callback user data.
+ * Looks up a (sector, length) pair from D_800E19BC[idx*2..idx*2+1] and
+ * dispatches the read: cdRead when direction is 0 (load from disc), or
+ * func_80038868 otherwise (alternate transfer path). Both calls register
+ * func_8009B654 as the completion callback. The user data and the data
+ * length are cached in D_800ED148.unk128C / unk12D8 for the callback to
+ * pick up later.
+ * @param idx Index into D_800E19BC (each entry is two s32s).
+ * @param dst Destination buffer / target address.
+ * @param dir Direction flag (0 = cdRead, else func_80038868).
+ * @param userData Opaque value forwarded to the callback via unk128C.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009B5C4);
+void func_8009B5C4(s32 idx, s32 dst, s32 dir, s32 userData) {
+    /* FIXME: magic `* 2` / `+ 1` — same issue as func_8009B59C: the table
+       is conceptually CdReadEntry[] but only the flat s32[] form keeps
+       gcc's dual-pointer addressing intact. */
+    s32 sector = D_800E19BC[idx * 2];
+    s32 length = D_800E19BC[idx * 2 + 1];
+    if (dir == 0) {
+        cdRead(sector, length, dst, (s32)func_8009B654);
+    } else {
+        func_80038868(sector, length, dst, (s32)func_8009B654);
+    }
+    D_800ED148.unk128C = userData;
+    D_800ED148.unk12D8 = length;
+}
 
 /**
  * @brief Music playback completion callback.
@@ -1316,10 +1457,9 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009B5C4);
  * pointer from D_800ED148+0x12D8.
  */
 void func_8009B654(void) {
-    s32 base = (s32)&D_800ED148;
-    s32 callback = *(s32 *)(base + 0x128C);
+    s32 callback = D_800ED148.unk128C;
     if (callback != 0) {
-        ((void (*)(s32))callback)(*(s32 *)(base + 0x12D8));
+        ((void (*)(s32))callback)(D_800ED148.unk12D8);
     }
 }
 
@@ -1423,7 +1563,7 @@ s32 func_8009B7BC(s32 a0) {
 s32 func_8009B7F4(s32 a0, s32 a1) {
     s32 max;
 
-    if (*(u8 *)D_800EE4C1 == 0xED) {
+    if (D_800EE4C1[0] == 0xED) {
         s32 base = (s32)&D_800ED148;
         s32 offset = ((a1 * 2 + a1) * 4 + a1) * 16;
         if (*(s32 *)(base + offset + 0x28) == 0) {
@@ -1431,7 +1571,7 @@ s32 func_8009B7F4(s32 a0, s32 a1) {
         }
     }
     max = 9999;
-    if (*(u8 *)D_800EE456 & 8) {
+    if (D_800EE456[0] & 8) {
         max = 60000;
     }
     if (a0 > max) {
