@@ -29,7 +29,9 @@ typedef struct {
     /* 0x198 */ s32 posZ;
     /* 0x19C */ u8 pad19C[0x5A];
     /* 0x1F6 */ u16 radius;            /**< Collision radius (used by func_8009E468 overlap test). */
-    /* 0x1F8 */ u8 pad1F8[0x20];
+    /* 0x1F8 */ u8 pad1F8[0x02];
+    /* 0x1FA */ u16 unk1FA;            /**< Set from path-table entry's unk6 by func_8009BB18. */
+    /* 0x1FC */ u8 pad1FC[0x1C];
     /* 0x218 */ s16 unk218;            /**< -1 = inactive (skipped by collision tests). */
     /* 0x21A */ u8 pad21A[0x27];
     /* 0x241 */ u8 field_0x241;
@@ -45,7 +47,9 @@ typedef struct {
     /* 0x252 */ u8 field_0x252;
     /* 0x253 */ u8 field_0x253;
     /* 0x254 */ u8 field_0x254;
-    /* 0x255 */ u8 pad255[0x0F];
+    /* 0x255 */ u8 pad255[0x03];
+    /* 0x258 */ u8 unk258;             /**< Set from path-table entry's unk8 by func_8009BB18. */
+    /* 0x259 */ u8 pad259[0x0B];
 } Entity; /* 0x264 = 612 bytes */
 
 /** @brief Animation parameter entry. */
@@ -62,15 +66,26 @@ typedef struct {
     /* 0x001 */ u8 pad001;
     /* 0x002 */ s16 counter;
     /* 0x004 */ u8 pad004[0x0E];
-    /* 0x012 */ u8 entityIndex[2];
-    /* 0x014 */ u8 pad014[0x17C];
+    /* 0x012 */ u8 entityIndex[3];
+    /* 0x015 */ u8 pad015[0x17B];
     /* 0x190 */ u8 slotActive[16];
 } SystemState;
+
+/** @brief 12-byte path waypoint (64 entries per table, indexed by angle/64). */
+typedef struct {
+    /* 0x00 */ s16 x;       /**< Position X (fixed-point, << 12 when written). */
+    /* 0x02 */ s16 y;       /**< Position Y. */
+    /* 0x04 */ s16 z;       /**< Position Z. */
+    /* 0x06 */ u16 unk6;    /**< Stored to entity offset 0x1FA. */
+    /* 0x08 */ u8  unk8;    /**< Stored to entity offset 0x258. */
+    /* 0x09 */ u8  pad9[3];
+} PathEntry;
 
 extern Entity *D_80085224;
 extern SystemState D_800704A8;
 extern u16 D_8005F118;
 extern u16 D_8005F11A;
+extern u16 D_8005F144;
 extern s16 D_8005F148;
 extern u16 D_8005F160;
 extern u16 D_8005F162;
@@ -88,6 +103,8 @@ extern s16 D_8005F14A;
 extern s16 D_8005F100;
 extern s16 D_8005F142;
 extern u8 D_8005F103;
+extern PathEntry D_80070A60[64];
+extern PathEntry D_80070760[64];
 
 INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object1", func_80098314);
 
@@ -212,7 +229,37 @@ void func_8009B74C(s16 slotIdx, u16 paramIdx, AnimParam *params, s16 multiplier)
     }
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object1", func_8009BB18);
+/**
+ * @brief Update path-driven entity positions for slots 1 and 2.
+ *
+ * For each active slot (entityIndex != 0xFF), looks up a path waypoint by
+ * angle (computed as (D_8005F144 - phase) & 0x3F → 0..63 entry) and writes
+ * its x/y/z (shifted left 12 for fixed-point), unk6 halfword, and unk8 byte
+ * to the entity at offsets 0x190, 0x194, 0x198, 0x1FA, 0x258 respectively.
+ *
+ * Slot 2 reads from D_80070A60 with phase D_8005F11A; slot 1 reads from
+ * D_80070760 with phase D_8005F118.
+ */
+void func_8009BB18(void) {
+    u16 angle;
+
+    if (D_800704A8.entityIndex[2] != 0xFF) {
+        angle = (D_8005F144 - D_8005F11A) & 0x3F;
+        D_80085224[D_800704A8.entityIndex[2]].posX   = D_80070A60[angle].x << 12;
+        D_80085224[D_800704A8.entityIndex[2]].posY   = D_80070A60[angle].y << 12;
+        D_80085224[D_800704A8.entityIndex[2]].posZ   = D_80070A60[angle].z << 12;
+        D_80085224[D_800704A8.entityIndex[2]].unk1FA = D_80070A60[angle].unk6;
+        D_80085224[D_800704A8.entityIndex[2]].unk258 = D_80070A60[angle].unk8;
+    }
+    if (D_800704A8.entityIndex[1] != 0xFF) {
+        angle = (D_8005F144 - D_8005F118) & 0x3F;
+        D_80085224[D_800704A8.entityIndex[1]].posX   = D_80070760[angle].x << 12;
+        D_80085224[D_800704A8.entityIndex[1]].posY   = D_80070760[angle].y << 12;
+        D_80085224[D_800704A8.entityIndex[1]].posZ   = D_80070760[angle].z << 12;
+        D_80085224[D_800704A8.entityIndex[1]].unk1FA = D_80070760[angle].unk6;
+        D_80085224[D_800704A8.entityIndex[1]].unk258 = D_80070760[angle].unk8;
+    }
+}
 
 INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object1", func_8009BD50);
 
