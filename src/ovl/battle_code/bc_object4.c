@@ -15,8 +15,6 @@ void func_8009AE08(s32);
 void func_800E1850(void);
 extern u8 D_800EEBC8[];
 void func_800A8578(void);
-void func_800A554C(s32);
-void func_800A559C(s32);
 
 /**
  * @brief Compute table entry and forward call to func_800A5A7C.

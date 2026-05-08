@@ -804,4 +804,11 @@ typedef struct {
     /* 0x20 */ u8  pad20[0x38];      /**< Working pointer + remaining unmapped fields. */
 } EffectPrim; /* 0x58 */
 
+/** @brief Battle slot stat/AI hook called by @c func_800A7518. */
+void func_800A554C(s32 idx);
+
+/** @brief Battle slot fallback handler called by @c func_800A7518 when
+ *         @c charData->statusFlags bit @c 0x10000 is not set. */
+void func_800A559C(s32 idx);
+
 #endif /* BATTLE_H */
