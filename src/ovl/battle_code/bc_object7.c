@@ -332,7 +332,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B0574);
 void func_800B0600(s32 a0, s32 a1) {
     s32 bitPos = func_800B054C(a1);
     if (bitPos < 14) {
-        D_800ED148.entities[a0].field64[bitPos] = -0x457;
+        D_800ED148.entities[a0].field64.perBit[bitPos] = -0x457;
     }
 }
 
@@ -347,7 +347,7 @@ void func_800B0600(s32 a0, s32 a1) {
 s32 func_800B0668(s32 a0, s32 a1) {
     s32 bitPos = func_800B054C(a1);
     if (bitPos < 14) {
-        if (((BattleSystem *)&D_800ED148)->entities[a0].field64[bitPos] == -0x457) {
+        if (((BattleSystem *)&D_800ED148)->entities[a0].field64.perBit[bitPos] == -0x457) {
             return 1;
         }
     }

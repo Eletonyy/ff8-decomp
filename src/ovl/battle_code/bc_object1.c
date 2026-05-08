@@ -564,7 +564,7 @@ void func_8009A990(s32 target) {
     i = 0;
     p = (BattleEntity *)&D_800ED148;
 top:
-    if (p[1].key == target) {
+    if (p[1].slot8.byteView.trigKey == target) {
         if (((u8 *)&p[1])[0x7] != 0) {
             if (((u8 *)&p[1])[0x7] == 2) {
                 if (!(p[0].status & 1)) {
@@ -573,7 +573,7 @@ top:
             } else {
                 func_800A59AC(i, ((u8 *)&p[1])[0x7], 0);
             }
-            p[1].key = 0;
+            p[1].slot8.byteView.trigKey = 0;
             ((u8 *)&p[1])[0x7] = 0;
             return;
         }

@@ -532,33 +532,33 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object4", func_800A71C0);
  */
 void func_800A7518(s32 idx) {
     BattleCharData *charData = &g_battleChars.chars[idx];
-    BattleSlot     *slot     = (BattleSlot *)&D_800ED158.slots[idx];
+    BattleEntity   *slot     = &D_800ED158.slots[idx];
     u8              charId;
     s32             i;
 
     charId = charData->characterId;
     if (charId == 0xFF) {
-        slot->slotFlags  = 0;
-        slot->linkedIdx2 = 0xFF;
+        slot->field64.slotInit.slotFlags = 0;
+        slot->linkedIdx2                 = 0xFF;
         return;
     }
 
     {
         u16 dispStatus;
-        slot->linkedIdx2  = charId;
-        dispStatus        = charData->displayStatus;
-        slot->slotFlags   = 0x8801;
-        slot->slotDisplay = dispStatus;
+        slot->linkedIdx2                 = charId;
+        dispStatus                       = charData->displayStatus;
+        slot->field64.slotInit.slotFlags = 0x8801;
+        slot->at0x80.slotDisplay         = dispStatus;
     }
 
-    if (g_gfData.levelCurve12[charData->classId].field0B & 1) slot->slotFlags |= 0x1000;
-    if (g_gfData.xpCurves36[slot->linkedIdx2].field03   & 1)  slot->slotFlags |= 0x100;
+    if (g_gfData.levelCurve12[charData->classId].field0B & 1) slot->field64.slotInit.slotFlags |= 0x1000;
+    if (g_gfData.xpCurves36[slot->linkedIdx2].field03    & 1) slot->field64.slotInit.slotFlags |= 0x100;
 
-    slot->initFlags = 0;
-    if (charData->statusFlags & 0x1000) slot->initFlags  = 0x80;
-    if (charData->statusFlags & 0x4000) slot->initFlags |= 0x20;
-    if (charData->statusFlags & 0x2000) slot->initFlags |= 0x40;
-    if (charData->statusFlags & 0x8000) slot->initFlags |= 0x02;
+    slot->slot8.initFlags = 0;
+    if (charData->statusFlags & 0x1000) slot->slot8.initFlags  = 0x80;
+    if (charData->statusFlags & 0x4000) slot->slot8.initFlags |= 0x20;
+    if (charData->statusFlags & 0x2000) slot->slot8.initFlags |= 0x40;
+    if (charData->statusFlags & 0x8000) slot->slot8.initFlags |= 0x02;
 
     func_800A7188((u8 *)slot);
     func_800A71A0((u8 *)slot);
@@ -569,9 +569,8 @@ void func_800A7518(s32 idx) {
         u8 *p;
 
         /* The level-up sound test reads slot+0x80 as a 32-bit word (the write
-           above was 16-bit). Cast on the address-of slotDisplay to keep the
-           wider load that the matching codegen emits here. */
-        if (!(*(s32 *)&slot->slotDisplay & 5)) {
+           above was 16-bit) — pick up the wider view via the same union. */
+        if (!(slot->at0x80.word & 5)) {
             if (charData->statusFlags & 0x10000) {
                 /* &D_800ED148.entities[idx], expressed via D_800ED158 minus
                    0x10 to match the addressing chosen by the original code. */

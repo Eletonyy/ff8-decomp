@@ -247,8 +247,16 @@ typedef struct {
 typedef struct {
     s32 unk0;             /* 0x00: 4-byte field (semantics unknown). */
     s32 state;            /* 0x04: state machine value. Byte 3 (offset 0x07) is also accessed as a "trigger type" code via raw cast. */
-    u8 key;               /* 0x08: pending-trigger key (matched against arg). */
-    u8 pad09[0x03];
+    /* 0x08: byte view exposes @c trigKey (pending-trigger key matched
+       against arg). Word view (@c initFlags) is a 4-byte init-time
+       animation/render flag word written by @c func_800A7518. */
+    union {
+        struct {
+            u8 trigKey;       /* 0x08 */
+            u8 pad09[3];
+        } byteView;
+        s32 initFlags;        /* 0x08-0x0B as a single word. */
+    } slot8;
     u8 timer;
     u8 control;
     u8 pad0E;
@@ -262,8 +270,22 @@ typedef struct {
     s32 field28;
     s32 field2C;
     u8 pad30[0x34];
-    s16 field64[14];     /* 0x64: per-bit halfword slots indexed by lowest set bit. */
-    u8 pad80[0x04];
+    /* 0x64: byte-bit-slot view (14 halfwords, indexed by lowest set bit
+       of a flag mask). The trailing 4 bytes (@c 0x7C-0x7F) are also
+       read/written as a 4-byte slot flag word during init. */
+    union {
+        s16 perBit[14];                 /* 0x64-0x7F as 14 halfwords. */
+        struct {
+            s16 perBitLow[12];          /* 0x64-0x7B (12 halfwords). */
+            s32 slotFlags;              /* 0x7C-0x7F as a single word. */
+        } slotInit;
+    } field64;
+    /* 0x80: written 16-bit (mirror of @c BattleCharData.displayStatus)
+       and later read 32-bit (with a bitmask test). */
+    union {
+        u16 slotDisplay;     /* 0x80-0x81 (write path). */
+        s32 word;            /* 0x80-0x83 (read path). */
+    } at0x80;
     u16 animParam1;
     u16 animParam2;
     u16 animParam3;
@@ -280,29 +302,6 @@ typedef struct {
     u8 fieldCD;        /* 0xCD: stat byte used in case-0 damage formula (squared). */
     u8 padCE[0x02];
 } BattleEntity;
-
-/**
- * @brief Slot-init view of a @c BattleEntity slot.
- *
- * Same @c 0xD0 byte block as @c BattleEntity but exposes the fields the
- * battle slot init pass writes/reads at sizes that don't align with the
- * canonical @c BattleEntity layout: a 32-bit @c initFlags word at
- * @c 0x08 (overlaps @c key + @c pad09), a 32-bit @c slotFlags word at
- * @c 0x7C (overlaps the tail of @c field64[14]), and a 16-bit
- * @c slotDisplay at @c 0x80 (overlaps @c pad80[]).
- *
- * Cast at the access site: @c (BattleSlot *)&D_800ED158.slots[idx].
- */
-typedef struct {
-    /* 0x00 */ u8  pad00[0x08];
-    /* 0x08 */ s32 initFlags;       /**< Init-time animation/render flag word. */
-    /* 0x0C */ u8  pad0C[0x70];
-    /* 0x7C */ s32 slotFlags;       /**< Battle slot flag word (0x8801 base). */
-    /* 0x80 */ u16 slotDisplay;     /**< Mirror of @c BattleCharData.displayStatus. */
-    /* 0x82 */ u8  pad82[0x39];
-    /* 0xBB */ u8  linkedIdx2;
-    /* 0xBC */ u8  padBC[0x14];
-} BattleSlot; /* 0xD0 */
 
 /**
  * @brief Battle system block at D_800ED148.
