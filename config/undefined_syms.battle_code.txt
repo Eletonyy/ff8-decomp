@@ -3,3 +3,12 @@
    the overlay's VRAM range but are actually external references. */
 D_800E19B4 = 0x800E19B4;
 g_gfData = 0x80078E00;
+
+/* PsyQ libgte aliases (same addresses as the func_XXX names auto-emitted
+   by splat — both resolve to the symbols defined in src/psxsdk/libgte.c
+   in the main binary). */
+CompMatrix     = 0x8003FC24;
+ScaleMatrix    = 0x80040564;
+SetRotMatrix   = 0x800406A4;
+SetTransMatrix = 0x80040734;
+RotMatrix      = 0x80040FE4;

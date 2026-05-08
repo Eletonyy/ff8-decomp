@@ -16,11 +16,8 @@ extern s32 D_800FA5E8;
 extern s32 D_800FA5F0;
 extern s32 D_800EEC5C;
 
-void func_80040FE4(SVECTOR *r, MATRIX *m);              /* RotMatrix */
-void func_80040564(MATRIX *m, VECTOR *scale);           /* ScaleMatrix */
-void func_8003FC24(MATRIX *m0, MATRIX *m1, MATRIX *m2); /* CompMatrix */
-void func_800406A4(MATRIX *m);                          /* SetRotMatrix */
-void func_80040734(MATRIX *m);                          /* SetTransMatrix */
+void RotMatrix(SVECTOR *r, MATRIX *m);
+void CompMatrix(MATRIX *m0, MATRIX *m1, MATRIX *m2);
 
 s32 func_800B3698(s32 size);
 s32 func_800B36B8(s32 size);
@@ -104,7 +101,7 @@ s32 func_800CD35C(ParticleEntry *p) {
     rot.vx = 0;
     rot.vy = p->angle;
     rot.vz = 0;
-    func_80040FE4(&rot, &m);
+    RotMatrix(&rot, &m);
 
     m.t[0]   = p->posX;
     m.t[1]   = p->posY;
@@ -112,10 +109,10 @@ s32 func_800CD35C(ParticleEntry *p) {
     scale.vx = p->sizeX;
     scale.vy = p->sizeY;
     scale.vz = p->sizeX;
-    func_80040564(&m, &scale);
-    func_8003FC24(&D_800F02C8, &m, &m);
-    func_800406A4(&m);
-    func_80040734(&m);
+    ScaleMatrix(&m, &scale);
+    CompMatrix(&D_800F02C8, &m, &m);
+    SetRotMatrix(&m);
+    SetTransMatrix(&m);
 
     prim = (EffectPrim *)func_800B3698(0x58);
     prim->dispatch = (s32 *)func_800C6B1C(4);
