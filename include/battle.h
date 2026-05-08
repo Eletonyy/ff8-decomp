@@ -285,10 +285,11 @@ typedef struct {
  * Top-level view: 16 BattleEntity slots followed by a region of misc state
  * fields (only @c effectMult mapped here so far).
  *
- * @note Some files alias the same memory through a different struct
- *       (e.g. @c BattleState in bc_object1.c, @c BattleSystemFlat in
- *       bc_object7.c). The @c D_800ED148 extern therefore lives at file
- *       scope in each translation unit so each can pick the view it needs.
+ * @note @c BattleSystemFlat is an alternative view of the same memory
+ *       used in @c bc_object7.c via cast. The @c D_800ED148 extern is
+ *       declared at file scope in each translation unit (since some
+ *       want @c volatile and some don't) but the type is uniformly
+ *       @c BattleSystem now.
  */
 /** @brief 6-byte unsigned (x,y,z) triple in @c BattleSystem.unkCE4. */
 typedef struct {
