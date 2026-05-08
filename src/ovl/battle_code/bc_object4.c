@@ -1,6 +1,6 @@
 #include "common.h"
 
-extern u8 D_800ED148[];
+extern BattleSystem D_800ED148;
 extern u8 D_800EE464[];
 extern u8 g_battleChars[];
 extern u8 D_80078E00[];
@@ -115,7 +115,7 @@ void func_800A62DC(s32 a0, s32 a1, s32 a2, s32 a3) {
  * @return The byte value at D_800ED148[0x12EB].
  */
 s32 func_800A62FC(void) {
-    volatile u8 *base = D_800ED148;
+    volatile u8 *base = (u8 *)&D_800ED148;
     return base[0x12EB];
 }
 
@@ -130,7 +130,7 @@ s32 func_800A62FC(void) {
  */
 void func_800A6310(s32 a0) {
     s32 i = 0;
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
     u8 *status;
     u8 *buf;
     u8 *entry;
@@ -164,7 +164,7 @@ void func_800A6310(s32 a0) {
  * @param d Fourth halfword (offset 0x1296).
  */
 void func_800A63C0(s16 a, s16 b, s16 c, s16 d) {
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
     *(s16 *)(base + 0x1290) = a;
     *(s16 *)(base + 0x1292) = b;
     *(s16 *)(base + 0x1296) = d;
@@ -185,13 +185,13 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object4", func_800A63DC);
  */
 void func_800A64E4(s32 a0, s32 a1) {
     if (a0 == 0) {
-        u8 *base = D_800ED148;
+        u8 *base = (u8 *)&D_800ED148;
         func_800B0754(base[0xF], 0xED, base[0x1324], (u16)a1);
         decrementItemByType(base[0x1324] + 0x65);
         func_8009AF14((s32)func_800E1850);
     } else {
         s32 result = func_800AA4E8();
-        u8 *base = D_800ED148;
+        u8 *base = (u8 *)&D_800ED148;
         func_800B0754(base[0xF], 0xEE, base[0x1324], result);
         func_8009AE08(8);
     }
@@ -203,7 +203,7 @@ void func_800A64E4(s32 a0, s32 a1) {
  * @param value Byte value to store.
  */
 void func_800A6574(s32 value) {
-    volatile u8 *base = D_800ED148;
+    volatile u8 *base = (u8 *)&D_800ED148;
     base[0x12EF] = value;
 }
 
@@ -228,7 +228,7 @@ s32 func_8009A514(s32, s32);
  * @param a0 Entity slot index.
  */
 void func_800A66D0(s32 a0) {
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
     if (func_8009A514(base[0xCE3], 7 - a0) != 0) {
         base[a0 + 0xD5C] = 1;
     }
@@ -243,7 +243,7 @@ void func_800A66D0(s32 a0) {
  */
 void func_800A6724(void) {
     s32 i = 7;
-    s32 base = (s32)D_800ED148;
+    s32 base = (s32)&D_800ED148;
     base += 7;
 top:
     *(u8 *)(base + 0xD5C) = 0;
@@ -586,7 +586,7 @@ s32 func_800A7A8C(s32 idx) {
  * @return Byte value at the end of the pointer chain.
  */
 s32 func_800A7AB8(s32 a0) {
-    s32 base = (s32)D_800ED148;
+    s32 base = (s32)&D_800ED148;
     s32 entry = base + a0 * 208;
     s32 ptr = *(s32 *)(entry + 0x10);
     ptr = *(s32 *)ptr;
@@ -604,7 +604,7 @@ s32 func_800A7AB8(s32 a0) {
  * @return Byte value at the end of the pointer chain.
  */
 s32 func_800A7AF4(s32 a0) {
-    s32 base = (s32)D_800ED148;
+    s32 base = (s32)&D_800ED148;
     s32 ptr;
     s32 p2;
     ptr = *(s32 *)(base + a0 * 208 + 0x14);

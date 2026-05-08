@@ -2,7 +2,7 @@
 #include "battle.h"
 #include "gamestate.h"
 
-extern u8 D_800ED148[];
+extern BattleSystem D_800ED148;
 extern u8 D_800E3CEC[];
 void func_800AB054(void);
 void func_800AB1AC(void);
@@ -186,7 +186,7 @@ s32 func_800A97A4(s32 a0) {
  */
 void func_800A97D4(void) {
     s32 i = 7;
-    s32 base = (s32)D_800ED148;
+    s32 base = (s32)&D_800ED148;
     base += 0x1C;
 top:
     *(s32 *)(base + 0x1298) = 0;
@@ -221,7 +221,7 @@ s32 func_800A980C(void) {
     if (func_800AE730() == 0xFF) {
         return 0;
     }
-    table = D_800ED148;
+    table = (u8 *)&D_800ED148;
     do {
         idx = func_800A97A4(3);
     } while (*(u16 *)(table + idx * 0xD0 + 0x90) & 1);
@@ -244,7 +244,7 @@ s32 func_800A9888(void) {
     if (func_800AE788() == 0xFF) {
         return 8;
     }
-    table = D_800ED148;
+    table = (u8 *)&D_800ED148;
     do {
         idx = func_800A97A4(4) + 3;
     } while (*(u16 *)(table + idx * 0xD0 + 0x90) & 1);
@@ -258,7 +258,7 @@ s32 func_800A9888(void) {
  * @return 16-bit mask with one bit set at the position given by entity[0x98].
  */
 u16 func_800A9904(s32 a0) {
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
     u8 *entity;
     asm("");
     entity = base + a0 * 0xD0;
@@ -294,7 +294,7 @@ void func_800A9970(s32 a0) {
     s32 i = 0;
     s32 one = 1;
     u8 *output = D_800EEBE0;
-    u8 *entity = D_800ED148;
+    u8 *entity = (u8 *)&D_800ED148;
     do {
         if (*(s32 *)(entity + 0x8C) & 0x100) {
             *output = one;
@@ -329,7 +329,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object5", func_800A9E08);
 void func_800A9F98(void) {
     s32 i = 0;
     s32 arr = (s32)D_800EEBE0;
-    s32 ptr = (s32)D_800ED148;
+    s32 ptr = (s32)&D_800ED148;
     do {
         if (!(*(s32 *)(ptr + 0x8C) & 1)) {
             *(u8 *)(i + arr) = 0;
@@ -348,7 +348,7 @@ void func_800A9F98(void) {
 void func_800A9FDC(void) {
     s32 i = 0;
     s32 arr = (s32)D_800EEBE0;
-    s32 ptr = (s32)D_800ED148;
+    s32 ptr = (s32)&D_800ED148;
 top:
     if (!(*(s32 *)(ptr + 0x8C) & 1) || (*(u16 *)(ptr + 0x90) & 1)) {
         *(u8 *)(i + arr) = 0;
@@ -387,7 +387,7 @@ s32 func_800AA4F0(void) {
  */
 s32 func_800AA4F8(s32 a0) {
     s32 i = 0;
-    u8 *entity = D_800ED148;
+    u8 *entity = (u8 *)&D_800ED148;
     do {
         if (entity[0xCB] == a0) {
             return i;
@@ -406,7 +406,7 @@ s32 func_800AA4F8(s32 a0) {
  */
 s32 func_800AA530(s32 a0) {
     s32 i = 0;
-    s32 base = (s32)D_800ED148;
+    s32 base = (s32)&D_800ED148;
     s32 ptr = base;
     s32 result;
 top:
@@ -678,7 +678,7 @@ void func_800AB208(s32 a0) {
  */
 s32 func_800AB24C(void) {
     s32 i = 3;
-    s32 base = (s32)D_800ED148;
+    s32 base = (s32)&D_800ED148;
     s32 entry = base + 0x270;
     do {
         if (!(*(s32 *)(entry + 0x8C) & 1)) {
@@ -700,7 +700,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object5", func_800AB36C);
  * @brief Set battle flag 0x5C2 and clear status bytes 0x12F9 and 0x12FD.
  */
 void func_800AB3C4(void) {
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
     base[0x5C2] = 1;
     base[0x12F9] = 0;
     base[0x12FD] = 0;
@@ -710,7 +710,7 @@ void func_800AB3C4(void) {
  * @brief Clear battle flag 0x5C2 and set status bytes 0x12F9 and 0x12FD.
  */
 void func_800AB3E0(void) {
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
     base[0x5C2] = 0;
     base[0x12F9] = 1;
     base[0x12FD] = 1;
@@ -728,7 +728,7 @@ void func_800AB3E0(void) {
  * @param a2 Y position for display.
  */
 void func_800AB3FC(s32 a0, s32 a1, s32 a2) {
-    volatile u8 *base = D_800ED148;
+    volatile u8 *base = (u8 *)&D_800ED148;
     u8 *entity = (u8 *)base + a0 * 0xD0;
     s32 sub = *(s32 *)(entity + 0x14);
     s32 tbl = *(s32 *)sub;

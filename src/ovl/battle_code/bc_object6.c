@@ -1,7 +1,7 @@
 #include "common.h"
 
 extern u8 g_battleChars[];
-extern u8 D_800ED148[];
+extern BattleSystem D_800ED148;
 extern u8 D_80082C0F[];
 extern u8 D_800ED70C[];
 extern u8 D_800EE441[];
@@ -107,7 +107,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object6", func_800ACF84);
 void func_800AD4A4(s32 a0) {
     u8 *entityBase;
     s32 entity;
-    entityBase = D_800ED148;
+    entityBase = (u8 *)&D_800ED148;
     entity = (s32)entityBase + a0 * 0xD0;
     *(volatile s32 *)(entity + 0x8C) |= 0x40;
     func_800AE6C0();
@@ -125,7 +125,7 @@ void func_800AD4A4(s32 a0) {
 void func_800AD50C(s32 a0) {
     func_800AD4A4(a0);
     {
-        volatile u8 *base = D_800ED148;
+        volatile u8 *base = (u8 *)&D_800ED148;
         u8 *entity = (u8 *)base + a0 * 0xD0;
         *(s32 *)(entity + 0x8C) &= ~1;
     }
@@ -147,7 +147,7 @@ void func_800B0398(s32);
  * @param a1 Sub-index for u16 table lookup.
  */
 void func_800AD564(s32 a0, s32 a1) {
-    volatile u8 *base = D_800ED148;
+    volatile u8 *base = (u8 *)&D_800ED148;
     u8 *entity = (u8 *)base + a0 * 0xD0;
     s32 sub = *(s32 *)(entity + 0x14);
     s32 tbl = *(s32 *)sub;
@@ -176,7 +176,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object6", func_800AD8E4);
  * then clears the action pointer.
  */
 void func_800AD960(void) {
-    s32 base = (s32)D_800ED148;
+    s32 base = (s32)&D_800ED148;
     if (*(volatile s32 *)(base + 0x12DC) != 0) {
         u8 byte = *(u8 *)D_80077E59;
         func_8009AF3C(*(volatile s32 *)(base + 0x12DC), (s32)byte * 8 + 8, 3, 0x80, 0x56);
@@ -324,7 +324,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object6", func_800AE83C);
  */
 s32 func_800AE8A0(void) {
     s32 i = 0;
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
     do {
         if (*(s32 *)(base + 0x8C) & 1) {
             if (func_800ACED4(i) != 0) {
@@ -427,7 +427,7 @@ void func_800AECD4(void) {
     if (*(u8 *)D_80082C0F != 0) {
         return;
     }
-    base = (s32)D_800ED148;
+    base = (s32)&D_800ED148;
     if (*(u8 *)(base + 0x12F9) == 1) {
         return;
     }
@@ -483,7 +483,7 @@ void func_800AEE64(void) {
     func_80048BB8(0);
     *(u8 *)D_80082C0F = 5;
     {
-        volatile u8 *base = D_800ED148;
+        volatile u8 *base = (u8 *)&D_800ED148;
         base[0xC] = 0;
     }
     sndStopAll();

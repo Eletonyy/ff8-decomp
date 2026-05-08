@@ -1,6 +1,6 @@
 #include "common.h"
 
-extern u8 D_800ED148[];
+extern BattleSystem D_800ED148;
 extern u8 D_800EEED8[];
 void func_800B304C();
 extern u8 D_8007DADB[];
@@ -50,7 +50,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B16C0);
  * @param a0 Entity parameter for func_800A97FC and func_800B0754.
  */
 void func_800B17B8(s32 a0) {
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
     if (base[0x130C] != 0) {
         return;
     }
@@ -103,7 +103,7 @@ void func_800B1828(s32 a0) {
  * @param a0 Entity index (stride 0xD0 in D_800ED148).
  */
 void func_800B18A0(s32 a0) {
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
 
     if (base[0x130C] != 0) {
         return;
@@ -137,7 +137,7 @@ void func_800B1A48(void) {
  */
 s32 func_800B1A78(void) {
     s32 i = 3;
-    s32 base = (s32)D_800ED148;
+    s32 base = (s32)&D_800ED148;
     s32 ptr = base + 0x270;
 top:
     if (!(*(u16 *)(ptr + 0x90) & 1)) {
@@ -200,7 +200,7 @@ s32 func_800B1B1C(void) {
  */
 void func_800B1B68(void) {
     s32 val = func_800B1B1C();
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
     base[0x1314] = val + 7;
     func_800B1A48();
     base[0x131D] = 1;
@@ -213,7 +213,7 @@ void func_800B1B68(void) {
  * @param a1 Value to store at D_800ED148[0x12E6] as halfword.
  */
 void func_800B1BA8(s32 a0, s32 a1) {
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
     base[0x1314] = a0;
     *(u16 *)(base + 0x12E6) = a1;
     func_800A59AC(func_800AE6F8(), 8, 0);
@@ -228,7 +228,7 @@ void func_800B1BA8(s32 a0, s32 a1) {
  */
 s32 func_800B1BE4(s32 a0, s32 a1) {
     s32 i = 0;
-    s32 ptr = (s32)D_800ED148;
+    s32 ptr = (s32)&D_800ED148;
 top:
     if (i != a0) {
         if (*(s32 *)(ptr + 0x8C) & 1) {
@@ -274,7 +274,7 @@ void func_800B2024(void) {
  * and func_800B2024 to handle completion. Otherwise decrements the timer.
  */
 void func_800B2038(void) {
-    s32 base = (s32)D_800ED148;
+    s32 base = (s32)&D_800ED148;
     u16 val = *(u16 *)(base + 0x12E4);
     if (val == 0) {
         func_800B1DFC();
@@ -308,7 +308,7 @@ void func_800B2084(void) {
  */
 s32 func_800B20D8(void) {
     s32 i = 0;
-    s32 ptr = (s32)D_800ED148;
+    s32 ptr = (s32)&D_800ED148;
 top:
     if (*(s32 *)(ptr + 0x8C) & 1) {
         if (!(*(u16 *)(ptr + 0x90) & 4)) {
@@ -390,7 +390,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B228C);
  * and func_800D3090 with it, then calls func_800D0530 and func_800AB3C4.
  */
 void func_800B2338(void) {
-    u8 *base = D_800ED148;
+    u8 *base = (u8 *)&D_800ED148;
     func_800AE6C0(base[0x1301]);
     func_800D3090(base[0x1301], 1);
     func_800D0530();
