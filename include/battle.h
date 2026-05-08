@@ -763,4 +763,45 @@ void func_800A4320(s32 value);
 /** @brief Store @c getMenuString(id) result into @c D_800EE424. */
 void func_800A432C(s32 stringId);
 
+/** @brief Animated 3D particle/effect entry processed by @c bc_object16.c. */
+typedef struct {
+    /* 0x00 */ u8  pad00[0xC];
+    /* 0x0C */ u16 frame;            /**< Frame counter, increments each tick. */
+    /* 0x0E */ u8  pad0E[0x2];
+    /* 0x10 */ s16 posX;             /**< Translation X. */
+    /* 0x12 */ s16 posY;             /**< Translation Y. */
+    /* 0x14 */ s16 posZ;             /**< Translation Z. */
+    /* 0x16 */ u8  pad16[0x2];
+    /* 0x18 */ u16 angle;            /**< Y rotation angle. */
+    /* 0x1A */ u16 angVel;           /**< Angular velocity (decays by >>4 each tick). */
+    /* 0x1C */ s16 sizeX;            /**< Scale X (also reused as Z). */
+    /* 0x1E */ s16 sizeXVel;         /**< Scale X velocity. */
+    /* 0x20 */ s16 sizeY;            /**< Scale Y. */
+    /* 0x22 */ s16 sizeYVel;         /**< Scale Y velocity (decays by >>3 each tick). */
+} ParticleEntry;
+
+/**
+ * @brief 0x58-byte primitive packet built by @c func_800CD35C and processed
+ *        by @c func_800CBC68.
+ *
+ * @c func_800CBC68 dispatches through @c dispatch (an offset list) and feeds
+ * the BG color triple at @c bgR/bgG/bgB into the GTE BG color registers
+ * (RBK/GBK/BBK at COP2 $21/$22/$23) after a @c <<4 scale. Most of the
+ * remaining bytes are still unmapped.
+ */
+typedef struct {
+    /* 0x00 */ s32 *dispatch;        /**< Pointer to dispatch list (handler addr at @c [0]). */
+    /* 0x04 */ u8  pad04[0x4];       /**< Tail pointer (set to dispatch+8 in some flag paths). */
+    /* 0x08 */ u8  bgR;              /**< GTE background red (loaded into RBK after @c <<4). */
+    /* 0x09 */ u8  bgG;              /**< GTE background green (loaded into GBK). */
+    /* 0x0A */ u8  bgB;              /**< GTE background blue (loaded into BBK). */
+    /* 0x0B */ u8  pad0B;
+    /* 0x0C */ s32 depth;            /**< Depth/sort key. */
+    /* 0x10 */ u8  pad10[0x4];
+    /* 0x14 */ s32 cmd;              /**< Packet command word (set to @c 0x3867 here). */
+    /* 0x18 */ u8  pad18[0x4];       /**< Cleared when flag bit @c 0x1000 unset. */
+    /* 0x1C */ s32 flags;            /**< Attribute/flag word (bits @c 0x1000 / @c 0x2000 read by @c func_800CBC68). */
+    /* 0x20 */ u8  pad20[0x38];      /**< Working pointer + remaining unmapped fields. */
+} EffectPrim; /* 0x58 */
+
 #endif /* BATTLE_H */

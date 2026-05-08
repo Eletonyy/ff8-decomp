@@ -1,4 +1,6 @@
 #include "common.h"
+#include "battle.h"
+#include "psxsdk/libgte.h"
 
 extern u8 D_800FB42C[];
 extern u8 D_800FB428[];
@@ -9,6 +11,21 @@ extern u8 D_800FB444[];
 extern u8 D_800FB448[];
 extern u8 D_800F1B80[];
 extern u8 D_800FB408[];
+extern MATRIX D_800F02C8;
+extern s32 D_800FA5E8;
+extern s32 D_800FA5F0;
+extern s32 D_800EEC5C;
+
+void func_80040FE4(SVECTOR *r, MATRIX *m);              /* RotMatrix */
+void func_80040564(MATRIX *m, VECTOR *scale);           /* ScaleMatrix */
+void func_8003FC24(MATRIX *m0, MATRIX *m1, MATRIX *m2); /* CompMatrix */
+void func_800406A4(MATRIX *m);                          /* SetRotMatrix */
+void func_80040734(MATRIX *m);                          /* SetTransMatrix */
+
+s32 func_800B3698(s32 size);
+s32 func_800B36B8(s32 size);
+s32 func_800C6B1C(s32 idx);
+s32 func_800CBC68(s32 prim, s32 a1, s32 a2, s32 a3);
 
 void func_800CE158(void);
 void func_800A5454(void);
@@ -52,7 +69,88 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CCCB8);
 
 INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CD1C0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CD35C);
+/**
+ * @brief Render a particle/effect primitive and update its animation state.
+ *
+ * Builds a transform matrix from the particle's position, Y rotation and
+ * scale, composes it with the current world matrix at @c D_800F02C8, then
+ * sets the GTE rotation/translation registers. Allocates a 0x58-byte
+ * primitive packet from the scratch ring (@c func_800B3698), initializes
+ * its header fields (cmd word @c 0x3867 at offset 0x14, attribute word
+ * @c 0x230 at offset 0x1C). When the frame counter has reached 8, zeros
+ * the RGB color triple at offsets 0x8/0x9/0xA, encodes the post-frame-8
+ * index as @c (frame-8)*341 at offset 0xC, and ORs @c 0xC0 into the
+ * attribute word. Submits the packet via @c func_800CBC68 and updates the
+ * scratch tail pointer @c D_800FA5F0 with the call's return value, then
+ * frees the temporary 0x58 byte slot.
+ *
+ * If bit 0 of @c D_800EEC5C is set, returns @c 0 immediately. Otherwise
+ * advances the particle: angle += angVel; angVel decays by >>4; sizeX +=
+ * sizeXVel; for the first 5 frames sizeY accumulates sizeYVel, after that
+ * it instead decays by sizeYVel/2; sizeYVel always decays by >>3. Frame
+ * counter increments by 1 and the function returns @c 2 once the counter
+ * passes @c 20 (signaling the effect should end), @c 0 otherwise.
+ *
+ * @param p Particle entry to render and step.
+ * @return @c 2 when the particle has expired, @c 0 otherwise.
+ */
+s32 func_800CD35C(ParticleEntry *p) {
+    SVECTOR     rot;
+    MATRIX      m;
+    VECTOR      scale;
+    EffectPrim *prim;
+    s32         newFrame;
+
+    rot.vx = 0;
+    rot.vy = p->angle;
+    rot.vz = 0;
+    func_80040FE4(&rot, &m);
+
+    m.t[0]   = p->posX;
+    m.t[1]   = p->posY;
+    m.t[2]   = p->posZ;
+    scale.vx = p->sizeX;
+    scale.vy = p->sizeY;
+    scale.vz = p->sizeX;
+    func_80040564(&m, &scale);
+    func_8003FC24(&D_800F02C8, &m, &m);
+    func_800406A4(&m);
+    func_80040734(&m);
+
+    prim = (EffectPrim *)func_800B3698(0x58);
+    prim->dispatch = (s32 *)func_800C6B1C(4);
+    prim->cmd      = 0x3867;
+    prim->flags    = 0x230;
+
+    if ((s16)p->frame >= 8) {
+        prim->bgB = 0;
+        prim->bgG = 0;
+        prim->bgR = 0;
+        prim->depth = ((s16)p->frame - 8) * 341;
+        prim->flags |= 0xC0;
+    }
+
+    D_800FA5F0 = func_800CBC68((s32)prim, D_800FA5E8 + 0x44, 2, D_800FA5F0);
+    func_800B36B8(0x58);
+
+    if (D_800EEC5C & 1) {
+        return 0;
+    }
+
+    p->angle  += p->angVel;
+    p->angVel -= (s16)p->angVel >> 4;
+    p->sizeX  += p->sizeXVel;
+    if ((s16)p->frame < 5) {
+        p->sizeY    += p->sizeYVel;
+        p->sizeYVel -= (s16)p->sizeYVel >> 3;
+    } else {
+        p->sizeY    -= (s16)p->sizeYVel / 2;
+        p->sizeYVel -= (s16)p->sizeYVel >> 3;
+    }
+    newFrame = p->frame + 1;
+    p->frame = newFrame;
+    return ((s16)newFrame > 20) * 2;
+}
 
 INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CD594);
 
