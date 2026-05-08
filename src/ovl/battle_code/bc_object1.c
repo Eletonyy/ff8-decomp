@@ -20,48 +20,7 @@
 #include "battle.h"
 #include "gf.h"
 
-/** @brief Battle state structure (D_800ED148). */
-typedef struct {
-    s32 unk0;
-    s32 unk4;
-    u8 pad8[0x4];
-    u8 unkC;
-    u8 unkD;
-    u8 padE[0x1];
-    u8 unkF;
-    u8 pad10[0x5B2];
-    u8 unk5C2;
-    u8 unk5C3;
-    u8 pad5C4[0x719];
-    u8 unkCDD;
-    u8 padCDE[0x6];
-    BattleVec3u unkCE4[0x8];    /* 0xCE4 — table of (x, y, z) position triples */
-    u8 unkD14[0x8];             /* 0xD14 — hit-type byte table */
-    u8 padD1C[0x40];
-    u8 unkD5C[0x8];
-    u8 padD64[0x528];
-    s32 unk128C;
-    u8 pad1290[0x48];
-    s32 unk12D8;
-    u8 pad12DC[0xC];
-    u8 unk12E8;
-    u8 unk12E9;
-    u8 unk12EA;
-    u8 pad12EB[0x1];
-    u8 unk12EC;
-    u8 unk12ED;
-    u8 unk12EE;
-    u8 pad12EF[0x9];
-    u8 unk12F8;
-    u8 unk12F9;
-    u8 pad12FA[0x3];
-    u8 unk12FD;
-    u8 pad12FE[0x1B];
-    u8 unk1319;
-} BattleState;
-
-
-extern volatile BattleState D_800ED148;
+extern volatile BattleSystem D_800ED148;
 
 /* FIXME: D_800E19BC is conceptually an array of (s32 sector, s32 length)
    pairs (8-byte stride, two s32s per entry) used as CdRead arguments by
@@ -205,10 +164,10 @@ void func_80099FE8(void) {
     func_80027448();
     func_8009B428();
 
-    D_800ED148.unk5C3 = 1;
-    D_800ED148.unk4 = 0;
+    *((u8 *)&D_800ED148 + 0x5C3) = 1;
+    D_800ED148.entities[0].state = 0;
     D_800ED148.unk12EC = 0xFF;
-    D_800ED148.unkC = 0xFF;
+    D_800ED148.entities[0].timer = 0xFF;
     g_battleConfig.result = BATTLE_RESULT_UNDETERMINED;
     D_800ED148.unk1319 = 0xFF;
 
@@ -220,12 +179,12 @@ void func_80099FE8(void) {
     func_800B25E4();
     func_8009B6D0(g_battleConfig.battleSceneId, D_800EDE24);
     {
-        BattleState *base = (BattleState *)(D_800EDE24 - 0xCDC);
-        if ((base->unkCDD & 0xE0) == 0) {
-            g_battleConfig.unk2 |= base->unkCDD & (~0x10);
+        u8 *base = (u8 *)(D_800EDE24 - 0xCDC);
+        if ((base[0xCDD] & 0xE0) == 0) {
+            g_battleConfig.unk2 |= base[0xCDD] & (~0x10);
         } else {
             g_battleConfig.unk2 &= 0xFF1F;
-            g_battleConfig.unk2 |= (*base).unkCDD & (~0x10);
+            g_battleConfig.unk2 |= base[0xCDD] & (~0x10);
         }
     }
     func_800A94E0();
@@ -251,7 +210,7 @@ void func_80099FE8(void) {
  * sound/SFX commands. Sets entity state to 2 (active).
  */
 void func_8009A160(void) {
-    volatile BattleState *state;
+    volatile BattleSystem *state;
     func_800A7B48();
     func_800A6D30();
     func_8009A638();
@@ -262,7 +221,7 @@ void func_8009A160(void) {
     func_8009B134(0x70, 0x80, 0);
     func_8009AF14(&func_8009ABE4);
     state = &D_800ED148;
-    state->unk4 = 2;
+    state->entities[0].state = 2;
 }
 
 /**
@@ -435,7 +394,7 @@ s32 func_8009A514(s32 a0, s32 a1) {
  * sound 0x67 targeting the entity. Stores idx + flag (cmd->unk2.b.lo = 1,
  * .b.hi = 1 if entity flags bit 1 set, else 0). Then copies the @p off-th
  * hit-type byte (D_800ED148.unkD14) into entity->unkCB and the @p off-th
- * position (D_800ED148.unkCE4) into entity->pos.
+ * position ((*(BattleVec3u (*)[0x8])((u8 *)&D_800ED148 + 0xCE4))) into entity->pos.
  * @param idx Entity slot index.
  * @param off Source entity index for the hit-type / position lookup.
  *
@@ -452,9 +411,9 @@ s32 func_8009A514(s32 a0, s32 a1) {
  *     cmd->unk2.b.lo = 1;
  *     cmd->unk2.b.hi = (entity->flags & 2) ? 1 : 0;
  *     entity->unkCB = D_800ED148.unkD14[off];
- *     entity->pos.x = D_800ED148.unkCE4[off].x;
- *     entity->pos.y = D_800ED148.unkCE4[off].y;
- *     entity->pos.z = D_800ED148.unkCE4[off].z;
+ *     entity->pos.x = (*(BattleVec3u (*)[0x8])((u8 *)&D_800ED148 + 0xCE4))[off].x;
+ *     entity->pos.y = (*(BattleVec3u (*)[0x8])((u8 *)&D_800ED148 + 0xCE4))[off].y;
+ *     entity->pos.z = (*(BattleVec3u (*)[0x8])((u8 *)&D_800ED148 + 0xCE4))[off].z;
  * }
  * @endcode
  * Permuter ~67% — same gcc-combine and `s1 -= 0x10` / split-across-call
@@ -708,7 +667,7 @@ void func_8009AB54(s32 a0) {
  * func_800AED9C, func_800AEB50.
  */
 void func_8009AB98(void) {
-    if (D_800ED148.unk0 == 0) {
+    if (D_800ED148.entities[0].unk0 == 0) {
         func_800AECD4();
         func_800AED30();
         func_800AEC04();
@@ -723,7 +682,7 @@ void func_8009AB98(void) {
  * Writes value 3 to D_800ED148 offset 0x4 (entity state field).
  */
 void func_8009ABE4(void) {
-    D_800ED148.unk4 = 3;
+    D_800ED148.entities[0].state = 3;
 }
 
 /**
@@ -733,7 +692,7 @@ void func_8009ABE4(void) {
  *
  */
 void func_8009ABFC(void) {
-    D_800ED148.unk4 = 1;
+    D_800ED148.entities[0].state = 1;
 }
 
 /**
@@ -752,7 +711,7 @@ void func_8009AC14(void) {
  * func_800A30E4 (animation), and func_800A79A0 (state reset).
  */
 void func_8009AC34(void) {
-    *(s32 *)&D_800ED148.unk0 = 0;
+    *(s32 *)&D_800ED148.entities[0].unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
@@ -766,11 +725,11 @@ void func_8009AC34(void) {
  * calls func_800AF8A4 with it.
  */
 void func_8009AC68(void) {
-    D_800ED148.unk0 = 0;
+    D_800ED148.entities[0].unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
-    func_800AF8A4(D_800ED148.unkF);
+    func_800AF8A4(D_800ED148.entities[0].entityRef);
 }
 
 /**
@@ -820,7 +779,7 @@ void func_8009ACEC(void) {
  *
  * Reads D_800EE449 (speed setting 0-3) and maps to frame counts:
  * 0 or 3 -> 60, 1 -> 30, 2 -> 40. Schedules a timer via func_8009AB54
- * (passing frames - 15) and stores the frame count into D_800ED148.unkC.
+ * (passing frames - 15) and stores the frame count into D_800ED148.entities[0].timer.
  */
 void func_8009AD7C(void) {
     s32 frames;
@@ -839,7 +798,7 @@ void func_8009AD7C(void) {
             break;
     }
     func_8009AB54(frames - 15);
-    D_800ED148.unkC = frames;
+    D_800ED148.entities[0].timer = frames;
 }
 
 /**
@@ -855,7 +814,7 @@ void func_8009AD7C(void) {
 void func_8009AE08(s32 cmd) {
     switch (cmd) {
         case 5:
-            *(s32 *)&D_800ED148.unk0 = 1;
+            *(s32 *)&D_800ED148.entities[0].unk0 = 1;
             break;
         case 6:
             func_8009AF14((s32)func_8009AC14);
