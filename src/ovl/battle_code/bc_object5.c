@@ -2,7 +2,6 @@
 #include "battle.h"
 #include "gamestate.h"
 
-extern BattleSystem D_800ED148;
 extern u8 D_800E3CEC[];
 void func_800AB054(void);
 void func_800AB1AC(void);

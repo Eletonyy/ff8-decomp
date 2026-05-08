@@ -1,7 +1,6 @@
 #include "common.h"
 
 extern u8 g_battleChars[];
-extern BattleSystem D_800ED148;
 extern u8 D_80082C0F[];
 extern u8 D_800ED70C[];
 extern u8 D_800EE441[];

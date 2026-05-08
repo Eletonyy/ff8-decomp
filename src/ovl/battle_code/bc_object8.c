@@ -1,6 +1,5 @@
 #include "common.h"
 
-extern BattleSystem D_800ED148;
 extern u8 D_800EEED8[];
 void func_800B304C();
 extern u8 D_8007DADB[];

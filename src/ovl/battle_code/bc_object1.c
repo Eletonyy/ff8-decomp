@@ -20,7 +20,6 @@
 #include "battle.h"
 #include "gf.h"
 
-extern volatile BattleSystem D_800ED148;
 
 /* FIXME: D_800E19BC is conceptually an array of (s32 sector, s32 length)
    pairs (8-byte stride, two s32s per entry) used as CdRead arguments by

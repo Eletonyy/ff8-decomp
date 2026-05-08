@@ -9,7 +9,6 @@
 #include "battle.h"
 #include "gamestate.h"
 
-extern BattleSystem D_800ED148;
 extern u8 D_800786D9[];
 
 extern u8 *getMenuString(s32 id);

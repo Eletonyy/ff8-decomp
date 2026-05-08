@@ -286,10 +286,9 @@ typedef struct {
  * fields (only @c effectMult mapped here so far).
  *
  * @note @c BattleSystemFlat is an alternative view of the same memory
- *       used in @c bc_object7.c via cast. The @c D_800ED148 extern is
- *       declared at file scope in each translation unit (since some
- *       want @c volatile and some don't) but the type is uniformly
- *       @c BattleSystem now.
+ *       used in @c bc_object7.c via cast. Files needing @c volatile
+ *       semantics for specific accesses should use volatile casts at
+ *       the access site rather than redeclaring @c D_800ED148.
  */
 /** @brief 6-byte unsigned (x,y,z) triple in @c BattleSystem.unkCE4. */
 typedef struct {
@@ -629,6 +628,9 @@ extern BattleSceneData D_80078E00;
 
 /** @brief Top-level battle config block (g_battleConfig at 0x...). */
 extern BattleConfig g_battleConfig;
+
+/** @brief The battle system block at @c 0x800ED148. */
+extern BattleSystem D_800ED148;
 
 /** @brief Single battle unit entry (stride 0xD0).
  *

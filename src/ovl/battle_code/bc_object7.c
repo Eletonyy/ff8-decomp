@@ -1,7 +1,6 @@
 #include "common.h"
 #include "battle.h"
 
-extern BattleSystem D_800ED148;
 extern u8 D_800EE490[];
 extern u8 D_80082C10[];
 extern u8 D_80077EBC[];
