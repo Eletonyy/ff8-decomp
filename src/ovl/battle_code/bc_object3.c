@@ -1,13 +1,7 @@
 #include "common.h"
+#include "battle.h"
 
-typedef struct {
-    u8 pad[0x12E0];
-    s16 unk12E0;
-    u8 pad2[0x2D];
-    s8 unk130F;
-} D_800ED148_Type;
-
-extern D_800ED148_Type D_800ED148;
+extern BattleSystem D_800ED148;
 extern u8 D_80078E00[];
 extern u8 D_800786D8[];
 extern u8 D_800EE424[];
@@ -42,7 +36,7 @@ extern u8 D_800ED156[];
  * @param a0 Entity index (stride 0xD0).
  */
 void func_800A18E0(s32 a0) {
-    D_800ED148_Type *entityBase;
+    BattleSystem *entityBase;
     s32 entity;
     s32 mask;
     entityBase = &D_800ED148;
@@ -65,7 +59,7 @@ void func_800A18E0(s32 a0) {
  */
 void func_800A1940(s32 a0) {
     u8 *displayBase;
-    D_800ED148_Type *entityBase;
+    BattleSystem *entityBase;
     s32 display;
     s32 entity;
     s32 offset = 0x24;
@@ -94,7 +88,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object3", func_800A1AB8);
  * @param a0 Entity index (stride 0xD0).
  */
 void func_800A1C98(s32 a0) {
-    D_800ED148_Type *entityBase;
+    BattleSystem *entityBase;
     s32 entity;
     s32 mask;
     entityBase = &D_800ED148;

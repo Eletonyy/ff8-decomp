@@ -292,7 +292,11 @@ typedef struct {
  */
 typedef struct {
     /* 0x0000 */ BattleEntity entities[16];     /**< 16 × 0xD0 = 0xD00 bytes. */
-    /* 0x0D00 */ u8 padD00[0x611];              /**< Misc state fields not yet mapped. */
+    /* 0x0D00 */ u8 padD00[0x5E0];              /**< Misc state fields not yet mapped. */
+    /* 0x12E0 */ s16 unk12E0;                   /**< Low 13 bits of a packed s16 field. */
+    /* 0x12E2 */ u8 pad12E2[0x2D];              /**< Misc state fields. */
+    /* 0x130F */ s8 unk130F;                    /**< Upper 3 bits of a packed s16 field (sign-extended). */
+    /* 0x1310 */ u8 pad1310[1];                 /**< Pad to actionType. */
     /* 0x1311 */ u8 actionType;                 /**< Queued action type (0=none, 1=stat-up message). */
     /* 0x1312 */ u8 actionByte0;                /**< Queued action arg 0 (stat ID for type 1). */
     /* 0x1313 */ u8 actionByte1;                /**< Queued action arg 1 (count for type 1). */
