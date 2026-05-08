@@ -142,6 +142,68 @@ void func_800C4644(void) {
     D_800E3E70.status = 0;
 }
 
+/**
+ * @brief World-engine SeeD level-up tick — same logic as the field_engine
+ *        @c updateSeedLevel (@c func_800BD3A8).
+ *
+ * Snapshots @c seedExp, sums kill counts across the 8 character slots,
+ * adjusts @c seedExp by @c (totalKills - prevKillSum) - 10 (clamped to
+ * @c [100, 0xC1C]), then pays salary into @c gil from
+ * @c g_seedSalaryTable[level] (capped at @c 0x5F5E0FF). When neither bit
+ * @c 0x10 nor @c 0x1000 of @c stateFlags is set, fires the level-up
+ * notification: palette transition via @c func_800316D4 with old/new
+ * rank and salary, sets @c levelUpDisplayTimer to 150, and plays three
+ * rank-up sound effects. Always stores @c totalKills as the new
+ * @c prevKillSum.
+ *
+ * Best-effort C reproduction reaches 96.82% match (142/142 instructions,
+ * 4 register-allocator differences vs target — same plateau as the
+ * field_engine duplicate). Reproduction kept here for future iteration:
+ *
+ * @verbatim
+ * void func_800C4688(void) {
+ *     s32 totalKills, newSeedExp, level, salary, flags;
+ *     s32 oldLevel, newLevel, oldSalary, newSalary;
+ *     s32 i;
+ *
+ *     g_seedState->prevSeedExp = g_seedState->seedExp;
+ *
+ *     totalKills = 0;
+ *     for (i = 0; i < 8; i++) {
+ *         totalKills += g_gameState.chars[i].kills;
+ *     }
+ *
+ *     newSeedExp = (totalKills - g_seedState->prevKillSum) + g_seedState->seedExp - 10;
+ *     g_seedState->seedExp = newSeedExp;
+ *     if ((s16)newSeedExp < 100) g_seedState->seedExp = 100;
+ *     else if ((s16)newSeedExp >= 0xC1C) g_seedState->seedExp = 0xC1C;
+ *
+ *     level = (s16)g_seedState->seedExp / 100;
+ *     i = g_gameState.gil;
+ *     salary = g_seedSalaryTable[level];
+ *     salary = i + salary * 10;
+ *     g_gameState.gil = salary;
+ *     if ((u32)salary > 0x5F5E0FE) g_gameState.gil = 0x5F5E0FF;
+ *
+ *     flags = g_seedState->stateFlags;
+ *     if ((flags & 0x10) == 0) {
+ *         if ((flags & 0x1000) == 0) {
+ *             oldLevel  = (s16)g_seedState->prevSeedExp / 100;
+ *             newLevel  = (s16)g_seedState->seedExp / 100;
+ *             oldSalary = g_seedSalaryTable[oldLevel] * 10;
+ *             newSalary = g_seedSalaryTable[newLevel] * 10;
+ *             func_800316D4(oldLevel, newLevel, oldSalary, newSalary);
+ *             g_seedState->levelUpDisplayTimer = 150;
+ *             sndPlaySfx(0x5B, 0, 0x80, 0x7F);
+ *             sndPlaySfx(0x5C, 0, 0x80, 0x7F);
+ *             sndPlaySfx(0x5D, 0, 0x80, 0x7F);
+ *         }
+ *     }
+ *
+ *     g_seedState->prevKillSum = totalKills;
+ * }
+ * @endverbatim
+ */
 INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object13", func_800C4688);
 
 /**
