@@ -15,6 +15,8 @@ void func_8009AE08(s32);
 void func_800E1850(void);
 extern u8 D_800EEBC8[];
 void func_800A8578(void);
+void func_800A554C(s32);
+void func_800A559C(s32);
 
 /**
  * @brief Compute table entry and forward call to func_800A5A7C.
@@ -499,7 +501,107 @@ void func_800A71A0(u8 *base) {
 
 INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object4", func_800A71C0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object4", func_800A7518);
+/**
+ * @brief Initialize a battle slot from its corresponding @c BattleCharData.
+ *
+ * Looks up @c g_battleChars[idx] and @c D_800ED158.slots[idx], then:
+ *  - If the source's @c characterId byte (offset @c 0x1C3) is @c 0xFF
+ *    (slot empty), zeroes the slot's flags word at @c 0x7C, sets
+ *    @c linkedIdx2 to @c 0xFF and returns.
+ *  - Otherwise copies @c characterId into the slot's @c linkedIdx2,
+ *    seeds the flags word at @c 0x7C with @c 0x8801, and mirrors
+ *    @c displayStatus from the char data into the slot's halfword at
+ *    @c 0x80.
+ *  - Tests two ability/effect tables in @c D_80078E00 (at offsets
+ *    @c 0x35C3 stride 12 keyed by @c charData[0x1BA], and @c 0x37A7
+ *    stride 36 keyed by @c characterId); each set bit ORs an extra
+ *    flag (@c 0x1000 / @c 0x100) into @c slot+0x7C.
+ *  - Translates four bits of @c charData->statusFlags (@c 0x190) into
+ *    flags in @c slot+0x8: @c 0x1000 → @c 0x80 (overwrites), then
+ *    @c 0x4000 → @c |= @c 0x20, @c 0x2000 → @c |= @c 0x40,
+ *    @c 0x8000 → @c |= @c 0x2.
+ *  - Calls @c func_800A7188 (clears 5 bytes), @c func_800A71A0
+ *    (zeroes 8 words), and @c func_800A554C(idx) (a stat/AI hook).
+ *  - If neither @c slot+0x80 bit @c 0x1 nor @c 0x4 is set: when
+ *    @c charData->statusFlags has bit @c 0x10000, copies word at
+ *    @c D_800ED148.entities[idx]+0x20 into @c +0x24; otherwise calls
+ *    @c func_800A559C(idx).
+ *  - Finally fills the 40-byte @c slot+0x90..0xB7 region with @c 100
+ *    (probably an HP-percent / stat init).
+ *
+ * @param idx Battle slot index (0..6 covers the 7 active slots).
+ */
+void func_800A7518(s32 idx) {
+    u8 *charData = (u8 *)&g_battleChars + idx * 0x1D0;
+    u8 *slot     = (u8 *)&D_800ED158 + idx * 0xD0;
+    u8 *scene;
+    u8  charId;
+    s32 i;
+
+    charId = charData[0x1C3];
+    if (charId == 0xFF) {
+        *(s32 *)(slot + 0x7C) = 0;
+        slot[0xBB] = 0xFF;
+        return;
+    }
+
+    {
+        u16 dispStatus;
+        slot[0xBB] = charId;
+        dispStatus = *(u16 *)(charData + 0x1B2);
+        *(s32 *)(slot + 0x7C) = 0x8801;
+        *(u16 *)(slot + 0x80) = dispStatus;
+    }
+
+    scene = (u8 *)&D_80078E00;
+    if (scene[0x35C3 + charData[0x1BA] * 12] & 1) {
+        *(s32 *)(slot + 0x7C) |= 0x1000;
+    }
+    if (scene[0x37A7 + slot[0xBB] * 36] & 1) {
+        *(s32 *)(slot + 0x7C) |= 0x100;
+    }
+
+    *(s32 *)(slot + 0x8) = 0;
+    if (*(s32 *)(charData + 0x190) & 0x1000) {
+        *(s32 *)(slot + 0x8) = 0x80;
+    }
+    if (*(s32 *)(charData + 0x190) & 0x4000) {
+        *(s32 *)(slot + 0x8) |= 0x20;
+    }
+    if (*(s32 *)(charData + 0x190) & 0x2000) {
+        *(s32 *)(slot + 0x8) |= 0x40;
+    }
+    if (*(s32 *)(charData + 0x190) & 0x8000) {
+        *(s32 *)(slot + 0x8) |= 0x2;
+    }
+
+    func_800A7188(slot);
+    func_800A71A0(slot);
+    func_800A554C(idx);
+
+    {
+        s32 fillVal;
+        u8 *p;
+
+        if (!(*(s32 *)(slot + 0x80) & 5)) {
+            if (*(s32 *)(charData + 0x190) & 0x10000) {
+                u8 *entityHdr = (u8 *)&D_800ED158 - 0x10 + idx * 0xD0;
+                *(volatile s32 *)(entityHdr + 0x24) = *(volatile s32 *)(entityHdr + 0x20);
+            } else {
+                func_800A559C(idx);
+            }
+        }
+
+        fillVal = 100;
+        i = 0x27;
+        p = slot + 0x27;
+    top:
+        p[0x90] = fillVal;
+        i--;
+        p--;
+        if (i >= 0) goto top;
+    }
+}
 
 /**
  * @brief Test a bit in the g_gameState bitfield at offset 0xD04.
