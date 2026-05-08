@@ -245,7 +245,7 @@ typedef struct {
 } BattleEntityLinked;
 
 typedef struct {
-    u8 pad00[0x04];
+    s32 unk0;             /* 0x00: 4-byte field (semantics unknown). */
     s32 state;
     u8 pad08[0x04];
     u8 timer;
@@ -659,8 +659,8 @@ void func_8009B924(s32 a0, s32 a1, s32 a2);
 /** @brief Resolve a battle scene entry pointer by index. */
 s32 func_800A09D0(s32 idx);
 
-/** @brief Copy entity ability state into the buffer pointer. */
-void func_800A4FC4(s32 entityIdx, u8 *out);
+/** @brief Count bits in @p mask, writing each bit's index into @p dst. Returns count. */
+s32 func_800A4FC4(s32 mask, u8 *dst);
 
 /** @brief Process a queued damage event for the entity. */
 void func_800A5210(s32 entityIdx);
@@ -668,8 +668,8 @@ void func_800A5210(s32 entityIdx);
 /** @brief Apply a status flag, ORing it into the flag word. */
 s32 func_800B0574(s32 a0, s32 a1);
 
-/** @brief Toggle masked status flag bits. */
-s32 func_800B0600(s32 a0, s32 a1);
+/** @brief Set @c field64[lowest-bit-of-a1] = -0x457 on entity @p a0. */
+void func_800B0600(s32 a0, s32 a1);
 
 /** @brief Look up auxiliary ability flags by stat byte (low bits). */
 s32 func_800B0F7C(s32 stat);
@@ -687,13 +687,13 @@ s32 func_800AF134(s32 entityIdx, u8 *outStat, u8 *outCount, s32 typeByte);
 u8 *func_800B04A0(s32 a0, u8 *buf);
 
 /** @brief Concatenate two parts into the @c D_800EEBE8 message buffer. */
-u8 *func_800B0248(u8 *part1, s32 sepByte, u8 *part2);
+u8 *func_800B0248(s32 part1, s32 sepByte, s32 part2);
 
 /** @brief Finalize the @c D_800EEBE8 message buffer. */
 u8 *func_800B02AC(u8 *buf);
 
-/** @brief Display a message via the battle queue. */
-void func_800A4320(u8 *msg);
+/** @brief Store a u32 value to @c D_800EE424. */
+void func_800A4320(s32 value);
 
 /** @brief Store @c getMenuString(id) result into @c D_800EE424. */
 void func_800A432C(s32 stringId);

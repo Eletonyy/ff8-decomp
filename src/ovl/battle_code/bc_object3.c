@@ -2,16 +2,13 @@
 #include "battle.h"
 
 extern BattleSystem D_800ED148;
-extern u8 D_80078E00[];
 extern u8 D_800786D8[];
 extern u8 D_800EE424[];
 extern u8 D_800EE43C[];
 extern u8 D_800EE462[];
 extern u8 D_800ED158[];
 extern u8 D_80077E58[];
-extern u8 g_battleChars[];
 s32 func_800A4798(s32, s32);
-s32 func_8009B79C(s32, s32);
 void func_8009B320(s32, u8 *, u8 *);
 void func_800A5948(s32, s32);
 void func_800A18E0(s32);
@@ -19,7 +16,6 @@ void func_800A589C(s32);
 void func_800A6288(s32);
 void func_800DEAA4(s32, s32);
 void func_800E1880(s32, s32);
-s32 func_8009B7BC(s32);
 void func_800AF8A4(s32);
 u8 *func_8009B134(s32, s32, s32);
 s32 func_800AE568(s32);
@@ -65,7 +61,7 @@ void func_800A1940(s32 a0) {
     s32 offset = 0x24;
     func_800A18E0(a0);
     func_800A589C(a0);
-    displayBase = g_battleChars;
+    displayBase = (u8 *)&g_battleChars;
     entityBase = &D_800ED148;
     entity = (s32)entityBase + a0 * 0xD0;
     display = (s32)displayBase + a0 * 0x1D0;
@@ -160,7 +156,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object3", func_800A20AC);
 s32 func_800A2150(void) {
     s32 count = 0;
     s32 i = 0;
-    u8 *display = g_battleChars;
+    u8 *display = (u8 *)&g_battleChars;
     u8 *entity = (u8 *)&D_800ED148;
 
     do {
@@ -269,7 +265,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object3", func_800A2D24);
  * @return Byte value from the second-level table.
  */
 s32 func_800A2E04(s32 a0) {
-    u8 *table = D_80078E00;
+    u8 *table = (u8 *)&D_80078E00;
     u8 *base = (u8 *)&D_800ED148;
     s32 val = *(u8 *)(base + a0 * 208 + 0xDA);
     val = (val - 1) * 2;
@@ -314,7 +310,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object3", func_800A2EF8);
  * Calls func_800E1880 with inverted flag and the lookup result.
  */
 void func_800A2F54(void) {
-    u8 *table = D_80078E00;
+    u8 *table = (u8 *)&D_80078E00;
     u8 *base = (u8 *)&D_800ED148;
     u8 idx1 = base[0x1324];
     u8 idx2 = base[0xF];
@@ -628,7 +624,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object3", func_800A5688);
  */
 void func_800A5778(s32 idx) {
     u8 *src = D_800ED158 + idx * 0xD0;
-    u8 *dst = g_battleChars + idx * 0x1D0;
+    u8 *dst = (u8 *)&g_battleChars + idx * 0x1D0;
 
     if (idx < 3) {
         *(s32 *)(dst + 0x184) = *(s32 *)(src + 0x14);

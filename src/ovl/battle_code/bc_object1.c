@@ -194,7 +194,7 @@ void func_8009B654(void);
 void func_8009B690(void);
 void func_8009B6B0(void);
 s32 func_8009B74C(s32, s32);
-void func_8009B79C(s32, s32);
+s32 func_8009B79C(s32, s32);
 s32 func_8009B7BC(s32);
 s32 func_8009B7F4(s32, s32);
 void func_8009B878(s32, u16 *, s32 *, s32);
@@ -1530,9 +1530,10 @@ s32 func_8009B74C(s32 a0, s32 a1) {
  * @brief Wrapper for probability check (func_8009B74C).
  * @param a0 Numerator.
  * @param a1 Denominator.
+ * @return Forwarded result of @c func_8009B74C.
  */
-void func_8009B79C(s32 a0, s32 a1) {
-    func_8009B74C(a0, a1);
+s32 func_8009B79C(s32 a0, s32 a1) {
+    return func_8009B74C(a0, a1);
 }
 
 /**
