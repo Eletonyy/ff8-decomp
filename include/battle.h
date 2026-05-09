@@ -793,4 +793,26 @@ void func_800A554C(s32 idx);
  *         @c charData->statusFlags bit @c 0x10000 is not set. */
 void func_800A559C(s32 idx);
 
+/* ---------------------------------------------------------------- *
+ *  battle_engine state region (overlay @ 0x801C2000..0x801D4000).
+ * ---------------------------------------------------------------- */
+
+/** @brief Per-state mask tables consumed by the battle-engine tick.
+ *  Each is indexed by @c D_801D3338 (state byte, 0..1) or OR'd across
+ *  the first two entries when state == 2. */
+extern u16 D_801C2EB8[];
+extern u16 D_801C2EC0[];
+extern u16 D_801C2EC8[];
+
+/** @brief Battle-engine frame-state region. */
+extern u16 D_801D332C;     /**< Latched mask C (from D_801C2EC8). */
+extern u16 D_801D332E;     /**< Latched mask A (from D_801C2EB8). */
+extern u16 D_801D3330;     /**< Latched mask B (bits 0xC0/0x10 trigger completion). */
+extern s32 D_801D3334;     /**< Completion-suppress flags (bits 1, 2). */
+extern u8  D_801D3338;     /**< State byte (-1 = idle, 0..2 = active). */
+extern u8  D_801D3340[];   /**< Per-substate parameter table (stride 4). */
+extern u8  D_801D3358;     /**< Substate index (0..5). */
+extern u8  D_801D3359;     /**< Completion code (1 = arm, 2/3 = fired). */
+extern s16 D_801D335C;     /**< 4-byte snapshot of @c D_801D3340[D_801D3358]. */
+
 #endif /* BATTLE_H */
