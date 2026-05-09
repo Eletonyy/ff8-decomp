@@ -141,7 +141,4 @@ typedef struct {
 /** @brief Read the top s32 from the eline's bytecode stack without popping. */
 #define PEEK(eline) (((s32 *)(eline))[(eline)->stackPtr])
 
-extern FieldEngineState *g_seedState;
-extern u16               g_seedSalaryTable[];
-
 #endif /* FIELD_H */

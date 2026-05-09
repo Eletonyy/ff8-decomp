@@ -1,7 +1,11 @@
 #include "common.h"
 #include "field.h"
+#include "gamestate.h"
+#include "character.h"
 
 extern u8 D_800DE4FD[];
+extern FieldEngineState *g_seedState;
+extern u16               g_seedSalaryTable[];
 
 /**
  * @brief Pop value from script stack and branch to one of two handlers.
@@ -92,9 +96,9 @@ void updateSeedLevel(void) {
        register higher and the byte-match is lost. */
     i = g_seedSalaryTable[((s16)g_seedState->seedExp) / 100];
     salary = g_seedSalaryTable[(s16)g_seedState->seedExp / 100];
-    g_gameState.gil += salary * 10;
-    if (g_gameState.gil > 0x5F5E0FEu)
-        g_gameState.gil = 0x5F5E0FF;
+    g_gameState.mainData.party.gil += salary * 10;
+    if (g_gameState.mainData.party.gil > 0x5F5E0FEu)
+        g_gameState.mainData.party.gil = 0x5F5E0FF;
 
     if (!(g_seedState->stateFlags & 0x0010)) {
         if (!(g_seedState->stateFlags & 0x1000)) {

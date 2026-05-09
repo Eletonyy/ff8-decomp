@@ -37,6 +37,8 @@ typedef struct StreamState {
 
 extern StreamState D_800E3E70;
 extern void (*D_800E3E60)(s32, void *);
+extern FieldEngineState *g_seedState;
+extern u16               g_seedSalaryTable[];
 
 extern void func_80047C3C(u8 *msg);
 extern u8   D_800987C0;
@@ -178,9 +180,9 @@ void func_800C4688(void) {
        register higher and the byte-match is lost. */
     i = g_seedSalaryTable[((s16)g_seedState->seedExp) / 100];
     salary = g_seedSalaryTable[(s16)g_seedState->seedExp / 100];
-    g_gameState.gil += salary * 10;
-    if (g_gameState.gil > 0x5F5E0FEu)
-        g_gameState.gil = 0x5F5E0FF;
+    g_gameState.mainData.party.gil += salary * 10;
+    if (g_gameState.mainData.party.gil > 0x5F5E0FEu)
+        g_gameState.mainData.party.gil = 0x5F5E0FF;
 
     if (!(g_seedState->stateFlags & 0x0010)) {
         if (!(g_seedState->stateFlags & 0x1000)) {
