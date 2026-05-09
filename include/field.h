@@ -55,12 +55,17 @@ typedef struct {
  * fields are added as they are identified in decomped code.
  */
 typedef struct {
-    /* 0x00 */ u8 pad00[0x68];
+    /* 0x00 */ u8 pad00[0x10];
+    /* 0x10 */ u16 seedExp;             /**< SeeD experience (clamped to [100, 3100]; level = exp/100). */
+    /* 0x12 */ u16 prevKillSum;         /**< Last frame's total enemy-kill count across all 8 chars. */
+    /* 0x14 */ u8 pad14[0x54];
     /* 0x68 */ s32 stateFlags;          /**< Field state flags (bits 3-4 checked by getFieldStateFlags). */
     /* 0x6C */ s32 soundHandle0;        /**< Sound channel handle 0. */
     /* 0x70 */ s32 soundHandle1;        /**< Sound channel handle 1 (-1 = inactive). */
     /* 0x74 */ u8 packedFlags[0x40];    /**< Packed 2-bit-per-entry flag table (256 entries, indexed by 8-bit key). */
-    /* 0xB4 */ u8 padB4[0x08];
+    /* 0xB4 */ u8 padB4[0x04];
+    /* 0xB8 */ u16 levelUpDisplayTimer; /**< Frames remaining for the SeeD-rank-up notification (set to 150). */
+    /* 0xBA */ u16 prevSeedExp;         /**< Snapshot of @c seedExp from the previous tick (for rank-change detection). */
     /* 0xBC */ u8 partyOrderA[3];       /**< Bench list (members not in active party). */
     /* 0xBF */ u8 partyOrderB[3];       /**< Bench list duplicate (initialized identically). */
     /* 0xC2 */ u8 memberSlot[3];        /**< For each active party slot, the BattleFieldEntity index (0xFF = none). */
@@ -135,5 +140,8 @@ typedef struct {
 
 /** @brief Read the top s32 from the eline's bytecode stack without popping. */
 #define PEEK(eline) (((s32 *)(eline))[(eline)->stackPtr])
+
+extern FieldEngineState *g_seedState;
+extern u16               g_seedSalaryTable[];
 
 #endif /* FIELD_H */

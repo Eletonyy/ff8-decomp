@@ -68,56 +68,52 @@ INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BD318);
  *      level-up notification: palette transition (@c func_800316D4 with old/new
  *      rank and old/new salary) plus three rank-up sound effects.
  *   6. Stores @c totalKills as the new @c prevKillSum baseline.
- *
- * Best-effort C reproduction reaches 96.82% match (142/142 instructions, 4
- * register-allocator differences vs target). Reproduction kept here for
- * future iteration:
- *
- * @verbatim
- * void updateSeedLevel(void) {
- *     s32 totalKills, newSeedExp, level, salary, flags;
- *     s32 oldLevel, newLevel, oldSalary, newSalary;
- *     s32 i;
- *
- *     g_seedState->prevSeedExp = g_seedState->seedExp;     // snapshot rank
- *
- *     totalKills = 0;
- *     for (i = 0; i < 8; i++) {
- *         totalKills += g_gameState.chars[i].kills;
- *     }
- *
- *     newSeedExp = (totalKills - g_seedState->prevKillSum) + g_seedState->seedExp - 10;
- *     g_seedState->seedExp = newSeedExp;
- *     if ((s16)newSeedExp < 100) g_seedState->seedExp = 100;
- *     else if ((s16)newSeedExp >= 0xC1C) g_seedState->seedExp = 0xC1C;
- *
- *     level = (s16)g_seedState->seedExp / 100;
- *     i = g_gameState.gil;
- *     salary = g_seedSalaryTable[level];
- *     salary = i + salary * 10;                       // salary reused as new gil
- *     g_gameState.gil = salary;
- *     if ((u32)salary > 0x5F5E0FE) g_gameState.gil = 0x5F5E0FF;
- *
- *     flags = g_seedState->stateFlags;
- *     if ((flags & 0x10) == 0) {
- *         if ((flags & 0x1000) == 0) {
- *             oldLevel = (s16)g_seedState->prevSeedExp / 100;
- *             newLevel = (s16)g_seedState->seedExp / 100;
- *             oldSalary = g_seedSalaryTable[oldLevel] * 10;
- *             newSalary = g_seedSalaryTable[newLevel] * 10;
- *             func_800316D4(oldLevel, newLevel, oldSalary, newSalary);
- *             g_seedState->levelUpDisplayTimer = 150;
- *             sndPlaySfx(0x5B, 0, 0x80, 0x7F);
- *             sndPlaySfx(0x5C, 0, 0x80, 0x7F);
- *             sndPlaySfx(0x5D, 0, 0x80, 0x7F);
- *         }
- *     }
- *
- *     g_seedState->prevKillSum = totalKills;
- * }
- * @endverbatim
  */
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", updateSeedLevel);
+void updateSeedLevel(void) {
+    s16 totalKills = 0;
+    s32 i;
+    s32 salary;
+
+    g_seedState->prevSeedExp = g_seedState->seedExp;
+
+    for (i = 0; i < 8; i++)
+        totalKills += g_gameState.chars[i].kills;
+
+    g_seedState->seedExp = totalKills - g_seedState->prevKillSum - 10 + g_seedState->seedExp;
+
+    if ((s16)g_seedState->seedExp < 100)
+        g_seedState->seedExp = 100;
+    else if ((s16)g_seedState->seedExp >= 0xC1C)
+        g_seedState->seedExp = 0xC1C;
+
+    /* Reg-allocation hack: this dead lookup keeps `i`'s register binding
+       alive long enough that gcc 2.7.2 places `salary` in the same slot
+       the original toolchain used. Without it, the allocator picks one
+       register higher and the byte-match is lost. */
+    i = g_seedSalaryTable[((s16)g_seedState->seedExp) / 100];
+    salary = g_seedSalaryTable[(s16)g_seedState->seedExp / 100];
+    g_gameState.gil += salary * 10;
+    if (g_gameState.gil > 0x5F5E0FEu)
+        g_gameState.gil = 0x5F5E0FF;
+
+    if (!(g_seedState->stateFlags & 0x0010)) {
+        if (!(g_seedState->stateFlags & 0x1000)) {
+            s32 oldLevel = (s16)g_seedState->prevSeedExp / 100;
+            s32 newLevel = (s16)g_seedState->seedExp / 100;
+
+            func_800316D4(oldLevel, newLevel,
+                          g_seedSalaryTable[oldLevel] * 10,
+                          g_seedSalaryTable[newLevel] * 10);
+
+            g_seedState->levelUpDisplayTimer = 150;
+            sndPlaySfx(0x5B, 0, 0x80, 0x7F);
+            sndPlaySfx(0x5C, 0, 0x80, 0x7F);
+            sndPlaySfx(0x5D, 0, 0x80, 0x7F);
+        }
+    }
+
+    g_seedState->prevKillSum = totalKills;
+}
 
 INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BD5E0);
 
