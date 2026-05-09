@@ -1,6 +1,7 @@
 #include "common.h"
 #include "gamestate.h"
 #include "battle.h"
+#include "field.h"
 #include "psxsdk/libcd.h"
 
 /** Initializes the CD subsystem: clears callbacks and pauses the drive. */
@@ -150,94 +151,55 @@ void func_800C4644(void) {
  * adjusts @c seedExp by @c (totalKills - prevKillSum) - 10 (clamped to
  * @c [100, 3100]), then pays salary into @c gil from the per-rank
  * salary table at @c g_seedSalaryTable[level] (capped at 99,999,999
- * gil — the 8-digit display ceiling). When neither @c stateFlags bit
- * @c 0x10 nor bit @c 0x1000 is set, fires the level-up notification:
- * palette transition via @c func_800316D4 with old/new rank and salary,
- * sets @c levelUpDisplayTimer to 150 (~2.5s @ 60Hz), and plays the
- * three rank-up sound effects. Always stores @c totalKills as the new
- * @c prevKillSum.
- *
- * Best-effort C reproduction reaches 96.75% match (142/142 instructions,
- * 4 register-allocator differences vs target — same plateau as the
- * field_engine duplicate after ~50K permuter iters there). Diffs:
- *  - Counter init @c addu reuses just-zeroed @c s0 instead of @c \$zero.
- *  - Loop-body fuse: target schedules
- *    @c "addu v1,s0,kills; addu s0,v1,zero" with the second @c addu in
- *    the @c bnez delay slot; mine emits @c "addu s0,s0,kills" with the
- *    pointer advance in the delay slot.
- *  - Post-loop @c "subu v0,v1,v0" — target reuses the loop's @c v1
- *    temp; mine uses @c s0 (consequence of the above).
- *  - Salary/gil register pair swap (@c a2 ↔ @c v1) — gcc 2.7.2 picks
- *    the opposite assignment regardless of source order.
- *
- * Reproduction kept here for future iteration:
- *
- * @verbatim
- * #define SEED_EXP_PER_FRAME_TAX 10        // SeeD exp drained each tick
- * #define SEED_EXP_MIN           100       // rank 1
- * #define SEED_EXP_MAX           3100      // rank 31 (cap)
- * #define SEED_EXP_PER_RANK      100
- * #define LEVEL_UP_NOTIFY_FRAMES 150       // ~2.5s @ 60Hz
- * #define MAX_GIL                99999999  // 8-digit display ceiling
- * #define SEED_FLAG_MUTE         0x10      // suppress all SeeD UI
- * #define SEED_FLAG_NO_LEVELUP   0x1000    // suppress rank-up popup only
- * #define SFX_RANKUP_1           0x5B
- * #define SFX_RANKUP_2           0x5C
- * #define SFX_RANKUP_3           0x5D
- * #define SFX_VOL_DEFAULT        0x80
- * #define SFX_PITCH_DEFAULT      0x7F
- *
- * void func_800C4688(void) {
- *     s32 totalKills, newExp, level, salary, flags;
- *     s32 oldLevel, newLevel, oldSalary, newSalary;
- *     s32 i;
- *
- *     // Snapshot the current rank so the post-update notify can compare.
- *     g_seedState->prevSeedExp = g_seedState->seedExp;
- *
- *     // Sum kill counts across all eight party member slots.
- *     totalKills = 0;
- *     for (i = 0; i < 8; i++) {
- *         totalKills += g_gameState.chars[i].kills;
- *     }
- *
- *     // SeeD exp gain = (new kills since last tick) - per-frame tax.
- *     newExp = (totalKills - g_seedState->prevKillSum) + g_seedState->seedExp
- *              - SEED_EXP_PER_FRAME_TAX;
- *     g_seedState->seedExp = newExp;
- *     if      ((s16)newExp <  SEED_EXP_MIN) g_seedState->seedExp = SEED_EXP_MIN;
- *     else if ((s16)newExp >= SEED_EXP_MAX) g_seedState->seedExp = SEED_EXP_MAX;
- *
- *     // Pay salary based on the new rank, capped at 99,999,999 gil.
- *     level  = (s16)g_seedState->seedExp / SEED_EXP_PER_RANK;
- *     i      = g_gameState.gil;
- *     salary = g_seedSalaryTable[level];
- *     salary = i + salary * 10;
- *     g_gameState.gil = salary;
- *     if ((u32)salary > MAX_GIL - 1) g_gameState.gil = MAX_GIL;
- *
- *     // Fire the rank-up popup unless either suppression flag is set.
- *     flags = g_seedState->stateFlags;
- *     if ((flags & SEED_FLAG_MUTE) == 0) {
- *         if ((flags & SEED_FLAG_NO_LEVELUP) == 0) {
- *             oldLevel  = (s16)g_seedState->prevSeedExp / SEED_EXP_PER_RANK;
- *             newLevel  = (s16)g_seedState->seedExp     / SEED_EXP_PER_RANK;
- *             oldSalary = g_seedSalaryTable[oldLevel] * 10;
- *             newSalary = g_seedSalaryTable[newLevel] * 10;
- *             func_800316D4(oldLevel, newLevel, oldSalary, newSalary);
- *             g_seedState->levelUpDisplayTimer = LEVEL_UP_NOTIFY_FRAMES;
- *             sndPlaySfx(SFX_RANKUP_1, 0, SFX_VOL_DEFAULT, SFX_PITCH_DEFAULT);
- *             sndPlaySfx(SFX_RANKUP_2, 0, SFX_VOL_DEFAULT, SFX_PITCH_DEFAULT);
- *             sndPlaySfx(SFX_RANKUP_3, 0, SFX_VOL_DEFAULT, SFX_PITCH_DEFAULT);
- *         }
- *     }
- *
- *     // Stash this frame's running total for next frame's delta calculation.
- *     g_seedState->prevKillSum = totalKills;
- * }
- * @endverbatim
+ * gil). When neither @c stateFlags bit @c 0x10 nor bit @c 0x1000 is
+ * set, fires the level-up notification (@c func_800316D4 + 3 rank-up
+ * SFX). Stores @c totalKills as the new @c prevKillSum.
  */
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object13", func_800C4688);
+void func_800C4688(void) {
+    s16 totalKills = 0;
+    s32 i;
+    s32 salary;
+
+    g_seedState->prevSeedExp = g_seedState->seedExp;
+
+    for (i = 0; i < 8; i++)
+        totalKills += g_gameState.chars[i].kills;
+
+    g_seedState->seedExp = totalKills - g_seedState->prevKillSum - 10 + g_seedState->seedExp;
+
+    if ((s16)g_seedState->seedExp < 100)
+        g_seedState->seedExp = 100;
+    else if ((s16)g_seedState->seedExp >= 0xC1C)
+        g_seedState->seedExp = 0xC1C;
+
+    /* Reg-allocation hack: this dead lookup keeps `i`'s register binding
+       alive long enough that gcc 2.7.2 places `salary` in the same slot
+       the original toolchain used. Without it, the allocator picks one
+       register higher and the byte-match is lost. */
+    i = g_seedSalaryTable[((s16)g_seedState->seedExp) / 100];
+    salary = g_seedSalaryTable[(s16)g_seedState->seedExp / 100];
+    g_gameState.gil += salary * 10;
+    if (g_gameState.gil > 0x5F5E0FEu)
+        g_gameState.gil = 0x5F5E0FF;
+
+    if (!(g_seedState->stateFlags & 0x0010)) {
+        if (!(g_seedState->stateFlags & 0x1000)) {
+            s32 oldLevel = (s16)g_seedState->prevSeedExp / 100;
+            s32 newLevel = (s16)g_seedState->seedExp / 100;
+
+            func_800316D4(oldLevel, newLevel,
+                          g_seedSalaryTable[oldLevel] * 10,
+                          g_seedSalaryTable[newLevel] * 10);
+
+            g_seedState->levelUpDisplayTimer = 150;
+            sndPlaySfx(0x5B, 0, 0x80, 0x7F);
+            sndPlaySfx(0x5C, 0, 0x80, 0x7F);
+            sndPlaySfx(0x5D, 0, 0x80, 0x7F);
+        }
+    }
+
+    g_seedState->prevKillSum = totalKills;
+}
 
 /**
  * @brief Tick all active GFs' HP up by 1 toward their battle max.
