@@ -306,6 +306,82 @@ INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009DB88);
 
 INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009E5C8);
 
+/**
+ * @brief Smooth-step a 12-bit angle (range @c [0,0x1000) = full revolution)
+ *        toward @c target.
+ *
+ * Normalizes both @c target and @c *current into @c [0,0x1000), wraps
+ * the signed delta into roughly @c [-0x800,0x801), and compares the
+ * absolute delta against @c limit. If within limit, snaps @c *current
+ * to @c target and returns 0 ("arrived"). Otherwise advances @c *current
+ * by @c limit (or @c 2*limit if the remaining distance still exceeds
+ * @c threshold) toward @c target and returns 1 ("still moving").
+ *
+ * @param target    desired angle (12-bit-revolution units).
+ * @param current   pointer to the angle to step (s16, in/out).
+ * @param limit     max single-step magnitude.
+ * @param threshold large-step / small-step decision threshold.
+ * @return          0 if snapped, 1 if still moving toward target.
+ *
+ * @note Decompiled at 99.65% in @c permuter/func_8009F594/base.c — the
+ *       permuter found two helpful tricks (stash sign-extended limit
+ *       through @c t and the @c *current double-store / @c changed
+ *       hoist) but plateaued at score 30. Remaining bytes differ in
+ *       reg allocation: @c sra targets @c $a2 vs @c $v1, and the
+ *       @c lim_s*2 step lands in @c $v0 vs @c $t1.
+ *
+ * @verbatim
+ * s32 func_8009F594(s32 target, s16 *current, s32 limit, s32 threshold) {
+ *     s32 lim_s, delta_s, abs_d, cur_now, delta;
+ *     s32 t = (s16)target;
+ *     s32 c = *current;
+ *     s32 changed = 0;
+ *
+ *     while (t >= 0x1000) t -= 0x1000;
+ *     while (t < 0)       t += 0x1000;
+ *     while (c >= 0x1000) c -= 0x1000;
+ *     while (c < 0)       c += 0x1000;
+ *
+ *     delta = t - c;
+ *     if (delta < -0x7FF) {
+ *         while (delta < 0) delta += 0x1000;
+ *     } else if (delta >= 0x801) {
+ *         while (delta >= 0) delta -= 0x1000;
+ *     }
+ *
+ *     // permuter trick: route lim_s sign-ext through (now-dead) t
+ *     t       = (s16)limit;
+ *     lim_s   = t;
+ *     delta_s = (s16)delta;
+ *     abs_d   = delta_s;
+ *     if (abs_d < 0) abs_d = -abs_d;
+ *
+ *     if (lim_s < abs_d) {
+ *         if (delta_s > 0) {
+ *             cur_now = *current;
+ *             if ((s16)threshold < abs_d) {
+ *                 *current = cur_now;          // double-store trick
+ *                 *current = *current + lim_s * 2;
+ *             } else {
+ *                 *current = cur_now + lim_s;
+ *             }
+ *         } else {
+ *             cur_now = *current;
+ *             if ((s16)threshold < abs_d) {
+ *                 changed = lim_s * 2;          // hoist *2 through changed
+ *                 *current = cur_now - changed;
+ *             } else {
+ *                 *current = cur_now - lim_s;
+ *             }
+ *         }
+ *         changed = 1;
+ *     } else {
+ *         *current = (s16)target;
+ *     }
+ *     return changed;
+ * }
+ * @endverbatim
+ */
 INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009F594);
 
 INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009F6EC);
