@@ -915,14 +915,10 @@ void func_8009AF3C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stack_arg) {
  * at volume 0x80 targeting the entity. Stores entity index.
  * @param a0 Entity slot index.
  */
-void func_8009AF98(s32 a0) {
-    s32 idx = a0;
-    s32 offset;
+void func_8009AF98(s32 idx) {
     SoundCmd *cmd;
-
     func_8009AFF0(idx);
-    offset = ((idx * 2 + idx) * 4 + idx) * 16;
-    cmd = func_8009B134(0x75, 0x80, offset + (s32)&D_800ED158);
+    cmd = func_8009B134(0x75, 0x80, (s32)&D_800ED158.slots[idx]);
     cmd->unk0 = idx;
 }
 
