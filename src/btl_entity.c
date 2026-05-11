@@ -33,7 +33,53 @@ s32* getEntityTablePtr(s32 idx) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_entity", func_8002BF24);
+/**
+ * @brief Build the per-frame battle entity display list.
+ *
+ * For each of the 8 entity slots, runs the visibility test (activeFlag set,
+ * field36 clear, field35 set) and clips the entity rect via @c clipBlitRects.
+ * Each entity that passes and has a non-empty clip result sets its bit in
+ * @p mask. Then @c func_8002BE48 sets up the draw area at @c ot[15], and for
+ * every set bit @c func_8002BC6C is called to render that entity into the
+ * display list at @p head.
+ *
+ * @param ot   Ordering table base pointer (treated as @c s32*).
+ * @param head Display-list write head; advanced through nested calls.
+ * @return The display-list head after all entity primitives are emitted.
+ */
+s32 func_8002BF24(s32 ot, s32 head) {
+    s32 mask = 0;
+    s32 hit;
+    s32 i;
+    s32 bit;
+    s32 slotBit;
+
+    i = 0;
+    bit = 1;
+    for (; i < 8; i++) {
+        BattleDisplayEntity *e = &g_battleEntities[i];
+        hit = 0;
+        if (e->activeFlag != 0 && e->field36 == 0 && e->field35 != 0) {
+            hit = (clipBlitRects((BlitParams *)e) != 0);
+        }
+        if (hit) {
+            mask |= bit << i;
+        }
+    }
+
+    head = func_8002BE48((s32)&((s32 *)ot)[15], head);
+    if (mask == 0) {
+        return head;
+    }
+
+    for (i = 0; i < 8; i++) {
+        slotBit = 1;
+        if (mask & (slotBit << i)) {
+            head = func_8002BC6C(ot, i, head);
+        }
+    }
+    return head;
+}
 
 
 /**

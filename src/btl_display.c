@@ -6,27 +6,6 @@
 extern BattleDisplayEntity g_battleEntities[];
 extern void copyDisplayRect(RECT *dst);
 
-/** @brief Clipped rectangle result: the clipped rect + saved pre-clip position. */
-typedef struct {
-    RECT rect;       /* 0x00: clipped rectangle */
-    s32 savedPos;    /* 0x08: packed original x|y before clipping */
-} ClipResult;
-
-/** @brief Scratch workspace for rectangle clipping operations. */
-typedef struct {
-    ClipResult work;
-    ClipResult disp;
-} ClipWork;
-
-/** @brief Parameters for a double-blit operation with source rects and destination buffers. */
-typedef struct {
-    u8 pad[0x08];
-    RECT srcRect1;
-    RECT srcRect2;
-    u8 dstData1[12];
-    u8 dstData2[12];
-} BlitParams;
-
 /**
  * @brief Set a battle entity's type and compute draw mode from bit 0.
  * @param idx Entity index.

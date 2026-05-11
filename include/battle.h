@@ -129,6 +129,31 @@ typedef struct BattleDisplayEntity {
     s16 pad3E;
 } BattleDisplayEntity;
 
+/** @brief Clipped rectangle result: the clipped rect + saved pre-clip position. */
+typedef struct {
+    RECT rect;       /* 0x00: clipped rectangle */
+    s32 savedPos;    /* 0x08: packed original x|y before clipping */
+} ClipResult;
+
+/** @brief Scratch workspace for rectangle clipping operations. */
+typedef struct {
+    ClipResult work;
+    ClipResult disp;
+} ClipWork;
+
+/** @brief Parameters for a double-blit operation with source rects and destination buffers. */
+typedef struct {
+    u8 pad[0x08];
+    RECT srcRect1;
+    RECT srcRect2;
+    u8 dstData1[12];
+    u8 dstData2[12];
+} BlitParams;
+
+/** @brief Clip a pair of source rects against the display and emit blits.
+ *  @return 1 if the first rect overlapped the display, 0 otherwise. */
+extern s32 clipBlitRects(BlitParams *arg);
+
 typedef struct {
     RECT rect;
     u8 *dataPtr;
