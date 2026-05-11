@@ -391,7 +391,8 @@ typedef struct {
     /* 0x0000 */ BattleEntity entities[7];      /**< 7 × 0xD0 = 0x5B0. Index 0 is also the header proxy. */
     /* 0x05B0 */ u8 pad5B0[0x10];               /**< Pre-control padding. */
     /* 0x05C0 */ u8 unk5C0;                     /**< Action queue head index (used by func_800B06DC). */
-    /* 0x05C1 */ u8 pad5C1[0x02];
+    /* 0x05C1 */ u8 pad5C1[0x1];
+    /* 0x05C2 */ u8 unk5C2;                     /**< Misc state byte (init to 1 by func_8009A1E0/ACEC). */
     /* 0x05C3 */ u8 unk5C3;                     /**< Misc state byte (init to 1 by func_80099FE8). */
     /* 0x05C4 */ u8 pad5C4[0x11];
     /* 0x05D5 */ BattleEntry entries[90];       /**< Action queue (stride 0x14). */

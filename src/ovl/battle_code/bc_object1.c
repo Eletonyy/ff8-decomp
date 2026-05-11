@@ -242,24 +242,21 @@ void func_8009A160(void) {
 /**
  * @brief Transition to post-battle state.
  *
- * Sets animation flag 0x12EA, calls victory/result handlers,
- * initializes idle animations, and sets entity state to 4.
- * Volatile base pointer prevents maspsx from moving sb stores
- * into jal delay slots.
+ * Sets @c unk12EA, calls victory/result handlers, initializes idle
+ * animations, then sets @c unk5C2 and entity state to @c 4. The TU-wide
+ * @c volatile on @c D_800ED148 keeps the stores from being moved into
+ * @c jal delay slots.
  */
 void func_8009A1E0(void) {
-    s32 base = (s32)&D_800ED148;
-    s32 one = 1;
-
-    *(volatile u8 *)(base + 0x12EA) = one;
+    D_800ED148.unk12EA = 1;
     func_800AE6C0();
     func_800A97D4();
     func_8009A254();
-    *(volatile u8 *)(base + 0x5C2) = one;
+    D_800ED148.unk5C2 = 1;
     func_800B1ACC();
     func_800B2084();
     func_800B2024();
-    *(volatile s32 *)(base + 0x4) = 4;
+    D_800ED148.entities[0].state = 4;
 }
 
 /**
