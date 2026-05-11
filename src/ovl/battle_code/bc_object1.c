@@ -1236,18 +1236,11 @@ s32 func_8009B3D0(s32 arg0) {
  * (with -0x10 stride, descending).
  */
 void func_8009B428(void) {
-    register s32 base asm("$16") = D_800EE24B;
     s32 i;
-
-    func_8009B208((TaskLink *)base, (u8 *)(base + 0x1F3), 0x10);
-
-    i = 15;
-    base += -0x1013;
-    do {
-        *(u8 *)(base + 0x1153) = 0;
-        i--;
-        base += -0x10;
-    } while (i >= 0);
+    func_8009B208((TaskLink *)D_800ED148.taskLinks, (u8 *)&D_800ED148.taskHead, 16);
+    for (i = 15; i >= 0; i--) {
+        D_800ED148.taskData[i].done = 0;
+    }
 }
 
 /**
