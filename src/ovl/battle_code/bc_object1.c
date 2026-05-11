@@ -83,7 +83,7 @@ void func_8009AD7C(void);
 void func_8009AE08(s32);
 void func_8009AE9C(void);
 void func_8009AF14(s32);
-s32 func_8009AF3C(s32, s32, s32, s32, s32);
+void func_8009AF3C(s32, s32, s32, s32, s32);
 void func_8009AF98(s32);
 s32 func_8009AFF0(s32);
 void func_8009B088(s32, s32, s32, s32);
@@ -906,7 +906,7 @@ void func_8009AF14(s32 a0) {
  * @param a3 Volume / priority.
  * @param stack_arg Extra flag byte 2 (5th argument on stack).
  */
-s32 func_8009AF3C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stack_arg) {
+void func_8009AF3C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stack_arg) {
     s32 entity_id = a1;
     s32 flag1 = a2;
     SoundCmd *cmd;

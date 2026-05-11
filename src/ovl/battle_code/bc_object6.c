@@ -11,7 +11,7 @@ void func_8009AF14(void *);
 extern u8 D_80077E59[];
 void func_800AD4A4(s32);
 void func_800AE6C0(void);
-s32 func_8009AF3C(s32, s32, s32, s32, s32);
+void func_8009AF3C(s32, s32, s32, s32, s32);
 void func_80048BB8(s32);
 void sndStopAll(void);
 extern u8 g_gameState[];
