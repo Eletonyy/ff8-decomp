@@ -371,9 +371,9 @@ typedef struct {
     /* 0x05C1 */ u8 pad5C1[0x02];
     /* 0x05C3 */ u8 unk5C3;                     /**< Misc state byte (init to 1 by func_80099FE8). */
     /* 0x05C4 */ u8 pad5C4[0x11];
-    /* 0x05D5 */ BattleEntry entries[91];       /**< Action queue (stride 0x14). */
-    /* 0x0CF1 */ u8 padCF1[0x0F];               /**< Pad to padD00. */
-    /* 0x0D00 */ u8 padD00[0x14];               /**< First 0x14 bytes of post-entries region (continuation of unkCE4). */
+    /* 0x05D5 */ BattleEntry entries[90];       /**< Action queue (stride 0x14). */
+    /* 0x0CDD */ u8 padCDD[0x7];                /**< Pad to unkCE4. */
+    /* 0x0CE4 */ BattleVec3u unkCE4[8];         /**< 8-entry x/y/z position table (read by @c func_8009A528). */
     /* 0x0D14 */ u8 unkD14[0x8];                /**< Hit-type byte table (8 entries). */
     /* 0x0D1C */ u8 padD1C[0x40];               /**< Misc state. */
     /* 0x0D5C */ u8 unkD5C[0x8];                /**< Per-trigger flag array (8 entries). */

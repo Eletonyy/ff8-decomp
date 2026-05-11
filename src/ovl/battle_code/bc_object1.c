@@ -407,34 +407,38 @@ s32 func_8009A514(s32 a0, s32 a1) {
  *
  * Snapshots entity state via func_8009AFF0 and func_800A1CFC, then plays
  * sound 0x67 targeting the entity. Stores idx + flag (cmd->unk2.b.lo = 1,
- * .b.hi = 1 if entity flags bit 1 set, else 0). Then copies the @p off-th
- * hit-type byte (D_800ED148.unkD14) into entity->unkCB and the @p off-th
- * position ((*(BattleVec3u (*)[0x8])((u8 *)&D_800ED148 + 0xCE4))) into entity->pos.
+ * .b.hi = 1 if entity controlFlags bit 1 set, else 0). Then copies the
+ * @p off-th hit-type byte (@c D_800ED148.unkD14) into @c entity->linkedIdx
+ * and the @p off-th position (@c D_800ED148.unkCE4) into @c entity->animParam1/2/3.
+ *
+ * @note The @c (s32)&D_800ED148.entities[idx].linkedPtr expression for the
+ * @c func_8009B134 argument is equivalent to @c (s32)&D_800ED158.slots[idx]
+ * (since @c BattleEntity::linkedPtr is at offset @c 0x10 and
+ * @c D_800ED158 = @c D_800ED148 + @c 0x10), but writing it relative to
+ * @c D_800ED148 lets gcc share one @c lui+addiu base register across the
+ * @c func_8009B134 arg and the post-call entity field accesses.
+ *
  * @param idx Entity slot index.
  * @param off Source entity index for the hit-type / position lookup.
- *
- * Best clean (struct-only) attempt:
- * @code
- * void func_8009A528(s32 idx, s32 off) {
- *     BattleEntity *units = (BattleEntity *)&D_800ED148;
- *     BattleEntity *entity = &units[idx];
- *     SoundCmd *cmd;
- *     func_8009AFF0(idx);
- *     func_800A1CFC(idx);
- *     cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED158.slots[idx]);
- *     cmd->unk0 = idx;
- *     cmd->unk2.b.lo = 1;
- *     cmd->unk2.b.hi = (entity->flags & 2) ? 1 : 0;
- *     entity->unkCB = D_800ED148.unkD14[off];
- *     entity->pos.x = (*(BattleVec3u (*)[0x8])((u8 *)&D_800ED148 + 0xCE4))[off].x;
- *     entity->pos.y = (*(BattleVec3u (*)[0x8])((u8 *)&D_800ED148 + 0xCE4))[off].y;
- *     entity->pos.z = (*(BattleVec3u (*)[0x8])((u8 *)&D_800ED148 + 0xCE4))[off].z;
- * }
- * @endcode
- * Permuter ~67% — same gcc-combine and `s1 -= 0x10` / split-across-call
- * issues as func_8009A6A8.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A528);
+void func_8009A528(s32 idx, s32 off) {
+    SoundCmd *cmd;
+
+    func_8009AFF0(idx);
+    func_800A1CFC(idx);
+    cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED148.entities[idx].linkedPtr);
+    cmd->unk0 = idx;
+    cmd->unk2.b.lo = 1;
+    if (D_800ED148.entities[idx].controlFlags & 2) {
+        cmd->unk2.b.hi = 1;
+    } else {
+        cmd->unk2.b.hi = 0;
+    }
+    D_800ED148.entities[idx].linkedIdx = D_800ED148.unkD14[off];
+    D_800ED148.entities[idx].animParam1 = D_800ED148.unkCE4[off].x;
+    D_800ED148.entities[idx].animParam2 = D_800ED148.unkCE4[off].y;
+    D_800ED148.entities[idx].animParam3 = D_800ED148.unkCE4[off].z;
+}
 
 /**
  * @brief Queue attack animations for all active party members.
