@@ -85,7 +85,7 @@ void func_8009AE9C(void);
 void func_8009AF14(s32);
 void func_8009AF3C(s32, s32, s32, s32, s32);
 void func_8009AF98(s32);
-s32 func_8009AFF0(s32);
+void func_8009AFF0(s32);
 void func_8009B088(s32, s32, s32, s32);
 void func_8009B0F8(s32);
 SoundCmd *func_8009B134(s32, s32, s32);
@@ -925,33 +925,27 @@ void func_8009AF98(s32 idx) {
 /**
  * @brief Snapshot entity animation state before a command.
  *
- * Copies status (0x90) to backup (0x92) and flags (0x18) to backup
- * (0x1C) for the given entity. If entity index >= 3, checks linked
- * entity data flags and conditionally clears bit 6 of status and
- * bit 0x2000 of flags.
- * @param a0 Entity slot index.
+ * Mirrors @c entity->status into @c statusBackup and @c flags into
+ * @c flagsBackup. For entity slots @c >= 3 (linked entities), also
+ * consults @c BattleEntityData.immunityFlags through @c linkedPtr->data
+ * and conditionally clears @c 0x40 from the backed-up status / @c 0x2000
+ * from the backed-up flags.
  */
-s32 func_8009AFF0(s32 a0) {
-    s32 base = (s32)&D_800ED148;
-    s32 offset = ((a0 * 2 + a0) * 4 + a0) * 16;
-    u8 *entity = (u8 *)(offset + base);
-    s32 flags;
-    u8 *linked;
-    s32 linkedFlags;
+void func_8009AFF0(s32 idx) {
+    BattleSystem *bs = (BattleSystem *)&D_800ED148;
+    BattleEntity *e = &bs->entities[idx];
+    BattleEntityData *linked;
 
-    *(u16 *)(entity + 0x92) = *(u16 *)(entity + 0x90);
-    flags = *(s32 *)(entity + 0x18);
-    *(s32 *)(entity + 0x1C) = flags;
+    e->statusBackup = e->status;
+    e->flagsBackup = e->flags;
 
-    if (a0 >= 3) {
-        linked = *(u8 **)(*(s32 *)(entity + 0x10));
-        linkedFlags = *(u8 *)(linked + 0xF7);
-        if (linkedFlags & 1) {
-            *(u16 *)(entity + 0x92) = *(u16 *)(entity + 0x92) & 0xFFBF;
+    if (idx >= 3) {
+        linked = e->linkedPtr->data;
+        if (linked->immunityFlags & 1) {
+            e->statusBackup &= 0xFFBF;
         }
-        linkedFlags = *(u8 *)(linked + 0xF7);
-        if (linkedFlags & 2) {
-            *(s32 *)(entity + 0x1C) = *(s32 *)(entity + 0x1C) & ~0x2000;
+        if (linked->immunityFlags & 2) {
+            e->flagsBackup &= ~0x2000;
         }
     }
 }

@@ -266,7 +266,9 @@ typedef enum {
  * (read by @c func_800AF988) is mapped so far.
  */
 typedef struct {
-    u8 unk00[0x14F];
+    u8 unk00[0xF7];
+    u8 immunityFlags;   /* 0xF7: bit 0 forces status bit 0x40 clear, bit 1 forces flags bit 0x2000 clear (read by @c func_8009AFF0). */
+    u8 padF8[0x57];
     u8 unk14F;          /* 0x14F: byte read by func_800AF988. */
 } BattleEntityData;
 
