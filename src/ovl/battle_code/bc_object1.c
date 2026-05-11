@@ -774,28 +774,21 @@ void func_8009ACB4(void) {
 /**
  * @brief Initialize battle entities for a new round.
  *
- * Sets control bytes (0x12E8=2, 0xD=0, 0x12FD=1, 0x12EA=0, 0x5C2=0),
- * then iterates 3 entity slots calling func_800A6288 and clearing
- * bit 31 of flags word (0x18). Finally calls func_800A62B0.
+ * Sets state bytes @c unk12E8 = 2, @c entities[0].control = 0,
+ * @c unk12FD = 1, @c unk12EA = 0, @c unk5C2 = 0, then iterates the
+ * first 3 entity slots calling @c func_800A6288 and clearing bit 31
+ * of each entity's flags. Finally calls @c func_800A62B0.
  */
 void func_8009ACEC(void) {
-    s32 i = 0;
-    s32 mask = 0x7FFFFFFF;
-    register s32 tmp asm("$2") = (s32)&D_800ED148;
-    s32 base;
-    REGALLOC_BARRIER(tmp);
-    base = tmp;
-
-    *(u8 *)(base + 0x12E8) = 2;
-    *(u8 *)(base + 0xD) = 0;
-    *(u8 *)(base + 0x12FD) = 1;
-    *(u8 *)(base + 0x12EA) = 0;
-    *(u8 *)(base + 0x5C2) = 0;
-
-    for (; i < 3; i++) {
+    s32 i;
+    D_800ED148.unk12E8 = 2;
+    D_800ED148.entities[0].control = 0;
+    D_800ED148.unk12FD = 1;
+    D_800ED148.unk12EA = 0;
+    D_800ED148.unk5C2 = 0;
+    for (i = 0; i < 3; i++) {
         func_800A6288(i);
-        *(volatile s32 *)(base + 0x18) = *(volatile s32 *)(base + 0x18) & mask;
-        base += 0xD0;
+        D_800ED148.entities[i].flags &= 0x7FFFFFFF;
     }
     func_800A62B0();
 }
