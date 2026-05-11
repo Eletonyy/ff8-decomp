@@ -49,11 +49,8 @@ extern volatile BattleSystem D_800ED148;
    codegen is found. */
 extern u8 D_80098030[];
 
-/* File-local forward declarations (defined later in this TU,
-   called from earlier code). Cross-TU prototypes live in battle.h
-   unless overlay-conflicting (same address, different function in
-   another overlay) — those stay file-local. */
-void func_80027448(void);
+/* Forward declarations for file-private functions (defined later in
+   this TU). Cross-TU "public" functions live in battle.h. */
 void func_8009A254(void);
 void func_8009A308(void);
 void func_8009A38C(void);
@@ -61,8 +58,6 @@ void func_8009A3BC(void);
 void func_8009A42C(s32, s32);
 void func_8009A4A4(void);
 void func_8009A528(s32, s32);
-void func_8009A638(void);    /* overlay-conflict: also in world_engine */
-void func_8009A8B4(s32);     /* overlay-conflict: also in battle_render */
 void func_8009A6A8(s32);
 void func_8009A74C(void);
 void func_8009A928(void);
@@ -85,71 +80,29 @@ void func_8009B088(s32, s32, s32, s32);
 void func_8009B0F8(s32);
 void func_8009B198(s32);
 void func_8009B208(TaskLink *, u8 *, s32);
-s32 func_8009B238(u8 *, s32);
-s32 func_8009B270(u8 *, s32);
-s32 func_8009B2A4(u8 *, u8 *, s32);
-s32 func_8009B390(u8 *, s32);
+s32  func_8009B238(u8 *, s32);
+s32  func_8009B270(u8 *, s32);
+s32  func_8009B2A4(u8 *, u8 *, s32);
+s32  func_8009B390(u8 *, s32);
 void func_8009B428(void);
 void func_8009B478(void);
 void func_8009B520(void);
 void func_8009B59C(s32, s32 *, s32 *);
 void func_8009B654(void);
-void func_8009B690(void);   /* overlay-conflict: also in battle_engine */
-s32 func_8009B74C(s32, s32); /* overlay-conflict: also in field_engine */
-s32 func_8009B7F4(s32, s32);
-void func_8009B878(s32, u16 *, s32 *, s32);
-s32 func_8009BA5C(s32, s32);
-
-void func_800393C8(void);
-s32 func_80042634(s32);
 void func_8009B6D0(s32, s32);
-void func_800A30E4(void);
-void func_800A6288(s32);
-void func_800A62B0(void);
-void func_800A1CFC(s32);
-void func_800A1AB8(s32, s32, s32);
-void func_800A240C(s32, s32, s32);
-void func_800A59AC(s32, s32, s32);
-void func_800A69BC(void);
-void func_800A6724(void);
-void func_800A6D30(void);
-void func_800A7B48(void);
-void func_800A7884(void);
-void func_800A853C(void);
-void func_800A864C(void);
-void func_800A86F0(s32);
-void func_800A94E0(void);
-void func_800A97D4(void);
-void func_800A79A0(void);
-s32 func_800AE6C0(void);
-s32 func_800AE730(void);
-s32 func_800AE788(void);
-void func_800AECD4(void);
-void func_800AED30(void);
-void func_800AEC04(void);
-void func_800AED9C(void);
-void func_800AEB50(void);
-void func_800AF8A4(s32);
+s32  func_8009B7F4(s32, s32);
+void func_8009B878(s32, u16 *, s32 *, s32);
+s32  func_8009BA5C(s32, s32);
 
-s32 func_800B0668(s32, s32);
+/* Overlay-conflict externs: same MIPS address holds different functions
+   in other overlays, so these cannot be hoisted into a shared header. */
+void func_8009A638(void);     /* also in world_engine */
+void func_8009A8B4(s32);      /* also in battle_render */
+void func_8009B690(void);     /* also in battle_engine */
+s32  func_8009B74C(s32, s32); /* also in field_engine */
 
-
-s32 func_800B1930(s32);
-void func_800B1ACC(void);
-void func_800B2024(void);
-void func_800B2084(void);
-void func_800B25E4(void);
-void func_800B26B8(void);
-SoundCmd *func_800B8564(s32, s32);
-s32 func_800CEDA4(void);
-void setCameraVibrateIntensity(s32);
-void setCameraVibrateState(s32);
-void sndCmdC1(s32, s32, s32);
-void func_80038868(s32, s32, s32, s32);
-void cdRead(s32, s32, s32, s32);
-void cdReadSync(s32, s32, s32, s32);
-void memcopy(s32, s32, s32);
-void func_800D0F74(void);
+extern void func_800D0F74(void); /* defined in another battle_code TU */
+extern SoundCmd *func_800B8564(s32, s32); /* defined in bc_object9.c */
 
 /**
  * @brief Battle initialization entry point.
@@ -178,7 +131,7 @@ void func_80099FE8(void) {
 
     func_8009B198(func_80042634(-1));
     func_800B25E4();
-    func_8009B6D0(g_battleConfig.battleSceneId, D_800EDE24);
+    func_8009B6D0(g_battleConfig.battleSceneId, (s32)D_800EDE24);
     {
         u8 *base = (u8 *)(D_800EDE24 - 0xCDC);
         if ((base[0xCDD] & 0xE0) == 0) {
@@ -201,7 +154,7 @@ void func_80099FE8(void) {
     func_8009A3BC();
     func_8009B134(9, 0x80, 0);
     func_8009A4A4();
-    func_8009AF14((void *)func_8009ABFC);
+    func_8009AF14(func_8009ABFC);
 }
 
 /**
@@ -217,10 +170,10 @@ void func_8009A160(void) {
     func_8009A638();
     func_8009A928();
     func_8009A74C();
-    func_8009AF14(&func_800D0F74);
+    func_8009AF14(func_800D0F74);
     func_800A69BC();
     func_8009B134(0x70, 0x80, 0);
-    func_8009AF14(&func_8009ABE4);
+    func_8009AF14(func_8009ABE4);
     state = &D_800ED148;
     state->entities[0].state.word = 2;
 }
@@ -820,19 +773,19 @@ void func_8009AE08(s32 cmd) {
             *(s32 *)&D_800ED148.entities[0].unk0 = 1;
             break;
         case 6:
-            func_8009AF14((s32)func_8009AC14);
+            func_8009AF14(func_8009AC14);
             break;
         case 7:
-            func_8009AF14((s32)func_8009AC34);
+            func_8009AF14(func_8009AC34);
             break;
         case 8:
-            func_8009AF14((s32)func_8009ACB4);
+            func_8009AF14(func_8009ACB4);
             break;
         case 9:
-            func_8009AF14((s32)func_8009AC68);
+            func_8009AF14(func_8009AC68);
             break;
         case 10:
-            func_8009AF14((s32)func_8009ACEC);
+            func_8009AF14(func_8009ACEC);
             break;
     }
 }
@@ -865,8 +818,8 @@ void func_8009AE9C(void) {
  * by calling func_8009B134, effectively queueing it for execution.
  * @param a0 Function pointer to schedule as a task callback.
  */
-void func_8009AF14(s32 a0) {
-    func_8009B134(0xA, 0x80, a0);
+void func_8009AF14(void *callback) {
+    func_8009B134(0xA, 0x80, (s32)callback);
 }
 
 /**

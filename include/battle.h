@@ -810,7 +810,7 @@ void func_8009AD7C(void);
 void func_8009AE08(s32 cmd);
 
 /** @brief Schedule a callback function as a battle task (sound id @c 0xA). */
-void func_8009AF14(s32 a0);
+void func_8009AF14(void *callback);
 
 /** @brief Queue a custom sound command (id @c 8) with entity / flag params. */
 void func_8009AF3C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stack_arg);
