@@ -737,6 +737,7 @@ typedef struct {
  *  Battle data symbols (battle_code overlay region).
  * ---------------------------------------------------------------- */
 
+extern s16 D_8005F11C;      /**< 0x8005F11C: misc sound state (used by bc_object1 / fe_object7). */
 extern u8 D_800ED157[];     /**< 0x800ED157: misc battle state. */
 extern u8 D_800ED160[];     /**< 0x800ED160: misc battle state. */
 extern u8 D_800ED1D8[];     /**< 0x800ED1D8: misc battle state. */
@@ -796,6 +797,51 @@ extern s32 D_800EEBC4;      /**< 0x800EEBC4: status flags word (bit 0x4000000). 
 /* ---------------------------------------------------------------- *
  *  Battle-overlay function prototypes (battle_code internals).
  * ---------------------------------------------------------------- */
+
+/** @brief Test if bit @p a1 is set in mask @p a0. */
+s32 func_8009A514(s32 a0, s32 a1);
+
+/** @brief Queue attack animations for all active party members. */
+void func_8009A638(void);
+
+/** @brief Queue a damage/heal visual effect sound for an entity slot. */
+void func_8009A8B4(s32 idx);
+
+/** @brief Set the battle round timer based on the speed setting. */
+void func_8009AD7C(void);
+
+/** @brief Dispatch a battle transition command (codes 5..10). */
+void func_8009AE08(s32 cmd);
+
+/** @brief Schedule a callback function as a battle task (sound id @c 0xA). */
+void func_8009AF14(s32 a0);
+
+/** @brief Queue a custom sound command (id @c 8) with entity / flag params. */
+void func_8009AF3C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stack_arg);
+
+/** @brief Allocate a slot in the sound-command queue; caller fills the buffer. */
+SoundCmd *func_8009B134(s32 cmd, s32 vol, s32 entry);
+
+/** @brief Get the next random value from the shuffle buffer. */
+s32 func_8009B15C(void);
+
+/** @brief Remove a task-link slot and relink neighbours. */
+void func_8009B320(s32 a0, u8 *a1, u8 *a2);
+
+/** @brief Allocate a task queue slot and store the callback pointer. */
+s32 func_8009B3D0(s32 callback);
+
+/** @brief Issue a CD or memory read for a sound bank entry, arming the completion callback. */
+void func_8009B5C4(s32 idx, s32 dst, s32 dir, s32 userData);
+
+/** @brief Yield execution (wrapper for @c func_800393C8). */
+void func_8009B690(void);
+
+/** @brief Yield execution (second wrapper for @c func_800393C8). */
+void func_8009B6B0(void);
+
+/** @brief Probability check using the random shuffle buffer. */
+s32 func_8009B74C(s32 a0, s32 a1);
 
 /** @brief Conditional add with overflow flag (clamped sum + carry). */
 s32 func_8009B79C(s32 a0, s32 a1);

@@ -49,12 +49,11 @@ extern volatile BattleSystem D_800ED148;
    codegen is found. */
 extern u8 D_80082C0A[];
 extern u8 D_80082C0F[];
-extern s16 D_8005F11C;
 
 extern u8 D_80098030[];
 
-extern u32 jtbl_80098018[];
-
+/* File-local forward declarations (defined later in this TU,
+   called from earlier code). Cross-TU prototypes live in battle.h. */
 void func_80027448(void);
 void func_8009A254(void);
 void func_8009A308(void);
@@ -63,10 +62,8 @@ void func_8009A3BC(void);
 void func_8009A42C(s32, s32);
 void func_8009A4A4(void);
 void func_8009A528(s32, s32);
-void func_8009A638(void);
 void func_8009A6A8(s32);
 void func_8009A74C(void);
-void func_8009A8B4(s32);
 void func_8009A928(void);
 void func_8009A990(s32);
 void func_8009AA2C(void);
@@ -80,39 +77,24 @@ void func_8009AC34(void);
 void func_8009AC68(void);
 void func_8009ACB4(void);
 void func_8009ACEC(void);
-void func_8009AD7C(void);
-void func_8009AE08(s32);
 void func_8009AE9C(void);
-void func_8009AF14(s32);
-void func_8009AF3C(s32, s32, s32, s32, s32);
 void func_8009AF98(s32);
 void func_8009AFF0(s32);
 void func_8009B088(s32, s32, s32, s32);
 void func_8009B0F8(s32);
-SoundCmd *func_8009B134(s32, s32, s32);
-s32 func_8009B15C(void);
 void func_8009B198(s32);
 void func_8009B208(TaskLink *, u8 *, s32);
 s32 func_8009B238(u8 *, s32);
 s32 func_8009B270(u8 *, s32);
 s32 func_8009B2A4(u8 *, u8 *, s32);
-void func_8009B320(s32, u8 *, u8 *);
 s32 func_8009B390(u8 *, s32);
-s32 func_8009B3D0(s32);
 void func_8009B428(void);
 void func_8009B478(void);
 void func_8009B520(void);
 void func_8009B59C(s32, s32 *, s32 *);
-void func_8009B5C4(s32, s32, s32, s32);
 void func_8009B654(void);
-void func_8009B690(void);
-void func_8009B6B0(void);
-s32 func_8009B74C(s32, s32);
-s32 func_8009B79C(s32, s32);
-s32 func_8009B7BC(s32);
 s32 func_8009B7F4(s32, s32);
 void func_8009B878(s32, u16 *, s32 *, s32);
-void func_8009B924(s32, s32, s32);
 s32 func_8009BA5C(s32, s32);
 
 void func_800393C8(void);

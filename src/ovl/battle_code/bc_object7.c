@@ -9,7 +9,6 @@ extern u8 D_80077E58[];
 s32 func_800B0204(u8 *, s32, s32, s32);
 void func_800A4C84(s32);
 void func_800AE524(s32);
-void func_8009AE08(s32);
 extern u8 g_gameState[];
 extern u8 D_800E3CF0[];
 extern u8 D_800EE4E8[];

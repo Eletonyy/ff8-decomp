@@ -6,12 +6,9 @@ extern u8 D_800EE441[];
 extern u8 D_80077EBC[];
 s32 func_800A980C(void);
 s32 func_800A9888(void);
-void func_8009AD7C(void);
-void func_8009AF14(void *);
 extern u8 D_80077E59[];
 void func_800AD4A4(s32);
 void func_800AE6C0(void);
-void func_8009AF3C(s32, s32, s32, s32, s32);
 void func_80048BB8(s32);
 void sndStopAll(void);
 extern u8 g_gameState[];
@@ -488,7 +485,6 @@ void func_800AEE64(void) {
 }
 
 extern u8 D_80078DF8[];
-s32 func_8009B15C(void);
 
 /**
  * @brief Classify the current animation frame into a range bucket.
