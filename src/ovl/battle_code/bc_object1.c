@@ -1117,13 +1117,18 @@ s32 func_8009B238(u8 *a0, s32 a1) {
 }
 
 /**
- * @brief Find first empty (inactive) entry in a buffer.
+ * @brief Find the tail of a linked-list task buffer.
  *
- * Scans up to a1 entries (4-byte stride) looking for one where
- * both a0[0] and a0[1] are zero. Returns the entry index.
+ * Scans up to @p a1 entries (4-byte stride) looking for one whose
+ * backward-link byte (@c a0[1]) equals @c 0xFF (end-of-list sentinel).
+ * Returns the index of that entry.
+ *
+ * @note Function has no callers in the decompiled codebase; the binary
+ * still references it (possibly via indirect dispatch).
+ *
  * @param a0 Pointer to buffer entries.
  * @param a1 Maximum number of entries to scan.
- * @return Index of the first empty entry.
+ * @return Index of the tail entry.
  */
 s32 func_8009B270(u8 *a0, s32 a1) {
     s32 i;
