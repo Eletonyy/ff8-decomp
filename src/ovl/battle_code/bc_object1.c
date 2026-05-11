@@ -1234,48 +1234,33 @@ void func_8009B428(void) {
 }
 
 /**
- * @brief Execute pending tasks from the task queue.
+ * @brief Execute pending tasks from the task queue, tail-first.
  *
- * Scans 16 queue entries for the first active one (byte at 0x1103
- * == 0xFF). Loads and calls the callback function pointer from the
- * corresponding data slot via jalr. Continues processing linked
- * entries until terminator (0xFF) or abort flag (0x12F6).
+ * Scans @c taskLinks for the tail entry (the one whose @c fwd is the
+ * @c 0xFF end-sentinel), invokes its @c taskData.callback with the slot
+ * index, then walks toward the head via @c bwd, invoking each callback
+ * along the way. Stops when @c bwd reaches the head sentinel or when
+ * @c taskHead is cleared (queue emptied by a callback).
  */
 void func_8009B478(void) {
+    BattleSystem *bs;
     s32 i = 0;
-    s32 sentinel = 0xFF;
-    s32 base = (s32)&D_800ED148;
-    s32 base2;
-    s32 entry;
+    void (*fn)(s32);
 
     do {
-        if (*(u8 *)(base + 0x1103) == sentinel) {
-            goto found;
-        }
+        if (D_800ED148.taskLinks[i].fwd == 0xFF) goto found;
         i++;
-        base += 4;
     } while (i < 16);
     return;
 
 loop:
-    i = *(u8 *)(entry + 0x1104);
+    i = bs->taskLinks[i].bwd;
 found:
-    base2 = (s32)&D_800ED148;
-    {
-        s32 off;
-        void (*fn)(s32);
-
-        fn = (void (*)(s32))*(s32 *)(base2 + i * 16 + 0x1144);
-        fn(i);
-        off = i * 4;
-        entry = off + base2;
-        if (*(u8 *)(entry + 0x1104) == 0xFF) {
-            return;
-        }
-        if (*(u8 *)(base2 + 0x12F6) != 0xFF) {
-            goto loop;
-        }
-    }
+    bs = (BattleSystem *)&D_800ED148;
+    fn = (void (*)(s32))bs->taskData[i].callback;
+    fn(i);
+    if (bs->taskLinks[i].bwd == 0xFF) return;
+    if (bs->taskHead != 0xFF) goto loop;
 }
 
 /**
