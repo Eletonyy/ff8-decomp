@@ -461,33 +461,36 @@ void func_8009A638(void) {
 /**
  * @brief Queue a return-to-position animation for an entity.
  *
- * Snapshots animation state via func_800A240C / func_8009AFF0 / func_800A1AB8
- * with the entity's status / unk18 / unk28 fields, then plays sound 0x67
- * with position bytes cleared.
- * @param idx Entity slot index.
+ * Snapshots animation state via @c func_800A240C / @c func_8009AFF0 /
+ * @c func_800A1AB8 with the entity's @c status / @c flags / @c field28,
+ * then plays sound @c 0x67 with both parameter bytes cleared.
  *
- * Best clean (struct-only) attempt — 84.24% match:
- * @code
- * void func_8009A6A8(s32 idx) {
- *     BattleEntity *units = (BattleEntity *)&D_800ED148;
- *     BattleEntity *entity = &units[idx];
- *     SoundCmd *cmd;
- *     func_800A240C(idx, entity->unk28, (s32)&entity->status);
- *     func_8009AFF0(idx);
- *     func_800A1AB8(idx, entity->status, entity->unk18);
- *     cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED158.slots[idx]);
- *     cmd->unk0 = idx;
- *     cmd->unk2.b.lo = 0;
- *     cmd->unk2.b.hi = 0;
- * }
- * @endcode
- * Mismatches: gcc collapses entity into a single saved register where the
- * original keeps base + offset separate (4 saved s-regs in target), and
- * the target reuses `addiu s1, s1, 0x10` to derive &D_800ED158 from
- * &D_800ED148 — both differences require magic byte offsets in the C to
- * reproduce.
+ * @note The @c (s32)&D_800ED148.entities[idx].linkedPtr expression is
+ * equivalent to @c (s32)&D_800ED158.slots[idx] (since @c BattleEntity::linkedPtr
+ * is at offset @c 0x10 and @c D_800ED158 = @c D_800ED148 + @c 0x10), but
+ * writing it relative to @c D_800ED148 lets gcc share one @c lui+addiu
+ * base register across the @c func_8009B134 arg and the entity field
+ * accesses.
+ *
+ * @note The local @c entities cache for the middle @c func_800A1AB8 call
+ * shifts gcc's @c s2/s3 register allocation to match the target.
+ *
+ * @param idx Entity slot index.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object1", func_8009A6A8);
+void func_8009A6A8(s32 idx) {
+    SoundCmd *cmd;
+    BattleEntity *entities;
+
+    func_800A240C(idx, D_800ED148.entities[idx].field28,
+                  (s32)&D_800ED148.entities[idx].status);
+    func_8009AFF0(idx);
+    entities = (BattleEntity *)D_800ED148.entities;
+    func_800A1AB8(idx, entities[idx].status, entities[idx].flags);
+    cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED148.entities[idx].linkedPtr);
+    cmd->unk0 = idx;
+    cmd->unk2.b.lo = 0;
+    cmd->unk2.b.hi = 0;
+}
 
 /**
  * @brief Lay out party-side battle slots and play the start-of-encounter sound.
