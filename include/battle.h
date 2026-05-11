@@ -364,6 +364,29 @@ typedef struct {
     u8 pad01[0x13];
 } BattleEntry; /* 0x14 */
 
+/** @brief Linked-list node for the @c BattleSystem.taskLinks queue.
+ *
+ * @c fwd is the next slot index (or 0xFF for end), @c bwd is the previous
+ * slot index (or 0xFF for head). Managed by @c func_8009B2A4 / @c func_8009B320. */
+typedef struct {
+    u8 fwd;     /* 0x00: forward link (next slot, 0xFF = tail) */
+    u8 bwd;     /* 0x01: backward link (prev slot, 0xFF = head) */
+    u8 unk2;    /* 0x02: cleared on free, written 0 on alloc */
+    u8 unk3;    /* 0x03 */
+} TaskLink; /* 0x4 */
+
+/** @brief Task slot in @c BattleSystem.taskData (callback + timer + done flag).
+ *
+ * Allocated/scheduled by @c func_8009B3D0, ticked by callbacks like
+ * @c func_8009AAC4, finalized/freed by @c func_8009B520. */
+typedef struct {
+    s32 callback;   /* 0x00: function pointer (called by @c func_8009B478). */
+    u8 pad04[4];    /* 0x04 */
+    u16 timer;      /* 0x08: countdown (ticked by callbacks). */
+    u8 pad0A[5];    /* 0x0A */
+    u8 done;        /* 0x0F: completion flag (1 = ready to free). */
+} TaskEntry; /* 0x10 */
+
 typedef struct {
     /* 0x0000 */ BattleEntity entities[7];      /**< 7 × 0xD0 = 0x5B0. Index 0 is also the header proxy. */
     /* 0x05B0 */ u8 pad5B0[0x10];               /**< Pre-control padding. */
@@ -377,7 +400,11 @@ typedef struct {
     /* 0x0D14 */ u8 unkD14[0x8];                /**< Hit-type byte table (8 entries). */
     /* 0x0D1C */ u8 padD1C[0x40];               /**< Misc state. */
     /* 0x0D5C */ u8 unkD5C[0x8];                /**< Per-trigger flag array (8 entries). */
-    /* 0x0D64 */ u8 padD64[0x528];              /**< Misc state. */
+    /* 0x0D64 */ u8 padD64[0x39F];              /**< Misc state. */
+    /* 0x1103 */ TaskLink taskLinks[16];        /**< Task queue link table (16 × 4 bytes). */
+    /* 0x1143 */ u8 pad1143[1];                 /**< Pad to taskData. */
+    /* 0x1144 */ TaskEntry taskData[16];        /**< Task queue data slots (16 × 16 bytes). */
+    /* 0x1244 */ u8 pad1244[0x48];              /**< Pad to unk128C. */
     /* 0x128C */ s32 unk128C;                   /**< Cached userData for callback. */
     /* 0x1290 */ u8 pad1290[0x48];              /**< Misc state. */
     /* 0x12D8 */ s32 unk12D8;                   /**< Cached length argument for callback. */
@@ -391,7 +418,9 @@ typedef struct {
     /* 0x12EC */ u8 unk12EC;                    /**< Misc state byte (init to 0xFF). */
     /* 0x12ED */ u8 unk12ED;                    /**< Misc state byte. */
     /* 0x12EE */ u8 unk12EE;                    /**< Misc state byte. */
-    /* 0x12EF */ u8 pad12EF[0x9];               /**< Misc state. */
+    /* 0x12EF */ u8 pad12EF[0x7];               /**< Misc state. */
+    /* 0x12F6 */ u8 taskHead;                   /**< Head index of the task queue linked list. */
+    /* 0x12F7 */ u8 pad12F7[0x1];               /**< Pad. */
     /* 0x12F8 */ u8 unk12F8;                    /**< Misc state counter. */
     /* 0x12F9 */ u8 unk12F9;                    /**< Misc state gate byte. */
     /* 0x12FA */ u8 pad12FA[0x3];               /**< Misc state. */

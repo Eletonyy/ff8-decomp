@@ -1312,25 +1312,17 @@ found:
 /**
  * @brief Process completed tasks and remove them from queue.
  *
- * Iterates 16 queue slots. For each with completion flag == 1
- * (at offset 0x1153), clears the flag and calls func_8009B320
- * to unlink and free the slot.
+ * Iterates 16 queue slots. For each with @c done == 1, clears the flag
+ * and calls @c func_8009B320 to unlink and free the slot.
  */
 void func_8009B520(void) {
-    s32 i = 0;
-    s32 one = 1;
-    s32 base = (s32)&D_800ED148;
-    s32 ptr = base + ptr - ptr;
-
-top:
-    if (*(u8 *)(ptr + 0x1153) == one) {
-        *(u8 *)(ptr + 0x1153) = 0;
-        func_8009B320(i & 0xFF, (u8 *)(base + 0x1103), (u8 *)(base + 0x12F6));
-    }
-    i++;
-    if (i < 16) {
-        ptr += 0x10;
-        goto top;
+    s32 i;
+    for (i = 0; i < 16; i++) {
+        s32 slot = i & 0xFF;
+        if (D_800ED148.taskData[i].done == 1) {
+            D_800ED148.taskData[i].done = 0;
+            func_8009B320(slot, (u8 *)D_800ED148.taskLinks, (u8 *)&D_800ED148.taskHead);
+        }
     }
 }
 
