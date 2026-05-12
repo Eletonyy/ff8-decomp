@@ -304,7 +304,7 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009CB10);
  * @param board The 5xN Triple Triad board (typically @c D_801D3398).
  * @return Number of cards captured this call.
  */
-s32 applyPlusRule(TTCell board[][TT_BOARD_COLS]) {
+s32 applyPlusRule(TripleTriadBoardSlot board[][TT_BOARD_COLS]) {
     s32 winningSum;
     s32 captures;
     s32 row, col, i;
@@ -312,12 +312,12 @@ s32 applyPlusRule(TTCell board[][TT_BOARD_COLS]) {
     s32 edgeSum;
     s32 nbrCol;
     u8 cellOwner;
-    TTSumBucket *bucket;
-    TTCell *cell;
-    TTCell *neighbor;
-    TTCard *cellCard;
-    TTDir *offset;
-    TTSumBucket sumHist[21];   /* indexed by edge-sum value (0..20) */
+    TripleTriadPlusBucket *bucket;
+    TripleTriadBoardSlot *cell;
+    TripleTriadBoardSlot *neighbor;
+    TripleTriadCard *cellCard;
+    TripleTriadDirection *offset;
+    TripleTriadPlusBucket sumHist[21];   /* indexed by edge-sum value (0..20) */
 
     captures = 0;
 

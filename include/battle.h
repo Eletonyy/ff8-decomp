@@ -1003,46 +1003,87 @@ extern void setSfxField2F(s32 idx, s32 val);
 /* ======================================================================== */
 
 /**
- * @brief Cell in the Triple Triad board.
+ * @brief One slot on the Triple Triad board (8 bytes).
  *
- * Stored in a 5-wide grid with the 3x3 active play area at rows/cols 1..3
- * and a 1-cell sentinel border (always flags=0) so neighbor lookups at the
- * edges fall through without bounds checks.
+ * The board is laid out as a 5-cell-wide grid (@c TT_BOARD_COLS) with the
+ * 3x3 active play area at rows/cols 1..3 and a 1-cell sentinel border
+ * around it. Border slots have @c flags = 0, so neighbor lookups at the
+ * edges of the play area fall through cleanly without bounds checks.
+ *
+ * Multiple bits in @c flags are stateful across a turn:
+ *   - @c 0x01 : sentinel/wall slot (set only on border cells; used by the
+ *               Same-Wall rule when a rank-A edge faces a wall).
+ *   - @c 0x02 : occupied — a card has been placed here.
+ *   - @c 0x04 : just-placed — the card was placed this turn, triggering
+ *               rule evaluation. Cleared by the orchestrator after each turn.
+ *   - @c 0x08..0x40 : captured-from-direction marks (bit @c 0x08<<dir set
+ *               when this slot was captured by a neighbor in direction
+ *               @c dir, where dir is 0=UP, 1=DOWN, 2=LEFT, 3=RIGHT).
+ *   - @c 0x80 : matched in the Same-rule pass-1 (matching edge value).
+ *   - @c 0x100 : involved in a Plus-rule combo this turn (set on both the
+ *               placer and the captured neighbors).
  */
 typedef struct {
-    /* 0x00 */ u16 flags;     /**< bit 0x2=occupied, 0x4=just placed, 0x100=in combo this turn,
-                                  bits 0x8/0x10/0x20/0x40 = captured-from-direction marks. */
+    /* 0x00 */ u16 flags;     /**< See flag-bit table above. */
     /* 0x02 */ u8  cardId;    /**< Index into @c g_tripleTriadCardStats. */
     /* 0x03 */ u8  pad03;
     /* 0x04 */ u8  owner;     /**< Player 0 or 1. */
     /* 0x05 */ u8  pad05[3];
-} TTCell;
+} TripleTriadBoardSlot;
 
-/** @brief Card stats entry (8 bytes per card, indexed by cardId). */
+/**
+ * @brief Per-card stat block (8 bytes) — one entry of @c g_tripleTriadCardStats.
+ *
+ * The four @c sides values are the edge ranks (1..10, where rank 10 = "A")
+ * stored in the order {top, bottom, left, right}. This ordering is chosen
+ * specifically so @c i^1 yields the opposing edge: 0(top)↔1(bottom),
+ * 2(left)↔3(right). The same ordering is used by @c TripleTriadDirection,
+ * letting rule evaluators compare @c myCard.sides[dir] against
+ * @c neighborCard.sides[dir^1] without a lookup table.
+ */
 typedef struct {
-    /* 0x00 */ u8 sides[4];   /**< Edge ranks 1..10 in order {top, bottom, left, right}.
-                                  Layout is chosen so @c i^1 yields the opposite edge. */
-    /* 0x04 */ u8 pad04[4];   /**< Element / level / other metadata. */
-} TTCard;
+    /* 0x00 */ u8 sides[4];   /**< Edge ranks 1..10, in {top, bottom, left, right} order. */
+    /* 0x04 */ u8 pad04[4];   /**< Element / level / other per-card metadata. */
+} TripleTriadCard;
 
-/** @brief 4-cardinal neighbor offset. */
+/**
+ * @brief 4-cardinal neighbor offset (4 bytes).
+ *
+ * One entry of @c g_tripleTriadDirectionOffsets, which holds the four
+ * cardinal direction vectors in this exact order:
+ *   index 0: UP    (0, -1)
+ *   index 1: DOWN  (0, +1)
+ *   index 2: LEFT  (-1, 0)
+ *   index 3: RIGHT (+1, 0)
+ *
+ * The pairing is deliberate: @c i^1 flips a direction to its opposite
+ * (0↔1, 2↔3), matching the @c TripleTriadCard.sides[] layout so that
+ * "my edge facing direction @c i" lines up with "my neighbor's edge
+ * facing direction @c i^1".
+ */
 typedef struct {
-    /* 0x00 */ s16 dx;
-    /* 0x02 */ s16 dy;
-} TTDir;
+    /* 0x00 */ s16 dx;        /**< Column delta. */
+    /* 0x02 */ s16 dy;        /**< Row delta. */
+} TripleTriadDirection;
 
-/** @brief One slot in the per-cell edge-sum histogram (Plus rule). */
+/**
+ * @brief One bucket in the Plus-rule edge-sum histogram (2 bytes).
+ *
+ * Used only inside @c applyPlusRule. After a placed card is identified,
+ * one bucket per possible edge sum (0..20) accumulates how many of the
+ * four neighbors produced that sum. The Plus rule fires when any bucket
+ * reaches @c count >= 2, at which point @c dirMask tells which neighbor
+ * directions to flip.
+ */
 typedef struct {
-    /* 0x00 */ u8 count;      /**< How many neighbors produced this edge sum. */
-    /* 0x01 */ u8 dirMask;    /**< Bitmask of which neighbor directions hit this sum. */
-} TTSumBucket;
+    /* 0x00 */ u8 count;      /**< Number of neighbors that hit this edge sum. */
+    /* 0x01 */ u8 dirMask;    /**< Bitmask of which directions (bit @c i set if dir @c i hit). */
+} TripleTriadPlusBucket;
 
 /** @brief Number of columns per row, including the 1-cell sentinel border. */
 #define TT_BOARD_COLS  5
 
-extern TTCard g_tripleTriadCardStats[];    /**< Card stats table (~110 cards). */
-extern TTDir g_tripleTriadDirectionOffsets[4];
-                                  /**< Neighbor offsets: UP, DOWN, LEFT, RIGHT
-                                       (ordered so @c i^1 = opposite direction). */
+extern TripleTriadCard      g_tripleTriadCardStats[];          /**< Card stats table (~110 cards). */
+extern TripleTriadDirection g_tripleTriadDirectionOffsets[4];  /**< UP, DOWN, LEFT, RIGHT (see TripleTriadDirection). */
 
 #endif /* BATTLE_H */
