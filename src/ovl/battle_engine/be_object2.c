@@ -539,7 +539,60 @@ s32 applyPlusRule(TripleTriadBoardSlot board[][TT_BOARD_COLS]) {
     return captures;
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009CF5C);
+/**
+ * @brief Triple Triad rule orchestrator — runs the rule cascade for a placed card.
+ *
+ * Resolves all captures triggered by a newly-placed card. If @p mode bit 0 is
+ * set, runs the optional rules (Same and Plus) before the unconditional basic
+ * capture; otherwise skips straight to basic. Same/Plus are gated on
+ * @c g_tripleTriadRules bits @c TT_RULE_SAME / @c TT_RULE_PLUS being active.
+ * After all captures, clears @c TT_CELL_JUST_PLACED from the 3x3 active grid
+ * so the rules don't fire again next turn.
+ *
+ * The bit-coded return value lets callers drive the combo loop: after the
+ * initial @c mode=1 call, any flipped neighbors are themselves "just placed"
+ * and the caller invokes this function again with @c mode=prev_result (bit 0
+ * cleared) to do a basic-rule-only combo sweep.
+ *
+ * @param board The 5x5 Triple Triad board.
+ * @param mode  Bit 0 = run Same/Plus rules (initial call); cleared on combo
+ *              re-entry. Other bits carried through from prior call's return.
+ * @return Bitmap of what fired:
+ *           @c 0x2 — basic capture flipped a card (combo step only),
+ *           @c 0x4 — Same rule fired,
+ *           @c 0x8 — Plus rule fired.
+ */
+s32 applyCardRules(TripleTriadBoard *board, s32 mode) {
+    s32 result;
+    s32 row, col;
+
+    result = 0;
+
+    if (mode & 1) {
+        if (g_tripleTriadRules & TT_RULE_SAME) {
+            result = (applySameRule(board) != 0) << 2;
+        }
+        if (g_tripleTriadRules & TT_RULE_PLUS) {
+            if (applyPlusRule((TripleTriadBoardSlot (*)[TT_BOARD_COLS])board) != 0) {
+                result |= 0x8;
+            }
+        }
+    }
+
+    if (applyBasicCapture(board) != 0) {
+        if (!(mode & 1)) {
+            result |= 0x2;
+        }
+    }
+
+    for (row = 1; row <= 3; row++) {
+        for (col = 1; col <= 3; col++) {
+            board->cells[row][col].flags &= ~TT_CELL_JUST_PLACED;
+        }
+    }
+
+    return result;
+}
 
 INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009D058);
 
