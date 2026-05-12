@@ -37,22 +37,21 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009AE6C);
 INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009B3EC);
 
 /**
- * @brief Reset battle state globals D_801D3328, D_801D3359, and D_801D3340 fields.
+ * @brief Reset battle state globals and the substate parameter table.
  *
- * Clears D_801D3328 (word), D_801D3359 (byte), and sets fields in D_801D3340:
- * halfwords at +6, +0xA, +0x10, +0x14 to 0, and +0xC, +0xE to 1.
+ * Clears @c D_801D3328, @c D_801D3359, and the per-substate slots in
+ * @c D_801D3340 (zeroing most fields, but setting both halves of slot 3
+ * to 1 — slot 3 is the only substate that uses both halfwords).
  */
 void func_8009B494(void) {
-    u8 *base;
     D_801D3328 = 0;
     D_801D3359 = 0;
-    base = D_801D3340;
-    *(s16 *)(base + 0x6) = 0;
-    *(s16 *)(base + 0xA) = 0;
-    *(s16 *)(base + 0xC) = 1;
-    *(s16 *)(base + 0xE) = 1;
-    *(s16 *)(base + 0x10) = 0;
-    *(s16 *)(base + 0x14) = 0;
+    D_801D3340[1].field2 = 0;
+    D_801D3340[2].field2 = 0;
+    D_801D3340[3].field0 = 1;
+    D_801D3340[3].field2 = 1;
+    D_801D3340[4].field0 = 0;
+    D_801D3340[5].field0 = 0;
 }
 
 INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009B4CC);
@@ -153,7 +152,7 @@ void func_8009BAF4(void) {
 
     if (D_801D3359 == 1) {
         s32   idx = D_801D3358 * 4;
-        void *p   = D_801D3340 + idx;
+        void *p   = &D_801D3340[D_801D3358];
 
         switch (D_801D3358) {
         case 0: break;
@@ -164,12 +163,12 @@ void func_8009BAF4(void) {
         case 5: func_8009BA4C(p);      break;
         }
 
-        func_8009B4CC(D_801D3358, (u32 *)(D_801D3340 + D_801D3358 * 4));
+        func_8009B4CC(D_801D3358, (u32 *)&D_801D3340[D_801D3358]);
 
         if (!(D_801D3334 & 1)) {
             if (D_801D3330 & 0xC0) {
                 D_801D3359 = 2;
-                memcpy(&D_801D335C, D_801D3340 + D_801D3358 * 4, 4);
+                memcpy(&D_801D335C, &D_801D3340[D_801D3358], 4);
                 return;
             }
         }
@@ -201,15 +200,11 @@ u8 *func_8009C010(s32 a0, s32 a1) {
 
     func_80098BC0(list, D_801D3360, 0x14, 1);
     node = (u8 *)func_80098C44(list, (s32)func_8009BDC0);
-    {
-        u8 *base;
-        node[0xC] = 0;
-        node[0xD] = a0;
-        node[0xE] = a1;
-        base = D_801D3340;
-        *(s16 *)(base + 0xC) = 1;
-        *(s16 *)(base + 0xE) = 1;
-    }
+    node[0xC] = 0;
+    node[0xD] = a0;
+    node[0xE] = a1;
+    D_801D3340[3].field0 = 1;
+    D_801D3340[3].field2 = 1;
     return list;
 }
 

@@ -949,7 +949,19 @@ extern u16 D_801D332E;     /**< Latched mask A (from D_801C2EB8). */
 extern u16 D_801D3330;     /**< Latched mask B (bits 0xC0/0x10 trigger completion). */
 extern s32 D_801D3334;     /**< Completion-suppress flags (bits 1, 2). */
 extern u8  D_801D3338;     /**< State byte (-1 = idle, 0..2 = active). */
-extern u8  D_801D3340[];   /**< Per-substate parameter table (stride 4). */
+/**
+ * @brief Per-substate parameter slot (4 bytes).
+ *
+ * One entry of @c D_801D3340 — each substate handler interprets its two
+ * halfwords differently. Some use only @c field0, some only @c field2,
+ * substate 3 uses both.
+ */
+typedef struct {
+    /* 0x00 */ s16 field0;
+    /* 0x02 */ s16 field2;
+} SubstateSlot;
+
+extern SubstateSlot D_801D3340[6]; /**< Per-substate parameter table (one slot per substate 0..5). */
 extern u8  D_801D3358;     /**< Substate index (0..5). */
 extern u8  D_801D3359;     /**< Completion code (1 = arm, 2/3 = fired). */
 extern s16 D_801D335C;     /**< 4-byte snapshot of @c D_801D3340[D_801D3358]. */
