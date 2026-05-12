@@ -344,7 +344,7 @@ s32 func_8009FED0(void) {
             }
             func_800406A4(node->subNode);
             func_80040734(node->subNode);
-            D_801C2EB4 = func_8009AE6C((u8)D_801D44FC, 0x13, D_801C2EB0 + 0xC, D_801C2EB4);
+            D_801C2EB4 = func_8009AE6C((u8)D_801D44FC, 0x13, &D_801C2EB0[3], D_801C2EB4);
             func_80098BA0(0x28);
             D_80182E64 = D_801D44FC;
         } else {

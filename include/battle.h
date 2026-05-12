@@ -294,17 +294,26 @@ typedef struct {
     /* 0x00 */ u8  entityType;   /**< Object type code (passed to handler funcs). */
     /* 0x01 */ u8  state;        /**< Slot state/sub-category (1 = active, 7 = reset). */
     /* 0x02 */ s16 field02;      /**< Cleared whenever @c state is written. */
-    /* 0x04 */ u16 flags;        /**< Bit 0x2 set in func_8009A878. */
-    /* 0x06 */ u8  pad06[2];
+    /* 0x04 */ u16 flags;        /**< Bit 0x2 = rotating CW (consumed by handler). */
+    /* 0x06 */ s16 angle;        /**< Current animation angle (clamped to 0..0x1000). */
     /* 0x08 */ s32 initFlags;    /**< Init-time flag word; bit 0 read in func_8009C978. */
-    /* 0x0C */ u8  groupId;      /**< Group/category for the priority-cancel sweep. */
-    /* 0x0D */ u8  pad0D;
-    /* 0x0E */ u8  priority;     /**< Slot priority within its group. */
+    /* 0x0C */ u8  groupId;      /**< Group/category for the priority-cancel sweep
+                                       (also doubles as a sub-state code: 0/2 in handler). */
+    /* 0x0D */ u8  fieldD;       /**< Secondary index (e.g. board column). */
+    /* 0x0E */ u8  priority;     /**< Slot priority within its group
+                                       (also doubles as a row index in some handlers). */
     /* 0x0F */ u8  pad0F;
     /* 0x10 */ u8  param0;       /**< Action parameter 0. */
     /* 0x11 */ u8  param1;       /**< Action parameter 1. */
     /* 0x12 */ u8  param2;       /**< Action parameter 2. */
-    /* 0x13 */ u8  pad13[0x11];
+    /* 0x13 */ u8  pad13;
+    /* 0x14 */ s16 posData[2];   /**< Local position source passed to @c func_80041274. */
+    /* 0x18 */ s16 field18;
+    /* 0x1A */ s16 field1A;
+    /* 0x1C */ s16 offX;         /**< Added to node @c baseX to produce world X. */
+    /* 0x1E */ s16 offY;
+    /* 0x20 */ s16 offZ;
+    /* 0x22 */ u16 offSort;      /**< Added to node @c sortKey. */
 } BattleObject; /* 36 bytes */
 
 extern BattleObject D_801D31C0[10];
@@ -994,8 +1003,8 @@ extern u8  D_801D3359;     /**< Completion code (1 = arm, 2/3 = fired). */
 extern s16 D_801D335C;     /**< 4-byte snapshot of @c D_801D3340[D_801D3358]. */
 
 /** @brief Battle-engine display-node spawner state (used by func_8009FED0). */
-extern s32 D_801C2EB0;     /**< Display-list head pointer. */
-extern s32 D_801C2EB4;     /**< Current display node tail. */
+extern s32 *D_801C2EB0;    /**< Display-list OT base — pointer-valued global; index by sort key. */
+extern void *D_801C2EB4;   /**< Current primitive-pool tail (advanced by display helpers). */
 extern s32 D_801D3EB0;     /**< Phase counter (incrementing each frame). */
 extern s32 D_801D3EB4;     /**< Last rotation/angle value (cached). */
 extern s32 D_801D3EB8;     /**< Phase mirror counter (running scale). */
@@ -1018,22 +1027,50 @@ typedef struct {
 } DispNode;                            /* 0x28 bytes */
 
 /**
- * @brief Animation sub-entity reached via @c BattleObjectCtl.entity (offset 0xC).
+ * @brief 40-byte animation work node allocated by @c func_80098B80.
  *
- * Holds the runtime state for a single animated/positioned overlay element
- * driven by the be_object2 dispatch layer (e.g. Triple Triad card UI, score
- * indicators). Only the fields actually touched by decomped functions are
- * named; the rest is padding pending decomp of the remaining callers.
- *
- * @note Size and several fields are still uncertain; refine as more
- *       functions in this overlay get decomped.
+ * Used by the be_object2 per-frame handlers to stage a transformed
+ * position + sort key for one overlay element before linking display-list
+ * primitives. Fields at 0x00-0x13 are scratch (written by @c func_80041274
+ * as a small transform/matrix). The position fields are populated as:
+ *  - @c func_8009A6EC writes @c baseX/baseY/baseZ/sortKey at 0x20-0x27 from
+ *    the source entity.
+ *  - The caller adds @c BattleObject.offX/Y/Z (and @c offSort) into
+ *    @c worldX/Y/Z (and @c sortKey).
+ *  - Sprite-emitting helpers (@c func_8009A970) then read the low 16 bits
+ *    of @c worldX/worldY as the screen-space anchor via the @c spriteX/
+ *    @c spriteY union members.
  */
 typedef struct {
     /* 0x00 */ u8  pad00[0x14];
-    /* 0x14 */ u16 spriteX;       /**< Base screen X (added to +0xB4 by @c func_8009A970). */
-    /* 0x16 */ u16 pad16;
-    /* 0x18 */ u16 spriteY;       /**< Base screen Y (added to +0x68 by @c func_8009A970). */
-} BattleSubEntity;
+    /* 0x14 */ union {
+        u16 spriteX;             /**< Low 16 bits — screen-space sprite X. */
+        s32 worldX;              /**< Full 32-bit accumulator. */
+    } x;
+    /* 0x18 */ union {
+        u16 spriteY;
+        s32 worldY;
+    } y;
+    /* 0x1C */ s32 worldZ;
+    /* 0x20 */ s16 baseX;        /**< Transformed base X from @c func_8009A6EC. */
+    /* 0x22 */ s16 baseY;
+    /* 0x24 */ s16 baseZ;
+    /* 0x26 */ u16 sortKey;      /**< Display-list bucket index (added to offSort). */
+} BattleAnimNode;                /* 40 bytes */
+
+/**
+ * @brief Per-frame handler context wrapping a @c BattleObject.
+ *
+ * Allocated by @c func_80098C44 with the per-frame callback (e.g.
+ * @c func_8009AA68) stored at offset @c 0x08. Different handlers in
+ * this overlay reuse the node's @c 0x0C slot for different purposes;
+ * the be_object2 dispatch stores a back-pointer to the @c BattleObject
+ * entry being driven.
+ */
+typedef struct {
+    /* 0x00 */ u8           pad00[0x0C];
+    /* 0x0C */ BattleObject *entry;
+} BattleObjectCtl;
 
 extern s32  func_80023B14(s32 idx);
 extern s32  func_8003ED64();
@@ -1042,8 +1079,11 @@ extern void func_800406A4();
 extern void func_80040734();
 extern s32  func_80098B80(s32 size);
 extern void func_80098BA0(s32 size);
-extern s32  func_8009AE6C();
-extern TSPRT *func_8009A970(BattleSubEntity *entity, s32 variant, void *ot, TSPRT *out);
+extern void *func_8009AE6C(s32 a, s32 b, void *ot, void *out);
+extern TSPRT *func_8009A970(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out);
+extern u8 *func_8009A6EC(u8 *src, s16 *dst);
+extern void func_8009C12C(BattleObject *entity);
+extern void func_8009C59C(BattleObject *entity, BattleAnimNode *node, void *otBucket);
 
 /* --- Battle animation lifecycle --- */
 extern void initBattleTransition(void);
@@ -1168,6 +1208,9 @@ typedef struct {
 typedef struct {
     /* 0x00 */ TripleTriadBoardSlot cells[TT_BOARD_ROWS][TT_BOARD_COLS];
 } TripleTriadBoard;
+
+/** @brief Global 5x5 Triple Triad board (sentinel-padded, 25 slots flat). */
+extern TripleTriadBoardSlot D_801D3398[TT_BOARD_ROWS * TT_BOARD_COLS];
 
 /** @brief 4-cardinal direction indices into @c g_tripleTriadDirectionOffsets and
  *         @c TripleTriadCard.sides[]. The pairing @c dir^1 yields the opposite. */

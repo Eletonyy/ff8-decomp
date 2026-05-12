@@ -46,10 +46,10 @@ void setBattleObjectAction(s32 idx, s32 param0, s32 param1, s32 param2) {
 }
 
 /**
- * @brief Emit a 24x16 TSPRT overlay sprite at the entity's screen position.
+ * @brief Emit a 24x16 TSPRT overlay sprite anchored at a node's world XY.
  *
  * Builds a single textured sprite primitive (combined DR_TPAGE + SPRT in
- * one packet, 24 bytes) at @c (entity->spriteX + 0xB4, entity->spriteY + 0x68)
+ * one packet, 24 bytes) at @c (node.spriteX + 0xB4, node.spriteY + 0x68)
  * and links it into the OT @p ot via @c AddPrim. The @p variant selector
  * picks between two adjacent textures sharing the same tpage:
  *  - @c variant @c > @c 0: U=0,  CLUT=0x3A80
@@ -60,23 +60,23 @@ void setBattleObjectAction(s32 idx, s32 param0, s32 param1, s32 param2) {
  * mirrors the original (likely a degenerate loop body retained for
  * scheduling reasons).
  *
- * @param entity   Sub-entity providing screen-space anchor (only @c spriteX
- *                 and @c spriteY are read).
+ * @param node     Animation node providing screen-space anchor (only the
+ *                 @c spriteX and @c spriteY union members are read).
  * @param variant  Texture selector — positive selects the first texture/CLUT.
  * @param ot       OT bucket pointer used by @c AddPrim.
  * @param out      Output primitive buffer (pre-allocated by caller).
  * @return         Pointer to the next free TSPRT slot in @p out.
  */
-TSPRT *func_8009A970(BattleSubEntity *entity, s32 variant, void *ot, TSPRT *out) {
+TSPRT *func_8009A970(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out) {
     s32 i = 0;
 
     do {
         out->tag      = 0x05000000;
         out->drawMode = 0xE100060C;
         *(u32 *)&out->r0 = 0x64808080;
-        out->x0 = entity->spriteX + 0xB4;
+        out->x0 = node->x.spriteX + 0xB4;
         {
-            s32 y0 = entity->spriteY;
+            s32 y0 = node->y.spriteY;
             out->w  = 24;
             out->h  = 16;
             out->y0 = y0 + 0x68;
@@ -98,7 +98,92 @@ TSPRT *func_8009A970(BattleSubEntity *entity, s32 variant, void *ot, TSPRT *out)
     return out;
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009AA68);
+/**
+ * @brief Per-frame update for a @c BattleObject — rotation, transform, render.
+ *
+ * Called by the be_object2 dispatch (registered via @c func_80098C44 in
+ * @c func_8009AD24). For one @c BattleObject the function:
+ *  - Advances @c angle toward 0x1000 (clockwise) or 0 (counter-clockwise)
+ *    based on the @c CTRL_FLAG_02 bit, and clamps the result.
+ *  - Allocates a 40-byte @c BattleAnimNode work buffer.
+ *  - Runs the transform chain (@c func_8009C12C, @c func_8009A6EC,
+ *    @c func_80041274) to populate the node's base position, then folds
+ *    in @c offX/Y/Z and @c offSort to produce the world position.
+ *  - Applies a small angle-driven X displacement
+ *    (@c (sin(angle/4) * 12) >> 12), sign-flipped by @c groupId.
+ *  - For Triple-Triad cards (@c state==0, @c groupId==2), looks up the
+ *    cell's @c elementMod in @c D_801D3398 — if non-zero, emits the
+ *    elemental modifier overlay sprite via @c func_8009A970.
+ *  - Calls the per-frame render helpers (@c func_8009AE6C and
+ *    @c func_8009C59C) to draw the rest of the object.
+ *  - Frees the @c BattleAnimNode.
+ *
+ * @param ctl Handler context whose @c entry slot points at the
+ *            @c BattleObject being driven.
+ * @return 0 (kept on the stack for compat with @c s32 callback signature).
+ */
+s32 func_8009AA68(BattleObjectCtl *ctl) {
+    BattleObject *entity;
+    BattleAnimNode *node;
+
+    node = func_80098B80(0x28);
+    entity = ctl->entry;
+
+    if (entity->flags & CTRL_FLAG_02) {
+        if (entity->angle < 0x1000) {
+            s16 newAngle = entity->angle + 0x800;
+            entity->angle = newAngle;
+            if (newAngle > 0x1000) {
+                entity->angle = 0x1000;
+            }
+        }
+        entity->flags &= ~CTRL_FLAG_02;
+    } else {
+        if (entity->angle != 0) {
+            s16 newAngle = entity->angle - 0x800;
+            entity->angle = newAngle;
+            if (newAngle < 0) {
+                entity->angle = 0;
+            }
+        }
+    }
+
+    func_8009C12C(entity);
+    func_8009A6EC(&entity->groupId, &node->baseX);
+    func_80041274(&entity->posData[0], node);
+
+    node->x.worldX  = node->baseX + entity->offX;
+    node->y.worldY  = node->baseY + entity->offY;
+    node->worldZ    = node->baseZ + entity->offZ;
+    node->sortKey  += entity->offSort;
+
+    if (entity->angle != 0) {
+        if (entity->groupId == 0) {
+            node->x.worldX += (func_8003ED64(entity->angle / 4) * 12) >> 12;
+        } else {
+            node->x.worldX -= (func_8003ED64(entity->angle / 4) * 12) >> 12;
+        }
+    }
+
+    if (entity->state == 0 && entity->groupId == 2) {
+        s32 col = entity->fieldD + 1;
+        s8 elementMod = D_801D3398[(entity->priority + 1) * 5 + col].elementMod;
+        if (elementMod != 0) {
+            D_801C2EB4 = func_8009A970(node, elementMod,
+                                        &D_801C2EB0[(s16)node->sortKey], D_801C2EB4);
+        }
+    }
+
+    func_800406A4(node);
+    func_80040734(node);
+
+    D_801C2EB4 = func_8009AE6C(entity->entityType, entity->initFlags,
+                                &D_801C2EB0[(s16)node->sortKey], D_801C2EB4);
+    func_8009C59C(entity, node, &D_801C2EB0[(s16)node->sortKey]);
+
+    func_80098BA0(0x28);
+    return 0;
+}
 
 /**
  * @brief Call func_80098D28 with D_801D3110.
