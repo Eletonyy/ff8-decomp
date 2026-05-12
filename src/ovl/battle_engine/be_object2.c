@@ -335,7 +335,7 @@ s32 applyPlusRule(TTCell board[][TT_BOARD_COLS]) {
 
                 maxCount = 0;
                 for (i = 0; i < 4; i++) {
-                    offset = &gDirOffsets[i];
+                    offset = &g_tripleTriadDirectionOffsets[i];
                     nbrCol = col + offset->dx;
                     neighbor = &board[row + offset->dy][nbrCol];
                     if (neighbor->flags & 0x2) {
@@ -353,7 +353,7 @@ s32 applyPlusRule(TTCell board[][TT_BOARD_COLS]) {
 
                 if (maxCount >= 2) {
                     for (i = 0; i < 4; i++) {
-                        offset = &gDirOffsets[i];
+                        offset = &g_tripleTriadDirectionOffsets[i];
                         nbrCol = col + offset->dx;
                         neighbor = &board[row + offset->dy][nbrCol];
                         if ((neighbor->flags & 0x2) &&

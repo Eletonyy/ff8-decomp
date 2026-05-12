@@ -1041,8 +1041,8 @@ typedef struct {
 #define TT_BOARD_COLS  5
 
 extern TTCard g_tripleTriadCardStats[];    /**< Card stats table (~110 cards). */
-extern TTDir  D_80182D44[4];      /**< Neighbor offsets: UP, DOWN, LEFT, RIGHT
+extern TTDir g_tripleTriadDirectionOffsets[4];
+                                  /**< Neighbor offsets: UP, DOWN, LEFT, RIGHT
                                        (ordered so @c i^1 = opposite direction). */
-#define gDirOffsets  D_80182D44
 
 #endif /* BATTLE_H */
