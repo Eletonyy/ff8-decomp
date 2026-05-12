@@ -148,10 +148,12 @@ INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B63C0);
  * @param actor  Actor record (used to look up the mode byte).
  * @return The list pointer advanced past the matched/inserted-at node.
  *
- * @note 90.93% match in permuter scratch at @c permuter/func_800B674C/base.c.
- * Remaining gap: gcc 2.8.0 register-allocation differences in the dir
- * dispatch and search loop (single-instruction @c addiu @c -1 vs
- * @c addu @c t1, and v0/v1 swap in the loop body).
+ * @note 93.30% match in permuter scratch at @c permuter/func_800B674C/base.c.
+ * Key trick (found by permuter): declare @c clamped as @c u32 (not @c s16)
+ * for the final interpolation factor — produces the right register
+ * allocation for the post-clamp store sequence. Remaining gap is gcc 2.8.0
+ * register-allocation differences in the dir dispatch and search loop
+ * (@c addiu @c -1 vs @c addu @c t1, and v0/v1 swap in the loop body).
  */
 INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B674C);
 

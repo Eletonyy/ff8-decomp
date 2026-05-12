@@ -1633,6 +1633,17 @@ void buildMagicLookupTable(s32 charIdx) {
  *
  * 11,412 bytes — the largest function in menujnc2.
  *
+ * @note Clean C scratch at @c permuter/junctionMenuUpdate/base.c matches at
+ * 85.02% using proper struct types (BattleSlot, GameSave, JunctionGfEntry,
+ * JunctionCharCfg) instead of raw pointer offsets. Patterns: do-while +
+ * @c volatile @c u8 dispatch flag with sentinel @c 0x4A (not @c 1, to
+ * prevent gcc hoisting); case 0x1C uses direct @c ctx->statByte[unk56]
+ * struct access (not a cached @c s8* pointer). Remaining gap: 3 extra
+ * saved s-regs vs target (s6/s7 for inputs allocated higher than target's
+ * s4/s5; s8 holds the @c /11 magic constant @c 0x2E8BA2E9). Target uses
+ * @c j .L801E7C10 goto so gcc doesn't see the dispatch as a loop,
+ * avoiding LICM hoisting.
+ *
  * @param ctx Junction menu context (JunctionMenuCtx *).
  * @see https://decomp.me/scratch/1glKK
  */
