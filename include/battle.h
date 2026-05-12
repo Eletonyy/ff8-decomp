@@ -282,6 +282,33 @@ typedef struct {
     BattleEntityData *data;  /* 0x00: pointer to the entity's linked data block. */
 } BattleEntityLinked;
 
+/**
+ * @brief Battle object slot (36 bytes) — one entry of @c D_801D31C0 (10 slots).
+ *
+ * Used by the be_object2 dispatch layer as a fixed-size table of active
+ * battle objects (effects, queued actions). Each slot has a category/group
+ * (@c groupId) and a priority (@c priority); setting a new high-priority
+ * entry in a group resets all lower-priority siblings.
+ */
+typedef struct {
+    /* 0x00 */ u8  entityType;   /**< Object type code (passed to handler funcs). */
+    /* 0x01 */ u8  state;        /**< Slot state/sub-category (1 = active, 7 = reset). */
+    /* 0x02 */ s16 field02;      /**< Cleared whenever @c state is written. */
+    /* 0x04 */ u16 flags;        /**< Bit 0x2 set in func_8009A878. */
+    /* 0x06 */ u8  pad06[2];
+    /* 0x08 */ s32 initFlags;    /**< Init-time flag word; bit 0 read in func_8009C978. */
+    /* 0x0C */ u8  groupId;      /**< Group/category for the priority-cancel sweep. */
+    /* 0x0D */ u8  pad0D;
+    /* 0x0E */ u8  priority;     /**< Slot priority within its group. */
+    /* 0x0F */ u8  pad0F;
+    /* 0x10 */ u8  param0;       /**< Action parameter 0. */
+    /* 0x11 */ u8  param1;       /**< Action parameter 1. */
+    /* 0x12 */ u8  param2;       /**< Action parameter 2. */
+    /* 0x13 */ u8  pad13[0x11];
+} BattleObject; /* 36 bytes */
+
+extern BattleObject D_801D31C0[10];
+
 typedef struct {
     s32 unk0;             /* 0x00: 4-byte field (semantics unknown). */
     /* 0x04: state machine value. Byte 3 (offset 0x07) is also accessed

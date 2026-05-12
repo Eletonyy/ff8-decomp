@@ -36,7 +36,6 @@ extern u8 D_801A2C78[];
 extern u8 D_801A2CE6;
 extern u8 D_801D3028[];
 extern u8 D_801D3038[];
-extern u8 D_801D31C0[];
 extern s32 func_80099C78();
 extern s32 func_8009A314();
 extern s32 func_8009A508();
@@ -687,7 +686,6 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object1", func_8009A7A4);
 void func_8009A878(s32 a0, s32 a1) {
     s32 idx = func_8009A7A4(a0, 0, a1);
     if (idx >= 0) {
-        s32 base = (s32)D_801D31C0;
-        *(u16 *)(base + idx * 36 + 4) |= 2;
+        D_801D31C0[idx].flags |= 2;
     }
 }

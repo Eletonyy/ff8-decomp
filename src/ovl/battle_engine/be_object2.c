@@ -2,7 +2,6 @@
 #include "battle.h"
 
 extern u8 D_801D3110[];
-extern u8 D_801D31C0[];
 extern u8 D_801D3360[];
 extern u8 D_801D3380[];
 extern u8 D_801D3798[];
@@ -17,7 +16,34 @@ extern void func_8009B690(void *entry, s32 idx);
 extern void func_8009B7B4(void *entry, s32 idx);
 extern void func_8009B8D8(void *entry, s32 idx);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009A8CC);
+/**
+ * @brief Set up a battle object slot and cancel lower-priority siblings in its group.
+ *
+ * Stores the three action params in slot @p idx, marks it active via
+ * @c func_8009C0A0(idx, 1), then sweeps the 10 slots: any sibling sharing
+ * @c groupId with strictly lower @c priority gets reset via
+ * @c func_8009C0A0(i, 7).
+ *
+ * @param idx     Index of the slot being placed (0..9).
+ * @param param0  First action parameter (stored at @c slot.param0).
+ * @param param1  Second action parameter (stored at @c slot.param1).
+ * @param param2  Third action parameter (stored at @c slot.param2).
+ */
+void setBattleObjectAction(s32 idx, s32 param0, s32 param1, s32 param2) {
+    s32 i;
+
+    D_801D31C0[idx].param0 = param0;
+    D_801D31C0[idx].param1 = param1;
+    D_801D31C0[idx].param2 = param2;
+    func_8009C0A0(idx, 1);
+
+    for (i = 0; i < 10; i++) {
+        if (D_801D31C0[i].groupId == D_801D31C0[idx].groupId
+            && D_801D31C0[i].priority < D_801D31C0[idx].priority) {
+            func_8009C0A0(i, 7);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009A970);
 
@@ -59,15 +85,13 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009B4CC);
 /**
  * @brief Look up the active object and initialize its handler.
  *
- * Gets an index via func_8009A7A4. If non-negative, uses it to look up
- * the object type from D_801D31C0 (stride 36) and passes it to func_800A2114.
+ * Gets an index via func_8009A7A4. If non-negative, passes the slot's
+ * @c entityType byte to func_800A2114.
  */
 void func_8009B644(void) {
     s32 idx = func_8009A7A4();
     if (idx >= 0) {
-        u8 *base = D_801D31C0;
-        u8 type = *(base + idx * 36);
-        func_800A2114(type);
+        func_800A2114(D_801D31C0[idx].entityType);
     }
 }
 
@@ -218,7 +242,7 @@ u8 *func_8009C010(s32 a0, s32 a1) {
  * @param a1 Entity type.
  */
 void func_8009C0A0(s32 a0, s32 a1) {
-    u8 *base = D_801D31C0;
+    u8 *base = (u8 *)D_801D31C0;
     u8 *entry = base + a0 * 36;
     entry[1] = a1;
     *(s16 *)(entry + 2) = 0;
@@ -238,7 +262,7 @@ void func_8009C0A0(s32 a0, s32 a1) {
  */
 s32 func_8009C0F4(void) {
     s32 i = 0;
-    u8 *entry = D_801D31C0;
+    u8 *entry = (u8 *)D_801D31C0;
     do {
         if (entry[1] != 0) {
             return 1;
@@ -271,7 +295,7 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009C890);
  * @param a3 Additional parameter (passed as 5th stack arg to handler).
  */
 void func_8009C978(s32 a0, s32 a1, s32 a2, s32 a3) {
-    u8 *base = D_801D31C0;
+    u8 *base = (u8 *)D_801D31C0;
     u8 *entry;
     u8 *result;
 
