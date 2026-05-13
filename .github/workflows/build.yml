@@ -64,6 +64,8 @@ jobs:
 
       - name: Generate progress site and badges
         run: .venv/bin/python tools/generate_progress_site.py
+        env:
+          PAGES_BASE_URL: https://roengstrom.github.io/ff8-decomp
 
       - name: Upload progress report artifact
         uses: actions/upload-artifact@v4
