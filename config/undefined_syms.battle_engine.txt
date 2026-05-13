@@ -1,8 +1,10 @@
 /* PsyQ library aliases used by decomped C. */
-ClearOTag    = 0x80049074;
-DrawOTag     = 0x80049244;
-AddPrim      = 0x8004D584;
-SetDrawTPage = 0x8004D724;
+ClearOTag     = 0x80049074;
+DrawOTag      = 0x80049244;
+AddPrim       = 0x8004D584;
+SetDrawTPage  = 0x8004D724;
+NormalClip    = 0x80040EA4;
+RotTransPers4 = 0x80040ED4;
 
 /* Symbols for data tables incorrectly disassembled as code by splat.
    Bogus function pointers from data segments. */

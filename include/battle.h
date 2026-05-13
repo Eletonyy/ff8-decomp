@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "psxsdk/libgpu.h"
+#include "psxsdk/libgte.h"
 
 /** @brief Battle result values (BattleConfig.result). */
 #define BATTLE_RESULT_UNDETERMINED  0

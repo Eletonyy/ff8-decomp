@@ -2,6 +2,7 @@
 #include "battle.h"
 
 extern u8 D_801D3110[];
+extern u8 D_801D3120[];
 extern u8 D_801D3360[];
 extern u8 D_801D3380[];
 extern u8 D_801D3798[];
@@ -9,12 +10,21 @@ extern u8 D_801D3C58[];
 extern s32 D_801D3328;
 extern s32 func_8009BDC0();
 
+/* Per-player Triple Triad match state (region starts at 0x801A2C40). */
+extern u8 D_801A2C48[2][5];  /* Two players' 5-card hands (card ids). */
+extern u8 D_801A2C70[2];     /* Per-player "type" byte; 3 selects the offset-hand layout. */
+
+extern void  func_80098BC0(u8 *list, u8 *pool, s32 nodeSize, s32 count);
+extern void *func_80098C44(u8 *list, s32 callback);
+extern void *func_8002FF34(s32 *otBase, void *pkt, s32 ch, s32 yPos, s32 w, s32 col);
+
 /* SVECTOR tables used by the card render path (func_8009AE6C). */
 extern SVECTOR D_80182C30[4];   /* main card-face quad corners */
 extern SVECTOR D_80182C50[4];   /* outer border quad corners */
 extern SVECTOR D_80182C70[4];   /* per-corner offsets used per rank digit */
 extern SVECTOR D_80182C90[4];   /* per-rank digit center positions */
 extern SVECTOR D_80182CD0[4];   /* element marker quad corners */
+extern SVECTOR D_80182CF0[4];   /* shadow quad corners (card drop-shadow) */
 
 /* Substate handlers dispatched from func_8009BAF4. Same names exist in
  * the battle_code overlay with different signatures; keep these as
@@ -199,7 +209,64 @@ void func_8009AD00(void) {
     func_80098D28(D_801D3110);
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009AD24);
+/**
+ * @brief Initialize the 10 hand-card @c BattleObject slots for a Triple Triad match.
+ *
+ * Builds the linked list at @c D_801D3110 (10 nodes from the @c D_801D3120 pool,
+ * 16 bytes each), then for each of the two players sets up 5 hand-card entries
+ * in @c D_801D31C0. Each entry is wired up so that its per-frame
+ * @c func_8009AA68 callback can find it via @c BattleObjectCtl.entry.
+ *
+ * Per-entry fields:
+ *  - @c entityType   ← @c D_801A2C48[player][slot] (card id into @c g_tripleTriadCardStats).
+ *  - @c flags        ← 1 (active).
+ *  - @c initFlags    ← @c 0x12 | player (flag bits read by the card render path).
+ *  - @c groupId      ← player.
+ *  - @c priority     ← slot.
+ *  - @c posData[1]   ← @c 0x800 when rule bit 0 is off and @c D_801A2C70[player] == 3
+ *                       (hand-position mode for that player type); 0 otherwise.
+ *  - all remaining fields cleared to 0.
+ */
+void func_8009AD24(void) {
+    s32 player;
+    s32 slot;
+    BattleObject *entity;
+    BattleObjectCtl *node;
+    u8 *hand;
+
+    func_80098BC0(D_801D3110, D_801D3120, 0x10, 0xA);
+
+    entity = D_801D31C0;
+    for (player = 0; player < 2; player++) {
+        u8 *playerType;
+        hand = D_801A2C48[player];
+        for (slot = 0; slot < 5; slot++) {
+            playerType = &D_801A2C70[player];
+            node = (BattleObjectCtl *)func_80098C44(D_801D3110, (s32)func_8009AA68);
+            node->entry = entity;
+            entity->entityType = hand[slot];
+            entity->state      = 0;
+            entity->initFlags  = 0x12 | player;
+            entity->groupId    = (u8)player;
+            entity->fieldD     = 0;
+            entity->priority   = (u8)slot;
+            entity->posData[0] = 0;
+            if ((g_tripleTriadRules & 1) == 0 && *playerType == 3) {
+                entity->posData[1] = 0x800;
+            } else {
+                entity->posData[1] = 0;
+            }
+            entity->field18 = 0;
+            entity->offX    = 0;
+            entity->offY    = 0;
+            entity->offZ    = 0;
+            entity->offSort = 0;
+            entity->angle   = 0;
+            entity->flags   = 1;
+            entity++;
+        }
+    }
+}
 
 /**
  * @brief Render one Triple Triad card (up to 4 ranks + element marker +
@@ -372,7 +439,37 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009AD24);
  */
 INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009AE6C);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009B3EC);
+/**
+ * @brief Emit a single semi-transparent black @c POLY_F4 quad — a "card shadow".
+ *
+ * Allocates a 60-byte @c CardRenderWork scratch, projects the four shadow-quad
+ * corners (@c D_80182CF0) through the GTE via @c RotTransPers4 into the
+ * primitive's @c x0..x3 fields, then links the primitive into the OT.
+ *
+ * The tag is set to @c 0x05000000 (5-word POLY_F4 payload) and the colour/code
+ * word to @c 0x2A000000 — RGB=0, code @c 0x2A (semi-transparent flat quad).
+ *
+ * @param ot   OT bucket pointer.
+ * @param prim Pre-allocated @c POLY_F4 slot in the primitive buffer.
+ * @return     @p prim incremented past this primitive (i.e. the next free
+ *             @c POLY_F4 slot).
+ */
+POLY_F4 *func_8009B3EC(u32 *ot, POLY_F4 *prim) {
+    CardRenderWork *work;
+
+    work = func_80098B80(0x3C);
+    prim->tag = 0x05000000;
+    *(u32 *)&prim->r0 = 0x2A000000;
+
+    RotTransPers4(&D_80182CF0[0], &D_80182CF0[1], &D_80182CF0[2], &D_80182CF0[3],
+                  (s32 *)&prim->x0, (s32 *)&prim->x1,
+                  (s32 *)&prim->x2, (s32 *)&prim->x3,
+                  &work->P, &work->flag);
+
+    AddPrim(ot, prim);
+    func_80098BA0(0x3C);
+    return prim + 1;
+}
 
 /**
  * @brief Reset battle state globals and the substate parameter table.
@@ -392,7 +489,55 @@ void func_8009B494(void) {
     D_801D3340[5].field0 = 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009B4CC);
+/**
+ * @brief Emit one HUD primitive at a substate-driven anchor.
+ *
+ * Dispatches on @p mode (1..5); modes outside that range are no-ops. Each
+ * case calls @c func_8002FF34 to emit a single GPU packet into
+ * @c &D_801C2EB0[4] (OT bucket #4), advancing @c D_801C2EB4 (the global
+ * primitive-pool tail). The substate slot's two halfwords (@c field0,
+ * @c field2) supply per-mode anchor offsets:
+ *
+ *  - mode 1: char @c 1   at y=0x58, w=@c (field2*32)+0x30
+ *  - mode 2: char @c 0   at y=0x110, w=@c (field2*32)+0x30
+ *  - mode 3: char @c 0   at y=@c (field0*64)+0x68, w=@c (field2*64)|0x30
+ *  - mode 4: char @c 0   at y=@c (field0*64)+0x28, w=0x4C
+ *  - mode 5: char @c 0   at y=@c (field0*64)+0x28, w=0x94
+ *
+ * Color is always white (@c 0x808080).
+ *
+ * @param mode  Substate index (1..5; other values are ignored).
+ * @param slot  Substate parameter slot supplying @c field0 / @c field2 anchors.
+ */
+void func_8009B4CC(s32 mode, SubstateSlot *slot) {
+    switch (mode) {
+    case 1:
+        D_801C2EB4 = func_8002FF34(&D_801C2EB0[4], D_801C2EB4,
+                                    1, 0x58,
+                                    (slot->field2 << 5) + 0x30, 0x808080);
+        break;
+    case 2:
+        D_801C2EB4 = func_8002FF34(&D_801C2EB0[4], D_801C2EB4,
+                                    0, 0x110,
+                                    (slot->field2 << 5) + 0x30, 0x808080);
+        break;
+    case 3:
+        D_801C2EB4 = func_8002FF34(&D_801C2EB0[4], D_801C2EB4,
+                                    0, (slot->field0 << 6) + 0x68,
+                                    (slot->field2 << 6) | 0x30, 0x808080);
+        break;
+    case 4:
+        D_801C2EB4 = func_8002FF34(&D_801C2EB0[4], D_801C2EB4,
+                                    0, (slot->field0 << 6) + 0x28,
+                                    0x4C, 0x808080);
+        break;
+    case 5:
+        D_801C2EB4 = func_8002FF34(&D_801C2EB0[4], D_801C2EB4,
+                                    0, (slot->field0 << 6) + 0x28,
+                                    0x94, 0x808080);
+        break;
+    }
+}
 
 /**
  * @brief Look up the active object and initialize its handler.
@@ -499,7 +644,7 @@ void func_8009BAF4(void) {
         case 5: func_8009BA4C(p);      break;
         }
 
-        func_8009B4CC(D_801D3358, (u32 *)&D_801D3340[D_801D3358]);
+        func_8009B4CC(D_801D3358, &D_801D3340[D_801D3358]);
 
         if (!(D_801D3334 & 1)) {
             if (D_801D3330 & 0xC0) {
