@@ -261,8 +261,8 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009AD24);
  *                               &work->P, &work->flag);
  *                 ftPrim->tag = 0x09000000;
  *                 *(s32 *)&ftPrim->r0 = transBit | 0x2C808080;
- *                 ftPrim->clut  = 0x3800;
  *                 ftPrim->tpage = 0xC;
+ *                 ftPrim->clut  = 0x3800;
  *                 {
  *                     u8 rank = card->sides[i];
  *                     ftPrim->u0 = rank * 16;        ftPrim->v0 = 0;
