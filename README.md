@@ -1,4 +1,4 @@
-# ff8-decomp
+## Final Fantasy VIII Decompilation Project
 
 A decompilation of Final Fantasy VIII (PS1, USA — `SLUS_008.92`).
 
@@ -54,7 +54,7 @@ Any help is greatly appreciated! Below are some basic steps to get started and b
    .venv/bin/pip install -e "tools/splat[mips]"
    ```
 
-3. **Provide your own disc image** — You need a Redump-verified BIN/CUE of
+3. **Provide your own disc image** — You need a BIN/CUE of
    FF8 Disc 1 (USA, SLUS-00892).
 
 4. **Extract game data from the disc**:
