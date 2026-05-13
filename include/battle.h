@@ -319,6 +319,20 @@ typedef struct {
 
 extern BattleObject D_801D31C0[10];
 
+/**
+ * @brief 4-byte byte-aggregate used for unaligned struct-copy codegen.
+ *
+ * Used in @c func_8009C12C to copy the @c BattleObject @c param0..pad13
+ * quartet (offset 0x10) over the @c groupId..pad0F quartet (offset 0x0C)
+ * as a single aggregate assignment. Cast a pointer to the first byte of
+ * each block to @c Tetra4* and assign — gcc 2.7.2 emits the original's
+ * lwl/lwr/swl/swr pair because the aggregate has byte alignment.
+ */
+typedef struct { u8 a, b, c, d; } Tetra4;
+
+/** @brief 4-entry direction-vector table used by @c func_8009C12C (cases 2..5). */
+extern SVECTOR D_80182D10[];
+
 typedef struct {
     s32 unk0;             /* 0x00: 4-byte field (semantics unknown). */
     /* 0x04: state machine value. Byte 3 (offset 0x07) is also accessed

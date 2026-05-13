@@ -1083,9 +1083,6 @@ s32 func_8009C0F4(void) {
  *
  * @param entity Battle object slot being driven this frame.
  */
-typedef struct { u8 a, b, c, d; } Tetra4;
-extern SVECTOR D_80182D10[];
-
 void func_8009C12C(BattleObject *entity) {
     s32 state;
     s32 field02;
