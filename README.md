@@ -3,6 +3,9 @@
 A decompilation of Final Fantasy VIII (PS1, USA — `SLUS_008.92`).
 
 ## Progress
+
+A more detailed progress report is available on [decomp.dev](https://decomp.dev/roengstrom/ff8-decomp)
+
 | Binary | Functions | Code |
 |---|---:|---:|
 | Main Executable | ![Functions](https://img.shields.io/endpoint?url=https%3A%2F%2Froengstrom.github.io%2Fff8-decomp%2Fbadges%2Fmain-functions.json) | ![Code](https://img.shields.io/endpoint?url=https%3A%2F%2Froengstrom.github.io%2Fff8-decomp%2Fbadges%2Fmain-code.json) |
@@ -75,3 +78,19 @@ Any help is greatly appreciated! Below are some basic steps to get started and b
    make verify         # build and compare SHA1s
    ```
 
+## References
+This project stands on the shoulders of giants. A lot of work has already been put into figuring out the inner workings of FF8 which I have liberally used when starting with this project. A shoutout to the decomp community as well, this project wouldn't be possible without all the work that has been put in and the tools that have developed.
+
+- [deling](https://github.com/myst6re/deling)
+- [hyne](https://github.com/myst6re/hyne)
+- [FF8UltimateEditor](https://github.com/HobbitDur/FF8UltimateEditor)
+- [OpenVIII](https://github.com/MaKiPL/OpenVIII-monogame)
+- [FF8 Modding Wiki](https://hobbitdur.github.io/FF8ModdingWiki/)
+- [Qhimm Wiki](https://qhimm-modding.fandom.com/wiki/FF8)
+- [maspsx](https://github.com/mkst/maspsx)
+- [splat](https://github.com/ethteck/splat)
+- [decomp.me](https://decomp.me/)
+
+## License
+
+This project does not contain any game assets or copyrighted material. It is a clean-room decompilation for educational and preservation purposes. You must provide your own copy of the game to build.
