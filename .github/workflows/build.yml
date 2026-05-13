@@ -31,7 +31,7 @@ jobs:
           git clone --depth=1 \
             https://x-access-token:${{ secrets.ORIGINALS_TOKEN }}@github.com/roengstrom/ff8-decomp-dependencies.git \
             /tmp/deps
-          cp -r /tmp/deps/original ./original
+          cp -r /tmp/deps/original ./
 
       - name: Install system dependencies
         run: |
