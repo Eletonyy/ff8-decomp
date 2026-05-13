@@ -219,12 +219,10 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009AD24);
  * @verbatim
  * void *func_8009AE6C(u8 cardId, s32 flags, void *ot, void *out) {
  *     CardRenderWork *work;
- *     TripleTriadCard *card;
  *     POLY_FT4 *ftPrim;
  *     POLY_G4  *gPrim;
  *     s32 baseColor;
  *     s32 transBit;
- *     s32 i, j;
  *
  *     work = func_80098B80(0x3C);
  *
@@ -240,30 +238,15 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009AD24);
  *         transBit = 0;
  *     }
  *
- *     card = &g_tripleTriadCardStats[cardId];
- *
  *     RotTransPers4(&D_80182C30[0], &D_80182C30[1], &D_80182C30[2], &D_80182C30[3],
  *                   &work->outXY[0], &work->outXY[1], &work->outXY[2], &work->outXY[3],
  *                   &work->P, &work->flag);
  *
- *     if (NormalClip(work->outXY[0], work->outXY[1], work->outXY[2]) < 0) {
- *         ftPrim = (POLY_FT4 *)out;
- *         ftPrim->tag = 0x09000000;
- *         *(s32 *)&ftPrim->r0 = transBit | 0x2C808080;
- *         *(s32 *)&ftPrim->x0 = work->outXY[0];
- *         *(s32 *)&ftPrim->x1 = work->outXY[1];
- *         *(s32 *)&ftPrim->x2 = work->outXY[2];
- *         *(s32 *)&ftPrim->x3 = work->outXY[3];
- *         ftPrim->tpage = 0x9D;
- *         ftPrim->clut  = 0x3FF0;
- *         ftPrim->u0 = 0x3F;  ftPrim->v0 = 0xC0;
- *         ftPrim->u1 = 0;     ftPrim->v1 = 0xC0;
- *         ftPrim->u2 = 0x3F;  ftPrim->v2 = 0xFF;
- *         ftPrim->u3 = 0;     ftPrim->v3 = 0xFF;
- *         func_8004D584(ot, ftPrim);
- *         out = ftPrim + 1;
- *     } else {
+ *     if (NormalClip(work->outXY[0], work->outXY[1], work->outXY[2]) >= 0) {
+ *         TripleTriadCard *card = &g_tripleTriadCardStats[cardId];
+ *
  *         if (flags & 0x2) {
+ *             s32 i, j;
  *             for (i = 0; i < 4; i++) {
  *                 for (j = 0; j < 4; j++) {
  *                     work->digitVerts[j].vx = D_80182C90[i].vx + D_80182C70[j].vx;
@@ -360,6 +343,26 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009AD24);
  *             func_8004D584(ot, gPrim);
  *             out = gPrim + 1;
  *         }
+ *     } else {
+ *         ftPrim = (POLY_FT4 *)out;
+ *         ftPrim->tag = 0x09000000;
+ *         *(s32 *)&ftPrim->r0 = transBit | 0x2C808080;
+ *         *(s32 *)&ftPrim->x0 = work->outXY[0];
+ *         *(s32 *)&ftPrim->x1 = work->outXY[1];
+ *         *(s32 *)&ftPrim->x2 = work->outXY[2];
+ *         *(s32 *)&ftPrim->x3 = work->outXY[3];
+ *         ftPrim->v0 = 0xC0;
+ *         ftPrim->v1 = 0xC0;
+ *         ftPrim->v2 = 0xFF;
+ *         ftPrim->v3 = 0xFF;
+ *         ftPrim->tpage = 0x9D;
+ *         ftPrim->u0 = 0x3F;
+ *         ftPrim->u1 = 0;
+ *         ftPrim->u2 = 0x3F;
+ *         ftPrim->u3 = 0;
+ *         ftPrim->clut = 0x3FF0;
+ *         func_8004D584(ot, ftPrim);
+ *         out = ftPrim + 1;
  *     }
  *
  *     func_80098BA0(0x3C);
