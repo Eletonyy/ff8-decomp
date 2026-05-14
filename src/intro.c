@@ -20,13 +20,14 @@ extern SeedState *g_seedState;
 
 /** @brief Display-init double-buffer context (184 bytes at 0x800991D8). */
 typedef struct {
-    u32     ot[2];       /**< 0x00: double-buffered single-entry OT. */
-    DRAWENV draw;        /**< 0x08: 92-byte drawing environment. */
-    DISPENV disp;        /**< 0x64: 20-byte display environment. */
-    u8      pad78[0x30]; /**< 0x78: scratch / unidentified. */
-    s32     currBuf;     /**< 0xA8: active buffer index (0 or 1). */
-    s32     unkAC;
-    u8      unkB0;       /**< 0xB0: flag byte. */
+    u32      ot[2];        /**< 0x00: double-buffered single-entry OT. */
+    DRAWENV  draw;         /**< 0x08: 92-byte drawing environment. */
+    DISPENV  disp;         /**< 0x64: 20-byte display environment. */
+    TILE     tiles[2];     /**< 0x78: per-buffer fade overlay rectangles. */
+    DR_TPAGE drTPages[2];  /**< 0x98: per-buffer SetDrawTPage commands. */
+    s32      currBuf;      /**< 0xA8: active buffer index (0 or 1). */
+    s32      unkAC;
+    u8      unkB0;         /**< 0xB0: flag byte. */
     u8      unkB1;
     u8      pad[6];
 } DispCtx;
@@ -45,7 +46,6 @@ extern s32  func_8004D208(s32 a);
 extern void func_8009818C(void);
 extern void func_80098000(void);
 extern void func_80098378(s32 a, s32 b, s32 c, s32 d, s32 e);
-extern void func_80098440(s32 brightness, s32 mode, RECT *rect);
 extern void func_800985EC(void);
 extern void func_800275D4();
 extern void func_80037FB0(s32 a, s32 b, s32 c);
@@ -237,7 +237,43 @@ void func_80098378(s32 mode, s32 x, s32 y, s32 width, s32 height) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/intro/nonmatchings/intro", func_80098440);
+/**
+ * @brief Queue a semi-transparent fade overlay onto the active buffer's OT.
+ *
+ * Builds two primitives per call into @c D_800991D8's per-buffer slots and
+ * adds them to the active buffer's OT:
+ *  - A @c TILE primitive at @c tiles[currBuf]: a flat-shaded rectangle
+ *    covering @p rect, filled with grey @p brightness on all channels
+ *    (r0=g0=b0=brightness), with semi-transparency enabled. This is what
+ *    draws the fade — the GPU's semi-trans mode (set via @c mode) blends
+ *    it with the underlying scene.
+ *  - A @c DR_TPAGE primitive at @c drTPages[currBuf]: switches the GPU
+ *    semi-trans operator to @p mode (1 = add, 2 = subtract, etc.).
+ *
+ * @param brightness Grey level (0..255) applied to all three colour channels.
+ * @param mode       Semi-trans blend mode forwarded to @c GetTPage.
+ * @param rect       Destination rectangle covered by the fade tile.
+ */
+void func_80098440(s32 brightness, s32 mode, RECT *rect) {
+    DispCtx  *dc = &D_800991D8;
+    TILE     *tiles  = dc->tiles;
+    DR_TPAGE *tpages;
+
+    SetTile(&tiles[dc->currBuf]);
+    SetSemiTrans(&tiles[dc->currBuf], 1);
+    tiles[dc->currBuf].r0 = brightness;
+    tiles[dc->currBuf].g0 = brightness;
+    tiles[dc->currBuf].b0 = brightness;
+    tiles[dc->currBuf].x0 = rect->x;
+    tiles[dc->currBuf].y0 = rect->y;
+    tiles[dc->currBuf].w  = rect->w;
+    tiles[dc->currBuf].h  = rect->h;
+    AddPrim(&dc->ot[dc->currBuf], &tiles[dc->currBuf]);
+
+    tpages = dc->drTPages;
+    SetDrawTPage(&tpages[dc->currBuf], 0, 0, GetTPage(0, mode, 0, 0));
+    AddPrim(&dc->ot[dc->currBuf], &tpages[dc->currBuf]);
+}
 
 /**
  * @brief Load and play a specific music track for the display init overlay.
