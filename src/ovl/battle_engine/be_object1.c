@@ -34,11 +34,25 @@ extern u8 D_800B7638[];
 extern u8 D_80182B84[];
 extern u8 D_801A2C78[];
 extern u8 D_801A2CE6;
+extern u8 *D_801A2C40;
+extern s8 D_801C2DC9;
 extern u8 D_801D3028[];
 extern u8 D_801D3038[];
+extern volatile u16 D_8005F158;
+
+typedef u8 *(*BattleStateFn)(void);
+extern BattleStateFn D_800A4588[];
+
 extern s32 func_80099C78();
 extern s32 func_8009A314();
 extern s32 func_8009A508();
+extern void func_800A271C(void);
+extern void func_8009E224(void);
+extern void func_8009EBCC(void);
+extern void func_8009BAF4(void);
+extern void func_800A1C6C(void);
+extern void func_800A2214(void);
+extern void func_800A21C4(void);
 
 
 /**
@@ -76,7 +90,65 @@ void func_8009822C(void) {
     } while (i < 0x6E);
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object1", func_80098304);
+/**
+ * @brief Battle engine main loop — runs until the state machine sentinel (6) is reached.
+ *
+ * After initializing all subsystems via @c func_8009822C, repeatedly:
+ *  - If the disable-input flag is set in @c D_801A2C74 (bit 2) and bits 4 or 5
+ *    of @c D_801C2EC0[2] are set, calls @c func_800A271C and clears the
+ *    3-element controller-input mask arrays (@c D_801C2EC0/EB8/EC8).
+ *  - Dispatches via @c D_800A4588 (function-pointer table indexed 1..5 by
+ *    @c D_801A2CE6) until the state returns non-zero (storing it in
+ *    @c D_801A2C40 and clearing state) or state becomes 6 (exit).
+ *  - Drains the active list at @c D_801A2C40 via @c func_80098D28, then runs
+ *    per-frame sub-tick callbacks and increments the frame counter @c D_801A2C6C.
+ *
+ * After the main loop, runs two frame-finalize iterations and stores 100 to
+ * @c g_vsyncRate (D_8005F158) before returning.
+ */
+s32 func_80098304(void) {
+    s32 i;
+
+    func_8009822C();
+
+    do {
+        if (D_801A2C74 & 0x4) {
+            if (D_801C2EC0[2] & 0x30) {
+                func_800A271C();
+            }
+            for (i = 0; i < 3; i++) {
+                D_801C2EC0[i] = 0;
+                D_801C2EC8[i] = D_801C2EB8[i] = 0;
+            }
+        }
+
+        while (D_801A2CE6 != 0 && D_801A2CE6 != 6) {
+            D_801A2C40 = D_800A4588[D_801A2CE6]();
+            if (D_801A2C40 != 0) {
+                D_801A2CE6 = 0;
+            }
+        }
+
+        if (D_801A2C40 != 0) func_80098D28(D_801A2C40);
+        func_8009E224();
+        func_8009EBCC();
+        func_8009BAF4();
+        func_800A1C6C();
+        func_80098690();
+        func_80098828();
+        func_800A2214();
+        D_801A2C6C++;
+    } while (D_801A2CE6 != 6);
+
+    D_801C2DC9 = -1;
+    for (i = 0; i < 2; i++) {
+        func_800A1C6C();
+        func_80098690();
+    }
+    func_800A21C4();
+    D_8005F158 = 100;
+    return 0;
+}
 
 INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object1", func_800984DC);
 
