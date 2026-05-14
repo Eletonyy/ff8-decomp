@@ -1,20 +1,20 @@
-name: display_init.bin
+name: intro.bin
 sha1: f56613c381e68076b3da62c84574444c9d672a4e
 options:
-  basename: display_init
-  target_path: original/display_init.bin
-  elf_path: build/ovl/display_init/display_init.elf
+  basename: intro
+  target_path: original/intro.bin
+  elf_path: build/ovl/intro/intro.elf
   base_path: ..
   platform: psx
   compiler: PSYQ
 
   # Directory layout
-  asm_path: asm/ovl/display_init
-  src_path: src/ovl/display_init
-  build_path: build/ovl/display_init
+  asm_path: asm/ovl/intro
+  src_path: src
+  build_path: build/ovl/intro
 
   # Linker
-  ld_script_path: config/display_init.ovl.ld
+  ld_script_path: config/intro.ovl.ld
   ld_dependencies: True
   ld_align_section_vram_end: False
   ld_align_segment_vram_end: False
@@ -25,9 +25,9 @@ options:
 
   # Symbols
   symbol_addrs_path:
-    - config/symbol_addrs.display_init.txt
-  undefined_funcs_auto_path: config/undefined_funcs_auto.display_init.txt
-  undefined_syms_auto_path: config/undefined_syms_auto.display_init.txt
+    - config/symbol_addrs.intro.txt
+  undefined_funcs_auto_path: config/undefined_funcs_auto.intro.txt
+  undefined_syms_auto_path: config/undefined_syms_auto.intro.txt
 
   # String detection
   string_encoding: ASCII
@@ -43,11 +43,11 @@ options:
   generate_asm_macros_files: False
 
 segments:
-  - name: display_init
+  - name: intro
     type: code
     start: 0x0
     vram: 0x80098000
     subsegments:
-      - [0x0, c, display_init]
+      - [0x0, c, intro]
       - [0x10B8, data]
   - [0x12B0]

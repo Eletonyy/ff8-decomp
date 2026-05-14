@@ -82,8 +82,47 @@ BUILT_EXE := $(BUILD_DIR)/SLUS_008.92
 ASM_SRCS := $(wildcard $(ASM_DIR)/*.s) $(wildcard $(ASM_DIR)/data/*.s)
 ASM_OBJS := $(patsubst $(ASM_DIR)/%.s,$(BUILD_DIR)/$(ASM_DIR)/%.o,$(ASM_SRCS))
 
-# C sources (compiled via cpp → cc1 → maspsx → GAS)
-C_SRCS := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/psxsdk/*.c) $(wildcard $(SRC_DIR)/psxsdk/*/*.c)
+# Overlay binaries (.ovl menu overlays + .bin code overlays).
+MENU_OVERLAYS := menumain menucfg menupty menusts menuabl menushop menuext \
+                 menuitem menumgc menugf menujnc2 menusav menucrd menututo \
+                 menutmag menutips menutest
+CODE_OVERLAYS := field_init intro field_engine \
+                 battle_engine battle_render battle_code world_engine
+OVERLAYS      := $(MENU_OVERLAYS) $(CODE_OVERLAYS)
+
+# Per-overlay C source files. Each overlay points to its own source location.
+menumain_C_SRCS      := $(wildcard src/ovl/menumain/*.c)
+menucfg_C_SRCS       := $(wildcard src/ovl/menucfg/*.c)
+menupty_C_SRCS       := $(wildcard src/ovl/menupty/*.c)
+menusts_C_SRCS       := $(wildcard src/ovl/menusts/*.c)
+menuabl_C_SRCS       := $(wildcard src/ovl/menuabl/*.c)
+menushop_C_SRCS      := $(wildcard src/ovl/menushop/*.c)
+menuext_C_SRCS       := $(wildcard src/ovl/menuext/*.c)
+menuitem_C_SRCS      := $(wildcard src/ovl/menuitem/*.c)
+menumgc_C_SRCS       := $(wildcard src/ovl/menumgc/*.c)
+menugf_C_SRCS        := $(wildcard src/ovl/menugf/*.c)
+menujnc2_C_SRCS      := $(wildcard src/ovl/menujnc2/*.c)
+menusav_C_SRCS       := $(wildcard src/ovl/menusav/*.c)
+menucrd_C_SRCS       := $(wildcard src/ovl/menucrd/*.c)
+menututo_C_SRCS      := $(wildcard src/ovl/menututo/*.c)
+menutmag_C_SRCS      := $(wildcard src/ovl/menutmag/*.c)
+menutips_C_SRCS      := $(wildcard src/ovl/menutips/*.c)
+menutest_C_SRCS      := $(wildcard src/ovl/menutest/*.c)
+field_init_C_SRCS    := $(wildcard src/ovl/field_init/*.c)
+intro_C_SRCS         := src/intro.c
+field_engine_C_SRCS  := $(wildcard src/ovl/field_engine/*.c)
+battle_engine_C_SRCS := $(wildcard src/ovl/battle_engine/*.c)
+battle_render_C_SRCS := $(wildcard src/ovl/battle_render/*.c)
+battle_code_C_SRCS   := $(wildcard src/ovl/battle_code/*.c)
+world_engine_C_SRCS  := $(wildcard src/ovl/world_engine/*.c)
+
+# C sources (compiled via cpp → cc1 → maspsx → GAS).
+# Main-binary sources = everything under src/ except files claimed by an overlay.
+ALL_OVERLAY_C_SRCS := $(foreach ovl,$(OVERLAYS),$($(ovl)_C_SRCS))
+C_SRCS := $(filter-out $(ALL_OVERLAY_C_SRCS), \
+            $(wildcard $(SRC_DIR)/*.c) \
+            $(wildcard $(SRC_DIR)/psxsdk/*.c) \
+            $(wildcard $(SRC_DIR)/psxsdk/*/*.c))
 C_OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/$(SRC_DIR)/%.o,$(C_SRCS))
 
 # All objects for linking
@@ -192,17 +231,6 @@ endif
 	./permute.sh $(FUNC)
 
 ### Overlays ###
-# Menu overlays (.ovl files in original/)
-MENU_OVERLAYS := menumain menucfg menupty menusts menuabl menushop menuext \
-                 menuitem menumgc menugf menujnc2 menusav menucrd menututo \
-                 menutmag menutips menutest
-
-# Code overlays (.bin files in original/)
-CODE_OVERLAYS := field_init display_init field_engine \
-                 battle_engine battle_render battle_code world_engine
-
-OVERLAYS := $(MENU_OVERLAYS) $(CODE_OVERLAYS)
-
 # Template for overlay build rules — $(1) = overlay name, $(2) = file extension
 define OVERLAY_TEMPLATE
 $(1)_YAML     := config/$(1).ovl.yaml
@@ -215,8 +243,7 @@ $(1)_BIN      := $$($(1)_DIR)/$(1).$(2)
 
 $(1)_ASM_SRCS := $$(wildcard $$($(1)_ASM_DIR)/*.s) $$(wildcard $$($(1)_ASM_DIR)/data/*.s)
 $(1)_ASM_OBJS := $$(patsubst $$($(1)_ASM_DIR)/%.s,$$($(1)_DIR)/$$($(1)_ASM_DIR)/%.o,$$($(1)_ASM_SRCS))
-$(1)_C_SRCS   := $$(wildcard src/ovl/$(1)/*.c)
-$(1)_C_OBJS   := $$(patsubst src/ovl/$(1)/%.c,$$($(1)_DIR)/src/ovl/$(1)/%.o,$$($(1)_C_SRCS))
+$(1)_C_OBJS   := $$(foreach src,$$($(1)_C_SRCS),$$($(1)_DIR)/$$(src:.c=.o))
 $(1)_BIN_SRCS := $$(wildcard assets/*.bin)
 $(1)_BIN_OBJS := $$(patsubst assets/%.bin,$$($(1)_DIR)/assets/%.o,$$($(1)_BIN_SRCS))
 $(1)_ALL_OBJS := $$($(1)_ASM_OBJS) $$($(1)_C_OBJS) $$($(1)_BIN_OBJS)
@@ -236,7 +263,7 @@ $$($(1)_DIR)/$$($(1)_ASM_DIR)/%.o: $$($(1)_ASM_DIR)/%.s
 	@mkdir -p $$(dir $$@)
 	$$(AS) $$(ASFLAGS) -o $$@ $$<
 
-$$($(1)_DIR)/src/ovl/$(1)/%.o: src/ovl/$(1)/%.c
+$$($(1)_DIR)/%.o: %.c
 	@mkdir -p $$(dir $$@)
 	$$(CPP) -E -lang-c -nostdinc -Iinclude $$< -o $$($(1)_DIR)/$$(*F).i && \
 	$$(if $$(filter $$<,$$(PSYQ43_SRCS)), \

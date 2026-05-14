@@ -1,4 +1,4 @@
-/* PsyQ library aliases used by decomped C in the display_init overlay. */
+/* PsyQ library aliases used by decomped C in the intro overlay. */
 VSync        = 0x80042634;
 CdSync       = 0x80043538;
 CdControlB   = 0x80043810;

@@ -37,7 +37,7 @@ CATEGORIES = [
     {"id": "menutips", "name": "menutips.ovl"},
     {"id": "menutest", "name": "menutest.ovl"},
     {"id": "field_init", "name": "field_init.bin"},
-    {"id": "display_init", "name": "display_init.bin"},
+    {"id": "intro", "name": "intro.bin"},
     {"id": "field_engine", "name": "field_engine.bin"},
     {"id": "battle_engine", "name": "battle_engine.bin"},
     {"id": "battle_render", "name": "battle_render.bin"},

@@ -117,7 +117,7 @@ void func_80098000(void) {
 }
 
 /**
- * @brief One frame of the display-init intro loop.
+ * @brief One frame of the intro display loop.
  *
  * Called 60 times in a row from @c func_80098000. Per-frame steps:
  *  - @c DrawSync(0) + @c VSync(0): wait for GPU idle and vblank.
@@ -174,11 +174,11 @@ void func_8009818C(void) {
     D_80099298 = ~D_800992A0;
 }
 
-INCLUDE_ASM("asm/ovl/display_init/nonmatchings/display_init", func_80098338);
+INCLUDE_ASM("asm/ovl/intro/nonmatchings/intro", func_80098338);
 
-INCLUDE_ASM("asm/ovl/display_init/nonmatchings/display_init", func_80098378);
+INCLUDE_ASM("asm/ovl/intro/nonmatchings/intro", func_80098378);
 
-INCLUDE_ASM("asm/ovl/display_init/nonmatchings/display_init", func_80098440);
+INCLUDE_ASM("asm/ovl/intro/nonmatchings/intro", func_80098440);
 
 /**
  * @brief Load and play a specific music track for the display init overlay.
@@ -277,7 +277,7 @@ void func_8009869C(void) {
     D_80099290 = 1;
 }
 
-INCLUDE_ASM("asm/ovl/display_init/nonmatchings/display_init", func_8009879C);
+INCLUDE_ASM("asm/ovl/intro/nonmatchings/intro", func_8009879C);
 
 /**
  * @brief Squaresoft / FF8 startup intro sequence.

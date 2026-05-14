@@ -12,7 +12,7 @@ MENU_OVERLAYS = [
     "menucrd", "menututo", "menutmag", "menutips", "menutest",
 ]
 CODE_OVERLAYS = [
-    "field_init", "display_init", "field_engine",
+    "field_init", "intro", "field_engine",
     "battle_engine", "battle_render", "battle_code", "world_engine",
 ]
 

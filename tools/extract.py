@@ -11,7 +11,7 @@ The output directory defaults to ./original/ (matching the Makefile).
 Extracts:
   - SLUS_008.92              (game executable, SHA1-verified)
   - field_init.bin           (init stub)
-  - display_init.bin         (LZSS-compressed)
+  - intro.bin                (LZSS-compressed; Squaresoft / FF8 boot intro)
   - field_engine.bin         (LZSS-compressed)
   - battle_engine.bin        (LZSS-compressed)
   - battle_render.bin
@@ -55,7 +55,7 @@ EXPECTED_EXE_SHA1 = "40706b4e0553fc6cbeb044ca1e0e9004d5ac2561"
 IMG_FILES = [
     # Code overlays (all load to 0x80098000)
     (0,  "field_init.bin",       "raw"),
-    (1,  "display_init.bin",     "lzss"),
+    (1,  "intro.bin",            "lzss"),
     (2,  "field_engine.bin",     "lzss"),
     # Menu overlays (load to 0x801E5800 / 0x801EF800 / ...)
     (4,  "menumain.ovl",         "raw"),
