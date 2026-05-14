@@ -1,59 +1,10 @@
 #include "common.h"
 #include "battle.h"
-#include "field.h"
+#include "gamestate.h"
+#include "intro.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
 #include "psxsdk/libcd.h"
-
-extern u32 D_800990B8[];
-extern s32 D_8009928C;
-extern s32 D_80099290;
-extern s32 D_80099294;
-extern s32 D_80099298;
-extern s32 D_8009929C;
-extern s32 D_800992A0;
-extern s32 D_800992A4;
-extern s32 D_800992A8;
-extern s32 D_800992AC;
-extern s32 D_800992B0;
-extern SeedState *g_seedState;
-
-/** @brief Display-init double-buffer context (184 bytes at 0x800991D8). */
-typedef struct {
-    u32      ot[2];        /**< 0x00: double-buffered single-entry OT. */
-    DRAWENV  draw;         /**< 0x08: 92-byte drawing environment. */
-    DISPENV  disp;         /**< 0x64: 20-byte display environment. */
-    TILE     tiles[2];     /**< 0x78: per-buffer fade overlay rectangles. */
-    DR_TPAGE drTPages[2];  /**< 0x98: per-buffer SetDrawTPage commands. */
-    s32      currBuf;      /**< 0xA8: active buffer index (0 or 1). */
-    s32      unkAC;
-    u8      unkB0;         /**< 0xB0: flag byte. */
-    u8      unkB1;
-    u8      pad[6];
-} DispCtx;
-
-extern DispCtx D_800991D8;
-
-extern void sndCmdF0(void);
-extern void sndCmdF1(void);
-extern s16  sndCmd10(u32 bank);
-extern void sndCmdC0(s32 a, s32 b);
-extern void sndCmdC1(s32 id, s32 b, s32 c);
-extern s32  sndGetStatus(void);
-extern u32  toggleSoundBank(void);
-extern s32  func_8004D174(void);
-extern s32  func_8004D208(s32 a);
-extern void func_8009818C(void);
-extern void func_80098000(void);
-extern void func_80098378(s32 a, s32 b, s32 c, s32 d, s32 e);
-extern void func_800985EC(void);
-extern void func_800275D4();
-extern void func_80037FB0(s32 a, s32 b, s32 c);
-extern s32  func_800393C8(void);
-extern void resetCdDriveMode(void);
-extern s32  getDiscId(void);
-extern s32  func_80038A60(void);
-extern s32  getAnimFrameParam(s32 slot, s32 sub);
 
 /**
  * @brief Display-init overlay entry point — set up display + run 60-frame intro.

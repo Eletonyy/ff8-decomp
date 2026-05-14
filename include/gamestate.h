@@ -335,6 +335,9 @@ typedef struct {
 /** @brief Main game state (BSS at 0x80077378). */
 extern GameState g_gameState;
 
+/** @brief Pointer to the SeeD/world sub-region of @c g_gameState (@c &g_gameState.seedState). */
+extern SeedState *g_seedState;
+
 /* --- Memory card busy flag (D_80085218) --- */
 extern void setMcBusy(void);
 extern u32  isMcBusy(void);
