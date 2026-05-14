@@ -44,7 +44,6 @@ extern s32  func_8004D174(void);
 extern s32  func_8004D208(s32 a);
 extern void func_8009818C(void);
 extern void func_80098000(void);
-extern void func_80098338(s32 stage);
 extern void func_80098378(s32 a, s32 b, s32 c, s32 d, s32 e);
 extern void func_80098440(s32 brightness, s32 mode, RECT *rect);
 extern void func_800985EC(void);
@@ -174,9 +173,69 @@ void func_8009818C(void) {
     D_80099298 = ~D_800992A0;
 }
 
-INCLUDE_ASM("asm/ovl/intro/nonmatchings/intro", func_80098338);
+/**
+ * @brief Kick off an asynchronous CD load for an intro asset.
+ *
+ * @c D_800990B8 is a table of (sector, size) pairs (8 bytes per entry,
+ * laid out as @c u32 sector then @c u32 size). For each story-stage
+ * index used by the intro sequence (e.g. @c 0x23 Squaresoft logo,
+ * @c 4 FF8 logo, @c 5..0x1F SeeD application text pages, @c 0x20 "The
+ * End", @c 0x21 final fade), the entry is fetched and queued via
+ * @c cdReadAsyncSync into VRAM-adjacent main RAM at @c 0x80100000.
+ *
+ * @param stage Asset table index — selects which (sector, size) pair
+ *              from @c D_800990B8.
+ */
+void func_80098338(s32 stage) {
+    /* Each table entry is 2 u32s (sector, size); index by stage * 2. */
+    cdReadAsyncSync(D_800990B8[stage * 2],
+                    D_800990B8[stage * 2 + 1],
+                    (s32)0x80100000, 0);
+}
 
-INCLUDE_ASM("asm/ovl/intro/nonmatchings/intro", func_80098378);
+/**
+ * @brief Stream a sub-rectangle of decoded video into VRAM scanline-by-scanline.
+ *
+ * Generalized version of @c func_800985EC. Pulls raw 16-bpp pixel data from
+ * the staged buffer at @c 0x80100008 (the @c +8 skips a small header in the
+ * decoded asset). Each call uploads @p height rows of @p width pixels into
+ * VRAM starting at @c (x, (u16)D_8009928C + y), advancing by 2 lines per
+ * @c LoadImage call (interlaced — odd lines belong to the other field and
+ * are filled in by the alternating frame buffer; @c D_8009928C provides
+ * the parity offset).
+ *
+ * Mode 0 (called by @c func_8009818C): full 640x400 area at (0, 0x28).
+ * Mode 1: cropped 580x406 layout at (0x1E, 0x26).
+ *
+ * @param mode    Stage layout selector (passed by caller; not read here).
+ * @param x       Destination VRAM x.
+ * @param y       Vertical offset added to @c D_8009928C for the first line.
+ * @param width   Pixels per row (also row stride / 4 in the source buffer).
+ * @param height  Total vertical extent; loop runs while @c y < y + height.
+ */
+void func_80098378(s32 mode, s32 x, s32 y, s32 width, s32 height) {
+    s16 rect[4];
+    s32 val;
+    s16 curY;
+    u8 *src;
+
+    val = D_8009928C * 2;
+    rect[0] = x;
+    rect[2] = width;
+    rect[3] = 1;
+    curY = (u16)D_8009928C + y;
+    rect[1] = curY;
+    src = (u8 *)(((u32)(width * val) >> 2 << 2) + (s32)0x80100008);
+
+    if ((s16)curY < y + height) {
+        do {
+            LoadImage((RECT *)rect, (u32 *)src);
+            curY = rect[1] + 2;
+            rect[1] = curY;
+            src += width * 4;
+        } while ((s16)curY < y + height);
+    }
+}
 
 INCLUDE_ASM("asm/ovl/intro/nonmatchings/intro", func_80098440);
 
