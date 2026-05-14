@@ -1230,6 +1230,61 @@ u8 *func_8009C440(BattleAnimNode *node, s32 angle, void *ot, u8 *primBuf) {
     }
 }
 
+/**
+ * @brief Per-frame transform stage 2 for a card-effect @c BattleObject.
+ *
+ * Dispatches on @c state, mirroring the small state machine in
+ * @c func_8009C12C but handling the matrix transform + render side:
+ *  - @b 0, @b 7+: nothing this frame.
+ *  - @b 1..5 (slide-in trajectory): scale @c node's matrix by the constant
+ *    @c cardScale, set @c worldZ to @c 0x200, push rotation/translation
+ *    into the GTE, then walk the next display primitive via
+ *    @c func_8009B3EC into @p otBucket.
+ *  - @b 6 (flip): drive an angle from @c field02 (0..19, divided over 20
+ *    frames as @c (n+1)*4096/20 — a 12-bit fixed-point sweep through
+ *    [0, 4096]) and emit the gouraud quad via @c func_8009C440 into
+ *    @c &D_801C2EB0[6] (a fixed OT bucket). @c field02 advances; when it
+ *    reaches @c 20 the state is cleared.
+ *
+ * The C below compiles to 95.51% match — gcc 2.7.2 won't fill the
+ * dispatch branch delay slots with a state-copy / node-copy pair the way
+ * the target does without an introduced `new_var` temp (which we don't
+ * use). Keep as @c INCLUDE_ASM for the byte match.
+ *
+ * @verbatim
+ * void func_8009C59C(BattleObject *entity, BattleAnimNode *node,
+ *                    void *otBucket) {
+ *     static const VECTOR cardScale = { 0x1000, 0x1000, 0, 0 };
+ *     VECTOR scaleVec;
+ *     s32 state;
+ *     s32 field02;
+ *
+ *     scaleVec = cardScale;
+ *     state = entity->state;
+ *     field02 = entity->field02;
+ *
+ *     if (state >= 6 || state == 0) {
+ *         if (state == 0) return;
+ *         if (state != 6) return;
+ *         field02 = ((field02 + 1) * 4096) / 20;
+ *         D_801C2EB4 = func_8009C440(node, field02,
+ *                                     &D_801C2EB0[6], D_801C2EB4);
+ *         entity->field02++;
+ *         if ((s16)entity->field02 >= 20) {
+ *             entity->state = 0;
+ *             entity->field02 = 0;
+ *         }
+ *         return;
+ *     }
+ *
+ *     ScaleMatrix((MATRIX *)node, &scaleVec);
+ *     node->worldZ = 0x200;
+ *     SetRotMatrix((MATRIX *)node);
+ *     SetTransMatrix((MATRIX *)node);
+ *     D_801C2EB4 = func_8009B3EC(otBucket, D_801C2EB4);
+ * }
+ * @endverbatim
+ */
 INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009C59C);
 
 INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009C6D8);
