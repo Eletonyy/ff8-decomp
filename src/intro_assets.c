@@ -11,7 +11,7 @@
  *   - 0x80100008: raw 16bpp BGR555 pixels — 640×400 for entries fed to
  *     @c func_80098378 mode 0, 580×406 for mode 1.
  *
- * @c func_80098338 indexes this table by stage; @c loadWrongDiscWarning reads
+ * @c loadIntroSlide indexes this table by stage; @c loadWrongDiscWarning reads
  * entry 34 directly (offset 0x110 = 34 * 8) and loads it to a separate
  * staging area at @c 0x8017D000 for the mode-2 flash overlay.
  *

@@ -23,7 +23,7 @@
  *  - Run the per-frame intro tick @c func_8009818C 60 times (one second
  *    at 60 Hz).
  */
-void func_80098000(void) {
+void initIntroOverlay(void) {
     RECT clearRect;
     s32 status;
     s32 i;
@@ -45,13 +45,13 @@ void func_80098000(void) {
 
     clearRect.x = 0;
     clearRect.y = 0;
-    clearRect.w = 0x280;
-    clearRect.h = 0x1E0;
+    clearRect.w = 640;
+    clearRect.h = 480;
     ClearImage(&clearRect, 0, 0, 0);
     DrawSync(0);
 
-    SetDefDispEnv(&g_introDispCtx.disp, 0, 0, 0x280, 0x1E0);
-    SetDefDrawEnv(&g_introDispCtx.draw, 0, 0, 0x280, 0x1E0);
+    SetDefDispEnv(&g_introDispCtx.disp, 0, 0, 640, 480);
+    SetDefDrawEnv(&g_introDispCtx.draw, 0, 0, 640, 480);
 
     g_introDispCtx.disp.isinter = 1;
     g_introDispCtx.draw.dfe = 1;
@@ -72,7 +72,7 @@ void func_80098000(void) {
 /**
  * @brief One frame of the intro display loop.
  *
- * Called 60 times in a row from @c func_80098000. Per-frame steps:
+ * Called 60 times in a row from @c initIntroOverlay. Per-frame steps:
  *  - @c DrawSync(0) + @c VSync(0): wait for GPU idle and vblank.
  *  - Spin until @c GetODE flips: the busy-wait re-arms the previous
  *    drawing pass.
@@ -100,10 +100,10 @@ void func_8009818C(void) {
     if (g_introRenderEnable != 0) {
         switch (g_introRenderMode) {
         case 0:
-            func_80098378(0, 0, 0x28, 0x280, 0x190);
+            func_80098378(0, 0, 40, 640, 400);
             break;
         case 1:
-            func_80098378(1, 0x1E, 0x26, 0x244, 0x196);
+            func_80098378(1, 30, 38, 580, 406);
             break;
         case 2:
             func_800985EC();
@@ -132,15 +132,15 @@ void func_8009818C(void) {
  *
  * @c g_introAssetTable is a table of (sector, size) pairs (8 bytes per entry,
  * laid out as @c u32 sector then @c u32 size). For each story-stage
- * index used by the intro sequence (e.g. @c 0x23 Square publisher attribution,
- * @c 4 Squaresoft logo, @c 5..0x1F SeeD application text pages, @c 0x20 "The
- * End", @c 0x21 FF8 logo), the entry is fetched and queued via
+ * index used by the intro sequence (e.g. @c 35 Square publisher attribution,
+ * @c 4 Squaresoft logo, @c 5..31 SeeD application text pages, @c 32 "The
+ * End", @c 33 FF8 logo), the entry is fetched and queued via
  * @c cdReadAsyncSync into VRAM-adjacent main RAM at @c 0x80100000.
  *
  * @param stage Asset table index — selects which (sector, size) pair
  *              from @c g_introAssetTable.
  */
-void func_80098338(s32 stage) {
+void loadIntroSlide(s32 stage) {
     /* Each table entry is 2 u32s (sector, size); index by stage * 2. */
     cdReadAsyncSync(g_introAssetTable[stage * 2],
                     g_introAssetTable[stage * 2 + 1],
@@ -158,8 +158,8 @@ void func_80098338(s32 stage) {
  * are filled in by the alternating frame buffer; @c g_introOdeLatch provides
  * the parity offset).
  *
- * Mode 0 (called by @c func_8009818C): full 640x400 area at (0, 0x28).
- * Mode 1: cropped 580x406 layout at (0x1E, 0x26).
+ * Mode 0 (called by @c func_8009818C): full 640x400 area at (0, 40).
+ * Mode 1: cropped 580x406 layout at (30, 38).
  *
  * @param mode    Stage layout selector (passed by caller; not read here).
  * @param x       Destination VRAM x.
@@ -168,24 +168,24 @@ void func_80098338(s32 stage) {
  * @param height  Total vertical extent; loop runs while @c y < y + height.
  */
 void func_80098378(s32 mode, s32 x, s32 y, s32 width, s32 height) {
-    s16 rect[4];
+    RECT rect;
     s32 val;
     s16 curY;
     u8 *src;
 
     val = g_introOdeLatch * 2;
-    rect[0] = x;
-    rect[2] = width;
-    rect[3] = 1;
+    rect.x = x;
+    rect.w = width;
+    rect.h = 1;
     curY = (u16)g_introOdeLatch + y;
-    rect[1] = curY;
+    rect.y = curY;
     src = (u8 *)g_introStagedFrame->pixels + (((u32)(width * val)) >> 2 << 2);
 
     if ((s16)curY < y + height) {
         do {
-            LoadImage((RECT *)rect, (u32 *)src);
-            curY = rect[1] + 2;
-            rect[1] = curY;
+            LoadImage(&rect, (u32 *)src);
+            curY = rect.y + 2;
+            rect.y = curY;
             src += width * 4;
         } while ((s16)curY < y + height);
     }
@@ -236,7 +236,7 @@ void func_80098440(s32 brightness, s32 mode, RECT *rect) {
  * (a 580x406 LZSS-compressed frame) into staging RAM at @c 0x8017D000
  * so that @c func_800985EC can later display it when @c func_8009869C
  * triggers the disc-mismatch flash. Called once at the start of
- * @c func_8009879C, right after the "insert disc N" prompt is loaded.
+ * @c waitForCorrectDisc, right after the "insert disc N" prompt is loaded.
  */
 void loadWrongDiscWarning(void) {
     cdReadAsyncSync(g_introAssetTable[INTRO_ASSET_WRONG_DISC * 2],
@@ -251,32 +251,32 @@ void loadWrongDiscWarning(void) {
  * starting at the field-parity row (@c g_introOdeLatch is 0 or 1), and
  * pushes every other line into VRAM via @c LoadImage. The complementary
  * field comes from the previous frame buffer thanks to the GPU's interlaced
- * display mode (see @c func_80098000's @c isinter setup).
+ * display mode (see @c initIntroOverlay's @c isinter setup).
  *
- * Geometry matches the 580x406 source: target rect (x=0x1E, w=0x244, h=1)
- * sweeps from @c y=g_introOdeLatch+0x26 upward by 2 until @c y >= 0x1BC.
+ * Geometry matches the 580x406 source: target rect (x=30, w=580, h=1)
+ * sweeps from @c y=g_introOdeLatch+38 upward by 2 until @c y >= 444.
  */
 void func_800985EC(void) {
-    s16 rect[4];
+    RECT rect;
     s32 field;
     s16 y;
     u16 *row;
 
     field = g_introOdeLatch;
-    rect[0] = 0x1E;
-    rect[2] = 0x244;
-    rect[3] = 1;
-    y = (u16)g_introOdeLatch + 0x26;
-    rect[1] = y;
+    rect.x = 30;
+    rect.w = 580;
+    rect.h = 1;
+    y = (u16)g_introOdeLatch + 38;
+    rect.y = y;
     row = &g_wrongDiscFrame->pixels[field * WRONG_DISC_FRAME_W];
 
-    if ((s16)y < 0x1BC) {
+    if ((s16)y < 444) {
         do {
-            LoadImage((RECT *)rect, (u32 *)row);
-            y = rect[1] + 2;
-            rect[1] = y;
+            LoadImage(&rect, (u32 *)row);
+            y = rect.y + 2;
+            rect.y = y;
             row += 2 * WRONG_DISC_FRAME_W;   /* advance two lines (interlace) */
-        } while ((s16)y < 0x1BC);
+        } while ((s16)y < 444);
     }
 }
 
@@ -288,7 +288,7 @@ void func_800985EC(void) {
  * g_introRenderMode state flag and g_introOdeLatch/g_introRenderEnable during the transition.
  */
 void func_8009869C(void) {
-    s16 rect[4];
+    RECT rect;
     s32 brightness;
     s32 i;
 
@@ -299,10 +299,10 @@ void func_8009869C(void) {
     brightness = 0xFF;
     g_introOdeLatch = (u32)i < 1;
 
-    rect[0] = 0x1E;
-    rect[1] = 0x26;
-    rect[2] = 0x244;
-    rect[3] = 0x196;
+    rect.x = 30;
+    rect.y = 38;
+    rect.w = 580;
+    rect.h = 406;
 
     /* Fade out: brightness 255 -> 0 by 4 */
     do {
@@ -318,7 +318,7 @@ void func_8009869C(void) {
     do {
         i++;
         func_8009818C();
-    } while (i < 0x12C);
+    } while (i < 300);
 
     /* Fade in: brightness 0 -> 255 by 4 */
     i = 0;
@@ -350,18 +350,18 @@ void func_8009869C(void) {
  *  - Any button press on controller 1 (high nibble of @c g_introCtrl0Edge)
  *    short-circuits the tray wait and jumps straight to the fade-in.
  */
-void func_8009879C(void) {
+void waitForCorrectDisc(void) {
     u8   cdStatus[8];
     RECT rect;
 
-    func_80098000();
-    func_80098338(g_seedState->expectedDiscId - 1);
+    initIntroOverlay();
+    loadIntroSlide(g_seedState->expectedDiscId - 1);
     loadWrongDiscWarning();
 
-    rect.x = 0x1E;
-    rect.y = 0x26;
-    rect.w = 0x244;
-    rect.h = 0x196;
+    rect.x = 30;
+    rect.y = 38;
+    rect.w = 580;
+    rect.h = 406;
 
     while (func_800393C8() != 0) {}
 
@@ -409,14 +409,14 @@ void func_8009879C(void) {
  * @brief Boot-time FF8 startup intro sequence.
  *
  * Plays the boot-time intro shown when no save is loaded — Square publisher attribution,
- * Squaresoft logo, then 27 intro slides (stages 5-0x1F, 27
- * pages of text rendered by @c func_80098338), followed by "The End"
- * (stage 0x20), and the "Final Fantasy VIII" title-screen logo (stage 0x21 with music fade-out). Any button press on controller 1
+ * Squaresoft logo, then 27 intro slides (stages 5-31, 27
+ * pages of text rendered by @c loadIntroSlide), followed by "The End"
+ * (stage 32), and the "Final Fantasy VIII" title-screen logo (stage 33 with music fade-out). Any button press on controller 1
  * (@c g_introCtrl0Edge high nibble) skips to the cleanup tail.
  *
  * Each segment fades in / holds / fades out via @c func_80098440 (the
  * fade primitive — modes 1 and 2 control how brightness is applied) over
- * a 640x400 (rectY=0x28, rectW=0x280, rectH=0x190) draw area. The per-frame
+ * a 640x400 (rectY=40, rectW=640, rectH=400) draw area. The per-frame
  * tick @c func_8009818C drives display flipping and input sampling.
  *
  * SeeD sound loading: waits for @c g_seedState->soundLoadComplete before
@@ -424,7 +424,7 @@ void func_8009879C(void) {
  * On exit, @c sndCmdC1(D_8005F11C, 0x60, 0) fades the music out and a
  * final brightness ramp restores the display to full before returning.
  */
-void func_80098974(void) {
+void playBootIntro(void) {
     RECT rect;
     s32 outerCount;
     s32 stage;
@@ -434,13 +434,13 @@ void func_80098974(void) {
     s32 frame;
     s32 one;
 
-    func_80098000();
-    rectY = 0x28;
-    rectW = 0x280;
-    rectH = 0x190;
+    initIntroOverlay();
+    rectY = 40;
+    rectW = 640;
+    rectH = 400;
 
     while (1) {
-        func_80098338(0x23);
+        loadIntroSlide(35);
         rect.x = 0; rect.y = rectY; rect.w = rectW; rect.h = rectH;
 
         for (brightness = 0xFF, one = 1; brightness >= 0; brightness -= 4) {
@@ -450,11 +450,11 @@ void func_80098974(void) {
             SetDispMask(1);
         }
 
-        for (frame = 0; frame < 0x78; frame++) {
+        for (frame = 0; frame < 120; frame++) {
             func_8009818C();
         }
 
-        for (frame = 0; frame < 0x78; frame++) {
+        for (frame = 0; frame < 120; frame++) {
             func_8009818C();
             if (g_introCtrl0Edge & 0xF0) goto exit;
         }
@@ -465,7 +465,7 @@ void func_80098974(void) {
             if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
-        func_80098338(4);
+        loadIntroSlide(4);
         rect.x = 0; rect.y = rectY; rect.w = rectW; rect.h = rectH;
 
         for (brightness = 0xFF, one = 1; brightness >= 0; brightness -= 4) {
@@ -475,11 +475,11 @@ void func_80098974(void) {
             SetDispMask(1);
         }
 
-        for (frame = 0; frame < 0x78; frame++) {
+        for (frame = 0; frame < 120; frame++) {
             func_8009818C();
         }
 
-        for (frame = 0; frame < 0x78; frame++) {
+        for (frame = 0; frame < 120; frame++) {
             func_8009818C();
             if (g_introCtrl0Edge & 0xF0) goto exit;
         }
@@ -500,7 +500,7 @@ void func_80098974(void) {
         D_8005F11C = sndCmd10(toggleSoundBank());
         sndCmdC0(0, 0x7F);
 
-        for (frame = 0; frame < 0xB4; frame++) {
+        for (frame = 0; frame < 180; frame++) {
             func_80098440(0xFF, 2, &rect);
             func_8009818C();
             if (g_introCtrl0Edge & 0xF0) goto exit;
@@ -509,8 +509,8 @@ void func_80098974(void) {
         outerCount = 0;
         g_introVSyncBase = VSync(-1);
 
-        for (stage = 5; stage < 0x20; stage++, outerCount++) {
-            func_80098338(stage);
+        for (stage = 5; stage < 32; stage++, outerCount++) {
+            loadIntroSlide(stage);
             rect.x = 0; rect.y = rectY; rect.w = rectW; rect.h = rectH;
 
             for (brightness = 0xFF; brightness >= 0; brightness -= 8) {
@@ -519,7 +519,7 @@ void func_80098974(void) {
                 if (g_introCtrl0Edge & 0xF0) goto exit;
             }
 
-            holdFrames = (stage - 4) * 0x1B3;
+            holdFrames = (stage - 4) * 435;
             while ((u32)(VSync(-1) - g_introVSyncBase) < (u32)holdFrames) {
                 func_8009818C();
                 if (g_introCtrl0Edge & 0xF0) goto exit;
@@ -532,7 +532,7 @@ void func_80098974(void) {
             }
         }
 
-        func_80098338(0x20);
+        loadIntroSlide(32);
         rect.x = 0; rect.y = rectY; rect.w = rectW; rect.h = rectH;
 
         for (brightness = 0xFF; brightness >= 0; brightness -= 8) {
@@ -541,7 +541,7 @@ void func_80098974(void) {
             if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
-        holdFrames = (outerCount + 1) * 0x1B3;
+        holdFrames = (outerCount + 1) * 435;
         while ((u32)(VSync(-1) - g_introVSyncBase) < (u32)holdFrames) {
             func_8009818C();
             if (g_introCtrl0Edge & 0xF0) goto exit;
@@ -553,13 +553,13 @@ void func_80098974(void) {
             if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
-        for (frame = 0; frame < 0x78; frame++) {
+        for (frame = 0; frame < 120; frame++) {
             func_80098440(0xFF, 1, &rect);
             func_8009818C();
             if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
-        func_80098338(0x21);
+        loadIntroSlide(33);
         rect.x = 0; rect.y = rectY; rect.w = rectW; rect.h = rectH;
 
         for (brightness = 0xFF; brightness >= 0; brightness -= 2) {
@@ -573,7 +573,7 @@ void func_80098974(void) {
             if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
-        for (frame = 0; frame < 0xE10; frame++) {
+        for (frame = 0; frame < 3600; frame++) {
             func_8009818C();
             if (g_introCtrl0Edge & 0xF0) goto exit;
         }
@@ -590,7 +590,7 @@ void func_80098974(void) {
 exit:
     sndCmdC1(D_8005F11C, 0x60, 0);
 
-    if (brightness >= 0x100) {
+    if (brightness >= 256) {
         brightness = 0xFF;
     }
     if (brightness < 0) {
@@ -609,40 +609,40 @@ exit:
  * Configures display buffers, selects a display mode (0 or 1), runs
  * the corresponding intro sequence, then resets the display back.
  *
- * @param mode 0 for the standard intro sequence (func_80098974),
- *             1 for the alternate intro sequence (func_8009879C).
+ * @param mode 0 for the standard intro sequence (playBootIntro),
+ *             1 for the alternate intro sequence (waitForCorrectDisc).
  */
 void func_80098FD4(s32 mode) {
-    s16 rect[4];
+    RECT rect;
 
     ResetGraph(1);
 
-    rect[0] = 0x100;
-    rect[1] = 0xE0;
-    rect[2] = 0x40;
-    rect[3] = 0x20;
-    MoveImage(&rect, 0, 0x1E0);
+    rect.x = 256;
+    rect.y = 224;
+    rect.w = 64;
+    rect.h = 32;
+    MoveImage(&rect, 0, 480);
     DrawSync(0);
     VSync(0);
 
     switch (mode) {
     case 0:
         g_introRenderMode = 0;
-        func_80098974();
+        playBootIntro();
         break;
     case 1:
         g_introRenderMode = mode;
-        func_8009879C();
+        waitForCorrectDisc();
         break;
     }
 
     SetDispMask(0);
 
-    rect[1] = 0x1E0;
-    rect[2] = 0x40;
-    rect[0] = 0;
-    rect[3] = 0x20;
-    MoveImage(&rect, 0x100, 0xE0);
+    rect.y = 480;
+    rect.w = 64;
+    rect.x = 0;
+    rect.h = 32;
+    MoveImage(&rect, 256, 224);
     DrawSync(0);
     VSync(0);
 }

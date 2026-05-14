@@ -26,7 +26,7 @@ typedef struct {
 #define WRONG_DISC_FRAME_W    580
 #define WRONG_DISC_FRAME_H    406
 
-/** @brief Per-stage scratch buffer where @c func_80098338 decodes a slide. */
+/** @brief Per-stage scratch buffer where @c loadIntroSlide decodes a slide. */
 #define g_introStagedFrame    ((IntroFrame *)0x80100000)
 
 /**
@@ -63,16 +63,16 @@ extern s32     g_introCtrl1Edge;     /**< 0x800992AC — controller-1 rising-edg
 extern s32     g_introVSyncBase;     /**< 0x800992B0 — VSync(-1) baseline for story-page hold timing. */
 
 /* --- Intro overlay entry points (defined in src/intro.c) ----------------- */
-void func_80098000(void);
+void initIntroOverlay(void);
 void func_8009818C(void);
-void func_80098338(s32 stage);
+void loadIntroSlide(s32 stage);
 void func_80098378(s32 mode, s32 x, s32 y, s32 width, s32 height);
 void func_80098440(s32 brightness, s32 mode, RECT *rect);
 void loadWrongDiscWarning(void);
 void func_800985EC(void);
 void func_8009869C(void);
-void func_80098974(void);
-void func_8009879C(void);
+void playBootIntro(void);
+void waitForCorrectDisc(void);
 void func_80098FD4(s32 mode);
 
 /* --- External helpers called by the intro overlay ------------------------ */
