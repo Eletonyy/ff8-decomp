@@ -15,7 +15,7 @@ BUILD = ROOT / "build"
 # Main binary source .o files
 MAIN_SRC_DIR = BUILD / "src"
 EXPECTED = ROOT / "expected"
-# Overlay source .o files pattern: build/ovl/<name>/src/ovl/<name>/<name>.o
+# Overlay source .o files pattern: build/<name>/src/.../<name>.o
 
 CATEGORIES = [
     {"id": "main", "name": "Main Executable"},
@@ -38,7 +38,7 @@ CATEGORIES = [
     {"id": "menutest", "name": "menutest.ovl"},
     {"id": "field_init", "name": "field_init.bin"},
     {"id": "intro", "name": "intro.bin"},
-    {"id": "field_engine", "name": "field_engine.bin"},
+    {"id": "field", "name": "field.bin"},
     {"id": "battle_engine", "name": "battle_engine.bin"},
     {"id": "battle_render", "name": "battle_render.bin"},
     {"id": "battle_code", "name": "battle_code.bin"},
@@ -81,29 +81,30 @@ def find_units():
                         "metadata": {"progress_categories": ["main"]},
                     })
 
-    # Overlay .o files — search any .c-derived .o under build/ovl/<name>/src/
-    # (some overlays live under src/ovl/<name>/, others at src/<name>.c).
-    ovl_base = BUILD / "ovl"
-    if ovl_base.exists():
-        for ovl_dir in sorted(ovl_base.iterdir()):
-            if not ovl_dir.is_dir():
-                continue
-            ovl_name = ovl_dir.name
-            src_root = ovl_dir / "src"
-            if not src_root.exists():
-                continue
-            for o_file in sorted(src_root.rglob("*.o")):
-                rel_from_ovl = o_file.relative_to(ovl_dir)
-                # The build path mirrors the source path; expected/ mirrors build/.
-                expected_o = EXPECTED / "build" / "ovl" / ovl_name / rel_from_ovl
-                # Name the unit by the source path it came from (drop the build/ovl/<name>/ prefix and .o).
-                src_rel = str(rel_from_ovl).replace(".o", "")
-                units.append({
-                    "name": f"ovl/{ovl_name}/{Path(src_rel).name}",
-                    "target_path": str(expected_o.relative_to(ROOT)) if expected_o.exists() else str(o_file.relative_to(ROOT)),
-                    "base_path": str(o_file.relative_to(ROOT)),
-                    "metadata": {"progress_categories": [ovl_name]},
-                })
+    # Overlay .o files — for each overlay declared in CATEGORIES, find its
+    # build directory. Most overlays still live at build/ovl/<name>, but a
+    # few have been migrated to build/<name>; check both.
+    for cat in CATEGORIES:
+        ovl_name = cat["id"]
+        if ovl_name == "main":
+            continue
+        for candidate in (BUILD / ovl_name, BUILD / "ovl" / ovl_name):
+            src_root = candidate / "src"
+            if src_root.exists():
+                ovl_dir = candidate
+                break
+        else:
+            continue
+        for o_file in sorted(src_root.rglob("*.o")):
+            rel_from_ovl = o_file.relative_to(ovl_dir)
+            expected_o = EXPECTED / ovl_dir.relative_to(ROOT) / rel_from_ovl
+            src_rel = str(rel_from_ovl).replace(".o", "")
+            units.append({
+                "name": f"ovl/{ovl_name}/{Path(src_rel).name}",
+                "target_path": str(expected_o.relative_to(ROOT)) if expected_o.exists() else str(o_file.relative_to(ROOT)),
+                "base_path": str(o_file.relative_to(ROOT)),
+                "metadata": {"progress_categories": [ovl_name]},
+            })
 
     return units
 

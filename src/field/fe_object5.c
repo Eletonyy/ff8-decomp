@@ -12,7 +12,7 @@ extern u8 D_800C5FB0[];
  * @param a0 Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B085C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B085C);
 
 /**
  * Pops a value, calls findCharacterSlot, and if result is not 0xFF
@@ -34,7 +34,7 @@ s32 func_800B08CC(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B0924);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B0924);
 
 /**
  * Clear bit 0x8 in entity flags, conditionally clear sprite visibility,
@@ -131,9 +131,9 @@ s32 func_800B0B2C(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B0B3C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B0B3C);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B0BE4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B0BE4);
 
 /**
  * Sets the byte at offset 0x24C in the object to 1.
@@ -208,7 +208,7 @@ s32 func_800B0D2C(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B0D94);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B0D94);
 
 /** @brief Pop value from stack, call findCharacterSlot, store result at 0x140. Returns 2. */
 s32 func_800B0E68(u8 *a0) {
@@ -218,19 +218,19 @@ s32 func_800B0E68(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B0EBC);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B0EBC);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B1034);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1034);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B10F8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B10F8);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B11BC);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B11BC);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B12A4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B12A4);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B13EC);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B13EC);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B14C8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B14C8);
 
 /**
  * Calls func_801E8B84, returns 1 if result is nonzero, else 2.
@@ -247,9 +247,9 @@ s32 func_800B158C(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B15BC);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B15BC);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B16B0);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B16B0);
 
 /**
  * Returns 2, indicating continue processing.
@@ -306,25 +306,25 @@ s32 func_800B17A8(u8 *a0) {
     return 1;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B17D8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B17D8);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B1870);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1870);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B18A4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B18A4);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B19D4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B19D4);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B1A20);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1A20);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B1AA0);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1AA0);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B1B10);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1B10);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B1BB8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1BB8);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B1C7C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1C7C);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B1D40);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1D40);
 
 /**
  * Pops a parameter and calls sndSetEngineFlag, returns 2.
@@ -341,7 +341,7 @@ s32 func_800B1DF4(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B1E34);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1E34);
 
 /**
  * Calls sndGetStatus with the object pointer, stores result at offset 0x140, returns 2.
@@ -370,11 +370,11 @@ s32 func_800B1F04(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B1F48);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1F48);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B1FE0);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1FE0);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B2090);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B2090);
 
 /**
  * Calls sndGetMaxVolume with argument 1, returns 1 if result is nonzero, else 2.
@@ -391,10 +391,10 @@ s32 func_800B2158(u8 *a0) {
     return 1;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B2188);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B2188);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B21E0);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B21E0);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B2248);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B2248);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object5", func_800B22C0);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B22C0);

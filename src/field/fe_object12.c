@@ -3,9 +3,9 @@
 
 extern u8 D_80077BA8[];
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object12", func_800C0098);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C0098);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object12", func_800C00C8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C00C8);
 
 /** @brief Sets bit 0x20 of the partyLockFlag. */
 void func_800C0384(void) {
@@ -32,7 +32,7 @@ void func_800C03F4(void) {
     g_gameState.mainData.partyLockFlag |= 0x02;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object12", func_800C0410);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C0410);
 
 /**
  * Copies 0x40 bytes from D_80077BA8 - 0x98 to D_80077BA8 using memcopy,
@@ -43,6 +43,6 @@ void func_800C0448(void) {
     memzero16(D_80077BA8, 4);
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object12", func_800C048C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C048C);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object12", func_800C0634);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C0634);

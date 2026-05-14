@@ -86,7 +86,7 @@ ASM_OBJS := $(patsubst $(ASM_DIR)/%.s,$(BUILD_DIR)/$(ASM_DIR)/%.o,$(ASM_SRCS))
 MENU_OVERLAYS := menumain menucfg menupty menusts menuabl menushop menuext \
                  menuitem menumgc menugf menujnc2 menusav menucrd menututo \
                  menutmag menutips menutest
-CODE_OVERLAYS := field_init intro field_engine \
+CODE_OVERLAYS := field_init intro field \
                  battle_engine battle_render battle_code world_engine
 OVERLAYS      := $(MENU_OVERLAYS) $(CODE_OVERLAYS)
 
@@ -110,7 +110,11 @@ menutips_C_SRCS      := $(wildcard src/ovl/menutips/*.c)
 menutest_C_SRCS      := $(wildcard src/ovl/menutest/*.c)
 field_init_C_SRCS    := $(wildcard src/ovl/field_init/*.c)
 intro_C_SRCS         := src/intro.c src/intro_assets.c src/intro_state.c
-field_engine_C_SRCS  := $(wildcard src/ovl/field_engine/*.c)
+intro_DIR            := build/intro
+intro_ASM_DIR        := asm/intro
+field_C_SRCS         := $(wildcard src/field/*.c)
+field_DIR            := build/field
+field_ASM_DIR        := asm/field
 battle_engine_C_SRCS := $(wildcard src/ovl/battle_engine/*.c)
 battle_render_C_SRCS := $(wildcard src/ovl/battle_render/*.c)
 battle_code_C_SRCS   := $(wildcard src/ovl/battle_code/*.c)
@@ -234,8 +238,8 @@ endif
 # Template for overlay build rules — $(1) = overlay name, $(2) = file extension
 define OVERLAY_TEMPLATE
 $(1)_YAML     := config/$(1).ovl.yaml
-$(1)_DIR      := build/ovl/$(1)
-$(1)_ASM_DIR  := asm/ovl/$(1)
+$(1)_DIR      ?= build/ovl/$(1)
+$(1)_ASM_DIR  ?= asm/ovl/$(1)
 $(1)_LD       := config/$(1).ovl.ld
 $(1)_TARGET   := original/$(1).$(2)
 $(1)_ELF      := $$($(1)_DIR)/$(1).elf

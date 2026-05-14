@@ -1386,9 +1386,9 @@ void func_800B788C(Eline *self, Eline *target) {
     self->flags |= 0x2001;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B79C8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B79C8);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B7D44);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B7D44);
 
 /**
  * @brief 3-party walk opcode handler.
@@ -1488,11 +1488,11 @@ s32 func_800B7E78(Eline *eline) {
     return 1;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B8344);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8344);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B83FC);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B83FC);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B84D8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B84D8);
 
 /**
  * Pops a word from the stack and stores the low byte to D_80070656.
@@ -1507,23 +1507,23 @@ s32 func_800B85C8(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B85F8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B85F8);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B8710);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8710);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B8824);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8824);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B89C0);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B89C0);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B8B58);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8B58);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B8BE0);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8BE0);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B8CD4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8CD4);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B8DC8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8DC8);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B8E74);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8E74);
 
 /**
  * Returns 2 if the byte at offset 0x245 equals 3, otherwise returns 1.
@@ -1582,7 +1582,7 @@ s32 func_800B8F80(u8 *a0) {
     return 1;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B8FA8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8FA8);
 
 /** @brief Pop byte from stack and store to offset 0x240. Returns 2. */
 s32 func_800B9000(u8 *a0) {
@@ -1592,4 +1592,4 @@ s32 func_800B9000(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object7", func_800B9030);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B9030);

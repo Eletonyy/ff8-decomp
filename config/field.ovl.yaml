@@ -1,20 +1,20 @@
-name: field_engine.bin
+name: field.bin
 sha1: 1787bc2d0ee08f2e0a29b78bd0f07a0bbcfe2bc8
 options:
-  basename: field_engine
-  target_path: original/field_engine.bin
-  elf_path: build/ovl/field_engine/field_engine.elf
+  basename: field
+  target_path: original/field.bin
+  elf_path: build/field/field.elf
   base_path: ..
   platform: psx
   compiler: PSYQ
 
   # Directory layout
-  asm_path: asm/ovl/field_engine
-  src_path: src/ovl/field_engine
-  build_path: build/ovl/field_engine
+  asm_path: asm/field
+  src_path: src/field
+  build_path: build/field
 
   # Linker
-  ld_script_path: config/field_engine.ovl.ld
+  ld_script_path: config/field.ovl.ld
   ld_dependencies: True
   ld_align_section_vram_end: False
   ld_align_segment_vram_end: False
@@ -25,9 +25,9 @@ options:
 
   # Symbols
   symbol_addrs_path:
-    - config/symbol_addrs.field_engine.txt
-  undefined_funcs_auto_path: config/undefined_funcs_auto.field_engine.txt
-  undefined_syms_auto_path: config/undefined_syms_auto.field_engine.txt
+    - config/symbol_addrs.field.txt
+  undefined_funcs_auto_path: config/undefined_funcs_auto.field.txt
+  undefined_syms_auto_path: config/undefined_syms_auto.field.txt
 
   # String detection
   string_encoding: ASCII
@@ -43,7 +43,7 @@ options:
   generate_asm_macros_files: False
 
 segments:
-  - name: field_engine
+  - name: field
     type: code
     start: 0x0
     vram: 0x80098000

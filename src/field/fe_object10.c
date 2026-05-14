@@ -54,7 +54,7 @@ void func_800BD250(s32 a0, u8 *a1) {
 
 s32 func_800BD2AC(FieldEntity *entity) { u8 *a0 = (u8 *)entity; u8 idx = entity->stackIdx; s16 buf[4]; entity->stackIdx = idx - 1; func_800BD250(*(s32 *)(a0 + (s8)idx * 4), (u8 *)buf); func_800A9434(*(u8 *)(a0 + 0x256), 0x30, 1, (u8 *)buf, 0x1E); return 2; }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BD318);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BD318);
 
 /**
  * @brief SeeD level-up tick: update SeeD experience and pay salary based on rank.
@@ -119,17 +119,17 @@ void updateSeedLevel(void) {
     g_seedState->prevKillSum = totalKills;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BD5E0);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BD5E0);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BD64C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BD64C);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BD6EC);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BD6EC);
 
 void func_800BD794(void) { s32 i = 0; do { s32 status = getPackedField2Bit(i) - 1; if ((u32)status < 2) { if (fieldRandom() & 1) { func_800383B8(i, status); } } i++; } while (i < 0x100); }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BD804);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BD804);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BD9C4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BD9C4);
 
 /**
  * Returns the value of the global byte D_800DE4FD.
@@ -162,34 +162,34 @@ void func_800BE2DC(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BE30C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BE30C);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BE36C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BE36C);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BE44C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BE44C);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BE4B0);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BE4B0);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BE5E4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BE5E4);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BE7F4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BE7F4);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BE924);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BE924);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BEA84);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BEA84);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BEBD0);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BEBD0);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BF080);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BF080);
 
 void func_800BF230(FieldEntity *entity) { extern u8 D_800D9630[]; u8 *a0 = (u8 *)entity; u8 *obj; func_800AA46C(*(u8 *)(a0 + 0x256), 0xD, *(u8 *)(a0 + 0x24E), 0); obj = *(u8 **)(D_800D9630 + *(u8 *)(a0 + 0x256) * 4); *(u16 *)(obj + 0x52) = *(u16 *)(a0 + 0x206); }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BF28C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BF28C);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BF3D8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BF3D8);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BF448);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BF448);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BF4A4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BF4A4);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object10", func_800BF5A8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BF5A8);

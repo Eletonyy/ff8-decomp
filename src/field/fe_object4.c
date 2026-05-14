@@ -14,9 +14,9 @@ extern u8 D_800780D8[];
 extern u8 D_80082C10;
 extern u8 g_gameState[];
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800ADB68);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800ADB68);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800ADC04);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800ADC04);
 
 /**
  * Returns 0, indicating no action taken.
@@ -293,7 +293,7 @@ s32 func_800AE0DC(u8 *a0, s32 a1) {
  * @param a0 Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AE124);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AE124);
 
 /** @brief Pop halfword from stack and store to entity offset 0x176. */
 void func_800AE184(u8 *a0) {
@@ -302,9 +302,9 @@ void func_800AE184(u8 *a0) {
     *(u16 *)(a0 + 0x176) = *(u16 *)(a0 + (s8)idx * 4);
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AE1AC);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AE1AC);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AE3A4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AE3A4);
 
 /** @brief Call func_800AE3A4 with a1 and mode 4, push result onto stack. Returns 2. */
 s32 func_800AE4C4(u8 *a0, s32 a1) {
@@ -425,19 +425,19 @@ s32 func_800AE88C(u8 *a0, s32 a1) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AE8B4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AE8B4);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AE978);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AE978);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AEA44);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AEA44);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AEB0C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AEB0C);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AEBD8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AEBD8);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AEC78);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AEC78);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AED9C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AED9C);
 
 /**
  * Returns 3, indicating skip to next entity.
@@ -459,13 +459,13 @@ s32 func_800AEECC(u8 *a0) {
     return 1;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AEED4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AEED4);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AEF4C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AEF4C);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AEFE8);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AEFE8);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AF02C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AF02C);
 
 /**
  * Decrement top-of-stack timer. If reaches zero, pop and return 3 (done).
@@ -485,7 +485,7 @@ s32 func_800AF070(u8 *a0) {
     return 1;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AF0B4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AF0B4);
 
 /**
  * Stores a random byte (0..0xFF) into the entity's @c result register.
@@ -510,7 +510,7 @@ s32 func_800AF114(u8 *a0, s32 a1) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AF120);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AF120);
 
 /**
  * Pops a value, calls findCharacterSlot to look up an index, then loads
@@ -540,9 +540,9 @@ s32 func_800AF1AC(u8 *a0) {
  * @param a1 Value to store at offset 0x24F.
  * @return 2 (continue processing).
  */
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AF224);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AF224);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AF274);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AF274);
 
 /** @brief Pop mask, test against D_800705F8, store boolean at result. Returns 2. */
 s32 func_800AF2C4(u8 *a0) {
@@ -613,7 +613,7 @@ s32 func_800AF404(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AF444);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AF444);
 
 /** @brief Set bit 0x10 in @c g_seedState->stateFlags. Returns 2. */
 s32 func_800AF47C(void) {
@@ -627,7 +627,7 @@ s32 func_800AF4A0(void) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AF4C4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AF4C4);
 
 /**
  * Sets the byte at offset 0x194 to 1, returns 2.
@@ -695,21 +695,21 @@ s32 func_800AF5F8(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AF610);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AF610);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AF7E4);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AF7E4);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AFD20);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AFD20);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AFD68);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AFD68);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AFE24);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AFE24);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800AFF64);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AFF64);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800B002C);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800B002C);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800B0124);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800B0124);
 
 /**
  * Calls func_800381BC and returns 2.
@@ -743,19 +743,19 @@ s32 func_800B02A0(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800B0304);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800B0304);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800B0344);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800B0344);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800B0444);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800B0444);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800B0570);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800B0570);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800B0638);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800B0638);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800B06D0);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800B06D0);
 
-INCLUDE_ASM("asm/ovl/field_engine/nonmatchings/fe_object4", func_800B0784);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800B0784);
 
 /**
  * Clears bit 0x800 in entity flags at g_seedState+0x68, clears

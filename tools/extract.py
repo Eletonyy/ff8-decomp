@@ -12,7 +12,7 @@ Extracts:
   - SLUS_008.92              (game executable, SHA1-verified)
   - field_init.bin           (init stub)
   - intro.bin                (LZSS-compressed; Squaresoft / FF8 boot intro)
-  - field_engine.bin         (LZSS-compressed)
+  - field.bin                (LZSS-compressed)
   - battle_engine.bin        (LZSS-compressed)
   - battle_render.bin
   - battle_code.bin
@@ -56,7 +56,7 @@ IMG_FILES = [
     # Code overlays (all load to 0x80098000)
     (0,  "field_init.bin",       "raw"),
     (1,  "intro.bin",            "lzss"),
-    (2,  "field_engine.bin",     "lzss"),
+    (2,  "field.bin",            "lzss"),
     # Menu overlays (load to 0x801E5800 / 0x801EF800 / ...)
     (4,  "menumain.ovl",         "raw"),
     (5,  "menucfg.ovl",          "raw"),
