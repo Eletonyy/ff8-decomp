@@ -1,4 +1,6 @@
-/* PsyQ library aliases used by decomped C in the intro overlay. */
+/* PsyQ library aliases + intro-external data symbols. */
+g_introVSyncBase = 0x800992B0;  /* sits past the overlay's .data — provided by caller (BSS). */
+
 VSync        = 0x80042634;
 CdSync       = 0x80043538;
 CdControlB   = 0x80043810;

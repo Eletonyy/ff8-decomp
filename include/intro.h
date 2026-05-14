@@ -26,17 +26,17 @@ typedef struct {
 
 /* --- Data globals defined in the intro overlay's .data section ----------- */
 extern u32     g_introAssetTable[];  /**< CD asset table: (sector, size) per stage (see src/intro_assets.c). */
-extern DispCtx D_800991D8;     /**< Per-buffer display context. */
-extern s32     D_8009928C;     /**< GPU drawing-ready latch (mirrors GetODE). */
-extern s32     D_80099290;     /**< Active intro-render mode (0..2). */
-extern s32     D_80099294;     /**< When non-zero, runs the per-frame renderer. */
-extern s32     D_80099298;     /**< ~previous controller-0 sample (edge mask). */
-extern s32     D_8009929C;     /**< ~previous controller-1 sample (edge mask). */
-extern s32     D_800992A0;     /**< Latest controller-0 sample. */
-extern s32     D_800992A4;     /**< Latest controller-1 sample. */
-extern s32     D_800992A8;     /**< Controller-0 rising-edge mask (& 0xF0 = ABXY). */
-extern s32     D_800992AC;     /**< Controller-1 rising-edge mask. */
-extern s32     D_800992B0;     /**< @c VSync(-1) baseline used to time story-page holds. */
+extern DispCtx g_introDispCtx;       /**< 0x800991D8 — double-buffer display context. */
+extern s32     g_introOdeLatch;      /**< 0x8009928C — last-seen @c GetODE() < 1 parity. */
+extern s32     g_introRenderMode;    /**< 0x80099290 — sub-renderer dispatch (0..2). */
+extern s32     g_introRenderEnable;  /**< 0x80099294 — non-zero runs the per-frame renderer. */
+extern s32     g_introCtrl0Inv;      /**< 0x80099298 — ~previous controller-0 sample. */
+extern s32     g_introCtrl1Inv;      /**< 0x8009929C — ~previous controller-1 sample. */
+extern s32     g_introCtrl0;         /**< 0x800992A0 — latest controller-0 sample. */
+extern s32     g_introCtrl1;         /**< 0x800992A4 — latest controller-1 sample. */
+extern s32     g_introCtrl0Edge;     /**< 0x800992A8 — controller-0 rising-edge mask (& 0xF0 = ABXY). */
+extern s32     g_introCtrl1Edge;     /**< 0x800992AC — controller-1 rising-edge mask. */
+extern s32     g_introVSyncBase;     /**< 0x800992B0 — VSync(-1) baseline for story-page hold timing. */
 
 /* --- Intro overlay entry points (defined in src/intro.c) ----------------- */
 void func_80098000(void);

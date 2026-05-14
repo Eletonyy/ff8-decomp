@@ -50,5 +50,5 @@ segments:
     subsegments:
       - [0x0, c, intro]
       - [0x10B8, .data, intro_assets]
-      - [0x11D8, data]
+      - [0x11D8, .data, intro_state]
   - [0x12B0]

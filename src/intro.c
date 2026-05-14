@@ -17,7 +17,7 @@
  *    issue @c CdControlB(0xE, ...) — CD command 0xE is @c CdlSetmode with
  *    param @c 0x80 (auto-pause + double-speed reporting).
  *  - Set up a 640x480 interlaced display: clear VRAM, build the
- *    @c DRAWENV / @c DISPENV in @c D_800991D8, mark dfe on the draw env
+ *    @c DRAWENV / @c DISPENV in @c g_introDispCtx, mark dfe on the draw env
  *    and @c isinter on the disp env, install both with @c PutDrawEnv /
  *    @c PutDispEnv. Clear the active OT entry.
  *  - Run the per-frame intro tick @c func_8009818C 60 times (one second
@@ -50,20 +50,20 @@ void func_80098000(void) {
     ClearImage(&clearRect, 0, 0, 0);
     DrawSync(0);
 
-    SetDefDispEnv(&D_800991D8.disp, 0, 0, 0x280, 0x1E0);
-    SetDefDrawEnv(&D_800991D8.draw, 0, 0, 0x280, 0x1E0);
+    SetDefDispEnv(&g_introDispCtx.disp, 0, 0, 0x280, 0x1E0);
+    SetDefDrawEnv(&g_introDispCtx.draw, 0, 0, 0x280, 0x1E0);
 
-    D_800991D8.disp.isinter = 1;
-    D_800991D8.draw.dfe = 1;
-    PutDispEnv(&D_800991D8.disp);
-    PutDrawEnv(&D_800991D8.draw);
-    D_800991D8.currBuf = 0;
-    D_800991D8.unkB0 = 0;
-    D_800991D8.unkB1 = 0;
-    D_80099294 = 0;
+    g_introDispCtx.disp.isinter = 1;
+    g_introDispCtx.draw.dfe = 1;
+    PutDispEnv(&g_introDispCtx.disp);
+    PutDrawEnv(&g_introDispCtx.draw);
+    g_introDispCtx.currBuf = 0;
+    g_introDispCtx.unkB0 = 0;
+    g_introDispCtx.unkB1 = 0;
+    g_introRenderEnable = 0;
     VSync(0);
-    D_8009928C = ((u32)GetODE() < 1);
-    ClearOTagR(&D_800991D8.ot[D_800991D8.currBuf], 1);
+    g_introOdeLatch = ((u32)GetODE() < 1);
+    ClearOTagR(&g_introDispCtx.ot[g_introDispCtx.currBuf], 1);
     for (i = 0; i < 60; i++) {
         func_8009818C();
     }
@@ -76,7 +76,7 @@ void func_80098000(void) {
  *  - @c DrawSync(0) + @c VSync(0): wait for GPU idle and vblank.
  *  - Spin until @c GetODE flips: the busy-wait re-arms the previous
  *    drawing pass.
- *  - If @c D_80099294 is set, dispatch on @c D_80099290 to one of the
+ *  - If @c g_introRenderEnable is set, dispatch on @c g_introRenderMode to one of the
  *    intro-stage renderers:
  *      - state 0: @c func_80098378 with a full-width 640x400 mode.
  *      - state 1: @c func_80098378 with the cropped 580x406 layout.
@@ -85,20 +85,20 @@ void func_80098000(void) {
  *    install the next frame's @c DRAWENV / @c DISPENV pair, and clear
  *    the newly-active OT for the next pass.
  *  - Sample the controllers (@c getAnimFrameParam slots 0 and 1) and
- *    update the edge-detect mirrors at @c D_800992A8 (slot 0 rising
- *    edges) and @c D_800992AC (slot 1 rising edges) using the
- *    @c D_80099298 / @c D_8009929C complements latched last frame.
+ *    update the edge-detect mirrors at @c g_introCtrl0Edge (slot 0 rising
+ *    edges) and @c g_introCtrl1Edge (slot 1 rising edges) using the
+ *    @c g_introCtrl0Inv / @c g_introCtrl1Inv complements latched last frame.
  */
 void func_8009818C(void) {
     DrawSync(0);
     VSync(0);
 
-    while (D_8009928C == ((u32)GetODE() < 1)) {}
+    while (g_introOdeLatch == ((u32)GetODE() < 1)) {}
 
-    D_8009928C = ((u32)GetODE() < 1);
+    g_introOdeLatch = ((u32)GetODE() < 1);
 
-    if (D_80099294 != 0) {
-        switch (D_80099290) {
+    if (g_introRenderEnable != 0) {
+        switch (g_introRenderMode) {
         case 0:
             func_80098378(0, 0, 0x28, 0x280, 0x190);
             break;
@@ -111,20 +111,20 @@ void func_8009818C(void) {
         }
     }
 
-    DrawOTag(&D_800991D8.ot[D_800991D8.currBuf]);
-    D_800991D8.currBuf = D_800991D8.currBuf ^ 1;
-    PutDispEnv(&D_800991D8.disp);
-    PutDrawEnv(&D_800991D8.draw);
-    ClearOTagR(&D_800991D8.ot[D_800991D8.currBuf], 1);
+    DrawOTag(&g_introDispCtx.ot[g_introDispCtx.currBuf]);
+    g_introDispCtx.currBuf = g_introDispCtx.currBuf ^ 1;
+    PutDispEnv(&g_introDispCtx.disp);
+    PutDrawEnv(&g_introDispCtx.draw);
+    ClearOTagR(&g_introDispCtx.ot[g_introDispCtx.currBuf], 1);
 
     func_800275D4();
-    D_800992A0 = getAnimFrameParam(0, 0);
-    D_800992A4 = getAnimFrameParam(1, 0);
+    g_introCtrl0 = getAnimFrameParam(0, 0);
+    g_introCtrl1 = getAnimFrameParam(1, 0);
 
-    D_800992A8 = D_80099298 & D_800992A0;
-    D_800992AC = D_8009929C & D_800992A4;
-    D_8009929C = ~D_800992A4;
-    D_80099298 = ~D_800992A0;
+    g_introCtrl0Edge = g_introCtrl0Inv & g_introCtrl0;
+    g_introCtrl1Edge = g_introCtrl1Inv & g_introCtrl1;
+    g_introCtrl1Inv = ~g_introCtrl1;
+    g_introCtrl0Inv = ~g_introCtrl0;
 }
 
 /**
@@ -153,9 +153,9 @@ void func_80098338(s32 stage) {
  * Generalized version of @c func_800985EC. Pulls raw 16-bpp pixel data from
  * the staged buffer at @c 0x80100008 (the @c +8 skips a small header in the
  * decoded asset). Each call uploads @p height rows of @p width pixels into
- * VRAM starting at @c (x, (u16)D_8009928C + y), advancing by 2 lines per
+ * VRAM starting at @c (x, (u16)g_introOdeLatch + y), advancing by 2 lines per
  * @c LoadImage call (interlaced — odd lines belong to the other field and
- * are filled in by the alternating frame buffer; @c D_8009928C provides
+ * are filled in by the alternating frame buffer; @c g_introOdeLatch provides
  * the parity offset).
  *
  * Mode 0 (called by @c func_8009818C): full 640x400 area at (0, 0x28).
@@ -163,7 +163,7 @@ void func_80098338(s32 stage) {
  *
  * @param mode    Stage layout selector (passed by caller; not read here).
  * @param x       Destination VRAM x.
- * @param y       Vertical offset added to @c D_8009928C for the first line.
+ * @param y       Vertical offset added to @c g_introOdeLatch for the first line.
  * @param width   Pixels per row (also row stride / 4 in the source buffer).
  * @param height  Total vertical extent; loop runs while @c y < y + height.
  */
@@ -173,11 +173,11 @@ void func_80098378(s32 mode, s32 x, s32 y, s32 width, s32 height) {
     s16 curY;
     u8 *src;
 
-    val = D_8009928C * 2;
+    val = g_introOdeLatch * 2;
     rect[0] = x;
     rect[2] = width;
     rect[3] = 1;
-    curY = (u16)D_8009928C + y;
+    curY = (u16)g_introOdeLatch + y;
     rect[1] = curY;
     src = (u8 *)(((u32)(width * val) >> 2 << 2) + (s32)0x80100008);
 
@@ -194,7 +194,7 @@ void func_80098378(s32 mode, s32 x, s32 y, s32 width, s32 height) {
 /**
  * @brief Queue a semi-transparent fade overlay onto the active buffer's OT.
  *
- * Builds two primitives per call into @c D_800991D8's per-buffer slots and
+ * Builds two primitives per call into @c g_introDispCtx's per-buffer slots and
  * adds them to the active buffer's OT:
  *  - A @c TILE primitive at @c tiles[currBuf]: a flat-shaded rectangle
  *    covering @p rect, filled with grey @p brightness on all channels
@@ -209,7 +209,7 @@ void func_80098378(s32 mode, s32 x, s32 y, s32 width, s32 height) {
  * @param rect       Destination rectangle covered by the fade tile.
  */
 void func_80098440(s32 brightness, s32 mode, RECT *rect) {
-    DispCtx  *dc = &D_800991D8;
+    DispCtx  *dc = &g_introDispCtx;
     TILE     *tiles  = dc->tiles;
     DR_TPAGE *tpages;
 
@@ -246,8 +246,8 @@ void func_800985B4(void) {
 /**
  * @brief Transfer display rows from VRAM buffer at 0x8017D008.
  *
- * Computes a VRAM source offset using D_8009928C and copies scanlines
- * starting at y = (u16)D_8009928C + 0x26, incrementing by 2 each iteration,
+ * Computes a VRAM source offset using g_introOdeLatch and copies scanlines
+ * starting at y = (u16)g_introOdeLatch + 0x26, incrementing by 2 each iteration,
  * until y >= 0x1BC.
  */
 void func_800985EC(void) {
@@ -256,11 +256,11 @@ void func_800985EC(void) {
     s16 y;
     u8 *ptr;
 
-    val = D_8009928C;
+    val = g_introOdeLatch;
     rect[0] = 0x1E;
     rect[2] = 0x244;
     rect[3] = 1;
-    y = (u16)D_8009928C + 0x26;
+    y = (u16)g_introOdeLatch + 0x26;
     rect[1] = y;
     ptr = (u8 *)((s32)0x8017D008 + val * 0x488);
 
@@ -279,19 +279,19 @@ void func_800985EC(void) {
  *
  * Fades display brightness from 255 down to 0 (by 4 each step),
  * waits 300 frames, then fades back up from 0 to 255. Updates
- * D_80099290 state flag and D_8009928C/D_80099294 during the transition.
+ * g_introRenderMode state flag and g_introOdeLatch/g_introRenderEnable during the transition.
  */
 void func_8009869C(void) {
     s16 rect[4];
     s32 brightness;
     s32 i;
 
-    D_80099290 = 2;
+    g_introRenderMode = 2;
     VSync(0);
 
     i = GetODE();
     brightness = 0xFF;
-    D_8009928C = (u32)i < 1;
+    g_introOdeLatch = (u32)i < 1;
 
     rect[0] = 0x1E;
     rect[1] = 0x26;
@@ -303,7 +303,7 @@ void func_8009869C(void) {
         func_80098440(brightness, 2, &rect);
         brightness -= 4;
         func_8009818C();
-        D_80099294 = 1;
+        g_introRenderEnable = 1;
         SetDispMask(1);
     } while (brightness >= 0);
 
@@ -323,7 +323,7 @@ void func_8009869C(void) {
     } while (i < 0xFF);
 
     SetDispMask(0);
-    D_80099290 = 1;
+    g_introRenderMode = 1;
 }
 
 /**
@@ -341,7 +341,7 @@ void func_8009869C(void) {
  *    disc matches @c g_seedState->expectedDiscId.
  *  - On mismatch (or if @c func_80038A60 returns nonzero), calls
  *    @c func_8009869C to flash the screen and restarts the wait loop.
- *  - Any button press on controller 1 (high nibble of @c D_800992A8)
+ *  - Any button press on controller 1 (high nibble of @c g_introCtrl0Edge)
  *    short-circuits the tray wait and jumps straight to the fade-in.
  */
 void func_8009879C(void) {
@@ -364,24 +364,24 @@ void func_8009879C(void) {
 
         resetCdDriveMode();
         VSync(0);
-        D_8009928C = ((u32)GetODE() < 1);
+        g_introOdeLatch = ((u32)GetODE() < 1);
 
         for (brightness = 0xFF; brightness >= 0; brightness -= 4) {
             func_80098440(brightness, 2, &rect);
             func_8009818C();
-            D_80099294 = 1;
+            g_introRenderEnable = 1;
             SetDispMask(1);
         }
 
         do {
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto fadein;
+            if (g_introCtrl0Edge & 0xF0) goto fadein;
             CdControlB(1, 0, cdStatus);
         } while (!(cdStatus[0] & 0x10));
 
         do {
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto fadein;
+            if (g_introCtrl0Edge & 0xF0) goto fadein;
             CdControlB(1, 0, cdStatus);
         } while (cdStatus[0] & 0x10);
 
@@ -406,7 +406,7 @@ void func_8009879C(void) {
  * FF8 logo, then the SeeD application story text crawl (stages 5-0x1F, 27
  * pages of text rendered by @c func_80098338), followed by "The End"
  * (stage 0x20) and a final fade. Any button press on controller 1
- * (@c D_800992A8 high nibble) skips to the cleanup tail.
+ * (@c g_introCtrl0Edge high nibble) skips to the cleanup tail.
  *
  * Each segment fades in / holds / fades out via @c func_80098440 (the
  * fade primitive — modes 1 and 2 control how brightness is applied) over
@@ -440,7 +440,7 @@ void func_80098974(void) {
         for (brightness = 0xFF, one = 1; brightness >= 0; brightness -= 4) {
             func_80098440(brightness, 2, &rect);
             func_8009818C();
-            D_80099294 = one;
+            g_introRenderEnable = one;
             SetDispMask(1);
         }
 
@@ -450,13 +450,13 @@ void func_80098974(void) {
 
         for (frame = 0; frame < 0x78; frame++) {
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         for (brightness = 0; brightness < 0xFF; brightness += 4) {
             func_80098440(brightness, 2, &rect);
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         func_80098338(4);
@@ -465,7 +465,7 @@ void func_80098974(void) {
         for (brightness = 0xFF, one = 1; brightness >= 0; brightness -= 4) {
             func_80098440(brightness, 2, &rect);
             func_8009818C();
-            D_80099294 = one;
+            g_introRenderEnable = one;
             SetDispMask(1);
         }
 
@@ -475,13 +475,13 @@ void func_80098974(void) {
 
         for (frame = 0; frame < 0x78; frame++) {
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         for (brightness = 0; brightness < 0xFF; brightness += 4) {
             func_80098440(brightness, 2, &rect);
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         func_80037FB0(0, 0x4F, 0x80110000);
@@ -497,11 +497,11 @@ void func_80098974(void) {
         for (frame = 0; frame < 0xB4; frame++) {
             func_80098440(0xFF, 2, &rect);
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         outerCount = 0;
-        D_800992B0 = VSync(-1);
+        g_introVSyncBase = VSync(-1);
 
         for (stage = 5; stage < 0x20; stage++, outerCount++) {
             func_80098338(stage);
@@ -510,19 +510,19 @@ void func_80098974(void) {
             for (brightness = 0xFF; brightness >= 0; brightness -= 8) {
                 func_80098440(brightness, 2, &rect);
                 func_8009818C();
-                if (D_800992A8 & 0xF0) goto exit;
+                if (g_introCtrl0Edge & 0xF0) goto exit;
             }
 
             holdFrames = (stage - 4) * 0x1B3;
-            while ((u32)(VSync(-1) - D_800992B0) < (u32)holdFrames) {
+            while ((u32)(VSync(-1) - g_introVSyncBase) < (u32)holdFrames) {
                 func_8009818C();
-                if (D_800992A8 & 0xF0) goto exit;
+                if (g_introCtrl0Edge & 0xF0) goto exit;
             }
 
             for (brightness = 0; brightness < 0xFF; brightness += 8) {
                 func_80098440(brightness, 2, &rect);
                 func_8009818C();
-                if (D_800992A8 & 0xF0) goto exit;
+                if (g_introCtrl0Edge & 0xF0) goto exit;
             }
         }
 
@@ -532,25 +532,25 @@ void func_80098974(void) {
         for (brightness = 0xFF; brightness >= 0; brightness -= 8) {
             func_80098440(brightness, 2, &rect);
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         holdFrames = (outerCount + 1) * 0x1B3;
-        while ((u32)(VSync(-1) - D_800992B0) < (u32)holdFrames) {
+        while ((u32)(VSync(-1) - g_introVSyncBase) < (u32)holdFrames) {
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         for (brightness = 0; brightness < 0xFF; brightness += 4) {
             func_80098440(brightness, 1, &rect);
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         for (frame = 0; frame < 0x78; frame++) {
             func_80098440(0xFF, 1, &rect);
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         func_80098338(0x21);
@@ -559,23 +559,23 @@ void func_80098974(void) {
         for (brightness = 0xFF; brightness >= 0; brightness -= 2) {
             func_80098440(brightness, 1, &rect);
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         while (sndGetStatus() != 0) {
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         for (frame = 0; frame < 0xE10; frame++) {
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         for (brightness = 0; brightness < 0xFF; brightness++) {
             func_80098440(brightness, 2, &rect);
             func_8009818C();
-            if (D_800992A8 & 0xF0) goto exit;
+            if (g_introCtrl0Edge & 0xF0) goto exit;
         }
 
         SetDispMask(0);
@@ -621,11 +621,11 @@ void func_80098FD4(s32 mode) {
 
     switch (mode) {
     case 0:
-        D_80099290 = 0;
+        g_introRenderMode = 0;
         func_80098974();
         break;
     case 1:
-        D_80099290 = mode;
+        g_introRenderMode = mode;
         func_8009879C();
         break;
     }
