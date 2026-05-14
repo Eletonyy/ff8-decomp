@@ -11,7 +11,7 @@
  *   - 0x80100008: raw 16bpp BGR555 pixels — 640×400 for entries fed to
  *     @c func_80098378 mode 0, 580×406 for mode 1.
  *
- * @c func_80098338 indexes this table by stage; @c func_800985B4 reads
+ * @c func_80098338 indexes this table by stage; @c loadWrongDiscWarning reads
  * entry 34 directly (offset 0x110 = 34 * 8) and loads it to a separate
  * staging area at @c 0x8017D000 for the mode-2 flash overlay.
  *
@@ -29,7 +29,7 @@ u32 g_introAssetTable[] = {
     0x00024736, 0x0002CE46,  /*  1: 580x406  disc-swap prompt for Disc 2      */
     0x00024790, 0x0002D772,  /*  2: 580x406  disc-swap prompt for Disc 3      */
     0x000247EB, 0x0002C834,  /*  3: 580x406  disc-swap prompt for Disc 4      */
-    0x00024845, 0x0000F199,  /*  4: 640x400  "Final Fantasy VIII" logo        */
+    0x00024845, 0x0000F199,  /*  4: 640x400  Squaresoft logo                  */
     0x00024864, 0x0000FCBC,  /*  5: 640x400  intro slide 5                    */
     0x00024884, 0x0000F96C,  /*  6: 640x400  intro slide 6                    */
     0x000248A4, 0x00024404,  /*  7: 640x400  intro slide 7 (large/full image) */
@@ -58,7 +58,7 @@ u32 g_introAssetTable[] = {
     0x00024D7B, 0x0000FBD7,  /* 30: 640x400  intro slide 30                   */
     0x00024D9B, 0x00026F1F,  /* 31: 640x400  intro slide 31 (large/full)      */
     0x00024DE9, 0x0002D5DA,  /* 32: 640x400  "The End" title card             */
-    0x00024E44, 0x00015485,  /* 33: 640x400  final fade frame                 */
+    0x00024E44, 0x00015485,  /* 33: 640x400  "Final Fantasy VIII" logo        */
     0x00024E6F, 0x0000FF09,  /* 34: 580x406  "CAUTION WRONG DISC" warning     */
-    0x00024E8F, 0x0000F131,  /* 35: 640x400  Squaresoft logo                  */
+    0x00024E8F, 0x0000F131,  /* 35: 640x400  "Published by Square Electronic Arts L.L.C" attribution */
 };

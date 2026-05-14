@@ -9,7 +9,7 @@
 /**
  * @brief Display-init overlay entry point — set up display + run 60-frame intro.
  *
- * Boot-time setup for the intro sequence (Squaresoft logo / opening movie
+ * Boot-time setup for the intro sequence (Square publisher attribution / opening movie
  * preface) before the main menu. Steps:
  *  - Ring the sound side (@c sndCmdF0/F1) and wait for the sound CPU to
  *    drain its pending command queue (@c func_8004D174 / @c func_8004D208).
@@ -132,9 +132,9 @@ void func_8009818C(void) {
  *
  * @c g_introAssetTable is a table of (sector, size) pairs (8 bytes per entry,
  * laid out as @c u32 sector then @c u32 size). For each story-stage
- * index used by the intro sequence (e.g. @c 0x23 Squaresoft logo,
- * @c 4 FF8 logo, @c 5..0x1F SeeD application text pages, @c 0x20 "The
- * End", @c 0x21 final fade), the entry is fetched and queued via
+ * index used by the intro sequence (e.g. @c 0x23 Square publisher attribution,
+ * @c 4 Squaresoft logo, @c 5..0x1F SeeD application text pages, @c 0x20 "The
+ * End", @c 0x21 FF8 logo), the entry is fetched and queued via
  * @c cdReadAsyncSync into VRAM-adjacent main RAM at @c 0x80100000.
  *
  * @param stage Asset table index — selects which (sector, size) pair
@@ -144,7 +144,7 @@ void func_80098338(s32 stage) {
     /* Each table entry is 2 u32s (sector, size); index by stage * 2. */
     cdReadAsyncSync(g_introAssetTable[stage * 2],
                     g_introAssetTable[stage * 2 + 1],
-                    (s32)0x80100000, 0);
+                    (s32)g_introStagedFrame, 0);
 }
 
 /**
@@ -179,7 +179,7 @@ void func_80098378(s32 mode, s32 x, s32 y, s32 width, s32 height) {
     rect[3] = 1;
     curY = (u16)g_introOdeLatch + y;
     rect[1] = curY;
-    src = (u8 *)(((u32)(width * val) >> 2 << 2) + (s32)0x80100008);
+    src = (u8 *)g_introStagedFrame->pixels + (((u32)(width * val)) >> 2 << 2);
 
     if ((s16)curY < y + height) {
         do {
@@ -230,46 +230,52 @@ void func_80098440(s32 brightness, s32 mode, RECT *rect) {
 }
 
 /**
- * @brief Load and play a specific music track for the display init overlay.
+ * @brief Pre-load the "CAUTION WRONG DISC" warning frame.
  *
- * Reads CD file entry at offset 0x110 (entry 34) from g_introAssetTable and
- * calls cdReadAsyncSync to load it to address 0x8017D000.
+ * Reads the @c INTRO_ASSET_WRONG_DISC entry from @c g_introAssetTable
+ * (a 580x406 LZSS-compressed frame) into staging RAM at @c 0x8017D000
+ * so that @c func_800985EC can later display it when @c func_8009869C
+ * triggers the disc-mismatch flash. Called once at the start of
+ * @c func_8009879C, right after the "insert disc N" prompt is loaded.
  */
-void func_800985B4(void) {
-    u32 *base = g_introAssetTable;
-
-    cdReadAsyncSync(*(u32 *)((u8 *)base + 0x110),
-                  *(u32 *)((u8 *)base + 0x114),
-                  (s32)0x8017D000, 0);
+void loadWrongDiscWarning(void) {
+    cdReadAsyncSync(g_introAssetTable[INTRO_ASSET_WRONG_DISC * 2],
+                    g_introAssetTable[INTRO_ASSET_WRONG_DISC * 2 + 1],
+                    (s32)0x8017D000, 0);
 }
 
 /**
- * @brief Transfer display rows from VRAM buffer at 0x8017D008.
+ * @brief Upload "CAUTION WRONG DISC" scanlines into VRAM (mode-2 renderer).
  *
- * Computes a VRAM source offset using g_introOdeLatch and copies scanlines
- * starting at y = (u16)g_introOdeLatch + 0x26, incrementing by 2 each iteration,
- * until y >= 0x1BC.
+ * Reads from the pre-loaded @c g_wrongDiscFrame staged at @c 0x8017D000,
+ * starting at the field-parity row (@c g_introOdeLatch is 0 or 1), and
+ * pushes every other line into VRAM via @c LoadImage. The complementary
+ * field comes from the previous frame buffer thanks to the GPU's interlaced
+ * display mode (see @c func_80098000's @c isinter setup).
+ *
+ * Geometry matches the 580x406 source: target rect (x=0x1E, w=0x244, h=1)
+ * sweeps from @c y=g_introOdeLatch+0x26 upward by 2 until @c y >= 0x1BC.
  */
 void func_800985EC(void) {
     s16 rect[4];
-    s32 val;
+    s32 field;
     s16 y;
-    u8 *ptr;
+    u16 *row;
 
-    val = g_introOdeLatch;
+    field = g_introOdeLatch;
     rect[0] = 0x1E;
     rect[2] = 0x244;
     rect[3] = 1;
     y = (u16)g_introOdeLatch + 0x26;
     rect[1] = y;
-    ptr = (u8 *)((s32)0x8017D008 + val * 0x488);
+    row = &g_wrongDiscFrame->pixels[field * WRONG_DISC_FRAME_W];
 
     if ((s16)y < 0x1BC) {
         do {
-            LoadImage(&rect, ptr);
+            LoadImage((RECT *)rect, (u32 *)row);
             y = rect[1] + 2;
             rect[1] = y;
-            ptr += 0x910;
+            row += 2 * WRONG_DISC_FRAME_W;   /* advance two lines (interlace) */
         } while ((s16)y < 0x1BC);
     }
 }
@@ -350,7 +356,7 @@ void func_8009879C(void) {
 
     func_80098000();
     func_80098338(g_seedState->expectedDiscId - 1);
-    func_800985B4();
+    loadWrongDiscWarning();
 
     rect.x = 0x1E;
     rect.y = 0x26;
@@ -400,12 +406,12 @@ void func_8009879C(void) {
 }
 
 /**
- * @brief Squaresoft / FF8 startup intro sequence.
+ * @brief Boot-time FF8 startup intro sequence.
  *
- * Plays the boot-time intro shown when no save is loaded — Squaresoft logo,
- * FF8 logo, then the SeeD application story text crawl (stages 5-0x1F, 27
+ * Plays the boot-time intro shown when no save is loaded — Square publisher attribution,
+ * Squaresoft logo, then 27 intro slides (stages 5-0x1F, 27
  * pages of text rendered by @c func_80098338), followed by "The End"
- * (stage 0x20) and a final fade. Any button press on controller 1
+ * (stage 0x20), and the "Final Fantasy VIII" title-screen logo (stage 0x21 with music fade-out). Any button press on controller 1
  * (@c g_introCtrl0Edge high nibble) skips to the cleanup tail.
  *
  * Each segment fades in / holds / fades out via @c func_80098440 (the

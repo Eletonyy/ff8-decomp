@@ -34,7 +34,7 @@ ASSETS = [
     (0x00024736, 0x0002CE46, "disc-swap prompt for Disc 2"),
     (0x00024790, 0x0002D772, "disc-swap prompt for Disc 3"),
     (0x000247EB, 0x0002C834, "disc-swap prompt for Disc 4"),
-    (0x00024845, 0x0000F199, "Final Fantasy VIII logo"),
+    (0x00024845, 0x0000F199, "Squaresoft logo"),
     (0x00024864, 0x0000FCBC, "intro slide 5"),
     (0x00024884, 0x0000F96C, "intro slide 6"),
     (0x000248A4, 0x00024404, "intro slide 7 (full image)"),
@@ -63,9 +63,9 @@ ASSETS = [
     (0x00024D7B, 0x0000FBD7, "intro slide 30"),
     (0x00024D9B, 0x00026F1F, "intro slide 31 (full image)"),
     (0x00024DE9, 0x0002D5DA, '"The End" title card'),
-    (0x00024E44, 0x00015485, "final fade frame"),
+    (0x00024E44, 0x00015485, "Final Fantasy VIII logo"),
     (0x00024E6F, 0x0000FF09, '"CAUTION WRONG DISC" warning'),
-    (0x00024E8F, 0x0000F131, "Squaresoft logo"),
+    (0x00024E8F, 0x0000F131, '"Published by Square Electronic Arts L.L.C" attribution'),
 ]
 
 # PSX raw-mode disc image: 2352-byte sectors, Mode 2 Form 1 user data at +24.
