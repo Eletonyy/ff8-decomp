@@ -1589,7 +1589,65 @@ s32 func_8009A4E0(CallbackNode *node) {
     return (func_80098D28(node->listPtr) == 0) << 1;
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object1", func_8009A508);
+/**
+ * @brief Triple Triad: tally per-player card ownership and render the two
+ *        score-digit sprites for the end-of-game tally screen.
+ *
+ * Walks all 10 @c BattleObject slots in @c D_801D31C0 and bins each by the
+ * low bit of @c initFlags (owner: player 0 or player 1) into a 2-element
+ * stack-local @c cnt[]. Then emits two 6-word combined @c DR_TPAGE + @c SPRT
+ * primitives — one per player — placed at fixed screen positions
+ * (player 0 at @c x=0x28, player 1 at @c x=0x140; both at @c y=0xC0). The
+ * @c u0 coordinate selects a digit glyph from a tex-page strip via the
+ * formula @c u0 = (cnt[p] * 24) - 24 = (cnt[p] - 1) * 24 (each glyph is
+ * 24 pixels wide). Sprites are 24x24, CLUT @c 0x3A40, @c v0 = 0x30.
+ *
+ * @return Always @c 0.
+ *
+ * @note Matching tricks: (1) @c cnt[1] = 0 then @c cnt[0] = 0 (reversed
+ *       init order) matches the target's @c sw zero sequence — same trick
+ *       used in @c func_80099C78's case 7. (2) The branch form
+ *       @c if (!(i & 1)) ... else ... — with the @c i==0 (player 0) path
+ *       in the @c if body — drives gcc to emit @c bnez to the player-1
+ *       (@c 0x140) branch and fall through (in delay slot) to the
+ *       player-0 (@c 0x28) value, matching target's @c bnez+j layout.
+ *       The @c & 1 mask is reused for both the @c x0 branch and the
+ *       @c cnt[i & 1] lookup so gcc CSEs the @c andi.
+ */
+s32 func_8009A508(void) {
+    s32 i = 0;
+    s32 cnt[2];
+    TripleTriadCellPrim *prim;
+
+    cnt[1] = 0;
+    cnt[0] = 0;
+
+    for (; i < 10; i++) {
+        cnt[D_801D31C0[i].initFlags & 1]++;
+    }
+
+    prim = (TripleTriadCellPrim *)D_801C2EB4;
+
+    for (i = 0; i < 2; i++) {
+        prim->tag      = 0x05000000;
+        prim->tpageCmd = 0xE100060C;
+        prim->sprtCmd  = 0x64808080;
+        if (!(i & 1)) prim->x0 = 0x28;
+        else          prim->x0 = 0x140;
+        prim->y0       = 0xC0;
+        prim->u0       = (cnt[i & 1] * 3 * 8) - 0x18;
+        prim->v0       = 0x30;
+        prim->clut     = 0x3A40;
+        prim->h        = 0x18;
+        prim->w        = 0x18;
+
+        AddPrim((s32 *)&D_801C2EB0[4], prim);
+        prim++;
+    }
+
+    D_801C2EB4 = prim;
+    return 0;
+}
 
 /**
  * @brief Initialize the D_801D3028 linked list with battle update callbacks.
@@ -1671,7 +1729,68 @@ u8 *func_8009A6EC(u8 *a0, s16 *a1) {
     return (u8 *)a1;
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object1", func_8009A7A4);
+/**
+ * @brief Find a battle-object slot in @c D_801D31C0 matching a search key.
+ *
+ * Three search modes are dispatched off @p groupId:
+ *  - @c groupId @c <0: invalid — returns @c -1.
+ *  - @c groupId @c 0 or @c 1: scan the 10 slots for an @b active entry
+ *    (@c flags @c & @c 1) whose @c groupId matches and whose @c priority
+ *    matches @p priority. @p fieldD is ignored.
+ *  - @c groupId @c ==2: scan for an entry (active or not) whose
+ *    @c groupId is @c 2, @c fieldD matches @p fieldD, and @c priority
+ *    matches @p priority.
+ *  - @c groupId @c >2: invalid — returns @c -1.
+ *
+ * @param groupId  Search-mode selector and target @c BattleObject.groupId.
+ * @param fieldD   Target @c BattleObject.fieldD (only used in mode 2).
+ * @param priority Target @c BattleObject.priority.
+ * @return Slot index @c 0..9 of the first matching entry, or @c -1 if
+ *         none found / invalid mode.
+ *
+ * @note Matching trick: explicit @c goto dispatch keeps gcc from inlining
+ *       each loop body right after its dispatch test. With gotos the two
+ *       scan loops land at the bottom of the function and the three
+ *       dispatch tests at the top become @c bltz / @c bnez / @c beq
+ *       forward jumps — matching the target's "test up top, handlers at
+ *       the bottom" layout. Without gotos, gcc falls through into the
+ *       first loop right after the @c a0 @c < @c 2 test (89% match).
+ */
+s32 func_8009A7A4(s32 groupId, s32 fieldD, s32 priority) {
+    s32 i;
+
+    if (groupId < 0) goto invalid;
+    if (groupId < 2) goto scan_active;
+    if (groupId == 2) goto scan_by_field;
+    return -1;
+
+scan_active:
+    for (i = 0; i < 10; i++) {
+        if (D_801D31C0[i].flags & 1) {
+            if (D_801D31C0[i].groupId == groupId) {
+                if (D_801D31C0[i].priority == priority) {
+                    return i;
+                }
+            }
+        }
+    }
+    return -1;
+
+scan_by_field:
+    for (i = 0; i < 10; i++) {
+        if (D_801D31C0[i].groupId == groupId) {
+            if (D_801D31C0[i].fieldD == fieldD) {
+                if (D_801D31C0[i].priority == priority) {
+                    return i;
+                }
+            }
+        }
+    }
+    return -1;
+
+invalid:
+    return -1;
+}
 
 /**
  * @brief Mark a battle entity's flags with bit 2.
