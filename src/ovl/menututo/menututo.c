@@ -1447,81 +1447,53 @@ void func_801E48C0(TutoState *self) {
 /**
  * @brief Build five textured-sprite GPU primitives for the tutorial fade banner.
  *
- * Iterates 5 times to produce a 320x216 strip of TSPRT primitives at y=0,
- * each 64 pixels wide, sourcing from texpages at TX=13..15. The sprite
- * color (r0/g0/b0) is set to fade/32 so opacity ramps smoothly. Each
- * primitive is linked into the OT via the lwl/swl addPrim pattern.
+ * Iterates 5 times to produce a 320x216 strip of TSPRT primitives at @c y=0,
+ * each 64 pixels wide, sourcing from texpages at @c TX=13..15. The sprite
+ * color (@c r0/g0/b0) is set to @c fade/32 so opacity ramps smoothly. Each
+ * primitive is linked into the OT via @c addPrim.
  *
  * @param ot   Ordering table pointer.
  * @param prim TSPRT packet allocation pointer.
  * @param fade Fade alpha value (signed); divided by 32 for the per-sprite tint.
- * @return Updated packet pointer (prim + 5 * sizeof(TSPRT)).
+ * @return Updated packet pointer (@c prim + 5*sizeof(TSPRT)).
  *
- * @note A byte-matching version exists but is heavily contorted (raw
- * pointer offsets relative to `prim + 0x12`, inline asm for addPrim
- * with explicit register names, dead-code variables to engineer the
- * register allocation). Preserved below for reference; do not enable
- * unless you accept the deviation from the project's "human-style C"
- * rule. The clean idiomatic version remains a TODO.
+ * @note Near-match (~63%): the target uses an @c lwl/swl 3-byte swap pattern
+ *       for @c addPrim that gcc 2.7.2-cdk does not emit from the project's
+ *       bitfield-based @c setaddr macro (it emits load-mask-or-store — 6+
+ *       instructions vs target's 4). The original source likely had hand-
+ *       written inline asm for @c addPrim, or relied on a PsyQ SDK variant
+ *       whose codegen our toolchain doesn't reproduce. Project policy bans
+ *       inline asm, so the function stays @c INCLUDE_ASM. Several similar
+ *       functions in @c btl_sfx.c (the "swl-based setaddr" comment there
+ *       refers to the same pattern) are likewise still @c INCLUDE_ASM.
+ *       The cleanest matching-aware C reaches 63% — preserved below for
+ *       reference. Other near-misses come from gcc not keeping the unused
+ *       @c tpY anchor variable in a register without a use site for it.
  *
  * @verbatim
  * s32 func_801E4BD0(s32 ot, TSPRT *prim, s32 fade) {
- *     s32 color  = fade / 32;
- *     s32 src    = 0x340;
- *     s32 x      = 0;
- *     s32 y      = x;
- *     s32 count  = x;
- *     s32 lenVal = 5;
- *     s32 abr    = count;
- *     s32 tpY    = count;
- *     u8 *p      = (u8 *)prim + 0x12;
+ *     s32 color = fade / 32;
+ *     s32 src   = 0x340;
+ *     s32 x     = 0;
+ *     s32 y     = 0;
+ *     s32 count = 0;
  *
  * top:
- *     {
- *         s32 cmd    = 0xE1000400;
- *         s32 tpQuot = src;
- *         s32 tpVal;
- *
- *         {
- *             s32 t = (src & 0x3FF) >> 6;
- *             t |= 0x80;
- *             tpVal = abr | t;
- *             tpVal |= cmd;
- *         }
- *
- *         *(u32 *)(p - 0xE) = tpVal;
- *         *(u8 *)(p - 0x7)  = 0x64;
- *         *(u16 *)(p + 0x2) = 0x40;
- *         *(u8 *)(p - 0xF)  = lenVal;
- *         *(u8 *)(p - 0xA)  = color;
- *         *(u8 *)(p - 0x9)  = color;
- *         *(u8 *)(p - 0x8)  = color;
- *         *(s16 *)(p - 0x6) = x;
- *         *(s16 *)(p - 0x4) = y;
- *         *(u16 *)(p + 0x4) = 0xD8;
- *
- *         if (src < 0)
- *             tpQuot = src + 0x3F;
- *         {
- *             s32 sraResult = tpQuot >> 6;
- *             *(u8 *)(p - 0x2) = (src - (sraResult << 6)) * 2;
- *         }
- *         *(u8 *)(p - 0x1)  = 0;
- *         *(u16 *)(p + 0x0) = 0x36A0;
- *
- *         asm volatile(
- *             ".set push; .set noat\n"
- *             "sll $1, %1, 8\n"
- *             "lwl $12, 2(%0)\n"
- *             "swl $1, 2(%0)\n"
- *             "swl $12, 2(%1)\n"
- *             ".set pop\n"
- *             : : "r"(ot), "r"(prim), "r"(tpY), "r"(tpQuot) : "$12", "memory");
- *     }
- *     p     += 0x18;
+ *     ((P_TAG *)prim)->len = 5;
+ *     prim->drawMode = 0xE1000480 | ((src & 0x3FF) >> 6);
+ *     prim->r0 = prim->g0 = prim->b0 = color;
+ *     prim->code = 0x64;
+ *     prim->x0   = x;
+ *     prim->y0   = y;
+ *     prim->u0   = (src % 64) * 2;
+ *     prim->v0   = 0;
+ *     prim->clut = 0x36A0;
+ *     prim->w    = 0x40;
+ *     prim->h    = 0xD8;
+ *     addPrim((P_TAG *)ot, prim);
  *     prim++;
- *     count += 0x40;
  *     x     += 0x40;
+ *     count += 0x40;
  *     src   += 0x20;
  *     if (count < 0x140) goto top;
  *
