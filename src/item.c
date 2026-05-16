@@ -6,8 +6,15 @@
 extern TripleTriadData g_tripleTriad;
 extern u16 D_8005EC3E[];
 
-/** @brief Return a pointer to the global Triple Triad / inventory data structure. */
-TripleTriadData *getInventoryPtr(void) {
+/**
+ * @brief Return a pointer to the global Triple Triad card collection data.
+ *
+ * @c g_tripleTriad is the same memory as @c g_gameState.cards (offset
+ * @c 0x12E0); it is declared as a standalone extern so accesses emit a
+ * clean @c lui + @c addiu instead of folding the @c g_gameState symbol
+ * and the @c 0x12E0 offset together.
+ */
+TripleTriadData *getTripleTriadData(void) {
     return &g_tripleTriad;
 }
 
@@ -20,7 +27,7 @@ TripleTriadData *getInventoryPtr(void) {
  * @note Item quantities stored in lower 7 bits (0x7F mask). Upper bit may be a flag.
  */
 s32 modifyItemQuantity(s32 a0, s32 a1) {
-    TripleTriadData *base = getInventoryPtr();
+    TripleTriadData *base = getTripleTriadData();
     u8 *ptr;
     u8 val;
 
@@ -58,7 +65,7 @@ s32 modifyItemQuantity(s32 a0, s32 a1) {
  * @param a0 Inventory slot index.
  */
 void markItemPresent(s32 a0) {
-    TripleTriadData *base = getInventoryPtr();
+    TripleTriadData *base = getTripleTriadData();
     if (a0 < 0x4D) {
         base->cards[a0] |= 0x80;
     } else {
@@ -105,7 +112,7 @@ u8 *func_80023A54(s32 itemId) {
  * @return 1 if the item/key item is flagged, 0 otherwise.
  */
 s32 isItemPresent(s32 a0) {
-    TripleTriadData *base = getInventoryPtr();
+    TripleTriadData *base = getTripleTriadData();
     s32 byte_idx;
     if (a0 < 0x4D) {
         if (base->cards[a0] & 0x80) {
@@ -135,7 +142,7 @@ s32 isItemPresent(s32 a0) {
  * @return Item quantity, 0/1 for key items, or -1 if not present.
  */
 s32 func_80023B14(s32 a0) {
-    TripleTriadData *base = getInventoryPtr();
+    TripleTriadData *base = getTripleTriadData();
     s32 idx;
     s32 byte_idx;
 
@@ -185,7 +192,7 @@ s32 sumItemQuantities(void) {
  * @return Card location value if a0 >= 0x4D, else 0.
  */
 s32 getKeyItemValue(s32 a0) {
-    TripleTriadData *base = getInventoryPtr();
+    TripleTriadData *base = getTripleTriadData();
     if (a0 >= 0x4D) {
         return base->cardLocations[a0 - 0x4D];
     }
@@ -193,7 +200,51 @@ s32 getKeyItemValue(s32 a0) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/item", func_80023C48);
+/**
+ * @brief Check whether the player owns all 110 Triple Triad cards.
+ *
+ * Walks every common card (77 entries) and every rare card bit (33 entries)
+ * to confirm completion. On the first call where every card is owned, sets
+ * bit 0 of @c TripleTriadData.pad73 as a "gold star" latch so subsequent
+ * calls short-circuit on that flag without re-walking the arrays. The latch
+ * drives the gold star that appears next to the @c Card menu entry once
+ * the player has collected every card.
+ *
+ * @return 1 if all 110 cards are (or have ever been) owned, 0 otherwise.
+ *
+ * @note The latch lives in @c pad73 bit 0, but the function reads and
+ *       writes it as a @c u32 at @c rareCards[2] (i.e. @c TripleTriadData
+ *       offset @c 0x70, four contiguous bytes covering the upper three
+ *       bytes of the rare-card bitmap plus @c pad73). gcc 2.7.2 emits the
+ *       check as @c lw @c + @c lui @c 0x0100 @c + @c and — the constant
+ *       @c 1 @c << @c 24 fits a single @c lui immediate with no @c ori, so
+ *       this is one instruction shorter than @c lbu @c 0x73 @c + @c andi.
+ *       The cast is the only way to express that idiom in C; the bytes it
+ *       touches at @c 0x70..0x72 are masked off and don't matter.
+ */
+s32 func_80023C48(void) {
+    TripleTriadData *base = getTripleTriadData();
+    s32 i;
+
+    if (*(u32 *)&base->rareCards[2] & 0x01000000) {
+        return 1;
+    }
+
+    for (i = 0; i < 0x4D; i++) {
+        if (!(base->cards[i] & 0x80)) {
+            return 0;
+        }
+    }
+
+    for (i = 0; i < 0x21; i++) {
+        if (!((base->rareCards[i / 8] >> (i & 7)) & 1)) {
+            return 0;
+        }
+    }
+
+    *(u32 *)&base->rareCards[2] |= 0x01000000;
+    return 1;
+}
 
 
 /**
@@ -207,7 +258,7 @@ INCLUDE_ASM("asm/nonmatchings/item", func_80023C48);
  * @return Pseudo-random value in [0, 32767].
  */
 s32 func_80023D04(void) {
-    TripleTriadData *ptr = getInventoryPtr();
+    TripleTriadData *ptr = getTripleTriadData();
     s32 seed = ptr->rngState;
     ptr->rngState = (seed * 69069) + 1;
     return ((u32)((seed * 69069) + 1)) >> 17;

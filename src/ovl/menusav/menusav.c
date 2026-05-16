@@ -527,7 +527,7 @@ void func_801E7408(void) {
  */
 void func_801E7428(void) {
     s32 s0;
-    u8 *a1 = (u8 *)getInventoryPtr();
+    u8 *a1 = (u8 *)getTripleTriadData();
     s32 v0;
 
     s0 = 0x6D;

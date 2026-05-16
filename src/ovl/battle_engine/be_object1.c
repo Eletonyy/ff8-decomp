@@ -1438,7 +1438,7 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object1", func_80099798);
  *                 if ((u8)ctl->counter < TT_HOLD_FRAMES_FADE) return 0;
  *                 if (D_801D3018 != 0) func_8009EB90(D_801D3018, 1);
  *                 {
- *                     TripleTriadData *inv = getInventoryPtr();
+ *                     TripleTriadData *inv = getTripleTriadData();
  *                     if (D_801D30FC == 2) {
  *                         D_80082C9C = D_801D30FC;
  *                         inv->draws++;

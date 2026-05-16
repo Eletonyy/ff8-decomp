@@ -210,8 +210,21 @@ typedef struct {
  * At g_gameState + 0x12E0 (0x80078658).
  */
 typedef struct {
-    /* 0x00 */ u8 cards[77];          /**< Card counts (one per card type). */
-    /* 0x4D */ u8 cardLocations[33];  /**< Card locations (for rare/unique cards). */
+    /* 0x00 */ u8 cards[77];          /**< Common card slots (one per card type).
+                                           Bit 7 = "owned / has been acquired" flag,
+                                           bits 0..6 = count (0..127). Byte is 0
+                                           when the card has never been obtained;
+                                           becomes 0x80 | count once acquired. */
+    /* 0x4D */ u8 cardLocations[33];  /**< Current location ID for each rare card (77..109).
+                                           Specifies where in the world the card sits;
+                                           the Queen of Cards uses this to relocate
+                                           cards between regions. Confirmed values:
+                                              0x00 — Used up (consumed by Card Mod)
+                                              0x01 — Queen of Cards (in transit)
+                                              0x10 — Garden hallway
+                                              0xF0 — Squall (in the player's deck)
+                                           Remaining IDs map to specific NPCs / rooms
+                                           and are not yet fully cataloged. */
     /* 0x6E */ u8 rareCards[5];       /**< Rare card flags. */
     /* 0x73 */ u8 pad73;              /**< Padding. */
     /* 0x74 */ u16 victories;         /**< TT win count. */
