@@ -439,7 +439,26 @@ s32 func_800B2F70(Eline *eline) {
  * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2FD8);
+/**
+ * Reset all movement-sweep state to "stopped at -1": set the current
+ * position halfword to @c -1, prime walk-speed countdown halfwords to 1,
+ * clear both saved endpoints, then mask the flags to clear high-mode
+ * bits + direction bit and arm the @c 0x1000 stop marker.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B2FD8(Eline *eline) {
+    *(s16 *)&eline->unk188 = -1;
+    ((FieldEntity *)eline)->walkSpeed2 = 1;
+    ((FieldEntity *)eline)->walkSpeed = 1;
+    eline->unk18E = 0;
+    eline->unk18C = 0;
+    eline->flags &= 0xFFFF07FF;
+    eline->flags &= ~0x100;
+    eline->flags |= 0x1000;
+    return 2;
+}
 
 /** @brief Pop halfword, store to both walkSpeed2 and walkSpeed. Returns 2. */
 s32 func_800B301C(Eline *eline) {
