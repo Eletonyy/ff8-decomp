@@ -1769,9 +1769,7 @@ s32 func_800B85F8(Eline *eline, s32 a1) {
             eline->msgActive = 0;
             return 2;
         }
-        return 1;
-    }
-    do {
+    } else {
         eline->msgActive = 3;
         eline->windowId = 1;
         eline->msgState = 0;
@@ -1781,11 +1779,55 @@ s32 func_800B85F8(Eline *eline, s32 a1) {
         eline->msgPosX = POP(eline) << 12;
         eline->msgTextPtr = POP(eline) << 12;
         eline->field_0x1FC = a1;
-    } while (0);
+    }
     return 1;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8710);
+/**
+ * @brief Positioned-message handler — windowId=0, msgActive=3 variant
+ *        with animation-trigger call.
+ *
+ * Sister of @c func_800B85F8 with @c windowId = 0 instead of 1.
+ * Active path: sets @c msgActive=3 / @c windowId=0 / @c msgState=0,
+ * pops a signed halfword and dispatches @c func_800B912C with it
+ * (animation trigger), marks @c flags |= 0x2000, pops three Q19.12
+ * coords into @c msgPosY / @c msgPosX / @c msgTextPtr, stores the
+ * dispatcher arg into @c field_0x1FC. Inactive path: waits for
+ * @c msgState == 2 then clears @c msgActive and returns 2.
+ *
+ * Uses the @c if/else (not @c do{}while(0)) form to get gcc 2.7.2 to
+ * allocate @c v0 for the stackPtr load — the do-while wrapper that
+ * works for the sibling handlers triggers a v0/v1 swap here because
+ * the bnez delay slot is taken by @c move @c s1, @c a1 (saving the
+ * arg across the @c func_800B912C call), forcing the @c msgActive
+ * constant load into the active block where it competes with the
+ * stackPtr load. The @c if/else structure keeps both paths in
+ * separate basic blocks so gcc allocates @c v0 to the more-used
+ * stackPtr.
+ *
+ * @param eline Script context.
+ * @param a1    Opcode argument (stored as halfword to field_0x1FC).
+ * @return 1 while running, 2 once read.
+ */
+s32 func_800B8710(Eline *eline, s32 a1) {
+    if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
+        if (eline->msgState == 2) {
+            eline->msgActive = 0;
+            return 2;
+        }
+    } else {
+        eline->msgActive = 3;
+        eline->windowId = 0;
+        eline->msgState = 0;
+        func_800B912C(eline, (s16)POP(eline));
+        eline->flags |= 0x2000;
+        eline->msgPosY = POP(eline) << 12;
+        eline->msgPosX = POP(eline) << 12;
+        eline->msgTextPtr = POP(eline) << 12;
+        eline->field_0x1FC = a1;
+    }
+    return 1;
+}
 
 /**
  * @brief 9-pop positioned-message handler — sets up message position
@@ -1813,9 +1855,7 @@ s32 func_800B8824(Eline *eline, s32 a1) {
             eline->msgActive = 0;
             return 2;
         }
-        return 1;
-    }
-    do {
+    } else {
         eline->msgActive = 4;
         eline->windowId = 1;
         eline->msgState = 0;
@@ -1829,7 +1869,7 @@ s32 func_800B8824(Eline *eline, s32 a1) {
         eline->unk1AC = POP(eline) << 12;
         eline->unk1A8 = POP(eline) << 12;
         eline->field_0x1FC = a1;
-    } while (0);
+    }
     return 1;
 }
 
@@ -1853,19 +1893,13 @@ s32 func_800B8824(Eline *eline, s32 a1) {
  * @return 1 while running, 2 once read.
  */
 s32 func_800B89C0(Eline *eline, s32 a1) {
-    u16 active_mask;
-    s32 new_var;
-    active_mask = eline->activeMask >> eline->scriptGroup;
-    new_var = 4;
-    if (!(active_mask & 1)) {
+    if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState == 2) {
             eline->msgActive = 0;
             return 2;
         }
-        return 1;
-    }
-    do {
-        eline->msgActive = new_var;
+    } else {
+        eline->msgActive = 4;
         eline->windowId = 0;
         eline->msgState = 0;
         eline->msgPosY = POP(eline) << 12;
@@ -1878,7 +1912,7 @@ s32 func_800B89C0(Eline *eline, s32 a1) {
         eline->unk1AC = POP(eline) << 12;
         eline->unk1A8 = POP(eline) << 12;
         eline->field_0x1FC = a1;
-    } while (0);
+    }
     return 1;
 }
 
@@ -1896,22 +1930,20 @@ s32 func_800B89C0(Eline *eline, s32 a1) {
  * @return 2 (advance PC).
  */
 s32 func_800B8B58(Eline *eline, s32 a1) {
-    do {
-        u16 a, b, c;
-        a = POP(eline);
-        eline->field_0x1EC = a;
-        eline->field_0x1EE = a;
-        b = POP(eline);
-        eline->field_0x1E6 = b;
-        eline->field_0x1E8 = b;
-        c = POP(eline);
-        eline->field_0x1FC = a1;
-        eline->unk245 = 0;
-        eline->msgState = 0;
-        eline->field_0x1F4 = 0;
-        eline->field_0x1E0 = c;
-        eline->field_0x1E2 = c;
-    } while (0);
+    u16 a, b, c;
+    a = POP(eline);
+    eline->field_0x1EC = a;
+    eline->field_0x1EE = a;
+    b = POP(eline);
+    eline->field_0x1E6 = b;
+    eline->field_0x1E8 = b;
+    c = POP(eline);
+    eline->field_0x1FC = a1;
+    eline->unk245 = 0;
+    eline->msgState = 0;
+    eline->field_0x1F4 = 0;
+    eline->field_0x1E0 = c;
+    eline->field_0x1E2 = c;
     return 2;
 }
 
@@ -1928,17 +1960,15 @@ s32 func_800B8B58(Eline *eline, s32 a1) {
  * @return 2 (advance PC).
  */
 s32 func_800B8BE0(Eline *eline, s32 a1) {
-    do {
-        eline->unk245 = 1;
-        eline->field_0x1F2 = POP(eline);
-        eline->field_0x1F0 = POP(eline);
-        eline->field_0x1EA = POP(eline);
-        eline->field_0x1E4 = POP(eline);
-        eline->field_0x1EE = POP(eline);
-        eline->field_0x1E8 = POP(eline);
-        eline->field_0x1E2 = POP(eline);
-        eline->field_0x1F4 = 0;
-    } while (0);
+    eline->unk245 = 1;
+    eline->field_0x1F2 = POP(eline);
+    eline->field_0x1F0 = POP(eline);
+    eline->field_0x1EA = POP(eline);
+    eline->field_0x1E4 = POP(eline);
+    eline->field_0x1EE = POP(eline);
+    eline->field_0x1E8 = POP(eline);
+    eline->field_0x1E2 = POP(eline);
+    eline->field_0x1F4 = 0;
     return 2;
 }
 
@@ -1953,17 +1983,15 @@ s32 func_800B8BE0(Eline *eline, s32 a1) {
  * @return 2 (advance PC).
  */
 s32 func_800B8CD4(Eline *eline, s32 a1) {
-    do {
-        eline->unk245 = 2;
-        eline->field_0x1F2 = POP(eline);
-        eline->field_0x1F0 = POP(eline);
-        eline->field_0x1EA = POP(eline);
-        eline->field_0x1E4 = POP(eline);
-        eline->field_0x1EE = POP(eline);
-        eline->field_0x1E8 = POP(eline);
-        eline->field_0x1E2 = POP(eline);
-        eline->field_0x1F4 = 0;
-    } while (0);
+    eline->unk245 = 2;
+    eline->field_0x1F2 = POP(eline);
+    eline->field_0x1F0 = POP(eline);
+    eline->field_0x1EA = POP(eline);
+    eline->field_0x1E4 = POP(eline);
+    eline->field_0x1EE = POP(eline);
+    eline->field_0x1E8 = POP(eline);
+    eline->field_0x1E2 = POP(eline);
+    eline->field_0x1F4 = 0;
     return 2;
 }
 
@@ -2114,11 +2142,9 @@ s32 func_800B8F80(Eline *eline) {
  * @return 2 (advance PC).
  */
 s32 func_800B8FA8(Eline *eline) {
-    do {
-        D_800704A8.unk104 = POP(eline);
-        D_800704A8.unk102 = POP(eline);
-        D_800704A8.unk106 = 0;
-    } while (0);
+    D_800704A8.unk104 = POP(eline);
+    D_800704A8.unk102 = POP(eline);
+    D_800704A8.unk106 = 0;
     return 2;
 }
 
