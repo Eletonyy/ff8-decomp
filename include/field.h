@@ -166,7 +166,9 @@ typedef struct {
     /* 0x185 */ u8 pad185[0x03];
     /* 0x188 */ u8 unk188;          /**< Script parameter byte. */
     /* 0x189 */ u8 unk189;          /**< Script parameter byte. */
-    /* 0x18A */ u8 pad18A[0x06];
+    /* 0x18A */ u8 pad18A[0x02];
+    /* 0x18C */ u16 unk18C;         /**< Halfword saved during async msg state. */
+    /* 0x18E */ u16 unk18E;         /**< Halfword saved during async msg state. */
     /* 0x190 */ s32 posX;           /**< Entity X position (fixed-point). */
     /* 0x194 */ s32 posY;           /**< Entity Y position (fixed-point). */
     /* 0x198 */ s32 posZ;           /**< Entity Z position (fixed-point). */

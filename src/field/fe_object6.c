@@ -305,7 +305,28 @@ s32 func_800B2B34(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2B48);
+/**
+ * Restore the @c unk188 / @c unk189 script-parameter halfword from one of
+ * two saved snapshots, conditioned on flag bits set in @c eline->flags:
+ *  - bit 0x2000: copy from @c unk18C and return (no flag mutation).
+ *  - bit 0x8000: copy from @c unk18E, clear high-mode bits in flags
+ *    (mask @c 0xFFFF07FF), set the @c 0x1000 marker, fall through.
+ * Then set the @c 0x800 marker regardless.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ */
+void func_800B2B48(Eline *eline) {
+    s32 flags = eline->flags;
+    if (flags & 0x2000) {
+        *(u16 *)&eline->unk188 = eline->unk18C;
+        return;
+    }
+    if (flags & 0x8000) {
+        eline->flags = (flags & 0xFFFF07FF) | 0x1000;
+        *(u16 *)&eline->unk188 = eline->unk18E;
+    }
+    eline->flags |= 0x800;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2BA0);
 
