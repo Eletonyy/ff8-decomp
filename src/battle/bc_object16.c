@@ -27,41 +27,41 @@ u32 func_8009A2E0(void);
 void func_800D13CC(void);
 void func_800D5E48(void);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CA078);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CA078);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CA344);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CA344);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CA668);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CA668);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CA9F0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CA9F0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CADD4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CADD4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CB0DC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CB0DC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CB31C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CB31C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CB464);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CB464);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CB820);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CB820);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CBC68);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CBC68);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CBEAC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CBEAC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CBFA8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CBFA8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CC360);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CC360);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CC4FC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CC4FC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CC6F0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CC6F0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CCB54);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CCB54);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CCCB8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CCCB8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CD1C0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CD1C0);
 
 /**
  * @brief Render a particle/effect primitive and update its animation state.
@@ -146,13 +146,13 @@ s32 func_800CD35C(ParticleEntry *p) {
     return ((s16)newFrame > 20) * 2;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CD594);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CD594);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CD98C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CD98C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CDB94);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CDB94);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CDD30);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CDD30);
 
 /**
  * @brief Render a wait-gated particle and step its motion.
@@ -235,7 +235,7 @@ s32 func_800CDF3C(ParticleEntry *p) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CE158);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CE158);
 
 /**
  * @brief Register a particle effect with callback func_800CE158.
@@ -272,11 +272,11 @@ s32 func_800CE7D4(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CE82C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CE82C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CE918);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CE918);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CEA7C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CEA7C);
 
 void func_800CEBE4(void) {
 }
@@ -363,7 +363,7 @@ s32 func_800CECC8(void) {
  *
  * @param a0 Nonzero to set, zero to clear.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CED0C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CED0C);
 
 /**
  * @brief Return the word value at D_800FB448.
@@ -401,7 +401,7 @@ void func_800CED84(void) {
     *(volatile u8 *)D_800FB444 = 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CED9C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CED9C);
 
 /**
  * @brief Read bit 1 from scratchpad control register at 0x1F8003AE.
@@ -421,13 +421,13 @@ s32 func_800CEDBC(void) {
     return (*(u16 *)0x1F8003AE >> 2) & 1;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CEDD4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CEDD4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CEDF8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CEDF8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CEE34);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CEE34);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CEFA0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CEFA0);
 
 /**
  * @brief Temporarily shrink entry dimensions by 2 and call func_800CEFA0.
@@ -447,17 +447,17 @@ void func_800CF060(s32 a0, s32 a1, u8 *entry) {
     *(s32 *)(entry + 4) = saved;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF0B0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CF0B0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF164);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CF164);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF1C0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CF1C0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF2D0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CF2D0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF300);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CF300);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF33C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CF33C);
 
 /**
  * @brief Process frame update with optional visual effect.
@@ -468,7 +468,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF33C);
  * scratchpad status halfword at gp+0x1E is set. Always calls
  * func_800A5454.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF38C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CF38C);
 
 /**
  * @brief Return the word value at D_800FB434.
@@ -506,10 +506,10 @@ void func_800CF40C(s32 a0) {
     *(s32 *)D_800FB43C = a0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF418);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CF418);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF4D4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CF4D4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF4F4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CF4F4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object16", func_800CF630);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CF630);

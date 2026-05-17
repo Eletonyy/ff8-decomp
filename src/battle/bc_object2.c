@@ -30,7 +30,7 @@ void func_8009DD2C(s32 a0, s32 a1, u16 a2, s32 a3);
  * @param a1 Default return value if bit 15 not set.
  * @return Combined ability flags (u16) or a1 (u16).
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BAC4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BAC4);
 
 /**
  * @brief Look up entity ability flags with adjusted index.
@@ -58,7 +58,7 @@ s32 func_8009BB3C(s32 a0) {
  *
  * @return Index of matching entry (0-31), or 0 if none found.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BB98);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BB98);
 
 /**
  * @brief Look up entity status and store it to D_800EE4C0 buffer.
@@ -67,15 +67,15 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BB98);
  * D_800ED70C (stride 20), copies entry[0] and D_800ED70C[0xD6A]
  * into D_800EE4C0 buffer with command byte 0xF9.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BBD0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BBD0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BC28);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BC28);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BCE4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BCE4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BD60);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BD60);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BDD0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BDD0);
 
 /**
  * @brief Check entity stat against limit and set overflow flag.
@@ -100,7 +100,7 @@ void func_8009BE24(s32 a0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BEA4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BEA4);
 
 /**
  * @brief Conditionally XOR masked flag bits.
@@ -123,9 +123,9 @@ s32 func_8009BF50(s32 newFlags, s32 *flagsPtr, s32 mask) {
     return current;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BF70);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BF70);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BFE0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BFE0);
 
 /**
  * @brief Apply a status flag to an entity if not blocked by guards.
@@ -142,13 +142,13 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009BFE0);
  * @param a3 Proposed status flag to apply.
  * @return 1 if flag was applied, 0 if rejected.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009C090);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C090);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009C104);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C104);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009C300);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C300);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009C390);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C390);
 
 /**
  * @brief Look up entity type byte from a battle table.
@@ -161,9 +161,9 @@ s32 func_8009C570(s32 id) {
     return buf[0];
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009C598);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C598);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009C610);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C610);
 
 /**
  * @brief Clamp a damage value to a maximum of 9999.
@@ -177,13 +177,13 @@ s32 func_8009C6CC(s32 val) {
     return val;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009C6E4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C6E4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009C798);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C798);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009C8B8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C8B8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009CA14);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009CA14);
 
 /**
  * @brief Apply a single-stat boost effect from src entity onto dst entity.
@@ -312,7 +312,7 @@ void func_8009CD44(s32 a0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009CD78);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009CD78);
 
 /**
  * @brief Query battle state 0x21 and add offset 0xEF to the result.
@@ -385,9 +385,9 @@ void func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, s32 type) {
     func_8009CD78(attackerIdx, targetIdx, power, dmg);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009D174);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009D174);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009D228);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009D228);
 
 /**
  * @brief Check if entity at index a1 has ability flag bit 2 set.
@@ -409,11 +409,11 @@ s32 func_8009D420(s32 a0, s32 a1) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009D474);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009D474);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009D508);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009D508);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009D594);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009D594);
 
 /**
  * @brief Conditionally set control flag bit 0x10 in D_800EE4C0.
@@ -431,13 +431,13 @@ void func_8009D68C(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009D6C4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009D6C4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009D7D8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009D7D8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009DCCC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009DCCC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009DD2C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009DD2C);
 
 /**
  * @brief Compute and dispatch a battle-action effect value.
@@ -505,23 +505,23 @@ s32 func_8009DEF0(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     return s1;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009E110);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009E110);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009E33C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009E33C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009E418);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009E418);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009E528);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009E528);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009E5C0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009E5C0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009E684);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009E684);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009E7B0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009E7B0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009E95C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009E95C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009EA08);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009EA08);
 
 /**
  * @brief Apply damage-over-time tick to GF targets and clear pending flag.
@@ -574,19 +574,19 @@ void func_8009EAEC(s32 charIdx) {
     D_800ED148.entities[charIdx].controlFlags &= ~0x20000;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009ED2C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009ED2C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009EE44);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009EE44);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009EF64);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009EF64);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F040);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009F040);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F168);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009F168);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F23C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009F23C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F350);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009F350);
 
 /**
  * @brief Read and clear an entity's pending damage value.
@@ -644,7 +644,7 @@ s32 func_8009F46C(s32 entityIdx) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F4BC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009F4BC);
 
 /**
  * @brief Test a bit in the battle flag array at g_gameState+0xD0C.
@@ -655,7 +655,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F4BC);
  * @param bitIndex The bit index to test.
  * @return 1 if the bit is set, 0 otherwise.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F52C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009F52C);
 
 /**
  * @brief Set a bit in the battle flag array at g_gameState+0xD0C.
@@ -672,9 +672,9 @@ void func_8009F570(s32 bitIndex) {
     *(s32 *)(base + wordIdx * 4 + 0xD0C) |= (1 << bitPos);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F5B4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009F5B4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F65C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009F65C);
 
 /**
  * @brief Look up a byte attribute from D_80078E00 table (stride 0x3C).
@@ -689,11 +689,11 @@ s32 func_8009F6F4(s32 idx) {
     return entry[0x228];
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F718);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009F718);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F824);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009F824);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009F930);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009F930);
 
 /**
  * @brief Store a command byte to entity data.
@@ -712,7 +712,7 @@ void func_8009FCF4(s32 cmd) {
     *(u8 *)(base + idx * 0xD0 + 0x99) = cmd;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009FD28);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009FD28);
 
 /**
  * @brief Check if a value is at least 20.
@@ -741,9 +741,9 @@ s32 func_8009FDE0(s32 a0, s32 a1) {
     return a1 + *(u8 *)(base + a0 * 208 + 0xDA);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_8009FE14);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009FE14);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_800A085C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_800A085C);
 
 /**
  * @brief Get the active entity count, defaulting to 1 if unset.
@@ -758,7 +758,7 @@ s32 func_800A08C0(void) {
     return val;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_800A08E0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_800A08E0);
 
 /**
  * @brief Apply 1.5x multiplier to battle control value if entity has status bit 0x20.
@@ -780,9 +780,9 @@ void func_800A0978(s32 entityIdx) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_800A09D0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_800A09D0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_800A1760);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_800A1760);
 
 /**
  * @brief Set masked attribute values on a g_battleChars table entry (stride 0x1D0).
@@ -817,4 +817,4 @@ void func_800A184C(s32 idx, s32 attr, s32 flags) {
  * }
  * @endcode
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object2", func_800A1888);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_800A1888);

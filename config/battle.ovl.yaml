@@ -1,20 +1,20 @@
-name: battle_code.bin
+name: battle.bin
 sha1: fa3b045925c0cc8855b321f5dd22ff196f9d51b0
 options:
-  basename: battle_code
-  target_path: original/battle_code.bin
-  elf_path: build/ovl/battle_code/battle_code.elf
+  basename: battle
+  target_path: original/battle.bin
+  elf_path: build/ovl/battle/battle.elf
   base_path: ..
   platform: psx
   compiler: PSYQ
 
   # Directory layout
-  asm_path: asm/ovl/battle_code
-  src_path: src/ovl/battle_code
-  build_path: build/ovl/battle_code
+  asm_path: asm/ovl/battle
+  src_path: src/battle
+  build_path: build/ovl/battle
 
   # Linker
-  ld_script_path: config/battle_code.ovl.ld
+  ld_script_path: config/battle.ovl.ld
   ld_dependencies: True
   ld_align_section_vram_end: False
   ld_align_segment_vram_end: False
@@ -25,9 +25,9 @@ options:
 
   # Symbols
   symbol_addrs_path:
-    - config/symbol_addrs.battle_code.txt
-  undefined_funcs_auto_path: config/undefined_funcs_auto.battle_code.txt
-  undefined_syms_auto_path: config/undefined_syms_auto.battle_code.txt
+    - config/symbol_addrs.battle.txt
+  undefined_funcs_auto_path: config/undefined_funcs_auto.battle.txt
+  undefined_syms_auto_path: config/undefined_syms_auto.battle.txt
 
   # String detection
   string_encoding: ASCII
@@ -43,7 +43,7 @@ options:
   generate_asm_macros_files: False
 
 segments:
-  - name: battle_code
+  - name: battle
     type: code
     start: 0x0
     vram: 0x80098000

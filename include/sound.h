@@ -219,7 +219,7 @@ typedef struct {
 /**
  * @brief Sound sequence table entry (stride 20 bytes).
  *
- * Used by world_engine's sound dispatch wrappers to look up a sequence
+ * Used by world's sound dispatch wrappers to look up a sequence
  * by index and feed the result to @c sndSeqStartPan and friends.
  */
 typedef struct {
@@ -233,7 +233,7 @@ typedef struct {
 /**
  * @brief SFX slot entry (stride 16 bytes).
  *
- * Used by world_engine's SFX slot table to track active SFX with their
+ * Used by world's SFX slot table to track active SFX with their
  * associated signed index values.
  */
 typedef struct {

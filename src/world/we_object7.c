@@ -1,7 +1,7 @@
 #include "common.h"
 #include "world.h"
 
-/* ActorRecord now lives in world.h (shared across world_engine TUs). */
+/* ActorRecord now lives in world.h (shared across world TUs). */
 
 /**
  * @brief 0x34-byte tracking entry — one world-space target with screen-space
@@ -44,11 +44,11 @@ extern s32 func_800A5DC8(s32 x, s32 y);
 extern s8 func_800B01A0(s16 viewY, s16 viewX, TrackEntry *e, u16 *posOut, s8 *unk30Out, u8 *unk2COut);
 extern s32 func_80041E84(s32 y, s32 x);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B310C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B310C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B33D8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B33D8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B368C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B368C);
 
 /**
  * @brief Update screen-space projection and chained-target pitch/yaw for
@@ -105,29 +105,29 @@ void func_800B3868(TrackObj *obj) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B3AB8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B3AB8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B3ED0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B3ED0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B3FD4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B3FD4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B438C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B438C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B454C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B454C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B4AA0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B4AA0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B56A0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B56A0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B5974);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B5974);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B5ADC);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B5ADC);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B5C60);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B5C60);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B6034);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B6034);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B63C0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B63C0);
 
 /**
  * @brief Walk a sorted @c KeyframeNode list to find the entry matching
@@ -155,9 +155,9 @@ INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B63C0);
  * register-allocation differences in the dir dispatch and search loop
  * (@c addiu @c -1 vs @c addu @c t1, and v0/v1 swap in the loop body).
  */
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B674C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B674C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B6968);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B6968);
 
 /**
  * @brief Compute a layout offset for an actor based on a 1..4 step counter.
@@ -240,21 +240,21 @@ void func_800B7178(void) {
     D_800C4DC8 = 0;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B7240);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B7240);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B73A4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B73A4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B7530);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B7530);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B76F8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B76F8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B7C70);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B7C70);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B816C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B816C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B8230);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B8230);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B83B4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B83B4);
 
 extern u8 *D_800C96C8;
 extern s32 D_800C4DBC;
@@ -335,10 +335,10 @@ s32 func_800B85DC(s16 *out) {
     return result;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B881C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B881C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B893C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B893C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B8C08);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B8C08);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object7", func_800B8C70);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object7", func_800B8C70);

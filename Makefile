@@ -87,7 +87,7 @@ MENU_OVERLAYS := menumain menucfg menupty menusts menuabl menushop menuext \
                  menuitem menumgc menugf menujnc2 menusav menucrd menututo \
                  menutmag menutips menutest
 CODE_OVERLAYS := field_init intro field \
-                 battle_engine battle_render battle_code world_engine
+                 tripletriad battle_render battle world
 OVERLAYS      := $(MENU_OVERLAYS) $(CODE_OVERLAYS)
 
 # Per-overlay C source files. Each overlay points to its own source location.
@@ -115,10 +115,10 @@ intro_ASM_DIR        := asm/intro
 field_C_SRCS         := $(wildcard src/field/*.c)
 field_DIR            := build/field
 field_ASM_DIR        := asm/field
-battle_engine_C_SRCS := $(wildcard src/tripletriad/*.c)
+tripletriad_C_SRCS   := $(wildcard src/tripletriad/*.c)
 battle_render_C_SRCS := $(wildcard src/ovl/battle_render/*.c)
-battle_code_C_SRCS   := $(wildcard src/ovl/battle_code/*.c)
-world_engine_C_SRCS  := $(wildcard src/world/*.c)
+battle_C_SRCS        := $(wildcard src/battle/*.c)
+world_C_SRCS         := $(wildcard src/world/*.c)
 
 # C sources (compiled via cpp → cc1 → maspsx → GAS).
 # Main-binary sources = everything under src/ except files claimed by an overlay.

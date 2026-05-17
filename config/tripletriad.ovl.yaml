@@ -1,20 +1,20 @@
-name: battle_engine.bin
+name: tripletriad.bin
 sha1: accfe3831595f26c5d6de6f3891736521736f8ef
 options:
-  basename: battle_engine
-  target_path: original/battle_engine.bin
-  elf_path: build/ovl/battle_engine/battle_engine.elf
+  basename: tripletriad
+  target_path: original/tripletriad.bin
+  elf_path: build/ovl/tripletriad/tripletriad.elf
   base_path: ..
   platform: psx
   compiler: PSYQ
 
   # Directory layout
-  asm_path: asm/ovl/battle_engine
+  asm_path: asm/ovl/tripletriad
   src_path: src/tripletriad
-  build_path: build/ovl/battle_engine
+  build_path: build/ovl/tripletriad
 
   # Linker
-  ld_script_path: config/battle_engine.ovl.ld
+  ld_script_path: config/tripletriad.ovl.ld
   ld_dependencies: True
   ld_align_section_vram_end: False
   ld_align_segment_vram_end: False
@@ -25,9 +25,9 @@ options:
 
   # Symbols
   symbol_addrs_path:
-    - config/symbol_addrs.battle_engine.txt
-  undefined_funcs_auto_path: config/undefined_funcs_auto.battle_engine.txt
-  undefined_syms_auto_path: config/undefined_syms_auto.battle_engine.txt
+    - config/symbol_addrs.tripletriad.txt
+  undefined_funcs_auto_path: config/undefined_funcs_auto.tripletriad.txt
+  undefined_syms_auto_path: config/undefined_syms_auto.tripletriad.txt
 
   # String detection
   string_encoding: ASCII
@@ -43,7 +43,7 @@ options:
   generate_asm_macros_files: False
 
 segments:
-  - name: battle_engine
+  - name: tripletriad
     type: code
     start: 0x0
     vram: 0x80098000

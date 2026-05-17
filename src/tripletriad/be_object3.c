@@ -55,13 +55,13 @@ void func_8009E248(s32 a0) {
     func_80098C44(D_801D3C58, a0);
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_8009E270);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_8009E270);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_8009E464);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_8009E464);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_8009E640);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_8009E640);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_8009E904);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_8009E904);
 
 /**
  * @brief Allocate a node in D_801D3C68 list with a callback from D_80182E4C.
@@ -108,7 +108,7 @@ void func_8009EBCC(void) {
     D_801D3D08 = func_80098D28(D_801D3C68);
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_8009EBF4);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_8009EBF4);
 
 /**
  * Checks if any active slot has a pending action.
@@ -145,17 +145,17 @@ s32 func_8009EF68(void) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_8009EFD4);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_8009EFD4);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_8009F17C);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_8009F17C);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_8009F5F0);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_8009F5F0);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_8009F844);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_8009F844);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_8009F908);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_8009F908);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_8009FAF8);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_8009FAF8);
 
 /**
  * @brief Add a rendering command entry based on the alternate screen index.
@@ -357,15 +357,15 @@ s32 func_8009FED0(void) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A00EC);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A00EC);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A01DC);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A01DC);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A030C);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A030C);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A0370);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A0370);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A03DC);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A03DC);
 
 /**
  * @brief Check if any active battle object has a pending action.
@@ -406,18 +406,18 @@ s32 func_800A0AD4(void) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A0B24);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A0B24);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A0F0C);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A0F0C);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A1080);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A1080);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A1260);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A1260);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A1374);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A1374);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A15C8);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A15C8);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A18D0);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A18D0);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object3", func_800A1BC4);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A1BC4);

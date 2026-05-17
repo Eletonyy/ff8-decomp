@@ -204,7 +204,7 @@ s32 func_800C4450(void) {
  * }
  * @endverbatim
  */
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object13", func_800C4480);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object13", func_800C4480);
 
 /**
  * @brief Query streaming status; optionally block until the current buffer
@@ -239,7 +239,7 @@ INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object13", func_800C4480);
  * }
  * @endverbatim
  */
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object13", func_800C4558);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object13", func_800C4558);
 
 /** Exchanges the callback pointer, returning the previous value.
  * @param newVal New callback value to store.
@@ -486,4 +486,4 @@ extern s32 D_80082C14;
  * }
  * @endverbatim
  */
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object13", func_800C4AE4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object13", func_800C4AE4);

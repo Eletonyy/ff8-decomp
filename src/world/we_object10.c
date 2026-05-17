@@ -8,7 +8,7 @@ extern u8 D_800780D8[];
 extern SlotEntry D_800DBFB8[];
 extern s32 D_800C5B50;
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BD6EC);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BD6EC);
 
 /**
  * @brief Linear search D_800DBFB8 for the first SlotEntry whose marker matches @p target.
@@ -84,7 +84,7 @@ s32 func_800BD7E4(s32 charIdx) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BD82C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BD82C);
 
 /**
  * @brief Copy 10 flag bytes from D_800780D8 to destination struct.
@@ -109,25 +109,25 @@ void func_800BD918(u8 *dst) {
     dst[0x6F] = src[0x101];
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BD998);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BD998);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BDA08);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDA08);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BDA78);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDA78);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BDAE4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDAE4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BDB5C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDB5C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BDBE0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDBE0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BDC94);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDC94);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BDDC4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDDC4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BDEF4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDEF4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BE040);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE040);
 
 extern LookupTarget *D_800DDB00[];
 
@@ -152,11 +152,11 @@ s32 func_800BE158(s32 idx) {
     return result;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BE1A8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE1A8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BE284);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE284);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BE3D0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE3D0);
 
 /**
  * @brief Linearly interpolate between two 3D vectors.
@@ -199,7 +199,7 @@ void func_800BE4D8(s32 *a, s32 *b, s32 t, s32 *out) {
     out[2] = b[2] + (val >> 12);
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BE578);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE578);
 
 /** @brief 32-byte record used by func_800BE5F8's table walker. */
 typedef struct {
@@ -232,17 +232,17 @@ s32 func_800BE5F8(Record *rec) {
     return -2;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BE63C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE63C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BE69C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE69C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BE720);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE720);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BE7FC);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE7FC);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BE8B0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE8B0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BE958);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE958);
 
 extern void func_8009B358(s32 a0, s32 a1, s32 a2);
 extern void func_8009D8A8(s32 a0);
@@ -290,11 +290,11 @@ void func_800BEA34(void) {
     renderBattleDisplayList(&D_800D244C->colorTag);
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BEA7C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BEA7C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BEAF4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BEAF4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BEB84);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BEB84);
 
 /**
  * @brief Map a command-kind code to a duration/timeout in frames.
@@ -316,7 +316,7 @@ s32 func_800BEC1C(s32 kind) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BEC60);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BEC60);
 
 /**
  * @brief Search g_gameState array for an active entry with type 0xA2.
@@ -353,12 +353,12 @@ s32 func_800BED90(s32 *outIndex, s32 *outCount) {
     return found;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BEDF0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BEDF0);
 
 void func_800BEECC(void) {
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BEED4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BEED4);
 
 /**
  * @brief Return 1 if any active slot's marker is 0x4F, else 0.
@@ -412,12 +412,12 @@ void func_800BEFEC(u8 *base) {
     } while (outer >= 0);
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BF024);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BF024);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BF20C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BF20C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BF2E8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BF2E8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BF3D8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BF3D8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object10", func_800BF5A8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BF5A8);

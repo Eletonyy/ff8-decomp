@@ -11,47 +11,47 @@ extern u8 D_800C4FD6;
 extern u8 D_800C4FD7;
 extern u8 D_800D23D8[];
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_800997E8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_800997E8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_80099B48);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099B48);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_80099C84);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099C84);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_80099EDC);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099EDC);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_80099F78);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099F78);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009A4DC);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009A4DC);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009A638);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009A638);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009A7C0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009A7C0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009A954);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009A954);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009AD3C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009AD3C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009AEE4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009AEE4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009B358);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B358);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009B550);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B550);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009B748);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B748);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009B840);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B840);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009B954);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B954);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009BFA0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009BFA0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009C070);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C070);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009C1A4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C1A4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009C294);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C294);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009C478);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C478);
 
 /**
  * @brief Fatal-error thunk that invokes the PSX SDK SystemError with category 0x57.
@@ -59,8 +59,8 @@ INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009C478);
  * Forwards @p rc to SystemError with a fixed category code. Callers pass a
  * line-number-like token so the fault site can be identified post-mortem.
  *
- * @note Category values in use elsewhere: field_engine → 0x53, battle_code
- *       → 0x59, world_engine → 0x57. They happen to be ASCII ('S','Y','W')
+ * @note Category values in use elsewhere: field → 0x53, battle
+ *       → 0x59, world → 0x57. They happen to be ASCII ('S','Y','W')
  *       but the mapping to subsystem isn't obvious — purpose uncertain.
  *
  * @param rc Diagnostic code (typically a unique line/site identifier).
@@ -69,9 +69,9 @@ void func_8009C528(s32 rc) {
     SystemError(0x57, rc);
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009C54C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C54C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009C5FC);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C5FC);
 
 extern void sndSeqSetTempoAlt(s32 tempo);
 extern void sndSetMasterVolume(s32 vol);
@@ -203,13 +203,13 @@ void func_8009C8CC(s32 val) {
     D_800C4FD5 = val;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009C8E0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C8E0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009CA34);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009CA34);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009CAE0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009CAE0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object1", func_8009CB70);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009CB70);
 
 void func_8009CC34(void) {
 }

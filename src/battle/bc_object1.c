@@ -3,7 +3,7 @@
  * @brief Battle scene orchestration and entity management.
  *
  * This file contains functions for managing battle entities within the
- * battle_code overlay. It handles:
+ * battle overlay. It handles:
  * - Entity state initialization and transitions (state machine at D_800ED148)
  * - Sound/SFX command queuing via a 16-entry task queue (D_800EE24B)
  * - Battle animation triggers and status effect application
@@ -25,7 +25,7 @@
  * Re-declare @c D_800ED148 with @c volatile for this TU.
  *
  * @c battle.h declares the symbol non-volatile (the common case across
- * battle_code/battle_engine TUs). bc_object1, however, contains
+ * battle/tripletriad TUs). bc_object1, however, contains
  * state-machine and accessor functions whose original codegen depends
  * on @c volatile semantics — without it gcc 2.7.2 folds
  * @c lui+addiu+lbu into @c lui+lbu, dropping an instruction per
@@ -96,12 +96,12 @@ s32  func_8009BA5C(s32, s32);
 
 /* Overlay-conflict externs: same MIPS address holds different functions
    in other overlays, so these cannot be hoisted into a shared header. */
-void func_8009A638(void);     /* also in world_engine */
+void func_8009A638(void);     /* also in world */
 void func_8009A8B4(s32);      /* also in battle_render */
-void func_8009B690(void);     /* also in battle_engine */
+void func_8009B690(void);     /* also in tripletriad */
 s32  func_8009B74C(s32, s32); /* also in field_engine */
 
-extern void func_800D0F74(void); /* defined in another battle_code TU */
+extern void func_800D0F74(void); /* defined in another battle TU */
 extern SoundCmd *func_800B8564(s32, s32); /* defined in bc_object9.c */
 
 /**

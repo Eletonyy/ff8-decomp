@@ -13,7 +13,7 @@ MENU_OVERLAYS = [
 ]
 CODE_OVERLAYS = [
     "field_init", "intro", "field",
-    "battle_engine", "battle_render", "battle_code", "world_engine",
+    "tripletriad", "battle_render", "battle", "world",
 ]
 
 OVERLAY_EXT = {name: "ovl" for name in MENU_OVERLAYS}
@@ -22,10 +22,11 @@ OVERLAY_EXT.update({name: "bin" for name in CODE_OVERLAYS})
 # C-source globs per overlay. Mirrors the Makefile's <name>_C_SRCS list.
 # Defaults to src/ovl/<name>/*.c; override here when sources live elsewhere.
 OVERLAY_SRC_GLOBS = {
-    "intro":         ["src/intro.c", "src/intro_assets.c", "src/intro_state.c"],
-    "field":         ["src/field/*.c"],
-    "battle_engine": ["src/tripletriad/*.c"],
-    "world_engine":  ["src/world/*.c"],
+    "intro":       ["src/intro.c", "src/intro_assets.c", "src/intro_state.c"],
+    "field":       ["src/field/*.c"],
+    "battle":      ["src/battle/*.c"],
+    "tripletriad": ["src/tripletriad/*.c"],
+    "world":       ["src/world/*.c"],
     **{name: [f"src/menu/{name}/*.c"] for name in MENU_OVERLAYS},
 }
 

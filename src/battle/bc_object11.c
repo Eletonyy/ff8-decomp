@@ -16,45 +16,45 @@ extern u8 D_800EEC58[];
 void func_800B5C10(u8 *, s32);
 s32 func_800C42FC(void);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BAEE8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BAEE8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB024);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB024);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB084);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB084);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB0DC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB0DC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB140);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB140);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB180);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB180);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB1B4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB1B4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB1E0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB1E0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB368);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB368);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB3F8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB3F8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB63C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB63C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB828);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB828);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BB9A8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BB9A8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BBA54);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BBA54);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BBBF8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BBBF8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BBD00);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BBD00);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BBE48);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BBE48);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BC060);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BC060);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BC3B8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BC3B8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BC420);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BC420);
 
 /**
  * @brief Process entity data and optional extra pointer.
@@ -71,11 +71,11 @@ void func_800BC7D4(u8 *entity) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BC818);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BC818);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BC88C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BC88C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BC908);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BC908);
 
 /**
  * @brief Read next bit from a bit stream and optionally process.
@@ -88,11 +88,11 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BC908);
  * @param a0 Pointer to bit stream state (word 0 = byte ptr, word 4 = bit index).
  * @return Processed value or 0x400.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BC9C8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BC9C8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BCA3C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BCA3C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BCF6C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BCF6C);
 
 /**
  * @brief Look up a byte from a nested pointer table.
@@ -127,9 +127,9 @@ void func_800BD06C(u8 *entity) {
     func_800BCA3C((s32)entity + 0x60, (s32)entity + 0x6C);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BD0B4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BD0B4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BD1B4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BD1B4);
 
 /**
  * @brief Call func_800C00D8 with fields from the D_800F16A4 pointer.
@@ -149,7 +149,7 @@ void func_800BD230(void) {
  * calls func_800BFE1C with the old pointer, then copies the first
  * byte at the new pointer to D_800F16BC.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BD260);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BD260);
 
 /**
  * @brief Call func_800BFE1C with the pointer stored in D_800F16A8.
@@ -218,7 +218,7 @@ s32 func_800BD374(void) {
     return func_800C5A34(*(s32 *)D_800F16AC, 0x1A, 0x40);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BD3A0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BD3A0);
 
 /**
  * @brief Call func_800BD374 and conditionally call func_800BD3A0.
@@ -235,9 +235,9 @@ s32 func_800BD434(void) {
     func_800BD3A0();
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BD464);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BD464);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BD508);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BD508);
 
 /**
  * @brief Set bit 15 of D_800EF724 halfword and clear D_800F02F4 halfword.
@@ -283,7 +283,7 @@ void func_800BD5FC(void) {
     *(s32 *)D_800F16B4 = 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BD658);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BD658);
 
 /**
  * @brief Clear status bits 0x410 from entity flags and update.
@@ -331,23 +331,23 @@ s32 func_800BD7A8(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BD804);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BD804);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BDE28);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BDE28);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BDF94);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BDF94);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BE104);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BE104);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BE89C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BE89C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BECB0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BECB0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BEE78);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BEE78);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BEEC4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BEEC4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BEF14);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BEF14);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object11", func_800BEFD0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BEFD0);
 

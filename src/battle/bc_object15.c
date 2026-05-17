@@ -10,11 +10,11 @@ extern u8 D_800FB408[];
 extern u8 D_800FA5F8[];
 extern u8 D_800E6658[];
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C7294); /* 0x58 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C7294); /* 0x58 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C72EC); /* 0x68 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C72EC); /* 0x68 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C7354); /* 0xF8 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C7354); /* 0xF8 */
 
 /**
  * @brief Register a particle effect with a callback from D_800E6658 table.
@@ -46,41 +46,41 @@ u8 *func_800C749C(void) {
     return buf;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C74E0); /* 0x1EC */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C74E0); /* 0x1EC */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C76CC); /* 0xC0 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C76CC); /* 0xC0 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C778C); /* 0x998 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C778C); /* 0x998 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C8124); /* 0x404 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C8124); /* 0x404 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C8528); /* 0x18C */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C8528); /* 0x18C */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C86B4); /* 0x114 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C86B4); /* 0x114 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C87C8); /* 0x2B0 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C87C8); /* 0x2B0 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C8A78); /* 0x15C */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C8A78); /* 0x15C */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C8BD4); /* 0x138 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C8BD4); /* 0x138 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C8D0C); /* 0x148 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C8D0C); /* 0x148 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C8E54); /* 0x1C0 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C8E54); /* 0x1C0 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C9014); /* 0xBC */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C9014); /* 0xBC */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C90D0); /* 0xB0 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C90D0); /* 0xB0 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C9180); /* 0xAC */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C9180); /* 0xAC */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C922C); /* 0x90 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C922C); /* 0x90 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C92BC); /* 0xB8 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C92BC); /* 0xB8 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C9374); /* 0xB0 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C9374); /* 0xB0 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C9424); /* 0x94 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C9424); /* 0x94 */
 
 /**
  * @brief Look up a pointer from D_800EBF24 array with fallback.
@@ -100,12 +100,12 @@ D_800EBF24_Type *func_800C94B8(s32 index) {
     return D_800EBF24[0];
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C94EC); /* 0x13C */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C94EC); /* 0x13C */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C9628); /* 0xBC */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C9628); /* 0xBC */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C96E4); /* 0x100 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C96E4); /* 0x100 */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C97E4); /* 0x62C */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C97E4); /* 0x62C */
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object15", func_800C9E10); /* 0x268 */
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object15", func_800C9E10); /* 0x268 */

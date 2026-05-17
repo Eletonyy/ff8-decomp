@@ -34,9 +34,9 @@ s32 func_800AA4E0(void);
 extern u8 D_800EEED0[];
 extern u8 D_800EEED4[];
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B1624);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B1624);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B16C0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B16C0);
 
 /**
  * @brief Conditionally trigger entity action based on D_800ED148 flags.
@@ -118,7 +118,7 @@ void func_800B18A0(s32 a0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B1930);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B1930);
 
 /**
  * @brief Get entity from func_800AE6F8 and call func_800A59AC with mode 7.
@@ -252,11 +252,11 @@ void func_800B1C3C(s32 a0, s32 a1, s32 a2) {
     func_800B0754(a0, 0xF0, a1, (u16)a2);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B1C68);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B1C68);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B1D4C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B1D4C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B1DFC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B1DFC);
 
 /**
  * @brief Copy a byte from D_8007DADB to D_800EE42C as a halfword.
@@ -375,11 +375,11 @@ void func_800B21B4(void) {
  * @param a0 Value to search for.
  * @return 0 if found, 1 if not found.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B21EC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B21EC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B2224);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B2224);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B228C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B228C);
 
 /**
  * @brief Process current battle entity: update effects and activate ability.
@@ -395,17 +395,17 @@ void func_800B2338(void) {
     func_800AB3C4();
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B2388);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B2388);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B243C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B243C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B24C8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B24C8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B25E4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B25E4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B26B8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B26B8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B27AC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B27AC);
 
 /**
  * @brief Advance a two-phase process based on state byte at offset 0xD.
@@ -439,7 +439,7 @@ ret0:
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B28C8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B28C8);
 
 /**
  * @brief Initialize a table header and zero its entries.
@@ -468,9 +468,9 @@ void func_800B2A00(u8 *a0, u8 *data, s32 stride, s32 count) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B2A38);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B2A38);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B2A84);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B2A84);
 
 /**
  * @brief Allocate a node, initialize it, and prepend to linked list.
@@ -496,7 +496,7 @@ s32 func_800B2B00(u8 *list, s32 callback) {
     return (s32)node;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B2B68);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B2B68);
 
 extern u8 D_800EEC68[];
 extern u8 D_800EEDC8[];
@@ -524,11 +524,11 @@ s32 func_800B2C58(s32 a0) {
     return func_800B2A84(D_800EEDC8, a0);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B2C80);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B2C80);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B2D0C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B2D0C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B2E04);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B2E04);
 
 /**
  * @brief Initialize sound system resources and configuration.
@@ -544,7 +544,7 @@ void func_800B2EDC(void) {
     func_800DF8A4(3, 0);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B2F3C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B2F3C);
 
 /**
  * @brief Allocate handler for func_800B2F3C and store entity pointers.
@@ -566,7 +566,7 @@ void func_800B2FF8(s32 a0, u8 *a1) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B304C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B304C);
 
 /**
  * @brief Allocate a handler for func_800B304C, initialize fields, and clear target byte.
@@ -580,7 +580,7 @@ void func_800B3128(u8 *a0) {
     *a0 = 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B3164);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3164);
 
 /**
  * @brief Set up audio stream from descriptor and register playback callback.
@@ -627,7 +627,7 @@ void func_800B330C(s32 a0) {
     *(s32 *)D_800EEEC8 = a0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B3330);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3330);
 
 /**
  * @brief Initialize sound data pointer based on D_80082C11 flag.
@@ -646,13 +646,13 @@ void func_800B3470(void) {
     *(u8 *)D_800EEED4 = 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B34B0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B34B0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B3534);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3534);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B3574);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3574);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B3650);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3650);
 
 /**
  * @brief Allocate aligned memory from the scratchpad buffer.
@@ -692,9 +692,9 @@ void func_800B36D8(void) {
     *(s32 *)D_800EEED8 = 0x1F800000;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B36E8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B36E8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B3738);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3738);
 
 /**
  * @brief Initialize SFX entry fields, setting pitch based on address range.
@@ -714,17 +714,17 @@ void func_800B37B4(u8 *entry) {
     *(u16 *)(entry + 0x10) = 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B37E0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B37E0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B3960);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3960);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B3AE8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3AE8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B3B54);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3B54);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B3C2C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3C2C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B3E54);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3E54);
 
 /**
  * @brief Initialize sound effect table and clear entries.
@@ -751,8 +751,8 @@ u8 *func_800B4248(void) {
     return buf;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B42B4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B42B4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B44D8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B44D8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object8", func_800B4920);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B4920);

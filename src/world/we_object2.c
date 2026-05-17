@@ -9,7 +9,7 @@ extern SeedState *g_seedState;
 extern s32 D_800C9E68;
 extern s32 D_800C9E70;
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009CCE8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009CCE8);
 
 extern s32 sndCmd1A(s32 a0, s32 a1, s32 a2);
 
@@ -66,11 +66,11 @@ void func_8009CE40(void) {
     g_seedState->audioChannel0State = -1;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009CE70);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009CE70);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009CFB4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009CFB4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009D0F0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D0F0);
 
 extern SeqEntry D_800C4FD8[];
 extern void func_80099EDC(s32 idx);
@@ -108,9 +108,9 @@ s32 func_8009D1B8(s32 idx) {
     return 1;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009D214);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D214);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009D2D8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D2D8);
 
 extern SceneState D_80082C8C;
 extern u8 D_800C4D38;
@@ -134,9 +134,9 @@ void func_8009D3F4(void) {
     func_800B3FD4(D_800D226C, 5);
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009D44C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D44C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009D510);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D510);
 
 extern s32 D_800C4D84;
 extern s32 D_800C4D88;
@@ -160,9 +160,9 @@ void func_8009D630(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009D688);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D688);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009D760);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D760);
 
 /** @brief Compare input against two entity IDs, return 0x29, 0x18, or -1. */
 s32 func_8009D7D8(s32 a0) {
@@ -230,9 +230,9 @@ void func_8009D8A8(s32 idx) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009D8F0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D8F0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009D954);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D954);
 
 extern s32 getSfxField28(s32 idx);
 
@@ -300,11 +300,11 @@ Entry12 *func_8009DA54(u8 key) {
     return NULL;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009DAA8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009DAA8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009DB88);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009DB88);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009E5C8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009E5C8);
 
 /**
  * @brief Smooth-step a 12-bit angle (range @c [0,0x1000) = full revolution)
@@ -382,11 +382,11 @@ INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009E5C8);
  * }
  * @endverbatim
  */
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009F594);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009F594);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009F6EC);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009F6EC);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009FDA4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009FDA4);
 
 /**
  * @brief Build a rotation matrix from angles, multiply by another, and set
@@ -437,11 +437,11 @@ void func_8009FEDC(u8 *a0, u8 a1) {
     a0[0xA] = a1;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009FF0C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009FF0C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_8009FF70);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009FF70);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_800A0000);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_800A0000);
 
 /** Returns a value based on input comparison. */
 s32 func_800A009C(s32 val) {
@@ -451,6 +451,6 @@ s32 func_800A009C(s32 val) {
     return 0x1460;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_800A00B4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_800A00B4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object2", func_800A017C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_800A017C);

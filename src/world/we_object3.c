@@ -2,39 +2,39 @@
 #include "psxsdk/libgpu.h"
 #include "world.h"
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A01DC);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A01DC);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A0388);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A0388);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A05E8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A05E8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A1540);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A1540);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A1678);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A1678);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A1F10);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A1F10);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A2350);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A2350);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A246C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A246C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A25F8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A25F8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A26E8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A26E8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A2920);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A2920);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A2D50);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A2D50);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A358C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A358C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A3870);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A3870);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A39BC);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A39BC);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A3C9C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A3C9C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A3EE4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A3EE4);
 
 typedef struct {
     s32 val;    /* +0x00 */
@@ -55,11 +55,11 @@ void func_800A40C0(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A40F8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A40F8);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A41E0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A41E0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A4420);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A4420);
 
 extern s32 D_800C4D20;
 
@@ -170,13 +170,13 @@ s32 func_800A475C(s32 a, s32 b) {
     return d;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A47A4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A47A4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A4EF4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A4EF4);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A50A0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A50A0);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A568C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A568C);
 
 extern WorldObject D_800D3320[16];
 extern WorldObject *D_800D3318;
@@ -229,11 +229,11 @@ void func_800A581C(void) {
     D_800D34F0 = 0;
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A58EC);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A58EC);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A5A3C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A5A3C);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A5B48);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A5B48);
 
 extern POLY_F4 D_800D3300;
 extern s16 D_800C97EA;
@@ -352,7 +352,7 @@ s32 func_800A5E40(s32 x, s32 y) {
     return xtile + ((((y + 0x48000) % 0x30000) / 0x2000) * 32);
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A5EC4);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A5EC4);
 
 /**
  * @brief Set up a draw environment for screen @p screenIdx and submit it.
@@ -389,7 +389,7 @@ void func_800A5FD4(s32 screenIdx) {
     PutDispEnv(&env);
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A6030);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A6030);
 
 extern WorldSection *D_800C4D5C;
 
@@ -602,4 +602,4 @@ void func_800A6358(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object3", func_800A63F0);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A63F0);

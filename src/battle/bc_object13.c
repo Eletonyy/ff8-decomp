@@ -137,15 +137,15 @@ s32 func_800C2C80(s32 a0, u8 *a1) {
     return (s32)a1 + 3;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C2CBC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C2CBC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C3014);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C3014);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C3104);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C3104);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C33A0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C33A0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C3418);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C3418);
 
 /**
  * @brief Allocate a handler via func_800B2C58 and initialize its fields.
@@ -164,7 +164,7 @@ void func_800C3518(s32 a0, s32 a1) {
     *(s32 *)(result + 0x1C) = 0xFF;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C3568);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C3568);
 
 /**
  * @brief Increment progress counter and compute pitch ratio.
@@ -196,11 +196,11 @@ void func_800C3704(void) {
     *(u16 *)D_800EF724 &= 0x7FFF;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C372C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C372C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C3898);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C3898);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C38BC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C38BC);
 
 /**
  * @brief Store a value to one of several sound parameter tables.
@@ -223,7 +223,7 @@ void func_800C3998(s16 a0, s16 a1) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C39F8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C39F8);
 
 /**
  * @brief Process D_800F1A90 if non-null, updating it with callback results.
@@ -269,7 +269,7 @@ void func_800C3C00(void) {
     *(s32 *)D_800F1A90 = 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C3C0C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C3C0C);
 
 /**
  * @brief Allocate handler for func_800C3C0C and store five parameters.
@@ -323,7 +323,7 @@ void func_800C3E64(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C3EFC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C3EFC);
 
 /**
  * @brief Allocate a handler for func_800C3EFC and store three halfword params.
@@ -346,7 +346,7 @@ void func_800C3F88(s32 a0, s32 a1, s32 a2) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C3FE8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C3FE8);
 
 /**
  * @brief Allocate a handler for func_800C3FE8 and store two words + halfword.
@@ -369,9 +369,9 @@ void func_800C40B4(s32 a0, s32 a1, s32 a2) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C4114);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C4114);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C4228);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C4228);
 
 /**
  * @brief Initialize three battle state globals.
@@ -428,9 +428,9 @@ void func_800C434C(s32 a0, u8 *a1) {
     *(s32 *)(result + 0x14) = (s32)a1;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C438C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C438C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C443C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C443C);
 
 /**
  * @brief Enqueue a type-1 command to the command table.
@@ -510,7 +510,7 @@ void func_800C4588(s32 arg0, s32 arg1, s32 arg2) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C45FC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C45FC);
 
 /**
  * @brief Wrapper for func_800C443C.
@@ -519,7 +519,7 @@ void func_800C4764(void) {
     func_800C443C();
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object13", func_800C4784);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C4784);
 
 
 /**

@@ -95,7 +95,7 @@ typedef struct {
 /**
  * @brief 4-byte scene state block at D_80082C8C.
  *
- * Accessed by several world_engine and field_engine routines; stores
+ * Accessed by several world and field_engine routines; stores
  * the current scene mode, dispatch code, and two marker bytes.
  */
 typedef struct {
@@ -128,7 +128,7 @@ typedef struct {
     Entry12 entries[1];
 } KeyBuffer;
 
-/* world_engine globals (we_object7) */
+/* world globals (we_object7) */
 extern s32 D_800C4D2C;
 extern s32 D_800C4D40;
 extern s32 D_800C4D44;

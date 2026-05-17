@@ -13,10 +13,10 @@ Extracts:
   - field_init.bin           (init stub)
   - intro.bin                (LZSS-compressed; Squaresoft / FF8 boot intro)
   - field.bin                (LZSS-compressed)
-  - battle_engine.bin        (LZSS-compressed)
+  - tripletriad.bin          (LZSS-compressed)
   - battle_render.bin
-  - battle_code.bin
-  - world_engine.bin     (LZSS-compressed)
+  - battle.bin
+  - world.bin                (LZSS-compressed)
   - menumain.ovl .. menutest.ovl  (17 menu overlays)
   - mngrp.bin, init.out      (data files)
 """
@@ -79,10 +79,10 @@ IMG_FILES = [
     (21, "mngrp.bin",            "raw"),
     (22, "init.out",             "raw"),
     # Battle overlays (load to 0x80098000)
-    (23, "battle_engine.bin",    "lzss"),
+    (23, "tripletriad.bin",      "lzss"),
     (24, "battle_render.bin",    "raw"),
-    (25, "battle_code.bin",      "raw"),
-    (26, "world_engine.bin", "lzss"),
+    (25, "battle.bin",           "raw"),
+    (26, "world.bin",            "lzss"),
 ]
 
 

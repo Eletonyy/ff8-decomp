@@ -56,7 +56,7 @@ extern SVECTOR D_80182CD0[4];   /* element marker quad corners */
 extern SVECTOR D_80182CF0[4];   /* shadow quad corners (card drop-shadow) */
 
 /* Substate handlers dispatched from func_8009BAF4. Same names exist in
- * the battle_code overlay with different signatures; keep these as
+ * the battle overlay with different signatures; keep these as
  * file-local externs so the two overlays don't collide. */
 extern void func_8009B690(SubstateSlot *slot, s32 idx);
 extern void func_8009B7B4(SubstateSlot *slot, s32 idx);
@@ -466,7 +466,7 @@ void func_8009AD24(void) {
  * }
  * @endverbatim
  */
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009AE6C);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009AE6C);
 
 /**
  * @brief Emit a single semi-transparent black @c POLY_F4 quad — a "card shadow".
@@ -1284,11 +1284,11 @@ u8 *func_8009C440(BattleAnimNode *node, s32 angle, void *ot, u8 *primBuf) {
  * }
  * @endverbatim
  */
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009C59C);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009C59C);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009C6D8);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009C6D8);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009C890);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009C890);
 
 /**
  * Starts an animation sequence on a battle entity.
@@ -1620,17 +1620,17 @@ s32 applyCardRules(TripleTriadBoard *board, s32 mode) {
     return result;
 }
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009D058);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D058);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009D154);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D154);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009D2B0);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D2B0);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009D72C);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D72C);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009DBE8);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009DBE8);
 
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object2", func_8009DECC);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009DECC);
 
 /**
  * @brief Initialize the D_801D3C58 list with node pool D_801D3798.

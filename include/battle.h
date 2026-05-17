@@ -663,7 +663,7 @@ extern BattleCharState g_battleChars;
 /**
  * @brief Battle/scene context struct pointed to by D_800D244C.
  *
- * At least 0x4070 bytes based on observed accesses in world_engine.
+ * At least 0x4070 bytes based on observed accesses in world.
  */
 typedef struct {
     /* 0x0000 */ u8 pad0000[0x74];
@@ -674,7 +674,7 @@ typedef struct {
 extern BattleSceneCtx *D_800D244C;
 
 /**
- * @brief Callback-node in the battle_engine list at D_801D3C68.
+ * @brief Callback-node in the tripletriad list at D_801D3C68.
  *
  * Minimal view: a header followed by a list-head pointer. Other fields
  * (byte flags at 0x0E, 0x22; s16 at 0x20; etc.) are not yet modeled.
@@ -785,7 +785,7 @@ typedef struct {
 } SoundCmd;
 
 /* ---------------------------------------------------------------- *
- *  Battle data symbols (battle_code overlay region).
+ *  Battle data symbols (battle overlay region).
  * ---------------------------------------------------------------- */
 
 extern s16 D_8005F11C;      /**< 0x8005F11C: misc sound state (used by bc_object1 / fe_object7). */
@@ -848,7 +848,7 @@ extern u16 D_800EEBC2;      /**< 0x800EEBC2: status code halfword. */
 extern s32 D_800EEBC4;      /**< 0x800EEBC4: status flags word (bit 0x4000000). */
 
 /* ---------------------------------------------------------------- *
- *  Battle-overlay function prototypes (battle_code internals).
+ *  Battle-overlay function prototypes (battle internals).
  * ---------------------------------------------------------------- */
 
 /** @brief Test if bit @p a1 is set in mask @p a0. */
@@ -984,7 +984,7 @@ void func_800A554C(s32 idx);
 void func_800A559C(s32 idx);
 
 /* ---------------------------------------------------------------- *
- *  battle_engine state region (overlay @ 0x801C2000..0x801D4000).
+ *  tripletriad state region (overlay @ 0x801C2000..0x801D4000).
  * ---------------------------------------------------------------- */
 
 /** @brief Per-state mask tables consumed by the battle-engine tick.

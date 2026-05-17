@@ -14,11 +14,11 @@ extern u8 D_800E3CF0[];
 extern u8 D_800EE4E8[];
 void func_800AE4A0(void);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800AF358);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF358);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800AF4BC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF4BC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800AF5E0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF5E0);
 
 /**
  * @brief Re-init the 32-slot anim init table at @c D_800EE9E8 by feeding
@@ -44,7 +44,7 @@ void func_800AF654(void) {
  *
  * @param a0 Entity index (stride 0xD0).
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800AF6BC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF6BC);
 
 extern void func_800AF6BC(s32 a0);
 
@@ -70,7 +70,7 @@ void func_800AF740(void) {
     func_800AF654();
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800AF7C4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF7C4);
 
 /**
  * @brief Clear two flag bits in the entity's @c controlFlags and bracket
@@ -85,7 +85,7 @@ void func_800AF8A4(s32 a0) {
     func_800A5778(a0);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800AF918);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF918);
 
 /**
  * @brief Read the byte at offset 0x14F of the entity's linked data block.
@@ -103,15 +103,15 @@ s32 func_800AF988(s32 a0) {
  * @param a0 Input value (low 16 bits used).
  * @return min(a0 & 0xFFFF, 60000).
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800AF9C4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF9C4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800AF9E8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF9E8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800AFA64);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AFA64);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800AFB5C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AFB5C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800AFD0C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AFD0C);
 
 /**
  * @brief Resolve the kernel pointer keyed by @c entriesA0[a0].lookupId.
@@ -194,7 +194,7 @@ void func_800B00C8(void) {
     getMenuString(0x10);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B00E8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B00E8);
 
 /**
  * @brief Copy a null-terminated string from src to dst.
@@ -261,7 +261,7 @@ u8 *func_800B0248(s32 a0, s32 a1, s32 a2) {
     return buf;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B02AC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B02AC);
 
 /**
  * @brief Copy a string to D_800EE490 and return the buffer pointer.
@@ -284,11 +284,11 @@ void func_800B0360(s32 a0) {
     resolveKernelPtr(D_80078E00.rows8[a0].lookupId, D_80078E00.rows8Arg);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B0398);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0398);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B0414);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0414);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B04A0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B04A0);
 
 /**
  * @brief Find the bit position of the lowest set bit.
@@ -319,7 +319,7 @@ s32 func_800B054C(s32 a0) {
  * @param a0 Entity index (stride 0xD0).
  * @param a1 Bitmask to find lowest set bit.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B0574);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0574);
 
 /**
  * @brief Store the reset sentinel @c -0x457 in the entity's per-bit
@@ -418,9 +418,9 @@ s32 func_800B0794(s32 a0, s32 a1) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B0808);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0808);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B08AC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B08AC);
 
 /**
  * @brief Call func_800A59AC with a1=6 and a2=0.
@@ -431,9 +431,9 @@ void func_800B095C(s32 a0) {
     func_800A59AC(a0, 6, 0);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B0980);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0980);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B09F0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B09F0);
 
 /**
  * @brief Process entities whose @c status has neither bit 0 nor bit 2 set.
@@ -450,11 +450,11 @@ void func_800B0C08(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B0C68);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0C68);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B0CC4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0CC4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B0D8C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0D8C);
 
 /**
  * @brief Dispatch call based on D_80082C10 flag bit 1.
@@ -475,7 +475,7 @@ s32 func_800B0DDC(s32 a0) {
     return func_800B0CC4(a0, val);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B0E30);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0E30);
 
 /**
  * @brief Dispatch call based on D_80082C10 flag bit 0.
@@ -521,9 +521,9 @@ s32 func_800B0F7C(s32 arg0) {
     return var_v0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B0F9C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0F9C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B1050);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B1050);
 
 /**
  * @brief Compute combined ability flags for the spell record at the given ID.
@@ -612,8 +612,8 @@ s32 func_800B115C(s32 selfIdx, s32 cmdIdx, s32 *outId, u16 *outFlags) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B13A0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B13A0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B1438);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B1438);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object7", func_800B1564);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B1564);

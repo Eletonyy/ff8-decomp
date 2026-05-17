@@ -14,10 +14,10 @@ void func_800B8BEC(void);
 void func_800B9078(void);
 s32 func_800B2C58(s32);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B872C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B872C);
 
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8754);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8754);
 
 /**
  * @brief Check availability and register entity with tag byte.
@@ -89,7 +89,7 @@ void func_800B8870(u8 *a0, s32 count) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B88A0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B88A0);
 
 /**
  * @brief Walk a linked list, following count links.
@@ -127,11 +127,11 @@ s32 *func_800B890C(void) {
     return node;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8944);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8944);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B89F4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B89F4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8A98);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8A98);
 
 /**
  * @brief Look up entity via func_800B88E0 and return field at +4.
@@ -180,24 +180,24 @@ s32 func_800B8B60(s32 a0, s32 *a1) {
     return count;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8B98);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8B98);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8BEC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8BEC);
 
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8C6C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8C6C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8CE0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8CE0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8DB8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8DB8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8E2C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8E2C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8E4C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8E4C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8EF4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8EF4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8F2C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8F2C);
 
 /**
  * @brief Allocate handler for func_800B8BEC and store initial params.
@@ -235,7 +235,7 @@ void func_800B8F98(s32 a0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B8FE4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8FE4);
 
 
 /**
@@ -259,7 +259,7 @@ void func_800B9048(s32 a0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B9078);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B9078);
 
 /**
  * @brief Initialize D_800EF738 color entries and register animation callback.
@@ -330,33 +330,33 @@ s32 func_800B91CC(void) {
  *
  * @return Pointer to free slot, or 0 if none found.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B91E4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B91E4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B921C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B921C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B9290);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B9290);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B94E0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B94E0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B9518);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B9518);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B953C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B953C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B96EC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B96EC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B97D8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B97D8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B9BF8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B9BF8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800B9F34);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B9F34);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800BA2D0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800BA2D0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800BA640);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800BA640);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800BA874);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800BA874);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800BA9FC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800BA9FC);
 
 /**
  * @brief Call func_800B2B68 with D_800F0830.
@@ -365,13 +365,13 @@ void func_800BAAA4(void) {
     func_800B2B68(D_800F0830);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800BAAC8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800BAAC8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800BABC0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800BABC0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800BAD28);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800BAD28);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800BAE08);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800BAE08);
 
 /**
  * @brief Clear the active byte of entries matching a given ID.
@@ -394,7 +394,7 @@ void func_800BAE28(s32 a0) {
     } while (i < 11);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object10", func_800BAE6C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800BAE6C);
 
 /**
  * @brief Clear the global D_800F1668 to zero.

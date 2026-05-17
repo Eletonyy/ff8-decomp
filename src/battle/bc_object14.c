@@ -24,13 +24,13 @@ void sndEnableReverb(s32);
 void sndDisableReverb(s32);
 void func_8009B6B0(void);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C4A64);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C4A64);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C4B78);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C4B78);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C4D70);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C4D70);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C5188);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5188);
 
 /**
  * @brief Store a word value to D_800F1B90.
@@ -69,7 +69,7 @@ void func_800C5304(s32 a0, s32 a1) {
     func_8009B5C4(a0, a1, 1, func_800C52C4);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C5338);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5338);
 
 /**
  * @brief Wait for a sound request to complete, disabling/re-enabling channels.
@@ -135,17 +135,17 @@ s32 func_800C5490(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C550C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C550C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C561C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C561C);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C5758);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5758);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C5848);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5848);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C58D8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C58D8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C599C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C599C);
 
 /**
  * @brief Check if an entity passes multiple flag checks.
@@ -158,11 +158,11 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C599C);
  * @param a2 Bitmask for indirect halfword check.
  * @return 0 if blocked, 1 if entity passes all checks.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C5A34);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5A34);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C5A94);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5A94);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C5B1C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5B1C);
 
 /**
  * @brief Allocate a handler with func_800C5B1C callback and initialize fields.
@@ -180,18 +180,18 @@ s32 func_800C5B88(s32 a0) {
     return 8;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C5BC8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5BC8);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C5D28);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5D28);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C5E68);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5E68);
 
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C5F98);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5F98);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C60A0);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C60A0);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C6198);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C6198);
 
 /**
  * @brief Update animation frame counter with optional palette reset.
@@ -217,13 +217,13 @@ void func_800C624C(u8 *a0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C62EC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C62EC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C63D4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C63D4);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C6480);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C6480);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C65A8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C65A8);
 
 /**
  * @brief Initialize palette and display state for battle effect.
@@ -233,7 +233,7 @@ INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C65A8);
  * D_800FA500, calls func_800408E4 with 0x200, sets D_800FA4F8 to 0x11,
  * and sets bit 2 of D_800EEC5C.
  */
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C66E4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C66E4);
 
 /**
  * @brief Store constant 2 to D_800FA4F8.
@@ -242,7 +242,7 @@ void func_800C674C(void) {
     *(u8 *)D_800FA4F8 = 2;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C675C);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C675C);
 
 /**
  * @brief Compute the difference between D_800FA4FC and D_800FA5F0.
@@ -253,7 +253,7 @@ s32 func_800C6A8C(void) {
     return *(s32 *)D_800FA4FC - *(s32 *)D_800FA5F0;
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C6AA4);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C6AA4);
 
 /**
  * @brief Look up a word from the D_800E662C array.
@@ -265,9 +265,9 @@ s32 func_800C6B1C(s32 a0) {
     return *(s32 *)(D_800E662C + a0 * 4);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C6B38);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C6B38);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C6C44);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C6C44);
 
 extern u8 D_800FB408[];
 s32 func_800B2A84(u8 *, void *);
@@ -316,12 +316,12 @@ void func_800C6DB4(s32 a0, s32 a1) {
     } while (i < 4);
 }
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C6DEC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C6DEC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C6EAC);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C6EAC);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C6F88);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C6F88);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C7134);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C7134);
 
-INCLUDE_ASM("asm/ovl/battle_code/nonmatchings/bc_object14", func_800C71D8);
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C71D8);

@@ -43,9 +43,9 @@ extern s32 func_800AC0A0(s32 type, PosDesc *pos, Velocity *vel, s32 flags);
 #define SPAWN_FLAG_LIFETIME_JITTER 1
 #define SPAWN_FLAG_SIZE_JITTER     2
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object9", func_800BA870);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object9", func_800BA870);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object9", func_800BAC84);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object9", func_800BAC84);
 
 /*
  * func_800BB150: message dispatch with counter + template expansion.
@@ -154,9 +154,9 @@ INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object9", func_800BAC84);
  *       }
  *   }
  */
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object9", func_800BB150);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object9", func_800BB150);
 
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object9", func_800BB4E8);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object9", func_800BB4E8);
 
 /**
  * @brief Spawn a mirrored particle pair (type 0x13) at ±0x320 angle offsets if visible.
@@ -255,7 +255,7 @@ void func_800BBD74(ParticleSource *src, s32 visRange) {
  *       func_800AC0A0(0xF, &localPos, &localVel, 3);
  *   }
  */
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object9", func_800BBF0C);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object9", func_800BBF0C);
 
 /**
  * @brief Spawn a mirrored particle pair (type 0x14) gated on a word-angle delta.
@@ -376,7 +376,7 @@ void func_800BC09C(ParticleSource *src) {
  *         return (s16)clamped;
  *     }
  */
-INCLUDE_ASM("asm/ovl/world_engine/nonmatchings/we_object9", func_800BC218);
+INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object9", func_800BC218);
 
 extern void func_800BFFEC(void);
 
@@ -1386,7 +1386,7 @@ extern s32 D_800C971C;
  *
  * @note The 5-case switch emits @c jtbl_80098770 at overlay offset 0x770
  *       (mid-rodata between @c we_dispatch and @c we_dispatch2 subsegments
- *       — see @c world_engine.ovl.yaml).
+ *       — see @c world.ovl.yaml).
  */
 void func_800BD540(Entity *e) {
     if (D_800C971C != 0) {

@@ -1230,7 +1230,7 @@ POLY_G3 *func_800995F8(void *ot, POLY_G3 *prims) {
  * }
  * @endverbatim
  */
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object1", func_80099798);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object1", func_80099798);
 
 /**
  * @brief Triple Triad match controller — 10-state machine driving the post-game
@@ -1458,7 +1458,7 @@ INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object1", func_80099798);
  * }
  * @endverbatim
  */
-INCLUDE_ASM("asm/ovl/battle_engine/nonmatchings/be_object1", func_80099C78);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object1", func_80099C78);
 
 /**
  * @brief Execute cleanup via func_8009AD00 and return success.
