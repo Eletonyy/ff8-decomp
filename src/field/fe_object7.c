@@ -2056,7 +2056,24 @@ s32 func_800B8F80(Eline *eline) {
     return 1;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8FA8);
+/**
+ * @brief Pop two halfwords into D_800704A8.unk102/unk104; clear unk106.
+ *
+ * Writes the popped values into the SystemState block: first POP →
+ * @c unk104, second POP → @c unk102. Also zeros @c unk106. Leaf
+ * function.
+ *
+ * @param eline Script context.
+ * @return 2 (advance PC).
+ */
+s32 func_800B8FA8(Eline *eline) {
+    do {
+        D_800704A8.unk104 = POP(eline);
+        D_800704A8.unk102 = POP(eline);
+        D_800704A8.unk106 = 0;
+    } while (0);
+    return 2;
+}
 
 /** @brief Pop byte from stack and store to offset 0x240. Returns 2. */
 s32 func_800B9000(u8 *a0) {
