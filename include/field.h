@@ -79,9 +79,17 @@ typedef struct {
     /* 0x106 */ u16 unk106;
     /* 0x108 */ u8 pad108[0x1A];
     /* 0x122 */ u8 unk122;          /**< Cleared together with @c unk130 by an fe_object6 opcode. */
-    /* 0x123 */ u8 pad123[0x0D];
+    /* 0x123 */ u8 pad123[0x03];
+    /* 0x126 */ u16 unk126;
+    /* 0x128 */ u8 pad128[0x04];
+    /* 0x12C */ u16 unk12C;
+    /* 0x12E */ u8 pad12E[0x02];
     /* 0x130 */ u8 unk130;
-    /* 0x131 */ u8 pad131[0x5F];
+    /* 0x131 */ u8 pad131[0x03];
+    /* 0x134 */ u16 unk134;
+    /* 0x136 */ u8 pad136[0x04];
+    /* 0x13A */ u16 unk13A;
+    /* 0x13C */ u8 pad13C[0x54];
     /* 0x190 */ u8 slotActive[16];
     /* 0x1A0 */ u8 pad1A0[0x0B];
     /* 0x1AB */ u8 unk1AB;          /**< Sub-mode byte; written together with @c mode by fe_object6 opcodes. */
@@ -166,7 +174,7 @@ typedef struct {
     /* 0x185 */ u8 pad185[0x03];
     /* 0x188 */ u8 unk188;          /**< Script parameter byte. */
     /* 0x189 */ u8 unk189;          /**< Script parameter byte. */
-    /* 0x18A */ u8 pad18A[0x02];
+    /* 0x18A */ u16 unk18A;         /**< Step delta added to unk188 each movement tick. */
     /* 0x18C */ u16 unk18C;         /**< Halfword saved during async msg state. */
     /* 0x18E */ u16 unk18E;         /**< Halfword saved during async msg state. */
     /* 0x190 */ s32 posX;           /**< Entity X position (fixed-point). */

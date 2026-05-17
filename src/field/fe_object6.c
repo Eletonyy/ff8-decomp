@@ -583,7 +583,24 @@ s32 func_800B3350(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B33B8);
+/**
+ * Pop four stack halfwords into @c D_800704A8 system-state slots and
+ * arm the activation markers @c unk122 and @c unk130. Pops are stored
+ * in reverse order across the four slot pairs at 0x126, 0x12C, 0x134
+ * and 0x13A.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B33B8(Eline *eline) {
+    D_800704A8.unk122 = 1;
+    D_800704A8.unk130 = 1;
+    D_800704A8.unk13A = (u16)POP(eline);
+    D_800704A8.unk134 = (u16)POP(eline);
+    D_800704A8.unk12C = (u16)POP(eline);
+    D_800704A8.unk126 = (u16)POP(eline);
+    return 3;
+}
 
 /**
  * Clears the bytes at D_800704A8+0x122 and D_800704A8+0x130, returns 2.
