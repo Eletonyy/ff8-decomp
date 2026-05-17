@@ -1103,7 +1103,18 @@ s32 func_800B4A18(Eline *eline) {
     return 3;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4A40);
+/**
+ * Mode-5 init: set mode = 5, counter = 0x17, pop a byte into @c unk1AB.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B4A40(Eline *eline) {
+    D_800704A8.mode = 5;
+    D_800704A8.counter = 0x17;
+    D_800704A8.unk1AB = POP_BYTE(eline);
+    return 3;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4A88);
 
