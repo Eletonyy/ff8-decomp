@@ -233,7 +233,25 @@ s32 func_800B2A40(Eline *eline, s32 a1) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2A70);
+/**
+ * Broadcast the current Eline's @c unk188 / @c unk189 script parameter
+ * bytes to every active @c BattleFieldEntity slot. Iterates over the
+ * @c D_80085224 array (count @c D_80085388, stride 0x264) and writes
+ * the same pair into each entry's mirror fields at +0x188 / +0x189.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B2A70(Eline *eline) {
+    s32 i;
+    BattleFieldEntity *p = D_80085224;
+    for (i = 0; i < D_80085388; i++) {
+        p->unk188 = eline->unk188;
+        p->unk189 = eline->unk189;
+        p++;
+    }
+    return 2;
+}
 
 /**
  * Sets bit 0x80 in the flags at offset 0x160, returns 2.
