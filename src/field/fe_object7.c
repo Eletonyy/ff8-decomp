@@ -2039,12 +2039,18 @@ s32 func_800B8F60(u8 *a0) {
     return 2;
 }
 
-/** @brief Compare D_800704A8 entries. Returns 1 if different, 2 if same. */
-s32 func_800B8F80(u8 *a0) {
-    u8 *base = (u8 *)&D_800704A8;
-    u16 val1 = *(u16 *)(base + 0x106);
-    u16 val2 = *(u16 *)(base + 0x104);
-    if (val1 == val2) {
+/**
+ * @brief Wait until @c D_800704A8.unk106 catches up with @c unk104.
+ *
+ * Read by scripts to wait for the animation tick set by
+ * @c func_800B8FA8 (POP → @c unk104, @c unk106 = 0) — some other
+ * code path advances @c unk106 each frame, and this opcode yields
+ * (return 1) until they're equal.
+ *
+ * @return 2 (advance) when @c unk104 == @c unk106, 1 (yield) otherwise.
+ */
+s32 func_800B8F80(Eline *eline) {
+    if (D_800704A8.unk106 == D_800704A8.unk104) {
         return 2;
     }
     return 1;
