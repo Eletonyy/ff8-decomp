@@ -477,7 +477,62 @@ s32 func_800B3050(Eline *eline) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3080);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B31B4);
+/**
+ * Set movement state from a stack-pushed parameter block. Sets the
+ * @c 0x600 dual-axis flag bits, zeros @c unk19E, pops six pairs of
+ * "current/target" bytes into the active/saved slot ranges
+ * (@c unk1A7..unk1AC mirroring @c unk1AD..unk1B2), pops the timer
+ * halfword @c unk1A2, pops the loop counter halfword @c unk1A0 /
+ * @c unk19C (broadcast), and primes the per-tick counter @c unk1A4
+ * from the saved tick total @c unk1A5.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B31B4(Eline *eline) {
+    FieldEntity *e = (FieldEntity *)eline;
+    u8 v;
+    u16 hw;
+
+    eline->flags |= 0x600;
+    e->unk19E = 0;
+
+    e->unk1A6 = POP_BYTE(eline);
+    e->unk1A5 = POP_BYTE(eline);
+
+    v = POP_BYTE(eline);
+    e->unk1AC = v;
+    e->unk1B2 = v;
+
+    v = POP_BYTE(eline);
+    e->unk1AB = v;
+    e->unk1B1 = v;
+
+    v = POP_BYTE(eline);
+    e->unk1AA = v;
+    e->unk1B0 = v;
+
+    v = POP_BYTE(eline);
+    e->unk1A9 = v;
+    e->unk1AF = v;
+
+    v = POP_BYTE(eline);
+    e->unk1A8 = v;
+    e->unk1AE = v;
+
+    v = POP_BYTE(eline);
+    e->unk1A7 = v;
+    e->unk1AD = v;
+
+    e->unk1A2 = (u16)POP(eline);
+
+    hw = (u16)POP(eline);
+    e->unk1A0 = hw;
+    e->unk19C = hw;
+
+    e->unk1A4 = e->unk1A5;
+    return 2;
+}
 
 /**
  * Clears bits 0x600 in the entity flags and zeroes the halfword at
