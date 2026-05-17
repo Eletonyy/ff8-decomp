@@ -1989,13 +1989,18 @@ s32 func_800B8E74(Eline *eline, s32 a1) {
 }
 
 /**
- * Returns 2 if the byte at offset 0x245 equals 3, otherwise returns 1.
+ * @brief Return 2 if @c unk245 == 3, otherwise return 1.
  *
- * @param a0 Pointer to the script/object structure.
- * @return 2 if object byte 0x245 is 3, else 1.
+ * Probes the animation sub-mode byte set by the sibling opcode
+ * handlers (@c func_800B8BE0 / @c func_800B8CD4 / @c func_800B8DC8 /
+ * @c func_800B8E74). Used by scripts to wait until the animation
+ * reaches sub-mode 3.
+ *
+ * @param eline Script context.
+ * @return 2 if @c unk245 == 3 (advance), 1 otherwise (yield).
  */
-s32 func_800B8F20(u8 *a0) {
-    if (*(u8 *)(a0 + 0x245) == 3) {
+s32 func_800B8F20(Eline *eline) {
+    if (eline->unk245 == 3) {
         return 2;
     }
     return 1;
