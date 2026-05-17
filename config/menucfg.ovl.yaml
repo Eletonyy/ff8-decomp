@@ -10,7 +10,7 @@ options:
 
   # Directory layout
   asm_path: asm/ovl/menucfg
-  src_path: src/ovl/menucfg
+  src_path: src/menu/menucfg
   build_path: build/ovl/menucfg
 
   # Linker

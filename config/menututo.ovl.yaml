@@ -10,7 +10,7 @@ options:
 
   # Directory layout
   asm_path: asm/ovl/menututo
-  src_path: src/ovl/menututo
+  src_path: src/menu/menututo
   build_path: build/ovl/menututo
 
   # Linker

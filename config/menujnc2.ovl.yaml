@@ -10,7 +10,7 @@ options:
 
   # Directory layout
   asm_path: asm/ovl/menujnc2
-  src_path: src/ovl/menujnc2
+  src_path: src/menu/menujnc2
   build_path: build/ovl/menujnc2
 
   # Linker

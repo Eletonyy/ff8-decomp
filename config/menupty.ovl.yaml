@@ -10,7 +10,7 @@ options:
 
   # Directory layout
   asm_path: asm/ovl/menupty
-  src_path: src/ovl/menupty
+  src_path: src/menu/menupty
   build_path: build/ovl/menupty
 
   # Linker

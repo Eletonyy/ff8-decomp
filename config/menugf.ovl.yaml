@@ -10,7 +10,7 @@ options:
 
   # Directory layout
   asm_path: asm/ovl/menugf
-  src_path: src/ovl/menugf
+  src_path: src/menu/menugf
   build_path: build/ovl/menugf
 
   # Linker

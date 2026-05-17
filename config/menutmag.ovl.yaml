@@ -10,7 +10,7 @@ options:
 
   # Directory layout
   asm_path: asm/ovl/menutmag
-  src_path: src/ovl/menutmag
+  src_path: src/menu/menutmag
   build_path: build/ovl/menutmag
 
   # Linker

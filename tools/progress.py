@@ -23,7 +23,8 @@ OVERLAY_EXT.update({name: "bin" for name in CODE_OVERLAYS})
 # Defaults to src/ovl/<name>/*.c; override here when sources live elsewhere.
 OVERLAY_SRC_GLOBS = {
     "intro":        ["src/intro.c", "src/intro_assets.c", "src/intro_state.c"],
-    "field": ["src/field/*.c"],
+    "field":        ["src/field/*.c"],
+    **{name: [f"src/menu/{name}/*.c"] for name in MENU_OVERLAYS},
 }
 
 

@@ -10,7 +10,7 @@ options:
 
   # Directory layout
   asm_path: asm/ovl/menusav
-  src_path: src/ovl/menusav
+  src_path: src/menu/menusav
   build_path: build/ovl/menusav
 
   # Linker

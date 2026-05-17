@@ -10,7 +10,7 @@ options:
 
   # Directory layout
   asm_path: asm/ovl/menusts
-  src_path: src/ovl/menusts
+  src_path: src/menu/menusts
   build_path: build/ovl/menusts
 
   # Linker
