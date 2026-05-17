@@ -29,9 +29,27 @@ typedef struct {
     u16 walkSpeed2;         /**< 0x192: Walk speed (copy). */
     u16 runSpeed;           /**< 0x194: Run speed. */
     u8 pad196[0x06];        /**< 0x196 */
-    u8 unk19C;              /**< 0x19C */
-    u8 unk19D;              /**< 0x19D */
-    u8 pad19E[0x58];        /**< 0x19E */
+    u16 unk19C;             /**< 0x19C */
+    u16 unk19E;             /**< 0x19E */
+    u16 unk1A0;             /**< 0x1A0 */
+    u16 unk1A2;             /**< 0x1A2 */
+    u8 unk1A4;              /**< 0x1A4 */
+    u8 unk1A5;              /**< 0x1A5 */
+    u8 unk1A6;              /**< 0x1A6 */
+    u8 unk1A7;              /**< 0x1A7 */
+    u8 unk1A8;              /**< 0x1A8 */
+    u8 unk1A9;              /**< 0x1A9 */
+    u8 unk1AA;              /**< 0x1AA */
+    u8 unk1AB;              /**< 0x1AB */
+    u8 unk1AC;              /**< 0x1AC */
+    u8 unk1AD;              /**< 0x1AD */
+    u8 unk1AE;              /**< 0x1AE */
+    u8 unk1AF;              /**< 0x1AF */
+    u8 unk1B0;              /**< 0x1B0 */
+    u8 unk1B1;              /**< 0x1B1 */
+    u8 unk1B2;              /**< 0x1B2 */
+    u8 unk1B3;              /**< 0x1B3 */
+    u8 pad1B4[0x42];        /**< 0x1B4 */
     u16 unk1F6;             /**< 0x1F6 */
     u16 unk1F8;             /**< 0x1F8 */
     u8 pad1FA[0x1E];        /**< 0x1FA */
@@ -145,7 +163,10 @@ typedef struct {
     /* 0x175 */ u8 activeMask;      /**< Entity active bitmask. */
     /* 0x176 */ u8 pad176[0x0E];
     /* 0x184 */ s8 stackPtr;        /**< Bytecode stack pointer (signed, grows down). */
-    /* 0x185 */ u8 pad185[0x0B];
+    /* 0x185 */ u8 pad185[0x03];
+    /* 0x188 */ u8 unk188;          /**< Script parameter byte. */
+    /* 0x189 */ u8 unk189;          /**< Script parameter byte. */
+    /* 0x18A */ u8 pad18A[0x06];
     /* 0x190 */ s32 posX;           /**< Entity X position (fixed-point). */
     /* 0x194 */ s32 posY;           /**< Entity Y position (fixed-point). */
     /* 0x198 */ s32 posZ;           /**< Entity Z position (fixed-point). */
