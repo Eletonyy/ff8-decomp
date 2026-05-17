@@ -10,7 +10,7 @@ options:
 
   # Directory layout
   asm_path: asm/ovl/battle_engine
-  src_path: src/ovl/battle_engine
+  src_path: src/tripletriad
   build_path: build/ovl/battle_engine
 
   # Linker
