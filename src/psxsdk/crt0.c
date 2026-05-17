@@ -8,4 +8,4 @@ void preInitStub(void) {
 }
 
 /** @brief CRT0 entry point. Clears BSS, sets up GP register, and calls main. */
-INCLUDE_ASM("asm/nonmatchings/crt0", start);
+INCLUDE_ASM("asm/nonmatchings/psxsdk/crt0", start);
