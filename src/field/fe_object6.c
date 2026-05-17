@@ -1192,7 +1192,18 @@ s32 func_800B4DFC(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4E60);
+/**
+ * Pop a character index, read @c g_gameState.chars[charId].currentHp
+ * and stage it into the script result slot 0.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B4E60(Eline *eline) {
+    s32 charId = POP(eline);
+    eline->resultSlots[0] = g_gameState.chars[charId].currentHp;
+    return 2;
+}
 
 /**
  * Sets D_800704A8 to 5, sets the halfword at D_800704A8+2 to 0x18,
