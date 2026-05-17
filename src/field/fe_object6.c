@@ -841,7 +841,21 @@ s32 func_800B41CC(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4288);
+/**
+ * Stop camera-shake mode: clear the @c stateFlags bit 0x40, the
+ * @c fieldB6 bit 0x4 and the @c g_battleConfig.unk2 bit 0x4, then call
+ * @c setCameraVibrateState(0). Inverse of @c func_800B41CC.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B4288(Eline *eline) {
+    g_seedState->stateFlags &= ~0x40;
+    g_seedState->fieldB6 &= ~0x4;
+    g_battleConfig.unk2 &= ~0x4;
+    setCameraVibrateState(0);
+    return 2;
+}
 
 /**
  * Pops a parameter and calls setCameraVibrateIntensity, returns 2.
