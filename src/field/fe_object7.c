@@ -1868,7 +1868,32 @@ s32 func_800B8B58(Eline *eline, s32 a1) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8BE0);
+/**
+ * @brief Pop seven halfwords into animation fields with @c unk245 = 1.
+ *
+ * Sister of @c func_800B8B58 but with one more parameter direction:
+ * sets @c unk245 = 1, pops seven u16 values into @c field_0x1F2,
+ * @c 1F0, @c 1EA, @c 1E4, @c 1EE, @c 1E8, @c 1E2 (last), and zeros
+ * @c field_0x1F4. Leaf function.
+ *
+ * @param eline Script context.
+ * @param a1    Ignored.
+ * @return 2 (advance PC).
+ */
+s32 func_800B8BE0(Eline *eline, s32 a1) {
+    do {
+        eline->unk245 = 1;
+        eline->field_0x1F2 = POP(eline);
+        eline->field_0x1F0 = POP(eline);
+        eline->field_0x1EA = POP(eline);
+        eline->field_0x1E4 = POP(eline);
+        eline->field_0x1EE = POP(eline);
+        eline->field_0x1E8 = POP(eline);
+        eline->field_0x1E2 = POP(eline);
+        eline->field_0x1F4 = 0;
+    } while (0);
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8CD4);
 
