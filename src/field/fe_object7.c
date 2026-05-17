@@ -1622,7 +1622,41 @@ s32 func_800B7E78(Eline *eline) {
     return 1;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8344);
+/**
+ * @brief Positioned-message opcode handler with stored arg.
+ *
+ * On the active frame, starts a new positioned message: writes
+ * @c msgActive = 2, @c msgState = 0, then pops three values from the
+ * bytecode stack — a halfword (window/format ID, stored to
+ * @c field_0x1D8), and two s32 coords that are scaled into Q19.12 and
+ * written to @c msgPosX and @c msgTextPtr. Finally stores the
+ * dispatcher arg into @c field_0x1FC.
+ *
+ * On subsequent inactive frames, waits for @c msgState == 2; once
+ * complete, clears @c msgActive and returns 3 (skip-to-next-entity).
+ *
+ * @param eline Script context.
+ * @param a1    Opcode argument (stored as halfword to field_0x1FC).
+ * @return 1 while running, 3 once the message has been read.
+ */
+s32 func_800B8344(Eline *eline, s32 a1) {
+    if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
+        if (eline->msgState != 2) {
+            return 1;
+        }
+        eline->msgActive = 0;
+        return 3;
+    }
+    do {
+        eline->msgActive = 2;
+        eline->msgState = 0;
+        eline->field_0x1D8 = POP(eline);
+        eline->msgPosX = POP(eline) << 12;
+        eline->msgTextPtr = POP(eline) << 12;
+        eline->field_0x1FC = a1;
+    } while (0);
+    return 1;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B83FC);
 
