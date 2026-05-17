@@ -1835,7 +1835,38 @@ s32 func_800B8824(Eline *eline, s32 a1) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B89C0);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8B58);
+/**
+ * @brief Pop three halfwords and broadcast each to a pair of fields.
+ *
+ * Pops three u16 values from the bytecode stack and stores each one to
+ * two adjacent halfword fields (current+target pattern for animation
+ * interpolation): @c (1EC,1EE), @c (1E6,1E8), and @c (1E0,1E2). Also
+ * stores the dispatcher arg into @c field_0x1FC, clears @c unk245 /
+ * @c msgState / @c field_0x1F4. Leaf function.
+ *
+ * @param eline Script context.
+ * @param a1    Opcode argument (stored as halfword to field_0x1FC).
+ * @return 2 (advance PC).
+ */
+s32 func_800B8B58(Eline *eline, s32 a1) {
+    do {
+        u16 a, b, c;
+        a = POP(eline);
+        eline->field_0x1EC = a;
+        eline->field_0x1EE = a;
+        b = POP(eline);
+        eline->field_0x1E6 = b;
+        eline->field_0x1E8 = b;
+        c = POP(eline);
+        eline->field_0x1FC = a1;
+        eline->unk245 = 0;
+        eline->msgState = 0;
+        eline->field_0x1F4 = 0;
+        eline->field_0x1E0 = c;
+        eline->field_0x1E2 = c;
+    } while (0);
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8BE0);
 

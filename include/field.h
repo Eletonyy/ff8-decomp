@@ -162,7 +162,19 @@ typedef struct {
     /* 0x1CC */ u8 pad1CC[0x0C];
     /* 0x1D8 */ u16 field_0x1D8;
     /* 0x1DA */ u16 field_0x1DA;
-    /* 0x1DC */ u8 pad1DC[0x1E];
+    /* 0x1DC */ u8 pad1DC[0x04];
+    /* 0x1E0 */ u16 field_0x1E0;
+    /* 0x1E2 */ u16 field_0x1E2;
+    /* 0x1E4 */ u16 field_0x1E4;
+    /* 0x1E6 */ u16 field_0x1E6;
+    /* 0x1E8 */ u16 field_0x1E8;
+    /* 0x1EA */ u16 field_0x1EA;
+    /* 0x1EC */ u16 field_0x1EC;
+    /* 0x1EE */ u16 field_0x1EE;
+    /* 0x1F0 */ u16 field_0x1F0;
+    /* 0x1F2 */ u16 field_0x1F2;
+    /* 0x1F4 */ u16 field_0x1F4;
+    /* 0x1F6 */ u8 pad1F6[0x04];
     /* 0x1FA */ u16 field_0x1FA;
     /* 0x1FC */ u16 field_0x1FC;
     /* 0x1FE */ s16 savedChannel;   /**< Previous message channel. */
@@ -177,7 +189,9 @@ typedef struct {
     /* 0x23C */ u8 msgActive;       /**< Message active flag. */
     /* 0x23D */ u8 pad23D[0x03];
     /* 0x240 */ u8 field_0x240;
-    /* 0x241 */ u8 pad241[0x0D];
+    /* 0x241 */ u8 pad241[0x04];
+    /* 0x245 */ u8 unk245;
+    /* 0x246 */ u8 pad246[0x08];
     /* 0x24E */ u8 field_0x24E;
     /* 0x24F */ u8 field_0x24F;
     /* 0x250 */ u8 field_0x250;
