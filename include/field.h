@@ -73,7 +73,14 @@ typedef struct {
     /* 0x002 */ s16 counter;
     /* 0x004 */ u8 pad004[0x0E];
     /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_seedState->memberSlot[]). */
-    /* 0x015 */ u8 pad015[0xED];
+    /* 0x015 */ u8 pad015[0x0B];
+    /* 0x020 */ u8 unk020;          /**< Mode marker, set together with @c unk022 and the @c 0x30 / @c 0x32 halfword pair. */
+    /* 0x021 */ u8 pad021;
+    /* 0x022 */ u8 unk022;
+    /* 0x023 */ u8 pad023[0x0D];
+    /* 0x030 */ u16 unk030;         /**< Mode parameter halfword (paired with @c unk032). */
+    /* 0x032 */ u16 unk032;
+    /* 0x034 */ u8 pad034[0xCE];
     /* 0x102 */ u16 unk102;
     /* 0x104 */ u16 unk104;
     /* 0x106 */ u16 unk106;
