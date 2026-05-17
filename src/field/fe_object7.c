@@ -1744,7 +1744,46 @@ s32 func_800B85C8(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B85F8);
+/**
+ * @brief Positioned-message opcode handler — variant with animation
+ *        kick and "msgActive = 3" semantics.
+ *
+ * On the active frame: sets @c msgActive = 3 (distinct from the
+ * @c msgActive = 2 variants in @c func_800B8344 / @c func_800B83FC),
+ * @c windowId = 1, @c msgState = 0; pops a signed halfword and
+ * dispatches @c func_800B912C with it (animation trigger); marks
+ * @c flags |= 0x2000; pops three coords (Q19.12) into @c msgPosY /
+ * @c msgPosX / @c msgTextPtr; stores the opcode arg into @c field_0x1FC.
+ *
+ * On inactive frames: waits for @c msgState == 2 and returns 2 once
+ * the message has been read (no return 3 here — the message stays
+ * available rather than skipping the entity).
+ *
+ * @param eline Script context.
+ * @param a1    Opcode argument (stored as halfword to field_0x1FC).
+ * @return 1 while running, 2 once read.
+ */
+s32 func_800B85F8(Eline *eline, s32 a1) {
+    if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
+        if (eline->msgState == 2) {
+            eline->msgActive = 0;
+            return 2;
+        }
+        return 1;
+    }
+    do {
+        eline->msgActive = 3;
+        eline->windowId = 1;
+        eline->msgState = 0;
+        func_800B912C(eline, (s16)POP(eline));
+        eline->flags |= 0x2000;
+        eline->msgPosY = POP(eline) << 12;
+        eline->msgPosX = POP(eline) << 12;
+        eline->msgTextPtr = POP(eline) << 12;
+        eline->field_0x1FC = a1;
+    } while (0);
+    return 1;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8710);
 
