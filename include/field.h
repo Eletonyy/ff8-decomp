@@ -75,7 +75,7 @@ typedef struct {
     /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_seedState->memberSlot[]). */
     /* 0x015 */ u8 pad015[0x0B];
     /* 0x020 */ u8 unk020;          /**< Mode marker, set together with @c unk022 and the @c 0x30 / @c 0x32 halfword pair. */
-    /* 0x021 */ u8 pad021;
+    /* 0x021 */ u8 unk021;          /**< Per-entity byte set from @c FieldEntity::field_0x256 by mode-0 opcodes. */
     /* 0x022 */ u8 unk022;
     /* 0x023 */ u8 pad023;
     /* 0x024 */ u16 unk024;         /**< Mode-4 only: third parameter halfword. */

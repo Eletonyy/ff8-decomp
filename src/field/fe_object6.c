@@ -21,6 +21,7 @@ extern u8 *func_800A8DAC(s32 entityIdx, s32 mode, void *buf, s32 flag);
 extern void func_800406A4(u8 *p);
 extern void func_80040734(u8 *p);
 extern s32 func_80040DE4(SVECTOR *v0, s32 *sxy, s32 *p, s32 *flag);
+extern Eline *D_80085230[];
 
 /**
  * Pops 3 stack values (target, volume, pan), looks up an SFX entry in
@@ -664,7 +665,23 @@ s32 func_800B3574(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B35FC);
+/**
+ * Pop a script index, look up the corresponding @c FieldEntity pointer
+ * via the @c D_80085230 table, and stage its @c field_0x256 byte into
+ * SystemState @c unk021 with mode @c unk020 = 0 and submode @c unk022
+ * = 0.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B35FC(Eline *eline) {
+    s32 val = POP(eline);
+    u8 byte = D_80085230[val]->field_0x256;
+    D_800704A8.unk020 = 0;
+    D_800704A8.unk022 = 0;
+    D_800704A8.unk021 = byte;
+    return 3;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3650);
 
