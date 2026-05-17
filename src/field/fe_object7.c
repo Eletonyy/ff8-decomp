@@ -56,7 +56,7 @@ extern Eline *D_800DE4F8;
  * @return 2 (continue processing).
  */
 s32 func_800B542C(Eline *eline) {
-    eline->field_0x140 = getKeyItemValue(POP(eline));
+    eline->resultSlots[0] = getKeyItemValue(POP(eline));
     return 2;
 }
 
@@ -87,8 +87,8 @@ s32 func_800B5480(Eline *eline) {
         params->field_05 = POP_BYTE(eline);
 
         result = sumItemQuantities(params);
-        eline->field_0x140 = result;
-        eline->field_0x144 = 0;
+        eline->resultSlots[0] = result;
+        eline->resultSlots[1] = 0;
 
         if (result >= 5) {
             if (!(g_seedState->stateFlags & 0x10)) {
@@ -130,9 +130,9 @@ s32 func_800B5480(Eline *eline) {
         return 1;
     } else {
         if (D_80082C90.result == 3) {
-            eline->field_0x144 = -1;
+            eline->resultSlots[1] = -1;
         } else {
-            eline->field_0x144 = D_80082C90.result;
+            eline->resultSlots[1] = D_80082C90.result;
         }
         return 2;
     }
@@ -352,7 +352,7 @@ s32 func_800B5A30(Eline *eline) {
 
         i = getPackedField2Bit(fieldIdx);
         if (i == 3 || getPackedField2Bit(fieldIdx) == 2) {
-            eline->field_0x140 = 0;
+            eline->resultSlots[0] = 0;
             eline->stackPtr--;
             return 2;
         }
@@ -362,7 +362,7 @@ s32 func_800B5A30(Eline *eline) {
             break;
         }
 
-        eline->field_0x140 = 0;
+        eline->resultSlots[0] = 0;
         eline->stackPtr--;
         return 2;
 
@@ -399,7 +399,7 @@ s32 func_800B5A30(Eline *eline) {
         g_seedState->sfxActiveMask &= ~0x40;
 
         if ((s8)D_800DE4D2 == 0) {
-            eline->field_0x140 = 0;
+            eline->resultSlots[0] = 0;
             eline->stackPtr--;
             return 2;
         }
@@ -636,7 +636,7 @@ s32 func_800B64B0(Eline *eline) {
  * @return 2 (continue processing).
  */
 s32 func_800B6524(Eline *eline) {
-    eline->field_0x140 = D_80082C0F;
+    eline->resultSlots[0] = D_80082C0F;
     return 2;
 }
 
@@ -1386,7 +1386,110 @@ void func_800B788C(Eline *self, Eline *target) {
     self->flags |= 0x2001;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B79C8);
+/**
+ * @brief Proximity-anchored message from the OTHER two party members.
+ *
+ * On the active frame, locates the party slot whose @c memberSlot
+ * matches @c eline->field_0x255 (the "speaker"), then sets up
+ * proximity messages from the other two slots back at the speaker
+ * via @c func_800B788C. Saves the chosen entity pointers in
+ * @c D_800DE4F0 / @c D_800DE4F4, kicks off the speaker's own animation
+ * via @c func_800B912C, and marks flag @c 0x2000.
+ *
+ * On subsequent inactive frames, waits for both saved entities to
+ * reach @c msgState == 2 with a fresh field_0x24E/24F mismatch — for
+ * each, triggers @c func_800B912C and sets flag @c 0x8000. Once both
+ * have completed, calls @c func_8009ECA4 and clears msgActive + flag
+ * bit @c 0x1 on each.
+ *
+ * @param eline Script context (the speaker).
+ * @return 1 while waiting, 2 once both other-party messages finish.
+ */
+s32 func_800B79C8(Eline *eline) {
+    s32 i;
+    s32 idx;
+
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        for (i = 0; i < 3; i++) {
+            if (g_gameState.battleParty[i] == eline->field_0x255) {
+                break;
+            }
+        }
+
+        D_800DE4F8 = 0;
+        D_800DE4F4 = 0;
+        D_800DE4F0 = 0;
+
+        switch (i) {
+        case 0:
+            if (g_seedState->memberSlot[1] != 0xFF) {
+                idx = g_seedState->memberSlot[1];
+                D_800DE4F0 = &D_80085224[idx];
+                func_800B788C(&D_80085224[idx], eline);
+            }
+            if (g_seedState->memberSlot[2] != 0xFF) {
+                idx = g_seedState->memberSlot[2];
+                D_800DE4F4 = &D_80085224[idx];
+                func_800B788C(&D_80085224[idx], eline);
+            }
+            break;
+        case 1:
+            if (g_seedState->memberSlot[0] != 0xFF) {
+                idx = g_seedState->memberSlot[0];
+                D_800DE4F0 = &D_80085224[idx];
+                func_800B788C(&D_80085224[idx], eline);
+            }
+            if (g_seedState->memberSlot[2] != 0xFF) {
+                idx = g_seedState->memberSlot[2];
+                D_800DE4F4 = &D_80085224[idx];
+                func_800B788C(&D_80085224[idx], eline);
+            }
+            break;
+        case 2:
+            if (g_seedState->memberSlot[0] != 0xFF) {
+                idx = g_seedState->memberSlot[0];
+                D_800DE4F0 = &D_80085224[idx];
+                func_800B788C(&D_80085224[idx], eline);
+            }
+            if (g_seedState->memberSlot[1] != 0xFF) {
+                idx = g_seedState->memberSlot[1];
+                D_800DE4F4 = &D_80085224[idx];
+                func_800B788C(&D_80085224[idx], eline);
+            }
+            break;
+        }
+
+        func_800B912C(eline, eline->field_0x24F);
+        eline->flags |= 0x2000;
+    } else {
+        if (D_800DE4F0 != NULL && D_800DE4F0->msgState == 2
+                && D_800DE4F0->field_0x24E != D_800DE4F0->field_0x24F) {
+            func_800B912C(D_800DE4F0, D_800DE4F0->field_0x24F);
+            D_800DE4F0->flags |= 0x8000;
+        }
+        if (D_800DE4F4 != NULL && D_800DE4F4->msgState == 2
+                && D_800DE4F4->field_0x24E != D_800DE4F4->field_0x24F) {
+            func_800B912C(D_800DE4F4, D_800DE4F4->field_0x24F);
+            D_800DE4F4->flags |= 0x8000;
+        }
+
+        if (D_800DE4F0 == NULL || D_800DE4F0->msgState == 2) {
+            if (D_800DE4F4 == NULL || D_800DE4F4->msgState == 2) {
+                func_8009ECA4();
+                if (D_800DE4F0) {
+                    D_800DE4F0->flags &= ~1;
+                    D_800DE4F0->msgActive = 0;
+                }
+                if (D_800DE4F4) {
+                    D_800DE4F4->flags &= ~1;
+                    D_800DE4F4->msgActive = 0;
+                }
+                return 2;
+            }
+        }
+    }
+    return 1;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B7D44);
 

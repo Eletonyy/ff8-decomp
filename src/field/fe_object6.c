@@ -459,7 +459,7 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B417C);
  */
 s32 func_800B41B0(Eline *eline) {
     volatile GameState *gs = &g_gameState;
-    eline->field_0x140 = gs->mainData.battleStateFlag;
+    eline->resultSlots[0] = gs->mainData.battleStateFlag;
     return 2;
 }
 

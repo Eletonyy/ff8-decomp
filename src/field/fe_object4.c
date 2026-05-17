@@ -287,13 +287,34 @@ s32 func_800AE0DC(u8 *a0, s32 a1) {
 }
 
 /**
- * Push 8 result slots (0x140+i*4) onto stack, zeroing each slot.
- * If flag 0x20 is set in 0x160, store 1 at result slot 0x140.
+ * @brief Opcode 0x05 — SAV: spill result-slot register file to the
+ *        bytecode stack and reset the slots.
  *
- * @param a0 Pointer to the script/object structure.
- * @return 2 (continue processing).
+ * Pushes the eight result-register values (@c eline->resultSlots[0..7])
+ * onto the bytecode stack in order, then clears each slot to zero.
+ * After the spill, if @c FLAG_SAV_SUCCESS is set in @c eline->flags,
+ * slot 0 is re-armed to @c 1 — a "success/default" marker the caller
+ * can fall through to.
+ *
+ * This is the script-VM analogue of a save-registers prologue; a
+ * later opcode pops the saved values back to restore the slot file.
+ *
+ * @param eline Script context.
+ * @param a1    Ignored (dispatcher-supplied opcode argument).
+ * @return 2 (advance PC).
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object4", func_800AE124);
+s32 func_800AE124(Eline *eline, s32 a1) {
+    s32 i;
+
+    for (i = 0; i < 8; i++) {
+        PUSH(eline, eline->resultSlots[i]);
+        eline->resultSlots[i] = 0;
+    }
+    if (eline->flags & 0x20) {
+        eline->resultSlots[0] = 1;
+    }
+    return 2;
+}
 
 /** @brief Pop halfword from stack and store to entity offset 0x176. */
 void func_800AE184(u8 *a0) {

@@ -113,9 +113,7 @@ typedef struct {
  */
 typedef struct {
     /* 0x000 */ u8 pad000[0x140];
-    /* 0x140 */ s32 field_0x140;
-    /* 0x144 */ s32 field_0x144;
-    /* 0x148 */ u8 pad148[0x18];
+    /* 0x140 */ s32 resultSlots[8]; /**< Result-slot register file (opcodes 0x08/0x09 read/write). */
     /* 0x160 */ s32 flags;
     /* 0x164 */ u8 pad164[0x10];
     /* 0x174 */ u8 scriptGroup;     /**< Script group index. */
@@ -153,11 +151,15 @@ typedef struct {
     /* 0x24F */ u8 field_0x24F;
     /* 0x250 */ u8 field_0x250;
     /* 0x251 */ u8 field_0x251;
-    /* 0x252 */ u8 pad252[0x04];
+    /* 0x252 */ u8 pad252[0x03];
+    /* 0x255 */ u8 field_0x255;
     /* 0x256 */ u8 field_0x256;
     /* 0x257 */ u8 pad257[0x0B];
     /* 0x262 */ u8 field_0x262;
 } Eline;
+
+/** @brief Push one s32 onto the eline's bytecode stack. */
+#define PUSH(eline, val) (((s32 *)(eline))[(s8)(++(eline)->stackPtr)] = (val))
 
 /** @brief Pop one s32 from the eline's bytecode stack. */
 #define POP(eline) (((s32 *)(eline))[(s8)(eline)->stackPtr--])

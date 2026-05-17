@@ -211,7 +211,7 @@ s32 func_800BC8CC(Eline *e) {
         case 0:
             setSfxGlobalFlag(sfxIdx);
             r = func_8002CE84(sfxIdx);
-            e->field_0x140 = r;
+            e->resultSlots[0] = r;
             if (r >= 0) {
                 fadeOutSfxSlow(sfxIdx);
                 e->field_0x204++;
