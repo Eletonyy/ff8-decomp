@@ -1833,7 +1833,54 @@ s32 func_800B8824(Eline *eline, s32 a1) {
     return 1;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B89C0);
+/**
+ * @brief 9-pop full-message handler (msgActive=4, windowId=0).
+ *
+ * Leaf variant of @c func_800B8824: same 9-pop sequence into the
+ * @c msgPosY / @c msgPosX / @c msgTextPtr / @c field_0x1C0..C8 /
+ * @c unk1A8..B0 region with the same @c msgActive = 4 marker, but
+ * @c windowId = 0 instead of 1.
+ *
+ * Matching scaffold for gcc 2.7.2: hoisting the active-mask shift
+ * into a @c u16 local (@c active_mask) and pre-loading the
+ * @c msgActive constant @c 4 into an @c s32 local (@c new_var) before
+ * the @c if check forces gcc to pick @c v1 for the constant rather
+ * than @c a2 — without this scaffolding the stackPtr load also
+ * gets allocated to the wrong register (v0/v1 swap).
+ *
+ * @param eline Script context.
+ * @param a1    Opcode argument (stored as halfword to field_0x1FC).
+ * @return 1 while running, 2 once read.
+ */
+s32 func_800B89C0(Eline *eline, s32 a1) {
+    u16 active_mask;
+    s32 new_var;
+    active_mask = eline->activeMask >> eline->scriptGroup;
+    new_var = 4;
+    if (!(active_mask & 1)) {
+        if (eline->msgState == 2) {
+            eline->msgActive = 0;
+            return 2;
+        }
+        return 1;
+    }
+    do {
+        eline->msgActive = new_var;
+        eline->windowId = 0;
+        eline->msgState = 0;
+        eline->msgPosY = POP(eline) << 12;
+        eline->msgPosX = POP(eline) << 12;
+        eline->msgTextPtr = POP(eline) << 12;
+        eline->field_0x1C8 = POP(eline) << 12;
+        eline->field_0x1C4 = POP(eline) << 12;
+        eline->field_0x1C0 = POP(eline) << 12;
+        eline->unk1B0 = POP(eline) << 12;
+        eline->unk1AC = POP(eline) << 12;
+        eline->unk1A8 = POP(eline) << 12;
+        eline->field_0x1FC = a1;
+    } while (0);
+    return 1;
+}
 
 /**
  * @brief Pop three halfwords and broadcast each to a pair of fields.
