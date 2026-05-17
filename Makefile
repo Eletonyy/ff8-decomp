@@ -37,10 +37,10 @@ PSYQ43_MASPSXFLAGS := --aspsx-version=2.77  # used by PSYQ43_SRCS
 
 # Source files compiled with PsyQ 4.3 (default is PsyQ 4.1)
 PSYQ43_SRCS := src/snd_init.c src/snd_dma.c src/snd_voice.c src/snd_bank.c src/snd_param.c src/snd_note.c src/snd_track.c src/snd_cmd.c \
-               src/ovl/world_engine/we_object1.c src/ovl/world_engine/we_object2.c src/ovl/world_engine/we_object3.c \
-               src/ovl/world_engine/we_object4.c src/ovl/world_engine/we_object5.c src/ovl/world_engine/we_object6.c \
-               src/ovl/world_engine/we_object7.c src/ovl/world_engine/we_object8.c src/ovl/world_engine/we_object9.c \
-               src/ovl/world_engine/we_object10.c
+               src/world/we_object1.c src/world/we_object2.c src/world/we_object3.c \
+               src/world/we_object4.c src/world/we_object5.c src/world/we_object6.c \
+               src/world/we_object7.c src/world/we_object8.c src/world/we_object9.c \
+               src/world/we_object10.c
 
 # Source files compiled without -G0 (default is -G0)
 NO_G0_SRCS := src/main.c src/snd_cmd.c
@@ -118,7 +118,7 @@ field_ASM_DIR        := asm/field
 battle_engine_C_SRCS := $(wildcard src/tripletriad/*.c)
 battle_render_C_SRCS := $(wildcard src/ovl/battle_render/*.c)
 battle_code_C_SRCS   := $(wildcard src/ovl/battle_code/*.c)
-world_engine_C_SRCS  := $(wildcard src/ovl/world_engine/*.c)
+world_engine_C_SRCS  := $(wildcard src/world/*.c)
 
 # C sources (compiled via cpp → cc1 → maspsx → GAS).
 # Main-binary sources = everything under src/ except files claimed by an overlay.

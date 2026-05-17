@@ -25,6 +25,7 @@ OVERLAY_SRC_GLOBS = {
     "intro":         ["src/intro.c", "src/intro_assets.c", "src/intro_state.c"],
     "field":         ["src/field/*.c"],
     "battle_engine": ["src/tripletriad/*.c"],
+    "world_engine":  ["src/world/*.c"],
     **{name: [f"src/menu/{name}/*.c"] for name in MENU_OVERLAYS},
 }
 

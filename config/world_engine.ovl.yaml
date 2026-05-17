@@ -10,7 +10,7 @@ options:
 
   # Directory layout
   asm_path: asm/ovl/world_engine
-  src_path: src/ovl/world_engine
+  src_path: src/world
   build_path: build/ovl/world_engine
 
   # Linker
