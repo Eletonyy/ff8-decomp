@@ -1787,7 +1787,51 @@ s32 func_800B85F8(Eline *eline, s32 a1) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8710);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B8824);
+/**
+ * @brief 9-pop positioned-message handler — sets up message position
+ *        plus three "saved" coords and three additional unk slots.
+ *
+ * On the active frame: @c msgActive = 4 (distinct from sibling
+ * handlers), @c windowId = 1, @c msgState = 0; then pops nine s32
+ * values, each scaled into Q19.12, into a contiguous region of the
+ * Eline:
+ *   - @c msgPosY  / @c msgPosX  / @c msgTextPtr   (current msg coords)
+ *   - @c field_0x1C8 / @c field_0x1C4 / @c field_0x1C0 (saved msg coords)
+ *   - @c unk1B0 / @c unk1AC / @c unk1A8 (three extra slots)
+ * and finally stores the dispatcher arg into @c field_0x1FC.
+ *
+ * On inactive frames: wait for @c msgState == 2 and return 2 once
+ * the message has been read.
+ *
+ * @param eline Script context.
+ * @param a1    Opcode argument (stored as halfword to field_0x1FC).
+ * @return 1 while running, 2 once read.
+ */
+s32 func_800B8824(Eline *eline, s32 a1) {
+    if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
+        if (eline->msgState == 2) {
+            eline->msgActive = 0;
+            return 2;
+        }
+        return 1;
+    }
+    do {
+        eline->msgActive = 4;
+        eline->windowId = 1;
+        eline->msgState = 0;
+        eline->msgPosY = POP(eline) << 12;
+        eline->msgPosX = POP(eline) << 12;
+        eline->msgTextPtr = POP(eline) << 12;
+        eline->field_0x1C8 = POP(eline) << 12;
+        eline->field_0x1C4 = POP(eline) << 12;
+        eline->field_0x1C0 = POP(eline) << 12;
+        eline->unk1B0 = POP(eline) << 12;
+        eline->unk1AC = POP(eline) << 12;
+        eline->unk1A8 = POP(eline) << 12;
+        eline->field_0x1FC = a1;
+    } while (0);
+    return 1;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object7", func_800B89C0);
 

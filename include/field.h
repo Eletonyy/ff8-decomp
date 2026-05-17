@@ -149,7 +149,10 @@ typedef struct {
     /* 0x190 */ s32 posX;           /**< Entity X position (fixed-point). */
     /* 0x194 */ s32 posY;           /**< Entity Y position (fixed-point). */
     /* 0x198 */ s32 posZ;           /**< Entity Z position (fixed-point). */
-    /* 0x19C */ u8 pad19C[0x18];
+    /* 0x19C */ u8 pad19C[0x0C];
+    /* 0x1A8 */ s32 unk1A8;
+    /* 0x1AC */ s32 unk1AC;
+    /* 0x1B0 */ s32 unk1B0;
     /* 0x1B4 */ s32 msgTextPtr;     /**< Message text pointer (fixed-point). */
     /* 0x1B8 */ s32 msgPosX;        /**< Message X position (fixed-point). */
     /* 0x1BC */ s32 msgPosY;        /**< Message Y position (fixed-point). */
