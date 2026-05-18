@@ -410,69 +410,67 @@ void func_800B2B48(Eline *eline) {
  * @c func_800B2B48) or — once the target is reached — clear the
  * @c 0x800 done marker.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param e Pointer to the FieldEntity movement view of the entity.
  */
-void func_800B2BA0(Eline *eline) {
-#define E(field) (((FieldEntity *)eline)->field)
-    s32 flags = E(unk160);
+void func_800B2BA0(FieldEntity *e) {
+    s32 flags = e->unk160;
 
-    if ((flags & 0x200) && (s16)E(unk19C) == 0) {
-        if (E(unk1A4) == 0) {
+    if ((flags & 0x200) && (s16)e->unk19C == 0) {
+        if (e->unk1A4 == 0) {
             if (flags & 0x400) {
-                E(unk160) = flags & ~0x400;
-                E(unk19E) = 0;
-                E(unk1A4) = E(unk1A6);
-                E(unk19C) = E(unk1A2);
-                E(unk1AC) = E(unk1AF);
-                E(unk1AB) = E(unk1AE);
-                E(unk1AA) = E(unk1AD);
-                E(unk1A9) = E(unk1B2);
-                E(unk1A8) = E(unk1B1);
-                E(unk1A7) = E(unk1B0);
+                e->unk160 = flags & ~0x400;
+                e->unk19E = 0;
+                e->unk1A4 = e->unk1A6;
+                e->unk19C = e->unk1A2;
+                e->unk1AC = e->unk1AF;
+                e->unk1AB = e->unk1AE;
+                e->unk1AA = e->unk1AD;
+                e->unk1A9 = e->unk1B2;
+                e->unk1A8 = e->unk1B1;
+                e->unk1A7 = e->unk1B0;
             } else {
-                E(unk160) = flags | 0x400;
-                E(unk19E) = 0;
-                E(unk1A4) = E(unk1A5);
-                E(unk19C) = E(unk1A0);
-                E(unk1AC) = E(unk1B2);
-                E(unk1AB) = E(unk1B1);
-                E(unk1AA) = E(unk1B0);
-                E(unk1A9) = E(unk1AF);
-                E(unk1A8) = E(unk1AE);
-                E(unk1A7) = E(unk1AD);
+                e->unk160 = flags | 0x400;
+                e->unk19E = 0;
+                e->unk1A4 = e->unk1A5;
+                e->unk19C = e->unk1A0;
+                e->unk1AC = e->unk1B2;
+                e->unk1AB = e->unk1B1;
+                e->unk1AA = e->unk1B0;
+                e->unk1A9 = e->unk1AF;
+                e->unk1A8 = e->unk1AE;
+                e->unk1A7 = e->unk1AD;
             }
         }
-        E(unk1A4)--;
+        e->unk1A4--;
     }
 
-    E(walkSpeed) -= 1;
-    if ((s16)E(walkSpeed) <= 0) {
+    e->walkSpeed -= 1;
+    if ((s16)e->walkSpeed <= 0) {
         s32 f1, f2;
-        E(walkSpeed) = E(walkSpeed2);
-        f1 = E(unk160);
+        e->walkSpeed = e->walkSpeed2;
+        f1 = e->unk160;
         if (!(f1 & 0x1000)) {
             if (f1 & 0x100) {
-                *(u16 *)&eline->unk188 = *(u16 *)&eline->unk188 - eline->unk18A;
+                *(u16 *)&e->unk188 = *(u16 *)&e->unk188 - e->unk18A;
             } else {
-                *(u16 *)&eline->unk188 = *(u16 *)&eline->unk188 + eline->unk18A;
+                *(u16 *)&e->unk188 = *(u16 *)&e->unk188 + e->unk18A;
             }
         }
-        f2 = E(unk160);
+        f2 = e->unk160;
         if (f2 & 0x100) {
-            if (*(s16 *)&eline->unk188 < (s16)eline->unk18E) {
-                func_800B2B48(eline);
+            if (*(s16 *)&e->unk188 < (s16)e->unk18E) {
+                func_800B2B48(e);
             } else {
-                E(unk160) = f2 & ~0x800;
+                e->unk160 = f2 & ~0x800;
             }
         } else {
-            if (*(s16 *)&eline->unk188 >= (s16)eline->unk18E) {
-                func_800B2B48(eline);
+            if (*(s16 *)&e->unk188 >= (s16)e->unk18E) {
+                func_800B2B48(e);
             } else {
-                E(unk160) = f2 & ~0x800;
+                e->unk160 = f2 & ~0x800;
             }
         }
     }
-#undef E
 }
 
 /**

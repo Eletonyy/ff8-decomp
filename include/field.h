@@ -24,7 +24,9 @@ typedef struct {
     u8 pad185[0x03];        /**< 0x185 */
     u8 unk188;              /**< 0x188: Script parameter byte. */
     u8 unk189;              /**< 0x189: Script parameter byte. */
-    u8 pad18A[0x06];        /**< 0x18A */
+    u16 unk18A;             /**< 0x18A: Step delta added to unk188 each movement tick. */
+    u16 unk18C;             /**< 0x18C */
+    u16 unk18E;             /**< 0x18E */
     u16 walkSpeed;          /**< 0x190: Walk speed (primary). */
     u16 walkSpeed2;         /**< 0x192: Walk speed (copy). */
     u16 runSpeed;           /**< 0x194: Run speed. */
