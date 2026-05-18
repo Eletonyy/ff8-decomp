@@ -28,6 +28,8 @@ extern void setCameraShakeParams(s32 a, s32 b);
 extern void setCameraVibrateState(s32 enable);
 extern u8 D_8007064E;
 extern void func_800A97E4(s32 a, s32 b, s32 c, s32 d);
+extern s32 func_80037C6C(s32 charId);
+extern s32 func_800211B4(s32 partyMember, s32 code);
 
 /**
  * Pops 3 stack values (target, volume, pan), looks up an SFX entry in
@@ -1514,7 +1516,31 @@ s32 func_800B4FF8(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B505C);
+/**
+ * Pop a retry count, an action code, and a character ID; look up the
+ * character's party slot via @c func_80037C6C, and if that character
+ * is in the active party, call @c func_800211B4(partyMember, code)
+ * up to @p count times, exiting early on the first non-zero return.
+ * Always returns 2 — the action is purely side-effecting.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B505C(Eline *eline) {
+    s32 count = POP(eline);
+    s32 val2 = POP(eline);
+    s32 charId = POP(eline);
+    s32 slot = func_80037C6C(charId);
+    if (slot != 0xFF) {
+        s32 i;
+        for (i = 0; i < count; i++) {
+            if (func_800211B4(g_gameState.mainData.party.party[slot], val2) != 0) {
+                return 2;
+            }
+        }
+    }
+    return 2;
+}
 
 /**
  * Pops a parameter, calls func_800C0410, stores result at offset 0x140.
