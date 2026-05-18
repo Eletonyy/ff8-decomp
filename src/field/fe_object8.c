@@ -1,8 +1,9 @@
 #include "common.h"
+#include "field.h"
 
 extern u8 D_80085230[];
 extern void func_800A97E4(u8 spatialIdx, s32 a1, s32 a2, s32 a3);
-extern void func_800B912C(u8 *eline, s32 byte);
+extern void func_800B912C(Eline *eline, s32 byte);
 
 /**
  * Clear bits @c 0x180000 and set bit @c 0x200000 in @c flags, then call
@@ -11,9 +12,9 @@ extern void func_800B912C(u8 *eline, s32 byte);
  * @param eline Pointer to the Eline event-script context.
  * @return 2 (advance PC).
  */
-s32 func_800B9078(u8 *eline) {
-    *(s32 *)(eline + 0x160) = (*(s32 *)(eline + 0x160) & 0xFFE7FFFF) | 0x200000;
-    func_800A97E4(*(u8 *)(eline + 0x256), 0x2F, 0, 0);
+s32 func_800B9078(Eline *eline) {
+    eline->flags = (eline->flags & 0xFFE7FFFF) | 0x200000;
+    func_800A97E4(eline->field_0x256, 0x2F, 0, 0);
     return 2;
 }
 
@@ -27,18 +28,18 @@ s32 func_800B9078(u8 *eline) {
  * @param eline Pointer to the Eline event-script context.
  * @return 2 (advance PC).
  */
-s32 func_800B90C0(u8 *eline) {
+s32 func_800B90C0(Eline *eline) {
     s8 idx;
     u8 byte;
 
-    *(s32 *)(eline + 0x160) = (*(s32 *)(eline + 0x160) & 0xFFCFFFFF) | 0x80000;
+    eline->flags = (eline->flags & 0xFFCFFFFF) | 0x80000;
 
-    idx = *(s8 *)(eline + 0x184);
-    *(s8 *)(eline + 0x184) = idx - 1;
-    byte = *(u8 *)(eline + idx * 4);
+    idx = eline->stackPtr;
+    eline->stackPtr = idx - 1;
+    byte = *(u8 *)((u8 *)eline + idx * 4);
 
-    *(u8 *)(eline + 0x263) = byte;
-    func_800A97E4(*(u8 *)(eline + 0x256), 0x27, 0, *(u8 *)(eline + 0x263));
+    eline->field_0x263 = byte;
+    func_800A97E4(eline->field_0x256, 0x27, 0, eline->field_0x263);
     return 2;
 }
 
@@ -101,9 +102,9 @@ s32 func_800B95A0(u8 *a0) {
  * @param eline Pointer to the Eline event-script context.
  * @return 3.
  */
-s32 func_800B95C0(u8 *eline) {
-    func_800B912C(eline, *(u8 *)(eline + 0x24F));
-    *(s32 *)(eline + 0x160) |= 0x2000;
+s32 func_800B95C0(Eline *eline) {
+    func_800B912C(eline, eline->field_0x24F);
+    eline->flags |= 0x2000;
     return 3;
 }
 
@@ -119,9 +120,9 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9798);
  * Sign-extend @p a1 to @c s16 and call @c func_800B912C, then set bit
  * @c 0x4000 in @c flags. Returns @c 3.
  */
-s32 func_800B9844(u8 *eline, s32 a1) {
+s32 func_800B9844(Eline *eline, s32 a1) {
     func_800B912C(eline, (s16)a1);
-    *(s32 *)(eline + 0x160) |= 0x4000;
+    eline->flags |= 0x4000;
     return 3;
 }
 
@@ -129,9 +130,9 @@ s32 func_800B9844(u8 *eline, s32 a1) {
  * Sign-extend @p a1 to @c s16 and call @c func_800B912C, then set bit
  * @c 0x8000 in @c flags. Returns @c 3.
  */
-s32 func_800B9888(u8 *eline, s32 a1) {
+s32 func_800B9888(Eline *eline, s32 a1) {
     func_800B912C(eline, (s16)a1);
-    *(s32 *)(eline + 0x160) |= 0x8000;
+    eline->flags |= 0x8000;
     return 3;
 }
 
@@ -143,9 +144,9 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9944);
  * Sign-extend @p a1 to @c s16 and call @c func_800B912C, then set bit
  * @c 0x2000 in @c flags. Returns @c 3.
  */
-s32 func_800B99BC(u8 *eline, s32 a1) {
+s32 func_800B99BC(Eline *eline, s32 a1) {
     func_800B912C(eline, (s16)a1);
-    *(s32 *)(eline + 0x160) |= 0x2000;
+    eline->flags |= 0x2000;
     return 3;
 }
 

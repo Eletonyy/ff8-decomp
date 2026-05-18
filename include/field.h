@@ -362,6 +362,7 @@ typedef struct {
     /* 0x256 */ u8 field_0x256;
     /* 0x257 */ u8 pad257[0x0B];
     /* 0x262 */ u8 field_0x262;
+    /* 0x263 */ u8 field_0x263;
 } Eline;
 
 /** @brief Push one s32 onto the eline's bytecode stack. */
