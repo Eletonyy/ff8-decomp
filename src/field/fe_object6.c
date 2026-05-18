@@ -13,7 +13,7 @@ extern u8 D_8007064D;
 extern u8 D_8007064F[];
 extern u8 D_8007065C[];
 
-extern BattleFieldEntity *D_80085224;
+extern Eline *D_80085224;
 extern u8 *D_800D5EA4;
 extern u8 *func_8003974C(u8 *base, s32 idx);
 extern s32 sndPlayBankSfx(s32 a0, s32 a1, s32 a2, s32 a3);
@@ -247,7 +247,7 @@ s32 func_800B2A40(Eline *eline, s32 a1) {
 
 /**
  * Broadcast the current Eline's @c unk188 / @c unk189 script parameter
- * bytes to every active @c BattleFieldEntity slot. Iterates over the
+ * bytes to every active @c Eline slot. Iterates over the
  * @c D_80085224 array (count @c D_80085388, stride 0x264) and writes
  * the same pair into each entry's mirror fields at +0x188 / +0x189.
  *
@@ -256,7 +256,7 @@ s32 func_800B2A40(Eline *eline, s32 a1) {
  */
 s32 func_800B2A70(Eline *eline) {
     s32 i;
-    BattleFieldEntity *p = D_80085224;
+    Eline *p = D_80085224;
     for (i = 0; i < D_80085388; i++) {
         p->unk188 = eline->unk188;
         p->unk189 = eline->unk189;
@@ -288,7 +288,7 @@ s32 func_800B2AD8(Eline *eline) {
 }
 
 /**
- * Clear bit 0x80 in the flags word of every active @c BattleFieldEntity
+ * Clear bit 0x80 in the flags word of every active @c Eline
  * slot (count @c D_80085388, stride 0x264 at @c D_80085224). Used by a
  * script opcode to reset a per-entity activation flag across the party.
  *
@@ -297,7 +297,7 @@ s32 func_800B2AD8(Eline *eline) {
  */
 s32 func_800B2AF0(Eline *eline) {
     s32 i;
-    BattleFieldEntity *p = D_80085224;
+    Eline *p = D_80085224;
     for (i = 0; i < D_80085388; i++) {
         p->flags &= ~0x80;
         p++;
@@ -1131,7 +1131,7 @@ s32 func_800B4320(Eline *eline) {
 /**
  * Pop a value (masked to 2 bits) into the global mode byte @c D_8007064E
  * and then fire @c func_800A97E4(i, 0x25, 0, 0) once per active
- * @c BattleFieldEntity slot (count from @c D_80085388).
+ * @c Eline slot (count from @c D_80085388).
  *
  * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).

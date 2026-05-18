@@ -8,7 +8,7 @@
 extern u8 D_8007809B[];
 extern u8 g_chocoboWorld;
 extern u8 D_80085218;
-extern BattleFieldEntity *D_80085224;
+extern Eline *D_80085224;
 extern SeedState *g_seedState;
 extern u8 D_8005F388[];
 extern u8 D_80063388[];
@@ -22,7 +22,7 @@ extern s32 D_80085220;
  */
 typedef struct {
     /* 0x00 */ u8 pad000[0x12];
-    /* 0x12 */ u8 memberSlot[3];       /**< BattleFieldEntity index per active party slot (0xFF = none). */
+    /* 0x12 */ u8 memberSlot[3];       /**< Eline index per active party slot (0xFF = none). */
 } FieldPartyEntity;
 
 extern FieldPartyEntity g_fieldEntity;
@@ -444,7 +444,7 @@ INCLUDE_ASM("asm/nonmatchings/gamestate", func_80038030);
 void func_800381BC(void) {
     s32 i;
     s32 j;
-    BattleFieldEntity *ent;
+    Eline *ent;
 
     for (i = 0; i < 3; i++) {
         g_fieldEntity.memberSlot[i] = 0xFF;
@@ -452,7 +452,7 @@ void func_800381BC(void) {
 
         ent = D_80085224;
         for (j = 0; j < D_80085388; j++) {
-            if (g_gameState.battleParty[i] == ent->partyId) {
+            if (g_gameState.battleParty[i] == ent->field_0x255) {
                 g_seedState->memberSlot[i] = j;
                 g_fieldEntity.memberSlot[i] = j;
                 break;
@@ -483,7 +483,7 @@ void func_800381BC(void) {
  */
 void clearEntityFlags(void) {
     s32 i;
-    BattleFieldEntity *ent = D_80085224;
+    Eline *ent = D_80085224;
     u8 count = D_80085388;
 
     for (i = 0; i < count; i++, ent++) {

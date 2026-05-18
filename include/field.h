@@ -200,7 +200,7 @@ typedef struct {
     /* 0xBA */ u16 prevSeedExp;         /**< Snapshot of @c seedExp from the previous tick (for rank-change detection). */
     /* 0xBC */ u8 partyOrderA[3];       /**< Bench list (members not in active party). */
     /* 0xBF */ u8 partyOrderB[3];       /**< Bench list duplicate (initialized identically). */
-    /* 0xC2 */ u8 memberSlot[3];        /**< For each active party slot, the BattleFieldEntity index (0xFF = none). */
+    /* 0xC2 */ u8 memberSlot[3];        /**< For each active party slot, the Eline index (0xFF = none). */
     /* 0xC5 */ u8 padC5[0x02];
     /* 0xC7 */ s8 audioChannel0State;   /**< Audio channel 0 state byte; -1 = reset/inactive. */
     /* 0xC8 */ s8 audioChannel1State;   /**< Audio channel 1 state byte; -1 = reset/inactive. */

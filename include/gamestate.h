@@ -355,18 +355,6 @@ extern SeedState *g_seedState;
 extern void setMcBusy(void);
 extern u32  isMcBusy(void);
 
-/** @brief Battle field entity (stride 0x264 = 612 bytes). */
-typedef struct {
-    /* 0x000 */ u8 pad000[0x160];
-    /* 0x160 */ u32 flags;
-    /* 0x164 */ u8 pad164[0x24];
-    /* 0x188 */ u8 unk188;             /**< Script-writable parameter byte. */
-    /* 0x189 */ u8 unk189;             /**< Script-writable parameter byte. */
-    /* 0x18A */ u8 pad18A[0xCB];
-    /* 0x255 */ u8 partyId;            /**< Character ID this entity represents. */
-    /* 0x256 */ u8 pad256[0xE];
-} BattleFieldEntity; /* 0x264 */
-
-extern u8 D_80085388;                  /**< BattleFieldEntity count. */
+extern u8 D_80085388;                  /**< @c Eline entity count at @c D_80085224. */
 
 #endif /* GAMESTATE_H */
