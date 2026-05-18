@@ -108,9 +108,40 @@ s32 func_800B95C0(Eline *eline) {
     return 3;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9604);
+/**
+ * @brief ANIME opcode 0x02D handler — start animation and wait for completion.
+ *
+ * While the entity's @c activeMask bit is set: call @c func_800B912C with
+ * the sign-extended @p a1, set the animation-active flag (0x4000), and
+ * return 1 (yield, retry next frame). On subsequent frames, the entity
+ * is no longer active for this script group; return 3 once flag 0x800
+ * (animation complete) is set, else keep yielding with return 1.
+ */
+s32 func_800B9604(Eline *eline, s32 a1) {
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        func_800B912C(eline, (s16)a1);
+        eline->flags |= 0x4000;
+    } else if (eline->flags & 0x800) {
+        return 3;
+    }
+    return 1;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9678);
+/**
+ * @brief ANIMEKEEP opcode 0x02E handler — start animation (keep variant).
+ *
+ * Same shape as @c func_800B9604 (ANIME) but sets flag bit @c 0x8000
+ * instead of @c 0x4000 to preserve the final frame after completion.
+ */
+s32 func_800B9678(Eline *eline, s32 a1) {
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        func_800B912C(eline, (s16)a1);
+        eline->flags |= 0x8000;
+    } else if (eline->flags & 0x800) {
+        return 3;
+    }
+    return 1;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B96EC);
 
