@@ -1,6 +1,8 @@
 #include "common.h"
 #include "field.h"
 #include "gamestate.h"
+#include "battle.h"
+#include "psxsdk/libgte.h"
 
 extern SeedState *g_seedState;
 extern u8 D_80070652;
@@ -11,21 +13,55 @@ extern u8 D_8007064D;
 extern u8 D_8007064F[];
 extern u8 D_8007065C[];
 
+extern Eline *D_80085224;
+extern u8 *D_800D5EA4;
+extern u8 *func_8003974C(u8 *base, s32 idx);
+extern s32 sndPlayBankSfx(s32 a0, s32 a1, s32 a2, s32 a3);
+extern void sndCmd21(s32 a0, s32 a1);
+extern s32 func_800131A8(void);
+extern u8 *func_800A8DAC(s32 entityIdx, s32 mode, void *buf, s32 flag);
+extern void func_800406A4(u8 *p);
+extern void func_80040734(u8 *p);
+extern s32 func_80040DE4(SVECTOR *v0, s32 *sxy, s32 *p, s32 *flag);
+extern Eline *D_80085230[];
+extern void setCameraShakeParams(s32 a, s32 b);
+extern void setCameraVibrateState(s32 enable);
+extern u8 D_8007064E;
+extern void func_800A97E4(s32 a, s32 b, s32 c, s32 d);
+extern s32 func_80037C6C(s32 charId);
+extern s32 func_800211B4(s32 partyMember, s32 code);
+extern u16 D_800704AA;
+extern void setGfExists(s32 gfId);
+extern void enableChocoboWorld(void);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2348);
+/**
+ * Pops 3 stack values (target, volume, pan), looks up an SFX entry in
+ * the dispatcher-keyed bank table @c D_800D5EA4, and plays the resulting
+ * bank SFX with the popped parameters (volume masked to 8 bits, pan to 7).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @param a1    Dispatcher-supplied SFX bank index.
+ * @return 2 (continue processing).
+ */
+s32 func_800B2348(Eline *eline, s32 a1) {
+    s32 val1, val2, val3;
+    val1 = POP(eline);
+    val2 = POP(eline);
+    val3 = POP(eline);
+    val2 &= 0xFF;
+    val3 &= 0x7F;
+    sndPlayBankSfx((s32)func_8003974C(D_800D5EA4, a1), val1, val2, val3);
+    return 2;
+}
 
 /**
  * Pops a parameter and calls sndSetMasterVolume, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B23F4(u8 *a0) {
-    u8 idx;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    sndSetMasterVolume(*(s32 *)(a0 + (s8)idx * 4));
+s32 func_800B23F4(Eline *eline) {
+    sndSetMasterVolume(POP(eline));
     return 2;
 }
 
@@ -33,18 +69,13 @@ s32 func_800B23F4(u8 *a0) {
  * Pops two parameters from the stack, shifts the first left by 1,
  * and calls sndSetChannelVolume with them.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B2434(u8 *a0) {
-    u8 idx;
+s32 func_800B2434(Eline *eline) {
     s32 val1, val2;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    val1 = *(s32 *)(a0 + (s8)idx * 4);
-    *(u8 *)(a0 + 0x184) = idx - 2;
-    val2 = *(s32 *)(a0 + (s8)(idx - 1) * 4);
+    val1 = POP(eline);
+    val2 = POP(eline);
     sndSetChannelVolume(val2, val1 << 1);
     return 2;
 }
@@ -52,15 +83,11 @@ s32 func_800B2434(u8 *a0) {
 /**
  * Pops a parameter and calls sndSeqSetTempo, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B248C(u8 *a0) {
-    u8 idx;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    sndSeqSetTempo(*(s32 *)(a0 + (s8)idx * 4));
+s32 func_800B248C(Eline *eline) {
+    sndSeqSetTempo(POP(eline));
     return 2;
 }
 
@@ -68,18 +95,13 @@ s32 func_800B248C(u8 *a0) {
  * Pops two parameters from the stack, shifts the first left by 1,
  * and calls sndSeqSetChannelTempo.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B24CC(u8 *a0) {
-    u8 idx;
+s32 func_800B24CC(Eline *eline) {
     s32 val1, val2;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    val1 = *(s32 *)(a0 + (s8)idx * 4);
-    *(u8 *)(a0 + 0x184) = idx - 2;
-    val2 = *(s32 *)(a0 + (s8)(idx - 1) * 4);
+    val1 = POP(eline);
+    val2 = POP(eline);
     sndSeqSetChannelTempo(val2, val1 << 1);
     return 2;
 }
@@ -87,18 +109,13 @@ s32 func_800B24CC(u8 *a0) {
 /**
  * Pops two parameters from the stack and calls sndSeqPlay7bit(0, val2, val1).
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B2524(u8 *a0) {
-    u8 idx;
+s32 func_800B2524(Eline *eline) {
     s32 val1, val2;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    val1 = *(s32 *)(a0 + (s8)idx * 4);
-    *(u8 *)(a0 + 0x184) = idx - 2;
-    val2 = *(s32 *)(a0 + (s8)(idx - 1) * 4);
+    val1 = POP(eline);
+    val2 = POP(eline);
     sndSeqPlay7bit(0, val2, val1);
     return 2;
 }
@@ -107,20 +124,14 @@ s32 func_800B2524(u8 *a0) {
  * Pops three parameters from the stack and calls
  * sndSeqPlayPan7bit(0, val3, val2 << 1, val1).
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B257C(u8 *a0) {
-    u8 idx;
+s32 func_800B257C(Eline *eline) {
     s32 val1, val2, val3;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    val1 = *(s32 *)(a0 + (s8)idx * 4);
-    *(u8 *)(a0 + 0x184) = idx - 2;
-    val2 = *(s32 *)(a0 + (s8)(idx - 1) * 4);
-    *(u8 *)(a0 + 0x184) = idx - 3;
-    val3 = *(s32 *)(a0 + (s8)(idx - 2) * 4);
+    val1 = POP(eline);
+    val2 = POP(eline);
+    val3 = POP(eline);
     sndSeqPlayPan7bit(0, val3, val2 << 1, val1);
     return 2;
 }
@@ -128,18 +139,13 @@ s32 func_800B257C(u8 *a0) {
 /**
  * Pops two parameters from the stack and calls sndSeqPlay8bit(0, val2, val1).
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B25F0(u8 *a0) {
-    u8 idx;
+s32 func_800B25F0(Eline *eline) {
     s32 val1, val2;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    val1 = *(s32 *)(a0 + (s8)idx * 4);
-    *(u8 *)(a0 + 0x184) = idx - 2;
-    val2 = *(s32 *)(a0 + (s8)(idx - 1) * 4);
+    val1 = POP(eline);
+    val2 = POP(eline);
     sndSeqPlay8bit(0, val2, val1);
     return 2;
 }
@@ -148,294 +154,1124 @@ s32 func_800B25F0(u8 *a0) {
  * Pops three parameters from the stack and calls
  * sndSeqPlayPan8bit(0, val3, val2 << 1, val1).
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B2648(u8 *a0) {
-    u8 idx;
+s32 func_800B2648(Eline *eline) {
     s32 val1, val2, val3;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    val1 = *(s32 *)(a0 + (s8)idx * 4);
-    *(u8 *)(a0 + 0x184) = idx - 2;
-    val2 = *(s32 *)(a0 + (s8)(idx - 1) * 4);
-    *(u8 *)(a0 + 0x184) = idx - 3;
-    val3 = *(s32 *)(a0 + (s8)(idx - 2) * 4);
+    val1 = POP(eline);
+    val2 = POP(eline);
+    val3 = POP(eline);
     sndSeqPlayPan8bit(0, val3, val2 << 1, val1);
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B26BC);
+/**
+ * Peek the top stack value as an SFX target; if the entity is the active
+ * script slot, dispatch @c sndCmd21(0, top). If the SPU is still busy
+ * with a matching channel (queried via @c func_800131A8), keep the stack
+ * intact and return 1 (wait). Otherwise pop the value and return 2.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 once the SPU is free, 1 while still waiting.
+ */
+s32 func_800B26BC(Eline *eline) {
+    s32 top = PEEK(eline);
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        sndCmd21(0, top);
+    }
+    if ((func_800131A8() & top) != 0) {
+        return 1;
+    }
+    eline->stackPtr--;
+    return 2;
+}
 
 /**
  * Pops a parameter, calls func_80013210, stores result at offset 0x140.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B273C(u8 *a0) {
-    u8 idx;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    *(s32 *)(a0 + 0x140) = func_80013210(*(s32 *)(a0 + (s8)idx * 4));
+s32 func_800B273C(Eline *eline) {
+    eline->resultSlots[0] = func_80013210(POP(eline));
     return 2;
 }
 
 /** @brief Pop value, bitwise-NOT, store to D_8007065C. Returns 2. */
-s32 func_800B2790(u8 *a0) {
-    u8 idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    *(s32 *)D_8007065C = ~*(s32 *)(a0 + (s8)idx * 4);
+s32 func_800B2790(Eline *eline) {
+    *(s32 *)D_8007065C = ~POP(eline);
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B27C4);
+/**
+ * Compute the on-screen projection of entity @p entityIdx through the
+ * GTE. Loads the entity's rotation and translation matrices (via the
+ * per-entity matrix buffer from @c func_800A8DAC), projects the local
+ * origin @c (0,0,0), writes the perspective parameter into @p *out, and
+ * narrows the projected packed @c SXY pair to its low @c s16 (X only,
+ * sign-extended) at @p *sxy.
+ *
+ * @param entityIdx Entity slot whose matrices to set up.
+ * @param sxy       In/out: receives the projected screen X (low s16,
+ *                  sign-extended back to s32).
+ * @param out       Output: GTE perspective Z parameter.
+ */
+void func_800B27C4(s32 entityIdx, s32 *sxy, s32 *out) {
+    SVECTOR v;
+    s32 p, flag;
+    func_800406A4(func_800A8DAC(entityIdx, 0x1F, 0, 0));
+    func_80040734(func_800A8DAC(entityIdx, 0x1F, 0, 0));
+    v.vx = 0;
+    v.vy = 0;
+    v.vz = 0;
+    *out = func_80040DE4(&v, sxy, &p, &flag);
+    *sxy = (s16)*sxy;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2864);
+/**
+ * Play a positional SFX for the entity. If the entity's @c 0x80 flag
+ * is set, project the entity's screen position via @c func_800B27C4,
+ * clamp the resulting screen X to @c [-0x200, 0x1FC] and remap to
+ * @c [0x40, 0xFF] for stereo pan, clamp the perspective Z to
+ * @c [8, 0x6E] and invert to volume (@c 0x7F-p). Then dispatch by
+ * channel: @c 0 plays via the left bus (@c 0x400000), @c 1 plays via
+ * the right bus (@c 0x800000). Within each channel, when @c msgActive
+ * is @c 3 or @c 4 (special states), a fixed SFX (@c 0x40 or @c 0x3F)
+ * is queued; otherwise if the per-channel SFX index byte
+ * (@c unk188 / @c unk189) is non-sentinel (not @c -1 as @c s8), the
+ * looked-up bank SFX is played directly; otherwise a fallback SFX is
+ * selected based on the @c 0x4000000 emphasis flag.
+ *
+ * @param eline   Pointer to the Eline event-script context.
+ * @param channel Output channel (0 = left bus, 1 = right bus).
+ */
+void func_800B2864(Eline *eline, s32 channel) {
+    s32 pitch;
+    s32 volume;
+
+    if (!(eline->flags & 0x80)) return;
+
+    func_800B27C4(eline->field_0x256, &pitch, &volume);
+
+    if (pitch < -0x200) pitch = -0x200;
+    else if (pitch >= 0x1FC) pitch = 0x1FC;
+    pitch = pitch / 4 + 0x80;
+
+    volume /= 24;
+    if (volume < 8) volume = 8;
+    else if (volume >= 0x6E) volume = 0x6E;
+    volume = 0x7F - volume;
+
+    switch (channel) {
+    case 0:
+        if ((u32)(eline->msgActive - 3) < 2) {
+            sndPlaySfx(0x40, 0x400000, pitch, volume);
+        } else if ((s8)eline->unk188 != -1) {
+            sndPlayBankSfx((s32)func_8003974C(D_800D5EA4, (s8)eline->unk188), 0x400000, pitch, volume);
+        } else if (eline->flags & 0x4000000) {
+            sndPlaySfx(0x36, 0x400000, pitch, volume);
+        } else {
+            sndPlaySfx(3, 0x400000, pitch, volume);
+        }
+        break;
+    case 1:
+        if ((u32)(eline->msgActive - 3) < 2) {
+            sndPlaySfx(0x3F, 0x400000, pitch, volume);
+        } else if ((s8)eline->unk189 != -1) {
+            sndPlayBankSfx((s32)func_8003974C(D_800D5EA4, (s8)eline->unk189), 0x800000, pitch, volume);
+        } else if (eline->flags & 0x4000000) {
+            sndPlaySfx(0x35, 0x400000, pitch, volume);
+        } else {
+            sndPlaySfx(2, 0x400000, pitch, volume);
+        }
+        break;
+    }
+}
 
 /**
  * Pops a byte from the stack, stores it at offset 0x188, and stores
  * the second argument at offset 0x189. Returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @param a1 Value to store at offset 0x189.
  * @return 2 (continue processing).
  */
-s32 func_800B2A40(u8 *a0, s32 a1) {
-    u8 idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    *(u8 *)(a0 + 0x188) = *(u8 *)(a0 + (s8)idx * 4);
-    *(u8 *)(a0 + 0x189) = a1;
+s32 func_800B2A40(Eline *eline, s32 a1) {
+    eline->unk188 = POP_BYTE(eline);
+    eline->unk189 = a1;
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2A70);
+/**
+ * Broadcast the current Eline's @c unk188 / @c unk189 script parameter
+ * bytes to every active @c Eline slot. Iterates over the
+ * @c D_80085224 array (count @c D_80085388, stride 0x264) and writes
+ * the same pair into each entry's mirror fields at +0x188 / +0x189.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B2A70(Eline *eline) {
+    s32 i;
+    Eline *p = D_80085224;
+    for (i = 0; i < D_80085388; i++) {
+        p->unk188 = eline->unk188;
+        p->unk189 = eline->unk189;
+        p++;
+    }
+    return 2;
+}
 
 /**
  * Sets bit 0x80 in the flags at offset 0x160, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B2AC0(u8 *a0) {
-    *(s32 *)(a0 + 0x160) = *(s32 *)(a0 + 0x160) | 0x80;
+s32 func_800B2AC0(Eline *eline) {
+    eline->flags |= 0x80;
     return 2;
 }
 
 /**
  * Clears bit 0x80 in the flags at offset 0x160, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B2AD8(u8 *a0) {
-    *(s32 *)(a0 + 0x160) = *(s32 *)(a0 + 0x160) & ~0x80;
+s32 func_800B2AD8(Eline *eline) {
+    eline->flags &= ~0x80;
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2AF0);
+/**
+ * Clear bit 0x80 in the flags word of every active @c Eline
+ * slot (count @c D_80085388, stride 0x264 at @c D_80085224). Used by a
+ * script opcode to reset a per-entity activation flag across the party.
+ *
+ * @param eline Pointer to the Eline event-script context (unused).
+ * @return 2 (continue processing).
+ */
+s32 func_800B2AF0(Eline *eline) {
+    s32 i;
+    Eline *p = D_80085224;
+    for (i = 0; i < D_80085388; i++) {
+        p->flags &= ~0x80;
+        p++;
+    }
+    return 2;
+}
 
 /**
  * Sets bytes at offsets 0x188 and 0x189 to 0xFF, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B2B34(u8 *a0) {
-    *(s8 *)(a0 + 0x188) = -1;
-    *(s8 *)(a0 + 0x189) = -1;
+s32 func_800B2B34(Eline *eline) {
+    *(s8 *)&eline->unk188 = -1;
+    *(s8 *)&eline->unk189 = -1;
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2B48);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2BA0);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2D40);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2DC0);
+/**
+ * Restore the @c unk188 / @c unk189 script-parameter halfword from one of
+ * two saved snapshots, conditioned on flag bits set in @c eline->flags:
+ *  - bit 0x2000: copy from @c unk18C and return (no flag mutation).
+ *  - bit 0x8000: copy from @c unk18E, clear high-mode bits in flags
+ *    (mask @c 0xFFFF07FF), set the @c 0x1000 marker, fall through.
+ * Then set the @c 0x800 marker regardless.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ */
+void func_800B2B48(Eline *eline) {
+    s32 flags = eline->flags;
+    if (flags & 0x2000) {
+        *(u16 *)&eline->unk188 = eline->unk18C;
+        return;
+    }
+    if (flags & 0x8000) {
+        eline->flags = (flags & 0xFFFF07FF) | 0x1000;
+        *(u16 *)&eline->unk188 = eline->unk18E;
+    }
+    eline->flags |= 0x800;
+}
 
 /**
- * Pops two parameters from the stack, calls func_800B2D40, then sets
- * bit 0x8000 in flags at offset 0x160.
+ * Per-frame movement-step tick. If the @c 0x200 axis-active flag is set
+ * and the inner counter @c unk19C is zero, refill the active movement
+ * state from one of two saved snapshots (selected by the @c 0x400
+ * direction bit) and decrement the tick counter @c unk1A4. Then decrement
+ * the @c walkSpeed countdown; when it hits zero, reload it from
+ * @c walkSpeed2, apply a @c +/- @c unk18A step to @c unk188 (direction
+ * gated by the @c 0x100 flag, suppressed by the @c 0x1000 stop marker),
+ * and either advance toward the @c unk18E target (helper
+ * @c func_800B2B48) or — once the target is reached — clear the
+ * @c 0x800 done marker.
  *
- * @param a0 Pointer to the script/object structure.
- * @return 2 (continue processing).
+ * @param e Pointer to the FieldEntity movement view of the entity.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2E68);
+void func_800B2BA0(FieldEntity *e) {
+    s32 flags = e->unk160;
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2EDC);
+    if ((flags & 0x200) && (s16)e->unk19C == 0) {
+        if (e->unk1A4 == 0) {
+            if (flags & 0x400) {
+                e->unk160 = flags & ~0x400;
+                e->unk19E = 0;
+                e->unk1A4 = e->unk1A6;
+                e->unk19C = e->unk1A2;
+                e->unk1AC = e->unk1AF;
+                e->unk1AB = e->unk1AE;
+                e->unk1AA = e->unk1AD;
+                e->unk1A9 = e->unk1B2;
+                e->unk1A8 = e->unk1B1;
+                e->unk1A7 = e->unk1B0;
+            } else {
+                e->unk160 = flags | 0x400;
+                e->unk19E = 0;
+                e->unk1A4 = e->unk1A5;
+                e->unk19C = e->unk1A0;
+                e->unk1AC = e->unk1B2;
+                e->unk1AB = e->unk1B1;
+                e->unk1AA = e->unk1B0;
+                e->unk1A9 = e->unk1AF;
+                e->unk1A8 = e->unk1AE;
+                e->unk1A7 = e->unk1AD;
+            }
+        }
+        e->unk1A4--;
+    }
+
+    e->walkSpeed -= 1;
+    if ((s16)e->walkSpeed <= 0) {
+        s32 f1, f2;
+        e->walkSpeed = e->walkSpeed2;
+        f1 = e->unk160;
+        if (!(f1 & 0x1000)) {
+            if (f1 & 0x100) {
+                *(u16 *)&e->unk188 = *(u16 *)&e->unk188 - e->unk18A;
+            } else {
+                *(u16 *)&e->unk188 = *(u16 *)&e->unk188 + e->unk18A;
+            }
+        }
+        f2 = e->unk160;
+        if (f2 & 0x100) {
+            if (*(s16 *)&e->unk188 < (s16)e->unk18E) {
+                func_800B2B48(e);
+            } else {
+                e->unk160 = f2 & ~0x800;
+            }
+        } else {
+            if (*(s16 *)&e->unk188 >= (s16)e->unk18E) {
+                func_800B2B48(e);
+            } else {
+                e->unk160 = f2 & ~0x800;
+            }
+        }
+    }
+}
 
 /**
- * Returns 2 if bit 0x800 is set in the flags at offset 0x160, otherwise 1.
+ * Initialize a movement sweep from @p a1 toward @p a2: stores both
+ * endpoints (scaled by 64) into @c unk18C / @c unk18E, primes
+ * @c unk188 with the start, clears the high-mode flag bits and the
+ * direction bit, then sets the appropriate direction marker and
+ * pre-offsets the start position by 0x3F.
  *
- * @param a0 Pointer to the script/object structure.
- * @return 2 if flag 0x800 is set, else 1.
+ * @param eline Pointer to the Eline event-script context.
+ * @param a1    Source value (scaled by 64 into @c unk18E).
+ * @param a2    Destination value (scaled by 64 into @c unk18C).
  */
-s32 func_800B2F50(u8 *a0) {
-    if (*(s32 *)(a0 + 0x160) & 0x800) {
+void func_800B2D40(Eline *eline, s32 a1, s32 a2) {
+    eline->unk18C = a2 << 6;
+    eline->unk18E = a1 << 6;
+
+    eline->flags &= 0xFFFF07FF;
+    eline->flags &= ~0x100;
+    *(u16 *)&eline->unk188 = eline->unk18C;
+
+    if (a1 < a2) {
+        eline->flags |= 0x100;
+        *(u16 *)&eline->unk188 = eline->unk18C + 0x3F;
+        eline->unk18C = eline->unk18C + 0x3F;
+    } else {
+        eline->unk18E += 0x3F;
+    }
+}
+
+/**
+ * Per-frame movement-sweep arm helper. When the entity's @c activeMask
+ * bit for the current @c scriptGroup is set, pop two parameters from
+ * the script stack, forward them to @c func_800B2D40 (which sets up
+ * the sweep state), and set the @c 0x8000 marker flag. When the bit
+ * is clear, return @c 2 once the @c 0x800 done flag is set (otherwise
+ * @c 1 to keep waiting for the bit to flip).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 1 to keep the opcode active, 2 when @c 0x800 is set on the
+ *         else-branch path.
+ */
+s32 func_800B2DC0(Eline *eline) {
+    Eline *self = eline;
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        s8 idx = self->stackPtr;
+        s8 idx2 = idx - 1;
+        self->stackPtr = idx - 2;
+        func_800B2D40(self, ((s32 *)self)[(s8)idx],
+                            ((s32 *)self)[(s8)idx2]);
+        self->flags |= 0x8000;
+    } else if (self->flags & 0x800) {
         return 2;
     }
     return 1;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2F70);
+/**
+ * Pops two parameters from the stack, calls func_800B2D40, then sets
+ * bit 0x8000 in flags at offset 0x160.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+/**
+ * Pop two stack values (source then destination), forward them to the
+ * movement-sweep setup helper @c func_800B2D40, and arm the @c 0x8000
+ * marker flag for the subsequent movement tick.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B2E68(Eline *eline) {
+    s8 idx = eline->stackPtr;
+    s8 idx2 = idx - 1;
+    eline->stackPtr = idx - 2;
+    func_800B2D40(eline, ((s32 *)eline)[(s8)idx],
+                         ((s32 *)eline)[(s8)idx2]);
+    eline->flags |= 0x8000;
+    return 2;
+}
+
+/**
+ * Variant of @c func_800B2E68 that arms the @c 0x2000 marker flag
+ * instead of @c 0x8000 after running the movement-sweep init.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B2EDC(Eline *eline) {
+    s8 idx = eline->stackPtr;
+    s8 idx2 = idx - 1;
+    eline->stackPtr = idx - 2;
+    func_800B2D40(eline, ((s32 *)eline)[(s8)idx],
+                         ((s32 *)eline)[(s8)idx2]);
+    eline->flags |= 0x2000;
+    return 2;
+}
+
+/**
+ * Returns 2 if bit 0x800 is set in the flags at offset 0x160, otherwise 1.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 if flag 0x800 is set, else 1.
+ */
+s32 func_800B2F50(Eline *eline) {
+    if (eline->flags & 0x800) {
+        return 2;
+    }
+    return 1;
+}
+
+/**
+ * Pop a single value @c v and stage a zero-length movement at that
+ * position: call @c func_800B2D40(v, v) (start equals end), set both
+ * walk-speed countdown halfwords to 1, and arm the @c 0x1000 stop
+ * marker so the next tick records completion immediately.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B2F70(Eline *eline) {
+    s32 val = POP(eline);
+    func_800B2D40(eline, val, val);
+    ((FieldEntity *)eline)->walkSpeed2 = 1;
+    ((FieldEntity *)eline)->walkSpeed = 1;
+    eline->flags |= 0x1000;
+    return 2;
+}
 
 /**
  * Reset movement parameters: set walk speed to 1, clear directions, update flags.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2FD8);
-
-/** @brief Pop halfword, store to both 0x192 and 0x190. Returns 2. */
-s32 func_800B301C(u8 *a0) {
-    u8 idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    *(u16 *)(a0 + 0x192) = *(u16 *)(a0 + (s8)idx * 4);
-    *(u16 *)(a0 + 0x190) = *(u16 *)(a0 + 0x192);
+/**
+ * Reset all movement-sweep state to "stopped at -1": set the current
+ * position halfword to @c -1, prime walk-speed countdown halfwords to 1,
+ * clear both saved endpoints, then mask the flags to clear high-mode
+ * bits + direction bit and arm the @c 0x1000 stop marker.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B2FD8(Eline *eline) {
+    *(s16 *)&eline->unk188 = -1;
+    ((FieldEntity *)eline)->walkSpeed2 = 1;
+    ((FieldEntity *)eline)->walkSpeed = 1;
+    eline->unk18E = 0;
+    eline->unk18C = 0;
+    eline->flags &= 0xFFFF07FF;
+    eline->flags &= ~0x100;
+    eline->flags |= 0x1000;
     return 2;
 }
 
-/** @brief Pop halfword, store to offset 0x194. Returns 2. */
-s32 func_800B3050(u8 *a0) {
-    u8 idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    *(u16 *)(a0 + 0x194) = *(u16 *)(a0 + (s8)idx * 4);
+/** @brief Pop halfword, store to both walkSpeed2 and walkSpeed. Returns 2. */
+s32 func_800B301C(Eline *eline) {
+    FieldEntity *e = (FieldEntity *)eline;
+    e->walkSpeed2 = (u16)POP(eline);
+    e->walkSpeed = e->walkSpeed2;
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3080);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B31B4);
+/** @brief Pop halfword, store to runSpeed. Returns 2. */
+s32 func_800B3050(Eline *eline) {
+    FieldEntity *e = (FieldEntity *)eline;
+    e->runSpeed = (u16)POP(eline);
+    return 2;
+}
 
 /**
- * Clears bits 0x600 in the flags at offset 0x160 and zeroes the
- * halfword at offset 0x19C, returns 2.
+ * Per-frame helper for the dual-axis movement state when the entity's
+ * @c activeMask bit for the current @c scriptGroup is set: clears the
+ * @c 0x600 axis-active flags, zeros @c unk19E, and pops a fresh
+ * parameter block of six bytes (@c unk1AC..@c unk1A7) plus a halfword
+ * (@c unk19C) from the script stack. When the bit is clear, returns
+ * @c 2 only if the @c unk19C counter has hit zero (otherwise @c 1 to
+ * keep waiting).
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
+ * @return 1 to keep the opcode active, 2 once the wait counter drains.
+ */
+s32 func_800B3080(Eline *eline) {
+    FieldEntity *e = (FieldEntity *)eline;
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        e->unk160 &= ~0x600;
+        e->unk19E = 0;
+        e->unk1AC = POP_BYTE(eline);
+        e->unk1AB = POP_BYTE(eline);
+        e->unk1AA = POP_BYTE(eline);
+        e->unk1A9 = POP_BYTE(eline);
+        e->unk1A8 = POP_BYTE(eline);
+        e->unk1A7 = POP_BYTE(eline);
+        e->unk19C = (u16)POP(eline);
+    } else if ((s16)e->unk19C == 0) {
+        return 2;
+    }
+    return 1;
+}
+
+/**
+ * Set movement state from a stack-pushed parameter block. Sets the
+ * @c 0x600 dual-axis flag bits, zeros @c unk19E, pops six pairs of
+ * "current/target" bytes into the active/saved slot ranges
+ * (@c unk1A7..unk1AC mirroring @c unk1AD..unk1B2), pops the timer
+ * halfword @c unk1A2, pops the loop counter halfword @c unk1A0 /
+ * @c unk19C (broadcast), and primes the per-tick counter @c unk1A4
+ * from the saved tick total @c unk1A5.
+ *
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B3334(u8 *a0) {
-    *(s16 *)(a0 + 0x19C) = 0;
-    *(s32 *)(a0 + 0x160) = *(s32 *)(a0 + 0x160) & ~0x600;
+s32 func_800B31B4(Eline *eline) {
+    FieldEntity *e = (FieldEntity *)eline;
+    u8 v;
+    u16 hw;
+
+    eline->flags |= 0x600;
+    e->unk19E = 0;
+
+    e->unk1A6 = POP_BYTE(eline);
+    e->unk1A5 = POP_BYTE(eline);
+
+    v = POP_BYTE(eline);
+    e->unk1AC = v;
+    e->unk1B2 = v;
+
+    v = POP_BYTE(eline);
+    e->unk1AB = v;
+    e->unk1B1 = v;
+
+    v = POP_BYTE(eline);
+    e->unk1AA = v;
+    e->unk1B0 = v;
+
+    v = POP_BYTE(eline);
+    e->unk1A9 = v;
+    e->unk1AF = v;
+
+    v = POP_BYTE(eline);
+    e->unk1A8 = v;
+    e->unk1AE = v;
+
+    v = POP_BYTE(eline);
+    e->unk1A7 = v;
+    e->unk1AD = v;
+
+    e->unk1A2 = (u16)POP(eline);
+
+    hw = (u16)POP(eline);
+    e->unk1A0 = hw;
+    e->unk19C = hw;
+
+    e->unk1A4 = e->unk1A5;
+    return 2;
+}
+
+/**
+ * Clears bits 0x600 in the entity flags and zeroes the halfword at
+ * @c unk19C. Returns 2.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3334(Eline *eline) {
+    FieldEntity *e = (FieldEntity *)eline;
+    e->unk19C = 0;
+    e->unk160 = e->unk160 & ~0x600;
     return 2;
 }
 
 /**
  * Clear movement state: zero many fields, clear bits 0x600 in flags,
- * copy byte 0x1A5 to 0x1A4. Returns 2.
+ * copy byte @c unk1A5 to @c unk1A4. Returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B3350(u8 *a0) {
-    s32 flags = *(s32 *)(a0 + 0x160);
-    *(volatile u8 *)(a0 + 0x1A5) = 0;
-    {
-        u8 val = *(volatile u8 *)(a0 + 0x1A5);
-        *(u16 *)(a0 + 0x19E) = 0;
-        *(u8 *)(a0 + 0x1A6) = 0;
-        *(u8 *)(a0 + 0x1AC) = 0;
-        *(u8 *)(a0 + 0x1B2) = 0;
-        *(u8 *)(a0 + 0x1AB) = 0;
-        *(u8 *)(a0 + 0x1B1) = 0;
-        *(u8 *)(a0 + 0x1AA) = 0;
-        *(u8 *)(a0 + 0x1B0) = 0;
-        *(u8 *)(a0 + 0x1A9) = 0;
-        *(u8 *)(a0 + 0x1AF) = 0;
-        *(u8 *)(a0 + 0x1A8) = 0;
-        *(u8 *)(a0 + 0x1AE) = 0;
-        *(u8 *)(a0 + 0x1A7) = 0;
-        *(u8 *)(a0 + 0x1AD) = 0;
-        *(u16 *)(a0 + 0x1A2) = 0;
-        *(u16 *)(a0 + 0x1A0) = 0;
-        *(u16 *)(a0 + 0x19C) = 0;
-        *(s32 *)(a0 + 0x160) = flags & ~0x600;
-        *(u8 *)(a0 + 0x1A4) = val;
-    }
+s32 func_800B3350(Eline *eline) {
+    FieldEntity *e = (FieldEntity *)eline;
+    s32 flags = e->unk160;
+    u8 val;
+    *(volatile u8 *)&e->unk1A5 = 0;
+    val = *(volatile u8 *)&e->unk1A5;
+    e->unk19E = 0;
+    e->unk1A6 = 0;
+    e->unk1AC = 0;
+    e->unk1B2 = 0;
+    e->unk1AB = 0;
+    e->unk1B1 = 0;
+    e->unk1AA = 0;
+    e->unk1B0 = 0;
+    e->unk1A9 = 0;
+    e->unk1AF = 0;
+    e->unk1A8 = 0;
+    e->unk1AE = 0;
+    e->unk1A7 = 0;
+    e->unk1AD = 0;
+    e->unk1A2 = 0;
+    e->unk1A0 = 0;
+    e->unk19C = 0;
+    e->unk160 = flags & ~0x600;
+    e->unk1A4 = val;
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B33B8);
+/**
+ * Pop four stack halfwords into @c D_800704A8 system-state slots and
+ * arm the activation markers @c unk122 and @c unk130. Pops are stored
+ * in reverse order across the four slot pairs at 0x126, 0x12C, 0x134
+ * and 0x13A.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B33B8(Eline *eline) {
+    D_800704A8.unk122 = 1;
+    D_800704A8.unk130 = 1;
+    D_800704A8.unk13A = (u16)POP(eline);
+    D_800704A8.unk134 = (u16)POP(eline);
+    D_800704A8.unk12C = (u16)POP(eline);
+    D_800704A8.unk126 = (u16)POP(eline);
+    return 3;
+}
 
 /**
  * Clears the bytes at D_800704A8+0x122 and D_800704A8+0x130, returns 2.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param eline Pointer to the Eline event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 func_800B3474(u8 *a0) {
-
+s32 func_800B3474(Eline *eline) {
     D_800704A8.unk122 = 0;
     D_800704A8.unk130 = 0;
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B348C);
+/**
+ * Pop two halfwords into the @c unk030 / @c unk032 SystemState parameter
+ * pair, then write mode byte @c unk020 = 3 and clear submode @c unk022.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B348C(Eline *eline) {
+    D_800704A8.slots[0].p2 = (u16)POP(eline);
+    D_800704A8.slots[0].p1 = (u16)POP(eline);
+    D_800704A8.slots[0].mode = 3;
+    D_800704A8.slots[0].submode = 0;
+    return 3;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B34EC);
+/**
+ * Pop three halfwords (third param, then @c unk032 / @c unk030 pair)
+ * into SystemState, set mode @c unk020 = 4 and clear submode
+ * @c unk022. Return value differs from @c func_800B348C (returns 2
+ * here, ending the opcode normally).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B34EC(Eline *eline) {
+    D_800704A8.slots[0].timer = (u16)POP(eline);
+    D_800704A8.slots[0].p2 = (u16)POP(eline);
+    D_800704A8.slots[0].p1 = (u16)POP(eline);
+    D_800704A8.slots[0].mode = 4;
+    D_800704A8.slots[0].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3574);
+/**
+ * Pop three halfwords into SystemState parameter slots and set mode
+ * @c unk020 = 5. Identical structure to @c func_800B34EC apart from the
+ * mode byte.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3574(Eline *eline) {
+    D_800704A8.slots[0].timer = (u16)POP(eline);
+    D_800704A8.slots[0].p2 = (u16)POP(eline);
+    D_800704A8.slots[0].p1 = (u16)POP(eline);
+    D_800704A8.slots[0].mode = 5;
+    D_800704A8.slots[0].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B35FC);
+/**
+ * Pop a script index, look up the corresponding @c FieldEntity pointer
+ * via the @c D_80085230 table, and stage its @c field_0x256 byte into
+ * SystemState @c unk021 with mode @c unk020 = 0 and submode @c unk022
+ * = 0.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B35FC(Eline *eline) {
+    s32 val = POP(eline);
+    u8 byte = D_80085230[val]->field_0x256;
+    D_800704A8.slots[0].mode = 0;
+    D_800704A8.slots[0].submode = 0;
+    D_800704A8.slots[0].param = byte;
+    return 3;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3650);
+/**
+ * Pop two stack values, store the first into SystemState halfword
+ * @c unk024 (mode-1 timer), look up the second through the @c D_80085230
+ * entity-pointer table and copy @c field_0x256 into @c unk021. Mode
+ * byte is set to 1.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3650(Eline *eline) {
+    s32 val1 = POP(eline);
+    s32 val2 = POP(eline);
+    D_800704A8.slots[0].timer = val1;
+    D_800704A8.slots[0].param = D_80085230[val2]->field_0x256;
+    D_800704A8.slots[0].mode = 1;
+    D_800704A8.slots[0].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B36C8);
+/**
+ * Variant of @c func_800B3650 with mode @c unk020 = 2.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B36C8(Eline *eline) {
+    s32 val1 = POP(eline);
+    s32 val2 = POP(eline);
+    D_800704A8.slots[0].timer = val1;
+    D_800704A8.slots[0].param = D_80085230[val2]->field_0x256;
+    D_800704A8.slots[0].mode = 2;
+    D_800704A8.slots[0].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3740);
+/**
+ * Pop a party-slot index, look up the active battle-field-entity index
+ * for that slot in @c g_seedState->memberSlot, and stage it into
+ * SystemState @c unk021 with mode @c unk020 = 0.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B3740(Eline *eline) {
+    SeedState *ss = g_seedState;
+    s32 val = POP(eline);
+    D_800704A8.slots[0].param = ss->memberSlot[val];
+    D_800704A8.slots[0].mode = 0;
+    D_800704A8.slots[0].submode = 0;
+    return 3;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3788);
+/**
+ * Pop a timer halfword, cache the seedState pointer, then pop a
+ * party-slot index; arm slot[0] with @c mode = 1 and the active
+ * battle-entity index from @c g_seedState->memberSlot.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3788(Eline *eline) {
+    u16 timer = (u16)POP(eline);
+    SeedState *ss = g_seedState;
+    s32 partySlot;
+    D_800704A8.slots[0].timer = timer;
+    partySlot = POP(eline);
+    D_800704A8.slots[0].param = ss->memberSlot[partySlot];
+    D_800704A8.slots[0].mode = 1;
+    D_800704A8.slots[0].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B37F8);
+/**
+ * Variant of @c func_800B3788 that arms @c mode = 2.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B37F8(Eline *eline) {
+    u16 timer = (u16)POP(eline);
+    SeedState *ss = g_seedState;
+    s32 partySlot;
+    D_800704A8.slots[0].timer = timer;
+    partySlot = POP(eline);
+    D_800704A8.slots[0].param = ss->memberSlot[partySlot];
+    D_800704A8.slots[0].mode = 2;
+    D_800704A8.slots[0].submode = 0;
+    return 2;
+}
 
 /**
  * Returns 2 if D_800704CA equals 2, otherwise returns 1.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param eline Pointer to the Eline event-script context (unused).
  * @return 2 if D_800704CA is 2, else 1.
  */
-s32 func_800B3868(u8 *a0) {
-
+s32 func_800B3868(Eline *eline) {
     if (D_800704CA == 2) {
         return 2;
     }
     return 1;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B388C);
+/**
+ * Peek the top stack value as a SystemState slot index. If that slot's
+ * @c submode is 2 (terminal state), pop and return 2 — the script
+ * advances past the wait opcode. Otherwise keep the stack intact and
+ * return 1 to retry next frame.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 once the slot reaches submode 2, 1 while still waiting.
+ */
+s32 func_800B388C(Eline *eline) {
+    s32 idx = PEEK(eline);
+    if (D_800704A8.slots[idx].submode == 2) {
+        eline->stackPtr--;
+        return 2;
+    }
+    return 1;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B38E0);
+/**
+ * Pop two halfword parameters and a slot index, store the parameters
+ * into @c slots[idx].p1 / @c .p2, then arm the slot with @c mode = 3
+ * and @c submode = 0.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B38E0(Eline *eline) {
+    u16 p2 = (u16)POP(eline);
+    u16 p1 = (u16)POP(eline);
+    s32 idx = POP(eline);
+    D_800704A8.slots[idx].p2 = p2;
+    D_800704A8.slots[idx].p1 = p1;
+    D_800704A8.slots[idx].mode = 3;
+    D_800704A8.slots[idx].submode = 0;
+    return 3;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3964);
+/**
+ * Pop a timer halfword, two parameter halfwords, and a slot index;
+ * arm @c slots[idx] with @c mode = 4 and the popped parameters.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3964(Eline *eline) {
+    u16 timer = (u16)POP(eline);
+    u16 p2 = (u16)POP(eline);
+    u16 p1 = (u16)POP(eline);
+    s32 idx = POP(eline);
+    D_800704A8.slots[idx].timer = timer;
+    D_800704A8.slots[idx].p2 = p2;
+    D_800704A8.slots[idx].p1 = p1;
+    D_800704A8.slots[idx].mode = 4;
+    D_800704A8.slots[idx].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3A04);
+/**
+ * Variant of @c func_800B3964 that arms the slot with @c mode = 5.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3A04(Eline *eline) {
+    u16 timer = (u16)POP(eline);
+    u16 p2 = (u16)POP(eline);
+    u16 p1 = (u16)POP(eline);
+    s32 idx = POP(eline);
+    D_800704A8.slots[idx].timer = timer;
+    D_800704A8.slots[idx].p2 = p2;
+    D_800704A8.slots[idx].p1 = p1;
+    D_800704A8.slots[idx].mode = 5;
+    D_800704A8.slots[idx].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3AA4);
+/**
+ * Pop an entity index and a slot index, look up the entity's
+ * @c field_0x256 byte via @c D_80085230 and stage it into
+ * @c slots[slotIdx].param with @c mode = 0.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B3AA4(Eline *eline) {
+    s32 entityIdx = POP(eline);
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
+    D_800704A8.slots[slotIdx].mode = 0;
+    D_800704A8.slots[slotIdx].submode = 0;
+    return 3;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3B20);
+/**
+ * Pop a timer halfword, an entity index, and a slot index; arm
+ * @c slots[slotIdx] with @c mode = 1, the timer, and the entity's
+ * @c field_0x256 byte from @c D_80085230.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3B20(Eline *eline) {
+    u16 timer = (u16)POP(eline);
+    s32 entityIdx = POP(eline);
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].timer = timer;
+    D_800704A8.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
+    D_800704A8.slots[slotIdx].mode = 1;
+    D_800704A8.slots[slotIdx].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3BC0);
+/**
+ * Variant of @c func_800B3B20 that arms @c mode = 2.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3BC0(Eline *eline) {
+    u16 timer = (u16)POP(eline);
+    s32 entityIdx = POP(eline);
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].timer = timer;
+    D_800704A8.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
+    D_800704A8.slots[slotIdx].mode = 2;
+    D_800704A8.slots[slotIdx].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3C60);
+/**
+ * Pop a party-slot index and a slot index; read the active battle-entity
+ * index from @c g_seedState->memberSlot and stage it into
+ * @c slots[slotIdx].param with @c mode = 0.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B3C60(Eline *eline) {
+    SeedState *ss = g_seedState;
+    s32 partySlot = POP(eline);
+    u8 byte = ss->memberSlot[partySlot];
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].param = byte;
+    D_800704A8.slots[slotIdx].mode = 0;
+    D_800704A8.slots[slotIdx].submode = 0;
+    return 3;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3CD0);
+/**
+ * Pop a timer halfword, cache the seedState pointer, pop a party-slot
+ * index and look up the active battle-entity index, then pop the
+ * target slot index; arm @c slots[slotIdx] with @c mode = 1.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3CD0(Eline *eline) {
+    u16 timer = (u16)POP(eline);
+    SeedState *ss = g_seedState;
+    s32 partySlot = POP(eline);
+    u8 byte = ss->memberSlot[partySlot];
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].timer = timer;
+    D_800704A8.slots[slotIdx].param = byte;
+    D_800704A8.slots[slotIdx].mode = 1;
+    D_800704A8.slots[slotIdx].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3D60);
+/**
+ * Variant of @c func_800B3CD0 that arms @c mode = 2.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3D60(Eline *eline) {
+    u16 timer = (u16)POP(eline);
+    SeedState *ss = g_seedState;
+    s32 partySlot = POP(eline);
+    u8 byte = ss->memberSlot[partySlot];
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].timer = timer;
+    D_800704A8.slots[slotIdx].param = byte;
+    D_800704A8.slots[slotIdx].mode = 2;
+    D_800704A8.slots[slotIdx].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3DF0);
+/**
+ * Pop four extra parameter halfwords and a slot index; stage them into
+ * @c slots[slotIdx].p3..p6 (tail parameters used by the wider mode
+ * bodies). Does not change @c mode or @c submode.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3DF0(Eline *eline) {
+    u16 p6 = (u16)POP(eline);
+    u16 p5 = (u16)POP(eline);
+    u16 p4 = (u16)POP(eline);
+    u16 p3 = (u16)POP(eline);
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].p3 = p3;
+    D_800704A8.slots[slotIdx].p4 = p4;
+    D_800704A8.slots[slotIdx].p5 = p5;
+    D_800704A8.slots[slotIdx].p6 = p6;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3EA0);
+/**
+ * Pop two tail parameters and a slot index; stage them into
+ * @c slots[slotIdx].p5 / @c .p6.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3EA0(Eline *eline) {
+    u16 p6 = (u16)POP(eline);
+    u16 p5 = (u16)POP(eline);
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].p5 = p5;
+    D_800704A8.slots[slotIdx].p6 = p6;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3F18);
+/**
+ * Pop two parameters and a slot index; stage them into
+ * @c slots[slotIdx].p1 / @c .p2 and arm with @c mode = 3.
+ * Sibling of @c func_800B38E0 with stores in @c p1 / @c p2 order.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B3F18(Eline *eline) {
+    u16 p2 = (u16)POP(eline);
+    u16 p1 = (u16)POP(eline);
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].p1 = p1;
+    D_800704A8.slots[slotIdx].p2 = p2;
+    D_800704A8.slots[slotIdx].mode = 3;
+    D_800704A8.slots[slotIdx].submode = 0;
+    return 3;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3F9C);
+/**
+ * Pop a timer halfword, four parameter halfwords (@c q1 / @c q2 / @c p1 /
+ * @c p2), and a slot index; arm @c slots[slotIdx] with @c mode = 4 and
+ * the popped values. Used by movement-with-vector mode opcodes.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B3F9C(Eline *eline) {
+    u16 timer = (u16)POP(eline);
+    u16 p2 = (u16)POP(eline);
+    u16 p1 = (u16)POP(eline);
+    u16 q2 = (u16)POP(eline);
+    u16 q1 = (u16)POP(eline);
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].q1 = q1;
+    D_800704A8.slots[slotIdx].q2 = q2;
+    D_800704A8.slots[slotIdx].p1 = p1;
+    D_800704A8.slots[slotIdx].p2 = p2;
+    D_800704A8.slots[slotIdx].timer = timer;
+    D_800704A8.slots[slotIdx].mode = 4;
+    D_800704A8.slots[slotIdx].submode = 0;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4074);
+/**
+ * Variant of @c func_800B3F9C that arms @c mode = 5.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B4074(Eline *eline) {
+    u16 timer = (u16)POP(eline);
+    u16 p2 = (u16)POP(eline);
+    u16 p1 = (u16)POP(eline);
+    u16 q2 = (u16)POP(eline);
+    u16 q1 = (u16)POP(eline);
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].q1 = q1;
+    D_800704A8.slots[slotIdx].q2 = q2;
+    D_800704A8.slots[slotIdx].p1 = p1;
+    D_800704A8.slots[slotIdx].p2 = p2;
+    D_800704A8.slots[slotIdx].timer = timer;
+    D_800704A8.slots[slotIdx].mode = 5;
+    D_800704A8.slots[slotIdx].submode = 0;
+    return 2;
+}
 
 /**
  * @brief Pop a byte from the stack and store to D_80070652.
@@ -448,7 +1284,18 @@ s32 func_800B414C(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B417C);
+/**
+ * Pop a value and store it into @c g_gameState.mainData.battleStateFlag
+ * (the battle state word at @c g_gameState+0xCD4 used by camera shake).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B417C(Eline *eline) {
+    volatile GameState *gs = &g_gameState;
+    gs->mainData.battleStateFlag = POP(eline);
+    return 2;
+}
 
 /**
  * @brief Copy the global battle state flag into the script result register.
@@ -462,69 +1309,229 @@ s32 func_800B41B0(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B41CC);
+/**
+ * Trigger camera-shake mode: pop two intensity bytes into
+ * @c g_seedState->cameraShakeY / @c cameraShakeX, arm the related
+ * field flag bits and the battle-config bit, then drive
+ * @c setCameraShakeParams + @c setCameraVibrateState(1).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B41CC(Eline *eline) {
+    g_seedState->cameraShakeY = POP_BYTE(eline);
+    g_seedState->cameraShakeX = POP_BYTE(eline);
+    g_seedState->stateFlags |= 0x40;
+    g_seedState->fieldB6 |= 0x4;
+    g_battleConfig.unk2 |= 0x4;
+    setCameraShakeParams(g_seedState->cameraShakeX, g_seedState->cameraShakeY);
+    setCameraVibrateState(1);
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4288);
+/**
+ * Stop camera-shake mode: clear the @c stateFlags bit 0x40, the
+ * @c fieldB6 bit 0x4 and the @c g_battleConfig.unk2 bit 0x4, then call
+ * @c setCameraVibrateState(0). Inverse of @c func_800B41CC.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B4288(Eline *eline) {
+    g_seedState->stateFlags &= ~0x40;
+    g_seedState->fieldB6 &= ~0x4;
+    g_battleConfig.unk2 &= ~0x4;
+    setCameraVibrateState(0);
+    return 2;
+}
 
 /**
  * Pops a parameter and calls setCameraVibrateIntensity, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B42E0(u8 *a0) {
-    u8 idx;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    setCameraVibrateIntensity(*(s32 *)(a0 + (s8)idx * 4));
+s32 func_800B42E0(Eline *eline) {
+    setCameraVibrateIntensity(POP(eline));
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4320);
+/**
+ * If this entity is the active script and the mode-7 reentry guard
+ * (@c D_800704A8.unk1A2) is clear, pop three halfwords into the
+ * mode-7 parameter slots @c unk00E / @c unk00C / @c counter, switch
+ * @c mode to 7, and call @c func_800B4F40 to launch the operation.
+ * If @c unk1A2 is set (operation already in progress), rewind the
+ * stack pointer by 3 instead so the script re-runs the opcode.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 1 (yield to dispatcher without advancing PC).
+ */
+s32 func_800B4320(Eline *eline) {
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        if (D_800704A8.unk1A2 != 0) {
+            eline->stackPtr -= 3;
+        } else {
+            D_800704A8.mode = 7;
+            D_800704A8.unk00E = (u16)POP(eline);
+            D_800704A8.unk00C = (u16)POP(eline);
+            D_800704A8.counter = (u16)POP(eline);
+            func_800B4F40();
+        }
+    }
+    return 1;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B43FC);
+/**
+ * Pop a value (masked to 2 bits) into the global mode byte @c D_8007064E
+ * and then fire @c func_800A97E4(i, 0x25, 0, 0) once per active
+ * @c Eline slot (count from @c D_80085388).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B43FC(Eline *eline) {
+    s32 i;
+    D_8007064E = POP(eline) & 0x3;
+    for (i = 0; i < D_80085388; i++) {
+        func_800A97E4(i, 0x25, 0, 0);
+    }
+    return 2;
+}
 
 /** @brief Pop byte, store to global D_8007064F. Returns 2. */
-s32 func_800B448C(u8 *a0) {
-    u8 idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    *(u8 *)D_8007064F = *(u8 *)(a0 + (s8)idx * 4);
+s32 func_800B448C(Eline *eline) {
+    *(u8 *)D_8007064F = POP_BYTE(eline);
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B44BC);
+/**
+ * Find the first free slot in @c D_8005F0F8->entries (the entry whose
+ * @c field16 is the sentinel @c 0x7FFF), pop four halfwords into its
+ * @c field04 / @c field06 / @c field08 / @c field16, set @c field14 =
+ * @c 0xFFFF to mark the slot armed, and re-arm the next entry's
+ * @c field16 to @c 0x7FFF as the new sentinel.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B44BC(Eline *eline) {
+    s32 t = 0;
+    if (D_8005F0F8->entries[0].field16 != 0x7FFF) {
+        do {
+            t++;
+        } while (D_8005F0F8->entries[t].field16 != 0x7FFF);
+    }
+    D_8005F0F8->entries[t].field08 = (u16)POP(eline);
+    D_8005F0F8->entries[t].field06 = (u16)POP(eline);
+    D_8005F0F8->entries[t].field04 = (u16)POP(eline);
+    D_8005F0F8->entries[t].field16 = (u16)POP(eline);
+    D_8005F0F8->entries[t].field14 = 0xFFFF;
+    D_8005F0F8->entries[t + 1].field16 = 0x7FFF;
+    return 2;
+}
 
 /**
  * Pops a parameter and calls func_800A5A14, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B45CC(u8 *a0) {
-    u8 idx;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    func_800A5A14(*(s32 *)(a0 + (s8)idx * 4));
+s32 func_800B45CC(Eline *eline) {
+    func_800A5A14(POP(eline));
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B460C);
+/**
+ * If active, set mode = 1 and stage the dispatcher-supplied @p a1 into
+ * @c unk00C, then pop four halfwords into @c unk00E / @c unk006 /
+ * @c unk004 / @c counter.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @param a1    Dispatcher-supplied mode-1 trigger word.
+ * @return 1 (yield to dispatcher without advancing PC).
+ */
+s32 func_800B460C(Eline *eline, s32 a1) {
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        D_800704A8.mode = 1;
+        D_800704A8.unk00C = a1;
+        D_800704A8.unk00E = (u16)POP(eline);
+        D_800704A8.unk006 = (u16)POP(eline);
+        D_800704A8.unk004 = (u16)POP(eline);
+        D_800704A8.counter = (u16)POP(eline);
+    }
+    return 1;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B46E4);
+/**
+ * Variant of @c func_800B460C that pops one extra halfword into
+ * @c unk008 (between @c unk00E and @c unk006).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @param a1    Dispatcher-supplied mode-1 trigger word.
+ * @return 1 (yield to dispatcher without advancing PC).
+ */
+s32 func_800B46E4(Eline *eline, s32 a1) {
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        D_800704A8.mode = 1;
+        D_800704A8.unk00C = a1;
+        D_800704A8.unk00E = (u16)POP(eline);
+        D_800704A8.unk008 = (u16)POP(eline);
+        D_800704A8.unk006 = (u16)POP(eline);
+        D_800704A8.unk004 = (u16)POP(eline);
+        D_800704A8.counter = (u16)POP(eline);
+    }
+    return 1;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B47E4);
+/**
+ * Mode-6 init: identical structure to @c func_800B46E4 but sets
+ * @c mode = 6 and also flags @c slotActive[0] = 1.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @param a1    Dispatcher-supplied mode-6 trigger word.
+ * @return 1 (yield to dispatcher without advancing PC).
+ */
+s32 func_800B47E4(Eline *eline, s32 a1) {
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        D_800704A8.mode = 6;
+        D_800704A8.unk1A0 = 1;
+        D_800704A8.unk00C = a1;
+        D_800704A8.unk00E = (u16)POP(eline);
+        D_800704A8.unk008 = (u16)POP(eline);
+        D_800704A8.unk006 = (u16)POP(eline);
+        D_800704A8.unk004 = (u16)POP(eline);
+        D_800704A8.counter = (u16)POP(eline);
+    }
+    return 1;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B48EC);
+/**
+ * Mode-1 init seeded with @c 0x7FFF sentinels in the inner-loop bounds
+ * and a single-pop @c unk00C parameter. Mode is set to 1.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 1 (yield to dispatcher without advancing PC).
+ */
+s32 func_800B48EC(Eline *eline) {
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        D_800704A8.mode = 1;
+        D_800704A8.unk00E = 0;
+        D_800704A8.unk00C = (u16)POP(eline);
+        D_800704A8.unk004 = 0x7FFF;
+        D_800704A8.unk006 = 0x7FFF;
+        D_800704A8.counter = (u16)POP(eline);
+    }
+    return 1;
+}
 
 /**
  * Clears the global byte D_8007064A, returns 2.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param eline Pointer to the Eline event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 func_800B497C(u8 *a0) {
+s32 func_800B497C(Eline *eline) {
     D_8007064A = 0;
     return 2;
 }
@@ -532,10 +1539,10 @@ s32 func_800B497C(u8 *a0) {
 /**
  * Sets the global byte D_8007064A to 1, returns 2.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param eline Pointer to the Eline event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 func_800B498C(u8 *a0) {
+s32 func_800B498C(Eline *eline) {
     D_8007064A = 1;
     return 2;
 }
@@ -543,10 +1550,10 @@ s32 func_800B498C(u8 *a0) {
 /**
  * Sets the global byte D_8007064D to 1, returns 2.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param eline Pointer to the Eline event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 func_800B49A0(u8 *a0) {
+s32 func_800B49A0(Eline *eline) {
     D_8007064D = 1;
     return 2;
 }
@@ -554,10 +1561,10 @@ s32 func_800B49A0(u8 *a0) {
 /**
  * Clears the global byte D_8007064D, returns 2.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param eline Pointer to the Eline event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 func_800B49B4(u8 *a0) {
+s32 func_800B49B4(Eline *eline) {
     D_8007064D = 0;
     return 2;
 }
@@ -565,10 +1572,10 @@ s32 func_800B49B4(u8 *a0) {
 /**
  * Sets the global byte D_8007064B to 1, returns 2.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param eline Pointer to the Eline event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 func_800B49C4(u8 *a0) {
+s32 func_800B49C4(Eline *eline) {
     D_8007064B = 1;
     return 2;
 }
@@ -576,10 +1583,10 @@ s32 func_800B49C4(u8 *a0) {
 /**
  * Clears the global byte D_8007064B, returns 2.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param eline Pointer to the Eline event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 func_800B49D8(u8 *a0) {
+s32 func_800B49D8(Eline *eline) {
     D_8007064B = 0;
     return 2;
 }
@@ -596,88 +1603,167 @@ s32 func_800B49E8(void) {
  * Sets D_800704A8 to 5, sets the halfword at D_800704A8+2 to 1,
  * sets the byte at D_800704A8+0x1AB to 2, returns 3.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param eline Pointer to the Eline event-script context (unused).
  * @return 3.
  */
-s32 func_800B4A18(u8 *a0) {
-
+s32 func_800B4A18(Eline *eline) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 1;
     D_800704A8.unk1AB = 2;
     return 3;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4A40);
+/**
+ * Mode-5 init: set mode = 5, counter = 0x17, pop a byte into @c unk1AB.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B4A40(Eline *eline) {
+    D_800704A8.mode = 5;
+    D_800704A8.counter = 0x17;
+    D_800704A8.unk1AB = POP_BYTE(eline);
+    return 3;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4A88);
+/**
+ * Mode-5 init dispatched by a 21-case switch on the popped value. The
+ * counter halfword @c D_800704AA is set per case (mostly @c val+2 with
+ * two paired swaps and special cases for @c 19 = chocobo-world enable
+ * and @c 20 = stand-alone counter 28). Cases 3..18 also call
+ * @c setGfExists for the corresponding GF id; the @c 8 / @c 9 and
+ * @c 14 / @c 15 pairs are deliberately written swapped in source to
+ * match the original case body order.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B4A88(Eline *eline) {
+    s32 val;
+    D_800704A8.mode = 5;
+    D_800704A8.unk1AB = 1;
+    val = POP(eline);
+    switch (val) {
+    case 0:  D_800704AA = 2;  break;
+    case 1:  D_800704AA = 3;  break;
+    case 2:  D_800704AA = 4;  break;
+    case 3:  D_800704AA = 5;  setGfExists(0);  break;
+    case 4:  D_800704AA = 6;  setGfExists(1);  break;
+    case 5:  D_800704AA = 7;  setGfExists(2);  break;
+    case 6:  D_800704AA = 8;  setGfExists(3);  break;
+    case 7:  D_800704AA = 9;  setGfExists(4);  break;
+    case 9:  D_800704AA = 10; setGfExists(5);  break;
+    case 8:  D_800704AA = 11; setGfExists(6);  break;
+    case 10: D_800704AA = 12; setGfExists(7);  break;
+    case 11: D_800704AA = 13; setGfExists(8);  break;
+    case 12: D_800704AA = 14; setGfExists(9);  break;
+    case 13: D_800704AA = 15; setGfExists(0xA); break;
+    case 15: D_800704AA = 16; setGfExists(0xB); break;
+    case 14: D_800704AA = 17; setGfExists(0xC); break;
+    case 16: D_800704AA = 18; setGfExists(0xD); break;
+    case 17: D_800704AA = 19; setGfExists(0xE); break;
+    case 18: D_800704AA = 20; setGfExists(0xF); break;
+    case 19: D_800704AA = 27; enableChocoboWorld(); break;
+    case 20: D_800704AA = 28; break;
+    }
+    return 3;
+}
 
 /**
  * Sets D_800704A8 to 5, sets the halfword at D_800704A8+2 to 0x1A,
  * sets the byte at D_800704A8+0x1AB to 1, returns 3.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param eline Pointer to the Eline event-script context (unused).
  * @return 3.
  */
-s32 func_800B4D0C(u8 *a0) {
-
+s32 func_800B4D0C(Eline *eline) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 0x1A;
     D_800704A8.unk1AB = 1;
     return 3;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4D34);
+/**
+ * Mode-5 init with counter 0x1D — variant of @c func_800B4A40.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B4D34(Eline *eline) {
+    D_800704A8.mode = 5;
+    D_800704A8.counter = 0x1D;
+    D_800704A8.unk1AB = POP_BYTE(eline);
+    return 3;
+}
 
 /**
  * Pops a parameter, masks it with 0x7F, and calls setFieldFlag, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B4D7C(u8 *a0) {
-    u8 idx;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    setFieldFlag(*(s32 *)(a0 + (s8)idx * 4) & 0x7F);
+s32 func_800B4D7C(Eline *eline) {
+    setFieldFlag(POP(eline) & 0x7F);
     return 2;
 }
 
 /**
  * Calls func_80037240 and returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B4DBC(u8 *a0) {
-    func_80037240(a0);
+s32 func_800B4DBC(Eline *eline) {
+    func_80037240(eline);
     return 2;
 }
 
 /**
  * Calls func_800ADC04 and returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B4DDC(u8 *a0) {
-    func_800ADC04(a0);
+s32 func_800B4DDC(Eline *eline) {
+    func_800ADC04(eline);
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4DFC);
+/**
+ * Pop a halfword HP value and a character index, then set
+ * @c g_gameState.chars[charId].currentHp to the popped value.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B4DFC(Eline *eline) {
+    u16 hp = (u16)POP(eline);
+    s32 charId = POP(eline);
+    g_gameState.chars[charId].currentHp = hp;
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4E60);
+/**
+ * Pop a character index, read @c g_gameState.chars[charId].currentHp
+ * and stage it into the script result slot 0.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B4E60(Eline *eline) {
+    s32 charId = POP(eline);
+    eline->resultSlots[0] = g_gameState.chars[charId].currentHp;
+    return 2;
+}
 
 /**
  * Sets D_800704A8 to 5, sets the halfword at D_800704A8+2 to 0x18,
  * sets the byte at D_800704A8+0x1AB to 1, returns 3.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param eline Pointer to the Eline event-script context (unused).
  * @return 3.
  */
-s32 func_800B4EB0(u8 *a0) {
-
+s32 func_800B4EB0(Eline *eline) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 0x18;
     D_800704A8.unk1AB = 1;
@@ -688,17 +1774,11 @@ s32 func_800B4EB0(u8 *a0) {
  * Pops a parameter from the stack. If nonzero, sets bit 0x01 in
  * g_seedState+0xD1. Otherwise clears it. Returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B4ED8(u8 *a0) {
-    u8 idx;
-    s32 val;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    val = *(s32 *)(a0 + (s8)idx * 4);
-    if (val != 0) {
+s32 func_800B4ED8(Eline *eline) {
+    if (POP(eline) != 0) {
         g_seedState->fieldD1 |= 0x01;
     } else {
         g_seedState->fieldD1 &= ~0x01;
@@ -721,97 +1801,181 @@ void func_800B4F40(void) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4F80);
+/**
+ * Pop a flag value. Nonzero clears @c stateFlags bit @c 0x200; zero
+ * sets bit @c 0x200 and additionally clears bit @c 0x02 of @c fieldD1.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B4F80(Eline *eline) {
+    if (POP(eline) != 0) {
+        g_seedState->stateFlags &= ~0x200;
+    } else {
+        g_seedState->stateFlags |= 0x200;
+        g_seedState->fieldD1 &= ~0x02;
+    }
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B4FF8);
+/**
+ * Pop a flag value. If @c stateFlags bit @c 0x200 is clear, set or
+ * clear bit @c 0x02 in @c fieldD1 based on the popped value. If
+ * @c 0x200 is set, leave @c fieldD1 alone.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B4FF8(Eline *eline) {
+    s32 val = POP(eline);
+    if (!(g_seedState->stateFlags & 0x200)) {
+        if (val != 0) {
+            g_seedState->fieldD1 |= 0x02;
+        } else {
+            g_seedState->fieldD1 &= ~0x02;
+        }
+    }
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B505C);
+/**
+ * Pop a retry count, an action code, and a character ID; look up the
+ * character's party slot via @c func_80037C6C, and if that character
+ * is in the active party, call @c func_800211B4(partyMember, code)
+ * up to @p count times, exiting early on the first non-zero return.
+ * Always returns 2 — the action is purely side-effecting.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B505C(Eline *eline) {
+    s32 count = POP(eline);
+    s32 val2 = POP(eline);
+    s32 charId = POP(eline);
+    s32 slot = func_80037C6C(charId);
+    if (slot != 0xFF) {
+        s32 i;
+        for (i = 0; i < count; i++) {
+            if (func_800211B4(g_gameState.mainData.party.party[slot], val2) != 0) {
+                return 2;
+            }
+        }
+    }
+    return 2;
+}
 
 /**
  * Pops a parameter, calls func_800C0410, stores result at offset 0x140.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B5134(u8 *a0) {
-    u8 idx;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    *(s32 *)(a0 + 0x140) = func_800C0410(*(s32 *)(a0 + (s8)idx * 4));
+s32 func_800B5134(Eline *eline) {
+    eline->resultSlots[0] = func_800C0410(POP(eline));
     return 2;
 }
 
 /**
  * Pops two parameters from the stack and calls addItemToInventory(val1, val2).
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B5188(u8 *a0) {
-    u8 idx;
+s32 func_800B5188(Eline *eline) {
     s32 val1, val2;
 
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    val1 = *(s32 *)(a0 + (s8)idx * 4);
-    *(u8 *)(a0 + 0x184) = idx - 2;
-    val2 = *(s32 *)(a0 + (s8)(idx - 1) * 4);
+    val1 = POP(eline);
+    val2 = POP(eline);
     addItemToInventory(val1, val2);
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B51E0);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B5248);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B52B0);
-
 /**
- * Pops a parameter, calls markItemPresent, stores result at offset 0x140.
+ * Pop a gil delta and add it to @c g_gameState.mainData.party.gil,
+ * clamped to the FF gil cap of 99,999,999. Mirror the new total into
+ * @c g_seedState->gilMirror.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B5318(u8 *a0) {
-    u8 idx;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    *(s32 *)(a0 + 0x140) = markItemPresent(*(s32 *)(a0 + (s8)idx * 4));
+s32 func_800B51E0(Eline *eline) {
+    s32 delta = POP(eline);
+    g_gameState.mainData.party.gil += delta;
+    if (g_gameState.mainData.party.gil > 0x05F5E0FE) {
+        g_gameState.mainData.party.gil = 0x05F5E0FF;
+    }
+    g_seedState->gilMirror = g_gameState.mainData.party.gil;
     return 2;
 }
 
 /**
- * Pops two values, calls modifyItemQuantity(val1, val2), stores result at 0x140.
+ * Variant of @c func_800B51E0 that operates on @c dreamGil instead of
+ * @c gil and mirrors the result into @c g_seedState->dreamGilMirror.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B536C(u8 *a0) {
-    u8 idx;
+s32 func_800B5248(Eline *eline) {
+    s32 delta = POP(eline);
+    g_gameState.mainData.party.dreamGil += delta;
+    if (g_gameState.mainData.party.dreamGil > 0x05F5E0FE) {
+        g_gameState.mainData.party.dreamGil = 0x05F5E0FF;
+    }
+    g_seedState->dreamGilMirror = g_gameState.mainData.party.dreamGil;
+    return 2;
+}
+
+/**
+ * Pop a delta and add it to @c g_seedState->seedExp, clamping the
+ * resulting value to the legal SeeD-rank range [@c 100, @c 3100].
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B52B0(Eline *eline) {
+    s32 delta = POP(eline);
+    g_seedState->seedExp += delta;
+    if ((s16)g_seedState->seedExp < 100) {
+        g_seedState->seedExp = 100;
+    } else if ((s16)g_seedState->seedExp >= 3100) {
+        g_seedState->seedExp = 3100;
+    }
+    return 2;
+}
+
+/**
+ * Pops a parameter, calls markItemPresent, stores result in resultSlots[0].
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B5318(Eline *eline) {
+    eline->resultSlots[0] = markItemPresent(POP(eline));
+    return 2;
+}
+
+/**
+ * Pops two values, calls modifyItemQuantity(val1, val2), stores result in resultSlots[0].
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B536C(Eline *eline) {
     s32 val1, val2;
 
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    val1 = *(s32 *)(a0 + (s8)idx * 4);
-    *(u8 *)(a0 + 0x184) = idx - 2;
-    val2 = *(s32 *)(a0 + (s8)(idx - 1) * 4);
-    *(s32 *)(a0 + 0x140) = modifyItemQuantity(val1, val2);
+    val1 = POP(eline);
+    val2 = POP(eline);
+    eline->resultSlots[0] = modifyItemQuantity(val1, val2);
     return 2;
 }
 
 /**
- * Pops a parameter, calls func_80023B14, stores result at offset 0x140.
+ * Pops a parameter, calls func_80023B14, stores result in resultSlots[0].
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B53D8(u8 *a0) {
-    u8 idx;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    *(s32 *)(a0 + 0x140) = func_80023B14(*(s32 *)(a0 + (s8)idx * 4));
+s32 func_800B53D8(Eline *eline) {
+    eline->resultSlots[0] = func_80023B14(POP(eline));
     return 2;
 }

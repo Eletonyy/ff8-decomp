@@ -355,4 +355,6 @@ extern SeedState *g_seedState;
 extern void setMcBusy(void);
 extern u32  isMcBusy(void);
 
+extern u8 D_80085388;                  /**< @c Eline entity count at @c D_80085224. */
+
 #endif /* GAMESTATE_H */

@@ -61,7 +61,7 @@ typedef struct {
     u16 rotation;         /* 0x00C */
     u16 anim_state;       /* 0x00E */
     u8  pad2[0x2];        /* 0x010..0x011 */
-    u8  memberSlot[3];    /* 0x012..0x014: BattleFieldEntity index per active party slot */
+    u8  memberSlot[3];    /* 0x012..0x014: Eline index per active party slot */
     u8  pad3[0x10B];      /* 0x015..0x11F */
     u16 field_120;        /* 0x120 */
 } FieldEntity;

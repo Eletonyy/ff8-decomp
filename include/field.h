@@ -3,8 +3,23 @@
 
 #include "common.h"
 
+/*
+ * ============================================================================
+ * Field entity overlay (FieldEntity / Eline)
+ * ============================================================================
+ *
+ * One field entity slot is 612 bytes (0x264). Both @ref FieldEntity and
+ * @ref Eline below describe the SAME memory — they are two struct typedefs
+ * over identical addresses, used by different parts of the engine to express
+ * different valid type-interpretations of the bytes.
+ *
+ * TODO: Unify the structs
+ */
+
 /**
- * @brief Field script entity / VM execution context.
+ * @brief Field script entity / VM execution context — movement/animation view.
+ *
+ * See the overlay comment block above for the relationship to @ref Eline.
  *
  * Used by the field engine's stack-based virtual machine. Each entity
  * has a stack of s32 values (slots 0-95), a stack pointer, result
@@ -24,14 +39,34 @@ typedef struct {
     u8 pad185[0x03];        /**< 0x185 */
     u8 unk188;              /**< 0x188: Script parameter byte. */
     u8 unk189;              /**< 0x189: Script parameter byte. */
-    u8 pad18A[0x06];        /**< 0x18A */
+    u16 unk18A;             /**< 0x18A: Step delta added to unk188 each movement tick. */
+    u16 unk18C;             /**< 0x18C */
+    u16 unk18E;             /**< 0x18E */
     u16 walkSpeed;          /**< 0x190: Walk speed (primary). */
     u16 walkSpeed2;         /**< 0x192: Walk speed (copy). */
     u16 runSpeed;           /**< 0x194: Run speed. */
     u8 pad196[0x06];        /**< 0x196 */
-    u8 unk19C;              /**< 0x19C */
-    u8 unk19D;              /**< 0x19D */
-    u8 pad19E[0x58];        /**< 0x19E */
+    u16 unk19C;             /**< 0x19C */
+    u16 unk19E;             /**< 0x19E */
+    u16 unk1A0;             /**< 0x1A0 */
+    u16 unk1A2;             /**< 0x1A2 */
+    u8 unk1A4;              /**< 0x1A4 */
+    u8 unk1A5;              /**< 0x1A5 */
+    u8 unk1A6;              /**< 0x1A6 */
+    u8 unk1A7;              /**< 0x1A7 */
+    u8 unk1A8;              /**< 0x1A8 */
+    u8 unk1A9;              /**< 0x1A9 */
+    u8 unk1AA;              /**< 0x1AA */
+    u8 unk1AB;              /**< 0x1AB */
+    u8 unk1AC;              /**< 0x1AC */
+    u8 unk1AD;              /**< 0x1AD */
+    u8 unk1AE;              /**< 0x1AE */
+    u8 unk1AF;              /**< 0x1AF */
+    u8 unk1B0;              /**< 0x1B0 */
+    u8 unk1B1;              /**< 0x1B1 */
+    u8 unk1B2;              /**< 0x1B2 */
+    u8 unk1B3;              /**< 0x1B3 */
+    u8 pad1B4[0x42];        /**< 0x1B4 */
     u16 unk1F6;             /**< 0x1F6 */
     u16 unk1F8;             /**< 0x1F8 */
     u8 pad1FA[0x1E];        /**< 0x1FA */
@@ -48,24 +83,100 @@ typedef struct {
     u8 unk24C;              /**< 0x24C */
 } FieldEntity;              /* size >= 0x24D */
 
+/**
+ * @brief One slot of the @c SystemState mode-slot table at
+ *        @c D_800704A8.slots, stride 28 bytes.
+ *
+ * Each slot encodes a mode-dispatched operation: @c mode selects which
+ * code path runs in the field engine's per-frame poller, @c param
+ * carries a target-entity byte (e.g. partyId), @c submode is a
+ * sub-state byte cleared on init, @c timer is a halfword countdown,
+ * and @c p1 / @c p2 are two halfword parameters consumed by the mode
+ * body.
+ */
+typedef struct {
+    /* 0x00 */ u8 mode;
+    /* 0x01 */ u8 param;
+    /* 0x02 */ u8 submode;
+    /* 0x03 */ u8 pad03;
+    /* 0x04 */ u16 timer;
+    /* 0x06 */ u8 pad06[0x02];
+    /* 0x08 */ u16 q1;
+    /* 0x0A */ u16 q2;
+    /* 0x0C */ u8 pad0C[0x04];
+    /* 0x10 */ u16 p1;
+    /* 0x12 */ u16 p2;
+    /* 0x14 */ u16 p3;
+    /* 0x16 */ u16 p4;
+    /* 0x18 */ u16 p5;
+    /* 0x1A */ u16 p6;
+} SystemSubMode; /* 0x1C = 28 bytes */
+
+/**
+ * @brief One slot of the field-engine's event-queue array at
+ *        @c D_8005F0F8->entries, stride 32 bytes.
+ *
+ * The array is scanned linearly for the entry whose @c field16 equals
+ * the sentinel @c 0x7FFF; that entry is then populated with the
+ * pushed event parameters and the next entry is re-armed as the new
+ * sentinel.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x04];
+    /* 0x04 */ u16 field04;
+    /* 0x06 */ u16 field06;
+    /* 0x08 */ u16 field08;
+    /* 0x0A */ u8 pad0A[0x0A];
+    /* 0x14 */ u16 field14;     /**< Set to @c 0xFFFF when the slot is armed. */
+    /* 0x16 */ u16 field16;     /**< Slot key / sentinel marker (@c 0x7FFF == free). */
+    /* 0x18 */ u8 pad18[0x08];
+} EventEntry; /* 0x20 = 32 bytes */
+
+/** @brief Container struct at @c D_8005F0F8; first 0x60 bytes are header data, then 16 event entries. */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x60];
+    /* 0x60 */ EventEntry entries[16];
+} EventQueue;
+
+extern EventQueue *D_8005F0F8;
+
 /** @brief System state block (at @c D_800704A8). */
 typedef struct {
     /* 0x000 */ u8 mode;
     /* 0x001 */ u8 pad001;
     /* 0x002 */ s16 counter;
-    /* 0x004 */ u8 pad004[0x0E];
+    /* 0x004 */ u16 unk004;
+    /* 0x006 */ u16 unk006;
+    /* 0x008 */ u16 unk008;
+    /* 0x00A */ u8 pad00A[0x02];
+    /* 0x00C */ u16 unk00C;
+    /* 0x00E */ u16 unk00E;
+    /* 0x010 */ u8 pad010[0x02];
     /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_seedState->memberSlot[]). */
-    /* 0x015 */ u8 pad015[0xED];
+    /* 0x015 */ u8 pad015[0x0B];
+    /* 0x020 */ SystemSubMode slots[8]; /**< 8 mode/param slots, stride 28; slot 0 corresponds to the legacy @c unk020..unk032 fields. */
+    /* 0x100 */ u8 pad100[0x02];
     /* 0x102 */ u16 unk102;
     /* 0x104 */ u16 unk104;
     /* 0x106 */ u16 unk106;
     /* 0x108 */ u8 pad108[0x1A];
     /* 0x122 */ u8 unk122;          /**< Cleared together with @c unk130 by an fe_object6 opcode. */
-    /* 0x123 */ u8 pad123[0x0D];
+    /* 0x123 */ u8 pad123[0x03];
+    /* 0x126 */ u16 unk126;
+    /* 0x128 */ u8 pad128[0x04];
+    /* 0x12C */ u16 unk12C;
+    /* 0x12E */ u8 pad12E[0x02];
     /* 0x130 */ u8 unk130;
-    /* 0x131 */ u8 pad131[0x5F];
+    /* 0x131 */ u8 pad131[0x03];
+    /* 0x134 */ u16 unk134;
+    /* 0x136 */ u8 pad136[0x04];
+    /* 0x13A */ u16 unk13A;
+    /* 0x13C */ u8 pad13C[0x54];
     /* 0x190 */ u8 slotActive[16];
-    /* 0x1A0 */ u8 pad1A0[0x0B];
+    /* 0x1A0 */ u8 unk1A0;          /**< Mode-6 active marker, set with mode = 6 by fe_object6 opcode. */
+    /* 0x1A1 */ u8 pad1A1;
+    /* 0x1A2 */ u8 unk1A2;          /**< Mode-7 reentry guard byte. */
+    /* 0x1A3 */ u8 pad1A3[0x08];
     /* 0x1AB */ u8 unk1AB;          /**< Sub-mode byte; written together with @c mode by fe_object6 opcodes. */
     /* 0x1AC */ u8 pad1AC[0x02];
     /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c func_800B85C8, read by @c func_8009FE18). */
@@ -90,7 +201,10 @@ typedef struct {
     /* 0x0C */ s32 hpRegenStepAcc;      /**< Step accumulator: fires HP regen ticks at @c 8. */
     /* 0x10 */ u16 seedExp;             /**< SeeD experience (clamped to [100, 3100]; level = exp/100). */
     /* 0x12 */ u16 prevKillSum;         /**< Last frame's total enemy-kill count across all 8 chars. */
-    /* 0x14 */ u8 pad14[0x44];
+    /* 0x14 */ u8 pad14[0x34];
+    /* 0x48 */ s32 gilMirror;           /**< Mirror of @c g_gameState.mainData.party.gil, kept in sync by fe_object6. */
+    /* 0x4C */ s32 dreamGilMirror;      /**< Mirror of @c g_gameState.mainData.party.dreamGil. */
+    /* 0x50 */ u8 pad50[0x08];
     /* 0x58 */ u8 field58;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0x59 */ u8 pad59[0x0F];
     /* 0x68 */ s32 stateFlags;          /**< Field state flags (bits 3-4 checked by getFieldStateFlags). */
@@ -103,7 +217,7 @@ typedef struct {
     /* 0xBA */ u16 prevSeedExp;         /**< Snapshot of @c seedExp from the previous tick (for rank-change detection). */
     /* 0xBC */ u8 partyOrderA[3];       /**< Bench list (members not in active party). */
     /* 0xBF */ u8 partyOrderB[3];       /**< Bench list duplicate (initialized identically). */
-    /* 0xC2 */ u8 memberSlot[3];        /**< For each active party slot, the BattleFieldEntity index (0xFF = none). */
+    /* 0xC2 */ u8 memberSlot[3];        /**< For each active party slot, the Eline index (0xFF = none). */
     /* 0xC5 */ u8 padC5[0x02];
     /* 0xC7 */ s8 audioChannel0State;   /**< Audio channel 0 state byte; -1 = reset/inactive. */
     /* 0xC8 */ s8 audioChannel1State;   /**< Audio channel 1 state byte; -1 = reset/inactive. */
@@ -111,7 +225,8 @@ typedef struct {
     /* 0xCA */ s8 audioChannel2State;   /**< Audio channel 2 state byte; -1 = reset/inactive. */
     /* 0xCB */ u8 padCB;
     /* 0xCC */ u8 expectedDiscId;       /**< Currently inserted disc (1..4). The intro/disc-swap screen waits for @c getDiscId() to match. */
-    /* 0xCD */ u8 padCD[0x02];
+    /* 0xCD */ u8 cameraShakeX;         /**< Camera shake X intensity, popped from stack. */
+    /* 0xCE */ u8 cameraShakeY;         /**< Camera shake Y intensity, popped from stack. */
     /* 0xCF */ u8 fieldCF;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0xD0 */ u8 padD0;
     /* 0xD1 */ u8 fieldD1;              /**< Bit 0 toggled by fe_object6 helper. */
@@ -131,10 +246,14 @@ typedef struct {
 } SeedState; /* 0x100 = 256 bytes */
 
 /**
- * @brief Eline (event line) — opcode handler view of the script context.
+ * @brief Eline (event line) — opcode handler / script-VM view.
  *
- * Same memory as FieldEntity, but with fields named for opcode handler usage.
- * Total size: 416 bytes (0x1A0), confirmed by sizeof(eline) debug print.
+ * See the overlay comment block before @ref FieldEntity for the relationship
+ * between the two typedefs. Both describe the same 612-byte field entity
+ * slot, with this view named for opcode handler usage. The size discrepancy
+ * (FieldEntity ≥ 0x24D, Eline ~0x264) is because each typedef only declares
+ * up through the highest offset its callers reference; both bound the same
+ * 612-byte allocation.
  */
 typedef struct {
     /* 0x000 */ u8 pad000[0x140];
@@ -145,7 +264,12 @@ typedef struct {
     /* 0x175 */ u8 activeMask;      /**< Entity active bitmask. */
     /* 0x176 */ u8 pad176[0x0E];
     /* 0x184 */ s8 stackPtr;        /**< Bytecode stack pointer (signed, grows down). */
-    /* 0x185 */ u8 pad185[0x0B];
+    /* 0x185 */ u8 pad185[0x03];
+    /* 0x188 */ u8 unk188;          /**< Script parameter byte. */
+    /* 0x189 */ u8 unk189;          /**< Script parameter byte. */
+    /* 0x18A */ u16 unk18A;         /**< Step delta added to unk188 each movement tick. */
+    /* 0x18C */ u16 unk18C;         /**< Halfword saved during async msg state. */
+    /* 0x18E */ u16 unk18E;         /**< Halfword saved during async msg state. */
     /* 0x190 */ s32 posX;           /**< Entity X position (fixed-point). */
     /* 0x194 */ s32 posY;           /**< Entity Y position (fixed-point). */
     /* 0x198 */ s32 posZ;           /**< Entity Z position (fixed-point). */
@@ -201,6 +325,7 @@ typedef struct {
     /* 0x256 */ u8 field_0x256;
     /* 0x257 */ u8 pad257[0x0B];
     /* 0x262 */ u8 field_0x262;
+    /* 0x263 */ u8 field_0x263;
 } Eline;
 
 /** @brief Push one s32 onto the eline's bytecode stack. */

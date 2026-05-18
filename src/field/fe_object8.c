@@ -1,16 +1,50 @@
 #include "common.h"
+#include "field.h"
 
 extern u8 D_80085230[];
+extern void func_800A97E4(u8 spatialIdx, s32 a1, s32 a2, s32 a3);
+extern void func_800B912C(Eline *eline, s32 byte);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9078);
+/**
+ * Clear bits @c 0x180000 and set bit @c 0x200000 in @c flags, then call
+ * @c func_800A97E4(spatialIndex, 0x2F, 0, 0).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (advance PC).
+ */
+s32 func_800B9078(Eline *eline) {
+    eline->flags = (eline->flags & 0xFFE7FFFF) | 0x200000;
+    func_800A97E4(eline->field_0x256, 0x2F, 0, 0);
+    return 2;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B90C0);
+/**
+ * Update entity flags by clearing bits @c 0x300000 and setting bit
+ * @c 0x80000. Then pop one byte from the script stack and write it to
+ * the byte at offset @c 0x263 of the entity. Finally call
+ * @c func_800A97E4 with the entity's @c spatialIndex (offset 0x256),
+ * opcode @c 0x27, @c 0, and the popped byte.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (advance PC).
+ */
+s32 func_800B90C0(Eline *eline) {
+    s8 idx;
+    u8 byte;
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9108);
+    eline->flags = (eline->flags & 0xFFCFFFFF) | 0x80000;
+
+    idx = eline->stackPtr;
+    eline->stackPtr = idx - 1;
+    byte = *(u8 *)((u8 *)eline + idx * 4);
+
+    eline->field_0x263 = byte;
+    func_800A97E4(eline->field_0x256, 0x27, 0, eline->field_0x263);
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B912C);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B91B4);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B91D8);
 
@@ -62,18 +96,17 @@ s32 func_800B95A0(u8 *a0) {
 }
 
 /**
- * Call func_800B912C with entity byte 0x24F, set bit 0x2000 in flags. Returns 3.
+ * Call @c func_800B912C with the entity's byte at offset @c 0x24F as
+ * the second arg, then set bit @c 0x2000 in @c flags. Returns @c 3.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param eline Pointer to the Eline event-script context.
  * @return 3.
  */
-/**
- * Call func_800B912C with entity and byte 0x24F, set bit 0x2000 in flags. Returns 3.
- *
- * @param a0 Pointer to the script/object structure.
- * @return 3.
- */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B95C0);
+s32 func_800B95C0(Eline *eline) {
+    func_800B912C(eline, eline->field_0x24F);
+    eline->flags |= 0x2000;
+    return 3;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9604);
 
@@ -83,15 +116,39 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B96EC);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9798);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9844);
+/**
+ * Sign-extend @p a1 to @c s16 and call @c func_800B912C, then set bit
+ * @c 0x4000 in @c flags. Returns @c 3.
+ */
+s32 func_800B9844(Eline *eline, s32 a1) {
+    func_800B912C(eline, (s16)a1);
+    eline->flags |= 0x4000;
+    return 3;
+}
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9888);
+/**
+ * Sign-extend @p a1 to @c s16 and call @c func_800B912C, then set bit
+ * @c 0x8000 in @c flags. Returns @c 3.
+ */
+s32 func_800B9888(Eline *eline, s32 a1) {
+    func_800B912C(eline, (s16)a1);
+    eline->flags |= 0x8000;
+    return 3;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B98CC);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9944);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B99BC);
+/**
+ * Sign-extend @p a1 to @c s16 and call @c func_800B912C, then set bit
+ * @c 0x2000 in @c flags. Returns @c 3.
+ */
+s32 func_800B99BC(Eline *eline, s32 a1) {
+    func_800B912C(eline, (s16)a1);
+    eline->flags |= 0x2000;
+    return 3;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9A00);
 
