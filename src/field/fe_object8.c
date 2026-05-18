@@ -4,6 +4,7 @@
 extern u8 D_80085230[];
 extern void func_800A97E4(u8 spatialIdx, s32 a1, s32 a2, s32 a3);
 extern void func_800B912C(Eline *eline, s32 byte);
+extern void func_800B91D8(Eline *eline, s32 a1, s32 v2, s32 v1);
 
 /**
  * Clear bits @c 0x180000 and set bit @c 0x200000 in @c flags, then call
@@ -167,9 +168,42 @@ s32 func_800B9888(Eline *eline, s32 a1) {
     return 3;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B98CC);
+/**
+ * @brief RCANIME opcode 0x033 handler — fire curved animation, return 3.
+ *
+ * Non-blocking variant of CANIME: pops two signed halfwords from the
+ * bytecode stack (top → @c v2, next → @c v1), calls @c func_800B91D8
+ * with them and the bytecode arg, sets animation-active flag (0x4000),
+ * then returns 3 to advance the script PC immediately.
+ */
+s32 func_800B98CC(Eline *eline, s32 a1) {
+    s32 v2;
+    s32 v1;
+    s32 tmp;
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9944);
+    v2 = POP_HALF(eline);
+    v1 = POP_HALF(eline);
+    func_800B91D8(eline, a1, v2, v1);
+    tmp = eline->flags | 0x4000;
+    eline->flags = tmp;
+    return 3;
+}
+
+/**
+ * @brief RCANIMEKEEP opcode 0x034 handler — like RCANIME but sets flag 0x8000.
+ */
+s32 func_800B9944(Eline *eline, s32 a1) {
+    s32 v2;
+    s32 v1;
+    s32 tmp;
+
+    v2 = POP_HALF(eline);
+    v1 = POP_HALF(eline);
+    func_800B91D8(eline, a1, v2, v1);
+    tmp = eline->flags | 0x8000;
+    eline->flags = tmp;
+    return 3;
+}
 
 /**
  * Sign-extend @p a1 to @c s16 and call @c func_800B912C, then set bit
@@ -181,7 +215,21 @@ s32 func_800B99BC(Eline *eline, s32 a1) {
     return 3;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9A00);
+/**
+ * @brief RCANIMELOOP opcode 0x036 handler — like RCANIME but sets flag 0x2000.
+ */
+s32 func_800B9A00(Eline *eline, s32 a1) {
+    s32 v2;
+    s32 v1;
+    s32 tmp;
+
+    v2 = POP_HALF(eline);
+    v1 = POP_HALF(eline);
+    func_800B91D8(eline, a1, v2, v1);
+    tmp = eline->flags | 0x2000;
+    eline->flags = tmp;
+    return 3;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9A78);
 
