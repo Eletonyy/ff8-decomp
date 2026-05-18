@@ -1,12 +1,34 @@
 #include "common.h"
 
 extern u8 D_80085230[];
+extern void func_800A97E4(u8 spatialIdx, s32 a1, s32 a2, s32 a3);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9078);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B90C0);
+/**
+ * Update entity flags by clearing bits @c 0x300000 and setting bit
+ * @c 0x80000. Then pop one byte from the script stack and write it to
+ * the byte at offset @c 0x263 of the entity. Finally call
+ * @c func_800A97E4 with the entity's @c spatialIndex (offset 0x256),
+ * opcode @c 0x27, @c 0, and the popped byte.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (advance PC).
+ */
+s32 func_800B90C0(u8 *eline) {
+    s8 idx;
+    u8 byte;
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9108);
+    *(s32 *)(eline + 0x160) = (*(s32 *)(eline + 0x160) & 0xFFCFFFFF) | 0x80000;
+
+    idx = *(s8 *)(eline + 0x184);
+    *(s8 *)(eline + 0x184) = idx - 1;
+    byte = *(u8 *)(eline + idx * 4);
+
+    *(u8 *)(eline + 0x263) = byte;
+    func_800A97E4(*(u8 *)(eline + 0x256), 0x27, 0, *(u8 *)(eline + 0x263));
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B912C);
 
