@@ -13,44 +13,7 @@
  * over identical addresses, used by different parts of the engine to express
  * different valid type-interpretations of the bytes.
  *
- * The original 1998 source almost certainly used a single struct containing
- * an actual `union` at the variant regions (e.g. 0x190+). We can't write that
- * cleanly because gcc 2.7.2 does not support C11 anonymous union members, and
- * named-union access (`e->u.pos.x`) would churn every caller in fe_object1..11
- * for marginal benefit. So the layout is split into two parallel typedefs
- * and each function takes the view matching its dominant operation:
- *
- *   - @ref FieldEntity  — animation / movement view. Use when the function
- *                         decrements `walkSpeed`, walks the `unk1A7..unk1B3`
- *                         byte grid, accesses `unk160` as a movement-flag
- *                         word, or otherwise treats 0x190+ as u16 speeds.
- *
- *   - @ref Eline        — script-VM / opcode-handler view. Use when the
- *                         function reads from `resultSlots[]`, walks the
- *                         bytecode stack via `stackPtr`, manipulates
- *                         message-state fields (`msgActive`, `msgChannel`,
- *                         …), or treats 0x190+ as fixed-point `posX/Y/Z`.
- *
- * Where the views disagree on TYPE at the same offset, the function casts at
- * the access site (e.g. `*(s16 *)&eline->unk188` to read the 0x188 halfword
- * from the byte-pair view). Those casts are doing union-member access by
- * hand; they look ugly but they are semantically honest.
- *
- * Key overlapping offsets (incomplete list):
- *   0x160 : FieldEntity.unk160 (s32)        ≡ Eline.flags (s32)        same type
- *   0x184 : FieldEntity.stackIdx (u8)       ≡ Eline.stackPtr (s8)      sign diff
- *   0x188 : two u8 bytes (sfxIndex pair)    ≡ one s16/u16 (script param) UNION
- *   0x190 : u16 walkSpeed / walkSpeed2 /    ≡ s32 posX / posY / posZ   UNION
- *           runSpeed (movement mode)          (positioned/render mode)
- *   0x1A8 : u8 unk1A8 (byte grid)           ≡ s32 unk1A8 (slot)        UNION
- *   0x1AC : u8 unk1AC                       ≡ s32 unk1AC               UNION
- *   0x1B0 : u8 unk1B0                       ≡ s32 unk1B0               UNION
- *
- * When you touch one struct, mirror the offset/pad change in the other so
- * both views stay aligned to the same 612-byte layout. If you discover a
- * cast at a new offset that suggests a third valid interpretation, prefer
- * widening the cast at the call site over fragmenting either struct.
- * ============================================================================
+ * TODO: Unify the structs
  */
 
 /**
