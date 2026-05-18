@@ -69,4 +69,5 @@ segments:
       - [0x28098, c, fe_object12]
       - [0x286A0, data, fe_object12_data]
       - [0x2B898, bin]
+      - [0x2E760, data, opcode_table]
   - [0x2ED80]

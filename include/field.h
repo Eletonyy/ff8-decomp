@@ -343,6 +343,24 @@ typedef struct {
 /** @brief SeeD salary lookup table indexed by SeeD level (exp / 100). */
 extern u16 g_seedSalaryTable[];
 
+/**
+ * @brief Field script-VM opcode dispatch table.
+ *
+ * 392-entry function-pointer table at @c 0x800C6760. The script
+ * interpreter reads one byte from the bytecode stream and indexes into
+ * this table to call the corresponding opcode handler with the
+ * current @c Eline as the argument. Opcode @c 19 (@c func_800AE048)
+ * is the "extended opcode" entry — it re-dispatches through this same
+ * table using a second byte as the index.
+ *
+ * Indices 0-17 are the arithmetic/logic stack ops (ADD, SUB, MUL, DIV,
+ * MOD, NEG, EQ, GT, GE, LT, LE, NEQ, AND, OR, XOR, NOT, SHR, SHL).
+ * Higher indices cover script-VM ops (PUSH/POP, conditional branches,
+ * call helpers, message dispatch, etc.) defined across @c fe_object3
+ * through @c fe_object11.
+ */
+extern s32 (*D_800C6760[392])(Eline *eline);
+
 /** @brief Read the 2-bit packed flag at the given key (256-entry table). */
 extern s32 getPackedField2Bit(s32 key);
 

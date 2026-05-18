@@ -2,7 +2,6 @@
 #include "field.h"
 
 
-extern s32 (*D_800C6760[])(u8 *);
 extern SeedState *g_seedState;
 extern s32 D_800705E8;
 extern s32 D_800705F0;
@@ -249,7 +248,7 @@ void func_800AE014(u8 *a0) {
  * @return 2 (continue processing).
  */
 s32 func_800AE048(u8 *eline, s32 index) {
-    D_800C6760[index](eline);
+    D_800C6760[index]((Eline *)eline);
     return 2;
 }
 
