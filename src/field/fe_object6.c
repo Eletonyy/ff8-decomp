@@ -1148,7 +1148,31 @@ s32 func_800B448C(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B44BC);
+/**
+ * Find the first free slot in @c D_8005F0F8->entries (the entry whose
+ * @c field16 is the sentinel @c 0x7FFF), pop four halfwords into its
+ * @c field04 / @c field06 / @c field08 / @c field16, set @c field14 =
+ * @c 0xFFFF to mark the slot armed, and re-arm the next entry's
+ * @c field16 to @c 0x7FFF as the new sentinel.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (continue processing).
+ */
+s32 func_800B44BC(Eline *eline) {
+    s32 t = 0;
+    if (D_8005F0F8->entries[0].field16 != 0x7FFF) {
+        do {
+            t++;
+        } while (D_8005F0F8->entries[t].field16 != 0x7FFF);
+    }
+    D_8005F0F8->entries[t].field08 = (u16)POP(eline);
+    D_8005F0F8->entries[t].field06 = (u16)POP(eline);
+    D_8005F0F8->entries[t].field04 = (u16)POP(eline);
+    D_8005F0F8->entries[t].field16 = (u16)POP(eline);
+    D_8005F0F8->entries[t].field14 = 0xFFFF;
+    D_8005F0F8->entries[t + 1].field16 = 0x7FFF;
+    return 2;
+}
 
 /**
  * Pops a parameter and calls func_800A5A14, returns 2.

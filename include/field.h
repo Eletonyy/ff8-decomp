@@ -95,6 +95,34 @@ typedef struct {
     /* 0x1A */ u16 p6;
 } SystemSubMode; /* 0x1C = 28 bytes */
 
+/**
+ * @brief One slot of the field-engine's event-queue array at
+ *        @c D_8005F0F8->entries, stride 32 bytes.
+ *
+ * The array is scanned linearly for the entry whose @c field16 equals
+ * the sentinel @c 0x7FFF; that entry is then populated with the
+ * pushed event parameters and the next entry is re-armed as the new
+ * sentinel.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x04];
+    /* 0x04 */ u16 field04;
+    /* 0x06 */ u16 field06;
+    /* 0x08 */ u16 field08;
+    /* 0x0A */ u8 pad0A[0x0A];
+    /* 0x14 */ u16 field14;     /**< Set to @c 0xFFFF when the slot is armed. */
+    /* 0x16 */ u16 field16;     /**< Slot key / sentinel marker (@c 0x7FFF == free). */
+    /* 0x18 */ u8 pad18[0x08];
+} EventEntry; /* 0x20 = 32 bytes */
+
+/** @brief Container struct at @c D_8005F0F8; first 0x60 bytes are header data, then 16 event entries. */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x60];
+    /* 0x60 */ EventEntry entries[16];
+} EventQueue;
+
+extern EventQueue *D_8005F0F8;
+
 /** @brief System state block (at @c D_800704A8). */
 typedef struct {
     /* 0x000 */ u8 mode;
