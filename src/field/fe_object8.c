@@ -4,7 +4,18 @@ extern u8 D_80085230[];
 extern void func_800A97E4(u8 spatialIdx, s32 a1, s32 a2, s32 a3);
 extern void func_800B912C(u8 *eline, s32 byte);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9078);
+/**
+ * Clear bits @c 0x180000 and set bit @c 0x200000 in @c flags, then call
+ * @c func_800A97E4(spatialIndex, 0x2F, 0, 0).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 2 (advance PC).
+ */
+s32 func_800B9078(u8 *eline) {
+    *(s32 *)(eline + 0x160) = (*(s32 *)(eline + 0x160) & 0xFFE7FFFF) | 0x200000;
+    func_800A97E4(*(u8 *)(eline + 0x256), 0x2F, 0, 0);
+    return 2;
+}
 
 /**
  * Update entity flags by clearing bits @c 0x300000 and setting bit
