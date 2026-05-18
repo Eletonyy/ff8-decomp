@@ -445,7 +445,32 @@ void func_800B2D40(Eline *eline, s32 a1, s32 a2) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B2DC0);
+/**
+ * Per-frame movement-sweep arm helper. When the entity's @c activeMask
+ * bit for the current @c scriptGroup is set, pop two parameters from
+ * the script stack, forward them to @c func_800B2D40 (which sets up
+ * the sweep state), and set the @c 0x8000 marker flag. When the bit
+ * is clear, return @c 2 once the @c 0x800 done flag is set (otherwise
+ * @c 1 to keep waiting for the bit to flip).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 1 to keep the opcode active, 2 when @c 0x800 is set on the
+ *         else-branch path.
+ */
+s32 func_800B2DC0(Eline *eline) {
+    Eline *self = eline;
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        s8 idx = self->stackPtr;
+        s8 idx2 = idx - 1;
+        self->stackPtr = idx - 2;
+        func_800B2D40(self, ((s32 *)self)[(s8)idx],
+                            ((s32 *)self)[(s8)idx2]);
+        self->flags |= 0x8000;
+    } else if (self->flags & 0x800) {
+        return 2;
+    }
+    return 1;
+}
 
 /**
  * Pops two parameters from the stack, calls func_800B2D40, then sets
