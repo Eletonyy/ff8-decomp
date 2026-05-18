@@ -337,6 +337,9 @@ typedef struct {
 /** @brief Pop one s32 then read low byte only. */
 #define POP_BYTE(eline) (*(u8 *)&POP(eline))
 
+/** @brief Pop one s32 then read low signed halfword (sign-extended to s32). */
+#define POP_HALF(eline) (*(s16 *)&POP(eline))
+
 /** @brief Read the top s32 from the eline's bytecode stack without popping. */
 #define PEEK(eline) (((s32 *)(eline))[(eline)->stackPtr])
 
