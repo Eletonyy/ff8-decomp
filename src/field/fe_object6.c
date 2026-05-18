@@ -887,7 +887,24 @@ s32 func_800B3BC0(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3C60);
+/**
+ * Pop a party-slot index and a slot index; read the active battle-entity
+ * index from @c g_seedState->memberSlot and stage it into
+ * @c slots[slotIdx].param with @c mode = 0.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @return 3 (yield to dispatcher with state change).
+ */
+s32 func_800B3C60(Eline *eline) {
+    SeedState *ss = g_seedState;
+    s32 partySlot = POP(eline);
+    u8 byte = ss->memberSlot[partySlot];
+    s32 slotIdx = POP(eline);
+    D_800704A8.slots[slotIdx].param = byte;
+    D_800704A8.slots[slotIdx].mode = 0;
+    D_800704A8.slots[slotIdx].submode = 0;
+    return 3;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object6", func_800B3CD0);
 
