@@ -3,11 +3,13 @@
 #include "gamestate.h"
 
 /*
- * @c func_800A97E4, @c func_800A8DAC, @c func_800B2864, and
- * @c func_8009E604 have polymorphic call sites across the field
- * overlay — different TUs use different argument signatures and
- * return types. Declare the TU-specific signatures locally so each
- * call site matches.
+ * Per-TU prototype overrides. Each of these is a single defined
+ * function (mostly in fe_object1.c / fe_object6.c), but the declared
+ * signature affects caller codegen — different TUs need different
+ * prototypes for byte-matching output. @c func_800B2864 is actually
+ * defined with 2 args in fe_object6.c yet this TU's target asm shows
+ * 4 register args passed at the @c jal, so the prototype here lies
+ * about the arity to make gcc emit those arg-register loads.
  */
 extern void func_800A97E4(s32 spatialIdx, s32 a1, s32 a2, s32 a3);
 extern void func_800A8DAC(u8 spatialIdx, s32 cmd, u32 arg, void *out);

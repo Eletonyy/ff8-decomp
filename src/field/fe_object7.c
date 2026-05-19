@@ -2133,9 +2133,12 @@ s32 func_800B9000(Eline *eline) {
 }
 
 /*
- * @c func_800A97E4 is polymorphic across the field overlay — this TU
- * uses the @c (u8, s32, s32, s32) signature; fe_object6 and fe_object8
- * use @c (s32, s32, s32, s32). Keep the local prototype.
+ * @c func_800A97E4 is a single INCLUDE_ASM function in fe_object1.c,
+ * but the declared first-arg type affects caller codegen for the
+ * byte-extension instructions emitted before @c jal. This TU compiles
+ * to matching bytes only with @c (u8, s32, s32, s32); fe_object6 and
+ * fe_object8 need @c (s32, s32, s32, s32) for the same reason. Keep
+ * each prototype TU-local.
  */
 extern void func_800A97E4(u8, s32, s32, s32);
 

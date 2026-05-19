@@ -698,12 +698,15 @@ extern u8 D_800DE8D2;
 /* ======================================================================== */
 
 /*
- * @c func_800A8DAC is polymorphic on its second arg (the @c cmd):
+ * @c func_800A8DAC is dispatched on its second arg (the @c cmd) and
+ * different TUs use it with different fixed cmd values:
  *   cmd 0x1E writes 4 halfwords (grid-cell snapshot)
  *   cmd 0x20 writes 3 halfwords (relative offsets)
- *   cmd 0x2F sets per-entity flags (returns u8 *)
- * Declare locally in each TU with the per-use signature; do not put a
- * canonical prototype here, since the prototype affects caller codegen.
+ *   cmd 0x2F sets per-entity flags
+ * Because the declared signature affects caller codegen (first-arg
+ * type and return type both alter the bytes emitted at the @c jal
+ * site), each TU keeps its own per-use prototype rather than sharing
+ * one here.
  */
 
 /** @brief Index into a null-terminated entry table by skipping strings. */
