@@ -13,6 +13,7 @@ extern Eline *D_80085230[];
 extern void func_800A97E4(u8 spatialIdx, s32 a1, s32 a2, s32 a3);
 extern void func_800B912C(Eline *eline, s16 a1);
 extern void func_800B91D8(Eline *eline, s32 a1, s32 v2, s32 v1);
+extern u8 D_800DE4FC;
 extern s32 func_8009E604();
 
 /**
@@ -69,7 +70,29 @@ void func_800B912C(Eline *eline, s16 a1) {
     eline->flags &= ~0xF800;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B91D8);
+/**
+ * @brief CANIME-family helper — queue curved animation + dispatch cmd 0xD.
+ *
+ * Asserts the active entity in @c D_800DE4FC matches @c eline->field_0x256
+ * (infinite-loops on mismatch). Encodes the popped halfwords @p a2 and
+ * @p a3 as @c (n-1)<<4 into @c field_0x20A and @c field_0x20C, mirrors
+ * the byte arg into @c field_0x24E, copies @c field_0x20A into the live
+ * motion halfword @c field_0x206 and into the render slot's @c unk52,
+ * then dispatches motion command @c 0xD with byte arg @p a1 via
+ * @c func_800AA46C and clears flag band @c 0xF800.
+ */
+void func_800B91D8(Eline *eline, s32 a1, s32 a2, s32 a3) {
+    if (D_800DE4FC != eline->field_0x256) {
+        while (1) {}
+    }
+    eline->field_0x20A = (a2 - 1) << 4;
+    eline->field_0x20C = (a3 - 1) << 4;
+    eline->field_0x24E = a1;
+    eline->field_0x206 = eline->field_0x20A;
+    D_800D9630[eline->field_0x256]->unk52 = eline->field_0x20A;
+    func_800AA46C(eline->field_0x256, 0xD, a1, 0);
+    eline->flags &= ~0xF800;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9288);
 
