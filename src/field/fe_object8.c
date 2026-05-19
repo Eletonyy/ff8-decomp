@@ -10,7 +10,7 @@ typedef struct {
 
 extern EntityRenderSlot *D_800D9630[];
 extern Eline *D_80085230[];
-extern void func_800A97E4(u8 spatialIdx, s32 a1, s32 a2, s32 a3);
+extern void func_800A97E4(s32 spatialIdx, s32 a1, s32 a2, s32 a3);
 extern void func_800B912C(Eline *eline, s16 a1);
 extern void func_800B91D8(Eline *eline, s32 a1, s32 v2, s32 v1);
 extern void func_800AA46C(u8 spatialIdx, s32 cmd, s32 arg, s32 arg4);
@@ -405,7 +405,7 @@ s32 func_800B9A00(Eline *eline, s32 a1) {
     return 3;
 }
 
-extern s32 D_800DE8CC;
+extern s32 D_800DE8C8[];
 
 /**
  * @brief Pop 3 bytes into the 0x18A vector slot and dispatch cmd 0x10.
@@ -419,13 +419,45 @@ s32 func_800B9A78(Eline *eline) {
     ((u8 *)&eline->unk18A)[2] = POP_BYTE(eline);
     ((u8 *)&eline->unk18A)[1] = POP_BYTE(eline);
     ((u8 *)&eline->unk18A)[0] = POP_BYTE(eline);
-    if (!(D_800DE8CC & 0x2)) {
+    if (!(D_800DE8C8[1] & 0x2)) {
         func_800A97E4(eline->field_0x256, 0x10, (s32)&eline->unk18A, 0);
     }
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9B24);
+extern u8 D_80085388;
+extern Eline *D_80085224;
+
+/**
+ * @brief Broadcast 3 popped bytes into the unk18A vector of every active entity.
+ *
+ * Pops three bytes from the script stack into a local buffer, then
+ * walks @c D_80085224[0..D_80085388-1] writing the same triple into
+ * each entry's @c unk18A/18B/18C slot. Each iteration where
+ * @c D_800DE8C8[1] & 0x2 is clear also dispatches command @c 0x10 to
+ * the entity (with the local buffer as the arg).
+ */
+s32 func_800B9B24(Eline *eline) {
+    u8 bytes[3];
+    s32 i;
+    Eline *p;
+
+    bytes[2] = POP_BYTE(eline);
+    bytes[1] = POP_BYTE(eline);
+    bytes[0] = POP_BYTE(eline);
+
+    p = D_80085224;
+    for (i = 0; i < D_80085388; i++) {
+        if (!(D_800DE8C8[1] & 0x2)) {
+            func_800A97E4(i, 0x10, (s32)bytes, 0);
+        }
+        ((u8 *)&p->unk18A)[0] = bytes[0];
+        ((u8 *)&p->unk18A)[1] = bytes[1];
+        ((u8 *)&p->unk18A)[2] = bytes[2];
+        p++;
+    }
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9C58);
 
