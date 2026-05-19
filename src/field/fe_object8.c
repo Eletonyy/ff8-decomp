@@ -937,7 +937,39 @@ s32 func_800BA7DC(Eline *eline) {
     return 1;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800BA8D4);
+/**
+ * @brief Variant of @c func_800BA6E4 that looks up the target via the
+ *        SeeD party-member slot table.
+ *
+ * Same control flow as @c func_800BA6E4, but the index popped after
+ * the bearing byte is treated as a SeeD-party slot. The target Eline
+ * is obtained via @c &D_80085224[g_seedState->memberSlot[slot]].
+ *
+ * @param eline Pointer to the Eline event-script context.
+ */
+s32 func_800BA8D4(Eline *eline) {
+    s32 first;
+    s32 slot;
+
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        first = POP(eline);
+        slot = POP(eline);
+        eline->field_0x243 = 0;
+        eline->field_0x1DC = eline->field_0x241;
+        eline->field_0x1DE = func_8009E604(eline, &D_80085224[g_seedState->memberSlot[slot]]) & 0xFF;
+        eline->field_0x242 = first;
+        if (eline->field_0x1DC == eline->field_0x1DE) {
+            return 2;
+        }
+        eline->field_0x244 = 1;
+        func_800BA3E0(eline);
+        return 1;
+    }
+    if (eline->field_0x244 == 3) {
+        return 2;
+    }
+    return 1;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800BA9E8);
 
