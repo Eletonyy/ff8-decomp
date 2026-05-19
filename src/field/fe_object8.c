@@ -1160,7 +1160,36 @@ s32 func_800BAF14(Eline *eline, s32 arg1) {
     return ((s32 (*)(Eline *, s32))func_800BAC18)(eline, arg1);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800BB05C);
+/**
+ * @brief Queue a relative offset turn target.
+ *
+ * If the entity's group bit is set, pops one halfword as the target
+ * bearing (saved to @c field_0x234), then queries
+ * @c func_800A8DAC(field_0x256, @c 0x20, @c buf, @c 0) to fill three
+ * halfwords describing the relative offset. Each entry is divided by
+ * @c 16 (signed, round toward zero) and stored to @c field_0x22A /
+ * @c field_0x22E / @c field_0x232. Clears @c field_0x236 and
+ * @c field_0x23B to keep this as a step-relative (not snapshot) turn.
+ *
+ * Always dispatches @c func_800BAC18 at the end.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @param arg1  Forwarded as the second argument to @c func_800BAC18.
+ */
+s32 func_800BB05C(Eline *eline, s32 arg1) {
+    s16 buf[4];
+
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        eline->field_0x234 = POP(eline);
+        ((void (*)(u8, s32, void *, void *))func_800A8DAC)(eline->field_0x256, 0x20, buf, 0);
+        eline->field_0x22A = buf[0] / 16;
+        eline->field_0x22E = buf[1] / 16;
+        eline->field_0x232 = buf[2] / 16;
+        eline->field_0x236 = 0;
+        eline->field_0x23B = 0;
+    }
+    return ((s32 (*)(Eline *, s32))func_800BAC18)(eline, arg1);
+}
 
 /**
  * @brief Helper that pops 4 halfwords and stores them as a facing-state block.
