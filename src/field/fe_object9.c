@@ -47,46 +47,49 @@ s32 func_800BB650(Eline *eline) {
 }
 
 /**
- * @brief Copy 12 animation halfwords from D_800704A8 table to entity.
+ * @brief Snapshot the 12-halfword dialog-state block from @c D_800704A8
+ *        into @c g_seedState.
  *
- * Copies halfwords at D_800704A8 offsets 0x108-0x11E to the entity
- * at offsets 0xD8-0xEE (matching pairs: src+0x108->dst+0xD8, etc).
+ * Copies @c D_800704A8.dialogState..field_0x11E (12 halfwords) into
+ * @c g_seedState->dialogStateMirror..fieldEE. The first four writes
+ * are emitted out of source order (dst@D8, DC, DA, DE) for codegen
+ * matching; the remaining eight are sequential.
  */
 void func_800BB6C8(void) {
-    u8 *dst = (u8 *)g_seedState;
-    u8 *src = (u8 *)&D_800704A8;
+    SeedState   *dst = g_seedState;
+    SystemState *src = &D_800704A8;
 
-    *(u16 *)(dst + 0xD8) = *(u16 *)(src + 0x108);
-    *(u16 *)(dst + 0xDC) = *(u16 *)(src + 0x10C);
-    *(u16 *)(dst + 0xDA) = *(u16 *)(src + 0x10A);
-    *(u16 *)(dst + 0xDE) = *(u16 *)(src + 0x10E);
-    *(u16 *)(dst + 0xE0) = *(u16 *)(src + 0x110);
-    *(u16 *)(dst + 0xE2) = *(u16 *)(src + 0x112);
-    *(u16 *)(dst + 0xE4) = *(u16 *)(src + 0x114);
-    *(u16 *)(dst + 0xE6) = *(u16 *)(src + 0x116);
-    *(u16 *)(dst + 0xE8) = *(u16 *)(src + 0x118);
-    *(u16 *)(dst + 0xEA) = *(u16 *)(src + 0x11A);
-    *(u16 *)(dst + 0xEC) = *(u16 *)(src + 0x11C);
-    *(u16 *)(dst + 0xEE) = *(u16 *)(src + 0x11E);
+    dst->dialogStateMirror = src->dialogState;
+    dst->fieldDC           = src->dialogCount;
+    dst->fieldDA           = src->dialogTimer;
+    dst->fieldDE           = src->field_0x10E;
+    dst->fieldE0           = src->field_0x110;
+    dst->fieldE2           = src->field_0x112;
+    dst->fieldE4           = src->field_0x114;
+    dst->fieldE6           = src->field_0x116;
+    dst->fieldE8           = src->field_0x118;
+    dst->fieldEA           = src->field_0x11A;
+    dst->fieldEC           = src->field_0x11C;
+    dst->fieldEE           = src->field_0x11E;
 }
 
 /**
- * @brief Initialise the 6-halfword dialog-state block at @c D_800704A8+0x108
- *        and mirror it into @c g_seedState->fieldD8 via @ref func_800BB6C8.
+ * @brief Initialise the dialog-state block and mirror it to @c g_seedState.
  *
- * Sets @c D_800DE8D2 = 2 as the global mode marker and seeds:
- * @c +0x108=2, @c +0x10A=0xFF, @c +0x10C=0x10, @c +0x10E=0xFF,
- * @c +0x110=0xFF, @c +0x112=0xFF.
+ * Sets the global mode marker @c D_800DE8D2 to @c 2 and seeds the
+ * 6-halfword dialog state at @c D_800704A8.dialogState..field_0x112
+ * with the boot values (state=2, timer=0xFF, count=0x10, then 0xFF
+ * sentinels). @c func_800BB6C8 copies the whole 12-halfword block
+ * into @c g_seedState->dialogStateMirror..fieldEE.
  */
 s32 func_800BB768(void) {
-    u8 *src = (u8 *)&D_800704A8;
     D_800DE8D2 = 2;
-    *(u16 *)(src + 0x108) = 2;
-    *(u16 *)(src + 0x10A) = 0xFF;
-    *(u16 *)(src + 0x10C) = 0x10;
-    *(u16 *)(src + 0x10E) = 0xFF;
-    *(u16 *)(src + 0x110) = 0xFF;
-    *(u16 *)(src + 0x112) = 0xFF;
+    D_800704A8.dialogState  = 2;
+    D_800704A8.dialogTimer  = 0xFF;
+    D_800704A8.dialogCount  = 0x10;
+    D_800704A8.field_0x10E  = 0xFF;
+    D_800704A8.field_0x110  = 0xFF;
+    D_800704A8.field_0x112  = 0xFF;
     func_800BB6C8();
     return 2;
 }
@@ -121,14 +124,13 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BBC64);
  *
  * Returns @c 1 while @c D_800704A8+0x10C (countdown) and @c +0x10A
  * (target/timer) differ. Once they match, copy the current dialog
- * state word at @c +0x108 into @c g_seedState->fieldD8 and return @c 2.
+ * state word at @c +0x108 into @c g_seedState->dialogStateMirror and return @c 2.
  */
 s32 func_800BBDA8(void) {
-    u8 *src = (u8 *)&D_800704A8;
-    if (*(u16 *)(src + 0x10C) != *(u16 *)(src + 0x10A)) {
+    if (D_800704A8.dialogCount != D_800704A8.dialogTimer) {
         return 1;
     }
-    g_seedState->fieldD8 = *(u16 *)(src + 0x108);
+    g_seedState->dialogStateMirror = D_800704A8.dialogState;
     return 2;
 }
 
@@ -137,16 +139,16 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BBDE0);
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BBE50);
 
 /**
- * @brief Force the dialog state to @c 4 and mirror it into @c g_seedState->fieldD8.
+ * @brief Force the dialog state to @c 4 and mirror it into @c g_seedState->dialogStateMirror.
  *
  * The @c volatile cast is required for matching codegen: the asm reads
  * the just-written value back through memory rather than reusing the
  * literal @c 4.
  */
 s32 func_800BBE78(void) {
-    u8 *src = (u8 *)&D_800704A8;
-    *(volatile u16 *)(src + 0x108) = 4;
-    g_seedState->fieldD8 = *(volatile u16 *)(src + 0x108);
+    SystemState *src = &D_800704A8;
+    *(volatile u16 *)&src->dialogState = 4;
+    g_seedState->dialogStateMirror = *(volatile u16 *)&src->dialogState;
     return 2;
 }
 

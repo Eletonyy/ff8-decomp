@@ -175,7 +175,18 @@ typedef struct {
     /* 0x102 */ u16 unk102;
     /* 0x104 */ u16 unk104;
     /* 0x106 */ u16 unk106;
-    /* 0x108 */ u8 pad108[0x18];
+    /* 0x108 */ u16 dialogState;    /**< Dialog state word (0=init, 2=run, 4=force-complete). */
+    /* 0x10A */ u16 dialogTimer;    /**< Dialog timer target. */
+    /* 0x10C */ u16 dialogCount;    /**< Dialog countdown — compared against @c dialogTimer to advance state. */
+    /* 0x10E */ u16 field_0x10E;
+    /* 0x110 */ u16 field_0x110;
+    /* 0x112 */ u16 field_0x112;
+    /* 0x114 */ u16 field_0x114;
+    /* 0x116 */ u16 field_0x116;
+    /* 0x118 */ u16 field_0x118;
+    /* 0x11A */ u16 field_0x11A;
+    /* 0x11C */ u16 field_0x11C;
+    /* 0x11E */ u16 field_0x11E;
     /* 0x120 */ u16 field_0x120;    /**< Snapshotted misc halfword; preserved across SaveSnapshot/RestoreSnapshot. */
     /* 0x122 */ u8 unk122;          /**< Cleared together with @c unk130 by an fe_object6 opcode. */
     /* 0x123 */ u8 pad123[0x03];
@@ -252,8 +263,18 @@ typedef struct {
     /* 0xD4 */ u8 padD4[0x02];
     /* 0xD6 */ u8 soundLoadComplete;    /**< Set to 1 after sound bank loading finishes. */
     /* 0xD7 */ u8 padD7;
-    /* 0xD8 */ u16 fieldD8;             /**< Mirrored from D_800704A8+0x108 by fe_object9 dialog helpers. */
-    /* 0xDA */ u8 padDA[0x16];          /**< 0xDA..0xEF */
+    /* 0xD8 */ u16 dialogStateMirror;   /**< Mirror of @c D_800704A8.dialogState (kept in sync by fe_object9). */
+    /* 0xDA */ u16 fieldDA;
+    /* 0xDC */ u16 fieldDC;
+    /* 0xDE */ u16 fieldDE;
+    /* 0xE0 */ u16 fieldE0;
+    /* 0xE2 */ u16 fieldE2;
+    /* 0xE4 */ u16 fieldE4;
+    /* 0xE6 */ u16 fieldE6;
+    /* 0xE8 */ u16 fieldE8;
+    /* 0xEA */ u16 fieldEA;
+    /* 0xEC */ u16 fieldEC;
+    /* 0xEE */ u16 fieldEE;
     /* 0xF0 */ u8 fieldF0;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0xF1 */ u8 fieldF1;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0xF2 */ u8 fieldF2;              /**< Set to popped field index by fe_object7 dispatch handler. */
