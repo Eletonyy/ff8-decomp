@@ -932,7 +932,41 @@ s32 func_800BCECC(Eline *e) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BD024);
+extern u8 setupAnimEntryFull(s32 idx_bit, s32 v4, u16 *buf, s32 v3, s32 v2, s32 v1, s32 v0);
+
+/**
+ * @brief Set up an 8-arg animation entry in the @c D_80085398 table.
+ *
+ * Variant of @c func_800BCECC: pops 8 stack values (7 halfwords plus
+ * an entry index), passes them via @c setupAnimEntryFull (the 7th
+ * value lands as the 7th register/stack arg), and records all 8 plus
+ * a @c flag=2 marker into the per-slot entry at @c D_80085398[idx].
+ */
+s32 func_800BD024(Eline *e) {
+    u16 buf[2];
+    s32 v0 = POP(e);
+    s32 v1 = POP(e);
+    s32 v2 = POP(e);
+    s32 v3 = POP(e);
+    s32 v4 = POP(e);
+    s32 v5 = POP(e);
+    s32 v6 = POP(e);
+    s32 idx = POP(e);
+
+    buf[0] = v6;
+    buf[1] = v5;
+    setupAnimEntryFull(idx & 1, v4, buf, v3, v2, v1, v0);
+
+    D_80085398[idx].flag   = 2;
+    D_80085398[idx].fieldE = v6;
+    D_80085398[idx].fieldC = v5;
+    D_80085398[idx].fieldA = v4;
+    D_80085398[idx].field8 = v3;
+    D_80085398[idx].field6 = v2;
+    D_80085398[idx].field4 = v1;
+    D_80085398[idx].field2 = v0;
+    return 2;
+}
 
 /**
  * @brief Pop value, clear D_80085398 table entry, call sound handler.
