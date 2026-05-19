@@ -73,7 +73,29 @@ s32 func_800BB3D8(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BB510);
+/**
+ * @brief Queue a relative-offset turn target (standalone variant).
+ *
+ * Same body as @c func_800BB05C in fe_object8 but doesn't tail-call
+ * @c func_800BAC18 — always returns 2. Queries @c func_800A8DAC with
+ * kind @c 0x20 (relative offsets, written to @c buf), divides each
+ * entry by 16, and stores into @c field_0x22A / @c field_0x22E /
+ * @c field_0x232. Clears @c field_0x236 and @c field_0x23B.
+ */
+s32 func_800BB510(Eline *eline) {
+    s16 buf[4];
+
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        eline->field_0x234 = POP(eline);
+        ((void (*)(u8, s32, void *, void *))func_800A8DAC)(eline->field_0x256, 0x20, buf, 0);
+        eline->field_0x22A = buf[0] / 16;
+        eline->field_0x22E = buf[1] / 16;
+        eline->field_0x232 = buf[2] / 16;
+        eline->field_0x236 = 0;
+        eline->field_0x23B = 0;
+    }
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BB5E0);
 
