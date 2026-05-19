@@ -6,7 +6,14 @@ extern u8 *D_800704C0;
 extern u32 D_800C71F8;
 extern s32 D_800DE4DC;
 extern u8 D_800DE8D2;
-extern u8 D_80085300[];
+typedef struct {
+    /* 0x0 */ u16 rect[4];
+    /* 0x8 */ s32 payload;
+    /* 0xC */ u16 volume;
+    /* 0xE */ u16 type;
+} SfxEntry;
+
+extern SfxEntry D_80085300[];
 
 typedef struct {
     /* 0x0 */ u16 flag;
@@ -21,6 +28,8 @@ typedef struct {
 
 extern AnimEntry D_80085398[];
 extern u8 setupAnimEntry(s32 idx_bit, s32 v4, u16 *buf, s32 v3, s32 v2, s32 v1);
+extern u8 setSfxEntryVolume(s32 idx, s32 vol);
+extern u8 setSfxEntityType(s32 idx, s32 type);
 
 extern void func_800A8DAC(u8 spatialIdx, s32 a1, u32 a2, void *a3);
 
@@ -394,7 +403,33 @@ s32 func_800BBEA4(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BBEFC);
+/**
+ * @brief Register an SFX entry's volume and type via VM stack args.
+ *
+ * Pops three values from the Eline stack: @c vol (top), @c kind, then
+ * @c idx. Forwards @c vol to @c setSfxEntryVolume and remaps the
+ * caller-supplied @c kind through a 3-way switch (0→2, 1→3, 2→0) before
+ * calling @c setSfxEntityType. Mirrors both into the per-slot SFX entry
+ * at @c D_80085300[idx]. Returns 2 (VM continue).
+ */
+s32 func_800BBEFC(Eline *eline) {
+    s32 vol  = POP(eline);
+    s32 kind = POP(eline);
+    s32 idx  = POP(eline);
+
+    setSfxEntryVolume(idx, vol);
+
+    switch (kind) {
+    case 0: kind = 2; break;
+    case 1: kind = 3; break;
+    case 2: kind = 0; break;
+    }
+
+    setSfxEntityType(idx, kind);
+    D_80085300[idx].volume = vol;
+    D_80085300[idx].type   = kind;
+    return 2;
+}
 
 /**
  * @brief Peek top two stack slots and pass them to @c setSfxPitch.
@@ -422,7 +457,7 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BC034);
  * @param src  4-halfword source block, copied to @c entry+0x0..+0x7.
  */
 void func_800BC12C(s32 idx, s32 val, u8 *src) {
-    u8 *base = D_80085300;
+    u8 *base = (u8 *)D_80085300;
     u8 *entry;
     idx <<= 4;
     entry = base + idx;
