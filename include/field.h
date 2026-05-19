@@ -370,7 +370,9 @@ typedef struct {
     /* 0x232 */ u16 field_0x232;
     /* 0x234 */ u16 field_0x234;
     /* 0x236 */ u16 field_0x236;
-    /* 0x238 */ u8 pad238[0x03];
+    /* 0x238 */ u8 field_0x238;
+    /* 0x239 */ u8 field_0x239;
+    /* 0x23A */ u8 field_0x23A;
     /* 0x23B */ u8 field_0x23B;
     /* 0x23C */ u8 msgActive;       /**< Message active flag. */
     /* 0x23D */ u8 pad23D[0x03];

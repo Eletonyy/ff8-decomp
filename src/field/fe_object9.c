@@ -97,7 +97,16 @@ s32 func_800BB510(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BB5E0);
+/**
+ * @brief Pop three bytes into @c field_0x238 / @c field_0x239 /
+ *        @c field_0x23A (top-of-stack first).
+ */
+s32 func_800BB5E0(Eline *eline) {
+    eline->field_0x23A = POP_BYTE(eline);
+    eline->field_0x239 = POP_BYTE(eline);
+    eline->field_0x238 = POP_BYTE(eline);
+    return 2;
+}
 
 /**
  * @brief Query relative offset (kind 0x20) and split into entity halfwords.
