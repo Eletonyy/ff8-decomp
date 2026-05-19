@@ -15,7 +15,9 @@ typedef struct {
 
 extern EntityRenderSlot *D_800D9630[];
 extern Eline *D_80085230[];
+extern u32 D_800C71F8;
 extern void func_800A97E4(s32 spatialIdx, s32 a1, s32 a2, s32 a3);
+extern void func_800A8DAC(u8 spatialIdx, s32 a1, u32 a2, void *a3);
 extern void func_800B912C(Eline *eline, s16 a1);
 extern void func_800B91D8(Eline *eline, s32 a1, s32 v2, s32 v1);
 extern void func_800AA46C(u8 spatialIdx, s32 cmd, s32 arg, s32 arg4);
@@ -1094,7 +1096,40 @@ s32 func_800BAD00(Eline *eline) {
     return func_800BAC18(eline);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800BADCC);
+/**
+ * @brief Snapshot the target entity's grid-cell position into the
+ *        queued turn-state fields, then dispatch @c func_800BAC18.
+ *
+ * If the entity's group bit is set, pops a bearing halfword (saved to
+ * @c field_0x234) and a field-entity index, queries the navigation
+ * helper @c func_800A8DAC at the target's spatial index, divides the
+ * target's @c posX / @c posY / @c posZ by 4096 (signed, round toward
+ * zero) into @c field_0x222 / @c field_0x224, and combines posZ with
+ * the queried halfword (@c buf[2]) into @c field_0x226. Clears
+ * @c field_0x236 and sets @c field_0x23B to @c 1 to mark the data ready.
+ *
+ * Always dispatches @c func_800BAC18 at the end (which compares the
+ * queued bearing against the current one) and returns its result.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ * @param arg1  Forwarded as the second argument to @c func_800BAC18.
+ */
+s32 func_800BADCC(Eline *eline, s32 arg1) {
+    s32 idx;
+    s16 buf[4];
+
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        eline->field_0x234 = POP(eline);
+        idx = POP(eline);
+        func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, D_800C71F8, buf);
+        eline->field_0x222 = D_80085230[idx]->posX / 4096;
+        eline->field_0x224 = D_80085230[idx]->posY / 4096;
+        eline->field_0x226 = buf[2] + D_80085230[idx]->posZ / 4096;
+        eline->field_0x23B = 1;
+        eline->field_0x236 = 0;
+    }
+    return ((s32 (*)(Eline *, s32))func_800BAC18)(eline, arg1);
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800BAF14);
 
