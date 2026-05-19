@@ -52,7 +52,6 @@ extern u8 g_characterAbilities[];
 extern u8 D_80056290[];
 extern u8 D_801F7E6C[];
 extern u8 D_801FAB88[];
-extern u16 D_8007737C;
 extern s32 g_menuColor;
 extern MenuDisplayConfig g_menuDisplayCfg;
 extern u8 D_801F7FB0[];

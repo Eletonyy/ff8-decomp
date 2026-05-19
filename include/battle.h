@@ -1125,7 +1125,7 @@ extern void updateAnimEntry(s32 idx, s32 value);
 
 /* --- Camera / vibration helpers (defined in btl_color.c) --- */
 extern void setCameraShakeParams(s32 intensity, s32 direction);
-extern void setCameraVibrateState(s32 enable);
+extern void setCameraVibrateState(u32 enable);
 
 /* --- Spatial / matrix helpers (defined in field overlay) --- */
 extern void func_800406A4(u8 *p);

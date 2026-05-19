@@ -21,7 +21,6 @@ void cdReadSync(s32, s32, s32, s32);
 void func_8001F5C8(void);
 void func_80098238(void);
 void setCameraVibrateIntensity(s32);
-void setCameraVibrateState(s32);
 s32 func_80021300(void);
 void func_80023D60(s32);
 void cdReadAsyncSync(s32, s32, s32, s32);

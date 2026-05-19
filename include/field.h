@@ -689,8 +689,8 @@ extern u8 D_80082C11;
 /** @brief Sound-load handshake byte for the battle-fade sequence. */
 extern u8 D_8007064C;
 
-/** @brief Misc menu/field share scalar (also read as @c u16 by @c menumain). */
-extern s16 D_8007737C;
+/** @brief Misc menu/field share scalar. */
+extern u16 D_8007737C;
 
 /** @brief Field-side post-battle flag byte. */
 extern u8 D_800773C0;
