@@ -492,7 +492,54 @@ s32 func_800BBFFC(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BC034);
+extern void initSfxPlayback(s32 idx, u8 *data);
+
+/**
+ * @brief Start an SFX slot if it's not already running on this script.
+ *
+ * Peeks two stack values: @c val1 (top, the SFX data index) and
+ * @c sfxIdx (one below, the playback slot).
+ *
+ * If the Eline's @c activeMask bit for the current @c scriptGroup is
+ * set: returns 5 immediately when the slot bit is already in
+ * @c sfxStartMask; otherwise looks up the SFX data via
+ * @c func_8003974C(D_800704C0, val1), kicks off playback
+ * (@c initSfxPlayback / @c startSfxSlow), promotes the global flag
+ * and marks the slot bit in @c sfxStartMask. Returns 1.
+ *
+ * If the Eline's @c activeMask bit is NOT set: returns 1 when the
+ * slot is already running, otherwise pops two stack slots and returns
+ * 3 to fall through to the next opcode.
+ *
+ * The @c do { } while (0) wrapper around the mask read-modify-write is
+ * a scheduling barrier — it keeps gcc from interleaving the
+ * @c (1 << sfxIdx) constant load with the @c lw of @c g_seedState,
+ * matching the target's register allocation.
+ */
+s32 func_800BC034(Eline *eline) {
+    s32 val1   = eline->stack[(s8)eline->stackPtr];
+    s32 sfxIdx = eline->stack[(s8)eline->stackPtr - 1];
+
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        u8 mask;
+        if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+            return 5;
+        }
+        initSfxPlayback(sfxIdx, func_8003974C(D_800704C0, val1));
+        startSfxSlow(sfxIdx);
+        setSfxGlobalFlag(sfxIdx);
+        do {
+            mask = g_seedState->sfxStartMask;
+            g_seedState->sfxStartMask = mask | (1 << sfxIdx);
+        } while (0);
+        return 1;
+    }
+    if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+        return 1;
+    }
+    eline->stackPtr -= 2;
+    return 3;
+}
 
 /**
  * @brief Write one 16-byte entry into the @c D_80085300 table.
