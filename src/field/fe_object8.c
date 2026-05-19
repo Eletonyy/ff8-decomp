@@ -4,9 +4,14 @@
 
 extern u32 D_800C71F8;
 extern u8 D_800DE4FC;
+extern s32 D_800DE8C8[];   /* @c D_800DE8C8[1] aliases @c D_800DE8CC; the
+                              two forms differ in codegen (loop-hoisted
+                              base) and target asm picks one per site. */
+extern s32 D_800DE8CC;
 extern void func_800A97E4(s32 spatialIdx, s32 a1, s32 a2, s32 a3);
 extern void func_800A8DAC(u8 spatialIdx, s32 a1, u32 a2, void *a3);
 extern void func_800B91D8(Eline *eline, s32 a1, s32 v2, s32 v1);
+extern void func_800B2864(Eline *eline, s32 channel, s32 a2, s32 a3);
 extern s32 func_8009E604();
 
 /**
@@ -86,8 +91,6 @@ void func_800B91D8(Eline *eline, s32 a1, s32 a2, s32 a3) {
     func_800AA46C(eline->field_0x256, 0xD, a1, 0);
     eline->flags &= ~0xF800;
 }
-
-extern s32 func_800B2864();
 
 /**
  * @brief Per-frame motion tick for the entity.
@@ -397,9 +400,6 @@ s32 func_800B9A00(Eline *eline, s32 a1) {
     return 3;
 }
 
-extern s32 D_800DE8C8[];
-extern s32 D_800DE8CC;
-
 /**
  * @brief Pop 3 bytes into the 0x18A vector slot and dispatch cmd 0x10.
  *
@@ -418,15 +418,13 @@ s32 func_800B9A78(Eline *eline) {
     return 2;
 }
 
-extern u8 D_80085388;
-
 /**
  * @brief Broadcast 3 popped bytes into the unk18A vector of every active entity.
  *
  * Pops three bytes from the script stack into a local buffer, then
  * walks @c D_80085224[0..D_80085388-1] writing the same triple into
  * each entry's @c unk18A/18B/18C slot. Each iteration where
- * @c D_800DE8C8[1] & 0x2 is clear also dispatches command @c 0x10 to
+ * @c D_800DE8CC & 0x2 is clear also dispatches command @c 0x10 to
  * the entity (with the local buffer as the arg).
  */
 s32 func_800B9B24(Eline *eline) {
@@ -455,7 +453,7 @@ s32 func_800B9B24(Eline *eline) {
  * @brief Pop a byte into @c field_0x257 and mirror to the active render slot.
  *
  * Pops one byte from the script stack, stores it into
- * @c eline->field_0x257. If @c D_800DE8C8[1] bit @c 0x2 is clear,
+ * @c eline->field_0x257. If @c D_800DE8CC bit @c 0x2 is clear,
  * also stores the same byte into the active entity's render slot
  * (@c D_800D9630[D_800DE4FC]->unk61).
  */
@@ -1035,8 +1033,14 @@ s32 func_800BABFC(Eline *eline) {
 
 /**
  * @brief Returns 2 once the queued facing matches the current facing.
+ *
+ * @p arg1 is ignored; it exists in the prototype because every field
+ * opcode handler is called with the dispatcher's @c (eline, arg1)
+ * pair, and several wrappers in this file forward their own @c arg1
+ * straight through (e.g. @c func_800BADCC) so the function pointer
+ * call lands with a real value in @c a1.
  */
-s32 func_800BAC18(Eline *eline) {
+s32 func_800BAC18(Eline *eline, s32 arg1) {
     if (eline->field_0x234 == eline->field_0x236) {
         return 2;
     }
@@ -1050,7 +1054,7 @@ s32 func_800BAC18(Eline *eline) {
  * @c field_0x236 and @c field_0x23B), then tail-calls
  * @c func_800BAC18 to apply the queued state.
  */
-s32 func_800BAC38(Eline *eline) {
+s32 func_800BAC38(Eline *eline, s32 arg1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->field_0x234 = POP(eline);
         eline->field_0x232 = POP(eline);
@@ -1059,7 +1063,7 @@ s32 func_800BAC38(Eline *eline) {
         eline->field_0x236 = 0;
         eline->field_0x23B = 0;
     }
-    return func_800BAC18(eline);
+    return func_800BAC18(eline, arg1);
 }
 
 /**
@@ -1068,7 +1072,7 @@ s32 func_800BAC38(Eline *eline) {
  * Like @c func_800BB1F0 (active path) but ends by calling
  * @c func_800BAC18 to apply the queued facing state.
  */
-s32 func_800BAD00(Eline *eline) {
+s32 func_800BAD00(Eline *eline, s32 arg1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->field_0x234 = POP(eline);
         eline->field_0x226 = POP(eline);
@@ -1077,7 +1081,7 @@ s32 func_800BAD00(Eline *eline) {
         eline->field_0x236 = 0;
         eline->field_0x23B = 1;
     }
-    return func_800BAC18(eline);
+    return func_800BAC18(eline, arg1);
 }
 
 /**
@@ -1112,7 +1116,7 @@ s32 func_800BADCC(Eline *eline, s32 arg1) {
         eline->field_0x23B = 1;
         eline->field_0x236 = 0;
     }
-    return ((s32 (*)(Eline *, s32))func_800BAC18)(eline, arg1);
+    return func_800BAC18(eline, arg1);
 }
 
 /**
@@ -1141,7 +1145,7 @@ s32 func_800BAF14(Eline *eline, s32 arg1) {
         eline->field_0x23B = 1;
         eline->field_0x236 = 0;
     }
-    return ((s32 (*)(Eline *, s32))func_800BAC18)(eline, arg1);
+    return func_800BAC18(eline, arg1);
 }
 
 /**
@@ -1172,7 +1176,7 @@ s32 func_800BB05C(Eline *eline, s32 arg1) {
         eline->field_0x236 = 0;
         eline->field_0x23B = 0;
     }
-    return ((s32 (*)(Eline *, s32))func_800BAC18)(eline, arg1);
+    return func_800BAC18(eline, arg1);
 }
 
 /**
