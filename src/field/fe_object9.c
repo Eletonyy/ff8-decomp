@@ -372,7 +372,23 @@ s32 func_800BBDA8(void) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BBDE0);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BBE50);
+/**
+ * @brief Clear the dialog state and mirror it into @c g_seedState.
+ *
+ * Writes 0 into @c D_800704A8.dialogState, then copies the freshly
+ * cleared value into @c g_seedState->dialogStateMirror. The @c volatile
+ * pointer is required to force a real load-after-store rather than
+ * letting gcc fold the mirror to a constant 0.
+ *
+ * @return Always 2 (VM continue).
+ */
+s32 func_800BBE50(void) {
+    volatile SystemState *src = &D_800704A8;
+    SeedState *dst = g_seedState;
+    src->dialogState = 0;
+    dst->dialogStateMirror = src->dialogState;
+    return 2;
+}
 
 /**
  * @brief Force the dialog state to @c 4 and mirror it into @c g_seedState->dialogStateMirror.
