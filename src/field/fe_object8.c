@@ -405,7 +405,25 @@ s32 func_800B9A00(Eline *eline, s32 a1) {
     return 3;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9A78);
+extern s32 D_800DE8CC;
+
+/**
+ * @brief Pop 3 bytes into the 0x18A vector slot and dispatch cmd 0x10.
+ *
+ * Pops three bytes from the script stack — top goes to @c eline->unk18A
+ * byte+2 (= offset 0x18C), then byte+1 (= 0x18B), then byte+0 (= 0x18A).
+ * If @c D_800DE8CC bit @c 0x2 is clear, dispatches command @c 0x10 to
+ * the entity at @c field_0x256 with the pointer to the 3-byte vector.
+ */
+s32 func_800B9A78(Eline *eline) {
+    ((u8 *)&eline->unk18A)[2] = POP_BYTE(eline);
+    ((u8 *)&eline->unk18A)[1] = POP_BYTE(eline);
+    ((u8 *)&eline->unk18A)[0] = POP_BYTE(eline);
+    if (!(D_800DE8CC & 0x2)) {
+        func_800A97E4(eline->field_0x256, 0x10, (s32)&eline->unk18A, 0);
+    }
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9B24);
 
