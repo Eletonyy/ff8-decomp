@@ -10,50 +10,6 @@ typedef struct {
     s32 z;
 } Vec3i;
 
-/** @brief Animation slot record (one of four per actor). */
-typedef struct {
-    /* 0x00 */ u8 pad00[0x10];
-    /* 0x10 */ s16 id;          /**< Animation ID, -1 = empty slot. */
-} AnimRec; /* 0x12 = 18 bytes */
-
-/** @brief Field entity (actor), 612 bytes (0x264). Same as "actor" in debug print. */
-typedef struct {
-    /* 0x000 */ u8 pad000[0x80];
-    /* 0x080 */ AnimRec rows[4];      /**< Four animation slots, stride 0x12. */
-    /* 0x0C8 */ s16 timers[4];        /**< Per-slot tick counters. */
-    /* 0x0D0 */ u8 padD0[0x24];
-    /* 0x0F4 */ s16 animOffset;       /**< Byte offset from rows[] to source row table. */
-    /* 0x0F6 */ u8 padF6[6];
-    /* 0x0FC */ s16 mode;             /**< Dispatch mode (1/2/3 = different sources). */
-    /* 0x0FE */ u8 padFE[0x92];
-    /* 0x190 */ s32 posX;
-    /* 0x194 */ s32 posY;
-    /* 0x198 */ s32 posZ;
-    /* 0x19C */ u8 pad19C[0x5A];
-    /* 0x1F6 */ u16 radius;            /**< Collision radius (used by func_8009E468 overlap test). */
-    /* 0x1F8 */ u8 pad1F8[0x02];
-    /* 0x1FA */ u16 unk1FA;            /**< Set from path-table entry's unk6 by func_8009BB18. */
-    /* 0x1FC */ u8 pad1FC[0x1C];
-    /* 0x218 */ s16 unk218;            /**< -1 = inactive (skipped by collision tests). */
-    /* 0x21A */ u8 pad21A[0x27];
-    /* 0x241 */ u8 field_0x241;
-    /* 0x242 */ u8 pad242[0x06];
-    /* 0x248 */ u8 unk248;             /**< Set to 1 by func_8009E468 when colliding with self entity. */
-    /* 0x249 */ u8 unk249;             /**< 0 = enable unk248 update path in func_8009E468. */
-    /* 0x24A */ u8 pad24A[0x02];
-    /* 0x24C */ u8 field_0x24C;
-    /* 0x24D */ u8 pad24D[0x02];
-    /* 0x24F */ u8 field_0x24F;
-    /* 0x250 */ u8 field_0x250;
-    /* 0x251 */ u8 field_0x251;
-    /* 0x252 */ u8 field_0x252;
-    /* 0x253 */ u8 field_0x253;
-    /* 0x254 */ u8 field_0x254;
-    /* 0x255 */ u8 pad255[0x03];
-    /* 0x258 */ u8 unk258;             /**< Set from path-table entry's unk8 by func_8009BB18. */
-    /* 0x259 */ u8 pad259[0x0B];
-} Entity; /* 0x264 = 612 bytes */
-
 /** @brief Animation parameter entry. */
 typedef struct {
     /* 0x00 */ u8 pad00[0x09];
@@ -73,7 +29,7 @@ typedef struct {
     /* 0x0A */ u8  padA[2];
 } PathEntry;
 
-extern Entity *D_80085224;
+
 extern u16 D_8005F118;
 extern u16 D_8005F11A;
 extern u16 D_8005F144;
@@ -238,7 +194,7 @@ void func_8009BB18(void) {
         D_80085224[D_800704A8.entityIndex[2]].posX   = D_80070A60[angle].x << 12;
         D_80085224[D_800704A8.entityIndex[2]].posY   = D_80070A60[angle].y << 12;
         D_80085224[D_800704A8.entityIndex[2]].posZ   = D_80070A60[angle].z << 12;
-        D_80085224[D_800704A8.entityIndex[2]].unk1FA = D_80070A60[angle].unk6;
+        D_80085224[D_800704A8.entityIndex[2]].field_0x1FA = D_80070A60[angle].unk6;
         D_80085224[D_800704A8.entityIndex[2]].unk258 = D_80070A60[angle].unk8;
     }
     if (D_800704A8.entityIndex[1] != 0xFF) {
@@ -246,7 +202,7 @@ void func_8009BB18(void) {
         D_80085224[D_800704A8.entityIndex[1]].posX   = D_80070760[angle].x << 12;
         D_80085224[D_800704A8.entityIndex[1]].posY   = D_80070760[angle].y << 12;
         D_80085224[D_800704A8.entityIndex[1]].posZ   = D_80070760[angle].z << 12;
-        D_80085224[D_800704A8.entityIndex[1]].unk1FA = D_80070760[angle].unk6;
+        D_80085224[D_800704A8.entityIndex[1]].field_0x1FA = D_80070760[angle].unk6;
         D_80085224[D_800704A8.entityIndex[1]].unk258 = D_80070760[angle].unk8;
     }
 }
@@ -273,7 +229,7 @@ void func_8009BB18(void) {
  * @param b9  Byte stored at offset 9 of each waypoint.
  * @param b8  Byte stored at offset 8 of each waypoint.
  */
-void func_8009BD50(Entity *e, s16 mode, u8 b9, u8 b8) {
+void func_8009BD50(Eline *e, s16 mode, u8 b9, u8 b8) {
     PathEntry *base1 = D_80070760;
     PathEntry *p1 = base1 + D_8005F144;
     PathEntry *base0 = D_80070A60;
@@ -290,7 +246,7 @@ void func_8009BD50(Entity *e, s16 mode, u8 b9, u8 b8) {
     v = e->posZ / 4096;
     p0->z = v;
     p1->z = v;
-    u = e->unk1FA;
+    u = e->field_0x1FA;
     p0->unk6 = u;
     p1->unk6 = u;
     p0->unk9 = b9;
@@ -422,16 +378,16 @@ s32 func_8009E468(s16 selfIdx, Vec3i *pos) {
  * @param a0 First entity pointer.
  * @param a1 Second entity pointer.
  */
-void func_8009E604(u8 *a0, u8 *a1) {
+s32 func_8009E604(Eline *a, Eline *b) {
     s32 pos1[4];
     s32 pos2[4];
     s32 result[2];
 
-    pos1[0] = *(s32 *)(a0 + 0x190) >> 12;
-    pos1[1] = *(s32 *)(a0 + 0x194) >> 12;
-    pos2[0] = *(s32 *)(a1 + 0x190) >> 12;
-    pos2[1] = *(s32 *)(a1 + 0x194) >> 12;
-    func_8009A0E8(pos1, pos2, result);
+    pos1[0] = a->posX >> 12;
+    pos1[1] = a->posY >> 12;
+    pos2[0] = b->posX >> 12;
+    pos2[1] = b->posY >> 12;
+    return func_8009A0E8(pos1, pos2, result);
 }
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009E660);
@@ -701,8 +657,8 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3488);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3534);
 
-extern void func_800A327C(Entity *actor, SVECTOR *out);
-extern void func_800A3488(Entity *actor, SVECTOR *out);
+extern void func_800A327C(Eline *actor, SVECTOR *out);
+extern void func_800A3488(Eline *actor, SVECTOR *out);
 
 /**
  * @brief Animation slot tick & dispatch — runs the per-frame update for the
@@ -727,7 +683,7 @@ extern void func_800A3488(Entity *actor, SVECTOR *out);
  * @param slot  Index into D_800704A8.slotActive (0..15).
  * @param a2    Second arg passed through to func_800A303C.
  */
-void func_800A355C(Entity *actor, s32 slot, s32 a2) {
+void func_800A355C(FieldActor *actor, s32 slot, s32 a2) {
     SVECTOR pos;
     s32 i;
 
@@ -757,11 +713,11 @@ void func_800A355C(Entity *actor, s32 slot, s32 a2) {
                 func_800A303C(actor->rows[i].id, a2, (SVECTOR *)actor, ratio);
                 break;
             case 2:
-                func_800A3488(actor, &pos);
+                func_800A3488((Eline *)actor, &pos);
                 func_800A303C(actor->rows[i].id, a2, &pos, ratio);
                 break;
             case 3:
-                func_800A327C(actor, &pos);
+                func_800A327C((Eline *)actor, &pos);
                 func_800A303C(actor->rows[i].id, a2, &pos, ratio);
                 break;
             }

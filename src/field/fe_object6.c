@@ -2,37 +2,8 @@
 #include "field.h"
 #include "gamestate.h"
 #include "battle.h"
+#include "sound.h"
 #include "psxsdk/libgte.h"
-
-extern SeedState *g_seedState;
-extern u8 D_80070652;
-extern u8 D_800704CA;
-extern u8 D_8007064A;
-extern u8 D_8007064B;
-extern u8 D_8007064D;
-extern u8 D_8007064F[];
-extern u8 D_8007065C[];
-
-extern Eline *D_80085224;
-extern u8 *D_800D5EA4;
-extern u8 *func_8003974C(u8 *base, s32 idx);
-extern s32 sndPlayBankSfx(s32 a0, s32 a1, s32 a2, s32 a3);
-extern void sndCmd21(s32 a0, s32 a1);
-extern s32 func_800131A8(void);
-extern u8 *func_800A8DAC(s32 entityIdx, s32 mode, void *buf, s32 flag);
-extern void func_800406A4(u8 *p);
-extern void func_80040734(u8 *p);
-extern s32 func_80040DE4(SVECTOR *v0, s32 *sxy, s32 *p, s32 *flag);
-extern Eline *D_80085230[];
-extern void setCameraShakeParams(s32 a, s32 b);
-extern void setCameraVibrateState(s32 enable);
-extern u8 D_8007064E;
-extern void func_800A97E4(s32 a, s32 b, s32 c, s32 d);
-extern s32 func_80037C6C(s32 charId);
-extern s32 func_800211B4(s32 partyMember, s32 code);
-extern u16 D_800704AA;
-extern void setGfExists(s32 gfId);
-extern void enableChocoboWorld(void);
 
 /**
  * Pops 3 stack values (target, volume, pan), looks up an SFX entry in
@@ -246,7 +217,7 @@ void func_800B27C4(s32 entityIdx, s32 *sxy, s32 *out) {
  * @param eline   Pointer to the Eline event-script context.
  * @param channel Output channel (0 = left bus, 1 = right bus).
  */
-void func_800B2864(Eline *eline, s32 channel) {
+void func_800B2864(Eline *eline, s32 channel, s32 unused2, s32 unused3) {
     s32 pitch;
     s32 volume;
 
@@ -1373,8 +1344,8 @@ s32 func_800B4320(Eline *eline) {
             eline->stackPtr -= 3;
         } else {
             D_800704A8.mode = 7;
-            D_800704A8.unk00E = (u16)POP(eline);
-            D_800704A8.unk00C = (u16)POP(eline);
+            D_800704A8.anim_state = (u16)POP(eline);
+            D_800704A8.rotation = (u16)POP(eline);
             D_800704A8.counter = (u16)POP(eline);
             func_800B4F40();
         }
@@ -1454,10 +1425,10 @@ s32 func_800B45CC(Eline *eline) {
 s32 func_800B460C(Eline *eline, s32 a1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 1;
-        D_800704A8.unk00C = a1;
-        D_800704A8.unk00E = (u16)POP(eline);
-        D_800704A8.unk006 = (u16)POP(eline);
-        D_800704A8.unk004 = (u16)POP(eline);
+        D_800704A8.rotation = a1;
+        D_800704A8.anim_state = (u16)POP(eline);
+        D_800704A8.position_y = (u16)POP(eline);
+        D_800704A8.position_x = (u16)POP(eline);
         D_800704A8.counter = (u16)POP(eline);
     }
     return 1;
@@ -1474,11 +1445,11 @@ s32 func_800B460C(Eline *eline, s32 a1) {
 s32 func_800B46E4(Eline *eline, s32 a1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 1;
-        D_800704A8.unk00C = a1;
-        D_800704A8.unk00E = (u16)POP(eline);
+        D_800704A8.rotation = a1;
+        D_800704A8.anim_state = (u16)POP(eline);
         D_800704A8.unk008 = (u16)POP(eline);
-        D_800704A8.unk006 = (u16)POP(eline);
-        D_800704A8.unk004 = (u16)POP(eline);
+        D_800704A8.position_y = (u16)POP(eline);
+        D_800704A8.position_x = (u16)POP(eline);
         D_800704A8.counter = (u16)POP(eline);
     }
     return 1;
@@ -1496,11 +1467,11 @@ s32 func_800B47E4(Eline *eline, s32 a1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 6;
         D_800704A8.unk1A0 = 1;
-        D_800704A8.unk00C = a1;
-        D_800704A8.unk00E = (u16)POP(eline);
+        D_800704A8.rotation = a1;
+        D_800704A8.anim_state = (u16)POP(eline);
         D_800704A8.unk008 = (u16)POP(eline);
-        D_800704A8.unk006 = (u16)POP(eline);
-        D_800704A8.unk004 = (u16)POP(eline);
+        D_800704A8.position_y = (u16)POP(eline);
+        D_800704A8.position_x = (u16)POP(eline);
         D_800704A8.counter = (u16)POP(eline);
     }
     return 1;
@@ -1516,10 +1487,10 @@ s32 func_800B47E4(Eline *eline, s32 a1) {
 s32 func_800B48EC(Eline *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 1;
-        D_800704A8.unk00E = 0;
-        D_800704A8.unk00C = (u16)POP(eline);
-        D_800704A8.unk004 = 0x7FFF;
-        D_800704A8.unk006 = 0x7FFF;
+        D_800704A8.anim_state = 0;
+        D_800704A8.rotation = (u16)POP(eline);
+        D_800704A8.position_x = 0x7FFF;
+        D_800704A8.position_y = 0x7FFF;
         D_800704A8.counter = (u16)POP(eline);
     }
     return 1;

@@ -4,40 +4,6 @@
 #include "field.h"
 #include "psxsdk/libgte.h"
 
-
-/** @brief Battle encounter setup parameters (at D_80082C90). */
-typedef struct {
-    /* 0x00 */ s32 encounterPtr;
-    /* 0x04 */ u8 field_04;
-    /* 0x05 */ u8 field_05;
-    /* 0x06 */ u8 field_06;
-    /* 0x07 */ u8 field_07;
-    /* 0x08 */ u8 field_08;
-    /* 0x09 */ u8 field_09;
-    /* 0x0A */ u8 pad0A[2];
-    /* 0x0C */ u8 result;
-} EncounterParams;
-
-extern u8 D_8007064C;
-extern s16 D_8007737C;
-extern Eline *D_80085224;
-extern Eline *D_80085230[];
-extern u8 D_800773C0;
-extern u8 D_80082C11;
-extern EncounterParams D_80082C90;
-extern u8 D_80082C10;
-extern u8 D_8005630C[];
-extern s32 D_8005F13C;
-extern s16 D_800704B2;
-extern u8 D_800DE8D0;
-extern s16 D_800DE4D0;
-extern s8 D_800DE4D2;
-extern s8 D_800DE4D3;
-extern s8 D_800DE4D4;
-extern Eline *D_800DE4F0;
-extern Eline *D_800DE4F4;
-extern Eline *D_800DE4F8;
-
 /**
  * @brief Pop a key item ID and store its value.
  *
@@ -127,7 +93,6 @@ s32 func_800B5480(Eline *eline) {
     }
 }
 
-extern u8 D_800DE880[];
 
 /**
  * @brief Copy a null-terminated string to the D_800DE880 buffer.
@@ -2166,8 +2131,6 @@ s32 func_800B9000(Eline *eline) {
     eline->field_0x240 = POP_BYTE(eline);
     return 2;
 }
-
-extern void func_800A97E4(u8, s32, s32, s32);
 
 /**
  * @brief Animation/sound dispatch for the speaker's voice/SFX slot.

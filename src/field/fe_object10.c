@@ -182,7 +182,17 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BEBD0);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BF080);
 
-void func_800BF230(FieldEntity *entity) { extern u8 D_800D9630[]; u8 *a0 = (u8 *)entity; u8 *obj; func_800AA46C(*(u8 *)(a0 + 0x256), 0xD, *(u8 *)(a0 + 0x24E), 0); obj = *(u8 **)(D_800D9630 + *(u8 *)(a0 + 0x256) * 4); *(u16 *)(obj + 0x52) = *(u16 *)(a0 + 0x206); }
+/**
+ * Re-issue motion command @c 0xD to the active spatial entity, then
+ * mirror @c field_0x206 into the entity's render slot @c unk52. Used
+ * by the dispatch table to keep the renderer in sync after an
+ * animation update.
+ */
+void func_800BF230(FieldEntity *entity) {
+    Eline *eline = (Eline *)entity;
+    func_800AA46C(eline->field_0x256, 0xD, eline->field_0x24E, 0);
+    D_800D9630[eline->field_0x256]->unk52 = eline->field_0x206;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BF28C);
 

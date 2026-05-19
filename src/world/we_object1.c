@@ -123,8 +123,6 @@ void func_8009C6F0(s32 idx, s32 a1, s8 pan) {
     sndSeqStartPan(D_800C4FD8[idx].field10, D_800C4FD8[idx].field04, a1, pan);
 }
 
-extern void sndCmd21(s32 a0, s32 a1);
-
 /**
  * @brief Stop the sound sequence associated with table entry @p idx.
  *

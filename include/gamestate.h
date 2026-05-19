@@ -357,4 +357,11 @@ extern u32  isMcBusy(void);
 
 extern u8 D_80085388;                  /**< @c Eline entity count at @c D_80085224. */
 
+/* --- Save / GF / chocobo-world state setters --- */
+extern void setGfExists(s32 gfId);
+extern void enableChocoboWorld(void);
+
+/** @brief Resolve a character ID (e.g. party slot) to its global character code. */
+extern s32 func_80037C6C(s32 charId);
+
 #endif /* GAMESTATE_H */

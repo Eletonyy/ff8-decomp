@@ -1,5 +1,6 @@
 #include "common.h"
 #include "cd.h"
+#include "field.h"
 #include "psxsdk/libgpu.h"
 
 /** @brief Fade effect mode for the rendering system. */
@@ -18,20 +19,6 @@ typedef enum {
     RENDER_GAME    = 4
 } RenderMode;
 
-/** @brief Battle entity structure (stride 612 / 0x264 bytes).
- *  Accessed via pointer at D_80085224. Fields named from func_80011870 usage.
- */
-typedef struct {
-    u8  pad0[0x190];   /* 0x000..0x18F */
-    s32 pos_x;         /* 0x190  fixed-point 20.12 */
-    s32 pos_y;         /* 0x194  fixed-point 20.12 */
-    u8  pad1[0x62];    /* 0x198..0x1F9 */
-    u16 rotation;      /* 0x1FA */
-    u8  pad2[0x45];    /* 0x1FC..0x240 */
-    u8  anim_state;    /* 0x241 */
-    u8  pad3[0x22];    /* 0x242..0x263 */
-} BattleEntity;        /* total: 0x264 = 612 */
-
 /** @brief Layout of the snapshot region within g_gameState (offsets 0xD40-0xD5C).
  *  Used by func_80011870 (save) and RestoreSnapshot (restore).
  */
@@ -48,30 +35,12 @@ typedef struct {
     u8  fade0;            /* 0xD5C */
 } SnapshotBuf;
 
-/** @brief Field entity state structure at g_fieldEntity (0x800704A8).
- *  Contains party member positions, rotations, and animation states
- *  for the field/overworld. Used by RestoreSnapshot and func_80011870.
- */
-typedef struct {
-    u8  state;            /* 0x000  exit/state flag (4 = exit) */
-    u8  pad0[0x3];        /* 0x001..0x003 */
-    u16 position_x;       /* 0x004 */
-    u16 position_y;       /* 0x006 */
-    u8  pad1[0x4];        /* 0x008..0x00B */
-    u16 rotation;         /* 0x00C */
-    u16 anim_state;       /* 0x00E */
-    u8  pad2[0x2];        /* 0x010..0x011 */
-    u8  memberSlot[3];    /* 0x012..0x014: Eline index per active party slot */
-    u8  pad3[0x10B];      /* 0x015..0x11F */
-    u16 field_120;        /* 0x120 */
-} FieldEntity;
-
 extern u8 g_gameState[];
 extern volatile u16 g_vsyncRate;
 extern u16 g_currentMusicTrack;
 extern u8 D_8005F150;
 extern u8 D_8005F151;
-extern FieldEntity g_fieldEntity;
+extern SystemState g_fieldEntity;
 extern u8 D_80067468[];
 extern CdFileDesc D_800974D8[];
 extern u8 D_8006A468[];
@@ -274,7 +243,7 @@ INCLUDE_ASM("asm/nonmatchings/main", func_80011870);
  */
 void RestoreSnapshot(void) {
     SnapshotBuf *buf;
-    FieldEntity *entity;
+    SystemState *entity;
 
     buf = (SnapshotBuf *)(s32)g_gameState;
 
@@ -287,7 +256,7 @@ void RestoreSnapshot(void) {
 
     entity = &g_fieldEntity;
 
-    entity->field_120 = buf->field_120;
+    entity->field_0x120 = buf->field_120;
     entity->position_x = buf->positions_x[0];
     entity->position_y = buf->positions_y[0];
     entity->rotation = buf->rotations[0];

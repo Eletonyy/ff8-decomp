@@ -253,4 +253,13 @@ typedef struct {
  */
 extern void sndPlaySfx(s32 sfxId, s32 a1, s32 a2, s32 a3);
 
+/** @brief Play one SFX from a specific bank with explicit volume and pan. */
+extern s32 sndPlayBankSfx(s32 bank, s32 idx, s32 vol, s32 pan);
+
+/** @brief Stop a sequence by track pair (bank, channel) packed pair. */
+extern void sndCmd21(s32 a0, s32 a1);
+
+/** @brief Query the current active-channel mask for SFX dispatch. */
+extern s32 func_800131A8(void);
+
 #endif /* SOUND_H */

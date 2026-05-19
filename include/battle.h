@@ -1090,8 +1090,6 @@ typedef struct {
 extern s32  func_80023B14(s32 idx);
 extern s32  func_8003ED64();
 extern void func_80041274();
-extern void func_800406A4();
-extern void func_80040734();
 extern s32  func_80098B80(s32 size);
 extern void func_80098BA0(s32 size);
 extern void *func_8009AE6C(s32 a, s32 b, void *ot, void *out);
@@ -1110,6 +1108,29 @@ extern void setSfxEntityType(s32 idx, s32 val);
 extern void setSfxEntryVolume(s32 idx, s32 val);
 extern void setSfxPitch(s32 idx, s32 val);
 extern void setSfxField2F(s32 idx, s32 val);
+
+/* --- Generic SFX playback helpers (shared field/world/menu/battle) --- */
+extern void initSfxPlayback(s32 idx, u8 *data);
+extern void startSfxSlow(s32 idx);
+extern void fadeOutSfxSlow(s32 idx);
+extern s32  getSfxField1C(s32 idx);
+extern s32  getSfxField28(s32 idx);
+extern s32  getSfxGlobalFlag(void);
+extern void setSfxGlobalFlag(s32 idx);
+
+/* --- Animation entry helpers (act on @c D_80085398 from field overlay) --- */
+extern void setupAnimEntry(s32 idx, u8 flags, s32 src, s32 start, s32 end, s32 inStart);
+extern void setupAnimEntryFull(s32 idx, u8 flags, s32 src, s32 start, s32 end, s32 inStart, s32 inEnd);
+extern void updateAnimEntry(s32 idx, s32 value);
+
+/* --- Camera / vibration helpers (defined in btl_color.c) --- */
+extern void setCameraShakeParams(s32 intensity, s32 direction);
+extern void setCameraVibrateState(u32 enable);
+
+/* --- Spatial / matrix helpers (defined in field overlay) --- */
+extern void func_800406A4(u8 *p);
+extern void func_80040734(u8 *p);
+extern s32  func_80040DE4(SVECTOR *v, s32 *sxy, s32 *p, s32 *flag);
 
 /* ======================================================================== */
 /* Triple Triad (card mini-game, played inside the battle overlay)          */
