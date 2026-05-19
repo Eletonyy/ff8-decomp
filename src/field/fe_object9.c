@@ -415,7 +415,45 @@ void func_800BC12C(s32 idx, s32 val, u8 *src) {
     *(u16 *)(entry + 0x6) = *(u16 *)(src + 0x6);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BC170);
+extern void initSfxPlayback(s32 idx, u8 *data);
+
+/**
+ * @brief SFX trigger with sound-data lookup and entry registration.
+ *
+ * Peeks two stack values: @c val1 (top, used as a 'kind' argument to
+ * the sound-data lookup) and @c sfxIdx (one below). If the slot's bit
+ * is already set in @c sfxStartMask, return 5 (busy).
+ *
+ * Otherwise: look up the SFX data via @c func_8003974C(D_800704C0,
+ * val1), kick off playback (@c initSfxPlayback / @c startSfxSlow),
+ * promote to the global flag, set both @c sfxStartMask and
+ * @c sfxActiveMask bits, pop two stack slots, then register the
+ * entry into @c D_80085300 via @c func_800BC12C.
+ *
+ * Returns 3 on success.
+ */
+s32 func_800BC170(Eline *eline) {
+    u8 buf[8];
+    s32 val1   = eline->stack[(s8)eline->stackPtr];
+    s32 sfxIdx = eline->stack[(s8)eline->stackPtr - 1];
+    u8 *data;
+
+    if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+        return 5;
+    }
+
+    data = func_8003974C(D_800704C0, val1);
+    initSfxPlayback(sfxIdx, data);
+    startSfxSlow(sfxIdx);
+    setSfxGlobalFlag(sfxIdx);
+
+    g_seedState->sfxStartMask  |= (1 << sfxIdx);
+    g_seedState->sfxEntryMask  |= (1 << sfxIdx);
+
+    eline->stackPtr -= 2;
+    func_800BC12C(sfxIdx, (s32)data, buf);
+    return 3;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BC258);
 
