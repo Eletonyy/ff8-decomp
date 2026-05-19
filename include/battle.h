@@ -1111,6 +1111,20 @@ extern void setSfxEntryVolume(s32 idx, s32 val);
 extern void setSfxPitch(s32 idx, s32 val);
 extern void setSfxField2F(s32 idx, s32 val);
 
+/* --- Generic SFX playback helpers (shared field/world/menu/battle) --- */
+extern void initSfxPlayback(s32 idx, u8 *data);
+extern void startSfxSlow(s32 idx);
+extern void fadeOutSfxSlow(s32 idx);
+extern s32  getSfxField1C(s32 idx);
+extern s32  getSfxField28(s32 idx);
+extern s32  getSfxGlobalFlag(void);
+extern void setSfxGlobalFlag(s32 idx);
+
+/* --- Animation entry helpers (act on @c D_80085398 from field overlay) --- */
+extern void setupAnimEntry(s32 idx, u8 flags, s32 src, s32 start, s32 end, s32 inStart);
+extern void setupAnimEntryFull(s32 idx, u8 flags, s32 src, s32 start, s32 end, s32 inStart, s32 inEnd);
+extern void updateAnimEntry(s32 idx, s32 value);
+
 /* ======================================================================== */
 /* Triple Triad (card mini-game, played inside the battle overlay)          */
 /* ======================================================================== */

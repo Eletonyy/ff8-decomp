@@ -1,54 +1,29 @@
 #include "common.h"
 #include "field.h"
 #include "gamestate.h"
+#include "battle.h"
 
-extern u8 *D_800704C0;
-extern u32 D_800C71F8;
-extern s32 D_800DE4DC;
-extern u8 D_800DE8D2;
-typedef struct {
-    /* 0x0 */ u16 rect[4];
-    /* 0x8 */ s32 payload;
-    /* 0xC */ u16 volume;
-    /* 0xE */ u16 type;
-} SfxEntry;
-
-extern SfxEntry D_80085300[];
-
-typedef struct {
-    /* 0x0 */ u16 flag;
-    /* 0x2 */ u16 field2;
-    /* 0x4 */ u16 field4;
-    /* 0x6 */ u16 field6;
-    /* 0x8 */ u16 field8;
-    /* 0xA */ u16 fieldA;
-    /* 0xC */ u16 fieldC;
-    /* 0xE */ u16 fieldE;
-} AnimEntry;
-
-extern AnimEntry D_80085398[];
+/*
+ * The animation/SFX helpers below are declared @c void in battle.h
+ * (their canonical signature from btl_color.c / btl_entity.c), but
+ * this translation unit's call sites only produce byte-matching
+ * codegen when gcc thinks the helpers return @c u8. Redeclaring them
+ * locally with @c u8 returns is a per-TU prototype override — the
+ * linker resolves to the canonical symbol regardless of return type.
+ */
 extern u8 setupAnimEntry(s32 idx_bit, s32 v4, u16 *buf, s32 v3, s32 v2, s32 v1);
+extern u8 setupAnimEntryFull(s32 idx_bit, s32 v4, u16 *buf, s32 v3, s32 v2, s32 v1, s32 v0);
+extern u8 updateAnimEntry(s32 idx, s32 val);
 extern u8 setSfxEntryVolume(s32 idx, s32 vol);
 extern u8 setSfxEntityType(s32 idx, s32 type);
 
-extern void func_800A8DAC(u8 spatialIdx, s32 a1, u32 a2, void *a3);
+extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
 
-extern s32 getSfxGlobalFlag(void);
-extern void setSfxGlobalFlag(s32 idx);
-extern void startSfxSlow(s32 idx);
-extern void fadeOutSfxSlow(s32 idx);
-extern s32 getSfxField1C(s32 idx);
-extern s32 func_8002CE84(s32 idx);
-extern u8 *func_8003974C(u8 *base, s32 idx);
-extern s32 func_8002E680(u8 *text);
-extern void func_8002E064(s32 idx, s16 *rect);
-extern void func_8002D784(s32 a0, u8 *text, s32 a2, s32 a3, s32 a4, s32 a5);
-typedef struct {
-    s16 x;
-    s16 y;
-    s16 w;
-    s16 h;
-} Rect;
+/*
+ * @c func_800A8DAC is polymorphic (see field.h); declare with the
+ * spatial-snapshot signature used by this TU.
+ */
+extern void func_800A8DAC(u8 spatialIdx, s32 cmd, u32 arg, void *out);
 
 /**
  * @brief Snapshot a target entity's grid-cell position into the queued
@@ -492,8 +467,6 @@ s32 func_800BBFFC(Eline *eline) {
     return 2;
 }
 
-extern void initSfxPlayback(s32 idx, u8 *data);
-
 /**
  * @brief Start an SFX slot if it's not already running on this script.
  *
@@ -561,8 +534,6 @@ void func_800BC12C(s32 idx, s32 val, u16 *src) {
     entry->rect[2] = src[2];
     entry->rect[3] = src[3];
 }
-
-extern void initSfxPlayback(s32 idx, u8 *data);
 
 /**
  * @brief SFX trigger with sound-data lookup and entry registration.
@@ -756,9 +727,6 @@ s32 func_800BC58C(Eline *eline) {
     return 2;
 }
 
-extern s32 D_800DE4D8;
-extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
-
 /**
  * @brief Field-VM SFX trigger / state-machine handler (6-arg variant).
  *
@@ -915,8 +883,6 @@ s32 func_800BC8CC(Eline *e) {
     return 1;
 }
 
-extern s32 D_80070600;
-extern s32 getSfxField28(s32 idx);
 
 /**
  * @brief Tear down an entry-registered SFX slot.
@@ -1023,8 +989,6 @@ s32 func_800BCDA0(Eline *e) {
     return 1;
 }
 
-extern u8 updateAnimEntry(s32 idx, s32 val);
-
 /**
  * @brief Update the @c field4 slot of a @c D_80085398 entry.
  *
@@ -1075,8 +1039,6 @@ s32 func_800BCECC(Eline *e) {
     D_80085398[idx].field4 = v1;
     return 2;
 }
-
-extern u8 setupAnimEntryFull(s32 idx_bit, s32 v4, u16 *buf, s32 v3, s32 v2, s32 v1, s32 v0);
 
 /**
  * @brief Set up an 8-arg animation entry in the @c D_80085398 table.

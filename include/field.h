@@ -532,4 +532,103 @@ extern void func_800383B8(s32 key, s32 status);
 /** @brief Trigger SeeD rank-up notification (palette transition phase 7). */
 extern void setTransitionPhase7(void);
 
+/* ======================================================================== */
+/* Field-overlay SFX / animation entry tables                                */
+/* ======================================================================== */
+
+/**
+ * @brief One slot in the field SFX-entry table @ref D_80085300.
+ *
+ * Populated by the field-script VM when an SFX instance is registered.
+ * @c rect is a 4-halfword on-screen rectangle (used by text/balloon
+ * SFX), @c payload typically holds the SFX data pointer cast to s32,
+ * and @c volume / @c type mirror the values previously set via
+ * @c setSfxEntryVolume / @c setSfxEntityType for the slot.
+ */
+typedef struct {
+    /* 0x0 */ u16 rect[4];
+    /* 0x8 */ s32 payload;
+    /* 0xC */ u16 volume;
+    /* 0xE */ u16 type;
+} SfxEntry;
+
+/** @brief Per-slot SFX entry table populated by field-VM SFX opcodes. */
+extern SfxEntry D_80085300[];
+
+/**
+ * @brief One slot in the field anim-entry table @ref D_80085398.
+ *
+ * Eight halfwords of opcode-supplied animation parameters. @c flag at
+ * @c 0x0 is the slot-active marker (cleared by @c func_800BD1A4),
+ * @c field2..fieldE are the per-opcode arg shadow (the same values
+ * forwarded to @c setupAnimEntry / @c setupAnimEntryFull / @c updateAnimEntry).
+ */
+typedef struct {
+    /* 0x0 */ u16 flag;
+    /* 0x2 */ u16 field2;
+    /* 0x4 */ u16 field4;
+    /* 0x6 */ u16 field6;
+    /* 0x8 */ u16 field8;
+    /* 0xA */ u16 fieldA;
+    /* 0xC */ u16 fieldC;
+    /* 0xE */ u16 fieldE;
+} AnimEntry;
+
+/** @brief Per-slot anim entry table populated by field-VM anim opcodes. */
+extern AnimEntry D_80085398[];
+
+/** @brief Small on-screen rectangle in halfword coords (used by SFX balloons). */
+typedef struct {
+    s16 x;
+    s16 y;
+    s16 w;
+    s16 h;
+} Rect;
+
+/** @brief Generic SFX/text data pointer used as base for @c func_8003974C. */
+extern u8 *D_800704C0;
+
+/** @brief Spatial-entity dispatch context word (passed to @c func_800A8DAC). */
+extern u32 D_800C71F8;
+
+/** @brief Field-side dialog companion scalar. */
+extern s32 D_800DE4DC;
+
+/** @brief Stashed SFX global flag, saved/restored around dialog SFX. */
+extern s32 D_800DE4D8;
+
+/** @brief Global SFX-status flags packed scalar (tested with 0xC0 etc.). */
+extern s32 D_80070600;
+
+/** @brief Dialog dispatch mode shared with @ref D_800704A8.dialogState. */
+extern u8 D_800DE8D2;
+
+/* ======================================================================== */
+/* Spatial / text / SFX helpers (defined in main binary)                    */
+/* ======================================================================== */
+
+/*
+ * @c func_800A8DAC is polymorphic on its second arg (the @c cmd):
+ *   cmd 0x1E writes 4 halfwords (grid-cell snapshot)
+ *   cmd 0x20 writes 3 halfwords (relative offsets)
+ *   cmd 0x2F sets per-entity flags (returns u8 *)
+ * Declare locally in each TU with the per-use signature; do not put a
+ * canonical prototype here, since the prototype affects caller codegen.
+ */
+
+/** @brief Index into a null-terminated entry table by skipping strings. */
+extern u8 *func_8003974C(u8 *base, s32 idx);
+
+/** @brief Measure a text string, returning width|height packed as one s32. */
+extern s32 func_8002E680(u8 *text);
+
+/** @brief Bind an on-screen rectangle to an SFX slot. */
+extern void func_8002E064(s32 idx, s16 *rect);
+
+/** @brief Stash an SFX-slot scalar (paramY/Z/W/V signature). */
+extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
+
+/** @brief Read the per-slot SFX status word at the table offset 0x?. */
+extern s32 func_8002CE84(s32 idx);
+
 #endif /* FIELD_H */

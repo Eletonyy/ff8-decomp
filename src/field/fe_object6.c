@@ -14,7 +14,6 @@ extern u8 D_8007064F[];
 extern u8 D_8007065C[];
 
 extern u8 *D_800D5EA4;
-extern u8 *func_8003974C(u8 *base, s32 idx);
 extern s32 sndPlayBankSfx(s32 a0, s32 a1, s32 a2, s32 a3);
 extern void sndCmd21(s32 a0, s32 a1);
 extern s32 func_800131A8(void);

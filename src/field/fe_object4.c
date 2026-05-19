@@ -6,7 +6,6 @@ extern SeedState *g_seedState;
 extern s32 D_800705E8;
 extern s32 D_800705F0;
 extern s32 D_800705F8;
-extern s32 D_80070600;
 extern s32 D_800852F0;
 extern u8 D_80077E5F;
 extern u8 D_800780D8[];

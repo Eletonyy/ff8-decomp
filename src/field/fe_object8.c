@@ -2,14 +2,12 @@
 #include "field.h"
 #include "gamestate.h"
 
-extern u32 D_800C71F8;
 extern u8 D_800DE4FC;
 extern s32 D_800DE8C8[];   /* @c D_800DE8C8[1] aliases @c D_800DE8CC; the
                               two forms differ in codegen (loop-hoisted
                               base) and target asm picks one per site. */
 extern s32 D_800DE8CC;
 extern void func_800A97E4(s32 spatialIdx, s32 a1, s32 a2, s32 a3);
-extern void func_800A8DAC(u8 spatialIdx, s32 a1, u32 a2, void *a3);
 extern void func_800B91D8(Eline *eline, s32 a1, s32 v2, s32 v1);
 extern void func_800B2864(Eline *eline, s32 channel, s32 a2, s32 a3);
 extern s32 func_8009E604();
