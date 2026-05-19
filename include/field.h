@@ -256,7 +256,7 @@ typedef struct {
  * 612-byte allocation.
  */
 typedef struct {
-    /* 0x000 */ u8 pad000[0x140];
+    /* 0x000 */ s32 stack[80];      /**< Bytecode stack slots (s32 each, indexed by @c stackPtr). */
     /* 0x140 */ s32 resultSlots[8]; /**< Result-slot register file (opcodes 0x08/0x09 read/write). */
     /* 0x160 */ s32 flags;
     /* 0x164 */ u8 pad164[0x10];

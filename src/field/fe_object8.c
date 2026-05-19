@@ -558,7 +558,39 @@ s32 func_800B9F58(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800B9F88);
+/**
+ * @brief Conditionally activate a message based on the entity's active bit.
+ *
+ * If bit @c scriptGroup of @c activeMask is set, peek the top three
+ * stack slots, shift each left by 12, and write them as the message's
+ * @c textPtr / @c posX / @c posY (fixed-point). Also clears
+ * @c msgState, @c windowId, @c savedChannel and sets @c msgActive=1.
+ * Returns 1 (wait for message) without popping.
+ *
+ * If the bit is clear, the message is skipped: @c msgState=2,
+ * @c msgActive=0, the current @c msgChannel is preserved into
+ * @c savedChannel, and three stack entries are discarded.
+ * Returns 2 (advance PC).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ */
+s32 func_800B9F88(Eline *eline) {
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        eline->msgActive    = 1;
+        eline->msgState     = 0;
+        eline->windowId     = 0;
+        eline->savedChannel = 0;
+        eline->msgTextPtr = eline->stack[(s8)eline->stackPtr - 2] << 12;
+        eline->msgPosX    = eline->stack[(s8)eline->stackPtr - 1] << 12;
+        eline->msgPosY    = eline->stack[(s8)eline->stackPtr]     << 12;
+        return 1;
+    }
+    eline->msgState     = 2;
+    eline->msgActive    = 0;
+    eline->stackPtr    -= 3;
+    eline->savedChannel = eline->msgChannel;
+    return 2;
+}
 
 /**
  * @brief Pop an entity index, dispatch the bearing-resolver, store byte to @c field_0x241.
