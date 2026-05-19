@@ -523,6 +523,15 @@ typedef struct {
 /** @brief Issue a dispatch command via the active spatial-entity table. */
 extern void func_800AA46C(u8 spatialIdx, s32 cmd, s32 arg, s32 arg4);
 
+/**
+ * @brief Per-entity dispatch on @ref D_800D9630 render slot.
+ *
+ * @c spatialIdx is the entity id (@c eline->field_0x256); @c cmd is
+ * a switch dispatch in range @c 0xF..0x2F. Defined as INCLUDE_ASM in
+ * @c fe_object1.c.
+ */
+extern void func_800A97E4(s32 spatialIdx, s32 cmd, s32 arg2, s32 arg3);
+
 /** @brief Motion-command setup: cmd 0xD with byte arg. */
 extern void func_800B912C(Eline *eline, s16 a1);
 
@@ -697,17 +706,19 @@ extern u8 D_800DE8D2;
 /* Spatial / text / SFX helpers (defined in main binary)                    */
 /* ======================================================================== */
 
-/*
- * @c func_800A8DAC is dispatched on its second arg (the @c cmd) and
- * different TUs use it with different fixed cmd values:
- *   cmd 0x1E writes 4 halfwords (grid-cell snapshot)
- *   cmd 0x20 writes 3 halfwords (relative offsets)
- *   cmd 0x2F sets per-entity flags
- * Because the declared signature affects caller codegen (first-arg
- * type and return type both alter the bytes emitted at the @c jal
- * site), each TU keeps its own per-use prototype rather than sharing
- * one here.
+/**
+ * @brief Per-entity spatial dispatch on @ref D_800D9630 render slots.
+ *
+ * Dispatched on @c cmd; selected cmds:
+ *   - @c 0x1E writes 4 grid-cell halfwords to @c out.
+ *   - @c 0x20 writes 3 relative-offset halfwords to @c out.
+ *   - @c 0x1F returns a per-entity matrix-buffer pointer (returned in @c v0).
+ *   - @c 0x2F / @c 0x2E set per-entity flags / queue voice/SFX.
+ *
+ * Returns a per-entity pointer in @c v0 (used by callers of @c 0x1F);
+ * callers that ignore the return value just drop it.
  */
+extern u8 *func_800A8DAC(s32 spatialIdx, s32 cmd, u32 arg, void *out);
 
 /** @brief Index into a null-terminated entry table by skipping strings. */
 extern u8 *func_8003974C(u8 *base, s32 idx);

@@ -29,12 +29,6 @@ extern s32  getSfxField28(s32 idx);
 extern void initSfxPlayback(s32 idx, u8 *data);
 extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
 
-/*
- * @c func_800A8DAC is polymorphic (see field.h); declare with the
- * spatial-snapshot signature used by this TU.
- */
-extern void func_800A8DAC(u8 spatialIdx, s32 cmd, u32 arg, void *out);
-
 /**
  * @brief Snapshot a target entity's grid-cell position into the queued
  *        turn-state fields.
