@@ -482,7 +482,54 @@ void func_800BC258(Rect *r) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BC2E0);
+/**
+ * @brief SFX trigger with text-measured rect and entry registration.
+ *
+ * Variant of @c func_800BC170 that also constructs a clipped on-screen
+ * rectangle around a piece of text: peeks @c sfxIdx / @c textIdx /
+ * @c rect.x / @c rect.y from the stack, measures the text via
+ * @c func_8002E680 to set @c rect.w / @c rect.h (with +0x10/+0x11
+ * padding), clips via @c func_800BC258, and calls @c func_8002E064
+ * to install the rect for the SFX slot.
+ *
+ * @return 5 if slot busy, 1 on success (kicks off SFX + entry),
+ *         3 once the slot frees up while inactive (pops 4).
+ */
+s32 func_800BC2E0(Eline *eline) {
+    Rect buf;
+    s32 sfxIdx;
+    s32 textIdx;
+    u8 *data;
+    s32 dims;
+
+    sfxIdx  = eline->stack[(s8)eline->stackPtr - 3];
+    textIdx = eline->stack[(s8)eline->stackPtr - 2];
+    buf.x   = (u16)eline->stack[(s8)eline->stackPtr - 1];
+    buf.y   = (u16)eline->stack[(s8)eline->stackPtr];
+
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+            return 5;
+        }
+        data = func_8003974C(D_800704C0, textIdx);
+        initSfxPlayback(sfxIdx, data);
+        dims = func_8002E680(data);
+        buf.w = (dims & 0xFFFF) + 0x10;
+        buf.h = (dims >> 16) + 0x11;
+        func_800BC258(&buf);
+        func_8002E064(sfxIdx, (s16 *)&buf);
+        startSfxSlow(sfxIdx);
+        setSfxGlobalFlag(sfxIdx);
+        g_seedState->sfxStartMask |= (1 << sfxIdx);
+        func_800BC12C(sfxIdx, (s32)data, (u8 *)&buf);
+        return 1;
+    }
+    if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+        return 1;
+    }
+    eline->stackPtr -= 4;
+    return 3;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BC44C);
 
