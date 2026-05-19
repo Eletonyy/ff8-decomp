@@ -140,17 +140,17 @@ typedef struct {
 
 extern EventQueue *D_8005F0F8;
 
-/** @brief System state block (at @c D_800704A8). */
+/** @brief System state block (at @c D_800704A8); also aliased as @c g_fieldEntity. */
 typedef struct {
-    /* 0x000 */ u8 mode;
+    /* 0x000 */ u8 mode;            /**< Top-level engine mode; @c 4 means exit. */
     /* 0x001 */ u8 pad001;
     /* 0x002 */ s16 counter;
-    /* 0x004 */ u16 unk004;
-    /* 0x006 */ u16 unk006;
+    /* 0x004 */ u16 position_x;     /**< Snapshotted X coordinate for the active party slot. */
+    /* 0x006 */ u16 position_y;     /**< Snapshotted Y coordinate for the active party slot. */
     /* 0x008 */ u16 unk008;
     /* 0x00A */ u8 pad00A[0x02];
-    /* 0x00C */ u16 unk00C;
-    /* 0x00E */ u16 unk00E;
+    /* 0x00C */ u16 rotation;       /**< Snapshotted heading for the active party slot. */
+    /* 0x00E */ u16 anim_state;     /**< Snapshotted animation byte for the active party slot. */
     /* 0x010 */ u8 pad010[0x02];
     /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_seedState->memberSlot[]). */
     /* 0x015 */ u8 pad015[0x0B];
@@ -159,7 +159,8 @@ typedef struct {
     /* 0x102 */ u16 unk102;
     /* 0x104 */ u16 unk104;
     /* 0x106 */ u16 unk106;
-    /* 0x108 */ u8 pad108[0x1A];
+    /* 0x108 */ u8 pad108[0x18];
+    /* 0x120 */ u16 field_0x120;    /**< Snapshotted misc halfword; preserved across SaveSnapshot/RestoreSnapshot. */
     /* 0x122 */ u8 unk122;          /**< Cleared together with @c unk130 by an fe_object6 opcode. */
     /* 0x123 */ u8 pad123[0x03];
     /* 0x126 */ u16 unk126;
