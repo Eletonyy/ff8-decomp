@@ -863,7 +863,46 @@ s32 func_800BA634(Eline *eline) {
     return 1;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800BA6E4);
+/**
+ * @brief Op 0x???  — start an N-step rotation if the entity's bit is set.
+ *
+ * If the entity's @c activeMask bit (selected by @c scriptGroup) is set,
+ * pops two values: the target bearing byte (@c first) and a SeeD-party
+ * member index. Looks up the target Eline via @c D_80085230[idx],
+ * snapshots @c field_0x241 into @c field_0x1DC, dispatches
+ * @c func_8009E604 to compute the target bearing into @c field_0x1DE,
+ * and writes @c first into @c field_0x242. If the snapshot matches the
+ * new bearing (no turn needed) returns @c 2; otherwise marks
+ * @c field_0x244 = 1, dispatches @c func_800BA3E0, and returns @c 1.
+ *
+ * If the bit is clear and @c field_0x244 == 3, returns @c 2 (turn
+ * complete). Otherwise returns @c 1 (wait).
+ *
+ * @param eline Pointer to the Eline event-script context.
+ */
+s32 func_800BA6E4(Eline *eline) {
+    s32 first;
+    s32 idx;
+
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        first = POP(eline);
+        idx = POP(eline);
+        eline->field_0x243 = 0;
+        eline->field_0x1DC = eline->field_0x241;
+        eline->field_0x1DE = func_8009E604(eline, D_80085230[idx]) & 0xFF;
+        eline->field_0x242 = first;
+        if (eline->field_0x1DC == eline->field_0x1DE) {
+            return 2;
+        }
+        eline->field_0x244 = 1;
+        func_800BA3E0(eline);
+        return 1;
+    }
+    if (eline->field_0x244 == 3) {
+        return 2;
+    }
+    return 1;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800BA7DC);
 
