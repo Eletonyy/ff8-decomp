@@ -406,6 +406,36 @@ extern s32 getPackedField2Bit(s32 key);
 /** @brief Field-engine PRNG; consumed by random encounter / step ticks. */
 extern s32 fieldRandom(void);
 
+/**
+ * @brief Per-entity render slot (rotational/animation state).
+ *
+ * One slot per field-engine entity, addressed via @ref D_800D9630. The
+ * full structure is around 0x64 bytes; only the fields touched by the
+ * opcode handlers are named so far.
+ */
+typedef struct {
+    u8 pad00[0x0C];
+    u16 unk0C;
+    u8 pad0E[0x44];
+    u16 unk52;       /**< Current motion halfword (mirror of Eline @c field_0x206). */
+    u8 pad54[0x0C];
+    u8 unk60;
+    u8 unk61;
+    u16 unk62;
+} EntityRenderSlot;
+
+/** @brief Entity render-slot pointer table; indexed by @c eline->field_0x256. */
+extern EntityRenderSlot *D_800D9630[];
+
+/** @brief Entity Eline pointer table; indexed by raw field-entity id. */
+extern Eline *D_80085230[];
+
+/** @brief Issue a dispatch command via the active spatial-entity table. */
+extern void func_800AA46C(u8 spatialIdx, s32 cmd, s32 arg, s32 arg4);
+
+/** @brief Motion-command setup: cmd 0xD with byte arg. */
+extern void func_800B912C(Eline *eline, s16 a1);
+
 /** @brief Update one packed-flag table slot from a step tick. */
 extern void func_800383B8(s32 key, s32 status);
 

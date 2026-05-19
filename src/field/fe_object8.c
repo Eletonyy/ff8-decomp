@@ -2,26 +2,11 @@
 #include "field.h"
 #include "gamestate.h"
 
-typedef struct {
-    u8 pad00[0x0C];
-    u16 unk0C;
-    u8 pad0E[0x44];
-    u16 unk52;
-    u8 pad54[0x0C];
-    u8 unk60;
-    u8 unk61;
-    u16 unk62;
-} EntityRenderSlot;
-
-extern EntityRenderSlot *D_800D9630[];
-extern Eline *D_80085230[];
 extern u32 D_800C71F8;
+extern u8 D_800DE4FC;
 extern void func_800A97E4(s32 spatialIdx, s32 a1, s32 a2, s32 a3);
 extern void func_800A8DAC(u8 spatialIdx, s32 a1, u32 a2, void *a3);
-extern void func_800B912C(Eline *eline, s16 a1);
 extern void func_800B91D8(Eline *eline, s32 a1, s32 v2, s32 v1);
-extern void func_800AA46C(u8 spatialIdx, s32 cmd, s32 arg, s32 arg4);
-extern u8 D_800DE4FC;
 extern s32 func_8009E604();
 
 /**

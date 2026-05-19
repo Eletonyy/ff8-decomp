@@ -23,7 +23,6 @@ extern u8 *func_800A8DAC(s32 entityIdx, s32 mode, void *buf, s32 flag);
 extern void func_800406A4(u8 *p);
 extern void func_80040734(u8 *p);
 extern s32 func_80040DE4(SVECTOR *v0, s32 *sxy, s32 *p, s32 *flag);
-extern Eline *D_80085230[];
 extern void setCameraShakeParams(s32 a, s32 b);
 extern void setCameraVibrateState(s32 enable);
 extern u8 D_8007064E;

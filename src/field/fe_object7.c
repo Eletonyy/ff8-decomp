@@ -21,7 +21,6 @@ typedef struct {
 extern u8 D_8007064C;
 extern s16 D_8007737C;
 extern Eline *D_80085224;
-extern Eline *D_80085230[];
 extern u8 D_800773C0;
 extern u8 D_80082C11;
 extern EncounterParams D_80082C90;
