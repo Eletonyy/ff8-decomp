@@ -614,7 +614,78 @@ s32 func_800BC58C(Eline *eline) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BC6F0);
+extern s32 D_800DE4D8;
+extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
+
+/**
+ * @brief Field-VM SFX trigger / state-machine handler (6-arg variant).
+ *
+ * Same shape as @c func_800BC8CC but without the on-screen rect /
+ * text-measure setup, so it takes 6 stack params instead of 8.
+ *
+ * Bit-set: save global flag (@c D_800DE4D8), dispatch
+ * @c func_8002D784(sfxIdx, data, paramY..V), kick off SFX, set both
+ * @c sfxStartMask and @c sfxActiveMask, clear @c field_0x204.
+ *
+ * Bit-clear: 2-state machine on @c field_0x204 — state 0 queries
+ * remaining duration and fades, state 1 waits for release then pops 6
+ * and restores the saved flag.
+ *
+ * @return 1 working, 3 done, 5 slot busy.
+ */
+s32 func_800BC6F0(Eline *e) {
+    s32 sfxIdx;
+    s32 textIdx;
+    s32 paramY;
+    s32 paramZ;
+    s32 paramW;
+    s32 paramV;
+    u8 *data;
+    s32 r;
+    s32 state;
+
+    paramV  = e->stack[(s8)e->stackPtr];
+    paramW  = e->stack[(s8)e->stackPtr - 1];
+    paramZ  = e->stack[(s8)e->stackPtr - 2];
+    paramY  = e->stack[(s8)e->stackPtr - 3];
+    textIdx = e->stack[(s8)e->stackPtr - 4];
+    sfxIdx  = e->stack[(s8)e->stackPtr - 5];
+
+    if ((e->activeMask >> e->scriptGroup) & 1) {
+        if ((g_seedState->sfxActiveMask >> sfxIdx) & 1) {
+            return 5;
+        }
+        D_800DE4D8 = getSfxGlobalFlag();
+        data = func_8003974C(D_800704C0, textIdx);
+        func_8002D784(sfxIdx, data, paramY, paramZ, paramW, paramV);
+        startSfxSlow(sfxIdx);
+        e->field_0x204 = 0;
+        g_seedState->sfxStartMask  |= (1 << sfxIdx);
+        g_seedState->sfxActiveMask |= (1 << sfxIdx);
+    } else {
+        state = e->field_0x204;
+        switch (state) {
+        case 0:
+            setSfxGlobalFlag(sfxIdx);
+            r = func_8002CE84(sfxIdx);
+            e->resultSlots[0] = r;
+            if (r >= 0) {
+                fadeOutSfxSlow(sfxIdx);
+                e->field_0x204++;
+            }
+            break;
+        case 1:
+            if (getSfxField1C(sfxIdx) == 0) {
+                g_seedState->sfxActiveMask &= ~(state << sfxIdx);
+                e->stackPtr -= 6;
+                setSfxGlobalFlag(D_800DE4D8);
+                return 3;
+            }
+            break;
+        }
+    }
+    return 1;
+}
 
 /**
  * @brief Field-VM SFX trigger / state-machine handler.
