@@ -451,6 +451,9 @@ extern s32 (*g_fieldOpcodeTable[392])(Eline *eline);
 /** @brief Read the 2-bit packed flag at the given key (256-entry table). */
 extern s32 getPackedField2Bit(s32 key);
 
+/** @brief Field-only party-member status predicate (used by dialog opcodes). */
+extern s32 func_800211B4(s32 partyMember, s32 code);
+
 /** @brief Field-engine PRNG; consumed by random encounter / step ticks. */
 extern s32 fieldRandom(void);
 
@@ -716,6 +719,26 @@ extern Eline *D_800DE4F8;
 
 /** @brief Per-text status array consumed by fe_object7 dialog flow. */
 extern u8 D_800DE880[];
+
+/* ======================================================================== */
+/* Field-side scalars consumed by fe_object6 (SFX / camera / GF opcodes)    */
+/* ======================================================================== */
+
+/** @brief Per-channel SFX bank lookup table; indexed by the SFX dispatcher. */
+extern u8 *D_800D5EA4;
+
+/** @brief Misc field-side scratch bytes used by fe_object6. */
+extern u8 D_8007064A;
+extern u8 D_8007064B;
+extern u8 D_8007064D;
+extern u8 D_8007064E;
+extern u8 D_8007064F[];
+extern u8 D_8007065C[];
+extern u8 D_80070652;
+extern u8 D_800704CA;
+
+/** @brief Field-side rotation/orientation halfword consumed by camera opcodes. */
+extern u16 D_800704AA;
 
 /** @brief Dialog dispatch mode shared with @ref D_800704A8.dialogState. */
 extern u8 D_800DE8D2;
