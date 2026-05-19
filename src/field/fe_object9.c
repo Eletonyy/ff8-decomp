@@ -1,7 +1,7 @@
 #include "common.h"
 #include "field.h"
+#include "gamestate.h"
 
-extern SeedState *g_seedState;
 extern u8 *D_800704C0;
 extern s32 D_800DE4DC;
 extern u8 D_800DE8D2;
@@ -28,7 +28,23 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BB510);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BB5E0);
 
-s32 func_800BB650(FieldEntity *entity) { s16 buf[4]; func_800A8DAC(*((u8 *)entity + 0x256), 0x20, (u8 *)buf, 0); *((u16 *)((u8 *)entity + 0x228)) = 0; *((u16 *)((u8 *)entity + 0x22C)) = buf[1] / 16; *((u16 *)((u8 *)entity + 0x230)) = buf[2] / 16; return 2; }
+/**
+ * @brief Query relative offset (kind 0x20) and split into entity halfwords.
+ *
+ * Calls @c func_800A8DAC with mode @c 0x20 to fetch three relative-offset
+ * halfwords for the active spatial entity. Stores @c buf[1]/16 into
+ * @c field_0x22C, @c buf[2]/16 into @c field_0x230, and clears
+ * @c field_0x228. (@c buf[0] is queried but discarded.)
+ */
+s32 func_800BB650(Eline *eline) {
+    s16 buf[4];
+
+    func_800A8DAC(eline->field_0x256, 0x20, (u8 *)buf, 0);
+    eline->field_0x228 = 0;
+    eline->field_0x22C = buf[1] / 16;
+    eline->field_0x230 = buf[2] / 16;
+    return 2;
+}
 
 /**
  * @brief Copy 12 animation halfwords from D_800704A8 table to entity.
@@ -54,7 +70,26 @@ void func_800BB6C8(void) {
     *(u16 *)(dst + 0xEE) = *(u16 *)(src + 0x11E);
 }
 
-s32 func_800BB768(void) { u8 *src = (u8 *)&D_800704A8; D_800DE8D2 = 2; *(u16 *)(src + 0x108) = 2; *(u16 *)(src + 0x10A) = 0xFF; *(u16 *)(src + 0x10C) = 0x10; *(u16 *)(src + 0x10E) = 0xFF; *(u16 *)(src + 0x110) = 0xFF; *(u16 *)(src + 0x112) = 0xFF; func_800BB6C8(); return 2; }
+/**
+ * @brief Initialise the 6-halfword dialog-state block at @c D_800704A8+0x108
+ *        and mirror it into @c g_seedState->fieldD8 via @ref func_800BB6C8.
+ *
+ * Sets @c D_800DE8D2 = 2 as the global mode marker and seeds:
+ * @c +0x108=2, @c +0x10A=0xFF, @c +0x10C=0x10, @c +0x10E=0xFF,
+ * @c +0x110=0xFF, @c +0x112=0xFF.
+ */
+s32 func_800BB768(void) {
+    u8 *src = (u8 *)&D_800704A8;
+    D_800DE8D2 = 2;
+    *(u16 *)(src + 0x108) = 2;
+    *(u16 *)(src + 0x10A) = 0xFF;
+    *(u16 *)(src + 0x10C) = 0x10;
+    *(u16 *)(src + 0x10E) = 0xFF;
+    *(u16 *)(src + 0x110) = 0xFF;
+    *(u16 *)(src + 0x112) = 0xFF;
+    func_800BB6C8();
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BB7BC);
 
@@ -81,29 +116,51 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BBC08);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BBC64);
 
-s32 func_800BBDA8(void) { u8 *src = (u8 *)&D_800704A8; if (*(u16 *)(src + 0x10C) != *(u16 *)(src + 0x10A)) { return 1; } *(u16 *)((u8 *)g_seedState + 0xD8) = *(u16 *)(src + 0x108); return 2; }
+/**
+ * @brief Wait for the dialog-state countdown to match the timer.
+ *
+ * Returns @c 1 while @c D_800704A8+0x10C (countdown) and @c +0x10A
+ * (target/timer) differ. Once they match, copy the current dialog
+ * state word at @c +0x108 into @c g_seedState->fieldD8 and return @c 2.
+ */
+s32 func_800BBDA8(void) {
+    u8 *src = (u8 *)&D_800704A8;
+    if (*(u16 *)(src + 0x10C) != *(u16 *)(src + 0x10A)) {
+        return 1;
+    }
+    g_seedState->fieldD8 = *(u16 *)(src + 0x108);
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BBDE0);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BBE50);
 
-s32 func_800BBE78(void) { u8 *src = (u8 *)&D_800704A8; *(volatile u16 *)(src + 0x108) = 4; *(u16 *)((u8 *)g_seedState + 0xD8) = *(volatile u16 *)(src + 0x108); return 2; }
+/**
+ * @brief Force the dialog state to @c 4 and mirror it into @c g_seedState->fieldD8.
+ *
+ * The @c volatile cast is required for matching codegen: the asm reads
+ * the just-written value back through memory rather than reusing the
+ * literal @c 4.
+ */
+s32 func_800BBE78(void) {
+    u8 *src = (u8 *)&D_800704A8;
+    *(volatile u16 *)(src + 0x108) = 4;
+    g_seedState->fieldD8 = *(volatile u16 *)(src + 0x108);
+    return 2;
+}
 
 /**
- * Pops two parameters from the stack and calls func_8002E1B4(val2 & 7, val1).
+ * @brief Pop two stack slots and dispatch @c func_8002E1B4 with them.
  *
- * @param a0 Pointer to the script/object structure.
- * @return 2 (continue processing).
+ * Pops two values from the script stack and calls
+ * @c func_8002E1B4(val2 & 7, val1) — val1 is the top slot, val2 the
+ * next. The @c & @c 7 mask suggests @c val2 is a 3-bit selector
+ * (e.g. SFX channel id).
  */
-s32 func_800BBEA4(u8 *a0) {
-    u8 idx;
-    s32 val1, val2;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    val1 = *(s32 *)(a0 + (s8)idx * 4);
-    *(u8 *)(a0 + 0x184) = idx - 2;
-    val2 = *(s32 *)(a0 + (s8)(idx - 1) * 4);
+s32 func_800BBEA4(Eline *eline) {
+    s32 val1 = POP(eline);
+    s32 val2 = POP(eline);
     func_8002E1B4(val2 & 7, val1);
     return 2;
 }
@@ -111,23 +168,41 @@ s32 func_800BBEA4(u8 *a0) {
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BBEFC);
 
 /**
- * Reads two parameters from the stack using the current index at 0x184,
- * calls setSfxPitch with them, returns 2.
+ * @brief Peek top two stack slots and pass them to @c setSfxPitch.
  *
- * @param a0 Pointer to the script/object structure.
- * @return 2 (continue processing).
+ * Reads @c stack[ptr-1] and @c stack[ptr] without decrementing
+ * @c stackPtr, then calls @c setSfxPitch(stack[ptr-1], stack[ptr]).
  */
-s32 func_800BBFFC(u8 *a0) {
-    s8 idx;
-
-    idx = *(s8 *)(a0 + 0x184);
-    setSfxPitch(*(s32 *)(a0 + idx * 4 - 4), *(s32 *)(a0 + idx * 4));
+s32 func_800BBFFC(Eline *eline) {
+    s8 idx = (s8)eline->stackPtr;
+    setSfxPitch(eline->stack[idx - 1], eline->stack[idx]);
     return 2;
 }
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BC034);
 
-void func_800BC12C(s32 a0, s32 a1, u8 *a2) { u8 *base = D_80085300; u8 *entry; a0 <<= 4; entry = base + a0; *(s32 *)(entry + 0x8) = a1; *(u16 *)(entry + 0x0) = *(u16 *)(a2 + 0x0); *(u16 *)(entry + 0x2) = *(u16 *)(a2 + 0x2); *(u16 *)(entry + 0x4) = *(u16 *)(a2 + 0x4); *(u16 *)(entry + 0x6) = *(u16 *)(a2 + 0x6); }
+/**
+ * @brief Write one 16-byte entry into the @c D_80085300 table.
+ *
+ * Each entry is laid out as four input halfwords (copied from
+ * @c src) followed by an @c s32 payload (@c val) at @c +0x8. The
+ * trailing @c +0xC..+0xF bytes are left untouched.
+ *
+ * @param idx  Entry index (stride 16 bytes).
+ * @param val  s32 payload stored at @c entry+0x8.
+ * @param src  4-halfword source block, copied to @c entry+0x0..+0x7.
+ */
+void func_800BC12C(s32 idx, s32 val, u8 *src) {
+    u8 *base = D_80085300;
+    u8 *entry;
+    idx <<= 4;
+    entry = base + idx;
+    *(s32 *)(entry + 0x8) = val;
+    *(u16 *)(entry + 0x0) = *(u16 *)(src + 0x0);
+    *(u16 *)(entry + 0x2) = *(u16 *)(src + 0x2);
+    *(u16 *)(entry + 0x4) = *(u16 *)(src + 0x4);
+    *(u16 *)(entry + 0x6) = *(u16 *)(src + 0x6);
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BC170);
 
@@ -172,21 +247,19 @@ s32 func_800BC8CC(Eline *e) {
     s32 paramZ;
     s32 paramW;
     s32 paramV;
-    s32 *stack;
     u8 *text;
     s32 dims;
     s32 r;
     s32 state;
 
-    stack = (s32 *)e;
-    buf[1] = *(u16 *)&stack[e->stackPtr];
-    buf[0] = *(u16 *)&stack[e->stackPtr - 1];
-    paramV = stack[e->stackPtr - 2];
-    paramW = stack[e->stackPtr - 3];
-    paramZ = stack[e->stackPtr - 4];
-    paramY = stack[e->stackPtr - 5];
-    textIdx = stack[e->stackPtr - 6];
-    sfxIdx = stack[e->stackPtr - 7];
+    buf[1] = *(u16 *)&e->stack[e->stackPtr];
+    buf[0] = *(u16 *)&e->stack[e->stackPtr - 1];
+    paramV  = e->stack[e->stackPtr - 2];
+    paramW  = e->stack[e->stackPtr - 3];
+    paramZ  = e->stack[e->stackPtr - 4];
+    paramY  = e->stack[e->stackPtr - 5];
+    textIdx = e->stack[e->stackPtr - 6];
+    sfxIdx  = e->stack[e->stackPtr - 7];
 
     if ((e->activeMask >> e->scriptGroup) & 1) {
         if ((g_seedState->sfxActiveMask >> sfxIdx) & 1) {
@@ -232,17 +305,10 @@ s32 func_800BC8CC(Eline *e) {
 INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BCB14);
 
 /**
- * Pops a parameter and calls setSfxGlobalFlag, returns 2.
- *
- * @param a0 Pointer to the script/object structure.
- * @return 2 (continue processing).
+ * @brief Pop the top stack slot and pass it to @c setSfxGlobalFlag.
  */
-s32 func_800BCC6C(u8 *a0) {
-    u8 idx;
-
-    idx = *(u8 *)(a0 + 0x184);
-    *(u8 *)(a0 + 0x184) = idx - 1;
-    setSfxGlobalFlag(*(s32 *)(a0 + (s8)idx * 4));
+s32 func_800BCC6C(Eline *eline) {
+    setSfxGlobalFlag(POP(eline));
     return 2;
 }
 
@@ -265,13 +331,8 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object9", func_800BD024);
  * @param entity Script entity context.
  * @return 2.
  */
-s32 func_800BD1A4(FieldEntity *entity) {
-    u8 *a0 = (u8 *)entity;
-    u8 idx = entity->stackIdx;
-    s32 val;
-
-    entity->stackIdx = idx - 1;
-    val = *(s32 *)(a0 + (s8)idx * 4);
+s32 func_800BD1A4(Eline *eline) {
+    s32 val = POP(eline);
     *(u16 *)(D_80085398 + val * 16) = 0;
     clearAnimEntryActive(val);
     return 2;
