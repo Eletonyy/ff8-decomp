@@ -542,26 +542,24 @@ s32 func_800BC034(Eline *eline) {
 }
 
 /**
- * @brief Write one 16-byte entry into the @c D_80085300 table.
+ * @brief Write one entry into the @c D_80085300 SFX-entry table.
  *
- * Each entry is laid out as four input halfwords (copied from
- * @c src) followed by an @c s32 payload (@c val) at @c +0x8. The
- * trailing @c +0xC..+0xF bytes are left untouched.
+ * Stores the s32 @c val into @c entry->payload and copies the four
+ * input halfwords from @c src into @c entry->rect. The trailing
+ * @c volume / @c type fields are left untouched.
  *
- * @param idx  Entry index (stride 16 bytes).
- * @param val  s32 payload stored at @c entry+0x8.
- * @param src  4-halfword source block, copied to @c entry+0x0..+0x7.
+ * @param idx  Entry index in @c D_80085300.
+ * @param val  s32 payload (typically an SFX data pointer cast to s32).
+ * @param src  4-halfword source block, copied into @c entry->rect.
  */
-void func_800BC12C(s32 idx, s32 val, u8 *src) {
-    u8 *base = (u8 *)D_80085300;
-    u8 *entry;
-    idx <<= 4;
-    entry = base + idx;
-    *(s32 *)(entry + 0x8) = val;
-    *(u16 *)(entry + 0x0) = *(u16 *)(src + 0x0);
-    *(u16 *)(entry + 0x2) = *(u16 *)(src + 0x2);
-    *(u16 *)(entry + 0x4) = *(u16 *)(src + 0x4);
-    *(u16 *)(entry + 0x6) = *(u16 *)(src + 0x6);
+void func_800BC12C(s32 idx, s32 val, u16 *src) {
+    SfxEntry *base = D_80085300;
+    SfxEntry *entry = base + idx;
+    entry->payload = val;
+    entry->rect[0] = src[0];
+    entry->rect[1] = src[1];
+    entry->rect[2] = src[2];
+    entry->rect[3] = src[3];
 }
 
 extern void initSfxPlayback(s32 idx, u8 *data);
@@ -600,7 +598,7 @@ s32 func_800BC170(Eline *eline) {
     g_seedState->sfxEntryMask  |= (1 << sfxIdx);
 
     eline->stackPtr -= 2;
-    func_800BC12C(sfxIdx, (s32)data, buf);
+    func_800BC12C(sfxIdx, (s32)data, (u16 *)buf);
     return 3;
 }
 
@@ -665,7 +663,7 @@ s32 func_800BC2E0(Eline *eline) {
         startSfxSlow(sfxIdx);
         setSfxGlobalFlag(sfxIdx);
         g_seedState->sfxStartMask |= (1 << sfxIdx);
-        func_800BC12C(sfxIdx, (s32)data, (u8 *)&buf);
+        func_800BC12C(sfxIdx, (s32)data, (u16 *)&buf);
         return 1;
     }
     if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
@@ -714,7 +712,7 @@ s32 func_800BC44C(Eline *eline) {
     g_seedState->sfxEntryMask |= (1 << sfxIdx);
 
     eline->stackPtr -= 4;
-    func_800BC12C(sfxIdx, (s32)data, (u8 *)&buf);
+    func_800BC12C(sfxIdx, (s32)data, (u16 *)&buf);
     return 3;
 }
 
@@ -754,7 +752,7 @@ s32 func_800BC58C(Eline *eline) {
     setSfxGlobalFlag(sfxIdx);
 
     g_seedState->sfxStartMask |= (1 << sfxIdx);
-    func_800BC12C(sfxIdx, (s32)data, (u8 *)&buf);
+    func_800BC12C(sfxIdx, (s32)data, (u16 *)&buf);
     return 2;
 }
 
@@ -1000,7 +998,7 @@ s32 func_800BCCAC(Eline *e) {
     func_800BC258(&buf);
     func_8002E064(sfxIdx, &buf);
     e->stackPtr -= 5;
-    func_800BC12C(sfxIdx, 0, (u8 *)&buf);
+    func_800BC12C(sfxIdx, 0, (u16 *)&buf);
     return 2;
 }
 
