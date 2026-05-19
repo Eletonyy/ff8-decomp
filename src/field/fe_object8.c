@@ -1003,7 +1003,39 @@ s32 func_800BA9E8(Eline *eline) {
     return 1;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object8", func_800BAAFC);
+/**
+ * @brief One-shot bearing-set variant.
+ *
+ * Similar pop+lookup pattern as @c func_800BA8D4 / @c func_800BA9E8.
+ * If the entity's group bit is set, pops the bearing byte and a SeeD
+ * party-slot index, computes the target bearing via @c func_8009E604,
+ * and either marks @c field_0x244 = 3 (no turn needed) or starts a
+ * turn (@c field_0x244 = 2, dispatch @c func_800BA3E0).
+ *
+ * Always returns @c 2 — the caller never has to wait.
+ *
+ * @param eline Pointer to the Eline event-script context.
+ */
+s32 func_800BAAFC(Eline *eline) {
+    s32 first;
+    s32 slot;
+
+    if ((eline->activeMask >> eline->scriptGroup) & 1) {
+        first = POP(eline);
+        slot = POP(eline);
+        eline->field_0x243 = 0;
+        eline->field_0x1DC = eline->field_0x241;
+        eline->field_0x1DE = func_8009E604(eline, &D_80085224[g_seedState->memberSlot[slot]]) & 0xFF;
+        eline->field_0x242 = first;
+        if (eline->field_0x1DC == eline->field_0x1DE) {
+            eline->field_0x244 = 3;
+        } else {
+            eline->field_0x244 = 2;
+            func_800BA3E0(eline);
+        }
+    }
+    return 2;
+}
 
 /**
  * @brief Returns 2 once the turn-state kind byte reaches 3, otherwise 1.
