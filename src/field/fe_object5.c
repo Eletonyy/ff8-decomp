@@ -23,7 +23,6 @@ extern s32 sndCmd1A(s32 bankHandle, s32 ramp, s32 priority);
 extern s32 sndCmdC2(s32 handle, s32 ramp, s32 depth, s32 vol);
 extern Eline *D_8008538C;
 extern void func_8009A8E0(Eline *e);
-extern void func_800A97E4();
 extern void sndCmdF1(void);
 extern void sndCmd11();
 extern s32 sndCmdC1(s32 handle, s32 ramp, s32 vol);
