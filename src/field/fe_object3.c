@@ -1,18 +1,5 @@
 #include "common.h"
-
-typedef struct {
-    /* 0x00 */ s32 unk0;
-    /* 0x04 */ s32 unk4;
-    /* 0x08 */ s32 unk8;
-} CmdEntry; /* 12 bytes */
-
-typedef struct {
-    /* 0x00 */ s32 count;
-    /* 0x04 */ u8  pad4[4];
-    /* 0x08 */ CmdEntry entries[1];
-} CmdQueue;
-
-extern CmdQueue D_800DE7B0;
+#include "field/fe_object3.h"
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object3", func_800AD7AC);
 

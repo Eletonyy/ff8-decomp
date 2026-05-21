@@ -169,7 +169,8 @@ typedef struct {
     /* 0x00E */ u16 anim_state;     /**< Snapshotted animation byte for the active party slot. */
     /* 0x010 */ u8 pad010[0x02];
     /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_seedState->memberSlot[]). */
-    /* 0x015 */ u8 pad015[0x0B];
+    /* 0x015 */ u8 unk015;          /**< Cleared by @c func_800AF610 along with the trigger flag. */
+    /* 0x016 */ u8 pad016[0x0A];
     /* 0x020 */ SystemSubMode slots[8]; /**< 8 mode/param slots, stride 28; slot 0 corresponds to the legacy @c unk020..unk032 fields. */
     /* 0x100 */ u8 pad100[0x02];
     /* 0x102 */ u16 unk102;
@@ -204,10 +205,13 @@ typedef struct {
     /* 0x1A0 */ u8 unk1A0;          /**< Mode-6 active marker, set with mode = 6 by fe_object6 opcode. */
     /* 0x1A1 */ u8 pad1A1;
     /* 0x1A2 */ u8 unk1A2;          /**< Mode-7 reentry guard byte. */
-    /* 0x1A3 */ u8 pad1A3[0x08];
+    /* 0x1A3 */ u8 unk1A3;          /**< Set to 1 by @c func_800AF7E4 on every call (re-arm guard). */
+    /* 0x1A4 */ u8 pad1A4[0x07];
     /* 0x1AB */ u8 unk1AB;          /**< Sub-mode byte; written together with @c mode by fe_object6 opcodes. */
     /* 0x1AC */ u8 pad1AC[0x02];
     /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c func_800B85C8, read by @c func_8009FE18). */
+    /* 0x1AF */ u8 pad1AF[0x09];
+    /* 0x1B8 */ u8 statusBits[0x40]; /**< Packed bit-array (512 bits); set by @c func_800AEFE8, cleared by @c func_800AF02C, zeroed during init. */
 } SystemState;
 
 extern SystemState D_800704A8;
@@ -236,8 +240,8 @@ typedef struct {
     /* 0x58 */ u8 field58;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0x59 */ u8 pad59[0x0F];
     /* 0x68 */ s32 stateFlags;          /**< Field state flags (bits 3-4 checked by getFieldStateFlags). */
-    /* 0x6C */ s32 soundHandle0;        /**< Sound channel handle 0. */
-    /* 0x70 */ s32 soundHandle1;        /**< Sound channel handle 1 (-1 = inactive). */
+    /* 0x6C */ s32 soundHandle0;        /**< Sound channel handle 0 (@ref SND_HANDLE_NONE = inactive). */
+    /* 0x70 */ s32 soundHandle1;        /**< Sound channel handle 1 (@ref SND_HANDLE_NONE = inactive). */
     /* 0x74 */ u8 packedFlags[0x40];    /**< Packed 2-bit-per-entry flag table (256 entries, indexed by 8-bit key). */
     /* 0xB4 */ u16 packedFlagsStepAcc;  /**< Step accumulator: fires packed-flags processing at @c 0x2800. */
     /* 0xB6 */ u16 fieldB6;             /**< Used by fe_object7 dispatch (purpose TBD). */
@@ -298,10 +302,13 @@ typedef struct {
     /* 0x000 */ s32 stack[80];      /**< Bytecode stack slots (s32 each, indexed by @c stackPtr). */
     /* 0x140 */ s32 resultSlots[8]; /**< Result-slot register file (opcodes 0x08/0x09 read/write). */
     /* 0x160 */ s32 flags;
-    /* 0x164 */ u8 pad164[0x10];
+    /* 0x164 */ u16 groupRanges[8]; /**< Per-script-group saved PC table (0xFFFF = empty); written by @c func_800AE1AC. */
     /* 0x174 */ u8 scriptGroup;     /**< Script group index. */
     /* 0x175 */ u8 activeMask;      /**< Entity active bitmask. */
-    /* 0x176 */ u8 pad176[0x0E];
+    /* 0x176 */ u16 pc;             /**< Script-VM program counter (advanced by JMP / JPF; pushed by CAL). */
+    /* 0x178 */ u16 rangeLo;        /**< Lower bound of script trigger range (tested by @c func_800BE44C). */
+    /* 0x17A */ u16 rangeHi;        /**< Upper bound of script trigger range. */
+    /* 0x17C */ u8 groupStackBase[8]; /**< Per-script-group saved stackPtr base (used by context-switch in @c func_800AE1AC). */
     /* 0x184 */ s8 stackPtr;        /**< Bytecode stack pointer (signed, grows down). */
     /* 0x185 */ u8 pad185[0x03];
     /* 0x188 */ u8 unk188;          /**< Script parameter byte. */
@@ -523,38 +530,6 @@ typedef struct {
     /* 0x0FE */ u8 padFE[0x166];    /**< Rest of the 612-byte slot mirrors @c Eline. */
 } FieldActor; /* 0x264 = 612 bytes */
 
-/** @brief Issue a dispatch command via the active spatial-entity table. */
-extern void func_800AA46C(u8 spatialIdx, s32 cmd, s32 arg, s32 arg4);
-
-/**
- * @brief Per-entity dispatch on @ref D_800D9630 render slot.
- *
- * @c spatialIdx is the entity id (@c eline->field_0x256); @c cmd is
- * a switch dispatch in range @c 0xF..0x2F. Defined as INCLUDE_ASM in
- * @c fe_object1.c.
- */
-extern void func_800A97E4(s32 spatialIdx, s32 cmd, s32 arg2, s32 arg3);
-
-/** @brief Motion-command setup: cmd 0xD with byte arg. */
-extern void func_800B912C(Eline *eline, s16 a1);
-
-/**
- * @brief Voice/SFX pitch+volume dispatch driven by entity motion hooks.
- *
- * Only @c eline and @c channel are read; @c unused2 / @c unused3 are
- * args the (sole) fe_object8 call site supplies but the callee discards.
- */
-extern void func_800B2864(Eline *eline, s32 channel, s32 unused2, s32 unused3);
-
-/**
- * @brief Compute the angular bearing from one entity to another.
- *
- * Reads the (@c posX, @c posY) of both entities, shifts to grid coords,
- * and forwards to @c func_8009A0E8 for the arctan-style bearing lookup.
- * Returns the 0x00..0xFF bearing byte (callers typically mask with
- * @c & 0xFF).
- */
-extern s32 func_8009E604(Eline *a, Eline *b);
 
 /** @brief Update one packed-flag table slot from a step tick. */
 extern void func_800383B8(s32 key, s32 status);
@@ -596,12 +571,12 @@ extern FieldSfxSlot D_80085300[];
  * forwarded to @c setupAnimEntry / @c setupAnimEntryFull / @c updateAnimEntry).
  */
 typedef struct {
-    /* 0x0 */ u16 flag;
-    /* 0x2 */ u16 field2;
-    /* 0x4 */ u16 field4;
-    /* 0x6 */ u16 field6;
-    /* 0x8 */ u16 field8;
-    /* 0xA */ u16 fieldA;
+    /* 0x0 */ s16 flag;
+    /* 0x2 */ s16 field2;
+    /* 0x4 */ s16 field4;
+    /* 0x6 */ s16 field6;
+    /* 0x8 */ s16 field8;
+    /* 0xA */ s16 fieldA;
     /* 0xC */ u16 fieldC;
     /* 0xE */ u16 fieldE;
 } FieldAnimSlot;
@@ -634,6 +609,10 @@ extern s32 D_80070600;
 
 /** @brief Active field-script entity index (mirrors @c eline->field_0x256). */
 extern u8 D_800DE4FC;
+extern u8 D_800DE4FD[];
+extern u8 D_80085390;
+extern u8 D_800704BB;
+extern u8 D_800704BC;
 
 /**
  * @brief Field-engine status word array; @c D_800DE8C8[1] aliases
@@ -720,6 +699,31 @@ extern Eline *D_800DE4F8;
 /** @brief Per-text status array consumed by fe_object7 dialog flow. */
 extern u8 D_800DE880[];
 
+/**
+ * @brief Field-VM event header — script blob preamble parsed by @c func_800BE30C.
+ *
+ * Each script blob begins with this header. Three byte flags at the
+ * start, a 4th flag at offset 3, then two 16-bit offsets that point
+ * to sub-tables inside the blob. The actual bytecode starts at
+ * @c +0x8.
+ */
+typedef struct {
+    /* 0x0 */ u8 field0;
+    /* 0x1 */ u8 field1;
+    /* 0x2 */ u8 field2;
+    /* 0x3 */ u8 field3;
+    /* 0x4 */ u16 offset4;
+    /* 0x6 */ u16 offset6;
+} EventHeader;
+
+extern u8 D_800DE8D8;       /**< Mirror of @c EventHeader.field2 from the active script. */
+extern u8 D_800DE8D9;       /**< Mirror of @c EventHeader.field0. */
+extern u8 D_800DE8DA;       /**< Mirror of @c EventHeader.field1. */
+extern u8 D_800DE8C0;       /**< Mirror of @c EventHeader.field3. */
+extern u8 *D_800DE4E0;      /**< Pointer to script bytecode start (header base + 8). */
+extern u8 *D_800DE4E4;      /**< Pointer to first sub-table (header base + offset4). */
+extern u8 *D_800DE4E8;      /**< Pointer to second sub-table (header base + offset6). */
+
 /* ======================================================================== */
 /* Field-side scalars consumed by fe_object6 (SFX / camera / GF opcodes)    */
 /* ======================================================================== */
@@ -759,8 +763,6 @@ extern u8 D_800DE8D2;
  * Returns a per-entity pointer in @c v0 (used by callers of @c 0x1F);
  * callers that ignore the return value just drop it.
  */
-extern u8 *func_800A8DAC(s32 spatialIdx, s32 cmd, u32 arg, void *out);
-
 /** @brief Index into a null-terminated entry table by skipping strings. */
 extern u8 *func_8003974C(u8 *base, s32 idx);
 

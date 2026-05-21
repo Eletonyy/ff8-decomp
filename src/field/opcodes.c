@@ -3,10 +3,11 @@
  * Layout (392 function pointers = 0x620 bytes):
  *
  *   Indices 0x000-0x011 (18 entries) — stack arithmetic sub-table.
- *     Indexed by func_800AE048 (the "meta-dispatcher", which receives
- *     a sub-opcode in @c a1 and tail-calls @c g_fieldOpcodeTable[a1]). The 18
- *     entries are pure stack ops on the eline's value stack at offset
- *     0x184: ADD, SUB, MUL, DIV, MOD, NEG, EQ, ... AND, OR, XOR, etc.
+ *     Invoked via the CAL opcode (op001 @ table index 0x013), which is
+ *     @c func_800AE048. CAL reads a sub-opcode in @c a1 and tail-calls
+ *     @c g_fieldOpcodeTable[a1]. The 18 entries are pure stack ops on
+ *     the eline's value stack at offset 0x184: ADD, SUB, MUL, DIV, MOD,
+ *     NEG, EQ, GT, GE, LT, LE, NE, AND, OR, EOR, NOT, RSH, LSH.
  *
  *   Indices 0x012-0x187 (374 entries) — main field-VM opcode dispatch.
  *     The runtime dispatcher (fe_object10 func_800BEBD0/func_800BD9C4)
@@ -22,401 +23,21 @@
  */
 #include "common.h"
 #include "field.h"
+#include "field/fe_object1.h"
+#include "field/fe_object2.h"
+#include "field/fe_object3.h"
+#include "field/fe_object4.h"
+#include "field/fe_object5.h"
+#include "field/fe_object6.h"
+#include "field/fe_object7.h"
+#include "field/fe_object8.h"
+#include "field/fe_object9.h"
+#include "field/fe_object10.h"
+#include "field/fe_object11.h"
+#include "field/fe_object12.h"
 
 /* Forward declarations for the 392 opcode handlers (K&R-style
  * unprototyped — the table cast handles arg-type compatibility). */
-extern void func_800ADCA4();
-extern void func_800ADCD8();
-extern void func_800ADD30();
-extern void func_800ADD68();
-extern void func_800ADDA0();
-extern void func_800ADD0C();
-extern void func_800ADDD8();
-extern void func_800ADE10();
-extern void func_800ADE44();
-extern void func_800ADE7C();
-extern void func_800ADEB0();
-extern void func_800ADEE8();
-extern void func_800ADF20();
-extern void func_800ADF54();
-extern void func_800ADF88();
-extern void func_800ADFBC();
-extern void func_800ADFE0();
-extern void func_800AE014();
-extern void func_800ADC9C();
-extern void func_800AE048();
-extern void func_800AE080();
-extern void func_800AE098();
-extern void func_800AE0DC();
-extern void func_800AE124();
-extern void func_800AE1AC();
-extern void func_800AE4C4();
-extern void func_800AE518();
-extern void func_800AE7B4();
-extern void func_800AE574();
-extern void func_800AE7E4();
-extern void func_800AE5D4();
-extern void func_800AE81C();
-extern void func_800AE634();
-extern void func_800AE854();
-extern void func_800AE694();
-extern void func_800AE6F4();
-extern void func_800AE754();
-extern void func_800AE88C();
-extern void func_800AE978();
-extern void func_800AEA44();
-extern void func_800AEB0C();
-extern void func_800AEBD8();
-extern void func_800AEC78();
-extern void func_800AED9C();
-extern void func_800AF5F8();
-extern void func_800AEEC4();
-extern void func_800AEECC();
-extern void func_800AEED4();
-extern void func_800AEF4C();
-extern void func_800AEFE8();
-extern void func_800AF02C();
-extern void func_800B2348();
-extern void func_800B2A40();
-extern void func_800B8344();
-extern void func_800B83FC();
-extern void func_800B85F8();
-extern void func_800B8710();
-extern void func_800B8824();
-extern void func_800B89C0();
-extern void func_800B460C();
-extern void func_800B46E4();
-extern void func_800AF114();
-extern void func_800AF224();
-extern void func_800B9604();
-extern void func_800B9678();
-extern void func_800B96EC();
-extern void func_800B9798();
-extern void func_800B9844();
-extern void func_800B9888();
-extern void func_800B98CC();
-extern void func_800B9944();
-extern void func_800B99BC();
-extern void func_800B9A00();
-extern void func_800AF274();
-extern void func_800B47E4();
-extern void func_800AF4C4();
-extern void func_800AF5A8();
-extern void func_800AF5B8();
-extern void func_800AF070();
-extern void func_800B68B8();
-extern void opHandler_MOVE();
-extern void func_800B69E8();
-extern void func_800B6B20();
-extern void func_800B6C28();
-extern void func_800B6D24();
-extern void func_800B84D8();
-extern void func_800B95A0();
-extern void func_800B95C0();
-extern void func_800BC034();
-extern void func_800BC170();
-extern void func_800BCB14();
-extern void func_800BBEA4();
-extern void func_800BC6F0();
-extern void func_800BCCAC();
-extern void func_800BCDA0();
-extern void func_800AF610();
-extern void func_800AF7E4();
-extern void func_800B13EC();
-extern void func_800B158C();
-extern void func_800AFD68();
-extern void func_800B9F58();
-extern void func_800B9F88();
-extern void func_800BA034();
-extern void func_800BA09C();
-extern void func_800B15BC();
-extern void func_800B0B04();
-extern void func_800B0B10();
-extern void func_800B0B20();
-extern void func_800B0B2C();
-extern void func_800B0C64();
-extern void func_800B48EC();
-extern void func_800B497C();
-extern void func_800B498C();
-extern void func_800BBFFC();
-extern void func_800B0A08();
-extern void func_800B0A7C();
-extern void func_800B0CCC();
-extern void func_800B0CFC();
-extern void func_800BC2E0();
-extern void func_800BC44C();
-extern void func_800B0D2C();
-extern void func_800B0C48();
-extern void func_800B0C58();
-extern void func_800B64B0();
-extern void func_800B6524();
-extern void func_800B653C();
-extern void func_800B6588();
-extern void func_800AF2C4();
-extern void func_800AF314();
-extern void func_800BC8CC();
-extern void func_800B0D94();
-extern void func_800B348C();
-extern void func_800B34EC();
-extern void func_800B3574();
-extern void func_800B35FC();
-extern void func_800B3650();
-extern void func_800B36C8();
-extern void func_800B3868();
-extern void func_800B7050();
-extern void func_800B711C();
-extern void func_800B7228();
-extern void func_800B7310();
-extern void func_800B73D4();
-extern void func_800B7490();
-extern void func_800AF0B4();
-extern void func_800B3740();
-extern void func_800B3788();
-extern void func_800B37F8();
-extern void func_800BA424();
-extern void func_800BA4D4();
-extern void func_800BA584();
-extern void func_800BA634();
-extern void func_800AFE24();
-extern void func_800AFF64();
-extern void func_800B002C();
-extern void func_800B0280();
-extern void func_800B0124();
-extern void func_800B02A0();
-extern void func_800B0344();
-extern void func_800B0444();
-extern void func_800B0570();
-extern void func_800BA6E4();
-extern void func_800BA7DC();
-extern void func_800BA8D4();
-extern void func_800BA9E8();
-extern void func_800B79C8();
-extern void func_800BCC6C();
-extern void func_800B2DC0();
-extern void func_800B2E68();
-extern void func_800B2EDC();
-extern void func_800B2F50();
-extern void func_800B2F70();
-extern void func_800B2FD8();
-extern void func_800B301C();
-extern void func_800B417C();
-extern void func_800B41CC();
-extern void func_800B42E0();
-extern void func_800B9C58();
-extern void func_800B9CBC();
-extern void func_800B1738();
-extern void func_800B17A0();
-extern void func_800B12A4();
-extern void func_800B41B0();
-extern void func_800BB768();
-extern void func_800BB7BC();
-extern void func_800BBDE0();
-extern void func_800B33B8();
-extern void func_800B3474();
-extern void func_800BBE78();
-extern void func_800B0B3C();
-extern void func_800B0BE4();
-extern void func_800B65B8();
-extern void func_800B65CC();
-extern void func_800B9F28();
-extern void func_800B9D7C();
-extern void func_800B6E18();
-extern void func_800B6F4C();
-extern void func_800B9D20();
-extern void func_800B1A20();
-extern void func_800B18A4();
-extern void func_800BBE50();
-extern void func_800B9A78();
-extern void func_800B9B24();
-extern void func_800B4288();
-extern void func_800B1C7C();
-extern void func_800B1D40();
-extern void func_800B22C0();
-extern void func_800B2248();
-extern void func_800B17A8();
-extern void func_800B1E34();
-extern void func_800B1F48();
-extern void func_800B1FE0();
-extern void func_800B2090();
-extern void func_800B23F4();
-extern void func_800B2434();
-extern void func_800B248C();
-extern void func_800B24CC();
-extern void func_800B2524();
-extern void func_800B257C();
-extern void func_800B25F0();
-extern void func_800B2648();
-extern void func_800B1870();
-extern void func_800B6478();
-extern void func_800B26BC();
-extern void func_800B3050();
-extern void func_800B17D8();
-extern void func_800B3080();
-extern void func_800B3334();
-extern void func_800B31B4();
-extern void func_800B38E0();
-extern void func_800B3964();
-extern void func_800B3A04();
-extern void func_800B3AA4();
-extern void func_800B3B20();
-extern void func_800B3BC0();
-extern void func_800B3C60();
-extern void func_800B3CD0();
-extern void func_800B3D60();
-extern void func_800B388C();
-extern void func_800B3DF0();
-extern void func_800B49D8();
-extern void func_800B49C4();
-extern void func_800B2AC0();
-extern void func_800B2AD8();
-extern void func_800B2AF0();
-extern void func_800B2B34();
-extern void func_800B44BC();
-extern void func_800AF5E0();
-extern void func_800B7E78();
-extern void func_800B9570();
-extern void func_800AF0E0();
-extern void func_800BB810();
-extern void func_800BB8B4();
-extern void func_800BB958();
-extern void func_800BBA3C();
-extern void func_800BBB20();
-extern void func_800BBC64();
-extern void func_800BBDA8();
-extern void func_800B8B58();
-extern void func_800B8BE0();
-extern void func_800B8CD4();
-extern void func_800B8DC8();
-extern void func_800B8E74();
-extern void func_800B8F20();
-extern void func_800B8F50();
-extern void func_800B8F3C();
-extern void func_800B49A0();
-extern void func_800B49B4();
-extern void func_800B8F60();
-extern void func_800AF120();
-extern void func_800AF1AC();
-extern void func_800BAD00();
-extern void func_800BADCC();
-extern void func_800BAF14();
-extern void func_800BB5E0();
-extern void func_800BB05C();
-extern void func_800AF404();
-extern void func_800AF444();
-extern void func_800AF47C();
-extern void func_800AF4A0();
-extern void func_800BBEFC();
-extern void func_800BB650();
-extern void func_800BAC38();
-extern void func_800B0EBC();
-extern void func_800B43FC();
-extern void func_800B65B0();
-extern void func_800B2A70();
-extern void func_800B4320();
-extern void func_800BB140();
-extern void func_800BB1F0();
-extern void func_800BB2A4();
-extern void func_800BB3D8();
-extern void func_800BB510();
-extern void func_800BAC18();
-extern void func_800B1034();
-extern void func_800B10F8();
-extern void func_800BC58C();
-extern void func_800B3350();
-extern void func_800B8FA8();
-extern void func_800B8F80();
-extern void func_800B49E8();
-extern void func_800B4A18();
-extern void func_800B414C();
-extern void func_800B0304();
-extern void func_800B4A40();
-extern void func_800B65D4();
-extern void func_800B3F18();
-extern void func_800B3F9C();
-extern void func_800B4074();
-extern void func_800B7718();
-extern void func_800B7674();
-extern void func_800B5188();
-extern void func_800B63A4();
-extern void func_800B6400();
-extern void func_800B08CC();
-extern void func_800B4A88();
-extern void func_800B4DBC();
-extern void func_800B74B0();
-extern void func_800B7578();
-extern void func_800B11BC();
-extern void func_800B4EB0();
-extern void func_800B4ED8();
-extern void func_800B4FF8();
-extern void func_800B0924();
-extern void func_800B1730();
-extern void func_800B6448();
-extern void func_800B448C();
-extern void func_800B1BB8();
-extern void func_800B5318();
-extern void func_800B5A30();
-extern void func_800B4F80();
-extern void func_800AFD20();
-extern void func_800B5480();
-extern void func_800BCE44();
-extern void func_800BCECC();
-extern void func_800BD1A4();
-extern void func_800B3EA0();
-extern void func_800B0E68();
-extern void func_800B1ED4();
-extern void func_800B1AA0();
-extern void func_800AF5D4();
-extern void func_800AF5C4();
-extern void func_800B1B10();
-extern void func_800B4DDC();
-extern void func_800B4DFC();
-extern void func_800B4E60();
-extern void func_800B7640();
-extern void func_800B2158();
-extern void func_800B9488();
-extern void func_800B94C0();
-extern void func_800AF364();
-extern void func_800AF3B4();
-extern void func_800B62E8();
-extern void func_800B6328();
-extern void func_800B1DF4();
-extern void func_800B51E0();
-extern void func_800B5248();
-extern void func_800B52B0();
-extern void func_800B6364();
-extern void func_800B6210();
-extern void func_800B4D7C();
-extern void func_800B0784();
-extern void func_800B0818();
-extern void func_800B085C();
-extern void func_800B4D0C();
-extern void func_800B9030();
-extern void func_800B9078();
-extern void func_800B90C0();
-extern void func_800B536C();
-extern void func_800B53D8();
-extern void func_800B542C();
-extern void func_800B505C();
-extern void func_800B06D0();
-extern void func_800B0638();
-extern void func_800B16B0();
-extern void func_800BD024();
-extern void func_800BD1F4();
-extern void func_800BD2AC();
-extern void func_800BD318();
-extern void func_800B9000();
-extern void func_800B5134();
-extern void func_800BA120();
-extern void func_800BA1D0();
-extern void func_800BA280();
-extern void func_800BA330();
-extern void func_800B1F04();
-extern void func_800BAAFC();
-extern void func_800BABFC();
-extern void func_800B273C();
-extern void func_800B2790();
-extern void func_800B85C8();
-extern void func_800B629C();
 
 typedef s32 (*OpcodeFn)(Eline *);
 
@@ -428,17 +49,17 @@ s32 (*g_fieldOpcodeTable[392])(Eline *) = {
     /* 0x004  arith MOD              */ (OpcodeFn)func_800ADDA0,
     /* 0x005  arith NEG              */ (OpcodeFn)func_800ADD0C,
     /* 0x006  arith EQ               */ (OpcodeFn)func_800ADDD8,
-    /* 0x007  arith NE               */ (OpcodeFn)func_800ADE10,
-    /* 0x008  arith LT               */ (OpcodeFn)func_800ADE44,
-    /* 0x009  arith LE               */ (OpcodeFn)func_800ADE7C,
-    /* 0x00A  arith GT               */ (OpcodeFn)func_800ADEB0,
-    /* 0x00B  arith GE               */ (OpcodeFn)func_800ADEE8,
+    /* 0x007  arith GT               */ (OpcodeFn)func_800ADE10,
+    /* 0x008  arith GE               */ (OpcodeFn)func_800ADE44,
+    /* 0x009  arith LT               */ (OpcodeFn)func_800ADE7C,
+    /* 0x00A  arith LE               */ (OpcodeFn)func_800ADEB0,
+    /* 0x00B  arith NE               */ (OpcodeFn)func_800ADEE8,
     /* 0x00C  arith AND              */ (OpcodeFn)func_800ADF20,
     /* 0x00D  arith OR               */ (OpcodeFn)func_800ADF54,
-    /* 0x00E  arith XOR              */ (OpcodeFn)func_800ADF88,
+    /* 0x00E  arith EOR              */ (OpcodeFn)func_800ADF88,
     /* 0x00F  arith NOT              */ (OpcodeFn)func_800ADFBC,
-    /* 0x010  arith LAND             */ (OpcodeFn)func_800ADFE0,
-    /* 0x011  arith LOR              */ (OpcodeFn)func_800AE014,
+    /* 0x010  arith RSH              */ (OpcodeFn)func_800ADFE0,
+    /* 0x011  arith LSH              */ (OpcodeFn)func_800AE014,
     /* 0x012  op000  NOP             */ (OpcodeFn)func_800ADC9C,
     /* 0x013  op001  CAL             */ (OpcodeFn)func_800AE048,
     /* 0x014  op002  JMP             */ (OpcodeFn)func_800AE080,
@@ -550,7 +171,7 @@ s32 (*g_fieldOpcodeTable[392])(Eline *) = {
     /* 0x07E  op06C  BATTLEOFF       */ (OpcodeFn)func_800B6588,
     /* 0x07F  op06D  KEYSCAN         */ (OpcodeFn)func_800AF2C4,
     /* 0x080  op06E  KEYON           */ (OpcodeFn)func_800AF314,
-    /* 0x081  op06F  AASK            */ (OpcodeFn)func_800BC8CC,
+    /* 0x081  op06F  AASK            */ (OpcodeFn)opHandler_AASK,
     /* 0x082  op070  PGETINFO        */ (OpcodeFn)func_800B0D94,
     /* 0x083  op071  DSCROLL         */ (OpcodeFn)func_800B348C,
     /* 0x084  op072  LSCROLL         */ (OpcodeFn)func_800B34EC,
@@ -630,7 +251,7 @@ s32 (*g_fieldOpcodeTable[392])(Eline *) = {
     /* 0x0CE  op0BC  EFFECTPLAY      */ (OpcodeFn)func_800B22C0,
     /* 0x0CF  op0BD  EFFECTLOAD      */ (OpcodeFn)func_800B2248,
     /* 0x0D0  op0BE  ???             */ (OpcodeFn)func_800B17A8,
-    /* 0x0D1  op0BF  MUSICSTOP       */ (OpcodeFn)func_800B1E34,
+    /* 0x0D1  op0BF  MUSICSTOP       */ (OpcodeFn)opHandler_MUSICSTOP,
     /* 0x0D2  op0C0  MUSICVOL        */ (OpcodeFn)func_800B1F48,
     /* 0x0D3  op0C1  MUSICVOLTRANS   */ (OpcodeFn)func_800B1FE0,
     /* 0x0D4  op0C2  ???             */ (OpcodeFn)func_800B2090,

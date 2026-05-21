@@ -1,33 +1,19 @@
 #include "common.h"
 #include "field.h"
 #include "gamestate.h"
+#include "battle.h"
+#include "sound.h"
+#include "field/fe_object1.h"
+#include "field/fe_object9.h"
 
-/*
- * The animation/SFX helpers below are declared @c void in battle.h
- * (their canonical signature from btl_color.c / btl_entity.c), but
- * this translation unit's call sites only produce byte-matching
- * codegen when gcc thinks the helpers return @c u8. Redeclaring them
- * with @c u8 returns is a per-TU prototype override — the linker
- * resolves to the canonical symbol regardless of return type. The
- * conflict with battle.h's void prototypes is why this TU does not
- * include @c battle.h.
- */
-extern u8 setupAnimEntry(s32 idx_bit, s32 v4, u16 *buf, s32 v3, s32 v2, s32 v1);
-extern u8 setupAnimEntryFull(s32 idx_bit, s32 v4, u16 *buf, s32 v3, s32 v2, s32 v1, s32 v0);
-extern u8 updateAnimEntry(s32 idx, s32 val);
-extern u8 setSfxEntryVolume(s32 idx, s32 vol);
-extern u8 setSfxEntityType(s32 idx, s32 type);
-
-/* Other SFX helpers (canonical signatures from battle.h, declared
- * locally because this TU avoids #include "battle.h"). */
-extern s32  getSfxGlobalFlag(void);
-extern void setSfxGlobalFlag(s32 idx);
-extern void startSfxSlow(s32 idx);
-extern void fadeOutSfxSlow(s32 idx);
-extern s32  getSfxField1C(s32 idx);
-extern s32  getSfxField28(s32 idx);
-extern void initSfxPlayback(s32 idx, u8 *data);
-extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
+// Intentionally NOT included — these headers would pull in void prototypes
+// for setSfxEntryVolume, setSfxEntityType, updateAnimEntry, setupAnimEntry,
+// and setupAnimEntryFull. We need gcc to implicit-int-declare those at the
+// call sites below to match the original K&R-style scheduling. Without that,
+// four functions mismatch.
+// #include "btl_entity.h"
+// #include "btl_sfx.h"
+// #include "btl_color.h"
 
 /**
  * @brief Snapshot a target entity's grid-cell position into the queued
@@ -734,7 +720,7 @@ s32 func_800BC58C(Eline *eline) {
 /**
  * @brief Field-VM SFX trigger / state-machine handler (6-arg variant).
  *
- * Same shape as @c func_800BC8CC but without the on-screen rect /
+ * Same shape as @c opHandler_AASK but without the on-screen rect /
  * text-measure setup, so it takes 6 stack params instead of 8.
  *
  * Bit-set: save global flag (@c D_800DE4D8), dispatch
@@ -824,7 +810,7 @@ s32 func_800BC6F0(Eline *e) {
  * @return 1 while still working, 3 when the state-1 release completes,
  *         5 when the slot was already active.
  */
-s32 func_800BC8CC(Eline *e) {
+s32 opHandler_AASK(Eline *e) {
     s16 buf[4];
     s32 sfxIdx;
     s32 textIdx;

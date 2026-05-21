@@ -162,10 +162,6 @@ typedef struct {
     u8 dstData2[12];
 } BlitParams;
 
-/** @brief Clip a pair of source rects against the display and emit blits.
- *  @return 1 if the first rect overlapped the display, 0 otherwise. */
-extern s32 clipBlitRects(BlitParams *arg);
-
 typedef struct {
     RECT rect;
     u8 *dataPtr;
@@ -1099,33 +1095,7 @@ extern void func_8009C12C(BattleObject *entity);
 extern void func_8009C59C(BattleObject *entity, BattleAnimNode *node, void *otBucket);
 
 /* --- Battle animation lifecycle --- */
-extern void initBattleTransition(void);
 extern void activateBattleAnim(s32 idx);
-
-/* --- Battle SFX channel control --- */
-extern s32  readSfxEntityType(s32 idx);
-extern void setSfxEntityType(s32 idx, s32 val);
-extern void setSfxEntryVolume(s32 idx, s32 val);
-extern void setSfxPitch(s32 idx, s32 val);
-extern void setSfxField2F(s32 idx, s32 val);
-
-/* --- Generic SFX playback helpers (shared field/world/menu/battle) --- */
-extern void initSfxPlayback(s32 idx, u8 *data);
-extern void startSfxSlow(s32 idx);
-extern void fadeOutSfxSlow(s32 idx);
-extern s32  getSfxField1C(s32 idx);
-extern s32  getSfxField28(s32 idx);
-extern s32  getSfxGlobalFlag(void);
-extern void setSfxGlobalFlag(s32 idx);
-
-/* --- Animation entry helpers (act on @c D_80085398 from field overlay) --- */
-extern void setupAnimEntry(s32 idx, u8 flags, s32 src, s32 start, s32 end, s32 inStart);
-extern void setupAnimEntryFull(s32 idx, u8 flags, s32 src, s32 start, s32 end, s32 inStart, s32 inEnd);
-extern void updateAnimEntry(s32 idx, s32 value);
-
-/* --- Camera / vibration helpers (defined in btl_color.c) --- */
-extern void setCameraShakeParams(s32 intensity, s32 direction);
-extern void setCameraVibrateState(u32 enable);
 
 /* --- Spatial / matrix helpers (defined in field overlay) --- */
 extern void func_800406A4(u8 *p);

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "field/fe_object2.h"
 
 typedef struct {
     /* 0x00 */ s32 tag;

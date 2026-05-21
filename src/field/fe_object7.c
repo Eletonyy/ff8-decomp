@@ -2,7 +2,9 @@
 #include "battle.h"
 #include "gamestate.h"
 #include "field.h"
+#include "sound.h"
 #include "psxsdk/libgte.h"
+#include "field/fe_object7.h"
 
 /**
  * @brief Pop a key item ID and store its value.
@@ -63,7 +65,7 @@ s32 func_800B5480(Eline *eline) {
 
             setCameraVibrateState(0);
 
-            if (g_seedState->soundHandle0 == -1) {
+            if (g_seedState->soundHandle0 == SND_HANDLE_NONE) {
                 sndCmd11(0);
             }
 

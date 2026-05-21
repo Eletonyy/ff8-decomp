@@ -2,6 +2,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libc.h"
 #include "battle.h"
+#include "btl_color.h"
 #include "gamestate.h"
 
 /* --- Local type definitions --- */
@@ -971,8 +972,8 @@ void initAnimEntry(s32 idx, s32 flags, s32 src, s32 start, s32 end, s32 inStart,
  *
  * Wrapper for initAnimEntry with a fixed inEnd of 0x60.
  */
-void setupAnimEntry(s32 idx, u8 flags, s32 src, s32 start, s32 end, s32 inStart) {
-    initAnimEntry(idx, flags, src, start, end, inStart, 0x60);
+void setupAnimEntry(s32 idx, s32 flags, s32 src, s32 start, s32 end, s32 inStart) {
+    initAnimEntry(idx, flags & 0xFF, src, start, end, inStart, 0x60);
 }
 
 
@@ -981,8 +982,8 @@ void setupAnimEntry(s32 idx, u8 flags, s32 src, s32 start, s32 end, s32 inStart)
  *
  * Wrapper for initAnimEntry passing all arguments through.
  */
-void setupAnimEntryFull(s32 idx, u8 flags, s32 src, s32 start, s32 end, s32 inStart, s32 inEnd) {
-    initAnimEntry(idx, flags, src, start, end, inStart, inEnd);
+void setupAnimEntryFull(s32 idx, s32 flags, s32 src, s32 start, s32 end, s32 inStart, s32 inEnd) {
+    initAnimEntry(idx, flags & 0xFF, src, start, end, inStart, inEnd);
 }
 
 

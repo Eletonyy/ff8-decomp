@@ -1,4 +1,5 @@
 #include "common.h"
+#include "field/fe_object5.h"
 
 extern u8 D_800DE8CC[];
 extern u8 D_800D9630[];
@@ -341,7 +342,7 @@ s32 func_800B1DF4(u8 *a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1E34);
+INCLUDE_ASM("asm/field/nonmatchings/fe_object5", opHandler_MUSICSTOP);
 
 /**
  * Calls sndGetStatus with the object pointer, stores result at offset 0x140, returns 2.

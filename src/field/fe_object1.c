@@ -2,21 +2,7 @@
 #include "field.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libgpu.h"
-
-/** @brief 12-byte signed integer 3D position (x, y, z). */
-typedef struct {
-    s32 x;
-    s32 y;
-    s32 z;
-} Vec3i;
-
-/** @brief Animation parameter entry. */
-typedef struct {
-    /* 0x00 */ u8 pad00[0x09];
-    /* 0x09 */ s8 field_09;
-    /* 0x0A */ u8 field_0A;
-    /* 0x0B */ u8 field_0B;
-} AnimParam;
+#include "field/fe_object1.h"
 
 /** @brief 12-byte path waypoint (64 entries per table, indexed by angle/64). */
 typedef struct {
@@ -582,27 +568,6 @@ typedef struct {
     /* 0x273B */ u8 active;
 } Particle;
 
-/** @brief 32-byte slot stride for indexing into a particle system buffer. */
-typedef struct {
-    u8 b[32];
-} ParticleBlock;
-
-/**
- * @brief Particle system buffer.
- *
- * Modeled as a flat array of 32-byte slots: the first ~313 slots hold the
- * emitter table and other buffer metadata; particle records overlay the
- * remaining slots starting at slot index 313 (byte offset 0x2720).
- * Casting a slot's address to @c Particle* gives access to that slot's
- * particle data via the absolute-offset view above.
- */
-typedef struct {
-    ParticleBlock slots[1];
-} ParticleSystem;
-
-extern s16 func_800A2EA4(s16 range);
-extern s16 func_800A2FE0(ParticleSystem *sys);
-
 /**
  * @brief Spawn up to @p count particles for emitter @p emIdx around @p pos.
  *
@@ -657,8 +622,6 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3488);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3534);
 
-extern void func_800A327C(Eline *actor, SVECTOR *out);
-extern void func_800A3488(Eline *actor, SVECTOR *out);
 
 /**
  * @brief Animation slot tick & dispatch — runs the per-frame update for the
