@@ -1,6 +1,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "battle.h"
+#include "btl_entity.h"
 
 extern BattleDisplayEntity g_battleEntities[];
 extern s32 D_800834CC;

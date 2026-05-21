@@ -4,6 +4,7 @@
 #include "battle.h"
 #include "sound.h"
 #include "psxsdk/libgte.h"
+#include "field/fe_object6.h"
 
 /**
  * Pops 3 stack values (target, volume, pan), looks up an SFX entry in

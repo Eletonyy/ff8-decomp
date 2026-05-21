@@ -4,6 +4,17 @@
 #include "common.h"
 
 /**
+ * @brief Sentinel value for an inactive sound channel handle.
+ *
+ * Follows PsyQ libsnd convention: @c SsUtKeyOn / @c SsSeqPlay and similar
+ * APIs return @c -1 to signal that no sound is playing on that channel.
+ * FF8 propagates that sentinel through its own command-bus wrappers
+ * (e.g. @c sndCmd11) — fields holding sound handles compare against this
+ * before issuing stop / fade commands.
+ */
+#define SND_HANDLE_NONE (-1)
+
+/**
  * @brief Sound sequence track (D_80070D60, stride 272 bytes).
  *
  * Each track controls one voice/channel of a sound sequence. The array

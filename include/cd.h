@@ -48,4 +48,6 @@ typedef struct {
     /* 0x20 */ void (*callback)(void); /**< Completion callback (NULL if none). */
 } CdReadState; /* 0x24 = 36 bytes */
 
+extern s32 cdReadAsyncSync(s32 lba, u32 size, u8 *dest, void (*callback)(void));
+
 #endif /* CD_H */

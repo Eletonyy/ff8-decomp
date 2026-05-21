@@ -1,6 +1,8 @@
 #include "common.h"
 #include "field.h"
 #include "gamestate.h"
+#include "field/fe_object1.h"
+#include "field/fe_object8.h"
 
 
 /**

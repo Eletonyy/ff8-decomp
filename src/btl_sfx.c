@@ -1,6 +1,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "battle.h"
+#include "btl_sfx.h"
 
 extern SfxSystem g_sfxEntries;
 extern s32 g_flashColor;

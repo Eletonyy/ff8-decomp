@@ -1,5 +1,6 @@
 #include "common.h"
 #include "gamestate.h"
+#include "field/fe_object12.h"
 
 extern u8 D_80077BA8[];
 

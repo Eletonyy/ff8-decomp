@@ -2,6 +2,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libc.h"
 #include "battle.h"
+#include "btl_display.h"
 
 extern BattleDisplayEntity g_battleEntities[];
 extern void copyDisplayRect(RECT *dst);
