@@ -21,6 +21,8 @@ extern s32 sndCmd19(u8 *bank, s32 arg);
 extern s32 sndCmd14(s32 bankHandle, s32 a, s32 b);
 extern s32 sndCmd1A(s32 bankHandle, s32 ramp, s32 priority);
 extern s32 sndCmdC2(s32 handle, s32 ramp, s32 depth, s32 vol);
+extern Eline *D_8008538C;
+extern void func_8009A8E0(Eline *e);
 extern void sndCmdF1(void);
 extern void sndCmd11();
 extern s32 sndCmdC1(s32 handle, s32 ramp, s32 vol);
@@ -257,7 +259,32 @@ s32 func_800B0E68(Eline *e) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B0EBC);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B1034);
+/**
+ * @brief Pop an entity id, look up the corresponding @c Eline in the
+ *        @c D_80085230 table, and copy six locator fields (pos x/y/z,
+ *        @c field_0x241, @c field_0x1FA, @c savedChannel) from that
+ *        entity into the current one. Finally call @c func_8009A8E0
+ *        on the global @c D_8008538C anchor to recompute derived
+ *        coordinates.
+ *
+ * @return 2 (continue processing).
+ */
+s32 func_800B1034(Eline *e) {
+    u8 idx;
+    s32 entityId;
+
+    idx = e->stackPtr;
+    e->stackPtr = idx - 1;
+    entityId = e->stack[(s8)idx];
+    e->posX = D_80085230[entityId]->posX;
+    e->posY = D_80085230[entityId]->posY;
+    e->posZ = D_80085230[entityId]->posZ;
+    e->field_0x241 = D_80085230[entityId]->field_0x241;
+    e->field_0x1FA = D_80085230[entityId]->field_0x1FA;
+    e->savedChannel = D_80085230[entityId]->savedChannel;
+    func_8009A8E0(D_8008538C);
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B10F8);
 

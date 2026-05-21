@@ -519,6 +519,9 @@ extern Eline *D_80085230[];
 /** @brief Eline entity array (count @c D_80085388, stride 612). */
 extern Eline *D_80085224;
 
+/** @brief Number of entries in the @c D_80085224 entity array. */
+extern u8 D_80085388;
+
 /**
  * @brief Animation slot record (one of four per actor).
  *
