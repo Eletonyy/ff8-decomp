@@ -266,8 +266,8 @@ typedef struct {
     /* 0x58 */ u8 field58;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0x59 */ u8 pad59[0x0F];
     /* 0x68 */ s32 stateFlags;          /**< Field state flags (bits 3-4 checked by getFieldStateFlags). */
-    /* 0x6C */ s32 soundHandle0;        /**< Sound channel handle 0 (@ref SND_HANDLE_NONE = inactive). */
-    /* 0x70 */ s32 soundHandle1;        /**< Sound channel handle 1 (@ref SND_HANDLE_NONE = inactive). */
+    /* 0x6C */ s32 soundHandle0;        /**< Sound channel 0 handle (music; @ref SND_HANDLE_NONE = inactive). */
+    /* 0x70 */ s32 soundHandle1;        /**< Sound channel 1 handle (SFX; @ref SND_HANDLE_NONE = inactive). */
     /* 0x74 */ u8 packedFlags[0x40];    /**< Packed 2-bit-per-entry flag table (256 entries, indexed by 8-bit key). */
     /* 0xB4 */ u16 packedFlagsStepAcc;  /**< Step accumulator: fires packed-flags processing at @c 0x2800. */
     /* 0xB6 */ u16 fieldB6;             /**< Used by fe_object7 dispatch (purpose TBD). */
@@ -276,12 +276,13 @@ typedef struct {
     /* 0xBC */ u8 partyOrderA[3];       /**< Bench list (members not in active party). */
     /* 0xBF */ u8 partyOrderB[3];       /**< Bench list duplicate (initialized identically). */
     /* 0xC2 */ u8 memberSlot[3];        /**< For each active party slot, the Eline index (0xFF = none). */
-    /* 0xC5 */ u8 padC5[0x02];
+    /* 0xC5 */ u8 musicVolume;          /**< Music channel volume (0..0x7F). */
+    /* 0xC6 */ u8 sfxVolume;            /**< Sound-effects channel volume (0..0x7F). */
     /* 0xC7 */ s8 audioChannel0State;   /**< Audio channel 0 state byte; -1 = reset/inactive. */
     /* 0xC8 */ s8 audioChannel1State;   /**< Audio channel 1 state byte; -1 = reset/inactive. */
-    /* 0xC9 */ u8 soundBankSelector;    /**< Sound bank toggle (0 or 1). */
+    /* 0xC9 */ s8 soundBankSelector;    /**< Sound bank toggle (0 or 1). */
     /* 0xCA */ s8 audioChannel2State;   /**< Audio channel 2 state byte; -1 = reset/inactive. */
-    /* 0xCB */ u8 padCB;
+    /* 0xCB */ u8 battleMusicId;        /**< Set by @c opHandler_SETBATTLEMUSIC. */
     /* 0xCC */ u8 expectedDiscId;       /**< Currently inserted disc (1..4). The intro/disc-swap screen waits for @c getDiscId() to match. */
     /* 0xCD */ u8 cameraShakeX;         /**< Camera shake X intensity, popped from stack. */
     /* 0xCE */ u8 cameraShakeY;         /**< Camera shake Y intensity, popped from stack. */
@@ -291,7 +292,7 @@ typedef struct {
     /* 0xD2 */ u8 sfxActiveMask;        /**< Per-slot SFX active bitmask (set on play, cleared on completion). */
     /* 0xD3 */ u8 sfxStartMask;         /**< Per-slot SFX start bitmask (set on play). */
     /* 0xD4 */ u8 sfxEntryMask;         /**< Per-slot SFX entry-table bitmask (set when slot is registered in @c D_80085300). */
-    /* 0xD5 */ u8 padD5;
+    /* 0xD5 */ u8 nextSoundBank;        /**< Sound bank ID staged by MUSICCHANGE; copied into @c audioChannel0State on swap. */
     /* 0xD6 */ u8 soundLoadComplete;    /**< Set to 1 after sound bank loading finishes. */
     /* 0xD7 */ u8 padD7;
     /* 0xD8 */ u16 dialogStateMirror;   /**< Mirror of @c D_800704A8.dialogState (kept in sync by fe_object9). */
