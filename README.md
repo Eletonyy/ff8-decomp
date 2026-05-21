@@ -48,7 +48,7 @@ Any help is greatly appreciated! Below are some basic steps to get started and b
 
 1. **Clone the repo with submodules**:
    ```bash
-   git clone --recursive https://github.com/rengstrom/ff8-decomp.git
+   git clone --recursive https://github.com/roengstrom/ff8-decomp.git
    cd ff8-decomp
    ```
 
