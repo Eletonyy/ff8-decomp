@@ -23,6 +23,7 @@ extern s32 sndCmd1A(s32 bankHandle, s32 ramp, s32 priority);
 extern s32 sndCmdC2(s32 handle, s32 ramp, s32 depth, s32 vol);
 extern Eline *D_8008538C;
 extern void func_8009A8E0(Eline *e);
+extern void func_800A97E4();
 extern void sndCmdF1(void);
 extern void sndCmd11();
 extern s32 sndCmdC1(s32 handle, s32 ramp, s32 vol);
@@ -67,7 +68,42 @@ s32 func_800B08CC(Eline *e) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B0924);
+/**
+ * @brief op131 HOLD — pop three values (top byte discarded, then a
+ *        hold/release flag and an actor id) and toggle the
+ *        @c CharacterData.exists bits @c 0x6 for that character.
+ *
+ * @c actorId values below @c 8 index @c g_gameState.chars directly;
+ * higher values are looked up via @c findCharacterSlot (which can
+ * return @c 0xFF for "no slot", in which case the opcode bails out
+ * early without touching @c chars).
+ *
+ * @return 2 (continue processing).
+ */
+s32 func_800B0924(Eline *e) {
+    u8 idx;
+    s32 flag;
+    s32 actorId;
+
+    idx = e->stackPtr;
+    e->stackPtr = idx - 2;
+    flag = e->stack[(s8)(idx - 1)];
+    e->stackPtr = idx - 3;
+    actorId = e->stack[(s8)(idx - 2)];
+
+    if (actorId >= 8) {
+        actorId = findCharacterSlot(actorId);
+        if (actorId == 0xFF) {
+            return 2;
+        }
+    }
+    if (flag != 0) {
+        g_gameState.chars[actorId].exists |= 6;
+    } else {
+        g_gameState.chars[actorId].exists &= ~6;
+    }
+    return 2;
+}
 
 /**
  * @brief Disable an entity. Clears the "active" flag bit @c 0x8, hides

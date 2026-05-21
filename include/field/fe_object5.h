@@ -32,7 +32,7 @@ extern s32 func_800B2158(u8 *a0);
 
 /* INCLUDE_ASM stubs — bodies still in assembly, signatures unknown.
  * Declared K&R-style; refine when these get decomped to C. */
-extern int  func_800B0924();
+extern s32  func_800B0924(Eline *e);
 extern s32  func_800B0B3C(Eline *e);
 extern s32  func_800B0BE4(Eline *e);
 extern s32  func_800B0D94(Eline *e);
