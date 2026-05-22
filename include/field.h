@@ -565,12 +565,17 @@ typedef struct {
  *        but with only two SFX triggers at @c 0x18A / @c 0x18B.
  */
 typedef struct {
-    /* 0x000 */ u8  pad000[0x174];
+    /* 0x000 */ u8  pad000[0x160];
+    /* 0x160 */ s32 flags;
+    /* 0x164 */ u16 groupRanges[8];
     /* 0x174 */ u8  scriptGroup;
     /* 0x175 */ u8  activeMask;
     /* 0x176 */ u16 pc;
     /* 0x178 */ u16 rangeLo;
-    /* 0x17A */ u8  pad17A[0x0E];
+    /* 0x17A */ u16 rangeHi;
+    /* 0x17C */ u8  pad17C[0x08];
+    /* 0x184 */ s8  stackPtr;
+    /* 0x185 */ u8  pad185[0x03];
     /* 0x188 */ u8  activeMarker;
     /* 0x189 */ u8  pad189;
     /* 0x18A */ u8  trigger6;

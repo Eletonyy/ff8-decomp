@@ -841,7 +841,68 @@ FieldEntityD *func_800BE924(FieldEntityD *buf) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BEA84);
+/**
+ * @brief Initialize the @c FieldEntityC pool (Block C entities, stride 0x18C).
+ *
+ * Memsets the supplied buffer for @c D_80085228 entities, then for each
+ * entry pulls a packed (upper:9, lower:7) value from @c D_800DE4E0,
+ * derives @c rangeLo / @c rangeHi / @c pc, and registers the entity in
+ * @c D_80085230 at indices @c [D_80085388+D_800852F8+D_80085391, ...).
+ * pc is masked with @c 0x7FFF; @c activeMarker is set to 1.
+ *
+ * @param buf Entity buffer (becomes the @c FieldEntityC pool base).
+ * @return Pointer past the last initialized @c FieldEntityC slot.
+ */
+FieldEntityC *func_800BEA84(FieldEntityC *buf) {
+    FieldEntityC *e = buf;
+
+    func_800396E0(buf, D_80085228 * 0x18C);
+    {
+        s32 k = 0;
+        u16 groupIdx;
+
+        if (D_80085228 == 0) return e;
+
+        do {
+            u16 packed;
+            u16 upper;
+            u16 lower;
+            u16 pcVal;
+
+            D_80085230[D_80085388 + D_800852F8 + D_80085391 + k] = (Eline *)e;
+            e->flags = 0x40000000;
+            e->stackPtr = -1;
+
+            packed = *D_800DE4E0;
+            D_800DE4E0++;
+            upper = packed >> 7;
+            groupIdx = upper;
+            lower = packed & 0x7F;
+            e->rangeLo = groupIdx;
+            e->rangeHi = lower;
+            upper = e->rangeLo;
+            e->rangeHi = (groupIdx + lower) + 1;
+
+            pcVal = D_800852F0[upper];
+            e->activeMask = 0xFF;
+            e->groupRanges[0] = 0xFFFF;
+            e->groupRanges[1] = 0xFFFF;
+            e->groupRanges[2] = 0xFFFF;
+            e->groupRanges[3] = 0xFFFF;
+            e->groupRanges[4] = 0xFFFF;
+            e->groupRanges[5] = 0xFFFF;
+            e->groupRanges[6] = 0xFFFF;
+            e->groupRanges[7] = 0xFFFF;
+            e->pc = pcVal & 0x7FFF;
+            e->activeMarker = 1;
+
+            e++;
+            k++;
+        } while (k < D_80085228);
+
+        return e;
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BEBD0);
 
