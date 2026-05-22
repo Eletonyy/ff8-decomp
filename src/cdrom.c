@@ -21,7 +21,6 @@ s32 func_80039444(u8 *buf, u8 *dest);
 
 void resetCdDrive(void);
 void setDiscNumber(s32 a0);
-s32 func_800393C8(void);
 void CdIntToPos(s32 lba, u8 *pos);
 
 /**

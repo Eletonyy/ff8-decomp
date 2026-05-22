@@ -44,4 +44,7 @@ extern s32  pollCdReadStatus(void);
 extern void saveAndClearFramebuffer(s32 a0);
 extern void loadOverlayWithTimCallback(s32 a0, s32 a1);
 
+/** @brief Reset card-slot dispatch state for the Triple-Triad mini-game. */
+extern void resetCardSlots(s32 mode);
+
 #endif /* OVERLAY_H */

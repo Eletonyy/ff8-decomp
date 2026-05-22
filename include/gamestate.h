@@ -364,4 +364,12 @@ extern void enableChocoboWorld(void);
 /** @brief Resolve a character ID (e.g. party slot) to its global character code. */
 extern s32 func_80037C6C(s32 charId);
 
+/** @brief Card / character refresh hook (src/card.c). Invoked when a
+ *         party member changes; refreshes derived character data. */
+extern void func_80036B90(s32 charIndex);
+
+/** @brief Companion to @ref func_80036B90 — applies a bitmask of
+ *         flags to the active-party char records. */
+extern void func_80036D44(s32 mask);
+
 #endif /* GAMESTATE_H */

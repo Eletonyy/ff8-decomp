@@ -325,7 +325,7 @@ void cdBreakRead(void) {
  *
  * @return Current CD read status after handler execution.
  */
-u8 func_800393C8(void) {
+s32 func_800393C8(void) {
     D_800562D8[D_8008A3D8.status]();
     return D_8008A3D8.status;
 }

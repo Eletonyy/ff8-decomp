@@ -19,10 +19,10 @@
  * @brief Snapshot a target entity's grid-cell position into the queued
  *        turn-state fields.
  *
- * Same body as @c func_800BADCC in fe_object8 but standalone — no
- * @c func_800BAC18 tail call, always returns 2.
+ * Same body as @c opHandler_FACEDIRA in fe_object8 but standalone — no
+ * @c opHandler_FACEDIRSYNC tail call, always returns 2.
  */
-s32 func_800BB2A4(Eline *eline) {
+s32 opHandler_RFACEDIRA(Eline *eline) {
     s16 buf[4];
     s32 idx;
 
@@ -40,15 +40,15 @@ s32 func_800BB2A4(Eline *eline) {
 }
 
 /**
- * @brief Variant of @c func_800BB2A4 that resolves the target via the
+ * @brief Variant of @c opHandler_RFACEDIRA that resolves the target via the
  *        SeeD party-member slot table.
  *
- * Same body as @c func_800BB2A4 but the popped index is treated as a
+ * Same body as @c opHandler_RFACEDIRA but the popped index is treated as a
  * SeeD party slot — look up @c g_seedState->memberSlot[slot] to get
  * the entity index into @c D_80085224, and pass that same byte as the
  * spatial argument to @c func_800A8DAC.
  */
-s32 func_800BB3D8(Eline *eline) {
+s32 opHandler_RFACEDIRP(Eline *eline) {
     s16 buf[4];
     u8 slot;
 
@@ -68,13 +68,13 @@ s32 func_800BB3D8(Eline *eline) {
 /**
  * @brief Queue a relative-offset turn target (standalone variant).
  *
- * Same body as @c func_800BB05C in fe_object8 but doesn't tail-call
- * @c func_800BAC18 — always returns 2. Queries @c func_800A8DAC with
+ * Same body as @c opHandler_FACEDIROFF in fe_object8 but doesn't tail-call
+ * @c opHandler_FACEDIRSYNC — always returns 2. Queries @c func_800A8DAC with
  * kind @c 0x20 (relative offsets, written to @c buf), divides each
  * entry by 16, and stores into @c field_0x22A / @c field_0x22E /
  * @c field_0x232. Clears @c field_0x236 and @c field_0x23B.
  */
-s32 func_800BB510(Eline *eline) {
+s32 opHandler_RFACEDIROFF(Eline *eline) {
     s16 buf[4];
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
@@ -93,7 +93,7 @@ s32 func_800BB510(Eline *eline) {
  * @brief Pop three bytes into @c field_0x238 / @c field_0x239 /
  *        @c field_0x23A (top-of-stack first).
  */
-s32 func_800BB5E0(Eline *eline) {
+s32 opHandler_FACEDIRLIMIT(Eline *eline) {
     eline->field_0x23A = POP_BYTE(eline);
     eline->field_0x239 = POP_BYTE(eline);
     eline->field_0x238 = POP_BYTE(eline);
@@ -108,7 +108,7 @@ s32 func_800BB5E0(Eline *eline) {
  * @c field_0x22C, @c buf[2]/16 into @c field_0x230, and clears
  * @c field_0x228. (@c buf[0] is queried but discarded.)
  */
-s32 func_800BB650(Eline *eline) {
+s32 opHandler_FACEDIRINIT(Eline *eline) {
     s16 buf[4];
 
     func_800A8DAC(eline->field_0x256, 0x20, (u8 *)buf, 0);
@@ -154,7 +154,7 @@ void func_800BB6C8(void) {
  * sentinels). @c func_800BB6C8 copies the whole 12-halfword block
  * into @c g_seedState->dialogStateMirror..fieldEE.
  */
-s32 func_800BB768(void) {
+s32 opHandler_FADEIN(void) {
     D_800DE8D2 = 2;
     D_800704A8.dialogState  = 2;
     D_800704A8.dialogTimer  = 0xFF;
@@ -169,14 +169,14 @@ s32 func_800BB768(void) {
 /**
  * @brief Initialise the dialog-state block (variant: state=3, count=8).
  *
- * Similar to @c func_800BB768 but with the boot values
+ * Similar to @c opHandler_FADEIN but with the boot values
  * (D_800DE8D2=3, dialogState=3, dialogTimer=0, dialogCount=8, then
  * three 0xFF sentinels). The empty @c do/while(0) breaks gcc's
  * scheduler at the right point so the @c sh @c zero (dialogTimer)
  * lands before the @c sh @c v1 (dialogCount) — without it gcc emits
  * the count store first and burns an extra @c li.
  */
-s32 func_800BB7BC(void) {
+s32 opHandler_FADEOUT(void) {
     D_800DE8D2 = 3;
     D_800704A8.dialogState = 3;
     D_800704A8.dialogTimer = 0;
@@ -201,7 +201,7 @@ s32 func_800BB7BC(void) {
  * this function) — the symbol was removed from @c symbol_addrs.field
  * so the two halves merge back into one function.
  */
-s32 func_800BB810(Eline *eline) {
+s32 opHandler_DCOLADD(Eline *eline) {
     D_800704A8.dialogState = 7;
     D_800704A8.dialogTimer = 0;
     D_800704A8.field_0x112 = POP(eline);
@@ -215,12 +215,12 @@ s32 func_800BB810(Eline *eline) {
 /**
  * @brief Initialise dialog state (variant 8) and pop three halfwords.
  *
- * Same as @c func_800BB810 but with @c dialogState=8.
+ * Same as @c opHandler_DCOLADD but with @c dialogState=8.
  *
  * @note Originally split by splat at @c func_800BB90C — symbol removed
  * from @c symbol_addrs.field so the two halves merge back.
  */
-s32 func_800BB8B4(Eline *eline) {
+s32 opHandler_DCOLSUB(Eline *eline) {
     D_800704A8.dialogState = 8;
     D_800704A8.dialogTimer = 0;
     D_800704A8.field_0x112 = POP(eline);
@@ -243,7 +243,7 @@ s32 func_800BB8B4(Eline *eline) {
  * @note Originally split by splat at @c func_800BB9A8 — symbol removed
  * from @c symbol_addrs.field so the two halves merge back.
  */
-s32 func_800BB958(Eline *eline) {
+s32 opHandler_TCOLADD(Eline *eline) {
     D_800704A8.dialogState = 5;
     D_800704A8.dialogTimer = 0;
     D_800704A8.dialogCount = POP(eline);
@@ -259,9 +259,9 @@ s32 func_800BB958(Eline *eline) {
 
 
 /**
- * @brief Same shape as @c func_800BB958 with @c dialogState=6.
+ * @brief Same shape as @c opHandler_TCOLADD with @c dialogState=6.
  */
-s32 func_800BBA3C(Eline *eline) {
+s32 opHandler_TCOLSUB(Eline *eline) {
     D_800704A8.dialogState = 6;
     D_800704A8.dialogTimer = 0;
     D_800704A8.dialogCount = POP(eline);
@@ -279,7 +279,7 @@ s32 func_800BBA3C(Eline *eline) {
 /**
  * @brief Initialise dialog state 5 + pop 7 halfwords.
  *
- * Like @c func_800BB958 but pops three more halfwords into
+ * Like @c opHandler_TCOLADD but pops three more halfwords into
  * @c field_0x118 / @c field_0x116 / @c field_0x114 instead of
  * copying from the lower triple.
  *
@@ -287,7 +287,7 @@ s32 func_800BBA3C(Eline *eline) {
  * BBC08); the trailing symbols were removed from
  * @c symbol_addrs.field to merge them back.
  */
-s32 func_800BBB20(Eline *eline) {
+s32 opHandler_FCOLADD(Eline *eline) {
     D_800704A8.dialogState = 5;
     D_800704A8.dialogTimer = 0;
     D_800704A8.dialogCount = POP(eline);
@@ -304,9 +304,9 @@ s32 func_800BBB20(Eline *eline) {
 
 
 /**
- * @brief Same shape as @c func_800BBB20 with @c dialogState=6.
+ * @brief Same shape as @c opHandler_FCOLADD with @c dialogState=6.
  */
-s32 func_800BBC64(Eline *eline) {
+s32 opHandler_FCOLSUB(Eline *eline) {
     D_800704A8.dialogState = 6;
     D_800704A8.dialogTimer = 0;
     D_800704A8.dialogCount = POP(eline);
@@ -327,7 +327,7 @@ s32 func_800BBC64(Eline *eline) {
  * (target/timer) differ. Once they match, copy the current dialog
  * state word at @c +0x108 into @c g_seedState->dialogStateMirror and return @c 2.
  */
-s32 func_800BBDA8(void) {
+s32 opHandler_COLSYNC(void) {
     if (D_800704A8.dialogCount != D_800704A8.dialogTimer) {
         return 1;
     }
@@ -349,7 +349,7 @@ s32 func_800BBDA8(void) {
  *
  * @return 2 when the polled state is ready, 1 while still waiting.
  */
-s32 func_800BBDE0(void) {
+s32 opHandler_FADESYNC(void) {
     u16 dlg;
     volatile SystemState *ss;
     if (D_800DE8D2 == 2) {
@@ -380,7 +380,7 @@ s32 func_800BBDE0(void) {
  *
  * @return Always 2 (VM continue).
  */
-s32 func_800BBE50(void) {
+s32 opHandler_FADENONE(void) {
     volatile SystemState *src = &D_800704A8;
     SeedState *dst = g_seedState;
     src->dialogState = 0;
@@ -395,7 +395,7 @@ s32 func_800BBE50(void) {
  * the just-written value back through memory rather than reusing the
  * literal @c 4.
  */
-s32 func_800BBE78(void) {
+s32 opHandler_FADEBLACK(void) {
     SystemState *src = &D_800704A8;
     *(volatile u16 *)&src->dialogState = 4;
     g_seedState->dialogStateMirror = *(volatile u16 *)&src->dialogState;
@@ -410,7 +410,7 @@ s32 func_800BBE78(void) {
  * next. The @c & @c 7 mask suggests @c val2 is a 3-bit selector
  * (e.g. SFX channel id).
  */
-s32 func_800BBEA4(Eline *eline) {
+s32 opHandler_MESVAR(Eline *eline) {
     s32 val1 = POP(eline);
     s32 val2 = POP(eline);
     func_8002E1B4(val2 & 7, val1);
@@ -426,7 +426,7 @@ s32 func_800BBEA4(Eline *eline) {
  * calling @c setSfxEntityType. Mirrors both into the per-slot SFX entry
  * at @c D_80085300[idx]. Returns 2 (VM continue).
  */
-s32 func_800BBEFC(Eline *eline) {
+s32 opHandler_MESMODE(Eline *eline) {
     s32 vol  = POP(eline);
     s32 kind = POP(eline);
     s32 idx  = POP(eline);
@@ -451,7 +451,7 @@ s32 func_800BBEFC(Eline *eline) {
  * Reads @c stack[ptr-1] and @c stack[ptr] without decrementing
  * @c stackPtr, then calls @c setSfxPitch(stack[ptr-1], stack[ptr]).
  */
-s32 func_800BBFFC(Eline *eline) {
+s32 opHandler_SETMESSPEED(Eline *eline) {
     s8 idx = (s8)eline->stackPtr;
     setSfxPitch(eline->stack[idx - 1], eline->stack[idx]);
     return 2;
@@ -479,7 +479,7 @@ s32 func_800BBFFC(Eline *eline) {
  * @c (1 << sfxIdx) constant load with the @c lw of @c g_seedState,
  * matching the target's register allocation.
  */
-s32 func_800BC034(Eline *eline) {
+s32 opHandler_MESW(Eline *eline) {
     s32 val1   = eline->stack[(s8)eline->stackPtr];
     s32 sfxIdx = eline->stack[(s8)eline->stackPtr - 1];
 
@@ -540,7 +540,7 @@ void func_800BC12C(s32 idx, s32 val, u16 *src) {
  *
  * Returns 3 on success.
  */
-s32 func_800BC170(Eline *eline) {
+s32 opHandler_MES(Eline *eline) {
     u8 buf[8];
     s32 val1   = eline->stack[(s8)eline->stackPtr];
     s32 sfxIdx = eline->stack[(s8)eline->stackPtr - 1];
@@ -588,7 +588,7 @@ void func_800BC258(Rect *r) {
 /**
  * @brief SFX trigger with text-measured rect and entry registration.
  *
- * Variant of @c func_800BC170 that also constructs a clipped on-screen
+ * Variant of @c opHandler_MES that also constructs a clipped on-screen
  * rectangle around a piece of text: peeks @c sfxIdx / @c textIdx /
  * @c rect.x / @c rect.y from the stack, measures the text via
  * @c func_8002E680 to set @c rect.w / @c rect.h (with +0x10/+0x11
@@ -598,7 +598,7 @@ void func_800BC258(Rect *r) {
  * @return 5 if slot busy, 1 on success (kicks off SFX + entry),
  *         3 once the slot frees up while inactive (pops 4).
  */
-s32 func_800BC2E0(Eline *eline) {
+s32 opHandler_AMESW(Eline *eline) {
     Rect buf;
     s32 sfxIdx;
     s32 textIdx;
@@ -637,13 +637,13 @@ s32 func_800BC2E0(Eline *eline) {
 /**
  * @brief Unconditional SFX trigger with text-measured rect.
  *
- * Like @c func_800BC2E0 but no @c activeMask gate — always runs once
+ * Like @c opHandler_AMESW but no @c activeMask gate — always runs once
  * the slot is free. Sets both @c sfxStartMask and @c sfxEntryMask,
  * pops four stack slots, registers the entry, and returns 3.
  *
  * @return 5 if slot busy, 3 otherwise.
  */
-s32 func_800BC44C(Eline *eline) {
+s32 opHandler_AMES(Eline *eline) {
     Rect buf;
     s32 sfxIdx;
     s32 textIdx;
@@ -680,13 +680,13 @@ s32 func_800BC44C(Eline *eline) {
 /**
  * @brief SFX trigger that pops 4 stack slots up front (vs peeking).
  *
- * Variant of @c func_800BC44C that consumes its 4 args with @c POP
+ * Variant of @c opHandler_AMES that consumes its 4 args with @c POP
  * instead of peeking. Sets only @c sfxStartMask (no @c sfxEntryMask),
  * registers the entry, and returns 2 (vs 3 for the peeking version).
  *
  * @return 5 if slot busy, 2 on success.
  */
-s32 func_800BC58C(Eline *eline) {
+s32 opHandler_RAMESW(Eline *eline) {
     Rect buf;
     s32 sfxIdx;
     s32 textIdx;
@@ -733,7 +733,7 @@ s32 func_800BC58C(Eline *eline) {
  *
  * @return 1 working, 3 done, 5 slot busy.
  */
-s32 func_800BC6F0(Eline *e) {
+s32 opHandler_ASK(Eline *e) {
     s32 sfxIdx;
     s32 textIdx;
     s32 paramY;
@@ -893,7 +893,7 @@ s32 opHandler_AASK(Eline *e) {
  *
  * @return 1 while waiting, 2 when torn down.
  */
-s32 func_800BCB14(Eline *e) {
+s32 opHandler_MESSYNC(Eline *e) {
     s32 sfxIdx = e->stack[(s8)e->stackPtr];
 
     if ((g_seedState->sfxEntryMask >> sfxIdx) & 1) {
@@ -925,7 +925,7 @@ s32 func_800BCB14(Eline *e) {
 /**
  * @brief Pop the top stack slot and pass it to @c setSfxGlobalFlag.
  */
-s32 func_800BCC6C(Eline *eline) {
+s32 opHandler_MESFORCUS(Eline *eline) {
     setSfxGlobalFlag(POP(eline));
     return 2;
 }
@@ -938,7 +938,7 @@ s32 func_800BCC6C(Eline *eline) {
  * it via @c func_8002E064, register an entry with @c data=0 via
  * @c func_800BC12C, pop 5, and return 2.
  */
-s32 func_800BCCAC(Eline *e) {
+s32 opHandler_WINSIZE(Eline *e) {
     Rect buf;
     s32 sfxIdx = e->stack[(s8)e->stackPtr - 4];
 
@@ -966,7 +966,7 @@ s32 func_800BCCAC(Eline *e) {
  * fully done, clear both @c sfxStartMask and @c sfxEntryMask bits,
  * pop one, and return 2.
  */
-s32 func_800BCDA0(Eline *e) {
+s32 opHandler_WINCLOSE(Eline *e) {
     s32 sfxIdx = e->stack[(s8)e->stackPtr];
 
     if (!getSfxField1C(sfxIdx)) {
@@ -986,7 +986,7 @@ s32 func_800BCDA0(Eline *e) {
  * to refresh whatever runtime state the helper tracks, then writes
  * @c val into @c D_80085398[idx].field4 and returns 2.
  */
-s32 func_800BCE44(Eline *e) {
+s32 opHandler_SETBAR(Eline *e) {
     s32 val = POP(e);
     s32 idx = POP(e);
     updateAnimEntry(idx, val);
@@ -1006,7 +1006,7 @@ s32 func_800BCE44(Eline *e) {
  * After the helper returns, all six values plus a @c flag=1 marker
  * are recorded into the per-slot entry at @c D_80085398[idx].
  */
-s32 func_800BCECC(Eline *e) {
+s32 opHandler_DISPBAR(Eline *e) {
     u16 buf[2];
     s32 v1 = POP(e);
     s32 v2 = POP(e);
@@ -1033,12 +1033,12 @@ s32 func_800BCECC(Eline *e) {
 /**
  * @brief Set up an 8-arg animation entry in the @c D_80085398 table.
  *
- * Variant of @c func_800BCECC: pops 8 stack values (7 halfwords plus
+ * Variant of @c opHandler_DISPBAR: pops 8 stack values (7 halfwords plus
  * an entry index), passes them via @c setupAnimEntryFull (the 7th
  * value lands as the 7th register/stack arg), and records all 8 plus
  * a @c flag=2 marker into the per-slot entry at @c D_80085398[idx].
  */
-s32 func_800BD024(Eline *e) {
+s32 opHandler_BROKEN(Eline *e) {
     u16 buf[2];
     s32 v0 = POP(e);
     s32 v1 = POP(e);
@@ -1073,7 +1073,7 @@ s32 func_800BD024(Eline *e) {
  * @param entity Script entity context.
  * @return 2.
  */
-s32 func_800BD1A4(Eline *eline) {
+s32 opHandler_KILLBAR(Eline *eline) {
     s32 val = POP(eline);
     D_80085398[val].flag = 0;
     clearAnimEntryActive(val);

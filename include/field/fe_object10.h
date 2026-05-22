@@ -4,8 +4,8 @@
 #include "common.h"
 #include "field.h"
 
-extern s32  func_800BD1F4(FieldEntity *entity);
-extern void func_800BD250(s32 a0, u8 *a1);
+extern s32  opHandler_DISABLEANGELO(FieldEntity *entity);
+extern void func_800BD250(s32 dir, s16 *out);
 extern s32  func_800BD2AC(FieldEntity *entity);
 extern s32  func_800BD318(FieldEntity *entity);
 extern void updateSeedLevel(void);
@@ -22,18 +22,20 @@ extern s32  func_800BE44C(s32 val);
 extern void func_800BF230(FieldEntity *entity);
 extern void func_800BF4A4(void);
 
+extern void func_800BD804(s32 stepDelta);
+
+extern void func_800BD9C4(s32 stepDelta);
+
 /* INCLUDE_ASM stubs — bodies still in assembly, signatures unknown.
  * Declared K&R-style; refine when these get decomped to C. */
-extern int  func_800BD804();
-extern int  func_800BD9C4();
-extern int  func_800BE36C();
-extern int  func_800BE4B0();
+extern Eline *func_800BE36C(u8 *header);
+extern s32 *func_800BE4B0(u8 *header, u16 *table);
 extern int  func_800BE5E4();
-extern int  func_800BE7F4();
-extern int  func_800BE924();
-extern int  func_800BEA84();
-extern int  func_800BEBD0();
-extern int  func_800BF080();
-extern void func_800BF28C(s32 a0);
+extern FieldEntityB *func_800BE7F4(FieldEntityB *buf);
+extern FieldEntityD *func_800BE924(FieldEntityD *buf);
+extern FieldEntityC *func_800BEA84(FieldEntityC *buf);
+extern void func_800BEBD0(void);
+extern void func_800BF080(void);
+extern void func_800BF28C(s32 dispatchEnabled);
 
 #endif

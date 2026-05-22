@@ -28,7 +28,7 @@ extern void opHandler_LSH(Eline *e);
 extern s32  opHandler_CAL(Eline *e, s32 opcode);
 extern s32  opHandler_JMP(Eline *e, s32 a1);
 extern s32  opHandler_JPF(Eline *e, s32 a1);
-extern s32  func_800AE0DC(Eline *e, s32 a1);
+extern s32  opHandler_GJMP(Eline *e, s32 a1);
 extern s32  opHandler_LBL(Eline *e, s32 a1);
 extern void func_800AE184(Eline *e);
 extern s32  opHandler_RET(Eline *e, s32 a1);

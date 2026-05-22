@@ -30,8 +30,7 @@ void func_8009CDC4(s32 a0, s8 val) {
     g_seedState->soundHandle0 = sndCmd1A(a0, 0x78, val);
 }
 
-extern s32 sndCmd10(s32 a0);
-extern void sndCmdC1(s32 a0, s32 a1, s32 a2);
+/* sndCmd10 / sndCmdC1 prototypes come from <sound.h>. */
 
 /**
  * @brief Dispatch SPU cmd 0x10 with @p a0, stash its handle, then issue cmd C1.
@@ -52,8 +51,6 @@ void func_8009CDFC(s32 a0, s8 val) {
     g_seedState->soundHandle0 = sndCmd10(a0);
     sndCmdC1(0, 0x3C, val);
 }
-
-extern void sndCmd11(s32 a0);
 
 /**
  * @brief Send sound command 0x11 then reset audio channel 0's state byte.

@@ -1257,4 +1257,7 @@ extern TripleTriadDirection g_tripleTriadDirectionOffsets[4];  /**< UP, DOWN, LE
 extern s32                  g_tripleTriadRules;                /**< Active rule flags (TT_RULE_*). */
 extern u8                   D_801A2C70[2];                     /**< Per-player layout type; 3 selects the offset-hand layout. */
 
+/** @brief Reset battle-transition state (clears @c btl_color flags). */
+extern void initBattleTransition(void);
+
 #endif /* BATTLE_H */

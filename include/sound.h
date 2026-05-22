@@ -273,4 +273,55 @@ extern void sndCmd21(s32 a0, s32 a1);
 /** @brief Query the current active-channel mask for SFX dispatch. */
 extern s32 func_800131A8(void);
 
+/**
+ * @brief SPU command-bus wrappers. Each writes its args into the
+ *        command buffer at @c D_80075058 and tail-calls
+ *        @c func_8001A1E8 to dispatch the indicated opcode. The
+ *        SPU-handle / dispatch result is left in @c $v0 by the inner
+ *        @c jal, which is why callers can treat them as returning
+ *        @c s32 even though the body has no explicit @c return.
+ */
+extern s32 sndCmd10(s32 a0);
+extern s32 sndCmd11(s32 a0);
+extern s32 sndCmd12(s32 a0, s32 a1);
+extern s32 sndCmd14(s32 a0, s32 a1, s32 a2);
+extern s32 sndCmd19(s32 a0, s32 a1);
+extern s32 sndCmd1A(s32 a0, s32 a1, s32 a2);
+extern s32 sndCmdC0(s32 a0, s32 a1);
+extern s32 sndCmdC1(s32 a0, s32 a1, s32 a2);
+extern s32 sndCmdC2(s32 a0, s32 a1, s32 a2, s32 a3);
+
+/** @brief Reset SPU command bus (issued by the music-state reset opcode). */
+extern void sndCmdF1(void);
+
+/** @brief Set the global SPU master volume (0..0x7F). */
+extern void sndSetMasterVolume(s32 vol);
+
+/** @brief Set the global SEQ tempo (0x80 = normal). */
+extern void sndSeqSetTempo(s32 tempo);
+
+/** @brief Upload a staged sample bank to the SPU; returns -1 while busy. */
+extern s32 sndUploadSamples(s32 a0, s32 a1);
+
+/** @brief Query the sound engine's current busy state (0 = idle). */
+extern s32 sndGetEngineState(void);
+
+/** @brief Toggle the current sound-bank-selector flag and return a pointer to the new bank table. */
+extern u8 *toggleSoundBank(void);
+
+/** @brief Sound-bank A: the staging table @c toggleSoundBank returns when the selector reads as @c 0. */
+extern u8 D_8005F388[];
+
+/** @brief Sound-bank B: the staging table @c toggleSoundBank returns when the selector reads as non-zero. */
+extern u8 D_80063388[];
+
+/** @brief Threshold tested by @c SPUSYNC — top-of-stack values below this
+ *         indicate a known SPU sample slot and can be popped immediately. */
+extern u32 D_800772B8;
+
+/** @brief Load a sample bank into SPU RAM at the given destination address.
+ *         @c a0 = mode (0 = standard), @c bank = sound-bank id,
+ *         @c fileLba = staging buffer / file address. */
+extern s32 func_80037FB0(s32 a0, s8 bank, s32 fileLba);
+
 #endif /* SOUND_H */

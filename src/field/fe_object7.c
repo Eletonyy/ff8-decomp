@@ -12,7 +12,7 @@
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B542C(Eline *eline) {
+s32 opHandler_WHERECARD(Eline *eline) {
     eline->resultSlots[0] = getKeyItemValue(POP(eline));
     return 2;
 }
@@ -28,7 +28,7 @@ s32 func_800B542C(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 on first pass (battle started), 2 on return (result ready).
  */
-s32 func_800B5480(Eline *eline) {
+s32 opHandler_CARDGAME(Eline *eline) {
     u8 *params;
     s32 result;
     s32 i;
@@ -241,7 +241,7 @@ s32 func_800B5990(void) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while processing, 2 when complete.
  */
-s32 func_800B5A30(Eline *eline) {
+s32 opHandler_DRAWPOINT(Eline *eline) {
     s32 fieldIdx;
     s32 tableResult;
     u8 *text;
@@ -451,7 +451,7 @@ s32 func_800B5A30(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B6210(Eline *eline) {
+s32 opHandler_SETDRAWPOINT(Eline *eline) {
     g_seedState->fieldF0 = 1;
     g_seedState->fieldF1 = POP_BYTE(eline);
     func_800A4500(eline->posX, eline->posY, eline->posZ);
@@ -480,7 +480,7 @@ s32 func_800B629C(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B62E8(Eline *eline) {
+s32 opHandler_PARTICLEON(Eline *eline) {
     D_800704A8.slotActive[POP(eline) & 0xF] = 1;
     return 2;
 }
@@ -491,7 +491,7 @@ s32 func_800B62E8(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B6328(Eline *eline) {
+s32 opHandler_PARTICLEOFF(Eline *eline) {
     D_800704A8.slotActive[POP(eline) & 0xF] = 0;
     return 2;
 }
@@ -502,7 +502,7 @@ s32 func_800B6328(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B6364(Eline *eline) {
+s32 opHandler_PARTICLESET(Eline *eline) {
     D_800704A8.slotActive[POP(eline) & 0xF] = eline->field_0x256 | 0x80;
     return 2;
 }
@@ -514,7 +514,7 @@ s32 func_800B6364(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B63A4(Eline *eline) {
+s32 opHandler_SETWITCH(Eline *eline) {
     if (POP(eline)) {
         func_800C0384();
     } else {
@@ -529,7 +529,7 @@ s32 func_800B63A4(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B6400(Eline *eline) {
+s32 opHandler_SETODIN(Eline *eline) {
     func_800C03F4(eline);
     return 2;
 }
@@ -553,7 +553,7 @@ s32 func_800B6420(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B6448(Eline *eline) {
+s32 opHandler_SETPLACE(Eline *eline) {
     D_8007737C = POP(eline);
     return 2;
 }
@@ -564,7 +564,7 @@ s32 func_800B6448(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B6478(Eline *eline) {
+s32 opHandler_BATTLEMODE(Eline *eline) {
     D_80082C0A = g_seedState->fieldB6 = POP(eline);
     do {} while (0);
     return 2;
@@ -576,7 +576,7 @@ s32 func_800B6478(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 3 (special return — triggers mode transition).
  */
-s32 func_800B64B0(Eline *eline) {
+s32 opHandler_BATTLE(Eline *eline) {
     if (D_800704A8.mode == 0) {
         D_800704A8.mode = 3;
     }
@@ -591,7 +591,7 @@ s32 func_800B64B0(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B6524(Eline *eline) {
+s32 opHandler_BATTLERESULT(Eline *eline) {
     eline->resultSlots[0] = D_80082C0F;
     return 2;
 }
@@ -601,7 +601,7 @@ s32 func_800B6524(Eline *eline) {
  *
  * @return 2 (continue processing).
  */
-s32 func_800B653C(void) {
+s32 opHandler_BATTLEON(void) {
     if (D_800DE8D0) {
         g_seedState->stateFlags |= 0x400;
     } else {
@@ -615,7 +615,7 @@ s32 func_800B653C(void) {
  *
  * @return 2 (continue processing).
  */
-s32 func_800B6588(void) {
+s32 opHandler_BATTLEOFF(void) {
     SeedState *ctx = g_seedState;
 
     ctx->fieldCF = 1;
@@ -624,7 +624,7 @@ s32 func_800B6588(void) {
 }
 
 /** @brief No-op handler. Returns 2 (continue). */
-s32 func_800B65B0(Eline *eline) {
+s32 opHandler_BATTLECUT(Eline *eline) {
     return 2;
 }
 
@@ -634,13 +634,13 @@ s32 func_800B65B0(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 (yield).
  */
-s32 func_800B65B8(Eline *eline) {
+s32 opHandler_GAMEOVER(Eline *eline) {
     D_800704A8.mode = 4;
     return 1;
 }
 
 /** @brief Yield handler. Returns 1 (wait). */
-s32 func_800B65CC(Eline *eline) {
+s32 opHandler_ENDING(Eline *eline) {
     return 1;
 }
 
@@ -650,7 +650,7 @@ s32 func_800B65CC(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B65D4(Eline *eline) {
+s32 opHandler_DISC(Eline *eline) {
     g_seedState->expectedDiscId = POP_BYTE(eline);
     D_800773C0 = g_seedState->expectedDiscId - 1;
     setDiscNumber(g_seedState->expectedDiscId);
@@ -788,7 +788,7 @@ void func_800B6854(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B68B8(Eline *eline) {
+s32 opHandler_MSPEED(Eline *eline) {
     u16 channel = POP(eline);
 
     eline->savedChannel = channel;
@@ -809,7 +809,7 @@ s32 func_800B68B8(Eline *eline) {
  * @note Previously misnamed @c opHandler_MES — the three @c <<12 pops are
  *       fixed-point coordinates, not message text/positions; the eline
  *       fields named @c msgPos[XY] / @c msgTextPtr actually hold motion
- *       target coords (see also func_800B69E8 which copies them from
+ *       target coords (see also opHandler_MOVEA which copies them from
  *       @c D_80085230[idx]->pos[XYZ]).
  *
  * @param eline Pointer to the event line (script context).
@@ -853,7 +853,7 @@ s32 opHandler_MOVE(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while message is active, 2 when complete.
  */
-s32 func_800B69E8(Eline *eline) {
+s32 opHandler_MOVEA(Eline *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->msgActive = 1;
         eline->msgState = 0;
@@ -877,14 +877,14 @@ s32 func_800B69E8(Eline *eline) {
 /**
  * @brief Show a message tracking a party member entity's position.
  *
- * Like func_800B69E8 but looks up the entity index through
+ * Like opHandler_MOVEA but looks up the entity index through
  * g_seedState->memberSlot[] first, then reads position from
  * D_80085224[idx]. Updates message coordinates each frame.
  *
  * @param eline Pointer to the event line (script context).
  * @return 1 while message is active, 2 when complete.
  */
-s32 func_800B6B20(Eline *eline) {
+s32 opHandler_PMOVEA(Eline *eline) {
     u8 idx;
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
@@ -918,7 +918,7 @@ s32 func_800B6B20(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while prompt is active, 2 when answered.
  */
-s32 func_800B6C28(Eline *eline) {
+s32 opHandler_CMOVE(Eline *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->msgActive = 1;
         eline->msgState = 0;
@@ -943,7 +943,7 @@ s32 func_800B6C28(Eline *eline) {
 /**
  * @brief Display a positioned message (variant without yes/no prompt setup).
  *
- * Like func_800B6C28 (ASK prompt) but without the field_0x262/field_0x240
+ * Like opHandler_CMOVE (ASK prompt) but without the field_0x262/field_0x240
  * initialization. Pops window ID, Y position, X position, and message text
  * pointer from the bytecode stack; saves the current message channel;
  * resets message state. Then polls for completion.
@@ -951,7 +951,7 @@ s32 func_800B6C28(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while message is active, 2 when complete.
  */
-s32 func_800B6D24(Eline *eline) {
+s32 opHandler_FMOVE(Eline *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->msgActive = 1;
         eline->msgState = 0;
@@ -974,14 +974,14 @@ s32 func_800B6D24(Eline *eline) {
 /**
  * @brief Position-tracking message variant (clears field_0x1DA, no display init).
  *
- * Like func_800B69E8 but clears field_0x1DA instead of calling func_800B6738.
+ * Like opHandler_MOVEA but clears field_0x1DA instead of calling func_800B6738.
  * Pops window ID and saves the channel on the first pass; afterwards, updates
  * the message coordinates from D_80085230[PEEK]'s position each frame.
  *
  * @param eline Pointer to the event line (script context).
  * @return 1 while message is active, 2 when complete.
  */
-s32 func_800B6E18(Eline *eline) {
+s32 opHandler_FMOVEA(Eline *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->msgActive = 1;
         eline->msgState = 0;
@@ -1005,14 +1005,14 @@ s32 func_800B6E18(Eline *eline) {
 /**
  * @brief Party-member position-tracking message variant (clears field_0x1DA).
  *
- * Like func_800B6B20 but clears field_0x1DA instead of calling func_800B6738.
+ * Like opHandler_PMOVEA but clears field_0x1DA instead of calling func_800B6738.
  * Looks up a party slot through g_seedState->memberSlot[], then updates the
  * message coordinates from D_80085224[idx]'s position each frame.
  *
  * @param eline Pointer to the event line (script context).
  * @return 1 while message is active, 2 when complete.
  */
-s32 func_800B6F4C(Eline *eline) {
+s32 opHandler_FMOVEP(Eline *eline) {
     u8 idx;
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
@@ -1046,7 +1046,7 @@ s32 func_800B6F4C(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 3 (message scheduled, deferred completion).
  */
-s32 func_800B7050(Eline *eline) {
+s32 opHandler_RMOVE(Eline *eline) {
     s32 new_var;
     u16 saved;
 
@@ -1076,7 +1076,7 @@ s32 func_800B7050(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 3 (message scheduled, deferred completion).
  */
-s32 func_800B711C(Eline *eline) {
+s32 opHandler_RMOVEA(Eline *eline) {
     eline->msgActive = 1;
     eline->flags |= 0x20000;
     eline->msgState = 0;
@@ -1100,7 +1100,7 @@ s32 func_800B711C(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 3 (message scheduled, deferred completion).
  */
-s32 func_800B7228(Eline *eline) {
+s32 opHandler_RPMOVEA(Eline *eline) {
     u8 idx;
 
     eline->msgActive = 1;
@@ -1122,13 +1122,13 @@ s32 func_800B7228(Eline *eline) {
  *
  * Sets the pending-message flag and pops window ID, Y, X, and text pointer
  * from the stack. Also initializes the prompt-specific state fields
- * (field_0x262=0, field_0x240=1, field_0x1DA=0) like func_800B6C28, but
+ * (field_0x262=0, field_0x240=1, field_0x1DA=0) like opHandler_CMOVE, but
  * unconditionally (no activeMask guard) and returns 3.
  *
  * @param eline Pointer to the event line (script context).
  * @return 3 (prompt scheduled, deferred completion).
  */
-s32 func_800B7310(Eline *eline) {
+s32 opHandler_RCMOVE(Eline *eline) {
     eline->msgActive = 1;
     eline->flags |= 0x20000;
     eline->msgState = 0;
@@ -1152,7 +1152,7 @@ s32 func_800B7310(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 3 (message scheduled, deferred completion).
  */
-s32 func_800B73D4(Eline *eline) {
+s32 opHandler_RFMOVE(Eline *eline) {
     eline->msgActive = 1;
     eline->flags |= 0x20000;
     eline->msgState = 0;
@@ -1171,7 +1171,7 @@ s32 func_800B73D4(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 if msgState == 2 (message complete), 1 otherwise (still displaying).
  */
-s32 func_800B7490(Eline *eline) {
+s32 opHandler_MOVESYNC(Eline *eline) {
     if (eline->msgState == 2) {
         return 2;
     }
@@ -1189,7 +1189,7 @@ s32 func_800B7490(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B74B0(Eline *eline) {
+s32 opHandler_MOVECANCEL(Eline *eline) {
     s32 idx = POP(eline);
 
     if (D_80085230[idx]->flags & 0x10000000) {
@@ -1214,7 +1214,7 @@ s32 func_800B74B0(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B7578(Eline *eline) {
+s32 opHandler_PMOVECANCEL(Eline *eline) {
     u8 idx = g_seedState->memberSlot[POP(eline)];
 
     if (D_80085224[idx].msgActive == 1) {
@@ -1231,7 +1231,7 @@ s32 func_800B7578(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 (continue processing).
  */
-s32 func_800B7640(Eline *eline) {
+s32 opHandler_MOVEFLUSH(Eline *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->flags &= ~0x10000;
     }
@@ -1244,7 +1244,7 @@ s32 func_800B7640(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B7674(Eline *eline) {
+s32 opHandler_MLIMIT(Eline *eline) {
     eline->field_0x262 = POP_BYTE(eline);
     return 2;
 }
@@ -1281,7 +1281,7 @@ s32 func_800B76A4(Eline *self) {
  * @param self Pointer to the event line (script context).
  * @return 1 while message is animating, 2 when complete.
  */
-s32 func_800B7718(Eline *self) {
+s32 opHandler_MACCEL(Eline *self) {
     s32 delta = 0;
 
     if ((self->activeMask >> self->scriptGroup) & 1) {
@@ -1368,7 +1368,7 @@ void func_800B788C(Eline *self, Eline *target) {
  * @param eline Script context (the speaker).
  * @return 1 while waiting, 2 once both other-party messages finish.
  */
-s32 func_800B79C8(Eline *eline) {
+s32 opHandler_JOIN(Eline *eline) {
     s32 i;
     s32 idx;
 
@@ -1512,7 +1512,7 @@ void func_800B7D44(Eline *eline, s32 x, s32 y, s32 z) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while still moving, 2 when all entities have completed.
  */
-s32 func_800B7E78(Eline *eline) {
+s32 opHandler_SPLIT(Eline *eline) {
     s32 z2, y2, x2, z1, y1, x1, z0, y0, x0;
     Eline *e0, *e4, *e8;
 
@@ -1613,7 +1613,7 @@ s32 func_800B7E78(Eline *eline) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 3 once the message has been read.
  */
-s32 func_800B8344(Eline *eline, s32 a1) {
+s32 opHandler_JUMP(Eline *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState != 2) {
             return 1;
@@ -1635,7 +1635,7 @@ s32 func_800B8344(Eline *eline, s32 a1) {
 /**
  * @brief Positioned-message opcode handler — 4-pop variant (full XYZ).
  *
- * Sister of @c func_800B8344 but pops an extra coordinate: pops one
+ * Sister of @c opHandler_JUMP but pops an extra coordinate: pops one
  * halfword (window/format ID, stored to @c field_0x1D8) plus three
  * s32 values that become @c msgPosY, @c msgPosX, and @c msgTextPtr
  * (each scaled into Q19.12). Stores the dispatcher arg into
@@ -1646,7 +1646,7 @@ s32 func_800B8344(Eline *eline, s32 a1) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 3 once the message has been read.
  */
-s32 func_800B83FC(Eline *eline, s32 a1) {
+s32 opHandler_JUMP3(Eline *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState != 2) {
             return 1;
@@ -1669,7 +1669,7 @@ s32 func_800B83FC(Eline *eline, s32 a1) {
 /**
  * @brief Positioned-message opcode handler — anchor at a party member.
  *
- * Variant of the @c func_800B8344 / @c func_800B83FC pattern that
+ * Variant of the @c opHandler_JUMP / @c opHandler_JUMP3 pattern that
  * copies the anchor coordinates from a party-member entity instead
  * of taking them as args. Pops a window/format halfword (stored to
  * @c field_0x1D8) and a slot index, looks up the entity through
@@ -1680,7 +1680,7 @@ s32 func_800B83FC(Eline *eline, s32 a1) {
  * @param eline Script context.
  * @return 1 while running, 3 once the message has been read.
  */
-s32 func_800B84D8(Eline *eline) {
+s32 opHandler_PJUMPA(Eline *eline) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState != 2) {
             return 1;
@@ -1723,7 +1723,7 @@ s32 func_800B85C8(Eline *eline) {
  *        kick and "msgActive = 3" semantics.
  *
  * On the active frame: sets @c msgActive = 3 (distinct from the
- * @c msgActive = 2 variants in @c func_800B8344 / @c func_800B83FC),
+ * @c msgActive = 2 variants in @c opHandler_JUMP / @c opHandler_JUMP3),
  * @c windowId = 1, @c msgState = 0; pops a signed halfword and
  * dispatches @c func_800B912C with it (animation trigger); marks
  * @c flags |= 0x2000; pops three coords (Q19.12) into @c msgPosY /
@@ -1737,7 +1737,7 @@ s32 func_800B85C8(Eline *eline) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 2 once read.
  */
-s32 func_800B85F8(Eline *eline, s32 a1) {
+s32 opHandler_LADDERUP(Eline *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState == 2) {
             eline->msgActive = 0;
@@ -1761,7 +1761,7 @@ s32 func_800B85F8(Eline *eline, s32 a1) {
  * @brief Positioned-message handler — windowId=0, msgActive=3 variant
  *        with animation-trigger call.
  *
- * Sister of @c func_800B85F8 with @c windowId = 0 instead of 1.
+ * Sister of @c opHandler_LADDERUP with @c windowId = 0 instead of 1.
  * Active path: sets @c msgActive=3 / @c windowId=0 / @c msgState=0,
  * pops a signed halfword and dispatches @c func_800B912C with it
  * (animation trigger), marks @c flags |= 0x2000, pops three Q19.12
@@ -1783,7 +1783,7 @@ s32 func_800B85F8(Eline *eline, s32 a1) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 2 once read.
  */
-s32 func_800B8710(Eline *eline, s32 a1) {
+s32 opHandler_LADDERDOWN(Eline *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState == 2) {
             eline->msgActive = 0;
@@ -1823,7 +1823,7 @@ s32 func_800B8710(Eline *eline, s32 a1) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 2 once read.
  */
-s32 func_800B8824(Eline *eline, s32 a1) {
+s32 opHandler_LADDERUP2(Eline *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState == 2) {
             eline->msgActive = 0;
@@ -1850,7 +1850,7 @@ s32 func_800B8824(Eline *eline, s32 a1) {
 /**
  * @brief 9-pop full-message handler (msgActive=4, windowId=0).
  *
- * Leaf variant of @c func_800B8824: same 9-pop sequence into the
+ * Leaf variant of @c opHandler_LADDERUP2: same 9-pop sequence into the
  * @c msgPosY / @c msgPosX / @c msgTextPtr / @c field_0x1C0..C8 /
  * @c unk1A8..B0 region with the same @c msgActive = 4 marker, but
  * @c windowId = 0 instead of 1.
@@ -1866,7 +1866,7 @@ s32 func_800B8824(Eline *eline, s32 a1) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 2 once read.
  */
-s32 func_800B89C0(Eline *eline, s32 a1) {
+s32 opHandler_LADDERDOWN2(Eline *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState == 2) {
             eline->msgActive = 0;
@@ -1903,7 +1903,7 @@ s32 func_800B89C0(Eline *eline, s32 a1) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 2 (advance PC).
  */
-s32 func_800B8B58(Eline *eline, s32 a1) {
+s32 opHandler_DOFFSET(Eline *eline, s32 a1) {
     u16 a, b, c;
     a = POP(eline);
     eline->field_0x1EC = a;
@@ -1924,7 +1924,7 @@ s32 func_800B8B58(Eline *eline, s32 a1) {
 /**
  * @brief Pop seven halfwords into animation fields with @c unk245 = 1.
  *
- * Sister of @c func_800B8B58 but with one more parameter direction:
+ * Sister of @c opHandler_DOFFSET but with one more parameter direction:
  * sets @c unk245 = 1, pops seven u16 values into @c field_0x1F2,
  * @c 1F0, @c 1EA, @c 1E4, @c 1EE, @c 1E8, @c 1E2 (last), and zeros
  * @c field_0x1F4. Leaf function.
@@ -1933,7 +1933,7 @@ s32 func_800B8B58(Eline *eline, s32 a1) {
  * @param a1    Ignored.
  * @return 2 (advance PC).
  */
-s32 func_800B8BE0(Eline *eline, s32 a1) {
+s32 opHandler_LOFFSETS(Eline *eline, s32 a1) {
     eline->unk245 = 1;
     eline->field_0x1F2 = POP(eline);
     eline->field_0x1F0 = POP(eline);
@@ -1949,14 +1949,14 @@ s32 func_800B8BE0(Eline *eline, s32 a1) {
 /**
  * @brief Pop seven halfwords into animation fields with @c unk245 = 2.
  *
- * Identical to @c func_800B8BE0 except @c unk245 is set to @c 2 (a
+ * Identical to @c opHandler_LOFFSETS except @c unk245 is set to @c 2 (a
  * different sub-mode marker). Same pop sequence and field layout.
  *
  * @param eline Script context.
  * @param a1    Ignored.
  * @return 2 (advance PC).
  */
-s32 func_800B8CD4(Eline *eline, s32 a1) {
+s32 opHandler_COFFSETS(Eline *eline, s32 a1) {
     eline->unk245 = 2;
     eline->field_0x1F2 = POP(eline);
     eline->field_0x1F0 = POP(eline);
@@ -1973,14 +1973,14 @@ s32 func_800B8CD4(Eline *eline, s32 a1) {
  * @brief Animation handler — rotate current XY/Z fields into "saved"
  *        slots and pop new values in (unk245 = 1 variant).
  *
- * Sister of @c func_800B8E74 with @c unk245 = 1. Same shape and
- * matching scaffold — see @c func_800B8E74 for the reg-alloc trick.
+ * Sister of @c opHandler_COFFSET with @c unk245 = 1. Same shape and
+ * matching scaffold — see @c opHandler_COFFSET for the reg-alloc trick.
  *
  * @param eline Script context.
  * @param a1    Ignored.
  * @return 2 (advance PC).
  */
-s32 func_800B8DC8(Eline *eline, s32 a1) {
+s32 opHandler_LOFFSET(Eline *eline, s32 a1) {
     s32 s1E4 = eline->field_0x1E4;
     s32 s1F0 = eline->field_0x1F0;
     s32 s1EA;
@@ -2003,7 +2003,7 @@ s32 func_800B8DC8(Eline *eline, s32 a1) {
  * @brief Animation handler — rotate current XY/Z fields into "saved"
  *        slots and pop new values in.
  *
- * Sister of @c func_800B8DC8 (which uses @c unk245 = 1). Pre-reads
+ * Sister of @c opHandler_LOFFSET (which uses @c unk245 = 1). Pre-reads
  * the current @c field_0x1E4 / @c 1F0 / @c 1EA into temporaries,
  * stores them into the "saved" trio (@c 1E2 / @c 1EE / @c 1E8),
  * then pops four fresh values into @c 1F2 / @c 1F0 / @c 1EA /
@@ -2018,7 +2018,7 @@ s32 func_800B8DC8(Eline *eline, s32 a1) {
  * @param a1    Ignored.
  * @return 2 (advance PC).
  */
-s32 func_800B8E74(Eline *eline, s32 a1) {
+s32 opHandler_COFFSET(Eline *eline, s32 a1) {
     s32 s1E4 = eline->field_0x1E4;
     s32 s1F0 = eline->field_0x1F0;
     s32 s1EA;
@@ -2041,14 +2041,14 @@ s32 func_800B8E74(Eline *eline, s32 a1) {
  * @brief Return 2 if @c unk245 == 3, otherwise return 1.
  *
  * Probes the animation sub-mode byte set by the sibling opcode
- * handlers (@c func_800B8BE0 / @c func_800B8CD4 / @c func_800B8DC8 /
- * @c func_800B8E74). Used by scripts to wait until the animation
+ * handlers (@c opHandler_LOFFSETS / @c opHandler_COFFSETS / @c opHandler_LOFFSET /
+ * @c opHandler_COFFSET). Used by scripts to wait until the animation
  * reaches sub-mode 3.
  *
  * @param eline Script context.
  * @return 2 if @c unk245 == 3 (advance), 1 otherwise (yield).
  */
-s32 func_800B8F20(Eline *eline) {
+s32 opHandler_OFFSETSYNC(Eline *eline) {
     if (eline->unk245 == 3) {
         return 2;
     }
@@ -2061,7 +2061,7 @@ s32 func_800B8F20(Eline *eline) {
  * @param a0 Pointer to the script/object structure (unused).
  * @return 2 (continue processing).
  */
-s32 func_800B8F3C(u8 *a0) {
+s32 opHandler_RUNDISABLE(u8 *a0) {
     D_8007064C = 1;
     return 2;
 }
@@ -2072,7 +2072,7 @@ s32 func_800B8F3C(u8 *a0) {
  * @param a0 Pointer to the script/object structure (unused).
  * @return 2 (continue processing).
  */
-s32 func_800B8F50(u8 *a0) {
+s32 opHandler_RUNENABLE(u8 *a0) {
     D_8007064C = 0;
     return 2;
 }
@@ -2083,7 +2083,7 @@ s32 func_800B8F50(u8 *a0) {
  * @param a0 Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 func_800B8F60(u8 *a0) {
+s32 opHandler_INITTRACE(u8 *a0) {
     func_8009E660(a0);
     return 2;
 }
@@ -2092,13 +2092,13 @@ s32 func_800B8F60(u8 *a0) {
  * @brief Wait until @c D_800704A8.unk106 catches up with @c unk104.
  *
  * Read by scripts to wait for the animation tick set by
- * @c func_800B8FA8 (POP → @c unk104, @c unk106 = 0) — some other
+ * @c opHandler_AXIS (POP → @c unk104, @c unk106 = 0) — some other
  * code path advances @c unk106 each frame, and this opcode yields
  * (return 1) until they're equal.
  *
  * @return 2 (advance) when @c unk104 == @c unk106, 1 (yield) otherwise.
  */
-s32 func_800B8F80(Eline *eline) {
+s32 opHandler_AXISSYNC(Eline *eline) {
     if (D_800704A8.unk106 == D_800704A8.unk104) {
         return 2;
     }
@@ -2115,7 +2115,7 @@ s32 func_800B8F80(Eline *eline) {
  * @param eline Script context.
  * @return 2 (advance PC).
  */
-s32 func_800B8FA8(Eline *eline) {
+s32 opHandler_AXIS(Eline *eline) {
     D_800704A8.unk104 = POP(eline);
     D_800704A8.unk102 = POP(eline);
     D_800704A8.unk106 = 0;
@@ -2145,7 +2145,7 @@ s32 func_800B9000(Eline *eline) {
  * @param eline Script context.
  * @return 2 (advance PC).
  */
-s32 func_800B9030(Eline *eline) {
+s32 opHandler_OPENEYES(Eline *eline) {
     eline->flags = (eline->flags & ~0x280000) | 0x100000;
     func_800A97E4(eline->field_0x256, 0x2E, 0, 0);
     return 2;
