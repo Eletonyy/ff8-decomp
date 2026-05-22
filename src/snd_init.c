@@ -149,15 +149,15 @@ s32 sndGetMaxVolume(s32 a0) {
 }
 
 /** @brief Sends SPU command 0x10 with parameter @p a0 via the command buffer. */
-void sndCmd10(s32 a0) {
+s32 sndCmd10(s32 a0) {
     D_80075058 = a0;
-    func_8001A1E8(0x10);
+    return func_8001A1E8(0x10);
 }
 
 /** @brief Sends SPU command 0x11 with parameter @p a0 via the command buffer. */
-void sndCmd11(s32 a0) {
+s32 sndCmd11(s32 a0) {
     D_80075058 = a0;
-    func_8001A1E8(0x11);
+    return func_8001A1E8(0x11);
 }
 
 /**
@@ -166,11 +166,11 @@ void sndCmd11(s32 a0) {
  * @param a1 Second command parameter (stored at D_80075058[1]).
  * @param a2 Third command parameter (stored at D_80075058[2]).
  */
-void sndCmd14(s32 a0, s32 a1, s32 a2) {
+s32 sndCmd14(s32 a0, s32 a1, s32 a2) {
     D_80075058 = a0;
     *(&D_80075058 + 1) = a1;
     *(&D_80075058 + 2) = a2;
-    func_8001A1E8(0x14);
+    return func_8001A1E8(0x14);
 }
 
 /** @brief Sends SPU command 0x40. */
@@ -182,10 +182,10 @@ void sndCmd40(void) {
  *  @param a0 First command parameter.
  *  @param a1 Second parameter, masked to 7 bits.
  */
-void sndCmd19(s32 a0, s32 a1) {
+s32 sndCmd19(s32 a0, s32 a1) {
     D_80075058 = a0;
     *(&D_80075058 + 1) = a1 & 0x7F;
-    func_8001A1E8(0x19);
+    return func_8001A1E8(0x19);
 }
 
 /** @brief Stores a0, a1, and a2 (masked to 7 bits) to SPU command buffer, sends command 0x1A.
@@ -193,21 +193,21 @@ void sndCmd19(s32 a0, s32 a1) {
  *  @param a1 Second command parameter.
  *  @param a2 Third command parameter (masked to 0x7F).
  */
-void sndCmd1A(s32 a0, s32 a1, s32 a2) {
+s32 sndCmd1A(s32 a0, s32 a1, s32 a2) {
     D_80075058 = a0;
     *(&D_80075058 + 1) = a1;
     *(&D_80075058 + 2) = a2 & 0x7F;
-    func_8001A1E8(0x1A);
+    return func_8001A1E8(0x1A);
 }
 
 /** @brief Stores a0 and a1 to SPU command buffer, sends command 0x12.
  *  @param a0 First command parameter.
  *  @param a1 Second command parameter.
  */
-void sndCmd12(s32 a0, s32 a1) {
+s32 sndCmd12(s32 a0, s32 a1) {
     D_80075058 = a0;
     *(&D_80075058 + 1) = a1;
-    func_8001A1E8(0x12);
+    return func_8001A1E8(0x12);
 }
 
 /**
@@ -553,10 +553,10 @@ void sndSeqStartPan(s32 a0, s32 a1, s32 a2, s32 a3) {
  * @param a0 Channel or voice identifier.
  * @param a1 Parameter value, masked to 7 bits (0-127).
  */
-void sndCmdC0(s32 a0, s32 a1) {
+s32 sndCmdC0(s32 a0, s32 a1) {
     D_80075058 = a0;
     *(&D_80075058 + 1) = a1 & 0x7F;
-    func_8001A1E8(0xC0);
+    return func_8001A1E8(0xC0);
 }
 
 /** @brief Stores a0, a1, and 7-bit masked a2 to SPU command buffer, sends command 0xC1.
@@ -564,11 +564,11 @@ void sndCmdC0(s32 a0, s32 a1) {
  *  @param a1 Second command parameter.
  *  @param a2 Third parameter, masked to 7 bits.
  */
-void sndCmdC1(s32 a0, s32 a1, s32 a2) {
+s32 sndCmdC1(s32 a0, s32 a1, s32 a2) {
     D_80075058 = a0;
     *(&D_80075058 + 1) = a1;
     *(&D_80075058 + 2) = a2 & 0x7F;
-    func_8001A1E8(0xC1);
+    return func_8001A1E8(0xC1);
 }
 
 /** @brief Stores a0, a1, 7-bit masked a2, and 7-bit masked a3 to SPU command buffer, sends command 0xC2.
@@ -577,12 +577,12 @@ void sndCmdC1(s32 a0, s32 a1, s32 a2) {
  *  @param a2 Third parameter, masked to 7 bits.
  *  @param a3 Fourth parameter, masked to 7 bits.
  */
-void sndCmdC2(s32 a0, s32 a1, s32 a2, s32 a3) {
+s32 sndCmdC2(s32 a0, s32 a1, s32 a2, s32 a3) {
     D_80075058 = a0;
     *(&D_80075058 + 1) = a1;
     *(&D_80075058 + 2) = a2 & 0x7F;
     *(&D_80075058 + 3) = a3 & 0x7F;
-    func_8001A1E8(0xC2);
+    return func_8001A1E8(0xC2);
 }
 
 /** @brief Stores a0 to SPU command buffer, sends command 0xC8.
@@ -725,9 +725,12 @@ void sndCmdF1(void) {
  * @param a0 Source address of sample data in main RAM.
  * @param a1 Transfer mode or bank index.
  */
-void sndUploadSamples(s32 a0, s32 a1) {
+s32 sndUploadSamples(s32 a0, s32 a1) {
+    s32 result;
     do {
-    } while (sndUploadSample(a0, a1) == 1);
+        result = sndUploadSample(a0, a1);
+    } while (result == 1);
+    return result;
 }
 
 INCLUDE_ASM("asm/nonmatchings/snd_init", func_80013AA8);
