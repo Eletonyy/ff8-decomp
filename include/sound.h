@@ -309,4 +309,19 @@ extern s32 sndGetEngineState(void);
 /** @brief Toggle the current sound-bank-selector flag and return a pointer to the new bank table. */
 extern u8 *toggleSoundBank(void);
 
+/** @brief Sound-bank A: the staging table @c toggleSoundBank returns when the selector reads as @c 0. */
+extern u8 D_8005F388[];
+
+/** @brief Sound-bank B: the staging table @c toggleSoundBank returns when the selector reads as non-zero. */
+extern u8 D_80063388[];
+
+/** @brief Threshold tested by @c SPUSYNC — top-of-stack values below this
+ *         indicate a known SPU sample slot and can be popped immediately. */
+extern u32 D_800772B8;
+
+/** @brief Load a sample bank into SPU RAM at the given destination address.
+ *         @c a0 = mode (0 = standard), @c bank = sound-bank id,
+ *         @c fileLba = staging buffer / file address. */
+extern s32 func_80037FB0(s32 a0, s8 bank, s32 fileLba);
+
 #endif /* SOUND_H */

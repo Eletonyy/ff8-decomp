@@ -522,6 +522,10 @@ extern Eline *D_80085224;
 /** @brief Number of entries in the @c D_80085224 entity array. */
 extern u8 D_80085388;
 
+/** @brief Self/anchor Eline pointer used by @c func_8009A8E0 after the
+ *         party-member copy in @c func_800B1034 / @c func_800B10F8. */
+extern Eline *D_8008538C;
+
 /**
  * @brief Animation slot record (one of four per actor).
  *
@@ -659,6 +663,18 @@ extern s32 D_800DE8CC;
 
 /** @brief Dialog-companion flag byte tested by some opcodes. */
 extern u8 D_800DE8D0;
+
+/** @brief SFX/sample-load ready flag — flipped on by the @c func_800B2188
+ *         load-complete callback and polled by @c EFFECTLOAD. */
+extern u8 D_800DE8D5;
+
+/** @brief Misc 4-byte field-engine slot; stash for @c func_801E8104's return
+ *         value in @c MOVIEREADY / @c SPUREADY. */
+extern s32 D_800DE4EC;
+
+/** @brief Movie subsystem state pointer (or buffer base) — stored to as
+ *         a single u32 by the battle-load opcodes. */
+extern u8 D_800DE878[];
 
 /* ======================================================================== */
 /* Battle encounter params (populated by field-VM opcode 0x14C)             */

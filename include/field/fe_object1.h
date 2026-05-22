@@ -59,7 +59,7 @@ extern void func_800A355C(FieldActor *actor, s32 slot, s32 a2);
 extern void func_800A44D8(void);
 extern void func_800A4550(s16 a0);
 extern s32  func_800A4910(s32 a0, s32 a1, s32 a2, s32 a3);
-extern void func_800A59D0(u8 *a0);
+extern void func_800A59D0();  /* K&R: a0 declared but ignored in body; callers vary 0/1-arg */
 extern void func_800A5A14(s16 a0);
 extern u8   func_800A5CF8(void);
 

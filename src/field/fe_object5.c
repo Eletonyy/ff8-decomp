@@ -5,34 +5,26 @@
 #include "cd.h"
 #include "battle.h"
 #include "overlay.h"
+#include "field/fe_object1.h"
 #include "field/fe_object5.h"
 
-/* File-private externs — symbols whose owner header doesn't exist yet
- * (mostly other field-engine overlays and a few un-categorized globals). */
-extern u8 D_800DE878[];
+/* File-private externs — symbols whose owner header doesn't exist
+ * yet. The @c func_801E* cluster lives in the movie-streaming overlay
+ * (loaded at @c 0x801E0000) which hasn't been split or modeled in a
+ * header; the @c D_800C2D14 / @c D_800C2E14 / @c D_800C2E1C tables
+ * are file-tool-generated CD-entry maps used only by this file; and
+ * @c D_800C5FB0 / @c D_80077E5F are battle-encounter / save-region
+ * scratch that other TUs already declare locally. */
 extern u8 D_800C5FB0[];
 extern u8 D_80077E5F;
-extern u8 D_800DE8D5;
-extern u8 D_800DE8D0;
-extern s32 D_800DE4EC;
-extern u8 D_8005F388[];
-extern u8 D_80063388[];
-extern u32 D_800772B8;
 extern u32 D_800C2D14[];
 extern u32 D_800C2E14[];
 extern u32 D_800C2E1C[];
-extern Eline *D_8008538C;
 extern s32 func_801E8B98(void);
-extern void func_8009A8E0(Eline *e);
-extern void func_80036D44(s32 arg);
-extern void func_80036B90(s32 idx);
-extern void func_800A97E4();
-extern void func_800A59D0(void);
 extern void func_801E8000(s32 priority);
 extern s32 func_801E8104(s32 a, s32 b, s32 c, s32 d);
 extern s32 func_801E82CC(void);
 extern void func_801E870C(void);
-extern s32 func_80037FB0(s32 a, s8 bank, s32 fileLba);
 
 /**
  * @brief op159 SEALEDOFF — pop a flag mask and unseal the matching
