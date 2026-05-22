@@ -26,6 +26,7 @@ extern void func_8009A8E0(Eline *e);
 extern void resetCardSlots(s32 mode);
 extern void func_80036D44(s32 arg);
 extern void func_80036B90(s32 idx);
+extern void func_800A97E4();
 extern void sndCmdF1(void);
 extern void sndCmd11();
 extern s32 sndCmdC1(s32 handle, s32 ramp, s32 vol);
@@ -453,7 +454,50 @@ s32 func_800B10F8(Eline *e) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B11BC);
+/**
+ * @brief op12D ACTORMODE — pop a mode byte and toggle two flag bits
+ *        in the entity's @c flags word, then invoke @c func_800A97E4
+ *        with the entity's @c field_0x256 and a mode-specific
+ *        (mask, param) tuple to update derived actor state.
+ *
+ *        Mode  flags          mask  param
+ *        ----  -----          ----  -----
+ *          0   |= 0x02000000  0x0F    1
+ *          1   &= ~0x02000000 0x0F    0
+ *          2   &= ~0x01000000 0x22   (unused)
+ *          3   |= 0x01000000  0x21   (unused)
+ *      other   no flag change, call still fires
+ *
+ * @return 2 (continue processing).
+ */
+s32 func_800B11BC(Eline *e) {
+    s32 mode = POP(e);
+    s32 a1_val;
+    s32 a2_val;
+
+    switch (mode) {
+    case 0:
+        e->flags |= 0x02000000;
+        a1_val = 0xF;
+        a2_val = 1;
+        break;
+    case 1:
+        e->flags &= ~0x02000000;
+        a1_val = 0xF;
+        a2_val = 0;
+        break;
+    case 2:
+        e->flags &= ~0x01000000;
+        a1_val = 0x22;
+        break;
+    case 3:
+        e->flags |= 0x01000000;
+        a1_val = 0x21;
+        break;
+    }
+    func_800A97E4(e->field_0x256, a1_val, a2_val, 0);
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B12A4);
 
