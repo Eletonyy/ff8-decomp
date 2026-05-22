@@ -19,8 +19,8 @@
  * @brief Snapshot a target entity's grid-cell position into the queued
  *        turn-state fields.
  *
- * Same body as @c func_800BADCC in fe_object8 but standalone — no
- * @c func_800BAC18 tail call, always returns 2.
+ * Same body as @c opHandler_FACEDIRA in fe_object8 but standalone — no
+ * @c opHandler_FACEDIRSYNC tail call, always returns 2.
  */
 s32 func_800BB2A4(Eline *eline) {
     s16 buf[4];
@@ -68,8 +68,8 @@ s32 func_800BB3D8(Eline *eline) {
 /**
  * @brief Queue a relative-offset turn target (standalone variant).
  *
- * Same body as @c func_800BB05C in fe_object8 but doesn't tail-call
- * @c func_800BAC18 — always returns 2. Queries @c func_800A8DAC with
+ * Same body as @c opHandler_FACEDIROFF in fe_object8 but doesn't tail-call
+ * @c opHandler_FACEDIRSYNC — always returns 2. Queries @c func_800A8DAC with
  * kind @c 0x20 (relative offsets, written to @c buf), divides each
  * entry by 16, and stores into @c field_0x22A / @c field_0x22E /
  * @c field_0x232. Clears @c field_0x236 and @c field_0x23B.
