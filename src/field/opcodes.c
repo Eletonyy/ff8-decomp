@@ -429,9 +429,9 @@ s32 (*g_fieldOpcodeTable[392])(Eline *) = {
     /* 0x180  op16E  ???             */ (OpcodeFn)func_800BA330,
     /* 0x181  op16F  ???             */ (OpcodeFn)func_800B1F04,
     /* 0x182  op170  HASITEM         */ (OpcodeFn)func_800BAAFC,
-    /* 0x183  op171  UNKNOWN6        */ (OpcodeFn)func_800BABFC,
-    /* 0x184  op172  UNKNOWN7        */ (OpcodeFn)func_800B273C,
-    /* 0x185  op173  UNKNOWN8        */ (OpcodeFn)func_800B2790,
-    /* 0x186  op174  UNKNOWN9        */ (OpcodeFn)func_800B85C8,
+    /* 0x183  op171  CLOCKWISETURN  */ (OpcodeFn)func_800BABFC,
+    /* 0x184  op172  COUNTERCLOCKWISETURN*/ (OpcodeFn)func_800B273C,
+    /* 0x185  op173  CLOCKWISETURN2 */ (OpcodeFn)func_800B2790,
+    /* 0x186  op174  COUNTERCLOCKWISETURN2*/ (OpcodeFn)func_800B85C8,
     /* 0x187  op175  UNKNOWN10       */ (OpcodeFn)func_800B629C,
 };
