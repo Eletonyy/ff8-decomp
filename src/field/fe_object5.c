@@ -174,7 +174,7 @@ s32 func_800B0B2C(Eline *e) {
 }
 
 /**
- * @brief op0AB — counterpart of @c func_800B0BE4. Finds the active-
+ * @brief op0AB — counterpart of @c opHandler_FOLLOWON. Finds the active-
  *        party slot whose @c battleParty member matches
  *        @c e->field_0x255, then disables that entity: clears flag
  *        bit @c 0x4, calls @c func_800B912C with the entity's
@@ -183,7 +183,7 @@ s32 func_800B0B2C(Eline *e) {
  *
  * @return 2 (continue processing).
  */
-s32 func_800B0B3C(Eline *e) {
+s32 opHandler_FOLLOWOFF(Eline *e) {
     s32 i;
     for (i = 0; i < 3; i++) {
         if (g_gameState.battleParty[i] == e->field_0x255) {
@@ -205,7 +205,7 @@ s32 func_800B0B3C(Eline *e) {
  *
  * @return 2 (continue processing).
  */
-s32 func_800B0BE4(Eline *e) {
+s32 opHandler_FOLLOWON(Eline *e) {
     s32 i;
     for (i = 0; i < 3; i++) {
         if (g_gameState.battleParty[i] == e->field_0x255) {
@@ -727,7 +727,7 @@ s32 opHandler_SETVIBRATE(Eline *e) {
  * @param a0 Pointer to the script/object structure (unused).
  * @return 2 (continue processing).
  */
-s32 func_800B17A0(u8 *a0) {
+s32 opHandler_STOPVIBRATE(u8 *a0) {
     return 2;
 }
 
@@ -735,7 +735,7 @@ s32 func_800B17A0(u8 *a0) {
  * @brief Wait-on-CD-read opcode body — block until @c func_800393C8
  *        (a CD poll) returns @c 0, then advance.
  */
-s32 func_800B17A8(Eline *e) {
+s32 opHandler_LOADSYNC(Eline *e) {
     if (func_800393C8() == 0) {
         return 2;
     }
@@ -752,7 +752,7 @@ s32 func_800B17A8(Eline *e) {
  *
  * @return 2 (continue processing).
  */
-s32 func_800B17D8(void) {
+s32 opHandler_INITSOUND(void) {
     sndCmdF1();
     if (g_seedState->soundHandle0 != -1) {
         sndCmdC0(g_seedState->soundHandle0, 0x7F);
@@ -874,7 +874,7 @@ s32 opHandler_MUSICCHANGE(void) {
  *
  * @return 3 (advance PC after deferred wait).
  */
-s32 func_800B1AA0(void) {
+s32 opHandler_MUSICREPLAY(void) {
     u8 *p;
     if ((s8)g_seedState->soundBankSelector == 0) {
         p = D_8005F388;
@@ -896,7 +896,7 @@ s32 func_800B1AA0(void) {
  *
  * @return 2 if no swap queued, 3 once the new track is launched.
  */
-s32 func_800B1B10(Eline *e) {
+s32 opHandler_MUSICSKIP(Eline *e) {
     s32 popped = POP(e);
     u8 *flag = D_800DE8C8;
     if (flag[8] == 0) {
@@ -918,7 +918,7 @@ s32 func_800B1B10(Eline *e) {
  *
  * @return 2 if no bank swap was queued, 3 once the new track starts.
  */
-s32 func_800B1BB8(Eline *e) {
+s32 opHandler_CHOICEMUSIC(Eline *e) {
     s32 b = POP(e);
     s32 a = POP(e);
     s32 aMasked = a & 0x3FFFFFF;
@@ -942,7 +942,7 @@ s32 func_800B1BB8(Eline *e) {
  *
  * @return 2 if no bank swap was queued, 3 once the new track starts.
  */
-s32 func_800B1C7C(Eline *e) {
+s32 opHandler_CROSSMUSIC(Eline *e) {
     s32 first = POP(e);
     s32 firstShifted = first << 1;
     s32 second = POP(e);
@@ -968,7 +968,7 @@ s32 func_800B1C7C(Eline *e) {
  *
  * @return 2 if no bank-swap was queued, 3 once the new SFX track starts.
  */
-s32 func_800B1D40(Eline *e) {
+s32 opHandler_DUALMUSIC(Eline *e) {
     s32 masked = POP(e) & 0x7F;
     u8 *flag = D_800DE8C8;
     u8 *bank;
@@ -1018,7 +1018,7 @@ s32 opHandler_MUSICSTOP(Eline *e) {
 }
 
 /** @brief Stash @c sndGetStatus into @c resultSlots[0]. */
-s32 func_800B1ED4(Eline *e) {
+s32 opHandler_MUSICSTATUS(Eline *e) {
     e->resultSlots[0] = sndGetStatus(e);
     return 2;
 }
@@ -1084,7 +1084,7 @@ s32 opHandler_MUSICVOLTRANS(Eline *e) {
  *
  * @return 2 (continue processing).
  */
-s32 func_800B2090(Eline *e) {
+s32 opHandler_MUSICVOLFADE(Eline *e) {
     s32 vol = POP(e);
     s32 depth = POP(e);
     s32 ramp = POP(e);
@@ -1102,7 +1102,7 @@ s32 func_800B2090(Eline *e) {
  * @param a0 Pointer to the script/object structure (unused).
  * @return 1 if sndGetMaxVolume returns nonzero, 2 otherwise.
  */
-s32 func_800B2158(u8 *a0) {
+s32 opHandler_MUSICVOLSYNC(u8 *a0) {
     s32 result;
     result = sndGetMaxVolume(1);
     if (result == 0) {
