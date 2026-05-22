@@ -416,7 +416,42 @@ s32 func_800B1034(Eline *e) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B10F8);
+/**
+ * @brief Variant of @c func_800B1034 that resolves the source entity
+ *        through the active-party @c memberSlot[] table — pop a
+ *        party-slot id, look up @c g_seedState->memberSlot[party] for
+ *        the field-entity index, and copy six locator fields
+ *        (pos x/y/z, @c field_0x241, @c field_0x1FA, @c savedChannel)
+ *        into the current entity. Calls @c func_8009A8E0(D_8008538C)
+ *        afterwards to recompute derived state.
+ *
+ * @return 2 (continue processing).
+ */
+s32 func_800B10F8(Eline *e) {
+    u8 *seed = (u8 *)g_seedState;
+    u8 idx;
+    s32 popped;
+    s32 entIdx;
+    s32 base;
+
+    idx = e->stackPtr;
+    e->stackPtr = idx - 1;
+    popped = e->stack[(s8)idx];
+    entIdx = (seed + popped)[0xC2];
+    /* Cache the D_80085224 base for the first 4 reads, then re-load
+     * it inline for the remaining two — gcc reuses the cached value
+     * via CSE and reloads only when the symbol is re-spelled,
+     * matching the target's load / 4-read / reload / 2-read pattern. */
+    base = (s32)D_80085224;
+    e->posX = ((Eline *)(entIdx * sizeof(Eline) + base))->posX;
+    e->posY = ((Eline *)(entIdx * sizeof(Eline) + base))->posY;
+    e->posZ = ((Eline *)(entIdx * sizeof(Eline) + base))->posZ;
+    e->field_0x241 = ((Eline *)(entIdx * sizeof(Eline) + base))->field_0x241;
+    e->field_0x1FA = ((Eline *)(entIdx * sizeof(Eline) + (s32)D_80085224))->field_0x1FA;
+    e->savedChannel = ((Eline *)(entIdx * sizeof(Eline) + (s32)D_80085224))->savedChannel;
+    func_8009A8E0(D_8008538C);
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B11BC);
 
