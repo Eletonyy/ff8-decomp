@@ -31,7 +31,7 @@ extern void func_800BD9C4(s32 stepDelta);
 extern Eline *func_800BE36C(u8 *header);
 extern s32 *func_800BE4B0(u8 *header, u16 *table);
 extern int  func_800BE5E4();
-extern int  func_800BE7F4();
+extern FieldEntityB *func_800BE7F4(FieldEntityB *buf);
 extern int  func_800BE924();
 extern int  func_800BEA84();
 extern int  func_800BEBD0();

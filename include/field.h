@@ -539,12 +539,15 @@ extern u8 D_80085388;
 typedef struct {
     /* 0x000 */ u8  pad000[0x160];
     /* 0x160 */ s32 flags;
-    /* 0x164 */ u8  pad164[0x10];
+    /* 0x164 */ u16 groupRanges[8];
     /* 0x174 */ u8  scriptGroup;
     /* 0x175 */ u8  activeMask;
     /* 0x176 */ u16 pc;
     /* 0x178 */ u16 rangeLo;
-    /* 0x17A */ u8  pad17A[0x1A];
+    /* 0x17A */ u16 rangeHi;
+    /* 0x17C */ u8  pad17C[0x08];
+    /* 0x184 */ s8  stackPtr;
+    /* 0x185 */ u8  pad185[0x0F];
     /* 0x194 */ u8  activeMarker;       /**< Block-active gate; non-zero enables trigger processing. */
     /* 0x195 */ u8  pad195;
     /* 0x196 */ u8  trigger4;
