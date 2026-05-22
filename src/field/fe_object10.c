@@ -904,7 +904,132 @@ FieldEntityC *func_800BEA84(FieldEntityC *buf) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BEBD0);
+/**
+ * @brief Pre-tick script-VM pump for all 4 entity pools.
+ *
+ * Iterates pools in order D, C, B, A (large stride first). For each
+ * entity, runs the script VM: calls @c func_800393C8 (yield-poll),
+ * fetches the next opcode via @c func_80037B7C, dispatches
+ * @c g_fieldOpcodeTable[opcode + 0x12] with the arg from
+ * @c func_80037B7C, and processes the return bits exactly like
+ * @c func_800BD9C4's per-iter dispatch (bit 2 keeps the @c activeMask
+ * bit; bit 1 advances @c pc and sets the bit). Unlike the main tick,
+ * the inner loop runs unbounded until the script yields with
+ * opcode 6 + arg < 9 (dialog/wait), at which point the entity is
+ * considered "paused" and the loop advances to the next entity.
+ *
+ * @note Mirrors @c func_800BD9C4's structure but with the inner loop
+ *       gated by the (op == 6 && arg < 9) yield instead of an
+ *       iteration counter.
+ */
+void func_800BEBD0(void) {
+    s32 sp10;
+    s32 sp14;
+
+    /* Block D: D_800852F4 entities (stride 0x1B4). */
+    {
+        FieldEntityD *e = D_800852F4;
+        D_800DE4FC = 0;
+        if (D_80085391 != 0) {
+            do {
+                while (1) {
+                    s32 ret;
+                    func_800393C8();
+                    func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
+                    if (sp10 == 6 && sp14 < 9) break;
+                    ret = g_fieldOpcodeTable[sp10 + 0x12](e, sp14);
+                    if (!(ret & 4)) {
+                        e->activeMask &= ~(1 << e->scriptGroup);
+                    }
+                    if (ret & 2) {
+                        e->pc++;
+                        e->activeMask |= (1 << e->scriptGroup);
+                    }
+                }
+                e++;
+                D_800DE4FC++;
+            } while (D_800DE4FC < D_80085391);
+        }
+    }
+
+    /* Block C: D_80085384 entities (stride 0x18C). */
+    {
+        FieldEntityC *e = D_80085384;
+        D_800DE4FC = 0;
+        if (D_80085228 != 0) {
+            do {
+                while (1) {
+                    s32 ret;
+                    func_800393C8();
+                    func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
+                    if (sp10 == 6 && sp14 < 9) break;
+                    ret = g_fieldOpcodeTable[sp10 + 0x12](e, sp14);
+                    if (!(ret & 4)) {
+                        e->activeMask &= ~(1 << e->scriptGroup);
+                    }
+                    if (ret & 2) {
+                        e->pc++;
+                        e->activeMask |= (1 << e->scriptGroup);
+                    }
+                }
+                e++;
+                D_800DE4FC++;
+            } while (D_800DE4FC < D_80085228);
+        }
+    }
+
+    /* Block B: D_8008538C entities (stride 0x1A0). */
+    {
+        FieldEntityB *e = D_8008538C;
+        D_800DE4FC = 0;
+        if (D_800852F8 != 0) {
+            do {
+                while (1) {
+                    s32 ret;
+                    func_800393C8();
+                    func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
+                    if (sp10 == 6 && sp14 < 9) break;
+                    ret = g_fieldOpcodeTable[sp10 + 0x12](e, sp14);
+                    if (!(ret & 4)) {
+                        e->activeMask &= ~(1 << e->scriptGroup);
+                    }
+                    if (ret & 2) {
+                        e->pc++;
+                        e->activeMask |= (1 << e->scriptGroup);
+                    }
+                }
+                e++;
+                D_800DE4FC++;
+            } while (D_800DE4FC < D_800852F8);
+        }
+    }
+
+    /* Block A: D_80085224 entities (full Eline, stride 0x264). */
+    {
+        Eline *e = D_80085224;
+        D_800DE4FC = 0;
+        if (D_80085388 != 0) {
+            do {
+                while (1) {
+                    s32 ret;
+                    func_800393C8();
+                    func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
+                    if (sp10 == 6 && sp14 < 9) break;
+                    ret = g_fieldOpcodeTable[sp10 + 0x12](e, sp14);
+                    if (!(ret & 4)) {
+                        e->activeMask &= ~(1 << e->scriptGroup);
+                    }
+                    if (ret & 2) {
+                        e->pc++;
+                        e->activeMask |= (1 << e->scriptGroup);
+                    }
+                }
+                e++;
+                D_800DE4FC++;
+            } while (D_800DE4FC < D_80085388);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BF080);
 
