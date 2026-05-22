@@ -42,7 +42,7 @@ extern s32  func_800B10F8(Eline *e);
 extern s32  func_800B11BC(Eline *e);
 extern s32  func_800B12A4(Eline *e);
 extern s32  func_800B13EC(Eline *e);
-extern int  func_800B14C8();
+extern void func_800B14C8(void);
 extern int  func_800B15BC();
 extern s32  opHandler_SPUSYNC(Eline *e);
 extern s32  func_800B17D8(void);

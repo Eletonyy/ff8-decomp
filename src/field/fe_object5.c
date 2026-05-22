@@ -598,7 +598,36 @@ s32 func_800B13EC(Eline *e) {
     return 1;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B14C8);
+/**
+ * @brief Halve the dialog-channel triple (@c savedChannel /
+ *        @c msgChannel / @c field_0x208 ) of every active entity,
+ *        clear the @c 0x1000 bit of the state flags, and reset two
+ *        re-arm flags ( @c D_800704A8.unk1A3 — only if @c unk015 is
+ *        clear — and @c D_800DE4FD[0] ). Counterpart of @c
+ *        func_800B13EC's doubling step — called as part of the
+ *        cinematic / movie postlude to restore the dialog channels
+ *        after a scene.
+ *
+ * @note Falls through without a return statement — callers don't read
+ *       the value (it leaves @c hi(D_800DE4FD) in @c $v0).
+ */
+void func_800B14C8(void) {
+    s32 i;
+    Eline *p;
+
+    g_seedState->stateFlags &= ~0x1000;
+    p = D_80085224;
+    for (i = 0; i < D_80085388; i++) {
+        p->savedChannel = (s16)p->savedChannel / 2;
+        p->msgChannel = (s16)p->msgChannel / 2;
+        p->field_0x208 = (s16)p->field_0x208 / 2;
+        p++;
+    }
+    if (D_800704A8.unk015 == 0) {
+        D_800704A8.unk1A3 = 0;
+    }
+    D_800DE4FD[0] = 0;
+}
 
 /**
  * Calls func_801E8B84, returns 1 if result is nonzero, else 2.
