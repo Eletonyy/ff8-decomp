@@ -273,4 +273,41 @@ extern void sndCmd21(s32 a0, s32 a1);
 /** @brief Query the current active-channel mask for SFX dispatch. */
 extern s32 func_800131A8(void);
 
+/**
+ * @brief SPU command-bus wrappers. Each writes its args into the SPU
+ *        command buffer and dispatches the indicated opcode via
+ *        @c func_8001A1E8. They are declared K&R-style because
+ *        callers spread across the codebase pass varying arg types
+ *        (raw pointers, s32 ids, etc.) and the @c sndCmd10..1A family
+ *        returns the SPU handle in @c $v0 even though @c snd_init.c
+ *        currently types them as @c void.
+ */
+extern s32 sndCmd10();
+extern s32 sndCmd11();
+extern s32 sndCmd12();
+extern s32 sndCmd14();
+extern s32 sndCmd19();
+extern s32 sndCmd1A();
+extern s32 sndCmdC0();
+extern s32 sndCmdC1();
+extern s32 sndCmdC2();
+
+/** @brief Reset SPU command bus (issued by the music-state reset opcode). */
+extern void sndCmdF1(void);
+
+/** @brief Set the global SPU master volume (0..0x7F). */
+extern void sndSetMasterVolume(s32 vol);
+
+/** @brief Set the global SEQ tempo (0x80 = normal). */
+extern void sndSeqSetTempo(s32 tempo);
+
+/** @brief Upload a staged sample bank to the SPU; returns -1 while busy. */
+extern s32 sndUploadSamples(s32 a0, s32 a1);
+
+/** @brief Query the sound engine's current busy state (0 = idle). */
+extern s32 sndGetEngineState(void);
+
+/** @brief Toggle the current sound-bank-selector flag and return a pointer to the new bank table. */
+extern u8 *toggleSoundBank(void);
+
 #endif /* SOUND_H */

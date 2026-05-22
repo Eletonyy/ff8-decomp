@@ -1,52 +1,38 @@
 #include "common.h"
 #include "field.h"
 #include "gamestate.h"
+#include "sound.h"
+#include "cd.h"
+#include "battle.h"
+#include "overlay.h"
 #include "field/fe_object5.h"
 
+/* File-private externs — symbols whose owner header doesn't exist yet
+ * (mostly other field-engine overlays and a few un-categorized globals). */
 extern u8 D_800DE878[];
 extern u8 D_800C5FB0[];
 extern u8 D_80077E5F;
 extern u8 D_800DE8D5;
+extern u8 D_800DE8D0;
+extern s32 D_800DE4EC;
 extern u8 D_8005F388[];
 extern u8 D_80063388[];
-extern s32 sndGetEngineState(void);
-extern s32 sndUploadSamples(s32 arg, s32 flag);
-extern s32 sndCmd10(u8 *p);
-extern s32 sndCmdC0(s32 a, s32 b);
 extern u32 D_800772B8;
-extern s32 func_801E8B98(void);
-extern u32 toggleSoundBank(void);
-extern s32 sndCmd12(u32 a, s32 b);
-extern s32 sndCmd19(u8 *bank, s32 arg);
-extern s32 sndCmd14(s32 bankHandle, s32 a, s32 b);
-extern s32 sndCmd1A(s32 bankHandle, s32 ramp, s32 priority);
-extern s32 sndCmdC2(s32 handle, s32 ramp, s32 depth, s32 vol);
+extern u32 D_800C2D14[];
+extern u32 D_800C2E14[];
+extern u32 D_800C2E1C[];
 extern Eline *D_8008538C;
+extern s32 func_801E8B98(void);
 extern void func_8009A8E0(Eline *e);
-extern void resetCardSlots(s32 mode);
 extern void func_80036D44(s32 arg);
 extern void func_80036B90(s32 idx);
 extern void func_800A97E4();
 extern void func_800A59D0(void);
-extern s32 func_80038868(s32 lba, u32 size, u32 dest, void (*cb)(void));
-extern s32 func_800393C8(void);
 extern void func_801E8000(s32 priority);
 extern s32 func_801E8104(s32 a, s32 b, s32 c, s32 d);
-extern u32 D_800C2D14[];
-extern u32 D_800C2E14[];
-extern u32 D_800C2E1C[];
-extern s32 cdRead(s32 lba, u32 size, u8 *dest, void (*callback)(void));
-extern u8 D_800DE8D0;
-extern s32 func_80037FB0(s32 a, s8 bank, s32 fileLba);
-extern s32 D_800DE4EC;
 extern s32 func_801E82CC(void);
 extern void func_801E870C(void);
-extern void initBattleTransition(void);
-extern void sndCmdF1(void);
-extern void sndCmd11();
-extern s32 sndCmdC1(s32 handle, s32 ramp, s32 vol);
-extern void sndSetMasterVolume(s32 v);
-extern void sndSeqSetTempo(s32 t);
+extern s32 func_80037FB0(s32 a, s8 bank, s32 fileLba);
 
 /**
  * @brief op159 SEALEDOFF — pop a flag mask and unseal the matching

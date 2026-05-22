@@ -50,4 +50,13 @@ typedef struct {
 
 extern s32 cdReadAsyncSync(s32 lba, u32 size, u8 *dest, void (*callback)(void));
 
+/** @brief Initiate an asynchronous CD read with a completion callback. */
+extern s32 cdRead(s32 lba, u32 size, u8 *dest, void (*callback)(void));
+
+/** @brief Lower-level async CD read used by @ref cdRead. */
+extern s32 func_80038868(s32 lba, u32 size, u32 dest, void (*cb)(void));
+
+/** @brief Poll the async CD read pipeline; returns @c 0 once the read has completed. */
+extern s32 func_800393C8(void);
+
 #endif /* CD_H */
