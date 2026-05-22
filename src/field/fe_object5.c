@@ -27,6 +27,13 @@ extern void resetCardSlots(s32 mode);
 extern void func_80036D44(s32 arg);
 extern void func_80036B90(s32 idx);
 extern void func_800A97E4();
+extern void func_800A59D0(void);
+extern s32 func_80038868(s32 lba, u32 size, u32 dest, void (*cb)(void));
+extern s32 func_800393C8(void);
+extern void func_801E8000(s32 priority);
+extern s32 func_801E8104(s32 a, s32 b, s32 c, s32 d);
+extern u32 D_800C2D14[];
+extern s32 D_800DE4EC;
 extern void sndCmdF1(void);
 extern void sndCmd11();
 extern s32 sndCmdC1(s32 handle, s32 ramp, s32 vol);
@@ -489,7 +496,59 @@ s32 func_800B11BC(Eline *e) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B12A4);
+/**
+ * @brief op0A3 MOVIEREADY — peek the top two stack slots
+ *        (a @c movieIndex and a @c priorityMode) and kick off an
+ *        asynchronous CD read of the corresponding movie data into
+ *        the @c 0x801E8000 frame buffer.
+ *
+ *        @c priorityMode picks one of three priorities:
+ *          0 -> 8, 1 -> 0xA, anything else -> 6.
+ *        The first invocation (active for this script group) seeds the
+ *        movie subsystem (@c func_800A59D0, then @c func_80038868 with
+ *        @c D_800C2D14[0..1] as the LBA/size pair) and marks
+ *        @c D_800DE4FD as in-flight. Subsequent invocations poll
+ *        @c func_800393C8 — they return @c 1 to keep the script
+ *        blocked until the read completes, then commit the movie
+ *        entry @c (movieIndex + 1) via @c func_801E8104 and pop both
+ *        stack slots before returning @c 2.
+ *
+ * @return 1 while CD read is pending, 2 once committed.
+ */
+s32 func_800B12A4(Eline *e) {
+    s32 priority;
+    s32 entryIdx;
+
+    priority = e->stack[(s8)e->stackPtr];
+    entryIdx = e->stack[(s8)e->stackPtr - 1] + 1;
+
+    switch (priority) {
+    case 0:  priority = 8;   break;
+    case 1:  priority = 0xA; break;
+    default: priority = 6;   break;
+    }
+
+    if ((e->activeMask >> e->scriptGroup) & 1) {
+        D_8007064B = 1;
+        func_800A59D0();
+        func_80038868(D_800C2D14[0], D_800C2D14[1], 0x801E8000, 0);
+        D_800DE4FD[0] = 1;
+    }
+
+    if (func_800393C8() != 0) {
+        return 1;
+    }
+
+    D_800DE4FD[0] |= 0x2;
+    func_801E8000(priority);
+    D_800DE4EC = func_801E8104(D_800C2D14[entryIdx * 2],
+                               D_800C2D14[entryIdx * 2 + 1],
+                               1,
+                               D_8005F13C);
+    *(s32 *)&g_seedState->pad50[0] = 0;
+    e->stackPtr -= 2;
+    return 2;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B13EC);
 
@@ -577,15 +636,11 @@ s32 func_800B17A0(u8 *a0) {
 }
 
 /**
- * Calls func_800393C8, returns 1 if result is nonzero, else 2.
- *
- * @param a0 Pointer to the script/object structure.
- * @return 1 if func_800393C8 returns nonzero, 2 otherwise.
+ * @brief Wait-on-CD-read opcode body — block until @c func_800393C8
+ *        (a CD poll) returns @c 0, then advance.
  */
-s32 func_800B17A8(u8 *a0) {
-    s32 result;
-    result = func_800393C8(a0);
-    if (result == 0) {
+s32 func_800B17A8(Eline *e) {
+    if (func_800393C8() == 0) {
         return 2;
     }
     return 1;
