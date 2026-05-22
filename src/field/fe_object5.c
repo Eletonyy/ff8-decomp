@@ -34,6 +34,8 @@ extern void func_801E8000(s32 priority);
 extern s32 func_801E8104(s32 a, s32 b, s32 c, s32 d);
 extern u32 D_800C2D14[];
 extern u32 D_800C2E14[];
+extern u8 D_800DE8D0;
+extern s32 func_80037FB0(s32 a, s8 bank, s32 fileLba);
 extern s32 D_800DE4EC;
 extern s32 func_801E82CC(void);
 extern void func_801E870C(void);
@@ -796,7 +798,56 @@ s32 opHandler_SETBATTLEMUSIC(Eline *e) {
     return 2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object5", func_800B18A4);
+/**
+ * @brief op0B5 MUSICLOAD — pop a sound-bank id and queue a bank load
+ *        via the audio CD pipeline if the new bank differs from the
+ *        currently-playing one and no SFX is in-flight.
+ *
+ *        First-time invocation (active for this script group):
+ *          - clears the @c D_800DE8D0 in-flight flag,
+ *          - pops the byte and stores it as @c g_seedState->nextSoundBank,
+ *          - early-returns @c 2 when the bank already matches
+ *            @c audioChannel0State, or when an SFX is currently playing
+ *            (@c soundHandle1 != -1),
+ *          - otherwise toggles the @c 0x400 stateFlags bit based on
+ *            @c fieldCF, marks @c fieldCF = 1, calls @c func_800A59D0,
+ *            and kicks off @c func_80037FB0(0, nextSoundBank, D_8005F13C)
+ *            to start the actual CD read; sets @c D_800DE8D0 = 1.
+ *
+ *        Subsequent invocations (and the no-op fall-through path)
+ *        check @c g_seedState->soundLoadComplete — return @c 1 while
+ *        still loading, @c 2 once finished.
+ *
+ * @return 1 while loading, 2 once the bank is staged.
+ */
+s32 func_800B18A4(Eline *e) {
+    SeedState *seed;
+    if ((e->activeMask >> e->scriptGroup) & 1) {
+        u8 sp;
+        D_800DE8D0 = 0;
+        sp = e->stackPtr;
+        seed = g_seedState;
+        e->stackPtr = sp - 1;
+        seed->nextSoundBank = (u8)e->stack[(s8)sp];
+
+        if (g_seedState->audioChannel0State == (s8)g_seedState->nextSoundBank) return 2;
+        if (g_seedState->soundHandle1 != -1) return 2;
+
+        if (g_seedState->fieldCF != 0) {
+            g_seedState->stateFlags &= ~0x400;
+        } else {
+            g_seedState->stateFlags |= 0x400;
+        }
+        g_seedState->fieldCF = 1;
+        func_800A59D0();
+        func_80037FB0(0, (s8)g_seedState->nextSoundBank, D_8005F13C);
+        D_800DE8D0 = 1;
+    }
+    if (g_seedState->soundLoadComplete != 0) {
+        return 2;
+    }
+    return 1;
+}
 
 /**
  * @brief Toggle @c fieldCF from the inverse of @c stateFlags bit 0x400,

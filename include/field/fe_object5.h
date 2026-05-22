@@ -46,7 +46,7 @@ extern void func_800B14C8(void);
 extern s32  func_800B15BC(Eline *e);
 extern s32  opHandler_SPUSYNC(Eline *e);
 extern s32  func_800B17D8(void);
-extern int  func_800B18A4();
+extern s32  func_800B18A4(Eline *e);
 extern void func_800B19D4(void);
 extern s32  opHandler_MUSICCHANGE(void);
 extern s32  func_800B1AA0(void);
