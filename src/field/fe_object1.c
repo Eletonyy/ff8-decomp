@@ -27,6 +27,8 @@ extern u8 D_800C32A0[];
 extern u8 D_800C3320[];
 extern u8 D_800C3520[];
 extern u8 D_800C6D90;            /**< PRNG counter advanced 13/step by func_800A2EA4 */
+extern u8 D_8005F150;            /**< Outer PRNG counter — D_800C3520 lookup offset, advanced 13/step per 256 calls of func_800A5C9C */
+extern u8 D_8005F151;            /**< Inner PRNG counter — D_800C3520 lookup index, advanced 1/call by func_800A5C9C */
 extern s32 D_800C71E4;
 extern u8 D_800D5F50[];
 extern u8 D_800D61A8[];
@@ -1084,7 +1086,30 @@ void func_800A5A14(s16 a0) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5A20);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5C9C);
+/**
+ * @brief Cheap PRNG-style byte generator that mixes a lookup-table read
+ *        with a slow-moving outer counter.
+ *
+ * Two-level counter design:
+ *   - @c D_8005F151 is the inner counter, incremented by 1 each call;
+ *     it wraps every 256 calls.
+ *   - @c D_8005F150 is the outer counter, bumped by 13 only when the
+ *     inner counter wraps to 0 (so it advances roughly once per 256 calls).
+ *
+ * The return is @c D_800C3520[D_8005F151] + @c D_8005F150 truncated to
+ * a byte — the lookup-table byte mixed with the slow drift counter.
+ *
+ * Same @c D_800C3520 lookup table that @c func_800A2EA4 and
+ * @c func_800A5CF8 use; this is one of several sibling helpers that
+ * produce byte-scale pseudo-randomness for the field engine.
+ */
+u8 func_800A5C9C(void) {
+    D_8005F151++;
+    if (D_8005F151 == 0) {
+        D_8005F150 += 13;
+    }
+    return D_800C3520[D_8005F151] + D_8005F150;
+}
 
 /**
  * Increments the global byte D_8005F103 and returns the value at

@@ -195,7 +195,7 @@ extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
 extern int  func_800A5788();
 extern int  func_800A5898();
 extern int  func_800A5A20();
-extern int  func_800A5C9C();
+extern u8   func_800A5C9C(void);
 extern int  func_800A5D28();
 extern int  func_800A5FA4();
 extern int  func_800A6100();
