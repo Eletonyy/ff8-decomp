@@ -981,7 +981,27 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A553C);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5698);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5700);
+/**
+ * @brief Advance the dialog timer by one step and clamp at 0xFF.
+ *
+ * Adds @c dialogCount to @c dialogTimer (one tick of the dialog scroll
+ * accumulator), unconditionally clears the @c unk1A1 flag, then if the
+ * advanced timer overflows 8-bit range (>= 256 as signed) clamps it
+ * back down to 0xFF.
+ *
+ * The @c (s16)*(volatile u16 *)&...->dialogTimer cast forces a reload
+ * of the just-stored value (without making the canonical struct member
+ * volatile) — matches the target's lhu-then-sign-extend pattern instead
+ * of letting gcc reuse the post-increment value still in a register.
+ */
+void func_800A5700(void) {
+    SystemState *sys = &D_800704A8;
+    sys->dialogTimer += sys->dialogCount;
+    sys->unk1A1 = 0;
+    if ((s16)*(volatile u16 *)&sys->dialogTimer >= 256) {
+        sys->dialogTimer = 0xFF;
+    }
+}
 
 /**
  * @brief Linear interpolation between two s16 endpoints.

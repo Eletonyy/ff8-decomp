@@ -233,7 +233,7 @@ typedef struct {
     /* 0x180 */ u8 unkActive180[16]; /**< 16-byte active-marker region, cleared on @c func_800BF718 mode 1 init. */
     /* 0x190 */ u8 slotActive[16];
     /* 0x1A0 */ u8 unk1A0;          /**< Mode-6 active marker, set with mode = 6 by fe_object6 opcode. */
-    /* 0x1A1 */ u8 pad1A1;
+    /* 0x1A1 */ u8 unk1A1;          /**< Cleared unconditionally by @c func_800A5700 each dialog tick. */
     /* 0x1A2 */ u8 unk1A2;          /**< Mode-7 reentry guard byte. */
     /* 0x1A3 */ u8 unk1A3;          /**< Set to 1 by @c opHandler_UCOFF on every call (re-arm guard). */
     /* 0x1A4 */ u8 pad1A4[0x02];
