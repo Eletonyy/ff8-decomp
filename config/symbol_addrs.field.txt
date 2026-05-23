@@ -798,5 +798,5 @@ D_800C2834 = 0x800C2834; // type:u32
 D_800C292C = 0x800C292C; // type:u32
 D_800C33A0 = 0x800C33A0; // type:u32
 g_fieldOpcodeTable = 0x800C6760; // type:u32 size:0x620
-g_seedState = 0x800562C4;
+g_fieldVars = 0x800562C4;
 g_seedSalaryTable = 0x800C5F70;

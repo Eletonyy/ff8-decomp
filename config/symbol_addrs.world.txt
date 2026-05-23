@@ -766,4 +766,4 @@ func_800C49CC = 0x800C49CC; // type:func
 func_800C4A74 = 0x800C4A74; // type:func
 func_800C4AE4 = 0x800C4AE4; // type:func
 func_800C7F34 = 0x800C7F34; // type:func
-g_seedState = 0x800562C4;
+g_fieldVars = 0x800562C4;

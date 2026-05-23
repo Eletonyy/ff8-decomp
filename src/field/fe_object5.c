@@ -30,7 +30,7 @@ extern void func_801E870C(void);
  * @brief op159 SEALEDOFF — pop a flag mask and unseal the matching
  *        Ultimecia's-Castle features.
  *
- * Clears the popped bits from @c g_seedState->fieldF3 (the "sealed
+ * Clears the popped bits from @c g_fieldVars->fieldF3 (the "sealed
  * status" byte), mirrors the result into @c D_80082C10 / @c D_80077E5F,
  * and recalculates party stats so menus reflect the newly-available
  * features. Counterpart to @c opHandler_LASTIN (which sets the same
@@ -40,9 +40,9 @@ extern void func_801E870C(void);
  */
 s32 opHandler_SEALEDOFF(Eline *e) {
     s32 popped = POP(e);
-    g_seedState->fieldF3 &= ~popped;
-    D_80082C10 = g_seedState->fieldF3;
-    D_80077E5F = g_seedState->fieldF3;
+    g_fieldVars->fieldF3 &= ~popped;
+    D_80082C10 = g_fieldVars->fieldF3;
+    D_80077E5F = g_fieldVars->fieldF3;
     recalcPartyStats();
     return 2;
 }
@@ -284,13 +284,13 @@ s32 func_800B0D2C(Eline *e) {
  *        few descriptor halfwords into the result-slot register file.
  *
  * Counterpart to @c func_800B0D2C — same store pattern, but the source
- * entity is the one indexed by @c g_seedState->memberSlot[popped]
+ * entity is the one indexed by @c g_fieldVars->memberSlot[popped]
  * rather than the current Eline.
  *
  * @return 2 (continue processing).
  */
 s32 opHandler_PGETINFO(Eline *e) {
-    SeedState *seed = g_seedState;
+    FieldVars *seed = g_fieldVars;
     u8 idx;
     s32 popped;
     s32 entIdx;
@@ -323,7 +323,7 @@ s32 func_800B0E68(Eline *e) {
  * Pops a flag word. Bit 0 selects the direction:
  *   - bit 0 set: SAVE — copy the current active party
  *     (@c g_gameState.battleParty / @c party) into the bench backup
- *     (@c g_seedState->partyOrderA / @c partyOrderB), then re-apply
+ *     (@c g_fieldVars->partyOrderA / @c partyOrderB), then re-apply
  *     character-data settings via @c func_80036B90 for every character
  *     whose @c characterId is in range.
  *   - bit 0 clear: RESTORE — copy the bench backup back into the
@@ -352,16 +352,16 @@ s32 opHandler_JUNCTION(Eline *e) {
 
     if (saveMode != 0) {
         for (i = 0; i < 3; i++) {
-            g_seedState->partyOrderA[i] = g_gameState.battleParty[i];
-            g_seedState->partyOrderB[i] = g_gameState.mainData.party.party[i];
+            g_fieldVars->partyOrderA[i] = g_gameState.battleParty[i];
+            g_fieldVars->partyOrderB[i] = g_gameState.mainData.party.party[i];
         }
 
         if (popped & 2) {
             D_800704A8.mode = 5;
             D_800704A8.counter = 0x16;
-            D_800704A8.unk1AB = g_seedState->stateFlags & 7;
+            D_800704A8.unk1AB = g_fieldVars->stateFlags & 7;
         } else {
-            func_80036D44(g_seedState->stateFlags & 7);
+            func_80036D44(g_fieldVars->stateFlags & 7);
         }
 
         for (i = 0; i < 8; i++) {
@@ -373,8 +373,8 @@ s32 opHandler_JUNCTION(Eline *e) {
     }
 
     for (i = 0; i < 3; i++) {
-        g_gameState.battleParty[i] = g_seedState->partyOrderA[i];
-        g_gameState.mainData.party.party[i] = g_seedState->partyOrderB[i];
+        g_gameState.battleParty[i] = g_fieldVars->partyOrderA[i];
+        g_gameState.mainData.party.party[i] = g_fieldVars->partyOrderB[i];
     }
     return 3;
 }
@@ -409,7 +409,7 @@ s32 func_800B1034(Eline *e) {
 /**
  * @brief Variant of @c func_800B1034 that resolves the source entity
  *        through the active-party @c memberSlot[] table — pop a
- *        party-slot id, look up @c g_seedState->memberSlot[party] for
+ *        party-slot id, look up @c g_fieldVars->memberSlot[party] for
  *        the field-entity index, and copy six locator fields
  *        (pos x/y/z, @c field_0x241, @c field_0x1FA, @c savedChannel)
  *        into the current entity. Calls @c func_8009A8E0(D_8008538C)
@@ -418,7 +418,7 @@ s32 func_800B1034(Eline *e) {
  * @return 2 (continue processing).
  */
 s32 func_800B10F8(Eline *e) {
-    SeedState *seed = g_seedState;
+    FieldVars *seed = g_fieldVars;
     u8 idx;
     s32 popped;
     s32 entIdx;
@@ -531,7 +531,7 @@ s32 opHandler_MOVIEREADY(Eline *e) {
                                D_800C2D14[entryIdx * 2 + 1],
                                1,
                                D_8005F13C);
-    g_seedState->padInitStatus = 0;
+    g_fieldVars->padInitStatus = 0;
     e->stackPtr -= 2;
     return 2;
 }
@@ -539,7 +539,7 @@ s32 opHandler_MOVIEREADY(Eline *e) {
 /**
  * @brief op04F MOVIE — enter cinematic mode.
  *
- * Sets the @c 0x1000 bit in @c g_seedState->stateFlags and asks the
+ * Sets the @c 0x1000 bit in @c g_fieldVars->stateFlags and asks the
  * movie subsystem (@c func_801E82CC) whether it is ready to play. If
  * it returns @c 0 (busy), the opcode blocks by returning @c 1.
  *
@@ -548,7 +548,7 @@ s32 opHandler_MOVIEREADY(Eline *e) {
  * entity — counterpart of @c func_800B14C8's halve step. If the
  * stateFlags @c 0x10 bit is clear, also kicks off
  * @c initBattleTransition (so the next scene starts clean) and
- * resets @c g_seedState->levelUpDisplayTimer. Finally calls
+ * resets @c g_fieldVars->levelUpDisplayTimer. Finally calls
  * @c func_801E870C to commit the mode switch.
  *
  * @return 1 to block while the movie subsystem is busy, 2 once it
@@ -559,7 +559,7 @@ s32 opHandler_MOVIE(Eline *e) {
     Eline *p;
     s32 sc, mc, fc;
 
-    g_seedState->stateFlags |= 0x1000;
+    g_fieldVars->stateFlags |= 0x1000;
     if (func_801E82CC()) {
         p = D_80085224;
         for (i = 0; i < D_80085388; i++) {
@@ -571,9 +571,9 @@ s32 opHandler_MOVIE(Eline *e) {
             p->field_0x208 = fc << 1;
             p++;
         }
-        if (!(g_seedState->stateFlags & 0x10)) {
+        if (!(g_fieldVars->stateFlags & 0x10)) {
             initBattleTransition();
-            g_seedState->levelUpDisplayTimer = 0;
+            g_fieldVars->levelUpDisplayTimer = 0;
         }
         func_801E870C();
         return 2;
@@ -598,7 +598,7 @@ void func_800B14C8(void) {
     s32 i;
     Eline *p;
 
-    g_seedState->stateFlags &= ~0x1000;
+    g_fieldVars->stateFlags &= ~0x1000;
     p = D_80085224;
     for (i = 0; i < D_80085388; i++) {
         p->savedChannel = (s16)p->savedChannel / 2;
@@ -754,14 +754,14 @@ s32 opHandler_LOADSYNC(Eline *e) {
  */
 s32 opHandler_INITSOUND(void) {
     sndCmdF1();
-    if (g_seedState->soundHandle0 != -1) {
-        sndCmdC0(g_seedState->soundHandle0, 0x7F);
+    if (g_fieldVars->soundHandle0 != -1) {
+        sndCmdC0(g_fieldVars->soundHandle0, 0x7F);
     }
-    if (g_seedState->soundHandle1 != -1) {
-        sndCmdC0(g_seedState->soundHandle1, 0x7F);
+    if (g_fieldVars->soundHandle1 != -1) {
+        sndCmdC0(g_fieldVars->soundHandle1, 0x7F);
     }
-    g_seedState->musicVolume = 0x7F;
-    g_seedState->sfxVolume = 0x7F;
+    g_fieldVars->musicVolume = 0x7F;
+    g_fieldVars->sfxVolume = 0x7F;
     sndSetMasterVolume(0x7F);
     sndSeqSetTempo(0x80);
     return 2;
@@ -774,7 +774,7 @@ s32 opHandler_INITSOUND(void) {
  * @return 2 (continue processing).
  */
 s32 opHandler_SETBATTLEMUSIC(Eline *e) {
-    g_seedState->battleMusicId = (u8)POP(e);
+    g_fieldVars->battleMusicId = (u8)POP(e);
     return 2;
 }
 
@@ -785,7 +785,7 @@ s32 opHandler_SETBATTLEMUSIC(Eline *e) {
  *
  *        First-time invocation (active for this script group):
  *          - clears the @c D_800DE8D0 in-flight flag,
- *          - pops the byte and stores it as @c g_seedState->nextSoundBank,
+ *          - pops the byte and stores it as @c g_fieldVars->nextSoundBank,
  *          - early-returns @c 2 when the bank already matches
  *            @c audioChannel0State, or when an SFX is currently playing
  *            (@c soundHandle1 != -1),
@@ -795,35 +795,35 @@ s32 opHandler_SETBATTLEMUSIC(Eline *e) {
  *            to start the actual CD read; sets @c D_800DE8D0 = 1.
  *
  *        Subsequent invocations (and the no-op fall-through path)
- *        check @c g_seedState->soundLoadComplete — return @c 1 while
+ *        check @c g_fieldVars->soundLoadComplete — return @c 1 while
  *        still loading, @c 2 once finished.
  *
  * @return 1 while loading, 2 once the bank is staged.
  */
 s32 opHandler_MUSICLOAD(Eline *e) {
-    SeedState *seed;
+    FieldVars *seed;
     if ((e->activeMask >> e->scriptGroup) & 1) {
         u8 sp;
         D_800DE8D0 = 0;
         sp = e->stackPtr;
-        seed = g_seedState;
+        seed = g_fieldVars;
         e->stackPtr = sp - 1;
         seed->nextSoundBank = (u8)e->stack[(s8)sp];
 
-        if (g_seedState->audioChannel0State == (s8)g_seedState->nextSoundBank) return 2;
-        if (g_seedState->soundHandle1 != -1) return 2;
+        if (g_fieldVars->audioChannel0State == (s8)g_fieldVars->nextSoundBank) return 2;
+        if (g_fieldVars->soundHandle1 != -1) return 2;
 
-        if (g_seedState->fieldCF != 0) {
-            g_seedState->stateFlags &= ~0x400;
+        if (g_fieldVars->fieldCF != 0) {
+            g_fieldVars->stateFlags &= ~0x400;
         } else {
-            g_seedState->stateFlags |= 0x400;
+            g_fieldVars->stateFlags |= 0x400;
         }
-        g_seedState->fieldCF = 1;
+        g_fieldVars->fieldCF = 1;
         func_800A59D0();
-        func_80037FB0(0, (s8)g_seedState->nextSoundBank, D_8005F13C);
+        func_80037FB0(0, (s8)g_fieldVars->nextSoundBank, D_8005F13C);
         D_800DE8D0 = 1;
     }
-    if (g_seedState->soundLoadComplete != 0) {
+    if (g_fieldVars->soundLoadComplete != 0) {
         return 2;
     }
     return 1;
@@ -834,12 +834,12 @@ s32 opHandler_MUSICLOAD(Eline *e) {
  *        then clear that bit. Helper for the music-state machine.
  */
 void func_800B19D4(void) {
-    if (g_seedState->stateFlags & 0x400) {
-        g_seedState->fieldCF = 0;
+    if (g_fieldVars->stateFlags & 0x400) {
+        g_fieldVars->fieldCF = 0;
     } else {
-        g_seedState->fieldCF = 1;
+        g_fieldVars->fieldCF = 1;
     }
-    g_seedState->stateFlags &= ~0x400;
+    g_fieldVars->stateFlags &= ~0x400;
 }
 
 /**
@@ -858,16 +858,16 @@ s32 opHandler_MUSICCHANGE(void) {
         return 2;
     }
     p[8] = 0;
-    g_seedState->audioChannel0State = g_seedState->nextSoundBank;
-    g_seedState->soundHandle0 = sndCmd10(toggleSoundBank());
-    sndCmdC0(0, g_seedState->musicVolume);
+    g_fieldVars->audioChannel0State = g_fieldVars->nextSoundBank;
+    g_fieldVars->soundHandle0 = sndCmd10(toggleSoundBank());
+    sndCmdC0(0, g_fieldVars->musicVolume);
     func_800B19D4();
     return 3;
 }
 
 /**
  * @brief op141 — start the next music track using the bank currently
- *        selected by @c g_seedState->soundBankSelector, save the
+ *        selected by @c g_fieldVars->soundBankSelector, save the
  *        returned handle in @c soundHandle0, then issue @c sndCmdC0
  *        with the current @c musicId and re-arm via
  *        @c func_800B19D4.
@@ -876,13 +876,13 @@ s32 opHandler_MUSICCHANGE(void) {
  */
 s32 opHandler_MUSICREPLAY(void) {
     u8 *p;
-    if ((s8)g_seedState->soundBankSelector == 0) {
+    if ((s8)g_fieldVars->soundBankSelector == 0) {
         p = D_8005F388;
     } else {
         p = D_80063388;
     }
-    g_seedState->soundHandle0 = sndCmd10(p);
-    sndCmdC0(0, g_seedState->musicVolume);
+    g_fieldVars->soundHandle0 = sndCmd10(p);
+    sndCmdC0(0, g_fieldVars->musicVolume);
     func_800B19D4();
     return 3;
 }
@@ -903,9 +903,9 @@ s32 opHandler_MUSICSKIP(Eline *e) {
         return 2;
     }
     flag[8] = 0;
-    g_seedState->audioChannel0State = g_seedState->nextSoundBank;
-    g_seedState->soundHandle0 = sndCmd12(toggleSoundBank(), popped);
-    sndCmdC0(0, g_seedState->musicVolume);
+    g_fieldVars->audioChannel0State = g_fieldVars->nextSoundBank;
+    g_fieldVars->soundHandle0 = sndCmd12(toggleSoundBank(), popped);
+    sndCmdC0(0, g_fieldVars->musicVolume);
     func_800B19D4();
     return 3;
 }
@@ -927,8 +927,8 @@ s32 opHandler_CHOICEMUSIC(Eline *e) {
         return 2;
     }
     flag[8] = 0;
-    g_seedState->audioChannel0State = g_seedState->nextSoundBank;
-    g_seedState->soundHandle0 = sndCmd14(toggleSoundBank(), aMasked, b);
+    g_fieldVars->audioChannel0State = g_fieldVars->nextSoundBank;
+    g_fieldVars->soundHandle0 = sndCmd14(toggleSoundBank(), aMasked, b);
     func_800B19D4();
     return 3;
 }
@@ -952,8 +952,8 @@ s32 opHandler_CROSSMUSIC(Eline *e) {
         return 2;
     }
     flag[8] = 0;
-    g_seedState->audioChannel0State = g_seedState->nextSoundBank;
-    g_seedState->soundHandle0 = sndCmd1A(toggleSoundBank(), firstShifted, secondMasked);
+    g_fieldVars->audioChannel0State = g_fieldVars->nextSoundBank;
+    g_fieldVars->soundHandle0 = sndCmd1A(toggleSoundBank(), firstShifted, secondMasked);
     func_800B19D4();
     return 3;
 }
@@ -976,13 +976,13 @@ s32 opHandler_DUALMUSIC(Eline *e) {
         return 2;
     }
     flag[8] = 0;
-    g_seedState->audioChannel1State = g_seedState->nextSoundBank;
-    if (g_seedState->soundBankSelector != 0) {
+    g_fieldVars->audioChannel1State = g_fieldVars->nextSoundBank;
+    if (g_fieldVars->soundBankSelector != 0) {
         bank = D_8005F388;
     } else {
         bank = D_80063388;
     }
-    g_seedState->soundHandle1 = sndCmd19(bank, masked);
+    g_fieldVars->soundHandle1 = sndCmd19(bank, masked);
     func_800B19D4();
     return 3;
 }
@@ -1006,12 +1006,12 @@ s32 func_800B1DF4(Eline *e) {
  */
 s32 opHandler_MUSICSTOP(Eline *e) {
     s32 ch = POP(e) & 1;
-    s32 handle = (&g_seedState->soundHandle0)[ch];
+    s32 handle = (&g_fieldVars->soundHandle0)[ch];
     s8 *p;
     if (handle != -1) {
         sndCmd11(handle);
-        (&g_seedState->soundHandle0)[ch] = -1;
-        p = (s8 *)g_seedState + ch;
+        (&g_fieldVars->soundHandle0)[ch] = -1;
+        p = (s8 *)g_fieldVars + ch;
         p[0xC7] = -1;
     }
     return 2;
@@ -1040,8 +1040,8 @@ s32 func_800B1F04(Eline *e) {
 /**
  * @brief op0C0 MUSICVOL — pop a volume and channel index, ramp the
  *        corresponding SPU sound handle to that volume, and persist
- *        the new value in @c g_seedState->musicVolume /
- *        @c g_seedState->sfxVolume (the @c [musicVolume,sfxVolume]
+ *        the new value in @c g_fieldVars->musicVolume /
+ *        @c g_fieldVars->sfxVolume (the @c [musicVolume,sfxVolume]
  *        adjacent-byte pair indexed by @c channel&1).
  *
  * @return 2 (continue processing).
@@ -1050,8 +1050,8 @@ s32 opHandler_MUSICVOL(Eline *e) {
     s32 vol = POP(e);
     s32 ch = POP(e) & 1;
     u8 *p;
-    sndCmdC1((&g_seedState->soundHandle0)[ch], 0x10, vol);
-    p = (u8 *)g_seedState + ch;
+    sndCmdC1((&g_fieldVars->soundHandle0)[ch], 0x10, vol);
+    p = (u8 *)g_fieldVars + ch;
     p[0xC5] = vol;
     return 2;
 }
@@ -1059,7 +1059,7 @@ s32 opHandler_MUSICVOL(Eline *e) {
 /**
  * @brief op0C1 MUSICVOLTRANS — pop a volume, fade ramp, and channel
  *        index; ramp the SPU channel's volume over @c ramp*2 frames
- *        and persist the new volume in @c g_seedState->musicVolume /
+ *        and persist the new volume in @c g_fieldVars->musicVolume /
  *        @c sfxVolume.
  *
  * @return 2 (continue processing).
@@ -1069,8 +1069,8 @@ s32 opHandler_MUSICVOLTRANS(Eline *e) {
     s32 ramp = POP(e);
     s32 ch = POP(e) & 1;
     u8 *p;
-    sndCmdC1((&g_seedState->soundHandle0)[ch], ramp << 1, vol);
-    p = (u8 *)g_seedState + ch;
+    sndCmdC1((&g_fieldVars->soundHandle0)[ch], ramp << 1, vol);
+    p = (u8 *)g_fieldVars + ch;
     p[0xC5] = vol;
     return 2;
 }
@@ -1079,7 +1079,7 @@ s32 opHandler_MUSICVOLTRANS(Eline *e) {
  * @brief 4-arg variant of @c MUSICVOLTRANS. Pop @c vol (top), @c depth,
  *        @c ramp, and a channel selector; ramp the SPU channel's volume
  *        toward @c vol with the extended parameters and persist the new
- *        volume in @c g_seedState->musicVolume / @c sfxVolume (indexed
+ *        volume in @c g_fieldVars->musicVolume / @c sfxVolume (indexed
  *        by @c channel&1, the adjacent-byte pair at offset @c 0xC5).
  *
  * @return 2 (continue processing).
@@ -1090,8 +1090,8 @@ s32 opHandler_MUSICVOLFADE(Eline *e) {
     s32 ramp = POP(e);
     s32 ch = POP(e) & 1;
     u8 *p;
-    sndCmdC2((&g_seedState->soundHandle0)[ch], ramp << 1, depth, vol);
-    p = (u8 *)g_seedState + ch;
+    sndCmdC2((&g_fieldVars->soundHandle0)[ch], ramp << 1, depth, vol);
+    p = (u8 *)g_fieldVars + ch;
     p[0xC5] = vol;
     return 2;
 }
@@ -1129,7 +1129,7 @@ void func_800B2188(void) {
 
 /**
  * @brief Helper for @c EFFECTLOAD (op0BD, @c opHandler_EFFECTLOAD) — looks up
- *        the SFX entry indexed by @c g_seedState->audioChannel2State
+ *        the SFX entry indexed by @c g_fieldVars->audioChannel2State
  *        in the @c D_800C2E1C @c {LBA, size} table and issues a
  *        @c cdRead targeting the @c D_8005F13C SPU staging buffer,
  *        with @c func_800B2188 as the load-complete callback. Also
@@ -1137,7 +1137,7 @@ void func_800B2188(void) {
  *        loop waits for the callback to flip it back on.
  */
 void func_800B21E0(void) {
-    s32 entryIdx = g_seedState->audioChannel2State;
+    s32 entryIdx = g_fieldVars->audioChannel2State;
     D_800DE8D5 = 0;
     func_800A59D0();
     cdRead(D_800C2E1C[entryIdx * 2],
@@ -1148,7 +1148,7 @@ void func_800B21E0(void) {
 
 /**
  * @brief op0BD EFFECTLOAD — pop an SFX entry id, stash it in
- *        @c g_seedState->audioChannel2State, and kick off a deferred
+ *        @c g_fieldVars->audioChannel2State, and kick off a deferred
  *        CD load of the corresponding sample bank via the helper
  *        @c func_800B21E0 (which looks the entry up in
  *        @c D_800C2E1C and issues @c cdRead targeting the SPU staging
@@ -1163,10 +1163,10 @@ void func_800B21E0(void) {
  * @return 1 while the CD read is pending, 2 once the bank is staged.
  */
 s32 opHandler_EFFECTLOAD(Eline *e) {
-    SeedState *seed;
+    FieldVars *seed;
     if ((e->activeMask >> e->scriptGroup) & 1) {
         u8 sp = e->stackPtr;
-        seed = g_seedState;
+        seed = g_fieldVars;
         e->stackPtr = sp - 1;
         seed->audioChannel2State = (s8)e->stack[(s8)sp];
         func_800B21E0();

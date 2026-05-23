@@ -492,4 +492,4 @@ func_8009869C = 0x8009869C; // type:func
 waitForCorrectDisc = 0x8009879C; // type:func
 playBootIntro = 0x80098974; // type:func
 func_80098FD4 = 0x80098FD4; // type:func
-g_seedState = 0x800562C4;
+g_fieldVars = 0x800562C4;

@@ -7,7 +7,7 @@
 #include "cd.h"
 #include "field/fe_object10.h"
 
-extern SeedState   *g_seedState;
+extern FieldVars   *g_fieldVars;
 extern CdReadState  D_8008A3D8;
 extern u8           D_8007809A;
 extern s32          D_80082C14;
@@ -112,45 +112,45 @@ void updateSeedLevel(void) {
     s32 i;
     s32 salary;
 
-    g_seedState->prevSeedExp = g_seedState->seedExp;
+    g_fieldVars->prevSeedExp = g_fieldVars->seedExp;
 
     for (i = 0; i < 8; i++)
         totalKills += g_gameState.chars[i].kills;
 
-    g_seedState->seedExp = totalKills - g_seedState->prevKillSum - 10 + g_seedState->seedExp;
+    g_fieldVars->seedExp = totalKills - g_fieldVars->prevKillSum - 10 + g_fieldVars->seedExp;
 
-    if ((s16)g_seedState->seedExp < 100)
-        g_seedState->seedExp = 100;
-    else if ((s16)g_seedState->seedExp >= 0xC1C)
-        g_seedState->seedExp = 0xC1C;
+    if ((s16)g_fieldVars->seedExp < 100)
+        g_fieldVars->seedExp = 100;
+    else if ((s16)g_fieldVars->seedExp >= 0xC1C)
+        g_fieldVars->seedExp = 0xC1C;
 
     /* Reg-allocation hack: this dead lookup keeps `i`'s register binding
        alive long enough that gcc 2.7.2 places `salary` in the same slot
        the original toolchain used. Without it, the allocator picks one
        register higher and the byte-match is lost. */
-    i = g_seedSalaryTable[((s16)g_seedState->seedExp) / 100];
-    salary = g_seedSalaryTable[(s16)g_seedState->seedExp / 100];
+    i = g_seedSalaryTable[((s16)g_fieldVars->seedExp) / 100];
+    salary = g_seedSalaryTable[(s16)g_fieldVars->seedExp / 100];
     g_gameState.mainData.party.gil += salary * 10;
     if (g_gameState.mainData.party.gil > 0x5F5E0FEu)
         g_gameState.mainData.party.gil = 0x5F5E0FF;
 
-    if (!(g_seedState->stateFlags & 0x0010)) {
-        if (!(g_seedState->stateFlags & 0x1000)) {
-            s32 oldLevel = (s16)g_seedState->prevSeedExp / 100;
-            s32 newLevel = (s16)g_seedState->seedExp / 100;
+    if (!(g_fieldVars->stateFlags & 0x0010)) {
+        if (!(g_fieldVars->stateFlags & 0x1000)) {
+            s32 oldLevel = (s16)g_fieldVars->prevSeedExp / 100;
+            s32 newLevel = (s16)g_fieldVars->seedExp / 100;
 
             func_800316D4(oldLevel, newLevel,
                           g_seedSalaryTable[oldLevel] * 10,
                           g_seedSalaryTable[newLevel] * 10);
 
-            g_seedState->levelUpDisplayTimer = 150;
+            g_fieldVars->levelUpDisplayTimer = 150;
             sndPlaySfx(0x5B, 0, 0x80, 0x7F);
             sndPlaySfx(0x5C, 0, 0x80, 0x7F);
             sndPlaySfx(0x5D, 0, 0x80, 0x7F);
         }
     }
 
-    g_seedState->prevKillSum = totalKills;
+    g_fieldVars->prevKillSum = totalKills;
 }
 
 /**
@@ -242,7 +242,7 @@ void func_800BD794(void) { s32 i = 0; do { s32 status = getPackedField2Bit(i) - 
  * @brief Field step tick — accumulates @c stepDelta into all per-step counters.
  *
  * Mirror of @c func_800C4AE4 in we_object13. Drives every per-step
- * accumulator on @c g_seedState for the field map:
+ * accumulator on @c g_fieldVars for the field map:
  *   - @c stepCounter (mirrored to @c D_80082C14).
  *   - @c packedFlagsStepAcc — fires @c func_800BD794 every @c 0x2800 steps.
  *   - @c hpRegenStepAcc — fires GF and party HP regen every @c 8 steps.
@@ -257,37 +257,37 @@ void func_800BD794(void) { s32 i = 0; do { s32 status = getPackedField2Bit(i) - 
  */
 void func_800BD804(s32 stepDelta) {
     s32 minSeedExp = 100;
-    g_seedState->stepCounter += stepDelta;
-    g_seedState->hpRegenStepAcc += stepDelta;
-    g_seedState->packedFlagsStepAcc = (u16)(g_seedState->packedFlagsStepAcc + stepDelta);
-    g_seedState->angeloLearnStepAcc += stepDelta;
-    D_80082C14 = (u32)g_seedState->stepCounter;
-    if (g_seedState->packedFlagsStepAcc >= 0x2800u) {
-        g_seedState->packedFlagsStepAcc = 0;
+    g_fieldVars->stepCounter += stepDelta;
+    g_fieldVars->hpRegenStepAcc += stepDelta;
+    g_fieldVars->packedFlagsStepAcc = (u16)(g_fieldVars->packedFlagsStepAcc + stepDelta);
+    g_fieldVars->angeloLearnStepAcc += stepDelta;
+    D_80082C14 = (u32)g_fieldVars->stepCounter;
+    if (g_fieldVars->packedFlagsStepAcc >= 0x2800u) {
+        g_fieldVars->packedFlagsStepAcc = 0;
         func_800BD794();
     }
-    if ((u32)g_seedState->hpRegenStepAcc >= 8u) {
-        g_seedState->hpRegenStepAcc = 0;
+    if ((u32)g_fieldVars->hpRegenStepAcc >= 8u) {
+        g_fieldVars->hpRegenStepAcc = 0;
         func_800BD5E0();
         func_800BD64C();
     }
     if (D_8007809A & 1) return;
-    if (!(g_seedState->stateFlags & 8)) {
-        g_seedState->seedExpStepAcc += stepDelta;
-        if ((u32)g_seedState->seedExpStepAcc >= 0x6000u) {
-            g_seedState->seedExpStepAcc = 0;
+    if (!(g_fieldVars->stateFlags & 8)) {
+        g_fieldVars->seedExpStepAcc += stepDelta;
+        if ((u32)g_fieldVars->seedExpStepAcc >= 0x6000u) {
+            g_fieldVars->seedExpStepAcc = 0;
             updateSeedLevel();
         }
-        if ((s16)g_seedState->seedExp < minSeedExp)  g_seedState->seedExp = minSeedExp;
-        else if ((s16)g_seedState->seedExp >= 0xC1C) g_seedState->seedExp = 0xC1C;
+        if ((s16)g_fieldVars->seedExp < minSeedExp)  g_fieldVars->seedExp = minSeedExp;
+        else if ((s16)g_fieldVars->seedExp >= 0xC1C) g_fieldVars->seedExp = 0xC1C;
     }
-    if ((s16)g_seedState->levelUpDisplayTimer >= 0) {
-        if ((s16)g_seedState->levelUpDisplayTimer == 0) setTransitionPhase7();
-        g_seedState->levelUpDisplayTimer--;
+    if ((s16)g_fieldVars->levelUpDisplayTimer >= 0) {
+        if ((s16)g_fieldVars->levelUpDisplayTimer == 0) setTransitionPhase7();
+        g_fieldVars->levelUpDisplayTimer--;
     }
     if (D_8007809A & 0x10) return;
-    if ((u32)g_seedState->angeloLearnStepAcc >= 0x250u) {
-        g_seedState->angeloLearnStepAcc = 0;
+    if ((u32)g_fieldVars->angeloLearnStepAcc >= 0x250u) {
+        g_fieldVars->angeloLearnStepAcc = 0;
         func_800BD6EC();
     }
 }
@@ -298,11 +298,11 @@ void func_800BD804(s32 stepDelta) {
  *
  * Stores @p stepDelta into the field status block and toggles its busy
  * byte. If the pad-init bit (@c D_800DE4FD[0] & 2) is armed, captures the
- * @c func_801E8B58 status into @c g_seedState->padInitStatus. Bails out
+ * @c func_801E8B58 status into @c g_fieldVars->padInitStatus. Bails out
  * if a CD read is in flight (@c D_8008A3D8.flags bit 0).
  *
  * On entry, mirrors party gil/dreamGil from @c g_gameState to
- * @c g_seedState, mirrors the audio-channel marker @c fieldD1 into
+ * @c g_fieldVars, mirrors the audio-channel marker @c fieldD1 into
  * @c D_800704A8.unk1AB, and fades out per-slot SFX whose ambient
  * trigger has expired (@c sfxStartMask bit set without
  * @c sfxEntryMask). Then calls @c getPackedField2Bit for the active
@@ -338,35 +338,35 @@ void func_800BD9C4(s32 stepDelta) {
     fs = (u8 *)D_800DE8C8;
     fs[0xB] = !fs[0xB];
     if (D_800DE4FD[0] & 2) {
-        g_seedState->padInitStatus = func_801E8B58();
+        g_fieldVars->padInitStatus = func_801E8B58();
     }
     if (D_8008A3D8.flags & 1) return;
 
     func_800BD804(D_800704A8.fieldStepDelta);
-    g_seedState->gilMirror      = g_gameState.mainData.party.gil;
-    g_seedState->dreamGilMirror = g_gameState.mainData.party.dreamGil;
-    D_800704A8.unk1AB = g_seedState->fieldD1;
+    g_fieldVars->gilMirror      = g_gameState.mainData.party.gil;
+    g_fieldVars->dreamGilMirror = g_gameState.mainData.party.dreamGil;
+    D_800704A8.unk1AB = g_fieldVars->fieldD1;
 
     {
         s32 i;
         for (i = 0; i < getMaxBattleEntities(); i++) {
-            if ((g_seedState->sfxEntryMask >> i) & 1) continue;
-            if (!((g_seedState->sfxStartMask >> i) & 1)) continue;
+            if ((g_fieldVars->sfxEntryMask >> i) & 1) continue;
+            if (!((g_fieldVars->sfxStartMask >> i) & 1)) continue;
             if (D_800704A8.ambientFlags & 0xC0) {
                 if (getSfxField28(i)) {
-                    if (!((g_seedState->sfxActiveMask >> i) & 1)) {
+                    if (!((g_fieldVars->sfxActiveMask >> i) & 1)) {
                         fadeOutSfxSlow(i);
                     }
                 }
             }
             if (getSfxField1C(i)) continue;
             if (!getSfxField28(i)) continue;
-            g_seedState->sfxStartMask &= ~(1 << i);
+            g_fieldVars->sfxStartMask &= ~(1 << i);
         }
     }
 
     {
-        u8 packed = (u8)getPackedField2Bit(g_seedState->fieldF2);
+        u8 packed = (u8)getPackedField2Bit(g_fieldVars->fieldF2);
         SystemState *sys = &D_800704A8;
         sys->packedFlagSlot = packed;
     }
@@ -1186,7 +1186,7 @@ extern s32 getMaxBattleEntities(void);
  * SFX slots restoring playback for any with their @c sfxStartMask
  * bit set, then iterates anim slots dispatching to @c setupAnimEntry
  * or @c setupAnimEntryFull based on the @c flag field. Finally
- * restores the dialog state from @c g_seedState and clears the
+ * restores the dialog state from @c g_fieldVars and clears the
  * D_800704A8 mode-slot[0] to a default state mirroring the active
  * entity index.
  *
@@ -1201,7 +1201,7 @@ void func_800BF4A4(void) {
     func_800BF28C(1);
 
     for (i = 0; i < getMaxBattleEntities(); i++) {
-        if ((g_seedState->sfxStartMask >> i) & 1) {
+        if ((g_fieldVars->sfxStartMask >> i) & 1) {
             initSfxPlayback(i, (u8 *)D_80085300[i].payload);
             func_8002E064(i, (s16 *)&D_80085300[i]);
             startSfxSlow(i);
@@ -1229,9 +1229,9 @@ void func_800BF4A4(void) {
     }
 
     if (D_800704A8.dialogCount == D_800704A8.dialogTimer) {
-        g_seedState->dialogStateMirror = 0;
+        g_fieldVars->dialogStateMirror = 0;
     }
-    if ((s16)g_seedState->dialogStateMirror == 0) {
+    if ((s16)g_fieldVars->dialogStateMirror == 0) {
         D_800704A8.dialogState = 2;
         D_800704A8.dialogCount = 0x10;
         D_800704A8.dialogTimer = 0xFF;
@@ -1239,18 +1239,18 @@ void func_800BF4A4(void) {
         D_800704A8.field_0x110 = 0xFF;
         D_800704A8.field_0x112 = 0xFF;
     } else {
-        D_800704A8.dialogState = g_seedState->dialogStateMirror;
-        D_800704A8.dialogCount = g_seedState->fieldDC;
-        D_800704A8.dialogTimer = g_seedState->fieldDA;
-        D_800704A8.field_0x10E = g_seedState->fieldDE;
-        D_800704A8.field_0x110 = g_seedState->fieldE0;
-        D_800704A8.field_0x112 = g_seedState->fieldE2;
-        D_800704A8.field_0x114 = g_seedState->fieldE4;
-        D_800704A8.field_0x116 = g_seedState->fieldE6;
-        D_800704A8.field_0x118 = g_seedState->fieldE8;
-        D_800704A8.field_0x11A = g_seedState->fieldEA;
-        D_800704A8.field_0x11C = g_seedState->fieldEC;
-        D_800704A8.field_0x11E = g_seedState->fieldEE;
+        D_800704A8.dialogState = g_fieldVars->dialogStateMirror;
+        D_800704A8.dialogCount = g_fieldVars->fieldDC;
+        D_800704A8.dialogTimer = g_fieldVars->fieldDA;
+        D_800704A8.field_0x10E = g_fieldVars->fieldDE;
+        D_800704A8.field_0x110 = g_fieldVars->fieldE0;
+        D_800704A8.field_0x112 = g_fieldVars->fieldE2;
+        D_800704A8.field_0x114 = g_fieldVars->fieldE4;
+        D_800704A8.field_0x116 = g_fieldVars->fieldE6;
+        D_800704A8.field_0x118 = g_fieldVars->fieldE8;
+        D_800704A8.field_0x11A = g_fieldVars->fieldEA;
+        D_800704A8.field_0x11C = g_fieldVars->fieldEC;
+        D_800704A8.field_0x11E = g_fieldVars->fieldEE;
     }
 
     D_800704A8.slots[0].mode = 0;

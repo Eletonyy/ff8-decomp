@@ -194,7 +194,7 @@ typedef struct {
     /* 0x00C */ u16 rotation;       /**< Snapshotted heading for the active party slot. */
     /* 0x00E */ u16 anim_state;     /**< Snapshotted animation byte for the active party slot. */
     /* 0x010 */ u8 pad010[0x02];
-    /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_seedState->memberSlot[]). */
+    /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_fieldVars->memberSlot[]). */
     /* 0x015 */ u8 unk015;          /**< Cleared by @c opHandler_UCON along with the trigger flag. */
     /* 0x016 */ u8 pad016[0x06];
     /* 0x01C */ s32 fieldStepDelta; /**< Step delta passed to @c func_800BD804 each field tick. */
@@ -252,7 +252,7 @@ extern SystemState D_800704A8;
 
 /**
  * @brief 256-byte misc3 region of @c GameState — held at @c g_gameState+0xD60
- * and aliased through the @c g_seedState pointer.
+ * and aliased through the @c g_fieldVars pointer.
  *
  * Despite the name, this region tracks general field/world state — step
  * accumulators that drive periodic ticks, SeeD experience and rank
@@ -330,7 +330,7 @@ typedef struct {
     /* 0xF3 */ u8 fieldF3;              /**< Mirrored to D_80082C10 when stateFlags bit 0x800 is set. */
     /* 0xF4 */ s32 angeloLearnStepAcc;  /**< Step accumulator: fires the Angelo trick learn tick at @c 0x250. */
     /* 0xF8 */ u8 padF8[0x08];
-} SeedState; /* 0x100 = 256 bytes */
+} FieldVars; /* 0x100 = 256 bytes */
 
 /**
  * @brief Eline (event line) — opcode handler / script-VM view.
@@ -828,7 +828,7 @@ typedef struct {
 
 extern EncounterParams D_80082C90;
 
-/** @brief Mirrored from @ref SeedState.fieldF3 when @c stateFlags & 0x800 is set. */
+/** @brief Mirrored from @ref FieldVars.fieldF3 when @c stateFlags & 0x800 is set. */
 extern u8 D_80082C10;
 
 /** @brief Stashed sound-bank selector across the battle transition. */

@@ -6,7 +6,7 @@
 #include "field/fe_object4.h"
 
 
-extern SeedState *g_seedState;
+extern FieldVars *g_fieldVars;
 extern s32 D_800705E8;
 extern s32 D_800705F0;
 extern s32 D_800705F8;
@@ -714,15 +714,15 @@ s32 opHandler_REQEW(Eline *e, s32 a1) {
  * @brief Pop 2 values, look up the entity in slot @c memberSlot[a1] of
  *        @c D_80085224, and forward to @c func_800AE8B4 with derived args.
  *
- * Re-reads @c g_seedState->memberSlot[a1] twice (matches the asm's two
+ * Re-reads @c g_fieldVars->memberSlot[a1] twice (matches the asm's two
  * @c lbu reads) rather than caching it — a cached form re-allocates
  * registers and breaks the match.
  */
 s32 opHandler_PREQ(Eline *e, s32 a1) {
     s32 v1_pop = POP(e);
     s32 v2_pop = POP(e);
-    if (g_seedState->memberSlot[a1] != 0xFF) {
-        Eline *entity = &D_80085224[g_seedState->memberSlot[a1]];
+    if (g_fieldVars->memberSlot[a1] != 0xFF) {
+        Eline *entity = &D_80085224[g_fieldVars->memberSlot[a1]];
         func_800AE8B4(entity, v2_pop, entity->rangeLo + v1_pop);
     }
     return 3;
@@ -730,11 +730,11 @@ s32 opHandler_PREQ(Eline *e, s32 a1) {
 
 /**
  * @brief Script-VM "send-to-party-member" opcode: looks up
- *        @c g_seedState->memberSlot[a1], finds the resolved entity in
+ *        @c g_fieldVars->memberSlot[a1], finds the resolved entity in
  *        @c D_80085224, and dispatches via @c func_800AE8B4.
  *
  * AEA44-style routing, but the entity comes from the field-actor table
- * @c D_80085224 (stride 612), indexed via @c g_seedState->memberSlot[a1].
+ * @c D_80085224 (stride 612), indexed via @c g_fieldVars->memberSlot[a1].
  * If the slot is empty (0xFF), pops the 2 peeked values and returns 3.
  */
 s32 opHandler_PREQSW(Eline *e, s32 a1) {
@@ -746,9 +746,9 @@ s32 opHandler_PREQSW(Eline *e, s32 a1) {
     value = e->stack[(s8)e->stackPtr - 1];
     top = e->stack[(s8)e->stackPtr];
 
-    if (g_seedState->memberSlot[a1] != 0xFF) {
+    if (g_fieldVars->memberSlot[a1] != 0xFF) {
         if ((e->activeMask >> e->scriptGroup) & 1) {
-            entity = &D_80085224[g_seedState->memberSlot[a1]];
+            entity = &D_80085224[g_fieldVars->memberSlot[a1]];
             callResult = func_800AE8B4(entity, (u8)value,
                                        (u16)(entity->rangeLo + top));
             if (callResult == 0) {
@@ -757,7 +757,7 @@ s32 opHandler_PREQSW(Eline *e, s32 a1) {
             }
         }
 
-        if (D_80085224[g_seedState->memberSlot[a1]].scriptGroup == value) {
+        if (D_80085224[g_fieldVars->memberSlot[a1]].scriptGroup == value) {
             e->stackPtr -= 2;
             return 3;
         }
@@ -782,9 +782,9 @@ s32 opHandler_PREQEW(Eline *e, s32 a1) {
     value = e->stack[(s8)e->stackPtr - 1];
     top = e->stack[(s8)e->stackPtr];
 
-    if (g_seedState->memberSlot[a1] != 0xFF) {
+    if (g_fieldVars->memberSlot[a1] != 0xFF) {
         if ((e->activeMask >> e->scriptGroup) & 1) {
-            entity = &D_80085224[g_seedState->memberSlot[a1]];
+            entity = &D_80085224[g_fieldVars->memberSlot[a1]];
             callResult = func_800AE8B4(entity, (u8)value,
                                        (u16)(entity->rangeLo + top));
             if (callResult == 0) {
@@ -793,7 +793,7 @@ s32 opHandler_PREQEW(Eline *e, s32 a1) {
             }
         }
 
-        if (D_80085224[g_seedState->memberSlot[a1]].scriptGroup < value) {
+        if (D_80085224[g_fieldVars->memberSlot[a1]].scriptGroup < value) {
             e->stackPtr -= 2;
             return 3;
         }
@@ -1051,7 +1051,7 @@ s32 func_800AF3B4(Eline *e) {
 }
 
 /**
- * Sets bits 0x18 in entity flags at g_seedState+0x68, then calls
+ * Sets bits 0x18 in entity flags at g_fieldVars+0x68, then calls
  * setTransitionFlag with the inverted bit 3 value.
  *
  * @param a0 Unused.
@@ -1060,9 +1060,9 @@ s32 func_800AF3B4(Eline *e) {
 s32 opHandler_SARALYOFF(Eline *e) {
     s32 flags;
 
-    flags = g_seedState->stateFlags;
+    flags = g_fieldVars->stateFlags;
     flags = flags | 0x18;
-    g_seedState->stateFlags = flags;
+    g_fieldVars->stateFlags = flags;
     setTransitionFlag(((u32)flags >> 3 ^ 1) & 1);
     return 2;
 }
@@ -1081,21 +1081,21 @@ s32 opHandler_SARALYOFF(Eline *e) {
  */
 s32 opHandler_SARALYON() {
     s32 dummy[2];
-    g_seedState->stateFlags &= ~0x18;
+    g_fieldVars->stateFlags &= ~0x18;
     setTransitionFlag(1);
     return 2;
     dummy[0] = 0;
 }
 
-/** @brief Set bit 0x10 in @c g_seedState->stateFlags. Returns 2. */
+/** @brief Set bit 0x10 in @c g_fieldVars->stateFlags. Returns 2. */
 s32 opHandler_SARALYDISPOFF(void) {
-    g_seedState->stateFlags |= 0x10;
+    g_fieldVars->stateFlags |= 0x10;
     return 2;
 }
 
-/** @brief Clear bit 0x10 in @c g_seedState->stateFlags. Returns 2. */
+/** @brief Clear bit 0x10 in @c g_fieldVars->stateFlags. Returns 2. */
 s32 opHandler_SARALYDISPON(void) {
-    g_seedState->stateFlags &= ~0x10;
+    g_fieldVars->stateFlags &= ~0x10;
     return 2;
 }
 
@@ -1213,22 +1213,22 @@ s32 opHandler_UCON(void) {
     D_80085390 = 0;
     D_800704A8.unk015 = 0;
 
-    if (g_seedState->memberSlot[0] != 0xFF
-        && !(D_80085224[g_seedState->memberSlot[0]].flags & 0x40)) {
-        D_800704A8.entityIndex[0] = g_seedState->memberSlot[0];
-        D_80085224[g_seedState->memberSlot[0]].flags |= 4;
+    if (g_fieldVars->memberSlot[0] != 0xFF
+        && !(D_80085224[g_fieldVars->memberSlot[0]].flags & 0x40)) {
+        D_800704A8.entityIndex[0] = g_fieldVars->memberSlot[0];
+        D_80085224[g_fieldVars->memberSlot[0]].flags |= 4;
     }
 
-    if (g_seedState->memberSlot[1] != 0xFF
-        && !(D_80085224[g_seedState->memberSlot[1]].flags & 0x40)) {
-        D_800704BB = g_seedState->memberSlot[1];
-        D_80085224[g_seedState->memberSlot[1]].flags |= 4;
+    if (g_fieldVars->memberSlot[1] != 0xFF
+        && !(D_80085224[g_fieldVars->memberSlot[1]].flags & 0x40)) {
+        D_800704BB = g_fieldVars->memberSlot[1];
+        D_80085224[g_fieldVars->memberSlot[1]].flags |= 4;
     }
 
-    if (g_seedState->memberSlot[2] != 0xFF
-        && !(D_80085224[g_seedState->memberSlot[2]].flags & 0x40)) {
-        D_800704BC = g_seedState->memberSlot[2];
-        D_80085224[g_seedState->memberSlot[2]].flags |= 4;
+    if (g_fieldVars->memberSlot[2] != 0xFF
+        && !(D_80085224[g_fieldVars->memberSlot[2]].flags & 0x40)) {
+        D_800704BC = g_fieldVars->memberSlot[2];
+        D_80085224[g_fieldVars->memberSlot[2]].flags |= 4;
     }
 
     return 2;
@@ -1258,48 +1258,48 @@ s32 opHandler_UCOFF(void) {
     D_80085390 = 1;
     D_800704A8.unk015 = 1;
 
-    if (g_seedState->memberSlot[0] != 0xFF) {
-        func_800AA46C(g_seedState->memberSlot[0], 0xD,
-                      D_80085224[g_seedState->memberSlot[0]].field_0x24F, 0);
-        D_80085224[g_seedState->memberSlot[0]].field_0x24E =
-            D_80085224[g_seedState->memberSlot[0]].field_0x24F;
-        D_80085224[g_seedState->memberSlot[0]].field_0x206 = 0;
-        D_80085224[g_seedState->memberSlot[0]].field_0x20A = 0;
-        D_80085224[g_seedState->memberSlot[0]].field_0x20C =
-            D_800D9630[g_seedState->memberSlot[0]]->unk0C;
-        D_80085224[g_seedState->memberSlot[0]].flags &= 0xFFFF07FF;
-        D_80085224[g_seedState->memberSlot[0]].flags |= 0x2000;
-        D_80085224[g_seedState->memberSlot[0]].flags &= ~4;
+    if (g_fieldVars->memberSlot[0] != 0xFF) {
+        func_800AA46C(g_fieldVars->memberSlot[0], 0xD,
+                      D_80085224[g_fieldVars->memberSlot[0]].field_0x24F, 0);
+        D_80085224[g_fieldVars->memberSlot[0]].field_0x24E =
+            D_80085224[g_fieldVars->memberSlot[0]].field_0x24F;
+        D_80085224[g_fieldVars->memberSlot[0]].field_0x206 = 0;
+        D_80085224[g_fieldVars->memberSlot[0]].field_0x20A = 0;
+        D_80085224[g_fieldVars->memberSlot[0]].field_0x20C =
+            D_800D9630[g_fieldVars->memberSlot[0]]->unk0C;
+        D_80085224[g_fieldVars->memberSlot[0]].flags &= 0xFFFF07FF;
+        D_80085224[g_fieldVars->memberSlot[0]].flags |= 0x2000;
+        D_80085224[g_fieldVars->memberSlot[0]].flags &= ~4;
     }
 
     if (D_800704A8.entityIndex[1] != 0xFF) {
-        func_800AA46C(g_seedState->memberSlot[1], 0xD,
-                      D_80085224[g_seedState->memberSlot[1]].field_0x24F, 0);
-        D_80085224[g_seedState->memberSlot[1]].field_0x24E =
-            D_80085224[g_seedState->memberSlot[1]].field_0x24F;
-        D_80085224[g_seedState->memberSlot[1]].field_0x206 = 0;
-        D_80085224[g_seedState->memberSlot[1]].field_0x20A = 0;
-        D_80085224[g_seedState->memberSlot[1]].field_0x20C =
-            D_800D9630[g_seedState->memberSlot[1]]->unk0C;
-        D_80085224[g_seedState->memberSlot[1]].flags &= 0xFFFF07FF;
-        D_80085224[g_seedState->memberSlot[1]].flags |= 0x2000;
+        func_800AA46C(g_fieldVars->memberSlot[1], 0xD,
+                      D_80085224[g_fieldVars->memberSlot[1]].field_0x24F, 0);
+        D_80085224[g_fieldVars->memberSlot[1]].field_0x24E =
+            D_80085224[g_fieldVars->memberSlot[1]].field_0x24F;
+        D_80085224[g_fieldVars->memberSlot[1]].field_0x206 = 0;
+        D_80085224[g_fieldVars->memberSlot[1]].field_0x20A = 0;
+        D_80085224[g_fieldVars->memberSlot[1]].field_0x20C =
+            D_800D9630[g_fieldVars->memberSlot[1]]->unk0C;
+        D_80085224[g_fieldVars->memberSlot[1]].flags &= 0xFFFF07FF;
+        D_80085224[g_fieldVars->memberSlot[1]].flags |= 0x2000;
         D_800704A8.entityIndex[1] = 0xFF;
-        D_80085224[g_seedState->memberSlot[1]].flags &= ~4;
+        D_80085224[g_fieldVars->memberSlot[1]].flags &= ~4;
     }
 
     if (D_800704A8.entityIndex[2] != 0xFF) {
-        func_800AA46C(g_seedState->memberSlot[2], 0xD,
-                      D_80085224[g_seedState->memberSlot[2]].field_0x24F, 0);
-        D_80085224[g_seedState->memberSlot[2]].field_0x24E =
-            D_80085224[g_seedState->memberSlot[2]].field_0x24F;
-        D_80085224[g_seedState->memberSlot[2]].field_0x206 = 0;
-        D_80085224[g_seedState->memberSlot[2]].field_0x20A = 0;
-        D_80085224[g_seedState->memberSlot[2]].field_0x20C =
-            D_800D9630[g_seedState->memberSlot[2]]->unk0C;
-        D_80085224[g_seedState->memberSlot[2]].flags &= 0xFFFF07FF;
-        D_80085224[g_seedState->memberSlot[2]].flags |= 0x2000;
+        func_800AA46C(g_fieldVars->memberSlot[2], 0xD,
+                      D_80085224[g_fieldVars->memberSlot[2]].field_0x24F, 0);
+        D_80085224[g_fieldVars->memberSlot[2]].field_0x24E =
+            D_80085224[g_fieldVars->memberSlot[2]].field_0x24F;
+        D_80085224[g_fieldVars->memberSlot[2]].field_0x206 = 0;
+        D_80085224[g_fieldVars->memberSlot[2]].field_0x20A = 0;
+        D_80085224[g_fieldVars->memberSlot[2]].field_0x20C =
+            D_800D9630[g_fieldVars->memberSlot[2]]->unk0C;
+        D_80085224[g_fieldVars->memberSlot[2]].flags &= 0xFFFF07FF;
+        D_80085224[g_fieldVars->memberSlot[2]].flags |= 0x2000;
         D_800704A8.entityIndex[2] = 0xFF;
-        D_80085224[g_seedState->memberSlot[2]].flags &= ~4;
+        D_80085224[g_fieldVars->memberSlot[2]].flags &= ~4;
     }
 
     return 2;
@@ -1343,7 +1343,7 @@ s32 opHandler_SETPC(Eline *e) {
  * @brief Pop a character id; if it's already in the battle party, return 2.
  *        Otherwise add it to the first empty battle slot and mirror in the
  *        first empty party slot. Then either set the corresponding bit in
- *        @c g_seedState->stateFlags (popped >= 8) or update the character's
+ *        @c g_fieldVars->stateFlags (popped >= 8) or update the character's
  *        @c exists flags and call @c recalcPartyStats (popped < 8).
  *
  * @note Match needs two tricks:
@@ -1376,7 +1376,7 @@ s32 opHandler_ADDPARTY(Eline *e) {
 
     if (popped >= 8) {
         popped -= 8;
-        g_seedState->stateFlags |= (1 << popped);
+        g_fieldVars->stateFlags |= (1 << popped);
         return 2;
     }
 
@@ -1565,7 +1565,7 @@ s32 opHandler_GETPARTY(Eline *e) {
  *        via an 11-entry jump table:
  *          - 0:        @c chars[popped].exists |= 0xD
  *          - 4,6,7:    @c chars[popped].exists |= 0x1
- *          - 8,9,10:   @c g_seedState->stateFlags |= (1 << (popped-8))
+ *          - 8,9,10:   @c g_fieldVars->stateFlags |= (1 << (popped-8))
  *          - otherwise (1,2,3,5 via jtbl default, plus @c popped>=11):
  *                      @c chars[popped].exists |= 0x9
  *
@@ -1587,7 +1587,7 @@ s32 opHandler_ADDMEMBER(Eline *e) {
         case 9:
         case 10:
             popped -= 8;
-            g_seedState->stateFlags |= (1 << popped);
+            g_fieldVars->stateFlags |= (1 << popped);
             break;
         default:
             g_gameState.chars[popped].exists |= 9;
@@ -1605,7 +1605,7 @@ s32 opHandler_ADDMEMBER(Eline *e) {
  *        popped value:
  *          - 6:        @c chars[6].exists &= 0xFFF6 + @c func_800C0448
  *          - 7:        @c chars[7].exists &= 0xFFF6 + @c func_800C0634
- *          - 8,9,10:   @c g_seedState->stateFlags &= ~(1 << (popped-8))
+ *          - 8,9,10:   @c g_fieldVars->stateFlags &= ~(1 << (popped-8))
  *          - otherwise (0..5, 11+): @c chars[popped].exists &= 0xFFF6
  *
  * Symmetric clear-counterpart of @c opHandler_ADDMEMBER. Unlike B0344's
@@ -1629,7 +1629,7 @@ s32 opHandler_SUBMEMBER(Eline *e) {
     case 9:
     case 10:
         popped -= 8;
-        g_seedState->stateFlags &= ~(1 << popped);
+        g_fieldVars->stateFlags &= ~(1 << popped);
         break;
     default:
         g_gameState.chars[popped].exists &= 0xFFF6;
@@ -1648,7 +1648,7 @@ s32 func_800B0570(Eline *e) {
     s32 slot;
     if (a1 >= 8) {
         a1 -= 8;
-        e->resultSlots[0] = g_seedState->stateFlags & (1 << a1);
+        e->resultSlots[0] = g_fieldVars->stateFlags & (1 << a1);
         return 2;
     }
     slot = findCharacterSlot(a1);
@@ -1674,8 +1674,8 @@ s32 func_800B0638(Eline *e, s32 a1) {
     j = 0;
     for (i = 0; i < 6; i++) {
         if (findBattlePartySlot(i) == 0xFF) {
-            g_seedState->partyOrderA[j] = (u8)i;
-            g_seedState->partyOrderB[j] = (u8)i;
+            g_fieldVars->partyOrderA[j] = (u8)i;
+            g_fieldVars->partyOrderB[j] = (u8)i;
             j++;
         }
     }
@@ -1684,7 +1684,7 @@ s32 func_800B0638(Eline *e, s32 a1) {
 }
 
 /**
- * @brief Swap @c g_seedState's bench lists (@c partyOrderA/B) with
+ * @brief Swap @c g_fieldVars's bench lists (@c partyOrderA/B) with
  *        @c g_gameState's active party and battle-party slots.
  *
  * For each of the 3 party slots:
@@ -1700,10 +1700,10 @@ s32 func_800B06D0(Eline *e) {
     for (i = 0; i < 3; i++) {
         savedBattle[i]                = g_gameState.battleParty[i];
         savedParty[i]                 = g_gameState.mainData.party.party[i];
-        g_gameState.battleParty[i]    = g_seedState->partyOrderA[i];
-        g_gameState.mainData.party.party[i] = g_seedState->partyOrderB[i];
-        g_seedState->partyOrderA[i]   = savedBattle[i];
-        g_seedState->partyOrderB[i]   = savedParty[i];
+        g_gameState.battleParty[i]    = g_fieldVars->partyOrderA[i];
+        g_gameState.mainData.party.party[i] = g_fieldVars->partyOrderB[i];
+        g_fieldVars->partyOrderA[i]   = savedBattle[i];
+        g_fieldVars->partyOrderB[i]   = savedParty[i];
     }
     recalcPartyStats();
     return 2;
@@ -1717,18 +1717,18 @@ s32 func_800B06D0(Eline *e) {
  * @return 2 (VM continue).
  */
 s32 opHandler_LASTIN(Eline *e, s32 a1) {
-    g_seedState->stateFlags |= 0x800;
+    g_fieldVars->stateFlags |= 0x800;
     if (POP(e) != 0) {
-        g_seedState->fieldF3 = 0xFF;
+        g_fieldVars->fieldF3 = 0xFF;
     }
-    D_80082C10 = g_seedState->fieldF3;
-    D_80077E5F = g_seedState->fieldF3;
+    D_80082C10 = g_fieldVars->fieldF3;
+    D_80077E5F = g_fieldVars->fieldF3;
     func_800B0638(e, a1);
     return 2;
 }
 
 /**
- * Clears bit 0x800 in entity flags at g_seedState+0x68, clears
+ * Clears bit 0x800 in entity flags at g_fieldVars+0x68, clears
  * D_80082C10 and D_80077E5F, then calls recalcPartyStats.
  *
  * @param a0 Unused.
@@ -1738,7 +1738,7 @@ s32 opHandler_LASTOUT(Eline *e) {
     /* Take the address of stateFlags so gcc materializes the read & write
      * through one register — keeps the seedState updates together
      * (before D_80082C10/D_80077E5F + recalcPartyStats() in the schedule). */
-    s32 *p = &g_seedState->stateFlags;
+    s32 *p = &g_fieldVars->stateFlags;
     *p = *p & ~0x800;
     D_80082C10 = 0;
     D_80077E5F = 0;

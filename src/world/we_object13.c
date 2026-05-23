@@ -39,7 +39,7 @@ typedef struct StreamState {
 
 extern StreamState D_800E3E70;
 extern void (*D_800E3E60)(s32, void *);
-extern SeedState *g_seedState;
+extern FieldVars *g_fieldVars;
 
 extern void func_80047C3C(u8 *msg);
 extern u8   D_800987C0;
@@ -284,45 +284,45 @@ void func_800C4688(void) {
     s32 i;
     s32 salary;
 
-    g_seedState->prevSeedExp = g_seedState->seedExp;
+    g_fieldVars->prevSeedExp = g_fieldVars->seedExp;
 
     for (i = 0; i < 8; i++)
         totalKills += g_gameState.chars[i].kills;
 
-    g_seedState->seedExp = totalKills - g_seedState->prevKillSum - 10 + g_seedState->seedExp;
+    g_fieldVars->seedExp = totalKills - g_fieldVars->prevKillSum - 10 + g_fieldVars->seedExp;
 
-    if ((s16)g_seedState->seedExp < 100)
-        g_seedState->seedExp = 100;
-    else if ((s16)g_seedState->seedExp >= 0xC1C)
-        g_seedState->seedExp = 0xC1C;
+    if ((s16)g_fieldVars->seedExp < 100)
+        g_fieldVars->seedExp = 100;
+    else if ((s16)g_fieldVars->seedExp >= 0xC1C)
+        g_fieldVars->seedExp = 0xC1C;
 
     /* Reg-allocation hack: this dead lookup keeps `i`'s register binding
        alive long enough that gcc 2.7.2 places `salary` in the same slot
        the original toolchain used. Without it, the allocator picks one
        register higher and the byte-match is lost. */
-    i = g_seedSalaryTable[((s16)g_seedState->seedExp) / 100];
-    salary = g_seedSalaryTable[(s16)g_seedState->seedExp / 100];
+    i = g_seedSalaryTable[((s16)g_fieldVars->seedExp) / 100];
+    salary = g_seedSalaryTable[(s16)g_fieldVars->seedExp / 100];
     g_gameState.mainData.party.gil += salary * 10;
     if (g_gameState.mainData.party.gil > 0x5F5E0FEu)
         g_gameState.mainData.party.gil = 0x5F5E0FF;
 
-    if (!(g_seedState->stateFlags & 0x0010)) {
-        if (!(g_seedState->stateFlags & 0x1000)) {
-            s32 oldLevel = (s16)g_seedState->prevSeedExp / 100;
-            s32 newLevel = (s16)g_seedState->seedExp / 100;
+    if (!(g_fieldVars->stateFlags & 0x0010)) {
+        if (!(g_fieldVars->stateFlags & 0x1000)) {
+            s32 oldLevel = (s16)g_fieldVars->prevSeedExp / 100;
+            s32 newLevel = (s16)g_fieldVars->seedExp / 100;
 
             func_800316D4(oldLevel, newLevel,
                           g_seedSalaryTable[oldLevel] * 10,
                           g_seedSalaryTable[newLevel] * 10);
 
-            g_seedState->levelUpDisplayTimer = 150;
+            g_fieldVars->levelUpDisplayTimer = 150;
             sndPlaySfx(0x5B, 0, 0x80, 0x7F);
             sndPlaySfx(0x5C, 0, 0x80, 0x7F);
             sndPlaySfx(0x5D, 0, 0x80, 0x7F);
         }
     }
 
-    g_seedState->prevKillSum = totalKills;
+    g_fieldVars->prevKillSum = totalKills;
 }
 
 /**
@@ -450,37 +450,37 @@ extern s32 D_80082C14;
  *
  * @verbatim
  * void func_800C4AE4(s32 stepDelta) {
- *     g_seedState->hpRegenStepAcc += stepDelta;
- *     g_seedState->stepCounter += stepDelta;
- *     g_seedState->angeloLearnStepAcc += stepDelta;
- *     g_seedState->packedFlagsStepAcc = (u16)(g_seedState->packedFlagsStepAcc + stepDelta);
- *     D_80082C14 = g_seedState->stepCounter;
- *     if (g_seedState->packedFlagsStepAcc >= 0x2800u) {
- *         g_seedState->packedFlagsStepAcc = 0;
+ *     g_fieldVars->hpRegenStepAcc += stepDelta;
+ *     g_fieldVars->stepCounter += stepDelta;
+ *     g_fieldVars->angeloLearnStepAcc += stepDelta;
+ *     g_fieldVars->packedFlagsStepAcc = (u16)(g_fieldVars->packedFlagsStepAcc + stepDelta);
+ *     D_80082C14 = g_fieldVars->stepCounter;
+ *     if (g_fieldVars->packedFlagsStepAcc >= 0x2800u) {
+ *         g_fieldVars->packedFlagsStepAcc = 0;
  *         func_800C4A74();
  *     }
- *     if (g_seedState->hpRegenStepAcc >= 8) {
- *         g_seedState->hpRegenStepAcc = 0;
+ *     if (g_fieldVars->hpRegenStepAcc >= 8) {
+ *         g_fieldVars->hpRegenStepAcc = 0;
  *         func_800C48C0();
  *         func_800C492C();
  *     }
  *     if (D_8007809A & 1) return;
- *     if (!(g_seedState->stateFlags & 8)) {
- *         g_seedState->seedExpStepAcc += stepDelta;
- *         if ((u32)g_seedState->seedExpStepAcc >= 0x6000u) {
- *             g_seedState->seedExpStepAcc = 0;
+ *     if (!(g_fieldVars->stateFlags & 8)) {
+ *         g_fieldVars->seedExpStepAcc += stepDelta;
+ *         if ((u32)g_fieldVars->seedExpStepAcc >= 0x6000u) {
+ *             g_fieldVars->seedExpStepAcc = 0;
  *             func_800C4688();
  *         }
- *         if ((s16)g_seedState->seedExp < 100)         g_seedState->seedExp = 100;
- *         else if ((s16)g_seedState->seedExp >= 0xC1C) g_seedState->seedExp = 0xC1C;
+ *         if ((s16)g_fieldVars->seedExp < 100)         g_fieldVars->seedExp = 100;
+ *         else if ((s16)g_fieldVars->seedExp >= 0xC1C) g_fieldVars->seedExp = 0xC1C;
  *     }
- *     if ((s16)g_seedState->levelUpDisplayTimer >= 0) {
- *         if ((s16)g_seedState->levelUpDisplayTimer == 0) setTransitionPhase7();
- *         g_seedState->levelUpDisplayTimer--;
+ *     if ((s16)g_fieldVars->levelUpDisplayTimer >= 0) {
+ *         if ((s16)g_fieldVars->levelUpDisplayTimer == 0) setTransitionPhase7();
+ *         g_fieldVars->levelUpDisplayTimer--;
  *     }
  *     if (D_8007809A & 0x10) return;
- *     if ((u32)g_seedState->angeloLearnStepAcc >= 0x250u) {
- *         g_seedState->angeloLearnStepAcc = 0;
+ *     if ((u32)g_fieldVars->angeloLearnStepAcc >= 0x250u) {
+ *         g_fieldVars->angeloLearnStepAcc = 0;
  *         func_800C49CC();
  *     }
  * }
