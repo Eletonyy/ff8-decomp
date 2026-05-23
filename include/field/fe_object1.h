@@ -164,7 +164,21 @@ extern int  func_800A1BB8();
 extern int  func_800A1CFC();
 extern int  func_800A2128();
 extern int  func_800A222C();
-extern void *func_800A29C0();  /* arg/return are a file-private buffer view in fe_object1.c */
+/**
+ * @brief Shape @c func_800A29C0 sees: array of 20-byte items with five
+ *        leading bytes that get initialized per item.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x3];
+    /* 0x03 */ u8 b3;     /**< Set to @c 4 each iter. */
+    /* 0x04 */ u8 b4;     /**< Cleared. */
+    /* 0x05 */ u8 b5;     /**< Cleared. */
+    /* 0x06 */ u8 b6;     /**< Cleared. */
+    /* 0x07 */ u8 b7;     /**< Set to @c 0x22. */
+    /* 0x08 */ u8 pad08[0xC];
+} func_800A29C0_arg0;  /* 0x14 = 20 bytes */
+
+extern func_800A29C0_arg0 *func_800A29C0(func_800A29C0_arg0 *p);
 extern int  func_800A2A30();
 extern int  func_800A2AF8();
 extern int  func_800A2D2C();
