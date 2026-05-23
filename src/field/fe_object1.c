@@ -449,7 +449,47 @@ s16 func_8009D254(s32 a0) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009D274);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009D500);
+/**
+ * @brief Scratchpad work context — arg2 of @c func_8009D500.
+ *
+ * Caller passes @c &scratchpad[0x40] (a temporary buffer in PSX
+ * scratchpad memory); the struct describes the slice of that area
+ * @c func_8009D500 touches.
+ */
+typedef struct {
+    /* 0x00 */ u8  pad00[0x10];
+    /* 0x10 */ s32 unk10;       /**< Passed to @c func_8009DF18 as the @c aux pointer. */
+    /* 0x14 */ u8  pad14[0x1C];
+    /* 0x30 */ s32 srcX;
+    /* 0x34 */ s32 srcY;
+    /* 0x38 */ s32 srcZ;        /**< Copied to @c outZ without delta. */
+    /* 0x3C */ u8  pad3C[0x04];
+    /* 0x40 */ s32 outX;        /**< @c outX = @c srcX + @c dx. */
+    /* 0x44 */ s32 outY;        /**< @c outY = @c srcY + @c dy. */
+    /* 0x48 */ s32 outZ;
+    /* 0x4C */ u8  pad4C[0x04];
+    /* 0x50 */ s32 dx;
+    /* 0x54 */ s32 dy;
+} func_8009D500_arg2;
+
+/**
+ * @brief Step a position by (@c dx, @c dy, @c 0) and check collision.
+ *
+ * Writes the stepped position into @c ctx->outX/outY/outZ, calls
+ * @c func_8009DF18 to do the per-axis path/extent computation (its
+ * return value is captured into @c *out — clever scheduling puts that
+ * store in the @c jal @c func_8009E468 delay slot), then runs the
+ * collision query @c func_8009E468 against the computed @c outX/Y/Z.
+ *
+ * @return @c 4 if @c func_8009E468 reported a hit, @c 0 otherwise.
+ */
+s32 func_8009D500(s32 selfIdx, s32 arg1, func_8009D500_arg2 *ctx, s32 *out) {
+    ctx->outX = ctx->srcX + ctx->dx;
+    ctx->outY = ctx->srcY + ctx->dy;
+    ctx->outZ = ctx->srcZ;
+    *out = func_8009DF18(arg1, (Vec3i *)&ctx->outX, &ctx->dx, &ctx->unk10);
+    return func_8009E468((s16)selfIdx, (Vec3i *)&ctx->outX) ? 4 : 0;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009D598);
 

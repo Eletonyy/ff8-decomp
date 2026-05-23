@@ -136,9 +136,9 @@ extern int  func_8009B4A8();
 extern int  func_8009BEC8();
 extern int  func_8009CEE8();
 extern int  func_8009D274();
-extern int  func_8009D500();
+extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
 extern int  func_8009D598();
-extern int  func_8009DF18();
+extern s32  func_8009DF18();  /* handwritten, return value used by func_8009D500 */
 extern int  func_8009E338();
 extern int  func_8009E660();
 extern int  func_8009ECA4();
