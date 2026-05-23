@@ -1467,6 +1467,19 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5FA4);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A6100);
 
+/**
+ * @brief Per-frame dispatch over 12 entries — call @c func_800A5FA4
+ *        with an even/odd flag based on the entry's @c mode.
+ *
+ * Iterates 12 16-byte entries. For each entry where @c active != @c 0xFF,
+ * switches on @c mode (0..5) and calls @c func_800A5FA4(entry, flag)
+ * where @c flag = 1 for even modes (0/2/4) and 0 for odd modes (1/3/5).
+ *
+ * @note Decomp at 71.83% match — gcc 2.7.2 strength-reduces @c items[i]
+ *       to an end-pointer comparison while target keeps an explicit
+ *       counter; also different s-reg allocation. See
+ *       @c permuter/func_800A62EC/base.c for the current C.
+ */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A62EC);
 
 /* ============================================================================
