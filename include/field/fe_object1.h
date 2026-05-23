@@ -179,7 +179,17 @@ typedef struct {
 } func_800A29C0_arg0;  /* 0x14 = 20 bytes */
 
 extern func_800A29C0_arg0 *func_800A29C0(func_800A29C0_arg0 *p);
-extern int  func_800A2A30();
+/**
+ * @brief Shape of the prim records @c func_800A2A30 writes — @c 8 bytes
+ *        with a @c tag byte and a @c cmd word (GPU command + color).
+ */
+typedef struct {
+    /* 0x00 */ u8  pad00[0x03];
+    /* 0x03 */ u8  tag;     /**< Always written as @c 1. */
+    /* 0x04 */ s32 cmd;     /**< @c 0xE1000200 | (color & 0x9FF). */
+} func_800A2A30_item;  /* 8 bytes */
+
+extern func_800A2A30_item *func_800A2A30(func_800A2A30_item *p);
 extern int  func_800A2AF8();
 extern int  func_800A2D2C();
 extern s16  func_800A2EA4(s16 range);

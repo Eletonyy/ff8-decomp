@@ -34,6 +34,7 @@ extern u8 D_8005F151;            /**< Inner PRNG counter — D_800C3520 lookup i
 extern s32 func_8004D564(s32 a, s32 b);
 extern s32 func_80048C50(s32 a);
 extern void func_80048F5C(RECT *r, u16 *src);
+extern s32 func_8004D524(s32, s32, s32, s32);
 
 extern u16 **D_800D5E9C;         /**< Pointer-to-pointer of u16 count for func_800A29C0's iteration */
 extern u16 *D_800C71E4;
@@ -849,7 +850,28 @@ func_800A29C0_arg0 *func_800A29C0(func_800A29C0_arg0 *p) {
     return p;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A2A30);
+/**
+ * @brief Append one GPU draw-mode prim per entry in the @c D_800D5E9C
+ *        list; return the advanced output pointer.
+ *
+ * For each non-sentinel entry (count from @c **D_800D5E9C), calls
+ * @c func_8004D524(0, 1, 0, 0) to get a color value, masks to 9 bits,
+ * ORs with the GPU draw-mode command base @c 0xE1000200, and writes
+ * one 8-byte prim with @c tag=1 + @c cmd=combined.
+ *
+ * Used by @c func_800983F0 's draw-prim chain layout.
+ */
+func_800A2A30_item *func_800A2A30(func_800A2A30_item *p) {
+    s32 i;
+    for (i = 0; i < **D_800D5E9C; i++) {
+        s32 color;
+        p->tag = 1;
+        color = func_8004D524(0, 1, 0, 0);
+        p->cmd = (color & 0x9FF) | 0xE1000200;
+        p++;
+    }
+    return p;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A2AF8);
 
