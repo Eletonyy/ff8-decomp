@@ -120,7 +120,6 @@ extern s16  func_800A2EA4(s16 range);
 extern int  func_800A2F48();
 extern int  func_800A2F70();
 extern s16  func_800A2FE0(ParticleSystem *sys);
-extern int  func_800A3018();
 extern void func_800A327C(Eline *actor, SVECTOR *out);
 extern void func_800A3488(Eline *actor, SVECTOR *out);
 extern int  func_800A3534();

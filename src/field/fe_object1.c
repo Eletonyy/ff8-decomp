@@ -40,6 +40,10 @@ extern PathEntry D_80070760[64];
 extern DRAWENV D_80067388[2];   /**< Double-buffered draw environments. */
 extern DISPENV D_80067440[2];   /**< Double-buffered display environments. */
 
+/* Forward decl — full Emitter typedef lives below, near its primary users. */
+typedef struct Emitter Emitter;
+extern void func_800A3018(Emitter *em);
+
 /**
  * @brief Initialize the field engine's double-buffered draw/display envs.
  *
@@ -608,8 +612,6 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A2F70);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A2FE0);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3018);
-
 /**
  * @brief Particle emitter record (one of an array within ParticleSystem).
  *
@@ -617,13 +619,13 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3018);
  * Holds the emitter's spawn-rate counters and the velocity/position
  * jitter ranges used to seed each particle.
  */
-typedef struct {
+struct Emitter {
     /* 0x000 */ u8 pad000[0x14E];
     /* 0x14E */ u8 unk14E;          /**< Reset to 0 on each call. */
     /* 0x14F */ u8 pad14F[0x0B];
     /* 0x15A */ s16 maxCount;       /**< Cap on simultaneously-active particles. */
     /* 0x15C */ s16 curCount;       /**< Currently active particle count. */
-    /* 0x15E */ u8 pad15E[0x02];
+    /* 0x15E */ s16 unk15E;         /**< Cleared together with @c curCount by @c func_800A3018. */
     /* 0x160 */ s16 unk160;         /**< Velocity-Z bias (added * 32). */
     /* 0x162 */ s16 unk162;         /**< Velocity-Z jitter half-range. */
     /* 0x164 */ s16 unk164;         /**< unk16 jitter half-range. */
@@ -634,7 +636,22 @@ typedef struct {
     /* 0x16E */ s16 unk16E;         /**< Velocity-Y jitter half-range. */
     /* 0x170 */ s16 unk170;         /**< Velocity-Z jitter half-range. */
     /* 0x172 */ u8 pad172[0x02];
-} Emitter; /* 0x174 = 372 bytes */
+}; /* 0x174 = 372 bytes */
+
+/**
+ * @brief Zero @c curCount and @c unk15E across the first 16 emitter slots.
+ *
+ * Called from @c func_800A2EE0 during particle-system init to reset the
+ * active-particle counts (and the small @c unk15E word that travels with
+ * them) without touching the static jitter ranges.
+ */
+void func_800A3018(Emitter *em) {
+    s32 i;
+    for (i = 0; i < 16; i++) {
+        em[i].unk15E = 0;
+        em[i].curCount = 0;
+    }
+}
 
 /**
  * @brief Particle "view" — overlay struct positioned at @c &sys->slots[slot].
