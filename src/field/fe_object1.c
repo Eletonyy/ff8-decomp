@@ -34,6 +34,8 @@ extern u8 D_8005F151;            /**< Inner PRNG counter — D_800C3520 lookup i
 extern s32 func_8004D564(s32 a, s32 b);
 extern s32 func_80048C50(s32 a);
 extern void func_80048F5C(RECT *r, u16 *src);
+extern void func_80048EFC(RECT *r, u8 *src);
+extern void func_80042634(s32 a);
 extern s32 func_8004D524(s32, s32, s32, s32);
 
 extern u16 **D_800D5E9C;         /**< Pointer-to-pointer of u16 count for func_800A29C0's iteration */
@@ -669,7 +671,45 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A0640);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A06F0);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A0D6C);
+/**
+ * @brief Restore VRAM regions for the dialog window and 16 strip layers.
+ *
+ * Two-phase StoreImage transfer:
+ *   - First, copies a 256x24 region from the front of @p buf to VRAM
+ *     at @c (0, 232) (the dialog header / pause overlay strip).
+ *   - Then, advances @p buf by @c 0x3000 and StoreImages 16 strips of
+ *     @c 832x16 (stride @c 0x6800 in the buffer), each placed at
+ *     @c (0, 256 + i*16) — a stack of 16 strips of decoration / VRAM
+ *     content.
+ *
+ * Each transfer is sandwiched by @c func_80048C50(1) polls (GPU-busy
+ * waits); @c func_80042634(0) is called once per strip to set up the
+ * mode for the upcoming StoreImage.
+ *
+ * @return Restores VRAM in-place; no return value.
+ */
+void func_800A0D6C(u8 *buf) {
+    RECT rect;
+    s16 i;
+    rect.x = 0;
+    rect.y = 0xE8;
+    rect.w = 0x100;
+    rect.h = 0x18;
+    while (func_80048C50(1) != 0) {}
+    func_80048EFC(&rect, buf);
+    while (func_80048C50(1) != 0) {}
+    buf += 0x3000;
+    for (i = 0; i < 16; i++) {
+        func_80042634(0);
+        rect.x = 0;
+        rect.y = i * 16 + 0x100;
+        rect.w = 0x340;
+        rect.h = 0x10;
+        func_80048EFC(&rect, buf);
+        buf += 0x6800;
+    }
+    while (func_80048C50(1) != 0) {}
+}
 
 /**
  * @brief Overflow-safe s32 linear interpolation.
