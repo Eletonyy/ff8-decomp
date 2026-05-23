@@ -32,9 +32,12 @@ extern u8 D_8005F150;            /**< Outer PRNG counter — D_800C3520 lookup o
 extern u8 D_8005F151;            /**< Inner PRNG counter — D_800C3520 lookup index, advanced 1/call by func_800A5C9C */
 
 extern s32 func_8004D564(s32 a, s32 b);
+extern s32 func_80048C50(s32 a);
+extern void func_80048F5C(RECT *r, u16 *src);
 
 extern u16 **D_800D5E9C;         /**< Pointer-to-pointer of u16 count for func_800A29C0's iteration */
-extern s32 D_800C71E4;
+extern u16 *D_800C71E4;
+extern u16 D_800D3E88[];
 extern u8 D_800D5F50[];
 extern u8 D_800D61A8[];
 extern u8 D_8005F168[];
@@ -719,7 +722,39 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A17B8);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A19B8);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A1BB8);
+/**
+ * @brief Restore a 256x16 VRAM region from a saved buffer and clear
+ *        the @c 0x8000 transparency bit on every pixel.
+ *
+ * Sets @c D_800C71E4 to point at the saved-image buffer @c D_800D3E88,
+ * then (only when the current event queue's @c unk0E flag is @c 1)
+ * uses @c StoreImage (via @c func_80048F5C) to write the buffer back
+ * to VRAM at @c (0x100, 0x10) with a @c 256x16 RECT, and masks every
+ * pixel's @c 0x8000 transparency bit to leave just the colour bits.
+ *
+ * The two @c func_80048C50(1) polls are GPU-busy waits sandwiching
+ * the transfer so the buffer isn't read while another command is
+ * still being issued.
+ */
+void func_800A1BB8(void) {
+    RECT rect;
+    u16 *p;
+    s32 i;
+    D_800C71E4 = D_800D3E88;
+    if (D_8005F0F8->unk0E != 1) return;
+    rect.x = 0x200;
+    rect.y = 0xF0;
+    rect.w = 0x100;
+    rect.h = 0x10;
+    while (func_80048C50(1) != 0) {}
+    func_80048F5C(&rect, D_800C71E4);
+    while (func_80048C50(1) != 0) {}
+    p = D_800C71E4;
+    for (i = 0; i < 0x1000; i++) {
+        *p &= 0x7FFF;
+        p++;
+    }
+}
 
 /**
  * If D_8005F0F8 byte at offset 0xE is 1, sets up a display region

@@ -182,7 +182,9 @@ typedef struct {
 
 /** @brief Container struct at @c D_8005F0F8; first 0x60 bytes are header data, then 16 event entries. */
 typedef struct {
-    /* 0x00 */ u8 pad00[0x60];
+    /* 0x00 */ u8 pad00[0x0E];
+    /* 0x0E */ u8 unk0E;            /**< When @c == 1, @c func_800A1BB8 issues a StoreImage to VRAM. */
+    /* 0x0F */ u8 pad0F[0x51];
     /* 0x60 */ EventEntry entries[16];
 } EventQueue;
 

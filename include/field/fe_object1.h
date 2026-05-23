@@ -160,7 +160,7 @@ extern int  func_800A1318();
 extern int  func_800A15C0();
 extern int  func_800A17B8();
 extern int  func_800A19B8();
-extern int  func_800A1BB8();
+extern void func_800A1BB8(void);
 extern int  func_800A1CFC();
 extern int  func_800A2128();
 extern int  func_800A222C();
