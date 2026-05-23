@@ -241,7 +241,7 @@ typedef struct {
     /* 0x1A7 */ u8 pad1A7[0x04];
     /* 0x1AB */ u8 unk1AB;          /**< Sub-mode byte; written together with @c mode by fe_object6 opcodes. */
     /* 0x1AC */ u8 pad1AC[0x02];
-    /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c func_800B85C8, read by @c func_8009FE18). */
+    /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c opHandler_COUNTERCLOCKWISETURN2, read by @c func_8009FE18). */
     /* 0x1AF */ u8 packedFlagSlot;  /**< Last @c getPackedField2Bit result for the active dispatcher slot; written each tick by @c func_800BD9C4. */
     /* 0x1B0 */ u8 pad1B0[0x04];
     /* 0x1B4 */ s32 field1B4;       /**< Initialised to @c 0xFFFFFF by @c func_800BFBBC on full reset. */
@@ -390,7 +390,7 @@ typedef struct {
     /* 0x1F2 */ u16 field_0x1F2;
     /* 0x1F4 */ u16 field_0x1F4;
     /* 0x1F6 */ u16 radius;         /**< Collision radius (used by @c func_8009E468 overlap test). */
-    /* 0x1F8 */ u16 field_0x1F8;    /**< Stored by @c func_800B0CCC from popped stack slot. */
+    /* 0x1F8 */ u16 field_0x1F8;    /**< Stored by @c opHandler_TALKRADIUS from popped stack slot. */
     /* 0x1FA */ u16 field_0x1FA;    /**< Set from path-table entry's @c unk6 by @c func_8009BB18. */
     /* 0x1FC */ u16 field_0x1FC;
     /* 0x1FE */ s16 savedChannel;   /**< Previous message channel. */
@@ -621,7 +621,7 @@ typedef struct {
 } FieldEntityD; /* 0x1B4 */
 
 /** @brief Self/anchor pointer used by @c func_8009A8E0 after the
- *         party-member copy in @c func_800B1034 / @c func_800B10F8; also
+ *         party-member copy in @c opHandler_COPYINFO / @c opHandler_PCOPYINFO; also
  *         the base of the Block B entity array dispatched by @c func_800BD9C4. */
 extern FieldEntityB *D_8008538C;
 

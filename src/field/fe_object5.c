@@ -33,7 +33,7 @@ s32 opHandler_SEALEDOFF(Eline *e) {
  * @brief Pop a character/party token, resolve it via @c findCharacterSlot,
  *        and if the slot is valid hand it to @c func_80036B90.
  */
-s32 func_800B08CC(Eline *e) {
+s32 opHandler_RESETGF(Eline *e) {
     u8 idx;
     s32 result;
 
@@ -90,7 +90,7 @@ s32 opHandler_HOLD(Eline *e) {
  *        secondary @c unk249 / @c field_0x24B flags so collision /
  *        scripting skip this entity.
  */
-s32 func_800B0A08(Eline *e) {
+s32 opHandler_SHOW(Eline *e) {
     *(volatile s32 *)&e->flags = *(volatile s32 *)&e->flags & ~0x8;
     if (!(D_800DE8CC & 0x2)) {
         EntityRenderSlot **base = D_800D9630;
@@ -108,12 +108,12 @@ s32 func_800B0A08(Eline *e) {
 }
 
 /**
- * @brief Re-enable an entity. Counterpart of @c func_800B0A08 — sets the
+ * @brief Re-enable an entity. Counterpart of @c opHandler_SHOW — sets the
  *        "active" flag bit @c 0x8, restores render-slot visibility,
  *        re-installs the @c 0x10 flag from @c field_0x24C, then sets
  *        @c field_0x24C / @c unk249 / @c field_0x24B back to 1.
  */
-s32 func_800B0A7C(Eline *e) {
+s32 opHandler_HIDE(Eline *e) {
     *(volatile s32 *)&e->flags = *(volatile s32 *)&e->flags | 0x8;
     if (!(D_800DE8CC & 0x2)) {
         EntityRenderSlot **base = D_800D9630;
@@ -132,25 +132,25 @@ s32 func_800B0A7C(Eline *e) {
 }
 
 /** @brief Clear @c field_0x24B (entity "B flag"). */
-s32 func_800B0B04(Eline *e) {
+s32 opHandler_TALKON(Eline *e) {
     e->field_0x24B = 0;
     return 2;
 }
 
 /** @brief Set @c field_0x24B (entity "B flag") to 1. */
-s32 func_800B0B10(Eline *e) {
+s32 opHandler_TALKOFF(Eline *e) {
     e->field_0x24B = 1;
     return 2;
 }
 
 /** @brief Clear @c unk249 (entity "self-collision enable" flag). */
-s32 func_800B0B20(Eline *e) {
+s32 opHandler_PUSHON(Eline *e) {
     e->unk249 = 0;
     return 2;
 }
 
 /** @brief Set @c unk249 (entity "self-collision enable" flag) to 1. */
-s32 func_800B0B2C(Eline *e) {
+s32 opHandler_PUSHOFF(Eline *e) {
     e->unk249 = 1;
     return 2;
 }
@@ -200,13 +200,13 @@ s32 opHandler_FOLLOWON(Eline *e) {
 }
 
 /** @brief Set @c field_0x24C (entity "C flag") to 1. */
-s32 func_800B0C48(Eline *e) {
+s32 opHandler_THROUGHON(Eline *e) {
     e->field_0x24C = 1;
     return 2;
 }
 
 /** @brief Clear @c field_0x24C (entity "C flag"). */
-s32 func_800B0C58(Eline *e) {
+s32 opHandler_THROUGHOFF(Eline *e) {
     e->field_0x24C = 0;
     return 2;
 }
@@ -216,7 +216,7 @@ s32 func_800B0C58(Eline *e) {
  *        that entity in @c resultSlots[0] (so a following @c GETN can
  *        retrieve it).
  */
-s32 func_800B0C64(Eline *e) {
+s32 opHandler_ISTOUCH(Eline *e) {
     u8 idx;
     s32 val;
 
@@ -228,7 +228,7 @@ s32 func_800B0C64(Eline *e) {
 }
 
 /** @brief Pop halfword from stack and store to @c field_0x1F8. */
-s32 func_800B0CCC(Eline *e) {
+s32 opHandler_TALKRADIUS(Eline *e) {
     u8 idx = e->stackPtr;
     e->stackPtr = idx - 1;
     e->field_0x1F8 = *(u16 *)&e->stack[(s8)idx];
@@ -236,7 +236,7 @@ s32 func_800B0CCC(Eline *e) {
 }
 
 /** @brief Pop halfword from stack and store to @c radius (collision radius). */
-s32 func_800B0CFC(Eline *e) {
+s32 opHandler_PUSHRADIUS(Eline *e) {
     u8 idx = e->stackPtr;
     e->stackPtr = idx - 1;
     e->radius = *(u16 *)&e->stack[(s8)idx];
@@ -249,7 +249,7 @@ s32 func_800B0CFC(Eline *e) {
  *        opcodes can read them. Position is rounded toward zero by
  *        dividing the fixed-point @c posX/Y/Z by 4096.
  */
-s32 func_800B0D2C(Eline *e) {
+s32 opHandler_GETINFO(Eline *e) {
     e->resultSlots[0] = e->posX / 4096;
     e->resultSlots[1] = e->posY / 4096;
     e->resultSlots[2] = e->posZ / 4096;
@@ -265,7 +265,7 @@ s32 func_800B0D2C(Eline *e) {
  *        zero by dividing the fixed-point @c posX/Y/Z by 4096) and a
  *        few descriptor halfwords into the result-slot register file.
  *
- * Counterpart to @c func_800B0D2C — same store pattern, but the source
+ * Counterpart to @c opHandler_GETINFO — same store pattern, but the source
  * entity is the one indexed by @c g_fieldVars->memberSlot[popped]
  * rather than the current Eline.
  *
@@ -291,7 +291,7 @@ s32 opHandler_PGETINFO(Eline *e) {
 }
 
 /** @brief Pop a character-id and stash @c findCharacterSlot's result in @c resultSlots[0]. */
-s32 func_800B0E68(Eline *e) {
+s32 opHandler_WHOAMI(Eline *e) {
     u8 idx = e->stackPtr;
     e->stackPtr = idx - 1;
     e->resultSlots[0] = findCharacterSlot(e->stack[(s8)idx]);
@@ -371,7 +371,7 @@ s32 opHandler_JUNCTION(Eline *e) {
  *
  * @return 2 (continue processing).
  */
-s32 func_800B1034(Eline *e) {
+s32 opHandler_COPYINFO(Eline *e) {
     u8 idx;
     s32 entityId;
 
@@ -389,7 +389,7 @@ s32 func_800B1034(Eline *e) {
 }
 
 /**
- * @brief Variant of @c func_800B1034 that resolves the source entity
+ * @brief Variant of @c opHandler_COPYINFO that resolves the source entity
  *        through the active-party @c memberSlot[] table — pop a
  *        party-slot id, look up @c g_fieldVars->memberSlot[party] for
  *        the field-entity index, and copy six locator fields
@@ -399,7 +399,7 @@ s32 func_800B1034(Eline *e) {
  *
  * @return 2 (continue processing).
  */
-s32 func_800B10F8(Eline *e) {
+s32 opHandler_PCOPYINFO(Eline *e) {
     FieldVars *seed = g_fieldVars;
     u8 idx;
     s32 popped;
@@ -680,7 +680,7 @@ s32 opHandler_SPUSYNC(Eline *e) {
  * @param a0 Pointer to the script/object structure (unused).
  * @return 2 (continue processing).
  */
-s32 func_800B1730(u8 *a0) {
+s32 opHandler_MOVIECUT(u8 *a0) {
     return 2;
 }
 
@@ -970,7 +970,7 @@ s32 opHandler_DUALMUSIC(Eline *e) {
 }
 
 /** @brief Pop a flag value and feed it to @c sndSetEngineFlag. */
-s32 func_800B1DF4(Eline *e) {
+s32 opHandler_KEYSIGHNCHANGE(Eline *e) {
     u8 idx;
 
     idx = e->stackPtr;
@@ -1010,7 +1010,7 @@ s32 opHandler_MUSICSTATUS(Eline *e) {
  *        the high halfword (@c resultSlots[0]) and zero-extended low
  *        halfword (@c resultSlots[1]).
  */
-s32 func_800B1F04(Eline *e) {
+s32 opHandler_OP16F(Eline *e) {
     s32 result;
     result = func_80012FEC(e);
     e->resultSlots[1] = result;

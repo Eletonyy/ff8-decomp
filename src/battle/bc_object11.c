@@ -154,7 +154,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BD260);
 /**
  * @brief Call func_800BFE1C with the pointer stored in D_800F16A8.
  */
-void func_800BD2AC(void) {
+void opHandler_OP167(void) {
     func_800BFE1C(*(s32 *)D_800F16A8);
 }
 

@@ -6,8 +6,8 @@
 
 extern s32  opHandler_DISABLEANGELO(FieldEntity *entity);
 extern void func_800BD250(s32 dir, s16 *out);
-extern s32  func_800BD2AC(FieldEntity *entity);
-extern s32  func_800BD318(FieldEntity *entity);
+extern s32  opHandler_OP167(FieldEntity *entity);
+extern s32  opHandler_OP168(FieldEntity *entity);
 extern void updateSeedLevel(void);
 extern void func_800BD5E0(void);
 extern void func_800BD64C(void);

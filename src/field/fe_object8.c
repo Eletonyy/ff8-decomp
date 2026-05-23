@@ -603,11 +603,11 @@ s32 opHandler_PDIRA(Eline *eline) {
 /**
  * @brief Helper — pop byte + halfword, queue turn (subtract variant, kind 1).
  *
- * Same shape as @c func_800BA1D0 but with reversed comparison: subtracts
+ * Same shape as @c opHandler_OP16C but with reversed comparison: subtracts
  * @c 0x100 from the heading if @c field_0x1DC is less than @c (s16)raw.
  * Sets @c field_0x244 to @c 1.
  */
-s32 func_800BA120(Eline *eline) {
+s32 opHandler_OP16B(Eline *eline) {
     s32 raw;
     u8 byte1;
 
@@ -640,7 +640,7 @@ s32 func_800BA120(Eline *eline) {
  *
  * Inactive path: return 2 unless @c field_0x244 == 3, otherwise 1.
  */
-s32 func_800BA1D0(Eline *eline) {
+s32 opHandler_OP16C(Eline *eline) {
     s32 raw;
     u8 byte1;
 
@@ -664,9 +664,9 @@ s32 func_800BA1D0(Eline *eline) {
 /**
  * @brief Helper — pop byte + halfword, queue turn (subtract variant, kind 2).
  *
- * Same as @c func_800BA120 but sets @c field_0x244 to @c 2.
+ * Same as @c opHandler_OP16B but sets @c field_0x244 to @c 2.
  */
-s32 func_800BA280(Eline *eline) {
+s32 opHandler_OP16D(Eline *eline) {
     s32 raw;
     u8 byte1;
 
@@ -690,9 +690,9 @@ s32 func_800BA280(Eline *eline) {
 /**
  * @brief Helper — pop byte + halfword, queue turn (add variant, kind 2).
  *
- * Same as @c func_800BA1D0 but sets @c field_0x244 to @c 2.
+ * Same as @c opHandler_OP16C but sets @c field_0x244 to @c 2.
  */
-s32 func_800BA330(Eline *eline) {
+s32 opHandler_OP16E(Eline *eline) {
     s32 raw;
     u8 byte1;
 
@@ -749,7 +749,7 @@ void func_800BA3E0(Eline *eline) {
 /**
  * @brief Op 0x082 handler — pop byte+halfword, queue turn (kind 1, shortest path).
  *
- * Same as @c func_800BA1D0 but delegates the heading-wrap math to
+ * Same as @c opHandler_OP16C but delegates the heading-wrap math to
  * @c func_800BA3E0 (which picks the shortest rotation direction).
  * Sets @c field_0x244 to @c 1.
  */

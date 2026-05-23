@@ -465,7 +465,7 @@ s32 opHandler_SETDRAWPOINT(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B629C(Eline *eline) {
+s32 opHandler_UNKNOWN10(Eline *eline) {
     g_fieldVars->fieldF2 = POP_BYTE(eline);
     g_fieldVars->fieldF2--;
     return 2;
@@ -1713,7 +1713,7 @@ s32 opHandler_PJUMPA(Eline *eline) {
  * @param eline Script context.
  * @return 2 (advance PC).
  */
-s32 func_800B85C8(Eline *eline) {
+s32 opHandler_COUNTERCLOCKWISETURN2(Eline *eline) {
     D_800704A8.unk1AE = *(volatile s32 *)&POP(eline);
     return 2;
 }
@@ -2129,7 +2129,7 @@ s32 opHandler_AXIS(Eline *eline) {
  * @param eline Script context.
  * @return 2 (advance PC).
  */
-s32 func_800B9000(Eline *eline) {
+s32 opHandler_UNKNOWN4(Eline *eline) {
     eline->field_0x240 = POP_BYTE(eline);
     return 2;
 }

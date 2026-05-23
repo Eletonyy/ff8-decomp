@@ -52,7 +52,7 @@ void func_800BD250(s32 dir, s16 *out) {
     }
 }
 
-s32 func_800BD2AC(FieldEntity *entity) {
+s32 opHandler_OP167(FieldEntity *entity) {
     u8 idx = entity->stackIdx;
     s16 buf[4];
     entity->stackIdx = idx - 1;
@@ -62,15 +62,15 @@ s32 func_800BD2AC(FieldEntity *entity) {
 }
 
 /**
- * @brief Variant of @c func_800BD2AC that negates the rect/offset triple.
+ * @brief Variant of @c opHandler_OP167 that negates the rect/offset triple.
  *
- * Same shape as @c func_800BD2AC: pop one stack value, call @c func_800BD250
+ * Same shape as @c opHandler_OP167: pop one stack value, call @c func_800BD250
  * to fill @c buf with a 3-halfword rect from the direction code, then
  * dispatch @c func_800A9434 with cmd @c 0x30 and sub-cmd @c 1. The
  * difference is the three leading halfwords are sign-negated before the
  * dispatch — used when the source direction needs to be inverted.
  */
-s32 func_800BD318(FieldEntity *entity) {
+s32 opHandler_OP168(FieldEntity *entity) {
     Eline *eline = (Eline *)entity;
     u8 idx = entity->stackIdx;
     s16 buf[4];

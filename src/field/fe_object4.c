@@ -936,12 +936,12 @@ s32 opHandler_SETMODEL(Eline *e, s32 a1) {
  * @brief Pop two values: a u8 model id and a character index; store the
  *        model id into @c chars[findCharacterSlot(idx)].alternateModel.
  *
- * Counterpart to @c func_800AF1AC (read-side). Used to set a character's
+ * Counterpart to @c opHandler_GETDRESS (read-side). Used to set a character's
  * SeeD/Galbadia costume model from a script-VM stack pair.
  *
  * @return 2 (VM continue).
  */
-s32 func_800AF120(Eline *e) {
+s32 opHandler_SETDRESS(Eline *e) {
     s32 val = POP(e);
     s32 result = findCharacterSlot(POP(e));
     u8 *base = (u8 *)&g_gameState;
@@ -956,7 +956,7 @@ s32 func_800AF120(Eline *e) {
  * @param a0 Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 func_800AF1AC(Eline *e) {
+s32 opHandler_GETDRESS(Eline *e) {
     /* g_gameState.chars[result].alternateModel — chars[] @ 0x490, stride
      * 152 bytes (sizeof CharacterData), alternateModel @ +0x5B inside
      * each => absolute byte offset 0x4EB for chars[0].  Split base from
@@ -1021,7 +1021,7 @@ s32 opHandler_KEYON(Eline *e) {
 }
 
 /** @brief Pop mask, test against D_800705E8, store boolean at result. Returns 2. */
-s32 func_800AF364(Eline *e) {
+s32 opHandler_KEYSCAN2(Eline *e) {
     if (D_800705E8 & POP(e)) {
         e->resultSlots[0] = 1;
     } else {
@@ -1031,7 +1031,7 @@ s32 func_800AF364(Eline *e) {
 }
 
 /** @brief Pop mask, test against D_800705F0, store boolean at result. Returns 2. */
-s32 func_800AF3B4(Eline *e) {
+s32 opHandler_KEYON2(Eline *e) {
     if (D_800705F0 & POP(e)) {
         e->resultSlots[0] = 1;
     } else {
@@ -1142,7 +1142,7 @@ s32 opHandler_LINEOFF(Eline *e) {
  * @param a0 Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 func_800AF5C4(Eline *e) {
+s32 opHandler_DOORLINEON(Eline *e) {
     e->unk188 = 1;
     return 2;
 }
@@ -1153,7 +1153,7 @@ s32 func_800AF5C4(Eline *e) {
  * @param a0 Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 func_800AF5D4(Eline *e) {
+s32 opHandler_DOORLINEOFF(Eline *e) {
     e->unk188 = 0;
     return 2;
 }
@@ -1299,7 +1299,7 @@ s32 opHandler_UCOFF(void) {
  * @brief Pop a value from the eline stack; set @c D_800704BD to 0 if
  *        nonzero, to 1 if zero. Returns 2 (VM continue).
  */
-s32 func_800AFD20(Eline *e) {
+s32 opHandler_KEY(Eline *e) {
     if (POP(e)) {
         D_800704BD = 0;
     } else {
@@ -1422,7 +1422,7 @@ s32 opHandler_SUBPARTY(Eline *e) {
  *         - second call: `slot = (new_var = call);`
  *         - explicit `noneSlot = 0xFF` variable instead of literal
  */
-s32 func_800B002C(Eline *e) {
+s32 opHandler_CHANGEPARTY(Eline *e) {
     s32 popped1 = POP(e);
     s32 popped2 = POP(e);
     s32 slot;
@@ -1511,7 +1511,7 @@ s32 opHandler_SETPARTY(Eline *e) {
  * @param a0 Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 func_800B0280(Eline *e) {
+s32 opHandler_REFRESHPARTY(Eline *e) {
     func_800381BC(e);
     return 2;
 }
@@ -1633,7 +1633,7 @@ s32 opHandler_SUBMEMBER(Eline *e) {
  *        @c resultSlots[0]; else look up the character and return bit 0
  *        of @c chars[slot].exists (or 0 if no slot).
  */
-s32 func_800B0570(Eline *e) {
+s32 opHandler_ISMEMBER(Eline *e) {
     s32 a1 = POP(e);
     s32 slot;
     if (a1 >= 8) {
@@ -1659,7 +1659,7 @@ s32 func_800B0570(Eline *e) {
  *
  * @return 2 (VM continue).
  */
-s32 func_800B0638(Eline *e, s32 a1) {
+s32 opHandler_SETPARTY2(Eline *e, s32 a1) {
     s32 i, j;
     j = 0;
     for (i = 0; i < 6; i++) {
@@ -1684,7 +1684,7 @@ s32 func_800B0638(Eline *e, s32 a1) {
  *
  * Finishes with @c recalcPartyStats.
  */
-s32 func_800B06D0(Eline *e) {
+s32 opHandler_SWAP(Eline *e) {
     u8 savedBattle[3], savedParty[3];
     s32 i;
     for (i = 0; i < 3; i++) {
@@ -1702,7 +1702,7 @@ s32 func_800B06D0(Eline *e) {
 /**
  * @brief Set stateFlags bit 0x800, then if popped value is nonzero
  *        force fieldF3 to 0xFF; mirror fieldF3 into @c D_80082C10 and
- *        @c D_80077E5F, then tail into @c func_800B0638.
+ *        @c D_80077E5F, then tail into @c opHandler_SETPARTY2.
  *
  * @return 2 (VM continue).
  */
@@ -1713,7 +1713,7 @@ s32 opHandler_LASTIN(Eline *e, s32 a1) {
     }
     D_80082C10 = g_fieldVars->fieldF3;
     D_80077E5F = g_fieldVars->fieldF3;
-    func_800B0638(e, a1);
+    opHandler_SETPARTY2(e, a1);
     return 2;
 }
 

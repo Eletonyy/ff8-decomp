@@ -1842,7 +1842,7 @@ s32 opHandler_ADDMAGIC(Eline *eline) {
  * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B5134(Eline *eline) {
+s32 opHandler_OP16A(Eline *eline) {
     eline->resultSlots[0] = func_800C0410(POP(eline));
     return 2;
 }
