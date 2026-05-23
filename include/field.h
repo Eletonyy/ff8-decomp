@@ -168,10 +168,16 @@ typedef struct {
     /* 0x04 */ u16 field04;
     /* 0x06 */ u16 field06;
     /* 0x08 */ u16 field08;
-    /* 0x0A */ u8 pad0A[0x0A];
+    /* 0x0A */ u16 field0A;
+    /* 0x0C */ u16 position_x;  /**< Snapshot field copied to @c D_800704A8.position_x by @c func_8009AA64. */
+    /* 0x0E */ u16 position_y;  /**< Snapshot field copied to @c D_800704A8.position_y. */
+    /* 0x10 */ u16 rotation;    /**< Snapshot field copied to @c D_800704A8.rotation. */
+    /* 0x12 */ u16 counter;     /**< Snapshot field copied to @c D_800704A8.counter; @c < 72 selects mode 1, else 7. */
     /* 0x14 */ u16 field14;     /**< Set to @c 0xFFFF when the slot is armed. */
     /* 0x16 */ u16 field16;     /**< Slot key / sentinel marker (@c 0x7FFF == free). */
-    /* 0x18 */ u8 pad18[0x08];
+    /* 0x18 */ u8 pad18[0x04];
+    /* 0x1C */ u8 anim_state;   /**< Snapshot field copied to @c D_800704A8.anim_state (low byte). */
+    /* 0x1D */ u8 pad1D[0x03];
 } EventEntry; /* 0x20 = 32 bytes */
 
 /** @brief Container struct at @c D_8005F0F8; first 0x60 bytes are header data, then 16 event entries. */

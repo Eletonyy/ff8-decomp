@@ -224,7 +224,29 @@ void func_8009A8E0(FieldEntityB *e) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A920);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009AA64);
+/**
+ * @brief Restore an event-entry snapshot into the live @c D_800704A8.
+ *
+ * Copies the 5 snapshot fields stored in an @c EventEntry slot back into
+ * the corresponding live fields of @c D_800704A8, and selects the
+ * engine @c mode from the snapshotted @c counter:
+ *   - @c counter < 72 → @c mode = 7 (e.g. resume an in-progress event)
+ *   - otherwise → @c mode = 1 (e.g. start a fresh interaction)
+ *
+ * Used when reactivating a queued event after it was paused or saved.
+ */
+void func_8009AA64(EventEntry *e) {
+    if (e->counter < 72) {
+        D_800704A8.mode = 7;
+    } else {
+        D_800704A8.mode = 1;
+    }
+    D_800704A8.counter = e->counter;
+    D_800704A8.position_x = e->position_x;
+    D_800704A8.position_y = e->position_y;
+    D_800704A8.rotation = e->rotation;
+    D_800704A8.anim_state = e->anim_state;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009AAC8);
 
