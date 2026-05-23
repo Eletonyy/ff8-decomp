@@ -933,7 +933,27 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A455C);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A4758);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A48CC);
+/**
+ * @brief Returns 1 if any of the 8 slot bytes in @c D_8005F168 equals 2.
+ *
+ * Linear scan over @c D_8005F168[0..7] looking for the value @c 2. Sets
+ * a result flag (never early-exits — scans all 8 slots regardless of
+ * when the match is found). Used by @c fe_object7 's @c DRAWPOINT
+ * dispatcher (case 5) as a predicate.
+ *
+ * @c D_8005F168 is a 8-slot table whose entries are written elsewhere
+ * by the field engine; the value @c 2 here is one of those slot states.
+ */
+s32 func_800A48CC(void) {
+    s32 result = 0;
+    s32 i;
+    for (i = 0; i < 8; i++) {
+        if (D_8005F168[i] == 2) {
+            result = 1;
+        }
+    }
+    return result;
+}
 
 /**
  * Linear interpolation: a0 + (a1 - a0) * a3 / a2.

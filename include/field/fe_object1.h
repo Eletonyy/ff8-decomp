@@ -183,7 +183,7 @@ extern int  func_800A42EC();
 extern int  func_800A4500();
 extern int  func_800A455C();
 extern int  func_800A4758();
-extern int  func_800A48CC();
+extern s32  func_800A48CC(void);
 extern int  func_800A4934();
 extern int  func_800A4C14();
 extern int  func_800A5224();
