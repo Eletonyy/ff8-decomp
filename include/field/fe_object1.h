@@ -65,7 +65,7 @@ extern u8   func_800A5CF8(void);
 
 /* INCLUDE_ASM stubs — bodies still in assembly, signatures unknown.
  * Declared K&R-style; refine when these get decomped to C. */
-extern int  func_80098314();
+extern void func_80098314(void);
 extern int  func_800983F0();
 extern int  func_8009895C();
 extern int  func_80099180();

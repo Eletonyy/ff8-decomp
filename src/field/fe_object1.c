@@ -37,8 +37,36 @@ extern s16 D_8005F142;
 extern u8 D_8005F103;
 extern PathEntry D_80070A60[64];
 extern PathEntry D_80070760[64];
+extern DRAWENV D_80067388[2];   /**< Double-buffered draw environments. */
+extern DISPENV D_80067440[2];   /**< Double-buffered display environments. */
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_80098314);
+/**
+ * @brief Initialize the field engine's double-buffered draw/display envs.
+ *
+ * Sets up two 320x224 draw/display environments at VRAM x=0 and x=512
+ * (standard PSX double-buffering), enables dithering, leaves background
+ * clearing off, raises the screen window by 8 pixels, and installs the
+ * first buffer pair as the live one.
+ */
+void func_80098314(void) {
+    SetDefDrawEnv(&D_80067388[0],   0, 0, 320, 224);
+    SetDefDrawEnv(&D_80067388[1], 512, 0, 320, 224);
+    SetDefDispEnv(&D_80067440[0], 512, 0, 320, 224);
+    SetDefDispEnv(&D_80067440[1],   0, 0, 320, 224);
+
+    D_80067388[0].dtd  = 1;
+    D_80067388[1].dtd  = 1;
+    D_80067388[0].isbg = 0;
+    D_80067388[1].isbg = 0;
+
+    D_80067440[0].screen.y = 8;
+    D_80067440[1].screen.y = 8;
+    D_80067440[0].screen.h = 224;
+    D_80067440[1].screen.h = 224;
+
+    PutDispEnv(&D_80067440[0]);
+    PutDrawEnv(&D_80067388[0]);
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800983F0);
 
