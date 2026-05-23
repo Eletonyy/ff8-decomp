@@ -562,13 +562,15 @@ typedef struct {
     /* 0x185 */ u8  pad185[0x0F];
     /* 0x194 */ u8  activeMarker;       /**< Block-active gate; non-zero enables trigger processing. */
     /* 0x195 */ u8  pad195;
-    /* 0x196 */ u8  trigger4;
+    /* 0x196 */ u8  trigger4;       /**< Cleared together with @c unk19D by @c func_8009A8E0. */
     /* 0x197 */ u8  trigger5;
     /* 0x198 */ u8  trigger6;
     /* 0x199 */ u8  trigger7;
     /* 0x19A */ u8  trigger2;
     /* 0x19B */ u8  trigger3;
-    /* 0x19C */ u8  pad19C[0x04];
+    /* 0x19C */ u8  pad19C;
+    /* 0x19D */ u8  unk19D;         /**< Per-entity flag cleared by @c func_8009A8E0 alongside @c trigger4. */
+    /* 0x19E */ u8  pad19E[0x02];
 } FieldEntityB; /* 0x1A0 */
 
 /**

@@ -180,7 +180,31 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A4C0);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A7E8);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A8E0);
+/**
+ * @brief Clear @c trigger4 and @c unk19D across every @c FieldEntityB in the pool.
+ *
+ * Walks the entire @c D_8008538C pool (size @c D_800852F8) and zeros each
+ * entity's @c trigger4 (offset 0x196) and @c unk19D (offset 0x19D). Called
+ * from the @c PCOPYINFO / @c SET script opcodes via @c func_8009A8E0(D_8008538C)
+ * after copying entity state — likely a reset of trigger-edge / pending-flag
+ * bookkeeping so the new state takes effect without leftover triggers.
+ *
+ * The loop is written do-while with a top-of-iter @c i++ so the count check
+ * uses the post-incremented value (@c v1 < count tests "one more iteration
+ * is in range"). The pool count @c D_800852F8 is reloaded each iteration
+ * because gcc can't prove the stores through @p e don't alias it.
+ */
+void func_8009A8E0(FieldEntityB *e) {
+    s32 i = 0;
+    if (D_800852F8 != 0) {
+        do {
+            i++;
+            e->trigger4 = 0;
+            e->unk19D = 0;
+            e++;
+        } while (i < D_800852F8);
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A920);
 
