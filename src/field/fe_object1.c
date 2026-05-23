@@ -611,6 +611,24 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009F990);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009FE18);
 
+/**
+ * @brief Transcode an input list (terminated by sentinel @c 0x7FFF) into
+ *        an output list of 16-byte records.
+ *
+ * Walks the list at @c *D_800D5E90 (input, stride 0x10) and writes one
+ * 16-byte record to @p out per non-sentinel entry, returning the
+ * advanced output pointer. Each output record gets fixed bytes
+ * (@c b3=3, @c b4/b5/b6=0x80, @c b7=0x7C), the input's @c bA/bB at
+ * @c bC/bD, and the input's @c h8 halfword at @c hE. Bit 1 of @c b7
+ * is then cleared (when input @c kind == 4) or set (otherwise).
+ *
+ * Called by @c func_800983F0 as part of the chain that lays out
+ * draw-prim regions back-to-back in one growing buffer.
+ *
+ * @note Decomp at 84.86% match — store ordering within the loop body
+ *       differs (gcc 2.7.2 places the @c sb of @c bD after the 0x80
+ *       trio; target has it before). See @c permuter/func_800A0640/base.c.
+ */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A0640);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A06F0);
