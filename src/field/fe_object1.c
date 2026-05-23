@@ -585,7 +585,32 @@ s32 func_800A0E54(s32 start, s32 end, s32 total, s32 progress) {
     return start;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A0EB8);
+/**
+ * @brief Sine-eased s32 interpolation between two endpoints.
+ *
+ * Computes an eased lerp from @p start to @p end using a sin lookup as
+ * the easing curve. The phase index for the lookup is derived from
+ * @p angle and @p total such that one full sin period spans @p total
+ * steps:
+ *   - @c (angle << 12) / total scales the angle into a fractional
+ *     position of the period.
+ *   - @c / 32 narrows that to the sin table's @c 0x100-entry resolution.
+ *   - @c - 0x80 shifts the phase so the curve crosses zero at the
+ *     midpoint instead of the start.
+ *
+ * The sin sample is returned in @c [-0x1000, 0x1000]; adding @c 0x1000
+ * remaps it to @c [0, 0x2000] and dividing by @c 0x2000 gives a
+ * fraction of @c (end - start) to add to @p start.
+ *
+ * @return Eased value between @p start and @p end at phase
+ *         @c angle / total.
+ */
+s32 func_800A0EB8(s32 start, s32 end, s32 total, s32 angle) {
+    s32 idx = ((angle << 12) / total) / 32 - 0x80;
+    s32 diff = end - start;
+    s16 sin_val = func_8009D254(idx & 0xFF);
+    return start + ((sin_val + 0x1000) * diff) / 0x2000;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A0F34);
 
