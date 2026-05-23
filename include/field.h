@@ -853,6 +853,13 @@ extern u8 D_8005630C[];
 /** @brief Sound-init parameter passed to @c func_80037FB0. */
 extern s32 D_8005F13C;
 
+/** @brief Misc sound state halfword used by @c func_800BF718; low byte stashed
+ *         into @c FieldVars.field57 on full field reset. */
+extern u16 D_8005F14C;
+
+/** @brief Misc field byte; copied into @c FieldVars.field56 on full reset. */
+extern u8  D_80082C8D;
+
 /** @brief Field-side rotation/orientation halfword consumed by encounter setup. */
 extern s16 D_800704B2;
 
@@ -941,9 +948,6 @@ extern u8 *func_8003974C(u8 *base, s32 idx);
 
 /** @brief Measure a text string, returning width|height packed as one s32. */
 extern s32 func_8002E680(u8 *text);
-
-/** @brief Bind an on-screen rectangle to an SFX slot. */
-extern void func_8002E064(s32 idx, s16 *rect);
 
 /** @brief Stash an SFX-slot scalar (paramY/Z/W/V signature). */
 extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);

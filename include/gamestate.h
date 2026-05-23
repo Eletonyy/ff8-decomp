@@ -361,6 +361,17 @@ extern u32  isMcBusy(void);
 
 extern u8 D_80085388;                  /**< @c Eline entity count at @c D_80085224. */
 
+/** @brief Halfword lookup table indexed by @c GameConfig.fieldMsgSpeed
+ *         (a.k.a. @c D_80077E5A). Used as the per-entity SFX pitch in
+ *         @c func_800BF718's common tail. */
+extern u16 D_800562C8[];
+
+/** @brief Bit @c 0x10 mirrors into @c FieldVars.field58 on full field reset. */
+extern u8  D_80078DF8;
+
+/** @brief Per-area sub-table pointer (snapshot of @c D_800DE4E4); written by @c func_800BFBBC. */
+extern u16 *D_800852F0;
+
 /* --- Save / GF / chocobo-world state setters --- */
 extern void setGfExists(s32 gfId);
 extern void enableChocoboWorld(void);

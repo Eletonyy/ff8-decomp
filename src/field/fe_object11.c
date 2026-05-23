@@ -5,17 +5,13 @@
 #include "sound.h"
 #include "btl_color.h"
 #include "btl_entity.h"
+#include "btl_sfx.h"
+#include "cd.h"
 #include "field/fe_object1.h"
+#include "field/fe_object3.h"
 #include "field/fe_object5.h"
 #include "field/fe_object10.h"
 #include "field/fe_object11.h"
-
-extern FieldVars     *g_fieldVars;
-extern u8             D_80078DF8;
-extern u16            D_800562C8[];
-extern VoicePoolEntry D_80074F20[12];
-extern s32            func_800393C8(void);
-extern void           setSfxPitch(s32 idx, s32 val);
 
 /**
  * @brief Initialise / reset the field-engine sound and slot state.
@@ -164,11 +160,6 @@ void func_800BF718(s32 mode) {
 }
 
 
-extern u16 D_8005F14C;
-extern u8  D_80082C8D;
-extern s32 D_800DE7B0;
-extern s32 D_800852F0;
-extern void resetAllSfx(void);
 
 /**
  * @brief Field-engine area-load / scene-reset.
@@ -240,7 +231,7 @@ s32 *func_800BFBBC(u8 *entity, FieldEntityB *a1, u16 *a2, s32 mode) {
     resetAllSfx();
     setCameraVibrateIntensity(0x1000);
     D_800DE4FD[0] = 0;
-    D_800DE7B0 = 0;
+    D_800DE7B0.count = 0;
     func_800BE30C(entity);
 
     if (mode == 1 || mode == 3) {
@@ -267,7 +258,7 @@ s32 *func_800BFBBC(u8 *entity, FieldEntityB *a1, u16 *a2, s32 mode) {
         D_80085228 = D_800DE8D9;
         D_800852F8 = D_800DE8DA;
         D_80085391 = D_800DE8D8;
-        D_800852F0 = (s32)D_800DE4E4;
+        D_800852F0 = (u16 *)D_800DE4E4;
         D_80085380 = (s32 *)D_800DE4E8;
         D_80082C0A = g_fieldVars->fieldB6;
         D_80085384 = (FieldEntityC *)func_800BE7F4((Eline *)a1);

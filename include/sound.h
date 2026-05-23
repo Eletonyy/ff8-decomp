@@ -134,6 +134,9 @@ typedef struct {
     /* 0x0C */ s32 fieldC;        /**< Passed as the 3rd arg to @c sndPlay*. */
 } VoicePoolEntry; /* 16 bytes */
 
+/** @brief 12-entry SFX play queue, replayed by @c func_800BF718 after a sound reset. */
+extern VoicePoolEntry D_80074F20[12];
+
 /**
  * @brief SPU voice parameter block passed to func_800150A8.
  *
