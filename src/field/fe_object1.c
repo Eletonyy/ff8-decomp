@@ -1331,12 +1331,14 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A6A80);
  * @c bgez loops — gcc strength-reduces the index since each iteration
  * is independent.
  *
- * @note Decomp at 95.56% match — remaining diff is a single epilogue
- *       scheduling slot: target fills the @c jr @c ra delay slot with
- *       @c addiu @c sp; ours emits @c addiu @c sp first then a nop in
- *       the delay slot. This is a maspsx scheduling artifact for
- *       PsyQ 4.1 builds. See @c permuter/func_800A7194/base.c for the
- *       current C.
+ * @note Function compiled with PsyQ 4.3 (gcc 2.8.0) in the original
+ *       binary — the @c jr-@c ra/@c addiu-@c sp FILLED epilogue is the
+ *       4.3 signature. fe_object1.c as a whole is PsyQ 4.1, so this
+ *       function and 12 others (0x800A63AC+ scattered to end of file)
+ *       stay as INCLUDE_ASM until we either split the file or accept
+ *       a per-function toolchain override. The current PsyQ 4.1
+ *       compile sits at 95.56%, off by one epilogue word.
+ *       See @c permuter/func_800A7194/base.c for the C body.
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A7194);
 
