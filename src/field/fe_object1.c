@@ -1051,7 +1051,40 @@ void func_800A303C(s16 emIdx, ParticleSystem *sys, s16 *pos, s16 count) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A327C);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3488);
+/**
+ * @brief View of the Eline stack region used by @c func_800A3488 — two
+ * @c s16 endpoints (@c a, @c b) and a @c num/denom progress ratio.
+ *
+ * @note Named after the function/arg. The same memory is normally the
+ *       Eline bytecode @c stack[]; @c func_800A3488 's caller has
+ *       already stashed animation state into specific stack slots
+ *       before invoking the interpolation.
+ */
+typedef struct {
+    /* 0x00 */ s16 ax, ay, az;          /**< Endpoint A (at progress @c 0). */
+    /* 0x06 */ u8  pad06[0x02];
+    /* 0x08 */ s16 bx, by, bz;          /**< Endpoint B (at progress @c denom). */
+    /* 0x0E */ u8  pad0E[0xD2];
+    /* 0xE0 */ u8  denom;               /**< Step count denominator. */
+    /* 0xE1 */ u8  padE1[0x0F];
+    /* 0xF0 */ s16 num;                 /**< Current step. */
+} func_800A3488_arg0;
+
+/**
+ * @brief Linearly interpolate a 3D position between two @c s16 endpoints.
+ *
+ * Writes @c out->vx/vy/vz with @c a + ((b - a) * num) / denom for each
+ * axis, where @c a, @c b, @c num, and @c denom come from specific slots
+ * of the actor's bytecode stack region.
+ *
+ * Used by @c func_800A355C dispatch (mode 2) to compute the per-step
+ * spawn position for particle bursts.
+ */
+void func_800A3488(func_800A3488_arg0 *a, SVECTOR *out) {
+    out->vx = a->ax + ((a->bx - a->ax) * a->num) / a->denom;
+    out->vy = a->ay + ((a->by - a->ay) * a->num) / a->denom;
+    out->vz = a->az + ((a->bz - a->az) * a->num) / a->denom;
+}
 
 /**
  * @brief Shape of the buffer @c func_800A3534 sees: an array of 16
