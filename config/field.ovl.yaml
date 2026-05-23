@@ -68,7 +68,7 @@ segments:
       - [0x232A4, c, fe_object9]
       - [0x251F4, c, fe_object10]
       - [0x27718, c, fe_object11]
-      - [0x28098, c, fe_object12]
+      - [0x280C8, c, fe_object12]
       - [0x286A0, data, fe_object12_data]
       - [0x2B898, bin]
       - [0x2E760, c, opcodes]

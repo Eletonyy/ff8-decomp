@@ -44,7 +44,7 @@ s32 opHandler_RFACEDIRA(Eline *eline) {
  *        SeeD party-member slot table.
  *
  * Same body as @c opHandler_RFACEDIRA but the popped index is treated as a
- * SeeD party slot — look up @c g_seedState->memberSlot[slot] to get
+ * SeeD party slot — look up @c g_fieldVars->memberSlot[slot] to get
  * the entity index into @c D_80085224, and pass that same byte as the
  * spatial argument to @c func_800A8DAC.
  */
@@ -54,7 +54,7 @@ s32 opHandler_RFACEDIRP(Eline *eline) {
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->field_0x234 = POP(eline);
-        slot = g_seedState->memberSlot[POP(eline)];
+        slot = g_fieldVars->memberSlot[POP(eline)];
         func_800A8DAC(slot, 0x1E, D_800C71F8, buf);
         eline->field_0x222 = D_80085224[slot].posX / 4096;
         eline->field_0x224 = D_80085224[slot].posY / 4096;
@@ -120,15 +120,15 @@ s32 opHandler_FACEDIRINIT(Eline *eline) {
 
 /**
  * @brief Snapshot the 12-halfword dialog-state block from @c D_800704A8
- *        into @c g_seedState.
+ *        into @c g_fieldVars.
  *
  * Copies @c D_800704A8.dialogState..field_0x11E (12 halfwords) into
- * @c g_seedState->dialogStateMirror..fieldEE. The first four writes
+ * @c g_fieldVars->dialogStateMirror..fieldEE. The first four writes
  * are emitted out of source order (dst@D8, DC, DA, DE) for codegen
  * matching; the remaining eight are sequential.
  */
 void func_800BB6C8(void) {
-    SeedState   *dst = g_seedState;
+    FieldVars   *dst = g_fieldVars;
     SystemState *src = &D_800704A8;
 
     dst->dialogStateMirror = src->dialogState;
@@ -146,13 +146,13 @@ void func_800BB6C8(void) {
 }
 
 /**
- * @brief Initialise the dialog-state block and mirror it to @c g_seedState.
+ * @brief Initialise the dialog-state block and mirror it to @c g_fieldVars.
  *
  * Sets the global mode marker @c D_800DE8D2 to @c 2 and seeds the
  * 6-halfword dialog state at @c D_800704A8.dialogState..field_0x112
  * with the boot values (state=2, timer=0xFF, count=0x10, then 0xFF
  * sentinels). @c func_800BB6C8 copies the whole 12-halfword block
- * into @c g_seedState->dialogStateMirror..fieldEE.
+ * into @c g_fieldVars->dialogStateMirror..fieldEE.
  */
 s32 opHandler_FADEIN(void) {
     D_800DE8D2 = 2;
@@ -195,7 +195,7 @@ s32 opHandler_FADEOUT(void) {
  * Sets @c dialogState=7 / @c dialogTimer=0, then pops three halfwords
  * top-down into @c field_0x112 / @c field_0x110 / @c field_0x10E
  * (so the first push lands in @c field_0x10E). Then dispatches
- * @c func_800BB6C8 to mirror the block into @c g_seedState.
+ * @c func_800BB6C8 to mirror the block into @c g_fieldVars.
  *
  * @note Originally split by splat at @c func_800BB888 (the tail of
  * this function) — the symbol was removed from @c symbol_addrs.field
@@ -325,13 +325,13 @@ s32 opHandler_FCOLSUB(Eline *eline) {
  *
  * Returns @c 1 while @c D_800704A8+0x10C (countdown) and @c +0x10A
  * (target/timer) differ. Once they match, copy the current dialog
- * state word at @c +0x108 into @c g_seedState->dialogStateMirror and return @c 2.
+ * state word at @c +0x108 into @c g_fieldVars->dialogStateMirror and return @c 2.
  */
 s32 opHandler_COLSYNC(void) {
     if (D_800704A8.dialogCount != D_800704A8.dialogTimer) {
         return 1;
     }
-    g_seedState->dialogStateMirror = D_800704A8.dialogState;
+    g_fieldVars->dialogStateMirror = D_800704A8.dialogState;
     return 2;
 }
 
@@ -371,10 +371,10 @@ s32 opHandler_FADESYNC(void) {
 }
 
 /**
- * @brief Clear the dialog state and mirror it into @c g_seedState.
+ * @brief Clear the dialog state and mirror it into @c g_fieldVars.
  *
  * Writes 0 into @c D_800704A8.dialogState, then copies the freshly
- * cleared value into @c g_seedState->dialogStateMirror. The @c volatile
+ * cleared value into @c g_fieldVars->dialogStateMirror. The @c volatile
  * pointer is required to force a real load-after-store rather than
  * letting gcc fold the mirror to a constant 0.
  *
@@ -382,14 +382,14 @@ s32 opHandler_FADESYNC(void) {
  */
 s32 opHandler_FADENONE(void) {
     volatile SystemState *src = &D_800704A8;
-    SeedState *dst = g_seedState;
+    FieldVars *dst = g_fieldVars;
     src->dialogState = 0;
     dst->dialogStateMirror = src->dialogState;
     return 2;
 }
 
 /**
- * @brief Force the dialog state to @c 4 and mirror it into @c g_seedState->dialogStateMirror.
+ * @brief Force the dialog state to @c 4 and mirror it into @c g_fieldVars->dialogStateMirror.
  *
  * The @c volatile cast is required for matching codegen: the asm reads
  * the just-written value back through memory rather than reusing the
@@ -398,7 +398,7 @@ s32 opHandler_FADENONE(void) {
 s32 opHandler_FADEBLACK(void) {
     SystemState *src = &D_800704A8;
     *(volatile u16 *)&src->dialogState = 4;
-    g_seedState->dialogStateMirror = *(volatile u16 *)&src->dialogState;
+    g_fieldVars->dialogStateMirror = *(volatile u16 *)&src->dialogState;
     return 2;
 }
 
@@ -476,7 +476,7 @@ s32 opHandler_SETMESSPEED(Eline *eline) {
  *
  * The @c do { } while (0) wrapper around the mask read-modify-write is
  * a scheduling barrier — it keeps gcc from interleaving the
- * @c (1 << sfxIdx) constant load with the @c lw of @c g_seedState,
+ * @c (1 << sfxIdx) constant load with the @c lw of @c g_fieldVars,
  * matching the target's register allocation.
  */
 s32 opHandler_MESW(Eline *eline) {
@@ -485,19 +485,19 @@ s32 opHandler_MESW(Eline *eline) {
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         u8 mask;
-        if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+        if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
             return 5;
         }
         initSfxPlayback(sfxIdx, func_8003974C(D_800704C0, val1));
         startSfxSlow(sfxIdx);
         setSfxGlobalFlag(sfxIdx);
         do {
-            mask = g_seedState->sfxStartMask;
-            g_seedState->sfxStartMask = mask | (1 << sfxIdx);
+            mask = g_fieldVars->sfxStartMask;
+            g_fieldVars->sfxStartMask = mask | (1 << sfxIdx);
         } while (0);
         return 1;
     }
-    if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+    if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 1;
     }
     eline->stackPtr -= 2;
@@ -546,7 +546,7 @@ s32 opHandler_MES(Eline *eline) {
     s32 sfxIdx = eline->stack[(s8)eline->stackPtr - 1];
     u8 *data;
 
-    if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+    if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 5;
     }
 
@@ -555,8 +555,8 @@ s32 opHandler_MES(Eline *eline) {
     startSfxSlow(sfxIdx);
     setSfxGlobalFlag(sfxIdx);
 
-    g_seedState->sfxStartMask  |= (1 << sfxIdx);
-    g_seedState->sfxEntryMask  |= (1 << sfxIdx);
+    g_fieldVars->sfxStartMask  |= (1 << sfxIdx);
+    g_fieldVars->sfxEntryMask  |= (1 << sfxIdx);
 
     eline->stackPtr -= 2;
     func_800BC12C(sfxIdx, (s32)data, (u16 *)buf);
@@ -611,7 +611,7 @@ s32 opHandler_AMESW(Eline *eline) {
     buf.y   = (u16)eline->stack[(s8)eline->stackPtr];
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
-        if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+        if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
             return 5;
         }
         data = func_8003974C(D_800704C0, textIdx);
@@ -623,11 +623,11 @@ s32 opHandler_AMESW(Eline *eline) {
         func_8002E064(sfxIdx, (s16 *)&buf);
         startSfxSlow(sfxIdx);
         setSfxGlobalFlag(sfxIdx);
-        g_seedState->sfxStartMask |= (1 << sfxIdx);
+        g_fieldVars->sfxStartMask |= (1 << sfxIdx);
         func_800BC12C(sfxIdx, (s32)data, (u16 *)&buf);
         return 1;
     }
-    if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+    if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 1;
     }
     eline->stackPtr -= 4;
@@ -655,7 +655,7 @@ s32 opHandler_AMES(Eline *eline) {
     buf.x   = (u16)eline->stack[(s8)eline->stackPtr - 1];
     buf.y   = (u16)eline->stack[(s8)eline->stackPtr];
 
-    if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+    if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 5;
     }
 
@@ -669,8 +669,8 @@ s32 opHandler_AMES(Eline *eline) {
     startSfxSlow(sfxIdx);
     setSfxGlobalFlag(sfxIdx);
 
-    g_seedState->sfxStartMask |= (1 << sfxIdx);
-    g_seedState->sfxEntryMask |= (1 << sfxIdx);
+    g_fieldVars->sfxStartMask |= (1 << sfxIdx);
+    g_fieldVars->sfxEntryMask |= (1 << sfxIdx);
 
     eline->stackPtr -= 4;
     func_800BC12C(sfxIdx, (s32)data, (u16 *)&buf);
@@ -698,7 +698,7 @@ s32 opHandler_RAMESW(Eline *eline) {
     textIdx = POP(eline);
     sfxIdx  = POP(eline);
 
-    if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+    if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 5;
     }
 
@@ -712,7 +712,7 @@ s32 opHandler_RAMESW(Eline *eline) {
     startSfxSlow(sfxIdx);
     setSfxGlobalFlag(sfxIdx);
 
-    g_seedState->sfxStartMask |= (1 << sfxIdx);
+    g_fieldVars->sfxStartMask |= (1 << sfxIdx);
     func_800BC12C(sfxIdx, (s32)data, (u16 *)&buf);
     return 2;
 }
@@ -752,7 +752,7 @@ s32 opHandler_ASK(Eline *e) {
     sfxIdx  = e->stack[(s8)e->stackPtr - 5];
 
     if ((e->activeMask >> e->scriptGroup) & 1) {
-        if ((g_seedState->sfxActiveMask >> sfxIdx) & 1) {
+        if ((g_fieldVars->sfxActiveMask >> sfxIdx) & 1) {
             return 5;
         }
         D_800DE4D8 = getSfxGlobalFlag();
@@ -760,8 +760,8 @@ s32 opHandler_ASK(Eline *e) {
         func_8002D784(sfxIdx, data, paramY, paramZ, paramW, paramV);
         startSfxSlow(sfxIdx);
         e->field_0x204 = 0;
-        g_seedState->sfxStartMask  |= (1 << sfxIdx);
-        g_seedState->sfxActiveMask |= (1 << sfxIdx);
+        g_fieldVars->sfxStartMask  |= (1 << sfxIdx);
+        g_fieldVars->sfxActiveMask |= (1 << sfxIdx);
     } else {
         state = e->field_0x204;
         switch (state) {
@@ -776,7 +776,7 @@ s32 opHandler_ASK(Eline *e) {
             break;
         case 1:
             if (getSfxField1C(sfxIdx) == 0) {
-                g_seedState->sfxActiveMask &= ~(state << sfxIdx);
+                g_fieldVars->sfxActiveMask &= ~(state << sfxIdx);
                 e->stackPtr -= 6;
                 setSfxGlobalFlag(D_800DE4D8);
                 return 3;
@@ -833,7 +833,7 @@ s32 opHandler_AASK(Eline *e) {
     sfxIdx  = e->stack[e->stackPtr - 7];
 
     if ((e->activeMask >> e->scriptGroup) & 1) {
-        if ((g_seedState->sfxActiveMask >> sfxIdx) & 1) {
+        if ((g_fieldVars->sfxActiveMask >> sfxIdx) & 1) {
             return 5;
         }
         D_800DE4DC = getSfxGlobalFlag();
@@ -846,8 +846,8 @@ s32 opHandler_AASK(Eline *e) {
         func_8002D784(sfxIdx, text, paramY, paramZ, paramW, paramV);
         startSfxSlow(sfxIdx);
         e->field_0x204 = 0;
-        g_seedState->sfxStartMask |= (1 << sfxIdx);
-        g_seedState->sfxActiveMask |= (1 << sfxIdx);
+        g_fieldVars->sfxStartMask |= (1 << sfxIdx);
+        g_fieldVars->sfxActiveMask |= (1 << sfxIdx);
     } else {
         state = e->field_0x204;
         switch (state) {
@@ -862,7 +862,7 @@ s32 opHandler_AASK(Eline *e) {
             break;
         case 1:
             if (getSfxField1C(sfxIdx) == 0) {
-                g_seedState->sfxActiveMask &= ~(state << sfxIdx);
+                g_fieldVars->sfxActiveMask &= ~(state << sfxIdx);
                 e->stackPtr -= 8;
                 setSfxGlobalFlag(D_800DE4DC);
                 return 3;
@@ -896,12 +896,12 @@ s32 opHandler_AASK(Eline *e) {
 s32 opHandler_MESSYNC(Eline *e) {
     s32 sfxIdx = e->stack[(s8)e->stackPtr];
 
-    if ((g_seedState->sfxEntryMask >> sfxIdx) & 1) {
-        if (!((g_seedState->sfxStartMask >> sfxIdx) & 1)) {
+    if ((g_fieldVars->sfxEntryMask >> sfxIdx) & 1) {
+        if (!((g_fieldVars->sfxStartMask >> sfxIdx) & 1)) {
             return 1;
         }
         if ((D_80070600 & 0xC0) && getSfxField28(sfxIdx)
-            && !((g_seedState->sfxActiveMask >> sfxIdx) & 1)) {
+            && !((g_fieldVars->sfxActiveMask >> sfxIdx) & 1)) {
             fadeOutSfxSlow(sfxIdx);
         }
         if (getSfxField1C(sfxIdx)) {
@@ -910,12 +910,12 @@ s32 opHandler_MESSYNC(Eline *e) {
         if (!getSfxField28(sfxIdx)) {
             return 1;
         }
-        g_seedState->sfxStartMask &= ~(1 << sfxIdx);
-        g_seedState->sfxEntryMask &= ~(1 << sfxIdx);
+        g_fieldVars->sfxStartMask &= ~(1 << sfxIdx);
+        g_fieldVars->sfxEntryMask &= ~(1 << sfxIdx);
         e->stackPtr -= 1;
         return 2;
     }
-    if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+    if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 1;
     }
     e->stackPtr -= 1;
@@ -942,7 +942,7 @@ s32 opHandler_WINSIZE(Eline *e) {
     Rect buf;
     s32 sfxIdx = e->stack[(s8)e->stackPtr - 4];
 
-    if ((g_seedState->sfxStartMask >> sfxIdx) & 1) {
+    if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 5;
     }
 
@@ -970,8 +970,8 @@ s32 opHandler_WINCLOSE(Eline *e) {
     s32 sfxIdx = e->stack[(s8)e->stackPtr];
 
     if (!getSfxField1C(sfxIdx)) {
-        g_seedState->sfxStartMask &= ~(1 << sfxIdx);
-        g_seedState->sfxEntryMask &= ~(1 << sfxIdx);
+        g_fieldVars->sfxStartMask &= ~(1 << sfxIdx);
+        g_fieldVars->sfxEntryMask &= ~(1 << sfxIdx);
         e->stackPtr -= 1;
         return 2;
     }

@@ -48,7 +48,7 @@ s32 opHandler_CARDGAME(Eline *eline) {
         eline->resultSlots[1] = 0;
 
         if (result >= 5) {
-            if (!(g_seedState->stateFlags & 0x10)) {
+            if (!(g_fieldVars->stateFlags & 0x10)) {
                 initBattleTransition();
             }
 
@@ -65,18 +65,18 @@ s32 opHandler_CARDGAME(Eline *eline) {
 
             setCameraVibrateState(0);
 
-            if (g_seedState->soundHandle0 == SND_HANDLE_NONE) {
+            if (g_fieldVars->soundHandle0 == SND_HANDLE_NONE) {
                 sndCmd11(0);
             }
 
             sndCmd40();
             func_80037FB0(0, 0x46, D_8005F13C);
 
-            while (g_seedState->soundLoadComplete == 0) {
+            while (g_fieldVars->soundLoadComplete == 0) {
                 func_800393C8();
             }
 
-            D_80082C11 = g_seedState->soundBankSelector;
+            D_80082C11 = g_fieldVars->soundBankSelector;
             D_8005F11C = sndCmd10(toggleSoundBank());
             sndCmdC0(0, 0x7F);
             sndStopPlayback();
@@ -213,8 +213,8 @@ u8 *func_800B57E8(s32 maxCount, s32 abilityId) {
 s32 func_800B5990(void) {
     s32 i;
 
-    if (g_seedState->stateFlags & 0x800) {
-        D_80082C10 = g_seedState->fieldF3;
+    if (g_fieldVars->stateFlags & 0x800) {
+        D_80082C10 = g_fieldVars->fieldF3;
     } else {
         D_80082C10 = 0;
     }
@@ -258,7 +258,7 @@ s32 opHandler_DRAWPOINT(Eline *eline) {
 
     switch (eline->field_0x204) {
     case 0:
-        g_seedState->fieldF2 = fieldIdx;
+        g_fieldVars->fieldF2 = fieldIdx;
         setSfxEntryVolume(6, 0x1000);
         setSfxEntityType(6, 6);
 
@@ -284,7 +284,7 @@ s32 opHandler_DRAWPOINT(Eline *eline) {
         func_8002E064(6, rect);
         startSfxSlow(6);
         setSfxGlobalFlag(6);
-        g_seedState->sfxStartMask |= 0x40;
+        g_fieldVars->sfxStartMask |= 0x40;
 
         if (tableResult & 0x80) {
             D_800DE4D0 = 0x14;
@@ -302,7 +302,7 @@ s32 opHandler_DRAWPOINT(Eline *eline) {
         break;
 
     case 1:
-        if (g_seedState->sfxStartMask & 0x40) {
+        if (g_fieldVars->sfxStartMask & 0x40) {
             return 1;
         }
 
@@ -340,8 +340,8 @@ s32 opHandler_DRAWPOINT(Eline *eline) {
         func_8002D784(6, text, 1, D_800DE4D4 + 1, 2, 1);
         startSfxSlow(6);
         setSfxGlobalFlag(6);
-        g_seedState->sfxStartMask |= 0x40;
-        g_seedState->sfxActiveMask |= 0x40;
+        g_fieldVars->sfxStartMask |= 0x40;
+        g_fieldVars->sfxActiveMask |= 0x40;
         eline->field_0x204++;
         break;
 
@@ -352,7 +352,7 @@ s32 opHandler_DRAWPOINT(Eline *eline) {
             return 1;
         }
         fadeOutSfxSlow(6);
-        g_seedState->sfxActiveMask &= ~0x40;
+        g_fieldVars->sfxActiveMask &= ~0x40;
 
         if ((s8)D_800DE4D2 == 0) {
             eline->resultSlots[0] = 0;
@@ -371,7 +371,7 @@ s32 opHandler_DRAWPOINT(Eline *eline) {
         }
 
         if (g_battleChars.chars[D_800DE4D3].fieldStatusByte & 2) {
-            func_800A455C(g_seedState->memberSlot[D_800DE4D2]);
+            func_800A455C(g_fieldVars->memberSlot[D_800DE4D2]);
             sndPlaySfx(0x43, 0, 0x80, 0x7F);
             eline->field_0x204++;
             break;
@@ -419,12 +419,12 @@ s32 opHandler_DRAWPOINT(Eline *eline) {
         func_8002E064(6, rect);
         startSfxSlow(6);
         setSfxGlobalFlag(6);
-        g_seedState->sfxStartMask |= 0x40;
+        g_fieldVars->sfxStartMask |= 0x40;
         eline->field_0x204++;
         break;
 
     case 7:
-        if (g_seedState->sfxStartMask & 0x40) {
+        if (g_fieldVars->sfxStartMask & 0x40) {
             return 1;
         }
 
@@ -452,10 +452,10 @@ s32 opHandler_DRAWPOINT(Eline *eline) {
  * @return 2 (continue processing).
  */
 s32 opHandler_SETDRAWPOINT(Eline *eline) {
-    g_seedState->fieldF0 = 1;
-    g_seedState->fieldF1 = POP_BYTE(eline);
+    g_fieldVars->fieldF0 = 1;
+    g_fieldVars->fieldF1 = POP_BYTE(eline);
     func_800A4500(eline->posX, eline->posY, eline->posZ);
-    func_800A4550(g_seedState->fieldF1 | g_seedState->field58);
+    func_800A4550(g_fieldVars->fieldF1 | g_fieldVars->field58);
     return 2;
 }
 
@@ -465,9 +465,9 @@ s32 opHandler_SETDRAWPOINT(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B629C(Eline *eline) {
-    g_seedState->fieldF2 = POP_BYTE(eline);
-    g_seedState->fieldF2--;
+s32 opHandler_UNKNOWN10(Eline *eline) {
+    g_fieldVars->fieldF2 = POP_BYTE(eline);
+    g_fieldVars->fieldF2--;
     return 2;
 }
 
@@ -565,7 +565,7 @@ s32 opHandler_SETPLACE(Eline *eline) {
  * @return 2 (continue processing).
  */
 s32 opHandler_BATTLEMODE(Eline *eline) {
-    D_80082C0A = g_seedState->fieldB6 = POP(eline);
+    D_80082C0A = g_fieldVars->fieldB6 = POP(eline);
     do {} while (0);
     return 2;
 }
@@ -603,9 +603,9 @@ s32 opHandler_BATTLERESULT(Eline *eline) {
  */
 s32 opHandler_BATTLEON(void) {
     if (D_800DE8D0) {
-        g_seedState->stateFlags |= 0x400;
+        g_fieldVars->stateFlags |= 0x400;
     } else {
-        g_seedState->fieldCF = 0;
+        g_fieldVars->fieldCF = 0;
     }
     return 2;
 }
@@ -616,7 +616,7 @@ s32 opHandler_BATTLEON(void) {
  * @return 2 (continue processing).
  */
 s32 opHandler_BATTLEOFF(void) {
-    SeedState *ctx = g_seedState;
+    FieldVars *ctx = g_fieldVars;
 
     ctx->fieldCF = 1;
     ctx->stateFlags &= ~0x400;
@@ -651,9 +651,9 @@ s32 opHandler_ENDING(Eline *eline) {
  * @return 2 (continue processing).
  */
 s32 opHandler_DISC(Eline *eline) {
-    g_seedState->expectedDiscId = POP_BYTE(eline);
-    D_800773C0 = g_seedState->expectedDiscId - 1;
-    setDiscNumber(g_seedState->expectedDiscId);
+    g_fieldVars->expectedDiscId = POP_BYTE(eline);
+    D_800773C0 = g_fieldVars->expectedDiscId - 1;
+    setDiscNumber(g_fieldVars->expectedDiscId);
     return 2;
 }
 
@@ -878,7 +878,7 @@ s32 opHandler_MOVEA(Eline *eline) {
  * @brief Show a message tracking a party member entity's position.
  *
  * Like opHandler_MOVEA but looks up the entity index through
- * g_seedState->memberSlot[] first, then reads position from
+ * g_fieldVars->memberSlot[] first, then reads position from
  * D_80085224[idx]. Updates message coordinates each frame.
  *
  * @param eline Pointer to the event line (script context).
@@ -901,7 +901,7 @@ s32 opHandler_PMOVEA(Eline *eline) {
         return 2;
     }
 
-    idx = g_seedState->memberSlot[PEEK(eline)];
+    idx = g_fieldVars->memberSlot[PEEK(eline)];
     eline->msgTextPtr = D_80085224[idx].posX;
     eline->msgPosX = D_80085224[idx].posY;
     eline->msgPosY = D_80085224[idx].posZ;
@@ -1006,7 +1006,7 @@ s32 opHandler_FMOVEA(Eline *eline) {
  * @brief Party-member position-tracking message variant (clears field_0x1DA).
  *
  * Like opHandler_PMOVEA but clears field_0x1DA instead of calling func_800B6738.
- * Looks up a party slot through g_seedState->memberSlot[], then updates the
+ * Looks up a party slot through g_fieldVars->memberSlot[], then updates the
  * message coordinates from D_80085224[idx]'s position each frame.
  *
  * @param eline Pointer to the event line (script context).
@@ -1029,7 +1029,7 @@ s32 opHandler_FMOVEP(Eline *eline) {
         return 2;
     }
 
-    idx = g_seedState->memberSlot[PEEK(eline)];
+    idx = g_fieldVars->memberSlot[PEEK(eline)];
     eline->msgTextPtr = D_80085224[idx].posX;
     eline->msgPosX = D_80085224[idx].posY;
     eline->msgPosY = D_80085224[idx].posZ;
@@ -1094,7 +1094,7 @@ s32 opHandler_RMOVEA(Eline *eline) {
  * @brief Pending message variant with party-member position tracking.
  *
  * Sets the pending-message flag, pops a window ID, looks up a party slot
- * through g_seedState->memberSlot[POP], then reads initial coordinates from
+ * through g_fieldVars->memberSlot[POP], then reads initial coordinates from
  * D_80085224[idx]'s position. Returns 3 for deferred completion.
  *
  * @param eline Pointer to the event line (script context).
@@ -1110,7 +1110,7 @@ s32 opHandler_RPMOVEA(Eline *eline) {
     eline->savedChannel = eline->msgChannel;
     func_800B6738(eline);
 
-    idx = g_seedState->memberSlot[POP(eline)];
+    idx = g_fieldVars->memberSlot[POP(eline)];
     eline->msgTextPtr = D_80085224[idx].posX;
     eline->msgPosX = D_80085224[idx].posY;
     eline->msgPosY = D_80085224[idx].posZ;
@@ -1207,7 +1207,7 @@ s32 opHandler_MOVECANCEL(Eline *eline) {
 /**
  * @brief Clean up message state for a referenced party-member entity.
  *
- * Pops a party slot, looks up the entity through g_seedState->memberSlot[],
+ * Pops a party slot, looks up the entity through g_fieldVars->memberSlot[],
  * then (if the message is currently active) clears it, tears down the display,
  * and marks the flags (clear 0xF800 range and set 0x2000).
  *
@@ -1215,7 +1215,7 @@ s32 opHandler_MOVECANCEL(Eline *eline) {
  * @return 2 (continue processing).
  */
 s32 opHandler_PMOVECANCEL(Eline *eline) {
-    u8 idx = g_seedState->memberSlot[POP(eline)];
+    u8 idx = g_fieldVars->memberSlot[POP(eline)];
 
     if (D_80085224[idx].msgActive == 1) {
         D_80085224[idx].msgActive = 0;
@@ -1385,37 +1385,37 @@ s32 opHandler_JOIN(Eline *eline) {
 
         switch (i) {
         case 0:
-            if (g_seedState->memberSlot[1] != 0xFF) {
-                idx = g_seedState->memberSlot[1];
+            if (g_fieldVars->memberSlot[1] != 0xFF) {
+                idx = g_fieldVars->memberSlot[1];
                 D_800DE4F0 = &D_80085224[idx];
                 func_800B788C(&D_80085224[idx], eline);
             }
-            if (g_seedState->memberSlot[2] != 0xFF) {
-                idx = g_seedState->memberSlot[2];
+            if (g_fieldVars->memberSlot[2] != 0xFF) {
+                idx = g_fieldVars->memberSlot[2];
                 D_800DE4F4 = &D_80085224[idx];
                 func_800B788C(&D_80085224[idx], eline);
             }
             break;
         case 1:
-            if (g_seedState->memberSlot[0] != 0xFF) {
-                idx = g_seedState->memberSlot[0];
+            if (g_fieldVars->memberSlot[0] != 0xFF) {
+                idx = g_fieldVars->memberSlot[0];
                 D_800DE4F0 = &D_80085224[idx];
                 func_800B788C(&D_80085224[idx], eline);
             }
-            if (g_seedState->memberSlot[2] != 0xFF) {
-                idx = g_seedState->memberSlot[2];
+            if (g_fieldVars->memberSlot[2] != 0xFF) {
+                idx = g_fieldVars->memberSlot[2];
                 D_800DE4F4 = &D_80085224[idx];
                 func_800B788C(&D_80085224[idx], eline);
             }
             break;
         case 2:
-            if (g_seedState->memberSlot[0] != 0xFF) {
-                idx = g_seedState->memberSlot[0];
+            if (g_fieldVars->memberSlot[0] != 0xFF) {
+                idx = g_fieldVars->memberSlot[0];
                 D_800DE4F0 = &D_80085224[idx];
                 func_800B788C(&D_80085224[idx], eline);
             }
-            if (g_seedState->memberSlot[1] != 0xFF) {
-                idx = g_seedState->memberSlot[1];
+            if (g_fieldVars->memberSlot[1] != 0xFF) {
+                idx = g_fieldVars->memberSlot[1];
                 D_800DE4F4 = &D_80085224[idx];
                 func_800B788C(&D_80085224[idx], eline);
             }
@@ -1503,7 +1503,7 @@ void func_800B7D44(Eline *eline, s32 x, s32 y, s32 z) {
  *
  * Pops 9 stack values (3 sets of XYZ coordinates), shifts each into Q19.12
  * fixed-point, and dispatches movement (via func_800B7D44) to up to 3 active
- * party-member entities looked up through g_seedState->memberSlot[0..2].
+ * party-member entities looked up through g_fieldVars->memberSlot[0..2].
  * Sets the movement-active flag (bit 0) on each non-self entity. On
  * subsequent ticks (when the activeMask bit is clear), waits for all
  * dispatched entities to reach msgState == 2 (movement complete), then
@@ -1531,26 +1531,26 @@ s32 opHandler_SPLIT(Eline *eline) {
         y0 = POP(eline) << 12;
         x0 = POP(eline) << 12;
 
-        if (g_seedState->memberSlot[0] != 0xFF) {
-            D_800DE4F0 = &D_80085224[g_seedState->memberSlot[0]];
+        if (g_fieldVars->memberSlot[0] != 0xFF) {
+            D_800DE4F0 = &D_80085224[g_fieldVars->memberSlot[0]];
             func_800B7D44(D_800DE4F0, x0, y0, z0);
-            if (g_seedState->memberSlot[0] != eline->field_0x256) {
+            if (g_fieldVars->memberSlot[0] != eline->field_0x256) {
                 D_800DE4F0->flags |= 1;
             }
         }
 
-        if (g_seedState->memberSlot[1] != 0xFF) {
-            D_800DE4F4 = &D_80085224[g_seedState->memberSlot[1]];
+        if (g_fieldVars->memberSlot[1] != 0xFF) {
+            D_800DE4F4 = &D_80085224[g_fieldVars->memberSlot[1]];
             func_800B7D44(D_800DE4F4, x1, y1, z1);
-            if (g_seedState->memberSlot[1] != eline->field_0x256) {
+            if (g_fieldVars->memberSlot[1] != eline->field_0x256) {
                 D_800DE4F4->flags |= 1;
             }
         }
 
-        if (g_seedState->memberSlot[2] != 0xFF) {
-            D_800DE4F8 = &D_80085224[g_seedState->memberSlot[2]];
+        if (g_fieldVars->memberSlot[2] != 0xFF) {
+            D_800DE4F8 = &D_80085224[g_fieldVars->memberSlot[2]];
             func_800B7D44(D_800DE4F8, x2, y2, z2);
-            if (g_seedState->memberSlot[2] != eline->field_0x256) {
+            if (g_fieldVars->memberSlot[2] != eline->field_0x256) {
                 D_800DE4F8->flags |= 1;
             }
         }
@@ -1673,7 +1673,7 @@ s32 opHandler_JUMP3(Eline *eline, s32 a1) {
  * copies the anchor coordinates from a party-member entity instead
  * of taking them as args. Pops a window/format halfword (stored to
  * @c field_0x1D8) and a slot index, looks up the entity through
- * @c g_seedState->memberSlot[], and copies the entity's @c posX /
+ * @c g_fieldVars->memberSlot[], and copies the entity's @c posX /
  * @c posY / @c posZ to @c msgTextPtr / @c msgPosX / @c msgPosY plus
  * @c field_0x1FA to @c field_0x1FC.
  *
@@ -1693,7 +1693,7 @@ s32 opHandler_PJUMPA(Eline *eline) {
         eline->msgActive = 2;
         eline->msgState = 0;
         eline->field_0x1D8 = POP(eline);
-        m = g_seedState->memberSlot[POP(eline)];
+        m = g_fieldVars->memberSlot[POP(eline)];
         eline->msgTextPtr = D_80085224[m].posX;
         eline->msgPosX = D_80085224[m].posY;
         eline->msgPosY = D_80085224[m].posZ;
@@ -1713,7 +1713,7 @@ s32 opHandler_PJUMPA(Eline *eline) {
  * @param eline Script context.
  * @return 2 (advance PC).
  */
-s32 func_800B85C8(Eline *eline) {
+s32 opHandler_COUNTERCLOCKWISETURN2(Eline *eline) {
     D_800704A8.unk1AE = *(volatile s32 *)&POP(eline);
     return 2;
 }
@@ -2129,7 +2129,7 @@ s32 opHandler_AXIS(Eline *eline) {
  * @param eline Script context.
  * @return 2 (advance PC).
  */
-s32 func_800B9000(Eline *eline) {
+s32 opHandler_UNKNOWN4(Eline *eline) {
     eline->field_0x240 = POP_BYTE(eline);
     return 2;
 }

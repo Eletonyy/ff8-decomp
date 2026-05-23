@@ -104,7 +104,7 @@ extern void func_800B4F40(void);
 extern s32  opHandler_PHSPOWER(Eline *eline);
 extern s32  opHandler_PHSENABLE(Eline *eline);
 extern s32  opHandler_ADDMAGIC(Eline *eline);
-extern s32  func_800B5134(Eline *eline);
+extern s32  opHandler_OP16A(Eline *eline);
 extern s32  opHandler_ADDITEM(Eline *eline);
 extern s32  opHandler_ADDGIL(Eline *eline);
 extern s32  opHandler_ADDPASTGIL(Eline *eline);

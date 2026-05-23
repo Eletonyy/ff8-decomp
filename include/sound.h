@@ -122,11 +122,20 @@ typedef struct {
     /* 0x0E */ u16 adsrHigh;      /**< ADSR envelope high halfword. */
 } SndInstrument; /* 16 bytes */
 
-/** @brief Voice pool entry (D_80074F20, stride 16 bytes). */
+/** @brief Voice pool entry (D_80074F20, stride 16 bytes).
+ *
+ * Used by @c func_800BF718 to replay any queued SFX after a sound reset:
+ * negative @c cmd → @c sndPlayBankSfx(cmd, arg1, fieldC, field8);
+ * positive @c cmd → @c sndPlaySfx(cmd-1, arg1, fieldC, field8). */
 typedef struct {
-    /* 0x00 */ s32 field0;
-    /* 0x04 */ u8 pad04[12];
+    /* 0x00 */ s32 cmd;           /**< Pending command (negative = bank SFX, zero = empty, positive = direct SFX + 1). */
+    /* 0x04 */ s32 arg1;          /**< First passthrough arg. */
+    /* 0x08 */ s32 field8;        /**< Passed as the 4th arg to @c sndPlay*. */
+    /* 0x0C */ s32 fieldC;        /**< Passed as the 3rd arg to @c sndPlay*. */
 } VoicePoolEntry; /* 16 bytes */
+
+/** @brief 12-entry SFX play queue, replayed by @c func_800BF718 after a sound reset. */
+extern VoicePoolEntry D_80074F20[12];
 
 /**
  * @brief SPU voice parameter block passed to func_800150A8.
@@ -290,6 +299,9 @@ extern s32 sndCmd1A(s32 a0, s32 a1, s32 a2);
 extern s32 sndCmdC0(s32 a0, s32 a1);
 extern s32 sndCmdC1(s32 a0, s32 a1, s32 a2);
 extern s32 sndCmdC2(s32 a0, s32 a1, s32 a2, s32 a3);
+
+/** @brief Send SPU command @c 0x45 (no args). */
+extern void sndCmd45(void);
 
 /** @brief Reset SPU command bus (issued by the music-state reset opcode). */
 extern void sndCmdF1(void);

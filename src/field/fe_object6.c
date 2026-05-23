@@ -887,14 +887,14 @@ s32 opHandler_CSCROLLA(Eline *eline) {
 
 /**
  * Pop a party-slot index, look up the active battle-field-entity index
- * for that slot in @c g_seedState->memberSlot, and stage it into
+ * for that slot in @c g_fieldVars->memberSlot, and stage it into
  * SystemState @c unk021 with mode @c unk020 = 0.
  *
  * @param eline Pointer to the Eline event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
 s32 opHandler_DSCROLLP(Eline *eline) {
-    SeedState *ss = g_seedState;
+    FieldVars *ss = g_fieldVars;
     s32 val = POP(eline);
     D_800704A8.slots[0].param = ss->memberSlot[val];
     D_800704A8.slots[0].mode = 0;
@@ -905,14 +905,14 @@ s32 opHandler_DSCROLLP(Eline *eline) {
 /**
  * Pop a timer halfword, cache the seedState pointer, then pop a
  * party-slot index; arm slot[0] with @c mode = 1 and the active
- * battle-entity index from @c g_seedState->memberSlot.
+ * battle-entity index from @c g_fieldVars->memberSlot.
  *
  * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
 s32 opHandler_LSCROLLP(Eline *eline) {
     u16 timer = (u16)POP(eline);
-    SeedState *ss = g_seedState;
+    FieldVars *ss = g_fieldVars;
     s32 partySlot;
     D_800704A8.slots[0].timer = timer;
     partySlot = POP(eline);
@@ -930,7 +930,7 @@ s32 opHandler_LSCROLLP(Eline *eline) {
  */
 s32 opHandler_CSCROLLP(Eline *eline) {
     u16 timer = (u16)POP(eline);
-    SeedState *ss = g_seedState;
+    FieldVars *ss = g_fieldVars;
     s32 partySlot;
     D_800704A8.slots[0].timer = timer;
     partySlot = POP(eline);
@@ -1084,14 +1084,14 @@ s32 opHandler_CSCROLLA2(Eline *eline) {
 
 /**
  * Pop a party-slot index and a slot index; read the active battle-entity
- * index from @c g_seedState->memberSlot and stage it into
+ * index from @c g_fieldVars->memberSlot and stage it into
  * @c slots[slotIdx].param with @c mode = 0.
  *
  * @param eline Pointer to the Eline event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
 s32 opHandler_DSCROLLP2(Eline *eline) {
-    SeedState *ss = g_seedState;
+    FieldVars *ss = g_fieldVars;
     s32 partySlot = POP(eline);
     u8 byte = ss->memberSlot[partySlot];
     s32 slotIdx = POP(eline);
@@ -1111,7 +1111,7 @@ s32 opHandler_DSCROLLP2(Eline *eline) {
  */
 s32 opHandler_LSCROLLP2(Eline *eline) {
     u16 timer = (u16)POP(eline);
-    SeedState *ss = g_seedState;
+    FieldVars *ss = g_fieldVars;
     s32 partySlot = POP(eline);
     u8 byte = ss->memberSlot[partySlot];
     s32 slotIdx = POP(eline);
@@ -1130,7 +1130,7 @@ s32 opHandler_LSCROLLP2(Eline *eline) {
  */
 s32 opHandler_CSCROLLP2(Eline *eline) {
     u16 timer = (u16)POP(eline);
-    SeedState *ss = g_seedState;
+    FieldVars *ss = g_fieldVars;
     s32 partySlot = POP(eline);
     u8 byte = ss->memberSlot[partySlot];
     s32 slotIdx = POP(eline);
@@ -1283,7 +1283,7 @@ s32 opHandler_GETTIMER(Eline *eline) {
 
 /**
  * Trigger camera-shake mode: pop two intensity bytes into
- * @c g_seedState->cameraShakeY / @c cameraShakeX, arm the related
+ * @c g_fieldVars->cameraShakeY / @c cameraShakeX, arm the related
  * field flag bits and the battle-config bit, then drive
  * @c setCameraShakeParams + @c setCameraVibrateState(1).
  *
@@ -1291,12 +1291,12 @@ s32 opHandler_GETTIMER(Eline *eline) {
  * @return 2 (continue processing).
  */
 s32 opHandler_DISPTIMER(Eline *eline) {
-    g_seedState->cameraShakeY = POP_BYTE(eline);
-    g_seedState->cameraShakeX = POP_BYTE(eline);
-    g_seedState->stateFlags |= 0x40;
-    g_seedState->fieldB6 |= 0x4;
+    g_fieldVars->cameraShakeY = POP_BYTE(eline);
+    g_fieldVars->cameraShakeX = POP_BYTE(eline);
+    g_fieldVars->stateFlags |= 0x40;
+    g_fieldVars->fieldB6 |= 0x4;
     g_battleConfig.unk2 |= 0x4;
-    setCameraShakeParams(g_seedState->cameraShakeX, g_seedState->cameraShakeY);
+    setCameraShakeParams(g_fieldVars->cameraShakeX, g_fieldVars->cameraShakeY);
     setCameraVibrateState(1);
     return 2;
 }
@@ -1310,8 +1310,8 @@ s32 opHandler_DISPTIMER(Eline *eline) {
  * @return 2 (continue processing).
  */
 s32 opHandler_KILLTIMER(Eline *eline) {
-    g_seedState->stateFlags &= ~0x40;
-    g_seedState->fieldB6 &= ~0x4;
+    g_fieldVars->stateFlags &= ~0x40;
+    g_fieldVars->fieldB6 &= ~0x4;
     g_battleConfig.unk2 &= ~0x4;
     setCameraVibrateState(0);
     return 2;
@@ -1567,7 +1567,7 @@ s32 opHandler_MENUENABLE(Eline *eline) {
 s32 opHandler_MENUNORMAL(void) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 0;
-    D_800704A8.unk1AB = g_seedState->fieldD1;
+    D_800704A8.unk1AB = g_fieldVars->fieldD1;
     return 3;
 }
 
@@ -1744,16 +1744,16 @@ s32 opHandler_MENUSAVE(Eline *eline) {
 
 /**
  * Pops a parameter from the stack. If nonzero, sets bit 0x01 in
- * g_seedState+0xD1. Otherwise clears it. Returns 2.
+ * g_fieldVars+0xD1. Otherwise clears it. Returns 2.
  *
  * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
 s32 opHandler_SAVEENABLE(Eline *eline) {
     if (POP(eline) != 0) {
-        g_seedState->fieldD1 |= 0x01;
+        g_fieldVars->fieldD1 |= 0x01;
     } else {
-        g_seedState->fieldD1 &= ~0x01;
+        g_fieldVars->fieldD1 &= ~0x01;
     }
     return 2;
 }
@@ -1766,10 +1766,10 @@ s32 opHandler_SAVEENABLE(Eline *eline) {
  * Otherwise, sets bit 2.
  */
 void func_800B4F40(void) {
-    if (g_seedState->stateFlags & 0x200) {
-        g_seedState->fieldD1 &= 0xFD;
+    if (g_fieldVars->stateFlags & 0x200) {
+        g_fieldVars->fieldD1 &= 0xFD;
     } else {
-        g_seedState->fieldD1 |= 0x2;
+        g_fieldVars->fieldD1 |= 0x2;
     }
 }
 
@@ -1782,10 +1782,10 @@ void func_800B4F40(void) {
  */
 s32 opHandler_PHSPOWER(Eline *eline) {
     if (POP(eline) != 0) {
-        g_seedState->stateFlags &= ~0x200;
+        g_fieldVars->stateFlags &= ~0x200;
     } else {
-        g_seedState->stateFlags |= 0x200;
-        g_seedState->fieldD1 &= ~0x02;
+        g_fieldVars->stateFlags |= 0x200;
+        g_fieldVars->fieldD1 &= ~0x02;
     }
     return 2;
 }
@@ -1800,11 +1800,11 @@ s32 opHandler_PHSPOWER(Eline *eline) {
  */
 s32 opHandler_PHSENABLE(Eline *eline) {
     s32 val = POP(eline);
-    if (!(g_seedState->stateFlags & 0x200)) {
+    if (!(g_fieldVars->stateFlags & 0x200)) {
         if (val != 0) {
-            g_seedState->fieldD1 |= 0x02;
+            g_fieldVars->fieldD1 |= 0x02;
         } else {
-            g_seedState->fieldD1 &= ~0x02;
+            g_fieldVars->fieldD1 &= ~0x02;
         }
     }
     return 2;
@@ -1842,7 +1842,7 @@ s32 opHandler_ADDMAGIC(Eline *eline) {
  * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B5134(Eline *eline) {
+s32 opHandler_OP16A(Eline *eline) {
     eline->resultSlots[0] = func_800C0410(POP(eline));
     return 2;
 }
@@ -1865,7 +1865,7 @@ s32 opHandler_ADDITEM(Eline *eline) {
 /**
  * Pop a gil delta and add it to @c g_gameState.mainData.party.gil,
  * clamped to the FF gil cap of 99,999,999. Mirror the new total into
- * @c g_seedState->gilMirror.
+ * @c g_fieldVars->gilMirror.
  *
  * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
@@ -1876,13 +1876,13 @@ s32 opHandler_ADDGIL(Eline *eline) {
     if (g_gameState.mainData.party.gil > 0x05F5E0FE) {
         g_gameState.mainData.party.gil = 0x05F5E0FF;
     }
-    g_seedState->gilMirror = g_gameState.mainData.party.gil;
+    g_fieldVars->gilMirror = g_gameState.mainData.party.gil;
     return 2;
 }
 
 /**
  * Variant of @c opHandler_ADDGIL that operates on @c dreamGil instead of
- * @c gil and mirrors the result into @c g_seedState->dreamGilMirror.
+ * @c gil and mirrors the result into @c g_fieldVars->dreamGilMirror.
  *
  * @param eline Pointer to the Eline event-script context.
  * @return 2 (continue processing).
@@ -1893,12 +1893,12 @@ s32 opHandler_ADDPASTGIL(Eline *eline) {
     if (g_gameState.mainData.party.dreamGil > 0x05F5E0FE) {
         g_gameState.mainData.party.dreamGil = 0x05F5E0FF;
     }
-    g_seedState->dreamGilMirror = g_gameState.mainData.party.dreamGil;
+    g_fieldVars->dreamGilMirror = g_gameState.mainData.party.dreamGil;
     return 2;
 }
 
 /**
- * Pop a delta and add it to @c g_seedState->seedExp, clamping the
+ * Pop a delta and add it to @c g_fieldVars->seedExp, clamping the
  * resulting value to the legal SeeD-rank range [@c 100, @c 3100].
  *
  * @param eline Pointer to the Eline event-script context.
@@ -1906,11 +1906,11 @@ s32 opHandler_ADDPASTGIL(Eline *eline) {
  */
 s32 opHandler_ADDSEEDLEVEL(Eline *eline) {
     s32 delta = POP(eline);
-    g_seedState->seedExp += delta;
-    if ((s16)g_seedState->seedExp < 100) {
-        g_seedState->seedExp = 100;
-    } else if ((s16)g_seedState->seedExp >= 3100) {
-        g_seedState->seedExp = 3100;
+    g_fieldVars->seedExp += delta;
+    if ((s16)g_fieldVars->seedExp < 100) {
+        g_fieldVars->seedExp = 100;
+    } else if ((s16)g_fieldVars->seedExp >= 3100) {
+        g_fieldVars->seedExp = 3100;
     }
     return 2;
 }

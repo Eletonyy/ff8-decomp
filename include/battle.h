@@ -18,6 +18,7 @@ typedef struct {
     u8 unk4[3]; // Post battle command queue?
     u8 result;          /**< Battle result (BATTLE_RESULT_*). */
     u8 unk8;
+    u8 unk9;            /**< Bit 0 toggles the @c FieldVars.soundBankSelector at field-VM init. */
 } BattleConfig;
 
 typedef struct {

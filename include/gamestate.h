@@ -306,7 +306,11 @@ typedef struct {
     /* 0x50 */ ItemSlot      itemSlots[ITEM_SLOT_COUNT];  /**< Item inventory (198 slots). */
     /* 0x1DC */ u8           padDC[4];                    /**< Battle vars / misc. */
     /* 0x1E0 */ s32          battleStateFlag;             /**< Battle state word, low byte compared against camera shake. */
-    /* 0x1E4 */ u8           padE4[0x48];                 /**< Battle vars / misc (continued). */
+    /* 0x1E4 */ u8           pad1E4[0x04];
+    /* 0x1E8 */ s32          fieldCDC;                     /**< Snapshotted by @c func_800BFBBC into @c FieldVars.field14. */
+    /* 0x1EC */ u16          fieldCE0;                     /**< Snapshotted by @c func_800BFBBC into @c FieldVars.field18. */
+    /* 0x1EE */ u16          fieldCE2;                     /**< Snapshotted by @c func_800BFBBC into @c FieldVars.field1A. */
+    /* 0x1F0 */ u8           pad1F0[0x3C];                 /**< Battle vars / misc (continued). */
     /* 0x22C */ u16          fieldD20;                    /**< Unknown (zeroed on save init). */
     /* 0x22E */ u8           partyLockFlag;               /**< Bit 0: party is locked. */
     /* 0x22F */ u8           pad2F[0x10];                 /**< Battle vars / misc (continued). */
@@ -338,7 +342,7 @@ typedef struct {
     /* 0xAF4 */ SaveMainData  mainData;                     /**< Party/items/battle state (580 bytes). */
     /* 0xD38 */ u8            battleParty[4];              /**< Battle party member IDs (mirrors party.party). */
     /* 0xD3C */ u8            padD3C[0x24];                /**< Battle vars / misc (continued). */
-    /* 0xD60 */ SeedState     seedState;                   /**< Steps, SeeD rank, counters (@c &g_gameState.seedState == @c g_seedState). */
+    /* 0xD60 */ FieldVars     fieldVars;                   /**< Steps, SeeD rank, counters (@c &g_gameState.fieldVars == @c g_fieldVars). */
     /* 0xE60 */ u8            padE60[0x400];               /**< Field script vars, TT rules. */
     /* 0x1260 */ u8           pad1260[0x80];               /**< World map position/vehicles. */
     /* 0x12E0 */ TripleTriadData cards;                    /**< Triple Triad data (128 bytes). */
@@ -348,14 +352,25 @@ typedef struct {
 /** @brief Main game state (BSS at 0x80077378). */
 extern GameState g_gameState;
 
-/** @brief Pointer to the SeeD/world sub-region of @c g_gameState (@c &g_gameState.seedState). */
-extern SeedState *g_seedState;
+/** @brief Pointer to the SeeD/world sub-region of @c g_gameState (@c &g_gameState.fieldVars). */
+extern FieldVars *g_fieldVars;
 
 /* --- Memory card busy flag (D_80085218) --- */
 extern void setMcBusy(void);
 extern u32  isMcBusy(void);
 
 extern u8 D_80085388;                  /**< @c Eline entity count at @c D_80085224. */
+
+/** @brief Halfword lookup table indexed by @c GameConfig.fieldMsgSpeed
+ *         (a.k.a. @c D_80077E5A). Used as the per-entity SFX pitch in
+ *         @c func_800BF718's common tail. */
+extern u16 D_800562C8[];
+
+/** @brief Bit @c 0x10 mirrors into @c FieldVars.field58 on full field reset. */
+extern u8  D_80078DF8;
+
+/** @brief Per-area sub-table pointer (snapshot of @c D_800DE4E4); written by @c func_800BFBBC. */
+extern u16 *D_800852F0;
 
 /* --- Save / GF / chocobo-world state setters --- */
 extern void setGfExists(s32 gfId);

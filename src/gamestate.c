@@ -8,7 +8,7 @@
 extern u8 D_8007809B[];
 extern u8 g_chocoboWorld;
 extern u8 D_80085218;
-extern SeedState *g_seedState;
+extern FieldVars *g_fieldVars;
 extern u8 D_8005F388[];
 extern u8 D_80063388[];
 extern s32 D_80085220;
@@ -329,14 +329,14 @@ INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037C6C);
 /**
  * @brief Stop all playing sound channels and reset sound state.
  *
- * Reads two sound handles from the entity pointer at g_seedState (offsets
+ * Reads two sound handles from the entity pointer at g_fieldVars (offsets
  * 0x6C and 0x70), stops each via sndCmdC1. Then calls sndStopPlayback
  * to flush sound state and sndSetChannelVolume to reset channel 0.
  */
 void stopAllSounds(void) {
     s32 val;
-    sndCmdC1(g_seedState->soundHandle0, 15, 0);
-    val = g_seedState->soundHandle1;
+    sndCmdC1(g_fieldVars->soundHandle0, 15, 0);
+    val = g_fieldVars->soundHandle1;
     if (val != -1) {
         sndCmdC1(val, 15, 0);
     }
@@ -351,15 +351,15 @@ INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037D40);
 /**
  * @brief Toggle the sound bank selector and return the corresponding bank table.
  *
- * XORs byte at g_seedState[0xC9] with 1, then reloads and checks:
+ * XORs byte at g_fieldVars[0xC9] with 1, then reloads and checks:
  * returns D_80063388 if the toggled value is non-zero, D_8005F388 otherwise.
  *
  * @return Pointer to the selected sound bank table.
  */
 u8 *toggleSoundBank(void) {
 
-    g_seedState->soundBankSelector ^= 1;
-    if ((s8)g_seedState->soundBankSelector == 0) {
+    g_fieldVars->soundBankSelector ^= 1;
+    if ((s8)g_fieldVars->soundBankSelector == 0) {
         return D_8005F388;
     }
     return D_80063388;
@@ -372,8 +372,8 @@ u8 *toggleSoundBank(void) {
  * Polls sndGetEngineState until it returns 0, then reads sound data from
  * D_80085220 using func_80039728 and plays it via sndProcessAudio.
  * Reads sound data a second time, selects a bank table (D_8005F388
- * or D_80063388) based on g_seedState field 0xC9, and calls
- * func_80039678. Sets the completion flag at g_seedState + 0xD6.
+ * or D_80063388) based on g_fieldVars field 0xC9, and calls
+ * func_80039678. Sets the completion flag at g_fieldVars + 0xD6.
  */
 void loadSoundBankA(void) {
     s32 size;
@@ -385,13 +385,13 @@ void loadSoundBankA(void) {
     result = func_80039728(D_80085220, 1, &size);
     sndProcessAudio(result, 1);
     result = func_80039728(D_80085220, 0, &size);
-    if ((s8)g_seedState->soundBankSelector != 0) {
+    if ((s8)g_fieldVars->soundBankSelector != 0) {
         table = D_8005F388;
     } else {
         table = D_80063388;
     }
     func_80039678((s32)table, result, size);
-    g_seedState->soundLoadComplete = 1;
+    g_fieldVars->soundLoadComplete = 1;
 }
 
 
@@ -399,7 +399,7 @@ void loadSoundBankA(void) {
  * @brief Load and apply sound data from disc (variant B).
  *
  * Same as func_80037E60, but the bank table selection is inverted:
- * uses D_80063388 when g_seedState field 0xC9 is non-zero, and
+ * uses D_80063388 when g_fieldVars field 0xC9 is non-zero, and
  * D_8005F388 when it is zero.
  */
 void loadSoundBankB(void) {
@@ -412,13 +412,13 @@ void loadSoundBankB(void) {
     result = func_80039728(D_80085220, 1, &size);
     sndProcessAudio(result, 1);
     result = func_80039728(D_80085220, 0, &size);
-    if ((s8)g_seedState->soundBankSelector == 0) {
+    if ((s8)g_fieldVars->soundBankSelector == 0) {
         table = D_8005F388;
     } else {
         table = D_80063388;
     }
     func_80039678((s32)table, result, size);
-    g_seedState->soundLoadComplete = 1;
+    g_fieldVars->soundLoadComplete = 1;
 }
 
 
@@ -433,7 +433,7 @@ INCLUDE_ASM("asm/nonmatchings/gamestate", func_80038030);
  *
  * Part 1: For each of the 3 active party slots, search the battle field
  * entity table for one whose @c partyId matches and record its index in
- * both g_fieldEntity.memberSlot and g_seedState->memberSlot. Defaults to
+ * both g_fieldEntity.memberSlot and g_fieldVars->memberSlot. Defaults to
  * 0xFF when no entity matches.
  *
  * Part 2: When the bench-list flag (stateFlags & 0x800) is set, build the
@@ -447,12 +447,12 @@ void func_800381BC(void) {
 
     for (i = 0; i < 3; i++) {
         g_fieldEntity.memberSlot[i] = 0xFF;
-        g_seedState->memberSlot[i] = 0xFF;
+        g_fieldVars->memberSlot[i] = 0xFF;
 
         ent = D_80085224;
         for (j = 0; j < D_80085388; j++) {
             if (g_gameState.battleParty[i] == ent->field_0x255) {
-                g_seedState->memberSlot[i] = j;
+                g_fieldVars->memberSlot[i] = j;
                 g_fieldEntity.memberSlot[i] = j;
                 break;
             }
@@ -460,12 +460,12 @@ void func_800381BC(void) {
         }
     }
 
-    if (g_seedState->stateFlags & 0x800) {
+    if (g_fieldVars->stateFlags & 0x800) {
         j = 0;
         for (i = 0; i < 6; i++) {
             if (findBattlePartySlot(i) == 0xFF) {
-                g_seedState->partyOrderA[j] = i;
-                g_seedState->partyOrderB[j] = i;
+                g_fieldVars->partyOrderA[j] = i;
+                g_fieldVars->partyOrderB[j] = i;
                 j++;
             }
         }
@@ -493,14 +493,14 @@ void clearEntityFlags(void) {
 }
 
 
-/** @brief Returns bits 3-4 of the flags word at offset 0x68 through g_seedState. */
+/** @brief Returns bits 3-4 of the flags word at offset 0x68 through g_fieldVars. */
 s32 getFieldStateFlags(void) {
-    return g_seedState->stateFlags & 0x18;
+    return g_fieldVars->stateFlags & 0x18;
 }
 
 
 /**
- * @brief Extract a 2-bit field from the packed bitfield array at g_seedState+0x74.
+ * @brief Extract a 2-bit field from the packed bitfield array at g_fieldVars+0x74.
  *
  * Treats the byte array as a packed 2-bit-per-entry table. Computes byte
  * index (a0/4) and bit position ((a0%4)*2), then extracts and returns
@@ -511,7 +511,7 @@ s32 getFieldStateFlags(void) {
  */
 s32 getPackedField2Bit(s32 entryIdx) {
     entryIdx &= 0xFF;
-    return (g_seedState->packedFlags[entryIdx / 4] >> ((entryIdx % 4) * 2)) & 3;
+    return (g_fieldVars->packedFlags[entryIdx / 4] >> ((entryIdx % 4) * 2)) & 3;
 }
 
 

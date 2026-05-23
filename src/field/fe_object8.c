@@ -586,7 +586,7 @@ s32 opHandler_DIRA(Eline *eline) {
  *        SeeD party-member slot table.
  *
  * Pops one s32 from the stack as a slot index, uses it to read
- * @c g_seedState->memberSlot[slot], indexes that into the entity
+ * @c g_fieldVars->memberSlot[slot], indexes that into the entity
  * array @c D_80085224 to fetch a target @c Eline, dispatches
  * @c func_8009E604 with the current entity and the target, and writes
  * the byte result into @c field_0x241.
@@ -596,18 +596,18 @@ s32 opHandler_DIRA(Eline *eline) {
  */
 s32 opHandler_PDIRA(Eline *eline) {
     s32 slot = POP(eline);
-    eline->field_0x241 = func_8009E604(eline, &D_80085224[g_seedState->memberSlot[slot]]);
+    eline->field_0x241 = func_8009E604(eline, &D_80085224[g_fieldVars->memberSlot[slot]]);
     return 2;
 }
 
 /**
  * @brief Helper — pop byte + halfword, queue turn (subtract variant, kind 1).
  *
- * Same shape as @c func_800BA1D0 but with reversed comparison: subtracts
+ * Same shape as @c opHandler_OP16C but with reversed comparison: subtracts
  * @c 0x100 from the heading if @c field_0x1DC is less than @c (s16)raw.
  * Sets @c field_0x244 to @c 1.
  */
-s32 func_800BA120(Eline *eline) {
+s32 opHandler_OP16B(Eline *eline) {
     s32 raw;
     u8 byte1;
 
@@ -640,7 +640,7 @@ s32 func_800BA120(Eline *eline) {
  *
  * Inactive path: return 2 unless @c field_0x244 == 3, otherwise 1.
  */
-s32 func_800BA1D0(Eline *eline) {
+s32 opHandler_OP16C(Eline *eline) {
     s32 raw;
     u8 byte1;
 
@@ -664,9 +664,9 @@ s32 func_800BA1D0(Eline *eline) {
 /**
  * @brief Helper — pop byte + halfword, queue turn (subtract variant, kind 2).
  *
- * Same as @c func_800BA120 but sets @c field_0x244 to @c 2.
+ * Same as @c opHandler_OP16B but sets @c field_0x244 to @c 2.
  */
-s32 func_800BA280(Eline *eline) {
+s32 opHandler_OP16D(Eline *eline) {
     s32 raw;
     u8 byte1;
 
@@ -690,9 +690,9 @@ s32 func_800BA280(Eline *eline) {
 /**
  * @brief Helper — pop byte + halfword, queue turn (add variant, kind 2).
  *
- * Same as @c func_800BA1D0 but sets @c field_0x244 to @c 2.
+ * Same as @c opHandler_OP16C but sets @c field_0x244 to @c 2.
  */
-s32 func_800BA330(Eline *eline) {
+s32 opHandler_OP16E(Eline *eline) {
     s32 raw;
     u8 byte1;
 
@@ -749,7 +749,7 @@ void func_800BA3E0(Eline *eline) {
 /**
  * @brief Op 0x082 handler — pop byte+halfword, queue turn (kind 1, shortest path).
  *
- * Same as @c func_800BA1D0 but delegates the heading-wrap math to
+ * Same as @c opHandler_OP16C but delegates the heading-wrap math to
  * @c func_800BA3E0 (which picks the shortest rotation direction).
  * Sets @c field_0x244 to @c 1.
  */
@@ -918,7 +918,7 @@ s32 opHandler_CTURN(Eline *eline) {
  *
  * Same control flow as @c opHandler_LTURN, but the index popped after
  * the bearing byte is treated as a SeeD-party slot. The target Eline
- * is obtained via @c &D_80085224[g_seedState->memberSlot[slot]].
+ * is obtained via @c &D_80085224[g_fieldVars->memberSlot[slot]].
  *
  * @param eline Pointer to the Eline event-script context.
  */
@@ -931,7 +931,7 @@ s32 opHandler_PLTURN(Eline *eline) {
         slot = POP(eline);
         eline->field_0x243 = 0;
         eline->field_0x1DC = eline->field_0x241;
-        eline->field_0x1DE = func_8009E604(eline, &D_80085224[g_seedState->memberSlot[slot]]) & 0xFF;
+        eline->field_0x1DE = func_8009E604(eline, &D_80085224[g_fieldVars->memberSlot[slot]]) & 0xFF;
         eline->field_0x242 = first;
         if (eline->field_0x1DC == eline->field_0x1DE) {
             return 2;
@@ -963,7 +963,7 @@ s32 opHandler_PCTURN(Eline *eline) {
         slot = POP(eline);
         eline->field_0x243 = 0;
         eline->field_0x1DC = eline->field_0x241;
-        eline->field_0x1DE = func_8009E604(eline, &D_80085224[g_seedState->memberSlot[slot]]) & 0xFF;
+        eline->field_0x1DE = func_8009E604(eline, &D_80085224[g_fieldVars->memberSlot[slot]]) & 0xFF;
         eline->field_0x242 = first;
         if (eline->field_0x1DC == eline->field_0x1DE) {
             return 2;
@@ -1000,7 +1000,7 @@ s32 opHandler_HASITEM(Eline *eline) {
         slot = POP(eline);
         eline->field_0x243 = 0;
         eline->field_0x1DC = eline->field_0x241;
-        eline->field_0x1DE = func_8009E604(eline, &D_80085224[g_seedState->memberSlot[slot]]) & 0xFF;
+        eline->field_0x1DE = func_8009E604(eline, &D_80085224[g_fieldVars->memberSlot[slot]]) & 0xFF;
         eline->field_0x242 = first;
         if (eline->field_0x1DC == eline->field_0x1DE) {
             eline->field_0x244 = 3;
@@ -1116,7 +1116,7 @@ s32 opHandler_FACEDIRA(Eline *eline, s32 arg1) {
  *
  * Same body as @c opHandler_FACEDIRA, but the index popped from the stack
  * is treated as a SeeD party-slot. The target entity is the one whose
- * Eline lives at @c &D_80085224[g_seedState->memberSlot[slot]], and
+ * Eline lives at @c &D_80085224[g_fieldVars->memberSlot[slot]], and
  * that same byte index is the spatial argument to @c func_800A8DAC.
  *
  * @param eline Pointer to the Eline event-script context.
@@ -1128,7 +1128,7 @@ s32 opHandler_FACEDIRP(Eline *eline, s32 arg1) {
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->field_0x234 = POP(eline);
-        slot = g_seedState->memberSlot[POP(eline)];
+        slot = g_fieldVars->memberSlot[POP(eline)];
         func_800A8DAC(slot, 0x1E, D_800C71F8, buf);
         eline->field_0x222 = D_80085224[slot].posX / 4096;
         eline->field_0x224 = D_80085224[slot].posY / 4096;

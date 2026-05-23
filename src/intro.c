@@ -344,7 +344,7 @@ void func_8009869C(void) {
  *    @c CdControlB(0x1, NULL, status) (CD command 0x1 = CdlNop, whose
  *    status byte's @c 0x10 bit indicates the shell is open).
  *  - After fade-in, polls @c getDiscId() and exits when the inserted
- *    disc matches @c g_seedState->expectedDiscId.
+ *    disc matches @c g_fieldVars->expectedDiscId.
  *  - On mismatch (or if @c func_80038A60 returns nonzero), calls
  *    @c func_8009869C to flash the screen and restarts the wait loop.
  *  - Any button press on controller 1 (high nibble of @c g_introCtrl0Edge)
@@ -355,7 +355,7 @@ void waitForCorrectDisc(void) {
     RECT rect;
 
     initIntroOverlay();
-    loadIntroSlide(g_seedState->expectedDiscId - 1);
+    loadIntroSlide(g_fieldVars->expectedDiscId - 1);
     loadWrongDiscWarning();
 
     rect.x = 30;
@@ -398,7 +398,7 @@ void waitForCorrectDisc(void) {
         }
         SetDispMask(0);
 
-        if (func_80038A60() == 0 && getDiscId() == g_seedState->expectedDiscId) {
+        if (func_80038A60() == 0 && getDiscId() == g_fieldVars->expectedDiscId) {
             return;
         }
         func_8009869C();
@@ -419,7 +419,7 @@ void waitForCorrectDisc(void) {
  * a 640x400 (rectY=40, rectW=640, rectH=400) draw area. The per-frame
  * tick @c func_8009818C drives display flipping and input sampling.
  *
- * SeeD sound loading: waits for @c g_seedState->soundLoadComplete before
+ * SeeD sound loading: waits for @c g_fieldVars->soundLoadComplete before
  * starting music (@c sndCmd10(toggleSoundBank()), @c sndCmdC0(0, 0x7F)).
  * On exit, @c sndCmdC1(D_8005F11C, 0x60, 0) fades the music out and a
  * final brightness ramp restores the display to full before returning.
@@ -491,10 +491,10 @@ void playBootIntro(void) {
         }
 
         func_80037FB0(0, 0x4F, 0x80110000);
-        if (g_seedState->soundLoadComplete == 0) {
+        if (g_fieldVars->soundLoadComplete == 0) {
             do {
                 func_800393C8();
-            } while (g_seedState->soundLoadComplete == 0);
+            } while (g_fieldVars->soundLoadComplete == 0);
         }
 
         D_8005F11C = sndCmd10(toggleSoundBank());

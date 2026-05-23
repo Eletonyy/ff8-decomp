@@ -12,7 +12,7 @@ extern u8  *func_800B57E8(s32 maxCount, s32 abilityId);
 extern s32  func_800B5990(void);
 extern s32  opHandler_DRAWPOINT(Eline *eline);
 extern s32  opHandler_SETDRAWPOINT(Eline *eline);
-extern s32  func_800B629C(Eline *eline);
+extern s32  opHandler_UNKNOWN10(Eline *eline);
 extern s32  opHandler_PARTICLEON(Eline *eline);
 extern s32  opHandler_PARTICLEOFF(Eline *eline);
 extern s32  opHandler_PARTICLESET(Eline *eline);
@@ -61,7 +61,7 @@ extern s32  opHandler_SPLIT(Eline *eline);
 extern s32  opHandler_JUMP(Eline *eline, s32 a1);
 extern s32  opHandler_JUMP3(Eline *eline, s32 a1);
 extern s32  opHandler_PJUMPA(Eline *eline);
-extern s32  func_800B85C8(Eline *eline);
+extern s32  opHandler_COUNTERCLOCKWISETURN2(Eline *eline);
 extern s32  opHandler_LADDERUP(Eline *eline, s32 a1);
 extern s32  opHandler_LADDERDOWN(Eline *eline, s32 a1);
 extern s32  opHandler_LADDERUP2(Eline *eline, s32 a1);
@@ -77,7 +77,7 @@ extern s32  opHandler_RUNENABLE(u8 *a0);
 extern s32  opHandler_INITTRACE(u8 *a0);
 extern s32  opHandler_AXISSYNC(Eline *eline);
 extern s32  opHandler_AXIS(Eline *eline);
-extern s32  func_800B9000(Eline *eline);
+extern s32  opHandler_UNKNOWN4(Eline *eline);
 extern s32  opHandler_OPENEYES(Eline *eline);
 
 #endif

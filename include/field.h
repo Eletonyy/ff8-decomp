@@ -194,7 +194,7 @@ typedef struct {
     /* 0x00C */ u16 rotation;       /**< Snapshotted heading for the active party slot. */
     /* 0x00E */ u16 anim_state;     /**< Snapshotted animation byte for the active party slot. */
     /* 0x010 */ u8 pad010[0x02];
-    /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_seedState->memberSlot[]). */
+    /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_fieldVars->memberSlot[]). */
     /* 0x015 */ u8 unk015;          /**< Cleared by @c opHandler_UCON along with the trigger flag. */
     /* 0x016 */ u8 pad016[0x06];
     /* 0x01C */ s32 fieldStepDelta; /**< Step delta passed to @c func_800BD804 each field tick. */
@@ -229,18 +229,22 @@ typedef struct {
     /* 0x13A */ u16 unk13A;
     /* 0x13C */ u8 pad13C[0x1C];
     /* 0x158 */ s32 ambientFlags;   /**< Ambient SFX/state flags; bits 6-7 gate the fade-out path in @c func_800BD9C4. */
-    /* 0x15C */ u8 pad15C[0x34];
+    /* 0x15C */ u8 pad15C[0x24];
+    /* 0x180 */ u8 unkActive180[16]; /**< 16-byte active-marker region, cleared on @c func_800BF718 mode 1 init. */
     /* 0x190 */ u8 slotActive[16];
     /* 0x1A0 */ u8 unk1A0;          /**< Mode-6 active marker, set with mode = 6 by fe_object6 opcode. */
     /* 0x1A1 */ u8 pad1A1;
     /* 0x1A2 */ u8 unk1A2;          /**< Mode-7 reentry guard byte. */
     /* 0x1A3 */ u8 unk1A3;          /**< Set to 1 by @c opHandler_UCOFF on every call (re-arm guard). */
-    /* 0x1A4 */ u8 pad1A4[0x07];
+    /* 0x1A4 */ u8 pad1A4[0x02];
+    /* 0x1A6 */ u8 unk1A6;          /**< Cleared by @c func_800BFBBC on full reset. */
+    /* 0x1A7 */ u8 pad1A7[0x04];
     /* 0x1AB */ u8 unk1AB;          /**< Sub-mode byte; written together with @c mode by fe_object6 opcodes. */
     /* 0x1AC */ u8 pad1AC[0x02];
-    /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c func_800B85C8, read by @c func_8009FE18). */
+    /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c opHandler_COUNTERCLOCKWISETURN2, read by @c func_8009FE18). */
     /* 0x1AF */ u8 packedFlagSlot;  /**< Last @c getPackedField2Bit result for the active dispatcher slot; written each tick by @c func_800BD9C4. */
-    /* 0x1B0 */ u8 pad1B0[0x08];
+    /* 0x1B0 */ u8 pad1B0[0x04];
+    /* 0x1B4 */ s32 field1B4;       /**< Initialised to @c 0xFFFFFF by @c func_800BFBBC on full reset. */
     /* 0x1B8 */ u8 statusBits[0x40]; /**< Packed bit-array (512 bits); set by @c opHandler_IDLOCK, cleared by @c opHandler_IDUNLOCK, zeroed during init. */
 } SystemState;
 
@@ -248,7 +252,7 @@ extern SystemState D_800704A8;
 
 /**
  * @brief 256-byte misc3 region of @c GameState — held at @c g_gameState+0xD60
- * and aliased through the @c g_seedState pointer.
+ * and aliased through the @c g_fieldVars pointer.
  *
  * Despite the name, this region tracks general field/world state — step
  * accumulators that drive periodic ticks, SeeD experience and rank
@@ -263,11 +267,19 @@ typedef struct {
     /* 0x0C */ s32 hpRegenStepAcc;      /**< Step accumulator: fires HP regen ticks at @c 8. */
     /* 0x10 */ u16 seedExp;             /**< SeeD experience (clamped to [100, 3100]; level = exp/100). */
     /* 0x12 */ u16 prevKillSum;         /**< Last frame's total enemy-kill count across all 8 chars. */
-    /* 0x14 */ u8 pad14[0x34];
+    /* 0x14 */ s32 field14;             /**< Copied from @c g_gameState[0xCDC] by @c func_800BFBBC. */
+    /* 0x18 */ u16 field18;             /**< Copied from @c g_gameState[0xCE0]. */
+    /* 0x1A */ u16 field1A;             /**< Copied from @c g_gameState[0xCE2]. */
+    /* 0x1C */ u16 charKills[8];        /**< Snapshot of @c chars[i].kills, refreshed by @c func_800BFBBC. */
+    /* 0x2C */ u16 charKos[8];          /**< Snapshot of @c chars[i].kos. */
+    /* 0x3C */ u8 pad3C[0x08];
+    /* 0x44 */ s32 killSum;             /**< Sum of @c chars[i].kills across all 8 characters. */
     /* 0x48 */ s32 gilMirror;           /**< Mirror of @c g_gameState.mainData.party.gil, kept in sync by fe_object6. */
     /* 0x4C */ s32 dreamGilMirror;      /**< Mirror of @c g_gameState.mainData.party.dreamGil. */
     /* 0x50 */ s32 padInitStatus;       /**< Result of @c func_801E8B58 (pad-init status), updated each field tick. */
-    /* 0x54 */ u8 pad54[0x04];
+    /* 0x54 */ u16 field54;             /**< Mirror of @c D_800704A8.field120, set by @c func_800BFBBC. */
+    /* 0x56 */ u8 field56;              /**< Copy of @c D_80082C8D byte, set by @c func_800BFBBC. */
+    /* 0x57 */ u8 field57;              /**< Low byte of @c D_8005F14C, set by @c func_800BFBBC. */
     /* 0x58 */ u8 field58;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0x59 */ u8 pad59[0x0F];
     /* 0x68 */ s32 stateFlags;          /**< Field state flags (bits 3-4 checked by getFieldStateFlags). */
@@ -318,7 +330,7 @@ typedef struct {
     /* 0xF3 */ u8 fieldF3;              /**< Mirrored to D_80082C10 when stateFlags bit 0x800 is set. */
     /* 0xF4 */ s32 angeloLearnStepAcc;  /**< Step accumulator: fires the Angelo trick learn tick at @c 0x250. */
     /* 0xF8 */ u8 padF8[0x08];
-} SeedState; /* 0x100 = 256 bytes */
+} FieldVars; /* 0x100 = 256 bytes */
 
 /**
  * @brief Eline (event line) — opcode handler / script-VM view.
@@ -378,7 +390,7 @@ typedef struct {
     /* 0x1F2 */ u16 field_0x1F2;
     /* 0x1F4 */ u16 field_0x1F4;
     /* 0x1F6 */ u16 radius;         /**< Collision radius (used by @c func_8009E468 overlap test). */
-    /* 0x1F8 */ u16 field_0x1F8;    /**< Stored by @c func_800B0CCC from popped stack slot. */
+    /* 0x1F8 */ u16 field_0x1F8;    /**< Stored by @c opHandler_TALKRADIUS from popped stack slot. */
     /* 0x1FA */ u16 field_0x1FA;    /**< Set from path-table entry's @c unk6 by @c func_8009BB18. */
     /* 0x1FC */ u16 field_0x1FC;
     /* 0x1FE */ s16 savedChannel;   /**< Previous message channel. */
@@ -609,7 +621,7 @@ typedef struct {
 } FieldEntityD; /* 0x1B4 */
 
 /** @brief Self/anchor pointer used by @c func_8009A8E0 after the
- *         party-member copy in @c func_800B1034 / @c func_800B10F8; also
+ *         party-member copy in @c opHandler_COPYINFO / @c opHandler_PCOPYINFO; also
  *         the base of the Block B entity array dispatched by @c func_800BD9C4. */
 extern FieldEntityB *D_8008538C;
 
@@ -816,7 +828,7 @@ typedef struct {
 
 extern EncounterParams D_80082C90;
 
-/** @brief Mirrored from @ref SeedState.fieldF3 when @c stateFlags & 0x800 is set. */
+/** @brief Mirrored from @ref FieldVars.fieldF3 when @c stateFlags & 0x800 is set. */
 extern u8 D_80082C10;
 
 /** @brief Stashed sound-bank selector across the battle transition. */
@@ -840,6 +852,35 @@ extern u8 D_8005630C[];
 
 /** @brief Sound-init parameter passed to @c func_80037FB0. */
 extern s32 D_8005F13C;
+
+/** @brief Misc sound state halfword used by @c func_800BF718; low byte stashed
+ *         into @c FieldVars.field57 on full field reset. */
+extern u16 D_8005F14C;
+
+/** @brief Misc field byte; copied into @c FieldVars.field56 on full reset. */
+extern u8  D_80082C8D;
+
+/** @brief Bitfield words tested by fe_object4 opcode handlers. */
+extern s32 D_800705E8;
+extern s32 D_800705F0;
+extern s32 D_800705F8;
+
+/** @brief Misc field-VM byte; set by fe_object4 from @c g_fieldVars->fieldF3. */
+extern u8  D_80077E5F;
+
+/** @brief @c &g_gameState.fieldVars exposed as a byte array for fe_object4's
+ *         script-VM M-memory load/store opcodes (offsets are popped from the
+ *         eline stack). */
+extern u8  D_800780D8[];
+
+/** @brief Field-side status flag byte; bitfield (0x1, 0x2, 0x4, 0x8, 0x10, 0x20). */
+extern u8  D_8007809A;
+
+/** @brief Mirror of @c g_fieldVars->stepCounter (s32). */
+extern s32 D_80082C14;
+
+/** @brief Pool sizer for entity/script tables; called from @c fe_object10. */
+extern s32 func_80037AEC(u8 *header, u16 *table, s32 **outBase);
 
 /** @brief Field-side rotation/orientation halfword consumed by encounter setup. */
 extern s16 D_800704B2;
@@ -930,13 +971,33 @@ extern u8 *func_8003974C(u8 *base, s32 idx);
 /** @brief Measure a text string, returning width|height packed as one s32. */
 extern s32 func_8002E680(u8 *text);
 
-/** @brief Bind an on-screen rectangle to an SFX slot. */
-extern void func_8002E064(s32 idx, s16 *rect);
-
 /** @brief Stash an SFX-slot scalar (paramY/Z/W/V signature). */
 extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
 
 /** @brief Read the per-slot SFX status word at the table offset 0x?. */
 extern s32 func_8002CE84(s32 idx);
+
+/* ======================================================================== */
+/* fe_object5 movie-load tables and movie-overlay (0x801E0000) entry points */
+/* ======================================================================== */
+
+/** @brief Battle-encounter scratch buffer; fe_object5 hands the pointer to
+ *         @c loadBattleCmd as the asset-payload base. */
+extern u8 D_800C5FB0[];
+
+/** @brief CD-entry @c {LBA,size} pairs for movie load opcodes (op04F MOVIE). */
+extern u32 D_800C2D14[];
+/** @brief CD-entry @c {LBA,size,_,_} quadruples for the alt movie loader. */
+extern u32 D_800C2E14[];
+/** @brief CD-entry @c {LBA,size} pairs for the SPU-stream loader (op056). */
+extern u32 D_800C2E1C[];
+
+/** @brief Movie overlay (loaded at @c 0x801E0000) entry points called by
+ *         the field-VM movie / SPU-stream opcodes. */
+extern void func_801E8000(s32 priority);
+extern s32  func_801E8104(s32 a, s32 b, s32 c, s32 d);
+extern s32  func_801E82CC(void);
+extern void func_801E870C(void);
+extern s32  func_801E8B98(void);
 
 #endif /* FIELD_H */
