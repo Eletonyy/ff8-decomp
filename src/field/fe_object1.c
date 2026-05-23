@@ -1319,6 +1319,25 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A63AC);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A6A80);
 
+/**
+ * @brief Reset three field-engine tables.
+ *
+ * 1. Calls @c func_80047CE4 (@c memset) on each of 64 @c D_800DD6D0
+ *    entries (stride 0x30 = 48 bytes), zeroing each in turn.
+ * 2. Clears 64 @c s32 entries at @c D_800D6620.
+ * 3. Clears 32 @c EntityRenderSlot* pointer entries at @c D_800D9630.
+ *
+ * The forward for-loops in the scratch source compile to backward
+ * @c bgez loops — gcc strength-reduces the index since each iteration
+ * is independent.
+ *
+ * @note Decomp at 95.56% match — remaining diff is a single epilogue
+ *       scheduling slot: target fills the @c jr @c ra delay slot with
+ *       @c addiu @c sp; ours emits @c addiu @c sp first then a nop in
+ *       the delay slot. This is a maspsx scheduling artifact for
+ *       PsyQ 4.1 builds. See @c permuter/func_800A7194/base.c for the
+ *       current C.
+ */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A7194);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A7224);
