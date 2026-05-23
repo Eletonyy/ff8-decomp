@@ -605,6 +605,18 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009F74C);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009F7F4);
 
+/**
+ * @brief Interpolate an Eline's X/Y/Z position via the safe-lerp helper.
+ *
+ * Looks up @c D_80085224[idx] and runs @c func_800A0E54 three times to
+ * compute @c posX / @c posY / @c posZ from the unk1A8/AC/B0 endpoints
+ * and field_0x1C0/C4/C8 targets, using field_0x1D8/DA as the total/step.
+ *
+ * @note Decomp at 58.56% match — gcc 2.7.2 caches the @c Eline pointer
+ *       across the 3 calls (loads @c D_80085224 once); target reloads
+ *       it after each call. Volatile-pointer cast at site made it
+ *       worse. See @c permuter/func_8009F8D0/base.c for the current C.
+ */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009F8D0);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009F990);
