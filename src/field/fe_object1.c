@@ -3,6 +3,7 @@
 #include "psxsdk/libgte.h"
 #include "psxsdk/libgpu.h"
 #include "field/fe_object1.h"
+#include "field/fe_object10.h"
 
 /** @brief 12-byte path waypoint (64 entries per table, indexed by angle/64). */
 typedef struct {
@@ -1062,7 +1063,32 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5360);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A553C);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5698);
+/**
+ * @brief Dialog tick that counts the timer DOWN; finalize on expire or
+ *        when @c func_800BE274 reports a script gate is open.
+ *
+ * Decrements @c dialogTimer by @c dialogCount (one count-down step),
+ * unconditionally clears the @c unk1A1 flag, then:
+ *   - If the new timer is still positive (more frames to wait), polls
+ *     @c func_800BE274 — if it returns 0 (gate not yet open), we keep
+ *     the dialog state intact and return.
+ *   - Otherwise (timer expired @em or gate now open) clears both
+ *     @c dialogState and @c dialogTimer so the dialog state machine
+ *     can advance.
+ *
+ * Companion to @c func_800A5700 (which counts the timer up); both are
+ * driven from the dialog state machine each frame.
+ */
+void func_800A5698(void) {
+    SystemState *sys = &D_800704A8;
+    sys->dialogTimer -= sys->dialogCount;
+    sys->unk1A1 = 0;
+    if ((s16)*(volatile u16 *)&sys->dialogTimer > 0) {
+        if (func_800BE274() == 0) return;
+    }
+    sys->dialogState = 0;
+    sys->dialogTimer = 0;
+}
 
 /**
  * @brief Advance the dialog timer by one step and clamp at 0xFF.
