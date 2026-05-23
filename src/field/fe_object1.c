@@ -1315,6 +1315,19 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A6100);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A62EC);
 
+/* ============================================================================
+ * PsyQ 4.3 boundary — every non-leaf function from here to the end of the
+ * file (func_800A63AC .. func_800AA8A0) was originally compiled with the
+ * PsyQ 4.3 toolchain (gcc 2.8.0), evidenced by FILLED branch-delay-slot
+ * epilogues (`jr ra; addiu sp` instead of PsyQ 4.1's `addiu sp; jr ra; nop`).
+ * Confirmed by recompiling the same C with tools/gcc-2.8.0-psx/cc1.
+ *
+ * fe_object1.c as a whole compiles with PsyQ 4.1, so these functions can't
+ * match while they live here. To decomp them in C, this file likely needs
+ * to be split at 0x800A63AC into a PsyQ 4.1 part (above) and a PsyQ 4.3
+ * part (below, added to PSYQ43_SRCS in the Makefile). Until the split is
+ * done, the functions below stay as INCLUDE_ASM stubs.
+ * ============================================================================ */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A63AC);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A6A80);
