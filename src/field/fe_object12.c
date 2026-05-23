@@ -4,8 +4,6 @@
 
 extern u8 D_80077BA8[];
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C0098);
-
 INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C00C8);
 
 /** @brief Sets bit 0x20 of the partyLockFlag. */

@@ -714,19 +714,21 @@ s32 *func_800BE4B0(u8 *header, u16 *table) {
 INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BE5E4);
 
 /**
- * @brief Initialize the @c FieldEntityB pool (Block B entities, stride 0x1A0).
+ * @brief Initialize the Block B field-entity pool (stride 0x1A0).
  *
- * Memsets the supplied buffer for @c D_800852F8 entities, then for each
- * entry pulls a packed (upper:9, lower:7) value from @c D_800DE4E0,
- * derives @c rangeLo / @c rangeHi / @c pc, and registers the entity in
- * @c D_80085230 at indices @c [D_80085388, D_80085388+count). pc is
- * masked with @c 0x7FFF. Returns the post-init free-slot pointer.
+ * Block B entities are smaller field actors (0x1A0 bytes each) but share
+ * the script-VM header (offsets 0x000..0x187) with @c Eline, so we type
+ * them as @c Eline* and walk with manual stride. Memsets the buffer,
+ * then for each entry pulls a packed (upper:9, lower:7) value from
+ * @c D_800DE4E0, derives @c rangeLo / @c rangeHi / @c pc, and registers
+ * the entity in @c D_80085230 at indices @c [D_80085388, D_80085388+count).
+ * pc is masked with @c 0x7FFF. Returns the post-init free-slot pointer.
  *
- * @param buf Entity buffer (becomes the @c FieldEntityB pool base).
- * @return Pointer past the last initialized @c FieldEntityB slot.
+ * @param buf Entity buffer (Block B pool base).
+ * @return Pointer past the last initialized Block B slot.
  */
-FieldEntityB *func_800BE7F4(FieldEntityB *buf) {
-    FieldEntityB *e = buf;
+Eline *func_800BE7F4(Eline *buf) {
+    Eline *e = buf;
     func_800396E0(buf, D_800852F8 * 0x1A0);
     {
         s32 k = 0;
@@ -740,7 +742,7 @@ FieldEntityB *func_800BE7F4(FieldEntityB *buf) {
             u16 lower;
             u16 pcVal;
 
-            D_80085230[D_80085388 + k] = (Eline *)e;
+            D_80085230[D_80085388 + k] = e;
             e->flags = 0x20000000;
             e->stackPtr = -1;
 
@@ -766,7 +768,7 @@ FieldEntityB *func_800BE7F4(FieldEntityB *buf) {
             e->pc = pcVal & 0x7FFF;
             e->groupRanges[7] = 0xFFFF;
 
-            e++;
+            e = (Eline *)((u8 *)e + 0x1A0);
             k++;
         } while (k < D_800852F8);
 

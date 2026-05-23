@@ -229,18 +229,22 @@ typedef struct {
     /* 0x13A */ u16 unk13A;
     /* 0x13C */ u8 pad13C[0x1C];
     /* 0x158 */ s32 ambientFlags;   /**< Ambient SFX/state flags; bits 6-7 gate the fade-out path in @c func_800BD9C4. */
-    /* 0x15C */ u8 pad15C[0x34];
+    /* 0x15C */ u8 pad15C[0x24];
+    /* 0x180 */ u8 unkActive180[16]; /**< 16-byte active-marker region, cleared on @c func_800BF718 mode 1 init. */
     /* 0x190 */ u8 slotActive[16];
     /* 0x1A0 */ u8 unk1A0;          /**< Mode-6 active marker, set with mode = 6 by fe_object6 opcode. */
     /* 0x1A1 */ u8 pad1A1;
     /* 0x1A2 */ u8 unk1A2;          /**< Mode-7 reentry guard byte. */
     /* 0x1A3 */ u8 unk1A3;          /**< Set to 1 by @c opHandler_UCOFF on every call (re-arm guard). */
-    /* 0x1A4 */ u8 pad1A4[0x07];
+    /* 0x1A4 */ u8 pad1A4[0x02];
+    /* 0x1A6 */ u8 unk1A6;          /**< Cleared by @c func_800BFBBC on full reset. */
+    /* 0x1A7 */ u8 pad1A7[0x04];
     /* 0x1AB */ u8 unk1AB;          /**< Sub-mode byte; written together with @c mode by fe_object6 opcodes. */
     /* 0x1AC */ u8 pad1AC[0x02];
     /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c func_800B85C8, read by @c func_8009FE18). */
     /* 0x1AF */ u8 packedFlagSlot;  /**< Last @c getPackedField2Bit result for the active dispatcher slot; written each tick by @c func_800BD9C4. */
-    /* 0x1B0 */ u8 pad1B0[0x08];
+    /* 0x1B0 */ u8 pad1B0[0x04];
+    /* 0x1B4 */ s32 field1B4;       /**< Initialised to @c 0xFFFFFF by @c func_800BFBBC on full reset. */
     /* 0x1B8 */ u8 statusBits[0x40]; /**< Packed bit-array (512 bits); set by @c opHandler_IDLOCK, cleared by @c opHandler_IDUNLOCK, zeroed during init. */
 } SystemState;
 
@@ -263,11 +267,19 @@ typedef struct {
     /* 0x0C */ s32 hpRegenStepAcc;      /**< Step accumulator: fires HP regen ticks at @c 8. */
     /* 0x10 */ u16 seedExp;             /**< SeeD experience (clamped to [100, 3100]; level = exp/100). */
     /* 0x12 */ u16 prevKillSum;         /**< Last frame's total enemy-kill count across all 8 chars. */
-    /* 0x14 */ u8 pad14[0x34];
+    /* 0x14 */ s32 field14;             /**< Copied from @c g_gameState[0xCDC] by @c func_800BFBBC. */
+    /* 0x18 */ u16 field18;             /**< Copied from @c g_gameState[0xCE0]. */
+    /* 0x1A */ u16 field1A;             /**< Copied from @c g_gameState[0xCE2]. */
+    /* 0x1C */ u16 charKills[8];        /**< Snapshot of @c chars[i].kills, refreshed by @c func_800BFBBC. */
+    /* 0x2C */ u16 charKos[8];          /**< Snapshot of @c chars[i].kos. */
+    /* 0x3C */ u8 pad3C[0x08];
+    /* 0x44 */ s32 killSum;             /**< Sum of @c chars[i].kills across all 8 characters. */
     /* 0x48 */ s32 gilMirror;           /**< Mirror of @c g_gameState.mainData.party.gil, kept in sync by fe_object6. */
     /* 0x4C */ s32 dreamGilMirror;      /**< Mirror of @c g_gameState.mainData.party.dreamGil. */
     /* 0x50 */ s32 padInitStatus;       /**< Result of @c func_801E8B58 (pad-init status), updated each field tick. */
-    /* 0x54 */ u8 pad54[0x04];
+    /* 0x54 */ u16 field54;             /**< Mirror of @c D_800704A8.field120, set by @c func_800BFBBC. */
+    /* 0x56 */ u8 field56;              /**< Copy of @c D_80082C8D byte, set by @c func_800BFBBC. */
+    /* 0x57 */ u8 field57;              /**< Low byte of @c D_8005F14C, set by @c func_800BFBBC. */
     /* 0x58 */ u8 field58;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0x59 */ u8 pad59[0x0F];
     /* 0x68 */ s32 stateFlags;          /**< Field state flags (bits 3-4 checked by getFieldStateFlags). */

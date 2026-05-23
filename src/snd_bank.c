@@ -351,7 +351,7 @@ void sndStopTrack(s32 *a0) {
 void sndClearVoicePool(void) {
     s32 i;
     for (i = 12; i != 0; i--) {
-        D_80074F20[i - 1].field0 = 0;
+        D_80074F20[i - 1].cmd = 0;
     }
 }
 
