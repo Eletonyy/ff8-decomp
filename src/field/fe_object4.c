@@ -5,16 +5,6 @@
 #include "field/fe_object3.h"
 #include "field/fe_object4.h"
 
-
-extern FieldVars *g_fieldVars;
-extern s32 D_800705E8;
-extern s32 D_800705F0;
-extern s32 D_800705F8;
-extern u16 *D_800852F0;
-extern u8 D_80077E5F;
-extern u8 D_800780D8[];
-extern u8 D_800704BD;
-
 /**
  * @brief Drain the @c D_800DE7B0 CD-load command queue.
  *

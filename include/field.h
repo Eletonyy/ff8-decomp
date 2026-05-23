@@ -860,6 +860,19 @@ extern u16 D_8005F14C;
 /** @brief Misc field byte; copied into @c FieldVars.field56 on full reset. */
 extern u8  D_80082C8D;
 
+/** @brief Bitfield words tested by fe_object4 opcode handlers. */
+extern s32 D_800705E8;
+extern s32 D_800705F0;
+extern s32 D_800705F8;
+
+/** @brief Misc field-VM byte; set by fe_object4 from @c g_fieldVars->fieldF3. */
+extern u8  D_80077E5F;
+
+/** @brief @c &g_gameState.fieldVars exposed as a byte array for fe_object4's
+ *         script-VM M-memory load/store opcodes (offsets are popped from the
+ *         eline stack). */
+extern u8  D_800780D8[];
+
 /** @brief Field-side rotation/orientation halfword consumed by encounter setup. */
 extern s16 D_800704B2;
 
