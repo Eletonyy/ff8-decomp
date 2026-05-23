@@ -711,7 +711,41 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A327C);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3488);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3534);
+/**
+ * @brief Shape of the buffer @c func_800A3534 sees: an array of 16
+ * items beginning at offset 0x1830, each item @c 0xFE bytes with three
+ * leading s16 fields that get zeroed.
+ *
+ * @note Named after the function/arg; we don't know the original name.
+ *       Same disc-loaded field-map buffer that the rest of the
+ *       @c func_800A2EE0 init chain operates on, but the per-item shape
+ *       (stride 0xFE, three s16 fields) doesn't align with any other
+ *       struct in this file.
+ */
+typedef struct {
+    /* 0x0000 */ u8 pad0000[0x1830];
+    /* 0x1830 */ struct {
+        s16 h0;
+        s16 h1;
+        s16 h2;
+        u8  pad[0xF8];   /* pad to 0xFE stride */
+    } items[16];
+} func_800A3534_arg0;
+
+/**
+ * @brief Zero the three leading s16 fields of each of 16 items in the table.
+ *
+ * Called from @c func_800A2EE0 as the first step of the particle-system
+ * init chain on the disc-loaded field-map buffer.
+ */
+void func_800A3534(func_800A3534_arg0 *t) {
+    s32 i;
+    for (i = 0; i < 16; i++) {
+        t->items[i].h0 = 0;
+        t->items[i].h1 = 0;
+        t->items[i].h2 = 0;
+    }
+}
 
 
 /**

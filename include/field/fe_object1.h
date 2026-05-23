@@ -174,7 +174,7 @@ extern int  func_800A2F70();
 extern s16  func_800A2FE0(ParticleSystem *sys);
 extern void func_800A327C(Eline *actor, SVECTOR *out);
 extern void func_800A3488(Eline *actor, SVECTOR *out);
-extern int  func_800A3534();
+extern void func_800A3534();  /* arg is a file-private buffer view in fe_object1.c */
 extern int  func_800A37A8();
 extern int  func_800A38B4();
 extern int  func_800A39D8();
