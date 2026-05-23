@@ -48,6 +48,9 @@ typedef struct {
     /* 0x20 */ void (*callback)(void); /**< Completion callback (NULL if none). */
 } CdReadState; /* 0x24 = 36 bytes */
 
+/** @brief Async CD read state owned by @c cdread.c; polled by @c func_800393C8. */
+extern CdReadState D_8008A3D8;
+
 extern s32 cdReadAsyncSync(s32 lba, u32 size, u8 *dest, void (*callback)(void));
 
 /** @brief Initiate an asynchronous CD read with a completion callback. */

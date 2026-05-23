@@ -6,7 +6,6 @@ extern u8 D_800E3CEC[];
 void func_800AB054(void);
 void func_800AB1AC(void);
 s32 func_800B0398(s32);
-extern u8 D_8007809A[];
 s32 func_800B0F9C(s32);
 s32 func_800B0F7C(s32);
 s32 func_800AE730(void);
@@ -521,10 +520,10 @@ s32 func_800AA980(s32 a0, s32 a1) {
  */
 s32 func_800AA9C8(s32 a0, s32 a1) {
     if (a0 == 0) {
-        return (*(u8 *)D_8007809A >> a1) & 1;
+        return (D_8007809A >> a1) & 1;
     }
     if (a0 == 3) {
-        return ((*(u8 *)D_8007809A >> a1) & 1) ^ 1;
+        return ((D_8007809A >> a1) & 1) ^ 1;
     }
 }
 

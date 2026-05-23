@@ -873,6 +873,15 @@ extern u8  D_80077E5F;
  *         eline stack). */
 extern u8  D_800780D8[];
 
+/** @brief Field-side status flag byte; bitfield (0x1, 0x2, 0x4, 0x8, 0x10, 0x20). */
+extern u8  D_8007809A;
+
+/** @brief Mirror of @c g_fieldVars->stepCounter (s32). */
+extern s32 D_80082C14;
+
+/** @brief Pool sizer for entity/script tables; called from @c fe_object10. */
+extern s32 func_80037AEC(u8 *header, u16 *table, s32 **outBase);
+
 /** @brief Field-side rotation/orientation halfword consumed by encounter setup. */
 extern s16 D_800704B2;
 

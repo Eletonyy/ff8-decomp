@@ -3,7 +3,6 @@
 #include "overlay.h"
 #include "cd.h"
 
-extern CdReadState D_8008A3D8;
 extern u8 D_8008A3DC[];
 extern CdDriveState D_8008A3C8;
 extern u8 D_8001092C[];

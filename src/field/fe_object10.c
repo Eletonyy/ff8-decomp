@@ -7,13 +7,6 @@
 #include "cd.h"
 #include "field/fe_object10.h"
 
-extern FieldVars   *g_fieldVars;
-extern CdReadState  D_8008A3D8;
-extern u8           D_8007809A;
-extern s32          D_80082C14;
-extern u16         *D_800852F0;
-extern s32          func_80037AEC(u8 *header, u16 *table, s32 **outBase);
-
 /**
  * @brief Pop value from script stack and branch to one of two handlers.
  *
