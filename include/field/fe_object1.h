@@ -12,6 +12,13 @@ typedef struct {
     s32 z;
 } Vec3i;
 
+/** @brief 6-byte signed 16-bit 3D position (x, y, z). */
+typedef struct {
+    s16 x;
+    s16 y;
+    s16 z;
+} Vec3s;
+
 /** @brief Animation parameter entry. */
 typedef struct {
     /* 0x00 */ u8 pad00[0x09];
@@ -138,7 +145,7 @@ extern int  func_8009D274();
 extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
 extern int  func_8009D598();
 extern s32  func_8009DF18();  /* handwritten, return value used by func_8009D500 */
-extern int  func_8009E338();
+extern s32 func_8009E338(Vec3i *a0, Vec3i *a1, Vec3i *a2, Vec3s *a3);  /* plane-cross intersection */
 extern int  func_8009E660();
 extern int  func_8009ECA4();
 extern s32  func_8009F74C(Eline *a, Eline *b);

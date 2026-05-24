@@ -581,7 +581,46 @@ void func_8009DED8(u8 *a0, u8 *a1, u8 *a2) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009DF18);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009E338);
+/**
+ * @brief Plane-cross intersection — compute @c (cross_xyz @c · (a3 @c -
+ *        @c a2_partial)) @c / @c cross_z, where @c cross @c = @c a1 @c
+ *        × @c a0.
+ *
+ * Builds the cross product @c a1 @c × @c a0 (stored to a stack array
+ * @c sp[3]), then overwrites @c a0 with @c a3's sign-extended values.
+ * The return value is the scalar projection of @c (a3 - a2_partial)
+ * along the cross-product axis divided by @c cross_z. Note: @c a2's
+ * @c z component is intentionally not subtracted.
+ *
+ * @param a0 Direction vector A (s32 x,y,z) — overwritten with @c a3.
+ * @param a1 Direction vector B (s32 x,y,z).
+ * @param a2 Reference point (s32 x,y,z) — only @c .x and @c .y used.
+ * @param a3 Target point (s16 x,y,z).
+ * @return The intersection parameter @c (s32).
+ *
+ * The trailing block caches @c sp[0..2] into local @c s32 vars (t0,
+ * t1, t2) so gcc 2.7.2 loads each only once — without the cache, gcc
+ * reloads them from the stack for each of the 5 uses.
+ */
+s32 func_8009E338(Vec3i *a0, Vec3i *a1, Vec3i *a2, Vec3s *a3) {
+    s32 sp[3];
+
+    sp[0] = -a0->y * a1->z + a1->y * a0->z;
+    sp[1] = -a0->z * a1->x + a0->x * a1->z;
+    sp[2] = -a0->x * a1->y + a1->x * a0->y;
+
+    a0->x = a3->x;
+    a0->y = a3->y;
+    a0->z = a3->z;
+
+    {
+        s32 t0 = sp[0];
+        s32 t1 = sp[1];
+        s32 t2 = sp[2];
+        return (t0 * a0->x + t1 * a0->y + t2 * a0->z
+                - t0 * a2->x - t1 * a2->y) / t2;
+    }
+}
 
 /**
  * @brief Test if @p selfIdx overlaps with any other active entity at world @p pos.
