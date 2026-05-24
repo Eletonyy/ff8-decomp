@@ -603,10 +603,14 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009ECA4);
  * the loop, so the body either succeeds on both iterations or fails on
  * both. Faithful to the original asm — the loop is preserved here.
  *
- * @note Decomp at 98.21% match — remaining diff is gcc 2.7.2 picking
- *       @c t0/t1 for the long-lived @c i / @c z_ok pair instead of
- *       target's @c a3/t0, which cascades into different @c mflo
- *       register choices later. See @c permuter/func_8009F74C/base.c.
+ * @note Decomp at 98.21% match. The instruction sequence matches
+ *       exactly; the diff is purely register allocation — gcc 2.7.2
+ *       consistently picks @c t0/t1 for the long-lived @c i / @c z_ok
+ *       pair where target picked @c a3/t0, cascading into different
+ *       @c mflo register choices later. Resists declaration-order
+ *       reshuffling, @c register hints, @c volatile, goto-based
+ *       loops, and do-while alternates. See
+ *       @c permuter/func_8009F74C/base.c for the current C.
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009F74C);
 
