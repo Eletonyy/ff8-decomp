@@ -220,12 +220,13 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A4C0);
  *   - bit 6 set in @c unk150 and clear in @c unk154 → @c trigger7 = @c unk19D (= 1)
  *   - bit 7 set in @c unk150 and clear in @c unk154 → @c trigger7 = 2
  *
- * @note Decomp at 83.39% match — the structure (gating chain + double
- *       flag dispatch) matches. Remaining diff is gcc 2.7.2 not caching
- *       the @c D_800852F8 base-address @c lui (target reuses @c t1 for
- *       the cached %%hi) and a missing walker rebase to entity+0x199
- *       (target uses small negative/positive offsets from the rebased
- *       walker). See @c permuter/func_8009A7E8/base.c.
+ * @note Decomp at 97.42% match. Walking @c pool via @c pool++ (instead
+ *       of @c pool[i] indexing) lets gcc rebase the walker to
+ *       @c +0x199 (the @c trigger7 field) and use small relative
+ *       offsets for the other fields, matching target's pattern.
+ *       Remaining diff is one scheduling slot: target uses a @c nop
+ *       to fill the count-reload @c lbu 's load delay; gcc 2.7.2
+ *       fills it with the @c i++ instead.
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A7E8);
 
