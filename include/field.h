@@ -236,7 +236,9 @@ typedef struct {
     /* 0x134 */ u16 unk134;
     /* 0x136 */ u8 pad136[0x04];
     /* 0x13A */ u16 unk13A;
-    /* 0x13C */ u8 pad13C[0x1C];
+    /* 0x13C */ u8 pad13C[0x14];
+    /* 0x150 */ s32 unk150;         /**< Bit-6/7 source for @c func_8009A7E8 's per-entity trigger7 write. */
+    /* 0x154 */ s32 unk154;         /**< Bit-6/7 mask gating @c func_8009A7E8 's write (inverse of @c unk150). */
     /* 0x158 */ s32 ambientFlags;   /**< Ambient SFX/state flags; bits 6-7 gate the fade-out path in @c func_800BD9C4. */
     /* 0x15C */ u8 pad15C[0x24];
     /* 0x180 */ u8 unkActive180[16]; /**< 16-byte active-marker region, cleared on @c func_800BF718 mode 1 init. */
@@ -436,7 +438,8 @@ typedef struct {
     /* 0x23A */ u8 field_0x23A;
     /* 0x23B */ u8 field_0x23B;
     /* 0x23C */ u8 msgActive;       /**< Message active flag. */
-    /* 0x23D */ u8 pad23D[0x03];
+    /* 0x23D */ u8 pad23D[0x02];
+    /* 0x23F */ u8 unk23F;          /**< Anim-sync byte; @c func_8009A7E8 's diff-window check uses @c entity->unk19C - @c eline->unk23F. */
     /* 0x240 */ u8 field_0x240;
     /* 0x241 */ u8 field_0x241;
     /* 0x242 */ u8 field_0x242;
@@ -574,10 +577,10 @@ typedef struct {
     /* 0x196 */ u8  trigger4;       /**< Cleared together with @c unk19D by @c func_8009A8E0. */
     /* 0x197 */ u8  trigger5;
     /* 0x198 */ u8  trigger6;
-    /* 0x199 */ u8  trigger7;
+    /* 0x199 */ u8  trigger7;       /**< Set to 1/2 by @c func_8009A7E8 when the active-marker test + diff window pass. */
     /* 0x19A */ u8  trigger2;
     /* 0x19B */ u8  trigger3;
-    /* 0x19C */ u8  pad19C;
+    /* 0x19C */ u8  unk19C;         /**< Anim-sync byte compared (with diff bias) against @c eline->unk23F by @c func_8009A7E8. */
     /* 0x19D */ u8  unk19D;         /**< Per-entity flag cleared by @c func_8009A8E0 alongside @c trigger4. */
     /* 0x19E */ u8  pad19E[0x02];
 } FieldEntityB; /* 0x1A0 */

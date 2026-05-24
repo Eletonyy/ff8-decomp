@@ -205,6 +205,28 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A2BC);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A4C0);
 
+/**
+ * @brief Sync per-entity @c trigger7 across the FieldEntityB pool from
+ *        the global @c unk150 / @c unk154 SFX flag pair.
+ *
+ * Iterates the @c D_800852F8 entities at @c pool. For each entity that
+ * passes the gating tests
+ *   - @c activeMarker == 1
+ *   - @c eline->msgActive == 0
+ *   - @c unk19D == @c activeMarker (so @c unk19D == 1)
+ *   - @c entity->unk19C falls within a @c +/-32 window of @c eline->unk23F
+ *
+ * writes @c trigger7 from the @c D_800704A8.unk150 / @c unk154 pair:
+ *   - bit 6 set in @c unk150 and clear in @c unk154 → @c trigger7 = @c unk19D (= 1)
+ *   - bit 7 set in @c unk150 and clear in @c unk154 → @c trigger7 = 2
+ *
+ * @note Decomp at 83.39% match — the structure (gating chain + double
+ *       flag dispatch) matches. Remaining diff is gcc 2.7.2 not caching
+ *       the @c D_800852F8 base-address @c lui (target reuses @c t1 for
+ *       the cached %%hi) and a missing walker rebase to entity+0x199
+ *       (target uses small negative/positive offsets from the rebased
+ *       walker). See @c permuter/func_8009A7E8/base.c.
+ */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A7E8);
 
 /**
