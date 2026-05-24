@@ -41,6 +41,7 @@ extern void func_8004D684(void *p);
 
 extern u16 **D_800D5E9C;         /**< Pointer-to-pointer of u16 count for func_800A29C0's iteration */
 extern u16 *D_800C71E4;
+extern s32 D_800C71FC;           /**< Latched result of @c func_800A0F34 from @c func_800A11E0. */
 extern u16 D_800D3E88[];
 extern u8 D_800D5F50[];
 extern u8 D_800D61A8[];
@@ -893,6 +894,22 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A0FB8);
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A10F4);
 
+/**
+ * @brief Build an @c SVECTOR from the active slot's entity position and
+ *        project it through @c func_800A0F34, then call @c func_800A0FB8
+ *        with a flag selected by the active-slot index.
+ *
+ * Reads @c D_800704A8.slots[unk1A6].param to pick a @ref FieldEntity,
+ * fills @c svec.{vx,vy,vz} from its @c posX/posY/posZ shifted right by
+ * @c 12, biased by @c D_8005F0F8->baseZ on @c vz. The projection result
+ * is latched to @c D_800C71FC. The trailing @c func_800A0FB8 call gets
+ * flag @c 0 when @c unk1A6 @c == @c 0 and flag @c 1 otherwise.
+ *
+ * @note Decomp at 95.45% match — semantics and structure match; remaining
+ *       diff is gcc 2.7.2 reg-alloc choice (which temp holds the
+ *       @c &D_80085224 pointer-base vs the @c &svec arg pointer).
+ *       See @c permuter/func_800A11E0/base.c.
+ */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A11E0);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A1318);

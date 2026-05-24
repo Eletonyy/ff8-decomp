@@ -155,7 +155,7 @@ extern s32  func_800A0EB8(s32 start, s32 end, s32 total, s32 angle);
 extern s32  func_800A0F34(SVECTOR *v, s32 *sxy);
 extern int  func_800A0FB8();
 extern int  func_800A10F4();
-extern int  func_800A11E0();
+extern void func_800A11E0(s32 *sxy);
 extern int  func_800A1318();
 extern int  func_800A15C0();
 extern int  func_800A17B8();

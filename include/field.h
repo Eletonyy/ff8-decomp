@@ -185,7 +185,9 @@ typedef struct {
 typedef struct {
     /* 0x00 */ u8 pad00[0x0E];
     /* 0x0E */ u8 unk0E;            /**< When @c == 1, @c func_800A1BB8 issues a StoreImage to VRAM. */
-    /* 0x0F */ u8 pad0F[0x51];
+    /* 0x0F */ u8 pad0F[0x03];
+    /* 0x12 */ u16 baseZ;           /**< Base Z offset added to the per-entity Z when building SVECTOR (func_800A11E0). */
+    /* 0x14 */ u8 pad14[0x4C];
     /* 0x60 */ EventEntry entries[16];
 } EventQueue;
 
