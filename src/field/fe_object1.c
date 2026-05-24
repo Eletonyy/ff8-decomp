@@ -1518,7 +1518,32 @@ void func_800A355C(FieldActor *actor, s32 slot, s32 a2) {
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A37A8);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A38B4);
+/**
+ * @brief Advance a 3-axis position+angle lerp accumulator by one tick.
+ *
+ * Updates @p out 's @c posX/posY/posZ (@c s32) and @c angle (@c u16)
+ * accumulators by adding (per-axis) @c (startSnapshot @c + @c origin @c +
+ * @c (target @c - @c origin) @c * @c stepProgress @c / @c stepTotal),
+ * where the angle term is then @c <<4. Bails early when
+ * @p in->stepTotal @c == @c 0 to avoid a divide-by-zero.
+ *
+ * Caching @c in->angle into an @c s32 local prevents gcc from doing
+ * lhu+sll/sra for that field; caching @c out->angleStart into an
+ * @c s32 local makes gcc pick @c lh over @c lhu for it. Together
+ * these match the target's exact instruction selection.
+ */
+void func_800A38B4(func_800A38B4_out *out, func_800A38B4_in *in, func_800A38B4_in *target) {
+    s32 a;
+    s32 s;
+    if (in->stepTotal != 0) {
+        a = in->angle;
+        s = out->angleStart;
+        out->angle += (s + a + (target->angle - a) * out->stepProgress / in->stepTotal) << 4;
+        out->posX  += out->xStart + in->x + (target->x - in->x) * out->stepProgress / in->stepTotal;
+        out->posY  += out->yStart + in->y + (target->y - in->y) * out->stepProgress / in->stepTotal;
+        out->posZ  += out->zStart + in->z + (target->z - in->z) * out->stepProgress / in->stepTotal;
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A39D8);
 

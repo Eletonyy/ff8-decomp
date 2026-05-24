@@ -200,7 +200,49 @@ extern void func_800A327C(Eline *actor, SVECTOR *out);
 extern void func_800A3488();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
 extern void func_800A3534();  /* arg is a file-private buffer view in fe_object1.c */
 extern int  func_800A37A8();
-extern int  func_800A38B4();
+/**
+ * @brief Input "movement command" view that @c func_800A38B4 lerps from.
+ *
+ * @c x/y/z/angle (s16) are the start endpoints; @c stepTotal (u8) is the
+ * lerp denominator. Used for both @c func_800A38B4's @c in (start) and
+ * @c target (end) — the same shape is reused via @c stepTotal field
+ * being irrelevant in the target view.
+ */
+typedef struct {
+    /* 0x00 */ s16 x;
+    /* 0x02 */ s16 y;
+    /* 0x04 */ s16 z;
+    /* 0x06 */ s16 angle;
+    /* 0x08 */ u8  pad08[0x06];
+    /* 0x0E */ u8  stepTotal;
+    /* 0x0F */ u8  pad0F;
+} func_800A38B4_in;  /* 0x10 = 16 bytes */
+
+/**
+ * @brief Output "movement accumulator" view that @c func_800A38B4 writes.
+ *
+ * Holds three @c s32 position accumulators at @c 0x00/04/08, three @c s16
+ * position-start snapshots at @c 0x0C/0E/10, a @c u16 angle accumulator
+ * at @c 0x12, a @c s16 angle-start snapshot at @c 0x16, and the @c u8
+ * progress counter at @c 0x1A. Each tick of @c func_800A38B4 advances
+ * the accumulators toward the lerp target.
+ */
+typedef struct {
+    /* 0x00 */ s32 posX;
+    /* 0x04 */ s32 posY;
+    /* 0x08 */ s32 posZ;
+    /* 0x0C */ s16 xStart;
+    /* 0x0E */ s16 yStart;
+    /* 0x10 */ s16 zStart;
+    /* 0x12 */ u16 angle;
+    /* 0x14 */ u8  pad14[0x02];
+    /* 0x16 */ s16 angleStart;
+    /* 0x18 */ u8  pad18[0x02];
+    /* 0x1A */ u8  stepProgress;
+    /* 0x1B */ u8  pad1B;
+} func_800A38B4_out;  /* 0x1C = 28 bytes */
+
+extern void func_800A38B4(func_800A38B4_out *out, func_800A38B4_in *in, func_800A38B4_in *target);
 extern int  func_800A39D8();
 extern int  func_800A3FE0();
 extern int  func_800A42EC();
