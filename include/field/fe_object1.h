@@ -267,24 +267,10 @@ extern void func_800A5700(void);
 extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
 extern void func_800A5788(s32 a0);
 extern void func_800A5898(s32 a0);  /* dialog-state dispatcher: switch over @c dialogState 0..8 */
-
-/**
- * @brief 16-byte entry view of @c func_800A62EC's array — also consumed by
- *        @c func_800A5FA4 (which is dispatched from each entry's @c mode).
- *        @c status indexes a @ref FieldEntityC in @ref D_80085384, and
- *        @c mode dispatches even/odd to a flag arg.
- */
-typedef struct {
-    /* 0x00 */ u8 pad00[0x0C];
-    /* 0x0C */ u8 status;       /**< @c 0xFF means slot is unused; otherwise indexes @c D_80085384. */
-    /* 0x0D */ u8 padD;
-    /* 0x0E */ u8 mode;         /**< Even (0/2/4) → flag=1, odd (1/3/5) → flag=0 in @c func_800A62EC. */
-    /* 0x0F */ u8 padF;
-} func_800A62EC_entry;  /* 0x10 = 16 bytes */
 extern int  func_800A5A20();
 extern u8   func_800A5C9C(void);
 extern int  func_800A5D28();
-extern s32 func_800A5FA4(func_800A62EC_entry *entry, s32 sel);  /* selector dispatcher: sel 0..5 */
+extern void func_800A5FA4();  /* arg 0 = entry pointer (16-byte stride); arg 1 = flag */
 extern int  func_800A6100();
 extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();

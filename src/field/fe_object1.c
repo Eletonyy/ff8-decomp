@@ -47,7 +47,6 @@ extern u8 D_800D5F50[];
 extern u8 D_800D61A8[];
 extern u8 D_8005F168[];
 extern u8 D_80070649;            /**< Flag set to @c 1 in @c func_800A5898 case 4. */
-extern u8 D_80070628[];          /**< 6-byte per-selector gate flag table consumed by @c func_800A5FA4. */
 
 extern void func_800127F8(s32 a0);
 
@@ -1983,56 +1982,7 @@ u8 func_800A5CF8(void) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5D28);
 
-/**
- * @brief Per-selector dispatcher — sets or clears a @ref FieldEntityC
- *        trigger byte indexed by @c entry->status, gated by a per-selector
- *        flag in @c D_80070628[0..5].
- *
- * @param entry  Per-frame entry (16-byte stride; @c status field at 0xC).
- * @param sel    Selector @c 0..5 (any other value is a no-op returning 0).
- * @return @c 1 when the gate passes (state-change occurred); @c 0 otherwise.
- *
- * Behavior per selector:
- *  - Even (@c 0/2/4): if the target's @c activeMarker is set AND the
- *    flag is currently @c 0, latch the flag to @c 1 and (when
- *    @c status < D_80085228) set the target's @c trigger6.
- *  - Odd (@c 1/3/5): if the target's @c activeMarker is set AND the
- *    flag is currently @c 1, clear the flag and (when
- *    @c status < D_80085228) clear the target's @c trigger7.
- */
-s32 func_800A5FA4(func_800A62EC_entry *entry, s32 sel) {
-    u8 *flag_arr = D_80070628;
-    s32 result = 0;
-    u32 s = sel & 0xFF;
-
-    if (s < 6) {
-        switch (s) {
-            case 0:
-            case 2:
-            case 4:
-                if (D_80085384[entry->status].activeMarker == 1 && flag_arr[s] == 0) {
-                    flag_arr[s] = 1;
-                    result = 1;
-                    if (entry->status < D_80085228) {
-                        D_80085384[entry->status].trigger6 = 1;
-                    }
-                }
-                break;
-            case 1:
-            case 3:
-            case 5:
-                if (D_80085384[entry->status].activeMarker == 1 && flag_arr[s] == 1) {
-                    flag_arr[s] = 0;
-                    result = 1;
-                    if (entry->status < D_80085228) {
-                        D_80085384[entry->status].trigger7 = 0;
-                    }
-                }
-                break;
-        }
-    }
-    return result;
-}
+INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5FA4);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A6100);
 
@@ -2045,6 +1995,14 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A6100);
  * where @c flag = 1 for even modes (0/2/4) and 0 for odd modes (1/3/5).
  *
  */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x0C];
+    /* 0x0C */ u8 status;       /**< @c 0xFF means slot is unused (skip). */
+    /* 0x0D */ u8 padD;
+    /* 0x0E */ u8 mode;         /**< Even (0/2/4) → flag=1, odd (1/3/5) → flag=0. */
+    /* 0x0F */ u8 padF;
+} func_800A62EC_entry;  /* 0x10 = 16 bytes */
+
 void func_800A62EC(func_800A62EC_entry *entries) {
     s32 i;
     func_800A62EC_entry *p;
