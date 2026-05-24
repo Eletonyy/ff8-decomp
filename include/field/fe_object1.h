@@ -144,7 +144,7 @@ extern int  func_8009ECA4();
 extern s32  func_8009F74C(Eline *a, Eline *b);
 extern void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode);
 extern void func_8009B4A8(s16 a, u8 b, s32 c, s32 d);
-extern int  func_8009F8D0();
+extern void func_8009F8D0(s16 idx);
 extern int  func_8009F990();
 extern int  func_8009FE18();
 extern int  func_800A0640();
