@@ -221,9 +221,9 @@ extern int  func_800A5898();
 extern int  func_800A5A20();
 extern u8   func_800A5C9C(void);
 extern int  func_800A5D28();
-extern int  func_800A5FA4();
+extern void func_800A5FA4();  /* arg 0 = entry pointer (16-byte stride); arg 1 = flag */
 extern int  func_800A6100();
-extern int  func_800A62EC();
+extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();
 extern int  func_800A6A80();
 extern int  func_800A7194();
