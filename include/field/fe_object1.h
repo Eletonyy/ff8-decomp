@@ -253,13 +253,13 @@ extern s32  func_800A48CC(void);
 extern int  func_800A4934();
 extern int  func_800A4C14();
 extern int  func_800A5224();
-extern int  func_800A5360();
-extern int  func_800A553C();
+extern void func_800A5360(s32 a0, s16 a1, s16 a2, s16 a3);  /* dialog 3-tuple dispatch */
+extern void func_800A553C(s32 a0, s16 a1, s16 a2, s16 a3);  /* dialog 3-tuple dispatch */
 extern void func_800A5698(void);
 extern void func_800A5700(void);
 extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
 extern void func_800A5788(s32 a0);
-extern int  func_800A5898();
+extern void func_800A5898(s32 a0);  /* dialog-state dispatcher: switch over @c dialogState 0..8 */
 extern int  func_800A5A20();
 extern u8   func_800A5C9C(void);
 extern int  func_800A5D28();

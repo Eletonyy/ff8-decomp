@@ -46,6 +46,9 @@ extern u16 D_800D3E88[];
 extern u8 D_800D5F50[];
 extern u8 D_800D61A8[];
 extern u8 D_8005F168[];
+extern u8 D_80070649;            /**< Flag set to @c 1 in @c func_800A5898 case 4. */
+
+extern void func_800127F8(s32 a0);
 
 /**
  * @brief 24-byte draw-point slot holding a 16-bit (x, y, z) position.
@@ -1751,7 +1754,72 @@ void func_800A5788(s32 a0) {
                                                          (s16)*(volatile u16 *)&sys->dialogCount)));
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5898);
+/**
+ * @brief Dialog-state dispatcher — runs the per-state handler for the
+ *        current @c D_800704A8.dialogState (@c 0..8).
+ *
+ * @param a0 Opaque pointer forwarded to the per-state callees.
+ *
+ * Behavior per state:
+ *  - @c 0: clear @c unk1A1, @c field_0x114/116/118 (reset)
+ *  - @c 1: no-op
+ *  - @c 2/3: rate-2 timer tick + setup/teardown, then dispatch via
+ *            @c func_800A5360 with the @c field_0x10E/110/112 triplet
+ *  - @c 4: latch the global @c D_80070649 sentinel to @c 1
+ *  - @c 5/6: rate-1/2 timer tick, then @c func_800A5788 (per-frame anim)
+ *  - @c 7/8: clear @c unk1A1, rate-1/2 timer tick, dispatch via
+ *            @c func_800A553C with the @c field_0x10E/110/112 triplet
+ *
+ * Case 7/8 are declared before 5/6 to match the target body layout —
+ * gcc 2.7.2 emits switch case bodies in source order. The
+ * @c *(volatile u16 *)&sys->dialogState cast prevents gcc from folding
+ * the @c +0x108 offset into the @c %lo() relocation of the prologue
+ * load.
+ */
+void func_800A5898(s32 a0) {
+    SystemState *sys = &D_800704A8;
+    switch ((s16)*(volatile u16 *)&sys->dialogState) {
+        case 0:
+            D_800704A8.unk1A1 = 0;
+            D_800704A8.field_0x114 = 0;
+            D_800704A8.field_0x116 = 0;
+            D_800704A8.field_0x118 = 0;
+            break;
+        case 1:
+            break;
+        case 2:
+            func_800127F8(2);
+            func_800A5698();
+            func_800A5360(a0, D_800704A8.field_0x10E, D_800704A8.field_0x110, D_800704A8.field_0x112);
+            break;
+        case 3:
+            func_800127F8(2);
+            func_800A5700();
+            func_800A5360(a0, D_800704A8.field_0x10E, D_800704A8.field_0x110, D_800704A8.field_0x112);
+            break;
+        case 4:
+            D_80070649 = 1;
+            break;
+        case 7:
+            D_800704A8.unk1A1 = 0;
+            func_800127F8(1);
+            func_800A553C(a0, D_800704A8.field_0x10E, D_800704A8.field_0x110, D_800704A8.field_0x112);
+            break;
+        case 8:
+            D_800704A8.unk1A1 = 0;
+            func_800127F8(2);
+            func_800A553C(a0, D_800704A8.field_0x10E, D_800704A8.field_0x110, D_800704A8.field_0x112);
+            break;
+        case 5:
+            func_800127F8(1);
+            func_800A5788(a0);
+            break;
+        case 6:
+            func_800127F8(2);
+            func_800A5788(a0);
+            break;
+    }
+}
 
 /**
  * If D_8005F14A equals 1, calls resetCdDrive. Then clears D_8005F100 and D_8005F14A.
