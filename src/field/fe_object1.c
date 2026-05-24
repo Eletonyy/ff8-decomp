@@ -599,20 +599,41 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009ECA4);
  * contributes the @c radius (0x1F6).
  *
  * The 2-iteration outer loop is a quirk of the original source: nothing
- * inside the body depends on @c i, and @c dz is computed once before
- * the loop, so the body either succeeds on both iterations or fails on
- * both. Faithful to the original asm — the loop is preserved here.
+ * inside the body depends on @c i, and the Z check is loop-invariant,
+ * so the body either succeeds on both iterations or fails on both.
+ * Preserved here for byte-match with the original binary.
  *
- * @note Decomp at 98.21% match. The instruction sequence matches
- *       exactly; the diff is purely register allocation — gcc 2.7.2
- *       consistently picks @c t0/t1 for the long-lived @c i / @c z_ok
- *       pair where target picked @c a3/t0, cascading into different
- *       @c mflo register choices later. Resists declaration-order
- *       reshuffling, @c register hints, @c volatile, goto-based
- *       loops, and do-while alternates. See
- *       @c permuter/func_8009F74C/base.c for the current C.
+ * @note The variable-reuse pattern (@c r used as a scratch for the
+ *       @c dz pre-shift, then reassigned inside the loop; the chained
+ *       @c r = (dy = r * r) inside the comparison) is what coaxes
+ *       gcc 2.7.2 into the exact register allocation the original
+ *       used. Not "natural" C — it's a deliberate trick that survived
+ *       to match.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009F74C);
+s32 func_8009F74C(Eline *a, Eline *b) {
+    s32 dz;
+    s16 i;
+    s32 dx;
+    s32 dy;
+    s32 r;
+    r = (b->posZ - a->posZ) >> 12;
+    dz = r;
+    r = a->talkRadius + r;
+    for (i = 0; i < 2; i++) {
+        if ((dz < (-126)) || (dz > 127)) {
+            continue;
+        }
+        dx = (b->posX - a->posX) >> 12;
+        dy = (b->posY - a->posY) >> 12;
+        r = b->radius;
+        r = a->talkRadius + r;
+        if (((dx * dx) + (dy * dy)) >= (r = (dy = r * r))) {
+            continue;
+        }
+        return 1;
+    }
+    return 0;
+}
 
 /**
  * @brief Compute a move/turn vector and record it as a waypoint.

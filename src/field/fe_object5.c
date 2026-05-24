@@ -227,11 +227,11 @@ s32 opHandler_ISTOUCH(Eline *e) {
     return 2;
 }
 
-/** @brief Pop halfword from stack and store to @c field_0x1F8. */
+/** @brief Pop halfword from stack and store to @c talkRadius. */
 s32 opHandler_TALKRADIUS(Eline *e) {
     u8 idx = e->stackPtr;
     e->stackPtr = idx - 1;
-    e->field_0x1F8 = *(u16 *)&e->stack[(s8)idx];
+    e->talkRadius = *(u16 *)&e->stack[(s8)idx];
     return 2;
 }
 

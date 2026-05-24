@@ -399,7 +399,7 @@ typedef struct {
     /* 0x1F2 */ u16 field_0x1F2;
     /* 0x1F4 */ u16 field_0x1F4;
     /* 0x1F6 */ u16 radius;         /**< Collision radius (used by @c func_8009E468 overlap test). */
-    /* 0x1F8 */ u16 field_0x1F8;    /**< Stored by @c opHandler_TALKRADIUS from popped stack slot. */
+    /* 0x1F8 */ u16 talkRadius;     /**< Set by @c opHandler_TALKRADIUS; read alongside @c radius by @c func_8009F74C 's asymmetric overlap test. */
     /* 0x1FA */ u16 field_0x1FA;    /**< Set from path-table entry's @c unk6 by @c func_8009BB18. */
     /* 0x1FC */ u16 field_0x1FC;
     /* 0x1FE */ s16 savedChannel;   /**< Previous message channel. */
