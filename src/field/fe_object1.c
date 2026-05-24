@@ -1463,6 +1463,26 @@ void func_800A355C(FieldActor *actor, s32 slot, s32 a2) {
     }
 }
 
+/**
+ * @brief Per-frame anim-row tick for all 16 active slots in the
+ *        @c D_800C7200 buffer.
+ *
+ * Iterates 16 anim-row slots (stride @c 0xFE in @p buf). For each
+ * slot where @c D_800704A8.slotActive[i] is set: walks a per-slot
+ * anim table at @c slot+0x1810, advancing @c h2 (the table index)
+ * whenever @c h1 (the per-frame counter) reaches @c table[h2].
+ * Each tick calls @c func_800A355C to dispatch the visual update for
+ * the current row.
+ *
+ * Inactive slots have all three state halfwords (@c h0 / @c h1 / @c h2)
+ * cleared.
+ *
+ * @note Decomp at 75.81% match — gcc 2.7.2 reg-alloc cascade. The
+ *       structure (slotActive gate + nested h1-vs-table[h2] check +
+ *       reset-on-end-of-table) matches; remaining diff is register
+ *       choice and instruction position. See
+ *       @c permuter/func_800A37A8/base.c for the current C.
+ */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A37A8);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A38B4);
