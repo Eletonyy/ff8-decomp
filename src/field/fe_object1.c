@@ -1683,6 +1683,24 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A4934);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A4C14);
 
+/**
+ * @brief 8-iteration script-dispatch loop with per-slot flag-driven
+ *        callbacks and a tick counter that auto-clears.
+ *
+ * Calls @c func_8003FEE4 once at start and @c func_8003FF88 at end
+ * (frame guards), then iterates @c i in @c [0,8) over four parallel
+ * arrays (stride 0x88 / 0x18 / 0x20 / 0xB4). When the per-slot flag
+ * @c D_8005F168[i] is non-zero, runs @c func_800A4934 on it, then
+ * conditionally @c func_800A4C14 (when flag is @c 2, or @c 1 and
+ * @c D_8005F122 @c == @c 1), then bumps the slot's tick counter and
+ * clears the flag when the counter passes its threshold.
+ *
+ * @note Decomp at 89.75% match — gcc 2.7.2 rebases the
+ *       @c D_800C6DA0 walker to @c base+0x80 (for the 0x80/0x82
+ *       cluster of slot-counter accesses), which costs an extra
+ *       s-reg and shifts the prologue layout. See
+ *       @c permuter/func_800A5224/base.c.
+ */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5224);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5360);
