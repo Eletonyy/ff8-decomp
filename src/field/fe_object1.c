@@ -1926,12 +1926,39 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A6100);
  * switches on @c mode (0..5) and calls @c func_800A5FA4(entry, flag)
  * where @c flag = 1 for even modes (0/2/4) and 0 for odd modes (1/3/5).
  *
- * @note Decomp at 71.83% match — gcc 2.7.2 strength-reduces @c items[i]
- *       to an end-pointer comparison while target keeps an explicit
- *       counter; also different s-reg allocation. See
- *       @c permuter/func_800A62EC/base.c for the current C.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A62EC);
+typedef struct {
+    /* 0x00 */ u8 pad00[0x0C];
+    /* 0x0C */ u8 status;       /**< @c 0xFF means slot is unused (skip). */
+    /* 0x0D */ u8 padD;
+    /* 0x0E */ u8 mode;         /**< Even (0/2/4) → flag=1, odd (1/3/5) → flag=0. */
+    /* 0x0F */ u8 padF;
+} func_800A62EC_entry;  /* 0x10 = 16 bytes */
+
+void func_800A62EC(func_800A62EC_entry *entries) {
+    s32 i;
+    func_800A62EC_entry *p;
+    p = entries;
+    i = 0;
+    do {
+        if (p->status != 0xFF) {
+            switch (p->mode) {
+                case 0:
+                case 2:
+                case 4:
+                    func_800A5FA4(p, 1);
+                    break;
+                case 1:
+                case 3:
+                case 5:
+                    func_800A5FA4(p, 0);
+                    break;
+            }
+        }
+        p++;
+        i++;
+    } while (i < 12);
+}
 
 /* ============================================================================
  * PsyQ 4.3 boundary — every non-leaf function from here to the end of the
