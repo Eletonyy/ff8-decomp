@@ -38,12 +38,64 @@ typedef struct {
     ParticleBlock slots[1];
 } ParticleSystem;
 
+/**
+ * @brief Particle emitter record (one of an array within ParticleSystem).
+ *
+ * Stride 0x174 bytes. Indexed by emitter id from the start of @c sys.
+ * Holds the emitter's spawn-rate counters and the velocity/position
+ * jitter ranges used to seed each particle.
+ */
+typedef struct {
+    /* 0x000 */ u8 pad000[0x14E];
+    /* 0x14E */ u8 unk14E;          /**< Reset to 0 on each call. */
+    /* 0x14F */ u8 pad14F[0x0B];
+    /* 0x15A */ s16 maxCount;       /**< Cap on simultaneously-active particles. */
+    /* 0x15C */ s16 curCount;       /**< Currently active particle count. */
+    /* 0x15E */ s16 unk15E;         /**< Cleared together with @c curCount by @c func_800A3018. */
+    /* 0x160 */ s16 unk160;         /**< Velocity-Z bias (added * 32). */
+    /* 0x162 */ s16 unk162;         /**< Velocity-Z jitter half-range. */
+    /* 0x164 */ s16 unk164;         /**< unk16 jitter half-range. */
+    /* 0x166 */ s16 unk166;         /**< Position-X jitter (* 256). */
+    /* 0x168 */ s16 unk168;         /**< Position-Y jitter (* 256). */
+    /* 0x16A */ u16 unk16A;         /**< Position-Z jitter (low 7 bits). */
+    /* 0x16C */ s16 unk16C;         /**< Velocity-X jitter half-range. */
+    /* 0x16E */ s16 unk16E;         /**< Velocity-Y jitter half-range. */
+    /* 0x170 */ s16 unk170;         /**< Velocity-Z jitter half-range. */
+    /* 0x172 */ u8 pad172[0x02];
+} Emitter; /* 0x174 = 372 bytes */
+
+/**
+ * @brief Particle "view" — overlay struct positioned at @c &sys->slots[slot].
+ *
+ * The view's fields are at the absolute byte offsets (0x2720..0x273B) where
+ * each particle's data actually lives. Indexing @c sys->slots[slot] gives a
+ * 32-byte slot stride; casting that address to @c Particle* lets field
+ * accesses (e.g. @c p->posX) compile to @c sw v0,0x2720(s0) — the original
+ * "keep @c sys+slot*32 in a register, full immediate offsets" pattern.
+ */
+typedef struct {
+    /* 0x0000 */ u8 pad0000[0x2720];
+    /* 0x2720 */ s32 posX;
+    /* 0x2724 */ s32 posY;
+    /* 0x2728 */ s32 posZ;
+    /* 0x272C */ s16 velX;
+    /* 0x272E */ s16 velY;
+    /* 0x2730 */ s16 velZ;
+    /* 0x2732 */ s16 unk12;
+    /* 0x2734 */ u8 pad2734[0x02];
+    /* 0x2736 */ s16 unk16;
+    /* 0x2738 */ u8 emitterIdx;
+    /* 0x2739 */ u8 unk19;
+    /* 0x273A */ u8 unk1A;
+    /* 0x273B */ u8 active;
+} Particle;
+
 extern void func_80098934(void);
 extern void func_80099124(void);
 extern void func_8009912C(void);
 extern void func_8009B74C(s16 slotIdx, u16 paramIdx, AnimParam *params, s16 multiplier);
 extern void func_8009BB18(void);
-extern void func_8009BD50(Eline *e, s16 mode, u8 b9, u8 b8);
+extern void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8);
 extern s16  func_8009D234(s32 a0);
 extern s16  func_8009D254(s32 a0);
 extern void func_8009DED8(u8 *a0, u8 *a1, u8 *a2);
@@ -65,7 +117,7 @@ extern u8   func_800A5CF8(void);
 
 /* INCLUDE_ASM stubs — bodies still in assembly, signatures unknown.
  * Declared K&R-style; refine when these get decomped to C. */
-extern int  func_80098314();
+extern void func_80098314(void);
 extern int  func_800983F0();
 extern int  func_8009895C();
 extern int  func_80099180();
@@ -74,33 +126,33 @@ extern int  func_8009A0E8();
 extern int  func_8009A2BC();
 extern int  func_8009A4C0();
 extern int  func_8009A7E8();
-extern int  func_8009A8E0();
+extern void func_8009A8E0(FieldEntityB *e);
 extern int  func_8009A920();
-extern int  func_8009AA64();
+extern void func_8009AA64(EventEntry *e);
 extern int  func_8009AAC8();
 extern int  func_8009AC9C();
 extern int  func_8009AEC0();
-extern int  func_8009B4A8();
 extern int  func_8009BEC8();
 extern int  func_8009CEE8();
 extern int  func_8009D274();
-extern int  func_8009D500();
+extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
 extern int  func_8009D598();
-extern int  func_8009DF18();
+extern s32  func_8009DF18();  /* handwritten, return value used by func_8009D500 */
 extern int  func_8009E338();
 extern int  func_8009E660();
 extern int  func_8009ECA4();
 extern int  func_8009F74C();
-extern int  func_8009F7F4();
+extern void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode);
+extern void func_8009B4A8(s16 a, u8 b, s32 c, s32 d);
 extern int  func_8009F8D0();
 extern int  func_8009F990();
 extern int  func_8009FE18();
 extern int  func_800A0640();
 extern int  func_800A06F0();
-extern int  func_800A0D6C();
-extern int  func_800A0E54();
-extern int  func_800A0EB8();
-extern int  func_800A0F34();
+extern void func_800A0D6C(u8 *buf);
+extern s32  func_800A0E54(s32 start, s32 end, s32 total, s32 progress);
+extern s32  func_800A0EB8(s32 start, s32 end, s32 total, s32 angle);
+extern s32  func_800A0F34(SVECTOR *v, s32 *sxy);
 extern int  func_800A0FB8();
 extern int  func_800A10F4();
 extern int  func_800A11E0();
@@ -108,43 +160,66 @@ extern int  func_800A1318();
 extern int  func_800A15C0();
 extern int  func_800A17B8();
 extern int  func_800A19B8();
-extern int  func_800A1BB8();
+extern void func_800A1BB8(void);
 extern int  func_800A1CFC();
 extern int  func_800A2128();
 extern int  func_800A222C();
-extern int  func_800A29C0();
-extern int  func_800A2A30();
+/**
+ * @brief Shape @c func_800A29C0 sees: array of 20-byte items with five
+ *        leading bytes that get initialized per item.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x3];
+    /* 0x03 */ u8 b3;     /**< Set to @c 4 each iter. */
+    /* 0x04 */ u8 b4;     /**< Cleared. */
+    /* 0x05 */ u8 b5;     /**< Cleared. */
+    /* 0x06 */ u8 b6;     /**< Cleared. */
+    /* 0x07 */ u8 b7;     /**< Set to @c 0x22. */
+    /* 0x08 */ u8 pad08[0xC];
+} func_800A29C0_arg0;  /* 0x14 = 20 bytes */
+
+extern func_800A29C0_arg0 *func_800A29C0(func_800A29C0_arg0 *p);
+/**
+ * @brief Shape of the prim records @c func_800A2A30 writes — @c 8 bytes
+ *        with a @c tag byte and a @c cmd word (GPU command + color).
+ */
+typedef struct {
+    /* 0x00 */ u8  pad00[0x03];
+    /* 0x03 */ u8  tag;     /**< Always written as @c 1. */
+    /* 0x04 */ s32 cmd;     /**< @c 0xE1000200 | (color & 0x9FF). */
+} func_800A2A30_item;  /* 8 bytes */
+
+extern func_800A2A30_item *func_800A2A30(func_800A2A30_item *p);
 extern int  func_800A2AF8();
 extern int  func_800A2D2C();
 extern s16  func_800A2EA4(s16 range);
-extern int  func_800A2F48();
-extern int  func_800A2F70();
-extern s16  func_800A2FE0(ParticleSystem *sys);
-extern int  func_800A3018();
+extern void func_800A2F48();  /* arg is a file-private buffer view in fe_object1.c */
+extern void func_800A2F70();  /* arg is a file-private buffer view in fe_object1.c */
+extern s16  func_800A2FE0();  /* arg is a file-private buffer view in fe_object1.c */
 extern void func_800A327C(Eline *actor, SVECTOR *out);
-extern void func_800A3488(Eline *actor, SVECTOR *out);
-extern int  func_800A3534();
+extern void func_800A3488();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
+extern void func_800A3534();  /* arg is a file-private buffer view in fe_object1.c */
 extern int  func_800A37A8();
 extern int  func_800A38B4();
 extern int  func_800A39D8();
 extern int  func_800A3FE0();
 extern int  func_800A42EC();
-extern int  func_800A4500();
+extern void func_800A4500(s32 x, s32 y, s32 z);
 extern int  func_800A455C();
 extern int  func_800A4758();
-extern int  func_800A48CC();
+extern s32  func_800A48CC(void);
 extern int  func_800A4934();
 extern int  func_800A4C14();
 extern int  func_800A5224();
 extern int  func_800A5360();
 extern int  func_800A553C();
-extern int  func_800A5698();
-extern int  func_800A5700();
-extern int  func_800A5748();
+extern void func_800A5698(void);
+extern void func_800A5700(void);
+extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
 extern int  func_800A5788();
 extern int  func_800A5898();
 extern int  func_800A5A20();
-extern int  func_800A5C9C();
+extern u8   func_800A5C9C(void);
 extern int  func_800A5D28();
 extern int  func_800A5FA4();
 extern int  func_800A6100();

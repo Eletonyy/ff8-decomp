@@ -1,5 +1,9 @@
 /* PsyQ library aliases used by decomped C. */
-SquareRoot0 = 0x8003F4A4;
+SquareRoot0   = 0x8003F4A4;
+SetDefDrawEnv = 0x800487E4;
+SetDefDispEnv = 0x80048898;
+PutDispEnv    = 0x80049480;
+PutDrawEnv    = 0x800492B4;
 
 /* Symbols for data tables incorrectly disassembled as code by splat.
    Cross-file labels and bogus function pointers from data segments. */

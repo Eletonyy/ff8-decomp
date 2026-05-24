@@ -142,10 +142,11 @@ typedef struct {
     /* 0x02 */ u8 submode;
     /* 0x03 */ u8 pad03;
     /* 0x04 */ u16 timer;
-    /* 0x06 */ u8 pad06[0x02];
+    /* 0x06 */ u16 unk06;            /**< Cleared on submode=0 entry by @c func_800A10F4. */
     /* 0x08 */ u16 q1;
     /* 0x0A */ u16 q2;
-    /* 0x0C */ u8 pad0C[0x04];
+    /* 0x0C */ u16 savedQ1;          /**< Snapshot of @c q1 captured by @c func_800A10F4. */
+    /* 0x0E */ u16 savedQ2;          /**< Snapshot of @c q2 captured by @c func_800A10F4. */
     /* 0x10 */ u16 p1;
     /* 0x12 */ u16 p2;
     /* 0x14 */ u16 p3;
@@ -168,15 +169,23 @@ typedef struct {
     /* 0x04 */ u16 field04;
     /* 0x06 */ u16 field06;
     /* 0x08 */ u16 field08;
-    /* 0x0A */ u8 pad0A[0x0A];
+    /* 0x0A */ u16 field0A;
+    /* 0x0C */ u16 position_x;  /**< Snapshot field copied to @c D_800704A8.position_x by @c func_8009AA64. */
+    /* 0x0E */ u16 position_y;  /**< Snapshot field copied to @c D_800704A8.position_y. */
+    /* 0x10 */ u16 rotation;    /**< Snapshot field copied to @c D_800704A8.rotation. */
+    /* 0x12 */ u16 counter;     /**< Snapshot field copied to @c D_800704A8.counter; @c < 72 selects mode 1, else 7. */
     /* 0x14 */ u16 field14;     /**< Set to @c 0xFFFF when the slot is armed. */
     /* 0x16 */ u16 field16;     /**< Slot key / sentinel marker (@c 0x7FFF == free). */
-    /* 0x18 */ u8 pad18[0x08];
+    /* 0x18 */ u8 pad18[0x04];
+    /* 0x1C */ u8 anim_state;   /**< Snapshot field copied to @c D_800704A8.anim_state (low byte). */
+    /* 0x1D */ u8 pad1D[0x03];
 } EventEntry; /* 0x20 = 32 bytes */
 
 /** @brief Container struct at @c D_8005F0F8; first 0x60 bytes are header data, then 16 event entries. */
 typedef struct {
-    /* 0x00 */ u8 pad00[0x60];
+    /* 0x00 */ u8 pad00[0x0E];
+    /* 0x0E */ u8 unk0E;            /**< When @c == 1, @c func_800A1BB8 issues a StoreImage to VRAM. */
+    /* 0x0F */ u8 pad0F[0x51];
     /* 0x60 */ EventEntry entries[16];
 } EventQueue;
 
@@ -233,7 +242,7 @@ typedef struct {
     /* 0x180 */ u8 unkActive180[16]; /**< 16-byte active-marker region, cleared on @c func_800BF718 mode 1 init. */
     /* 0x190 */ u8 slotActive[16];
     /* 0x1A0 */ u8 unk1A0;          /**< Mode-6 active marker, set with mode = 6 by fe_object6 opcode. */
-    /* 0x1A1 */ u8 pad1A1;
+    /* 0x1A1 */ u8 unk1A1;          /**< Cleared unconditionally by @c func_800A5700 each dialog tick. */
     /* 0x1A2 */ u8 unk1A2;          /**< Mode-7 reentry guard byte. */
     /* 0x1A3 */ u8 unk1A3;          /**< Set to 1 by @c opHandler_UCOFF on every call (re-arm guard). */
     /* 0x1A4 */ u8 pad1A4[0x02];
@@ -562,13 +571,15 @@ typedef struct {
     /* 0x185 */ u8  pad185[0x0F];
     /* 0x194 */ u8  activeMarker;       /**< Block-active gate; non-zero enables trigger processing. */
     /* 0x195 */ u8  pad195;
-    /* 0x196 */ u8  trigger4;
+    /* 0x196 */ u8  trigger4;       /**< Cleared together with @c unk19D by @c func_8009A8E0. */
     /* 0x197 */ u8  trigger5;
     /* 0x198 */ u8  trigger6;
     /* 0x199 */ u8  trigger7;
     /* 0x19A */ u8  trigger2;
     /* 0x19B */ u8  trigger3;
-    /* 0x19C */ u8  pad19C[0x04];
+    /* 0x19C */ u8  pad19C;
+    /* 0x19D */ u8  unk19D;         /**< Per-entity flag cleared by @c func_8009A8E0 alongside @c trigger4. */
+    /* 0x19E */ u8  pad19E[0x02];
 } FieldEntityB; /* 0x1A0 */
 
 /**
