@@ -41,7 +41,7 @@ PSYQ43_SRCS := src/snd_init.c src/snd_dma.c src/snd_voice.c src/snd_bank.c src/s
                src/world/we_object4.c src/world/we_object5.c src/world/we_object6.c \
                src/world/we_object7.c src/world/we_object8.c src/world/we_object9.c \
                src/world/we_object10.c \
-               src/field/fe_object2.c
+               src/field/fe_object1b.c src/field/fe_object2.c
 
 # Source files compiled without -G0 (default is -G0)
 NO_G0_SRCS := src/main.c src/snd_cmd.c

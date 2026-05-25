@@ -793,24 +793,42 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009F990);
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009FE18);
 
 /**
- * @brief Transcode an input list (terminated by sentinel @c 0x7FFF) into
- *        an output list of 16-byte records.
+ * @brief Transcode the script entry list at @c D_800D5E90->entries into
+ *        a buffer of @c TILE primitives.
  *
- * Walks the list at @c *D_800D5E90 (input, stride 0x10) and writes one
- * 16-byte record to @p out per non-sentinel entry, returning the
- * advanced output pointer. Each output record gets fixed bytes
- * (@c b3=3, @c b4/b5/b6=0x80, @c b7=0x7C), the input's @c bA/bB at
- * @c bC/bD, and the input's @c h8 halfword at @c hE. Bit 1 of @c b7
- * is then cleared (when input @c kind == 4) or set (otherwise).
+ * Walks the list of @ref ScriptEntry records (stride @c 0x10, terminated
+ * by @c terminator == @c 0x7FFF) and writes one @c TILE per non-terminator
+ * entry, returning the advanced @c prim pointer. Each tile is fixed at
+ * @c count=3, gray @c 0x80 color, and base code @c 0x7C. The entry's
+ * @c wLo/wHi bytes populate the two bytes of @c TILE::w, and @c h is
+ * the @c TILE::h halfword. Bit 1 of @c code (semi-translucency) is
+ * cleared when @c kind == @c 4 (opaque) and set otherwise.
  *
  * Called by @c func_800983F0 as part of the chain that lays out
  * draw-prim regions back-to-back in one growing buffer.
- *
- * @note Decomp at 84.86% match — store ordering within the loop body
- *       differs (gcc 2.7.2 places the @c sb of @c bD after the 0x80
- *       trio; target has it before). See @c permuter/func_800A0640/base.c.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A0640);
+TILE *func_800A0640(TILE *prim) {
+    ScriptEntry *e = D_800D5E90->entries;
+    while (1) {
+        if (e->terminator == 0x7FFF) break;
+        setlen(prim, 3);
+        prim->code = 0x7C;
+        ((u8 *)&prim->w)[0] = e->wLo;
+        ((u8 *)&prim->w)[1] = e->wHi;
+        prim->h = e->h;
+        prim->b0 = 0x80;
+        prim->g0 = 0x80;
+        prim->r0 = 0x80;
+        if (e->kind == 4) {
+            prim->code &= ~0x02;
+        } else {
+            prim->code |= 0x02;
+        }
+        prim++;
+        e++;
+    }
+    return prim;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A06F0);
 
@@ -947,13 +965,31 @@ s32 func_800A0F34(SVECTOR *v, s32 *sxy) {
  * @param a    @c rect_a[] index (one of 2 in caller).
  * @param b    @c rect_b[] index (always 0 in caller).
  *
- * @note Decomp at 99.30% match — semantics and structure match;
- *       remaining diff is gcc 2.7.2 prologue scheduling reordering the
- *       @c sll/sra sign-extensions of @c a1 vs @c a2, plus one
- *       register reuse in block 4 (target reuses @c a1, ours uses @c a3).
- *       See @c permuter/func_800A0FB8/base.c.
+ * @note The first and last `half` expressions are inlined (not assigned
+ *       to the @c half local) to match the target's register allocation
+ *       cascade — when inlined, gcc reuses the @c a*8 register slot
+ *       (a1) for the final half value; when assigned to @c half, gcc
+ *       picks a3, leaving a1 holding stale @c a*8 and the function
+ *       grows by 4 register-field bit changes.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A0FB8);
+void func_800A0FB8(Vec2s *out, s16 a, s16 b) {
+    s32 half;
+
+    if (D_8005F0F8->rect_a[a].f4 - (D_8005F0F8->rect_b[b].f4 - D_8005F0F8->rect_b[b].f6) / 2 < out->x) {
+        out->x = D_8005F0F8->rect_a[a].f4 - (D_8005F0F8->rect_b[b].f4 - D_8005F0F8->rect_b[b].f6) / 2;
+    }
+    half = (D_8005F0F8->rect_b[b].f4 - D_8005F0F8->rect_b[b].f6) / 2;
+    if (out->x < D_8005F0F8->rect_a[a].f6 + half) {
+        out->x = D_8005F0F8->rect_a[a].f6 + half;
+    }
+    half = (D_8005F0F8->rect_b[b].f2 - D_8005F0F8->rect_b[b].f0) / 2;
+    if (D_8005F0F8->rect_a[a].f2 - half < out->y) {
+        out->y = D_8005F0F8->rect_a[a].f2 - half;
+    }
+    if (out->y < D_8005F0F8->rect_a[a].f0 + (D_8005F0F8->rect_b[b].f2 - D_8005F0F8->rect_b[b].f0) / 2) {
+        out->y = D_8005F0F8->rect_a[a].f0 + (D_8005F0F8->rect_b[b].f2 - D_8005F0F8->rect_b[b].f0) / 2;
+    }
+}
 
 /**
  * @brief Advance the sub-mode of each of @c D_800704A8.slots[8] from
@@ -2093,107 +2129,4 @@ void func_800A62EC(func_800A62EC_entry *entries) {
     } while (i < 12);
 }
 
-/* ============================================================================
- * PsyQ 4.3 boundary — every non-leaf function from here to the end of the
- * file (func_800A63AC .. func_800AA8A0) was originally compiled with the
- * PsyQ 4.3 toolchain (gcc 2.8.0), evidenced by FILLED branch-delay-slot
- * epilogues (`jr ra; addiu sp` instead of PsyQ 4.1's `addiu sp; jr ra; nop`).
- * Confirmed by recompiling the same C with tools/gcc-2.8.0-psx/cc1.
- *
- * fe_object1.c as a whole compiles with PsyQ 4.1, so these functions can't
- * match while they live here. To decomp them in C, this file likely needs
- * to be split at 0x800A63AC into a PsyQ 4.1 part (above) and a PsyQ 4.3
- * part (below, added to PSYQ43_SRCS in the Makefile). Until the split is
- * done, the functions below stay as INCLUDE_ASM stubs.
- * ============================================================================ */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A63AC);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A6A80);
-
-/**
- * @brief Reset three field-engine tables.
- *
- * 1. Calls @c func_80047CE4 (@c memset) on each of 64 @c D_800DD6D0
- *    entries (stride 0x30 = 48 bytes), zeroing each in turn.
- * 2. Clears 64 @c s32 entries at @c D_800D6620.
- * 3. Clears 32 @c EntityRenderSlot* pointer entries at @c D_800D9630.
- *
- * The forward for-loops in the scratch source compile to backward
- * @c bgez loops — gcc strength-reduces the index since each iteration
- * is independent.
- *
- * @note Function compiled with PsyQ 4.3 (gcc 2.8.0) in the original
- *       binary — the @c jr-@c ra/@c addiu-@c sp FILLED epilogue is the
- *       4.3 signature. fe_object1.c as a whole is PsyQ 4.1, so this
- *       function and 12 others (0x800A63AC+ scattered to end of file)
- *       stay as INCLUDE_ASM until we either split the file or accept
- *       a per-function toolchain override. The current PsyQ 4.1
- *       compile sits at 95.56%, off by one epilogue word.
- *       See @c permuter/func_800A7194/base.c for the C body.
- */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A7194);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A7224);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A736C);
-
-/**
- * @brief Per-mode write/accumulate of three or four @c s32 values into
- *        an @ref EntityRenderSlot.
- *
- * @param idx   Render-slot index into @ref D_800D9630.
- * @param vals  Pointer to four @c s32 values (only first three used in mode 1).
- * @param mode  @c 0 → overwrite @c field20..field2C; @c 1 → add to
- *              @c field20..field28 (skipping @c field2C); other → no-op.
- *
- * @note Compiled as PsyQ 4.3 (the @c jr-ra-delay-slot @c sw in case 1
- *       is the gcc 2.8.0 schedule), but fe_object1.c is PsyQ 4.1.
- *       Current C decomp hits 87.27% with the load-all-then-store-all
- *       hoist; remaining diff is reg-alloc choice (t0..t3 vs v1/a0/a1/a2)
- *       and the case-1 delay-slot @c sw. Stays as INCLUDE_ASM until the
- *       file is split or a per-function toolchain override is wired in.
- *       See @c permuter/func_800A74B4/base.c.
- */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A74B4);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A7564);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A8058);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A81AC);
-
-/**
- * @brief Claim a render-slot pool entry and initialize its state.
- *
- * Acquires @c D_800D9630[idx] if currently @c NULL by installing @p slot
- * and writing @p firstWord to the slot's leading @c s32. The slot's state
- * fields (@c unk10/12/14/18/1A/1C/50/52) are zeroed except @c unk12 which
- * gets the default @c 0x190; the three @c field20/24/28 scale factors are
- * set to @c 0x1000 (unit scale); @c unk60 (active flag) is cleared.
- *
- * @return @p slot @c + @c 0x98 on successful claim, or @c NULL if the
- *         render-slot was already occupied.
- *
- * @note Compiled as PsyQ 4.3 (the two-@c jr-ra exit layout is gcc 2.8.0's
- *       no-tail-merge style). Current C decomp hits 95.77% — gcc 2.7.2
- *       tail-merges the two returns into one shared @c jr-ra. Stays as
- *       INCLUDE_ASM until the file is split.
- *       See @c permuter/func_800A8CDC/base.c.
- */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A8CDC);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A8DAC);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A91C8);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A9434);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A97E4);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800AA46C);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800AA5F8);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800AA870);
-
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800AA8A0);
+/* PsyQ 4.3 island (func_800A63AC..func_800AA8A0) lives in fe_object1b.c. */

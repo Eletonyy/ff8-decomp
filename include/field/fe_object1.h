@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "field.h"
+#include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 
 /** @brief 12-byte signed integer 3D position (x, y, z). */
@@ -11,6 +12,12 @@ typedef struct {
     s32 y;
     s32 z;
 } Vec3i;
+
+/** @brief 4-byte signed 16-bit 2D position (x, y). */
+typedef struct {
+    s16 x;
+    s16 y;
+} Vec2s;
 
 /** @brief 6-byte signed 16-bit 3D position (x, y, z). */
 typedef struct {
@@ -97,6 +104,30 @@ typedef struct {
     /* 0x273B */ u8 active;
 } Particle;
 
+/**
+ * @brief 16-byte script entry consumed by @c func_800A0640 to populate
+ *        a TILE primitive.
+ *
+ * The list is terminated by @c terminator == @c 0x7FFF.
+ */
+typedef struct ScriptEntry {
+    /* 0x00 */ s16 terminator;  /**< @c 0x7FFF marks end of list. */
+    /* 0x02 */ u8  pad02[6];
+    /* 0x08 */ u16 h;           /**< Copied to @c TILE::h. */
+    /* 0x0A */ u8  wLo;         /**< Low byte of @c TILE::w. */
+    /* 0x0B */ u8  wHi;         /**< High byte of @c TILE::w. */
+    /* 0x0C */ u8  padC;
+    /* 0x0D */ u8  kind;        /**< @c 4 = opaque, else semi-translucent. */
+    /* 0x0E */ u8  padE[2];
+} ScriptEntry;
+
+/** @brief Container for the entry list at @c D_800D5E90. */
+typedef struct ScriptList {
+    ScriptEntry *entries;
+} ScriptList;
+
+extern ScriptList *D_800D5E90;
+
 extern void func_80098934(void);
 extern void func_80099124(void);
 extern void func_8009912C(void);
@@ -154,13 +185,13 @@ extern void func_8009B4A8(s16 a, u8 b, s32 c, s32 d);
 extern void func_8009F8D0(s16 idx);
 extern int  func_8009F990();
 extern int  func_8009FE18();
-extern int  func_800A0640();
+extern TILE *func_800A0640(TILE *prim);
 extern int  func_800A06F0();
 extern void func_800A0D6C(u8 *buf);
 extern s32  func_800A0E54(s32 start, s32 end, s32 total, s32 progress);
 extern s32  func_800A0EB8(s32 start, s32 end, s32 total, s32 angle);
 extern s32  func_800A0F34(SVECTOR *v, s32 *sxy);
-extern int  func_800A0FB8();
+extern void func_800A0FB8(Vec2s *out, s16 a, s16 b);
 extern int  func_800A10F4();
 extern void func_800A11E0(s32 *sxy);
 extern int  func_800A1318();
@@ -275,14 +306,14 @@ extern int  func_800A6100();
 extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();
 extern int  func_800A6A80();
-extern int  func_800A7194();
+extern void func_800A7194(void);
 extern int  func_800A7224();
 extern int  func_800A736C();
 extern int  func_800A74B4();
 extern int  func_800A7564();
 extern int  func_800A8058();
 extern int  func_800A81AC();
-extern int  func_800A8CDC();
+extern s32 *func_800A8CDC(s32 idx, s32 firstWord, EntityRenderSlot *slot);
 extern u8  *func_800A8DAC(s32 spatialIdx, s32 cmd, u32 arg, void *out);
 extern int  func_800A91C8();
 extern int  func_800A9434();

@@ -181,13 +181,23 @@ typedef struct {
     /* 0x1D */ u8 pad1D[0x03];
 } EventEntry; /* 0x20 = 32 bytes */
 
+/** @brief 8-byte clamp rectangle (f0=top, f2=bottom, f4=right, f6=left edges). */
+typedef struct {
+    /* 0x00 */ s16 f0;
+    /* 0x02 */ s16 f2;
+    /* 0x04 */ s16 f4;
+    /* 0x06 */ s16 f6;
+} ClampRect;
+
 /** @brief Container struct at @c D_8005F0F8; first 0x60 bytes are header data, then 16 event entries. */
 typedef struct {
     /* 0x00 */ u8 pad00[0x0E];
     /* 0x0E */ u8 unk0E;            /**< When @c == 1, @c func_800A1BB8 issues a StoreImage to VRAM. */
     /* 0x0F */ u8 pad0F[0x03];
     /* 0x12 */ u16 baseZ;           /**< Base Z offset added to the per-entity Z when building SVECTOR (func_800A11E0). */
-    /* 0x14 */ u8 pad14[0x4C];
+    /* 0x14 */ ClampRect rect_a[8]; /**< Per-region clamp rectangles, consumed by @c func_800A0FB8. */
+    /* 0x54 */ ClampRect rect_b[1]; /**< Padding margin used by @c func_800A0FB8 to shrink @c rect_a. */
+    /* 0x5C */ u8 pad5C[0x04];
     /* 0x60 */ EventEntry entries[16];
 } EventQueue;
 
@@ -553,6 +563,8 @@ typedef struct {
     u8 unk60;
     u8 unk61;
     u16 unk62;
+    u8 pad64[0x34];
+    s32 subBuffer;   /**< @c 0x98 — caller of @c func_800A8CDC uses the returned @c &subBuffer pointer. */
 } EntityRenderSlot;
 
 /** @brief Entity render-slot pointer table; indexed by @c eline->field_0x256. */
