@@ -1,4 +1,5 @@
 #include "common.h"
+#include "battle.h"
 #include "field.h"
 #include "sound.h"
 #include "world.h"
@@ -67,7 +68,48 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009CE70);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009CFB4);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D0F0);
+extern s32 D_8005F138;
+
+extern void VSync(s32 mode);
+extern void func_800A5F78(s32 screen);
+extern void func_800A5FD4(s32 screen);
+
+/**
+ * @brief Vsync, scroll any partial display window back to origin, then
+ *        rebuild the screen-0 DRAWENV/DISPENV and clear the entity model.
+ *
+ * Steps:
+ *  1. @c VSync(0) — wait for vblank.
+ *  2. If @c (DISPENV*)D_8005F138->disp.x is non-zero, @c MoveImage
+ *     scrolls the live display rect back to @c (0,0) and a @c DrawSync
+ *     stalls until the move completes.
+ *  3. @c func_800A5F78(0) / @c func_800A5FD4(0) push the screen-0
+ *     DRAWENV and DISPENV.
+ *  4. @c ClearImage((RECT*)&D_800CA040, 0,0,0) blacks the entity-model
+ *     blob (the first 8 bytes of @ref D_800CA040 are interpreted as a
+ *     @c RECT here).
+ *  5. Final @c DrawSync(0) before returning.
+ *
+ * The unused @c DRAWENV / @c DISPENV locals match the original stack
+ * frame — they live on @c sp but are never written here (a leftover
+ * from the helper inlining the per-screen env setup once did).
+ */
+void func_8009D0F0(void) {
+    DRAWENV draw;
+    DISPENV disp;
+    DISPENV *env;
+
+    VSync(0);
+    env = (DISPENV *)D_8005F138;
+    if (env->disp.x != 0) {
+        MoveImage(&env->disp, 0, 0);
+        DrawSync(0);
+    }
+    func_800A5F78(0);
+    func_800A5FD4(0);
+    ClearImage(&D_800CA040, 0, 0, 0);
+    DrawSync(0);
+}
 
 extern SeqEntry D_800C4FD8[];
 extern void func_80099EDC(s32 idx);
@@ -159,7 +201,50 @@ void func_8009D630(void) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D688);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D760);
+/**
+ * @brief 4-byte slot (two halfwords). Default value is two @c -1s.
+ */
+typedef struct {
+    s16 a;
+    s16 b;
+} HalfwordPair;
+
+extern s32 func_800BD380(s16 *outLow, s16 *outHigh);
+extern s32 func_800BD2A0(s16 *outLow, s16 *outHigh);
+extern s32 func_800BD460(s16 *outLow, s16 *outHigh);
+
+/**
+ * @brief Fill three adjacent @ref HalfwordPair slots from three lookup
+ *        helpers, defaulting each slot to @c (-1, @c -1) on lookup miss.
+ *
+ * Walks @p s through three consecutive slots, calling one of three
+ * fetchers per slot:
+ *  - slot @c [0]: @c func_800BD380
+ *  - slot @c [1]: @c func_800BD2A0
+ *  - slot @c [2]: @c func_800BD460
+ *
+ * Each fetcher writes into @c (&s->a, @c &s->b) and returns non-zero on
+ * success. If it returns @c 0 (no entry available), the slot is filled
+ * with @c (-1, @c -1) — the "inactive" sentinel.
+ *
+ * @param s First slot of a three-slot array.
+ */
+void func_8009D760(HalfwordPair *s) {
+    if (func_800BD380(&s->a, &s->b) == 0) {
+        s->b = -1;
+        s->a = -1;
+    }
+    s++;
+    if (func_800BD2A0(&s->a, &s->b) == 0) {
+        s->b = -1;
+        s->a = -1;
+    }
+    s++;
+    if (func_800BD460(&s->a, &s->b) == 0) {
+        s->b = -1;
+        s->a = -1;
+    }
+}
 
 /** @brief Compare input against two entity IDs, return 0x29, 0x18, or -1. */
 s32 func_8009D7D8(s32 a0) {
@@ -227,9 +312,56 @@ void func_8009D8A8(s32 idx) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D8F0);
+/**
+ * @brief Fade out every active SFX slot in @c D_800C526C and mark them inactive.
+ *
+ * Per-slot loop version of @c func_8009D8A8 — walks all 13 entries of
+ * @c D_800C526C, and for each slot whose @c field00 is not @c -1, writes
+ * @c -1 into @c field00 and calls @c fadeOutSfxSlow with the slot's
+ * @c field02 (SFX index). Used at world-map teardown to silence every
+ * field-engine-owned SFX channel in one pass.
+ */
+void func_8009D8F0(void) {
+    s32 i;
+    for (i = 0; i < 13; i++) {
+        s32 field00 = D_800C526C[i].field00;
+        s32 field02 = D_800C526C[i].field02;
+        if (field00 != -1) {
+            D_800C526C[i].field00 = -1;
+            fadeOutSfxSlow(field02);
+        }
+    }
+}
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D954);
+extern BattleSceneCtx *D_800D244C;
+extern void fadeOutSfxFast(s32 idx);
+extern void renderAndUpdateDisplay(s32 frameCount);
+extern s32 renderBattleDisplayList(s32 *colorTag);
+
+/**
+ * @brief Hard tear-down: fade every @c D_800C526C SFX slot fast, then push
+ *        a 2-frame display flush.
+ *
+ * Walks all 13 entries of @c D_800C526C and unconditionally marks each
+ * @c field00 inactive (@c -1) and calls @c fadeOutSfxFast on its
+ * @c field02 — the harder/faster sibling of @c func_8009D8F0, which
+ * only acts on already-active slots. Then pushes @c 2 frames via
+ * @c renderAndUpdateDisplay and flushes the battle scene's
+ * @c colorTag into the display list.
+ *
+ * Used at world/battle hand-off when an immediate audio cut and frame
+ * push are required.
+ */
+void func_8009D954(void) {
+    s32 i;
+    for (i = 0; i < 13; i++) {
+        s32 sfxIdx = D_800C526C[i].field02;
+        D_800C526C[i].field00 = -1;
+        fadeOutSfxFast(sfxIdx);
+    }
+    renderAndUpdateDisplay(2);
+    renderBattleDisplayList(&D_800D244C->colorTag);
+}
 
 extern s32 getSfxField28(s32 idx);
 
@@ -405,7 +537,7 @@ void func_8009FE80(SVECTOR *a0, MATRIX *a1) {
     SetLightMatrix(&m);
 }
 
-extern void func_800A017C(s32 *vec);
+extern s32 func_800A017C(SVECTOR *v);
 
 /**
  * @brief Forward @p vec to func_800A017C, ignoring the first arg register.
@@ -415,7 +547,7 @@ extern void func_800A017C(s32 *vec);
  * @param unused First arg register, ignored.
  * @param vec Pointer forwarded as the first arg of func_800A017C.
  */
-void func_8009FEBC(s32 unused, s32 *vec) {
+void func_8009FEBC(s32 unused, SVECTOR *vec) {
     func_800A017C(vec);
 }
 
@@ -434,11 +566,81 @@ void func_8009FEDC(u8 *a0, u8 a1) {
     a0[0xA] = a1;
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009FF0C);
+/**
+ * @brief Pick an audio/parameter constant from a map-ID + mode pair.
+ *
+ * Special-cased @p mapId values return @c 0x400. The set is the union of
+ * the ranges @c [0x20, 0x29), @c [0x10, 0x17), @c [0x40, 0x43) and the
+ * singletons @c 0x30, @c 0x32, @c 0x84. For non-special @p mapId values,
+ * the result is selected by @p mode:
+ *  - @p mode == 0: @c 0x400
+ *  - @p mode == 1: @c 0x280
+ *  - otherwise:    @c 1
+ *
+ * The exact semantics are uncertain; the constants look like sound /
+ * fade-time parameters keyed off the world-map area.
+ *
+ * @param mapId World-map area identifier.
+ * @param mode  Mode selector consulted only on non-special @p mapId.
+ * @return Selected constant — @c 0x400, @c 0x280, or @c 1.
+ */
+s32 func_8009FF0C(s32 mapId, s32 mode) {
+    if ((u32)(mapId - 0x20) < 9 ||
+        mapId == 0x84 ||
+        mapId == 0x30 ||
+        (u32)(mapId - 0x10) < 7 ||
+        (u32)(mapId - 0x40) < 3 ||
+        mapId == 0x32 ||
+        mode == 0) {
+        return 0x400;
+    }
+    return mode == 1 ? 0x280 : 1;
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009FF70);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_800A0000);
+extern s16 D_800C534C;
+extern s16 D_800C5344;
+
+/**
+ * @brief Pick a per-map screen-scroll offset, with special handling for
+ *        @c mapId @c == @c 0x32 and a @p mode-keyed fallback.
+ *
+ * Returns @c D_800C534C for the "common" map set:
+ *  - @c mapId in @c [0x20, @c 0x29),
+ *  - @c mapId @c == @c 0x84,
+ *  - @c mapId @c == @c 0x30,
+ *  - @c mapId in @c [0x10, @c 0x17),
+ *  - @c mapId in @c [0x40, @c 0x43).
+ *
+ * For @c mapId @c == @c 0x32 returns @c -scroll @c / @c 24 @c - @c 0x100
+ * — a scroll-based offset computed from @p scroll.
+ *
+ * Otherwise selects on @p mode:
+ *  - @c mode @c == @c 0: @c D_800C534C.
+ *  - @c mode @c == @c 1: @c D_800C5344.
+ *  - else:               @c 1.
+ *
+ * @param mapId  World-map area identifier.
+ * @param mode   Mode selector consulted only on non-special @p mapId.
+ * @param scroll Scroll value, only used for @p mapId @c == @c 0x32.
+ * @return Selected scroll offset.
+ */
+s32 func_800A0000(s32 mapId, s32 mode, s32 scroll) {
+    if ((u32)(mapId - 0x20) < 9 ||
+        mapId == 0x84 ||
+        mapId == 0x30 ||
+        (u32)(mapId - 0x10) < 7 ||
+        (u32)(mapId - 0x40) < 3) {
+        return D_800C534C;
+    }
+    if (mapId == 0x32) {
+        return -scroll / 24 - 0x100;
+    }
+    if (mode == 0) return D_800C534C;
+    if (mode == 1) return D_800C5344;
+    return 1;
+}
 
 /** Returns a value based on input comparison. */
 s32 func_800A009C(s32 val) {
@@ -450,4 +652,38 @@ s32 func_800A009C(s32 val) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_800A00B4);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_800A017C);
+/**
+ * @brief Wrap @c vx into @c [0, 0x7FF] and @c vz into @c [-0x7FF, 0] by ±0x800.
+ *
+ * Used by the world map system to keep coordinates inside the active tile —
+ * when a coordinate spills past the tile boundary, it is shifted by one
+ * tile (0x800) so subsequent computations stay in-range.
+ *
+ *  - @c vx (offset 0): clamp to @c [0, 0x7FF]. If @c vx >= 0x800 subtract
+ *    0x800; if @c vx < 0 add 0x800.
+ *  - @c vz (offset 4): clamp to @c [-0x7FF, 0]. If @c vz > 0 subtract
+ *    0x800; if @c vz <= -0x800 add 0x800.
+ *
+ * @c vy (offset 2) and @c pad (offset 6) are left alone.
+ *
+ * @param v Target vector.
+ * @return @c 1 if either component was shifted, else @c 0.
+ */
+s32 func_800A017C(SVECTOR *v) {
+    s32 changed = 0;
+    if (v->vx >= 0x800) {
+        v->vx -= 0x800;
+        changed = 1;
+    } else if (v->vx < 0) {
+        v->vx += 0x800;
+        changed = 1;
+    }
+    if (v->vz > 0) {
+        v->vz -= 0x800;
+        changed = 1;
+    } else if (v->vz <= -0x800) {
+        v->vz += 0x800;
+        changed = 1;
+    }
+    return changed;
+}

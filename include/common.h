@@ -42,6 +42,11 @@ typedef union {
 /* Clamp value to [lo, hi] range. */
 #define CLAMP(val, lo, hi) ((val) < (lo) ? (lo) : (val) > (hi) ? (hi) : (val))
 
+/* Absolute value. Uses `<=` (rather than `<`) on the sign test so the
+ * compiler emits `blez` for the branch, matching the original codegen
+ * (`x == 0` falls into the negation arm, which still yields 0). */
+#define abs(x) ((x) <= 0 ? -(x) : (x))
+
 /*
  * Set/clear bit @c bitPos in a 64-bit flag set stored as @c u32 flags[2].
  * @c bitPos must be a signed type (s8 / s32) — this lets gcc 2.8.0 compile

@@ -665,7 +665,9 @@ extern BattleCharState g_battleChars;
 typedef struct {
     /* 0x0000 */ u8 pad0000[0x74];
     /* 0x0074 */ s32 colorTag;          /**< P_TAG consumed by renderBattleDisplayList. */
-    /* 0x0078 */ u8 pad0078[0x3FF4];
+    /* 0x0078 */ u8 pad0078[4];
+    /* 0x007C */ s32 otHead;            /**< P_TAG head — addPrim-style chain. */
+    /* 0x0080 */ u8 pad0080[0x3FEC];
 } BattleSceneCtx;
 
 extern BattleSceneCtx *D_800D244C;
