@@ -1,6 +1,7 @@
 #include "common.h"
 #include "sound.h"
 #include "psxsdk/libapi.h"
+#include "psxsdk/libgpu.h"
 
 extern u8 D_800780D8[];
 extern u8 D_800C4DCC[];
@@ -17,7 +18,35 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099B48);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099C84);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099EDC);
+extern SeqEntry D_800C4FD8[];
+
+/**
+ * @brief Kick off the SFX for @c D_800C4FD8[idx] and mark it active.
+ *
+ * Dispatches on the entry's @c bankHandle:
+ *  - non-zero: @c sndPlayBankSfx(bankHandle, @c field04, @c field08,
+ *    @c field0C).
+ *  - zero:     @c sndPlaySfx(field10, @c field04, @c field08,
+ *    @c field0C).
+ *
+ * Then sets @c field12 = @c 1 to mark the entry as running.
+ *
+ * @param idx Index into @c D_800C4FD8.
+ */
+void func_80099EDC(s32 idx) {
+    if (D_800C4FD8[idx].bankHandle != 0) {
+        sndPlayBankSfx(D_800C4FD8[idx].bankHandle,
+                       D_800C4FD8[idx].field04,
+                       D_800C4FD8[idx].field08,
+                       D_800C4FD8[idx].field0C);
+    } else {
+        sndPlaySfx(D_800C4FD8[idx].field10,
+                   D_800C4FD8[idx].field04,
+                   D_800C4FD8[idx].field08,
+                   D_800C4FD8[idx].field0C);
+    }
+    D_800C4FD8[idx].field12 = 1;
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099F78);
 
@@ -51,7 +80,54 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C1A4);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C294);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C478);
+/**
+ * @brief Two-stage @c LoadImage descriptor — pair of @c RECT / @c data
+ *        slots gated by the low nibble of @c flag. Shared between
+ *        @c func_8009C478 and @c func_8009C5FC.
+ */
+typedef struct {
+    RECT     rect1;
+    u32 *    data1;
+    RECT     rect2;
+    u32 *    data2;
+    u8       flag;
+} ImageDesc;
+
+extern void func_8009CA34(s32 *src, ImageDesc *desc);
+extern RECT D_800C8698;
+
+/**
+ * @brief Variant of @c func_8009C5FC that overrides the first
+ *        @c RECT's @c (x, y) with caller-supplied coordinates.
+ *
+ * Same two-stage @c LoadImage flow as @c func_8009C5FC, but the first
+ * blit's top-left corner is replaced by @p x, @p y (the @c w / @c h
+ * still come from the descriptor). The second blit (when bit 3 of
+ * @c desc.flag is set) uses @c desc.rect2 verbatim.
+ *
+ * Streams to the scratch @c D_800C8698 (separate from
+ * @c func_8009C5FC's @c D_800C8640).
+ *
+ * @param src Source buffer fed to @c func_8009CA34.
+ * @param x   Override X coordinate for the first blit.
+ * @param y   Override Y coordinate for the first blit.
+ */
+void func_8009C478(s32 *src, s32 x, s32 y) {
+    ImageDesc desc;
+    func_8009CA34(src, &desc);
+    D_800C8698.x = x;
+    D_800C8698.y = y;
+    D_800C8698.w = desc.rect1.w;
+    D_800C8698.h = desc.rect1.h;
+    LoadImage(&D_800C8698, desc.data1);
+    if ((desc.flag >> 3) & 1) {
+        D_800C8698.x = desc.rect2.x;
+        D_800C8698.y = desc.rect2.y;
+        D_800C8698.w = desc.rect2.w;
+        D_800C8698.h = desc.rect2.h;
+        LoadImage(&D_800C8698, desc.data2);
+    }
+}
 
 /**
  * @brief Fatal-error thunk that invokes the PSX SDK SystemError with category 0x57.
@@ -71,7 +147,42 @@ void func_8009C528(s32 rc) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C54C);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C5FC);
+extern RECT D_800C8640;
+
+/**
+ * @brief Pull a two-image descriptor from @p src and stream both TIMs
+ *        through @c LoadImage, gated by bit 3 of the descriptor flag.
+ *
+ * Steps:
+ *  1. @c func_8009CA34(@p src, @c &desc) — parse a streaming-image
+ *     header into @c desc.
+ *  2. Copy @c desc.rect1 into the scratch @c D_800C8640 and
+ *     @c LoadImage(@c &D_800C8640, @c desc.data1).
+ *  3. If bit 3 of @c desc.flag is set, copy @c desc.rect2 and
+ *     @c LoadImage the second payload too.
+ *
+ * The scratch @c D_800C8640 is re-used between both loads — the GPU
+ * blit is synchronous from this routine's POV, so the RECT can be
+ * overwritten right after the call returns.
+ *
+ * @param src Source buffer fed to @c func_8009CA34.
+ */
+void func_8009C5FC(s32 *src) {
+    ImageDesc desc;
+    func_8009CA34(src, &desc);
+    D_800C8640.x = desc.rect1.x;
+    D_800C8640.y = desc.rect1.y;
+    D_800C8640.w = desc.rect1.w;
+    D_800C8640.h = desc.rect1.h;
+    LoadImage(&D_800C8640, desc.data1);
+    if ((desc.flag >> 3) & 1) {
+        D_800C8640.x = desc.rect2.x;
+        D_800C8640.y = desc.rect2.y;
+        D_800C8640.w = desc.rect2.w;
+        D_800C8640.h = desc.rect2.h;
+        LoadImage(&D_800C8640, desc.data2);
+    }
+}
 
 extern void sndSeqSetTempoAlt(s32 tempo);
 extern void sndSetMasterVolume(s32 vol);

@@ -19,6 +19,7 @@ SetRotMatrix = 0x800406A4;
 SetTransMatrix = 0x80040734;
 RotMatrix = 0x80040FE4;
 SquareRoot0 = 0x8003F4A4;
+ratan2 = 0x80041E84;
 MulMatrix = 0x80040264;
 SetLightMatrix = 0x800406D4;
 SystemError = 0x800471E4;
@@ -36,6 +37,8 @@ CdGetSector = 0x8004397C;
 CdIntToPos = 0x80043A00;
 CdPosToInt = 0x80043B04;
 VSync = 0x80042634;
+MoveImage = 0x80048FBC;
+ClearImage = 0x80048DD4;
 
 /* Data blobs in bin section that are called/referenced by real code */
 func_800C4CA4 = 0x800C4CA4;

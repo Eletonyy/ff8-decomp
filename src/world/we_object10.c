@@ -5,10 +5,43 @@
 
 extern u8 D_800786D8;
 extern u8 D_800780D8[];
+extern u8 D_800DCE78[];
 extern SlotEntry D_800DBFB8[];
 extern s32 D_800C5B50;
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BD6EC);
+extern void func_800BAC84(u8 *p);
+extern s32 func_800BA870(u8 *p);
+
+extern s32 func_800B0010(void);
+
+/**
+ * @brief Search @c D_800DBFB8 for the slot whose @c marker matches the
+ *        value returned by @c func_800B0010.
+ *
+ * Calls @c func_800B0010 to get a marker byte, then linearly scans the
+ * first @c D_800C5B50 entries of @c D_800DBFB8 for the first slot whose
+ * @c marker matches. Returns the slot index or @c -1 if not found.
+ *
+ * Twin of @c func_800BD754 — same scan loop but the search key is
+ * sourced from @c func_800B0010 instead of an explicit argument.
+ *
+ * @return Matching slot index, or @c -1 on no match.
+ */
+s32 func_800BD6EC(void) {
+    s32 target = func_800B0010();
+    s32 i = 0;
+    s32 count = D_800C5B50;
+    if (count > 0) {
+        s32 bound = count;
+        SlotEntry *entry = &D_800DBFB8[0];
+        do {
+            if (target == entry->marker) return i;
+            i++;
+            entry++;
+        } while (i < bound);
+    }
+    return -1;
+}
 
 /**
  * @brief Linear search D_800DBFB8 for the first SlotEntry whose marker matches @p target.
@@ -115,7 +148,28 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDA08);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDA78);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDAE4);
+/**
+ * @brief Classify @p pos against two band centres (@c 0x90 and @c 0x130)
+ *        within tolerance @p radius.
+ *
+ * Tests @p pos for proximity to each band centre:
+ *  - @c |pos @c - @c 0x130| @c < @c radius: returns @c 0.
+ *  - @c |pos @c - @c 0x90|  @c < @c radius: returns @c 1.
+ *  - otherwise:                              returns @c -1.
+ *
+ * @param pos     Position to classify.
+ * @param radius  Half-width tolerance for each band.
+ * @return Band index @c 0 or @c 1, or @c -1 if @p pos is outside both bands.
+ */
+s32 func_800BDAE4(s32 pos, s32 radius) {
+    s32 result = -1;
+    if (abs(pos - 0x130) < radius) {
+        result = 0;
+    } else if (abs(pos - 0x90) < radius) {
+        result = 1;
+    }
+    return result;
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDB5C);
 
@@ -199,7 +253,30 @@ void func_800BE4D8(s32 *a, s32 *b, s32 t, s32 *out) {
     out[2] = b[2] + (val >> 12);
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE578);
+extern s32 ratan2(s32 y, s32 x);
+
+/**
+ * @brief Convert a direction vector to (pitch, yaw, 0) Euler angles.
+ *
+ * Treats @p dir as a 3D direction (PSX y-down convention) and writes
+ * the equivalent rotation into @p out:
+ *  - @c out->vx (pitch) = @c ratan2(-vy, @c sqrt(vz*vz + vx*vx))
+ *  - @c out->vy (yaw)   = @c ratan2(vx, vz)
+ *  - @c out->vz         = @c 0
+ *
+ * Uses the PsyQ GTE helpers @c SquareRoot0 (integer sqrt) and
+ * @c ratan2 (returns an angle in the standard PSX 0x1000 = full-circle
+ * unit).
+ *
+ * @param dir Input direction vector.
+ * @param out Destination Euler angles (vz is cleared).
+ */
+void func_800BE578(SVECTOR *dir, SVECTOR *out) {
+    s32 horizDist = SquareRoot0(dir->vz * dir->vz + dir->vx * dir->vx);
+    out->vx = ratan2(-dir->vy, horizDist);
+    out->vy = ratan2(dir->vx, dir->vz);
+    out->vz = 0;
+}
 
 /** @brief 32-byte record used by func_800BE5F8's table walker. */
 typedef struct {
@@ -232,9 +309,88 @@ s32 func_800BE5F8(Record *rec) {
     return -2;
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE63C);
+/**
+ * @brief Switch the @c D_800DCE78 subsystem between save and load modes.
+ *
+ * Dispatches based on @p reset:
+ *  - Non-zero @c reset: rebuild the @c D_800DCE78 state from scratch by
+ *    calling @c func_800BAC84 (init pass) followed by @c func_800BEFEC
+ *    (ramp/table fill). Returns @c 0.
+ *  - Zero @c reset: query @c func_800BA870 against the current state and
+ *    forward its return value.
+ *
+ * @param reset Non-zero rebuilds @c D_800DCE78; zero queries it instead.
+ * @return @c 0 in the rebuild path; @c func_800BA870's return value
+ *         otherwise.
+ */
+s32 func_800BE63C(s32 reset) {
+    s32 result = 0;
+    if (reset != 0) {
+        func_800BAC84(D_800DCE78);
+        func_800BEFEC(D_800DCE78);
+    } else {
+        result = func_800BA870(D_800DCE78);
+    }
+    return result;
+}
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE69C);
+/**
+ * @brief 0x34-byte transform entry — only the snapshot pair at @c 0x20
+ *        and @c 0x28 is mapped here. The trailing fields are consumed
+ *        by the per-entry handler @c func_800AEB58.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad0[0x20];
+    /* 0x20 */ s32 prevWord;    /**< Snapshot of @c currWord, refreshed each tick. */
+    /* 0x24 */ s32 currWord;
+    /* 0x28 */ u16 prevHalf;    /**< Snapshot of @c currHalf. */
+    /* 0x2A */ u16 currHalf;
+    /* 0x2C */ u8 pad2C[0x8];
+} XformEntry; /* 0x34 */
+
+/**
+ * @brief Header for the transform-entry table walked by @c func_800BE69C.
+ *
+ * Only the @c count byte at @c 0x02 and the @c entries pointer at
+ * @c 0x18 are mapped — the surrounding padding holds fields used by
+ * other handlers in the same overlay.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad0[2];
+    /* 0x02 */ s8 count;
+    /* 0x03 */ u8 pad3[0x15];
+    /* 0x18 */ XformEntry *entries;
+} XformGroup;
+
+extern void func_800AEB58(XformEntry *entry, XformGroup *group);
+
+/**
+ * @brief Snapshot each entry's @c curr fields into @c prev and invoke
+ *        the per-entry handler.
+ *
+ * Walks @p group->entries for @c group->count iterations. Before
+ * dispatching each entry to @c func_800AEB58:
+ *  - @c entry->prevHalf is loaded with @c entry->currHalf.
+ *  - @c entry->prevWord is loaded with @c entry->currWord.
+ *
+ * @c group->count is re-read each iteration since @c func_800AEB58 may
+ * mutate it (the cached @c i is compared against the fresh count).
+ *
+ * @param group Transform-entry group container.
+ */
+void func_800BE69C(XformGroup *group) {
+    XformEntry *entry = group->entries;
+    s32 i = 0;
+    if (group->count > 0) {
+        do {
+            i++;
+            entry->prevHalf = entry->currHalf;
+            entry->prevWord = entry->currWord;
+            func_800AEB58(entry, group);
+            entry++;
+        } while (i < group->count);
+    }
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE720);
 
@@ -242,7 +398,49 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE7FC);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE8B0);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE958);
+extern u8 *D_800C9E34;
+extern ScriptOp *func_800AF004(u8 *base, s32 flag);
+
+/**
+ * @brief Walk the @c D_800C9E34 script and return the last
+ *        @c 0xFF15 opcode's @c param (when @c D_800C4D64->flag has
+ *        bit 3 set), else @c -1.
+ *
+ * Steps:
+ *  1. If @c D_800C4D64->flag bit 3 isn't set, returns @c -1.
+ *  2. Calls @c func_800AF004(@c D_800C9E34, 0) — if no script, returns
+ *     @c -1.
+ *  3. Walks the script, treating opcodes as:
+ *     - @c 0xFF05 (END): stop walking.
+ *     - @c 0xFF0E (JUMP): follow the @c param-relative jump.
+ *     - @c 0xFF15: snapshot the @c param into @c result.
+ *     - other: skip to next op.
+ *
+ * Returns the last @c 0xFF15 param seen, or @c -1 if none.
+ */
+s32 func_800BE958(void) {
+    s32 result = -1;
+    ScriptOp *p;
+
+    if (D_800C4D64->flag & 0x8) {
+        p = func_800AF004(D_800C9E34, 0);
+        if (p != 0) {
+            while (1) {
+                u16 op = p->op;
+                if (op == 0xFF05) break;
+                if (op == 0xFF0E) {
+                    p = (ScriptOp *)(D_800C9E34 + p->param);
+                    continue;
+                }
+                if (op == 0xFF15) {
+                    result = p->param;
+                }
+                p++;
+            }
+        }
+    }
+    return result;
+}
 
 extern void func_8009B358(s32 a0, s32 a1, s32 a2);
 extern void func_8009D8A8(s32 a0);
@@ -290,11 +488,109 @@ void func_800BEA34(void) {
     renderBattleDisplayList(&D_800D244C->colorTag);
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BEA7C);
+extern s32 D_800C4D38;
+extern s32 D_800C5C1C;
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BEAF4);
+/**
+ * @brief Pick a per-map screen/mode constant keyed off @c D_800C4D38.
+ *
+ * Dispatches based on the current map id @c D_800C4D38:
+ *  - @c mapId @c < @c 0xA or @c == @c 0x80:
+ *      - @c D_800C5C1C @c > @c 0: returns @c 0x31.
+ *      - otherwise:               returns @c 0x20.
+ *  - @c mapId @c == @c 0x31:                          returns @c 0x20.
+ *  - @c mapId in @c [0x20, @c 0x29) or @c == @c 0x84: returns @c 0x32.
+ *  - @c mapId @c == @c 0x32:                          returns @c 0.
+ *  - otherwise:                                       returns @c -1.
+ *
+ * Constants look like screen-format / camera-mode selectors; the exact
+ * semantics aren't mapped yet.
+ *
+ * @return Per-map constant — @c 0x31, @c 0x32, @c 0x20, @c 0, or @c -1.
+ */
+s32 func_800BEA7C(void) {
+    s32 mapId = D_800C4D38;
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BEB84);
+    if ((u32)mapId < 0xA || mapId == 0x80) {
+        if (D_800C5C1C > 0) return 0x31;
+        return 0x20;
+    }
+    if (mapId == 0x31) return 0x20;
+    if ((u32)(mapId - 0x20) < 9 || mapId == 0x84) return 0x32;
+    if (mapId == 0x32) return 0;
+    return -1;
+}
+
+extern s32 D_800C5C18;
+extern s32 D_800C5C20;
+extern s32 D_800C5C24;
+extern s32 D_800C5C28;
+extern s32 D_800C5C2C;
+extern s32 D_800C5C30;
+
+/**
+ * @brief Check if @p val matches any of the 7 entries in the
+ *        @c D_800C5C18..D_800C5C30 slot table.
+ *
+ * Returns @c 0 immediately on negative @p val. Otherwise compares
+ * against each of the 7 named slot globals (@c D_800C5C18,
+ * @c D_800C5C1C, @c D_800C5C20, @c D_800C5C24, @c D_800C5C28,
+ * @c D_800C5C2C, @c D_800C5C30) and returns @c 1 on first match,
+ * @c 0 if none.
+ *
+ * @param val Slot identifier to test.
+ * @return @c 1 if @p val is in the slot table, @c 0 otherwise.
+ */
+s32 func_800BEAF4(s32 val) {
+    s32 result;
+    if (val < 0) return 0;
+    result = 0;
+    if (D_800C5C18 == val) result = 1;
+    else if (D_800C5C1C == val) result = 1;
+    else if (D_800C5C20 == val) result = 1;
+    else if (D_800C5C24 == val) result = 1;
+    else if (D_800C5C28 == val) result = 1;
+    else if (D_800C5C2C == val) result = 1;
+    else if (D_800C5C30 == val) result = 1;
+    return result;
+}
+
+/**
+ * @brief Compute a per-actor action code from the marker at
+ *        @c D_800D23D8[idx+2] crossed with the actor's @c flag1E.
+ *
+ * Looks up two pieces of per-actor state and combines them:
+ *  - marker = @c D_800D23D8[idx @c + @c 2] (byte from the world-state
+ *    flag buffer).
+ *  - flag = @c D_800DD6A8[idx].flag1E (s8 in the actor record).
+ *
+ * Returns:
+ *  - marker @c == @c 0 and flag @c == @c 1: @c 0x35.
+ *  - marker @c == @c 1 and flag @c == @c 1: @c 0x34.
+ *  - marker @c == @c 1 and flag @c == @c -1: @c 0x37.
+ *  - any other combination: @c -1.
+ *
+ * @param idx Actor index.
+ * @return Action code, or @c -1 if no rule matches.
+ */
+s32 func_800BEB84(s32 idx) {
+    s32 result = -1;
+    u8 marker = D_800D23D8[idx + 2];
+
+    if (marker == 0) {
+        if (D_800DD6A8[idx].flag1E == 1) {
+            result = 0x35;
+        }
+    } else if (marker == 1) {
+        s8 v = D_800DD6A8[idx].flag1E;
+        if (v == 1) {
+            result = 0x34;
+        } else if (v == -1) {
+            result = 0x37;
+        }
+    }
+    return result;
+}
 
 /**
  * @brief Map a command-kind code to a duration/timeout in frames.

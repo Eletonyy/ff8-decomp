@@ -243,9 +243,10 @@ typedef struct {
  * by index and feed the result to @c sndSeqStartPan and friends.
  */
 typedef struct {
-    /* 0x00 */ u8 pad00[4];
-    /* 0x04 */ s32 field04;     /**< Sequence handle / ID. */
-    /* 0x08 */ u8 pad08[8];
+    /* 0x00 */ s32 bankHandle;  /**< Non-zero = bank-based playback (passed to sndPlayBankSfx). */
+    /* 0x04 */ s32 field04;     /**< Sequence handle / ID (also generic SFX arg 1). */
+    /* 0x08 */ s32 field08;     /**< Generic SFX arg 2 (vol). */
+    /* 0x0C */ s32 field0C;     /**< Generic SFX arg 3 (pan). */
     /* 0x10 */ s16 field10;     /**< Sequence track / priority. */
     /* 0x12 */ s16 field12;     /**< Sequence runtime state (cleared by stop helper). */
 } SeqEntry; /* 0x14 = 20 bytes */
