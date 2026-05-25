@@ -142,7 +142,40 @@ void func_800BD918(u8 *dst) {
     dst[0x6F] = src[0x101];
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BD998);
+/**
+ * @brief Per-map constant lookup with implicit fall-through return.
+ *
+ * Dispatches on @p mapId:
+ *  - @p mapId @c < @c 0xA or @c == @c 0x80:                   @c 0x10.
+ *  - @p mapId @c == @c 0x32:                                  @c 0x78.
+ *  - @p mapId in @c [0x20, @c 0x29) or @c == @c 0x84:         @c 0x20.
+ *  - @p mapId in @c [0x40, @c 0x43):                          @c 0x78.
+ *  - @p mapId @c == @c 0x30:                                  @c 0x20.
+ *  - @p mapId @c == @c 0x31:                                  @c 0x78.
+ *  - otherwise:                                               @c 0x31.
+ *
+ * The @c 0x31 "default" is intentionally implicit — there is no
+ * trailing @c return statement, and the compiler leaves @c 0x31 in
+ * @c v0 from the final @c (mapId @c == @c 0x31) comparison's
+ * @c bne-delay-slot @c addiu. Adding @c return @c 0x31; explicitly
+ * generates a separate @c addiu and breaks the match.
+ *
+ * @param mapId Unsigned to make the @c mapId @c - @c 0x20 @c < @c 9 and
+ *              @c mapId @c - @c 0x40 @c < @c 3 range tests compile as
+ *              @c sltiu (one instruction) rather than a signed two-step
+ *              subtract+compare.
+ * @return Per-map constant — @c 0x10, @c 0x20, @c 0x78, or @c 0x31.
+ */
+s32 func_800BD998(u32 mapId) {
+    if (mapId < 0xA) return 0x10;
+    if (mapId == 0x80) return 0x10;
+    if (mapId == 0x32) return 0x78;
+    if (mapId - 0x20 < 9) return 0x20;
+    if (mapId == 0x84) return 0x20;
+    if (mapId - 0x40 < 3) return 0x78;
+    if (mapId == 0x30) return 0x20;
+    if (mapId == 0x31) return 0x78;
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDA08);
 
