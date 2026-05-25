@@ -146,7 +146,47 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BD998);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDA08);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDA78);
+/**
+ * @brief Edge-trigger each of two threshold flags at @p flags[0..1] from
+ *        the position @p pos, returning the index that crossed.
+ *
+ *  - Slot @c 0 (threshold @c 0x110): when @p pos is below the threshold,
+ *    the flag is reset to @c 0; otherwise, if the flag was @c 0, the
+ *    crossing is registered (@c result = @c 0, flag becomes @c 1).
+ *  - Slot @c 1 (threshold @c 0x70): the inverse — when @p pos is below
+ *    the threshold the flag is reset and no crossing is reported;
+ *    otherwise the same edge-trigger as slot 0.
+ *
+ * If both slots crossed in the same call the return value is the
+ * higher-index one (slot 1 overwrites slot 0).
+ *
+ * @param pos   Position to test against the two thresholds.
+ * @param flags Two-byte array; @c flags[0] is slot 0, @c flags[1] is slot 1.
+ * @return The index of the (last) slot that crossed this call, or @c -1.
+ */
+s32 func_800BDA78(s32 pos, u8 *flags) {
+    s32 result = -1;
+    s32 i;
+
+    for (i = 0; i < 2; i++, flags++) {
+        if (i == 0) {
+            if (pos < 0x110) {
+                *flags = 0;
+                continue;
+            }
+        } else if (pos < 0x70) {
+            goto clear;
+        }
+        if (*flags == 0) {
+            result = i;
+            *flags = 1;
+        }
+        continue;
+    clear:
+        *flags = 0;
+    }
+    return result;
+}
 
 /**
  * @brief Classify @p pos against two band centres (@c 0x90 and @c 0x130)
