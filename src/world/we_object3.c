@@ -389,7 +389,59 @@ void func_800A5FD4(s32 screenIdx) {
     PutDispEnv(&env);
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A6030);
+/**
+ * @brief Walk a @c WorldObject list, moving every node whose @c id is
+ *        not present in the @c D_800C9EF0 lookup table onto the front
+ *        of the @c D_800D3318 free list.
+ *
+ * For each @c WorldObject in the list rooted at @c *pp, scan the
+ * 16-entry @c D_800C9EF0 table (linked via @c next) for an entry with
+ * a matching @c id. When no match is found the node is removed from
+ * the source list (the predecessor's @c next pointer is patched via
+ * the @c Node** indirection) and prepended to @c D_800D3318. When a
+ * match is found the node is kept and the walker advances by
+ * re-pointing @p pp at the node's @c next.
+ *
+ * The @c Node @c ** indirection (rather than a separate @c prev
+ * pointer) is the key to byte-matching this routine: it lets gcc keep
+ * the same register as both the head-pointer and the predecessor's
+ * @c next pointer across iterations.
+ *
+ * @param pp Address of the head pointer for the list to filter.
+ */
+void func_800A6030(WorldObject **pp) {
+    WorldObject *curr;
+    WorldObject *search;
+    s32 found;
+
+    curr = *pp;
+    if (curr == NULL) {
+        return;
+    }
+
+    do {
+        search = &D_800C9EF0[0];
+        found = 0;
+
+        while (search != NULL) {
+            if (curr->id == search->id) {
+                found = 1;
+                break;
+            }
+            search = search->next;
+            found = 0;
+        }
+
+        if (!found) {
+            *pp = curr->next;
+            curr->next = D_800D3318;
+            D_800D3318 = curr;
+        } else {
+            pp = &curr->next;
+        }
+        curr = *pp;
+    } while (curr != NULL);
+}
 
 extern WorldSection *D_800C4D5C;
 
