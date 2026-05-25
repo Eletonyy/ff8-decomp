@@ -161,15 +161,11 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AA210);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AAD48);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AAE04);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AAEAC);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AAED4);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AAF84);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AAFBC);
 
 /**
  * @brief 0x1C-byte prim link — first word is an addPrim-style P_TAG, the
@@ -214,9 +210,4 @@ s32 func_800AB02C(PrimLink *p, s32 unused, s32 maskTake, s32 maskKeep) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AB06C);
 
-
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AB100);
-
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AB2D4);
-
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AB300);
