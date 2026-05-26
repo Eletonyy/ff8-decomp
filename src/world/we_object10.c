@@ -275,7 +275,7 @@ s32 func_800BDAE4(s32 pos, s32 radius) {
     return result;
 }
 
-extern void func_800AC0A0(s32 marker, u8 *input, u8 *buf, s32 zero);
+extern void func_800AC0A0(s32 marker, VECTOR *position, SVECTOR *vec, s32 zero);
 
 /**
  * @brief Snapshot an 8-byte payload from @p input, nudge its halfword
@@ -317,7 +317,7 @@ void func_800BDB5C(u8 *input, s32 flag, s32 mode) {
         *(s16 *)(buf + 2) = val;
     } while (0);
 
-    func_800AC0A0(marker, input, buf, 0);
+    func_800AC0A0(marker, (VECTOR *)input, (SVECTOR *)buf, 0);
 }
 
 extern void *func_80047CE4(void *dst, s32 c, u32 n);
@@ -347,8 +347,8 @@ void func_800BDBE0(u8 *target, s32 unitCount) {
         r1 = func_8009CC3C();
         buf.vy += (r1 - 0x80) * 8;
         r2 = func_8009CC3C();
-        buf.vz += (r2 - 0x80) << 2;
-        func_800AC0A0(2, target, (u8 *)&buf, 3);
+        buf.vz += (r2 - 0x80) * 4;
+        func_800AC0A0(2, (VECTOR *)target, &buf, 3);
     }
 }
 
@@ -371,25 +371,25 @@ extern s32 D_800C4D4C;
  *     (each biased by @c -0x80, scaled by @c 8 and @c 4 respectively).
  *  4. @c func_800AC0A0(0xE, input, scratch, 3) dispatches the result.
  */
-void func_800BDC94(u8 *input) {
-    u8 buf[8];
+void func_800BDC94(SlotEntry *input) {
+    SVECTOR buf;
     s32 r;
     s32 threshold = D_800C4D4C * 2;
     if (func_8009CC3C() >= threshold) return;
-    memcpy(buf, input + 0x14, 8);
-    *(u16 *)(buf + 2) += 0x320;
+    buf = input->vec;
+    buf.vy += 0x320;
     r = func_8009CC3C();
-    *(u16 *)(buf + 2) += (r - 0x80) * 8;
+    buf.vy += (r - 0x80) * 8;
     r = func_8009CC3C();
-    *(u16 *)(buf + 4) += (r - 0x80) << 2;
-    func_800AC0A0(0xE, input, buf, 3);
-    memcpy(buf, input + 0x14, 8);
-    *(u16 *)(buf + 2) -= 0x320;
+    buf.vz += (r - 0x80) * 4;
+    func_800AC0A0(0xE, &input->position, &buf, 3);
+    buf = input->vec;
+    buf.vy -= 0x320;
     r = func_8009CC3C();
-    *(u16 *)(buf + 2) += (r - 0x80) * 8;
+    buf.vy += (r - 0x80) * 8;
     r = func_8009CC3C();
-    *(u16 *)(buf + 4) += (r - 0x80) << 2;
-    func_800AC0A0(0xE, input, buf, 3);
+    buf.vz += (r - 0x80) * 4;
+    func_800AC0A0(0xE, &input->position, &buf, 3);
 }
 
 /**
@@ -401,25 +401,25 @@ void func_800BDC94(u8 *input) {
  * Otherwise emits twice with the same snapshot + perturb pipeline. See
  * @c func_800BDC94 for the per-emit body details.
  */
-void func_800BDDC4(u8 *input) {
-    u8 buf[8];
+void func_800BDDC4(SlotEntry *input) {
+    SVECTOR buf;
     s32 r;
     s32 threshold = D_800C4D4C * 4;
     if (func_8009CC3C() >= threshold) return;
-    memcpy(buf, input + 0x14, 8);
-    *(u16 *)(buf + 2) += 0x320;
+    buf = input->vec;
+    buf.vy += 0x320;
     r = func_8009CC3C();
-    *(u16 *)(buf + 2) += (r - 0x80) * 8;
+    buf.vy += (r - 0x80) * 8;
     r = func_8009CC3C();
-    *(u16 *)(buf + 4) += (r - 0x80) << 2;
-    func_800AC0A0(3, input, buf, 3);
-    memcpy(buf, input + 0x14, 8);
-    *(u16 *)(buf + 2) -= 0x320;
+    buf.vz += (r - 0x80) * 4;
+    func_800AC0A0(3, &input->position, &buf, 3);
+    buf = input->vec;
+    buf.vy -= 0x320;
     r = func_8009CC3C();
-    *(u16 *)(buf + 2) += (r - 0x80) * 8;
+    buf.vy += (r - 0x80) * 8;
     r = func_8009CC3C();
-    *(u16 *)(buf + 4) += (r - 0x80) << 2;
-    func_800AC0A0(3, input, buf, 3);
+    buf.vz += (r - 0x80) * 4;
+    func_800AC0A0(3, &input->position, &buf, 3);
 }
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDEF4);
@@ -455,29 +455,25 @@ s32 func_800BE158(s32 idx) {
  *
  * Sibling of @c func_800BDC94. Early-rejects when
  * @c func_8009CC3C() @c >= @c threshold. Otherwise snapshots @c input's
- * trailing 8 bytes at @c +0x14 (unaligned) and the leading 16 bytes
- * (aligned via an @c s32* cache so gcc emits @c lw/sw for the 16-byte
- * memcpy and @c lwl/lwr for the 8-byte trailing). Subtracts @c 0x140
- * from the scratch buf's word at @c +4, then perturbs the trailing's
- * @c vy/@c vz with two @c func_8009CC3C draws (each biased by @c -0x80,
- * scaled by @c 8 / @c 4 respectively) and dispatches the result to
- * @c func_800AC0A0 with marker @c target+4.
+ * @c position (16-byte aligned @c lw/@c sw) and @c vec (8-byte unaligned
+ * @c lwl/@c lwr), drops @c position.vy by @c 0x140, perturbs @c vec.vy
+ * and @c vec.vz with two @c func_8009CC3C draws (each biased by @c -0x80
+ * and scaled by @c 8 / @c 4 respectively), then dispatches to
+ * @c func_800AC0A0 with marker @c marker+4.
  */
-void func_800BE1A8(u8 *input, u8 *target, s32 threshold) {
-    u8 trailing[8];
-    u8 buf[16];
-    s32 *vec_src;
+void func_800BE1A8(SlotEntry *input, s32 marker, s32 threshold) {
+    SVECTOR vec;
+    VECTOR pos;
     s32 r;
     if (func_8009CC3C() >= threshold) return;
-    vec_src = (s32 *)input;
-    memcpy(trailing, input + 0x14, 8);
-    memcpy(buf, vec_src, 16);
-    *(s32 *)(buf + 4) -= 0x140;
+    vec = input->vec;
+    pos = input->position;
+    pos.vy -= 0x140;
     r = func_8009CC3C();
-    *(u16 *)(trailing + 2) += (r - 0x80) * 8;
+    vec.vy += (r - 0x80) * 8;
     r = func_8009CC3C();
-    *(u16 *)(trailing + 4) += (r - 0x80) * 4;
-    func_800AC0A0((s32)(target + 4), buf, trailing, 3);
+    vec.vz += (r - 0x80) * 4;
+    func_800AC0A0(marker + 4, &pos, &vec, 3);
 }
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE284);
@@ -668,11 +664,9 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE720);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE7FC);
 
-extern u8 *D_800DD6C0;
-extern u8 *D_800DD6E4;
-extern void func_800BC51C(s32 *src, s32 *dst);
-extern void func_800BC544(s32 *src, s32 *dst);
-extern void func_800A40F8(s32 *src, u8 *dst);
+extern void func_800BC51C(VECTOR *src, VECTOR *dst);
+extern void func_800BC544(VECTOR *src, VECTOR *dst);
+extern void func_800A40F8(VECTOR *src, u8 *dst);
 
 /**
  * @brief Pick a rotation source from a one-byte selector, copy/negate via
@@ -680,9 +674,9 @@ extern void func_800A40F8(s32 *src, u8 *dst);
  *        and @c func_800A40F8.
  *
  * Reads a byte from @p byteIn and uses it to choose a rotation source:
- *  - @c 1: @c &D_800DD6C0[0x34]
- *  - @c 2 or @c 3: @c &D_800DD6C0[0x68]
- *  - @c 4: @c &D_800DD6E4[0x68]
+ *  - @c 1: @c &D_800DD6C0->vecA
+ *  - @c 2 or @c 3: @c &D_800DD6C0->vecB
+ *  - @c 4: @c &D_800DD6E4->vecB
  *  - anything else: skip the rotation copy
  *
  * The selected source is fed through @c func_800BC51C(src, transform)
@@ -690,18 +684,18 @@ extern void func_800A40F8(s32 *src, u8 *dst);
  * the mirror copy into a scratch vector, and @c func_800A40F8(&buf, output)
  * projects/dispatches the final result.
  */
-void func_800BE8B0(u8 *byteIn, s32 *transform, u8 *output) {
+void func_800BE8B0(u8 *byteIn, VECTOR *transform, u8 *output) {
     u8 byte = *byteIn;
-    s32 buf[4];
+    VECTOR buf;
     if (byte == 1) {
-        func_800BC51C((s32 *)(D_800DD6C0 + 0x34), transform);
-    } else if ((u8)(byte - 2) < 2) {
-        func_800BC51C((s32 *)(D_800DD6C0 + 0x68), transform);
+        func_800BC51C(&D_800DD6C0->vecA, transform);
+    } else if (byte == 2 || byte == 3) {
+        func_800BC51C(&D_800DD6C0->vecB, transform);
     } else if (byte == 4) {
-        func_800BC51C((s32 *)(D_800DD6E4 + 0x68), transform);
+        func_800BC51C(&D_800DD6E4->vecB, transform);
     }
-    func_800BC544(transform, buf);
-    func_800A40F8(buf, output);
+    func_800BC544(transform, &buf);
+    func_800A40F8(&buf, output);
 }
 
 extern u8 *D_800C9E34;
@@ -1045,7 +1039,7 @@ s32 func_800BEED4(void) {
     if (D_800D23D8[0] != 0xD) return;
     if (D_800C4DC0 == 0) return;
 
-    ret = func_800A358C(0x32, &D_800DBFB8[D_800C5C24], &D_800DBFB8[D_800C5C24].data14, 0);
+    ret = func_800A358C(0x32, &D_800DBFB8[D_800C5C24], &D_800DBFB8[D_800C5C24].vec, 0);
     D_800C4DC4 = (ret >= 0);
     if (!D_800C4DC4) {
         D_800D23D8[0] = 0;

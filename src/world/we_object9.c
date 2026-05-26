@@ -429,17 +429,17 @@ s32 func_800BC46C(u16 *out) {
 }
 
 /** Copies and negates vector components (rotation variant A). */
-void func_800BC51C(s32 *src, s32 *dst) {
-    dst[0] = src[0];
-    dst[1] = -src[2];
-    dst[2] = src[1];
+void func_800BC51C(VECTOR *src, VECTOR *dst) {
+    dst->vx = src->vx;
+    dst->vy = -src->vz;
+    dst->vz = src->vy;
 }
 
 /** Copies and negates vector components (rotation variant B). */
-void func_800BC544(s32 *src, s32 *dst) {
-    dst[0] = src[0];
-    dst[1] = src[2];
-    dst[2] = -src[1];
+void func_800BC544(VECTOR *src, VECTOR *dst) {
+    dst->vx = src->vx;
+    dst->vy = src->vz;
+    dst->vz = -src->vy;
 }
 
 /** Two-word state blob assembled from @c D_800C9718 / @c D_800C9710. */
@@ -1141,13 +1141,13 @@ extern s32 func_800B00D8(s32 a);
  * @return 1 if the slot was newly inserted, 0 otherwise or on rejection.
  */
 s32 func_800BD09C(SlotEntry *slot, s32 arg1, CmdDesc *cmd, s32 worldAngle) {
-    s32 delta = slot->y - worldAngle;
+    s32 delta = slot->position.vy - worldAngle;
     s32 insertResult;
     s32 trigger;
 
     if (delta > 0) {
         if (delta >= 0xC8) return 0;
-    } else if (worldAngle - slot->y >= 0xC8) {
+    } else if (worldAngle - slot->position.vy >= 0xC8) {
         return 0;
     }
 
@@ -1158,32 +1158,22 @@ s32 func_800BD09C(SlotEntry *slot, s32 arg1, CmdDesc *cmd, s32 worldAngle) {
     if (func_800A4670(cmd->type | (cmd->flag << 8) | (cmd->param << 16), D_800C4D38) == 0) {
         if (trigger) return 0;
     }
-    insertResult = func_800A358C(func_800B00D8(slot->marker), slot, slot->data14, trigger);
+    insertResult = func_800A358C(func_800B00D8(slot->marker), slot, &slot->vec, trigger);
     if (insertResult < 0) return trigger;
     return 0;
 }
-
-/**
- * @brief Source-side 16-byte vector blob at @c D_800DD680.
- */
-typedef struct {
-    s32 x;             /* 0x00 */
-    s32 y;             /* 0x04 */
-    s32 z;             /* 0x08 */
-    s32 pad0C;         /* 0x0C */
-} WorldVec;
 
 extern s32      D_800C4DC8;
 extern s32      D_800C4D38;
 extern s32      D_800C4D3C;
 extern u8       D_800C9770[0x10];
 extern WorldPos D_800C9868;
-extern WorldVec D_800DD680;
+extern VECTOR   D_800DD680;
 extern u8       D_800DD690[8];
 extern s32      D_800DD698;
 extern s32      D_800DD69C;
 
-extern void func_800A40F8(WorldVec *src, u8 *dst);
+extern void func_800A40F8(VECTOR *src, u8 *dst);
 extern void *memcpy(void *dst, const void *src, u32 n);
 
 /**
@@ -1191,9 +1181,9 @@ extern void *memcpy(void *dst, const void *src, u32 n);
  *
  * No-op when the @c D_800C4DC8 flag is zero. Otherwise copies:
  *   - @c D_800DD698 → @c D_800C4D38 (primary cmd byte)
- *   - @c D_800DD680.x → @c D_800C9868.x
- *   - @c D_800DD680.y → @c D_800C9868.z  (Y/Z swap for PS1 coord system)
- *   - -@c D_800DD680.z → @c D_800C9868.y (Z negated)
+ *   - @c D_800DD680.vx → @c D_800C9868.x
+ *   - @c D_800DD680.vy → @c D_800C9868.z  (Y/Z swap for PS1 coord system)
+ *   - -@c D_800DD680.vz → @c D_800C9868.y (Z negated)
  *   - @c D_800DD690[0..8] → @c D_800C9770[8..0xF] (unaligned 8 bytes)
  *   - @c D_800DD69C → @c D_800C4D3C (secondary cmd byte)
  * and calls @c func_800A40F8 with the source vector and @c D_800C9770 buffer.
@@ -1201,9 +1191,9 @@ extern void *memcpy(void *dst, const void *src, u32 n);
 void func_800BD180(void) {
     if (D_800C4DC8 != 0) {
         D_800C4D38 = D_800DD698;
-        D_800C9868.x = D_800DD680.x;
-        D_800C9868.z = D_800DD680.y;
-        D_800C9868.y = -D_800DD680.z;
+        D_800C9868.x = D_800DD680.vx;
+        D_800C9868.z = D_800DD680.vy;
+        D_800C9868.y = -D_800DD680.vz;
         func_800A40F8(&D_800DD680, D_800C9770);
         memcpy(&D_800C9770[0x8], D_800DD690, 8);
         D_800C4D3C = D_800DD69C;
@@ -1224,7 +1214,7 @@ void func_800BD180(void) {
  * @param cmd Primary cmd byte, stored at @c D_800DD698.
  * @param cmd2 Secondary cmd byte, stored at @c D_800DD69C.
  */
-void func_800BD22C(WorldVec *src, u8 *rot, s32 cmd, s32 cmd2) {
+void func_800BD22C(VECTOR *src, u8 *rot, s32 cmd, s32 cmd2) {
     D_800C4DC8 = 1;
     D_800DD698 = cmd;
     D_800DD680 = *src;
@@ -1259,10 +1249,10 @@ s32 func_800BD2A0(s16 *outLow, s16 *outHigh) {
     if (slotIdx >= 0) {
         SlotEntry *slot = &D_800DBFB8[slotIdx];
         s32 *vp;
-        vec[0] = slot->x;
+        vec[0] = slot->position.vx;
         vp = vec;
-        vp[1] = -slot->z;
-        vp[2] = slot->y;
+        vp[1] = -slot->position.vz;
+        vp[2] = slot->position.vy;
         angle = func_800A5DC8(vec[0], vec[1]);
 
         s16angle = (s16)angle;
@@ -1301,10 +1291,10 @@ s32 func_800BD380(s16 *outLow, s16 *outHigh) {
     if (slotIdx >= 0) {
         SlotEntry *slot = &D_800DBFB8[slotIdx];
         s32 *vp;
-        vec[0] = slot->x;
+        vec[0] = slot->position.vx;
         vp = vec;
-        vp[1] = -slot->z;
-        vp[2] = slot->y;
+        vp[1] = -slot->position.vz;
+        vp[2] = slot->position.vy;
         angle = func_800A5DC8(vec[0], vec[1]);
 
         s16angle = (s16)angle;
@@ -1338,10 +1328,10 @@ s32 func_800BD460(s16 *outLow, s16 *outHigh) {
     if (slotIdx >= 0) {
         SlotEntry *slot = &D_800DBFB8[slotIdx];
         s32 *vp;
-        vec[0] = slot->x;
+        vec[0] = slot->position.vx;
         vp = vec;
-        vp[1] = -slot->z;
-        vp[2] = slot->y;
+        vp[1] = -slot->position.vz;
+        vp[2] = slot->position.vy;
         angle = func_800A5DC8(vec[0], vec[1]);
 
         s16angle = (s16)angle;

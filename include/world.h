@@ -74,15 +74,13 @@ typedef struct {
  * usages are discovered.
  */
 typedef struct {
-    /* 0x00 */ s32 x;               /**< Slot world X coordinate. */
-    /* 0x04 */ s32 y;               /**< Slot world Y (compared to world camera angle). */
-    /* 0x08 */ s32 z;               /**< Slot world Z coordinate. */
-    /* 0x0C */ s32 pad0C;
+    /* 0x00 */ VECTOR position;     /**< Slot world position (vx/vy/vz; vy compared to world camera angle). */
     /* 0x10 */ s8 marker;           /**< Scan terminator / type byte. */
     /* 0x11 */ u8 pad11;
     /* 0x12 */ s8 lookupIdx;        /**< Index into D_800DDB00 when >= 0. */
     /* 0x13 */ u8 pad13;
-    /* 0x14 */ u8 data14[0x14];     /**< Tail buffer passed to dispatcher. */
+    /* 0x14 */ SVECTOR vec;         /**< First 8 bytes of the tail — vy/vz used by func_800BDxxx perturb-and-emit helpers. */
+    /* 0x1C */ u8 tail[0x0C];       /**< Remaining 12 bytes of the tail. */
 } SlotEntry; /* 0x28 = 40 bytes */
 
 /**
@@ -327,5 +325,20 @@ extern ScriptOp *func_800AF004(u8 *base, s32 flag);
 extern s32 func_800AF28C(ScriptOp *p);
 extern s32 func_800BEFC4(void);
 extern void func_800BD82C(u8 *actor, SlotEntry *slot, s32 marker, s32 flag, SVECTOR *rot, VECTOR *trans);
+
+/**
+ * @brief Pair of rotation source vectors at known offsets. Pointed to by
+ *        @c D_800DD6C0 / @c D_800DD6E4. The leading @c 0x34 bytes and the
+ *        gap between the two vectors are not yet modeled.
+ */
+typedef struct {
+    /* 0x00 */ u8     unk00[0x34];
+    /* 0x34 */ VECTOR vecA;
+    /* 0x44 */ u8     unk44[0x24];
+    /* 0x68 */ VECTOR vecB;
+} RotationSources;
+
+extern RotationSources *D_800DD6C0;
+extern RotationSources *D_800DD6E4;
 
 #endif /* WORLD_H */
