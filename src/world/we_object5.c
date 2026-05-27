@@ -1,5 +1,6 @@
 #include "common.h"
 #include "world.h"
+#include "battle.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libc.h"
@@ -31,7 +32,6 @@
  *                both kinds (kind 0 first, then kind 1).
  *
  */
-extern EntityModel *D_800D244C;
 extern POLY_FT4     D_800D8810[2];
 extern POLY_FT4     D_800D8860[2];
 extern s16          D_800C977A;
@@ -48,7 +48,7 @@ void func_800AB540(s32 screenX, s32 screenY, s32 mode) {
     s32       i, c;
     s32       dim;
 
-    slot = (D_800D244C == (void *)&D_800CA040) ? D_800D8860 : D_800D8810;
+    slot = (D_800D244C == (BattleSceneCtx *)&D_800CA040) ? D_800D8860 : D_800D8810;
 
     m.t[2] = 0;
     m.t[1] = 0;
@@ -130,7 +130,7 @@ void func_800AB540(s32 screenX, s32 screenY, s32 mode) {
         *(s32 *)&slot->x2 = *(s32 *)&corners[2];
         *(s32 *)&slot->x3 = *(s32 *)&corners[3];
 
-        addPrim((P_TAG *)((u8 *)D_800D244C + 0x7C), slot);
+        addPrim(&D_800D244C->otHead, slot);
         slot++;
     }
 }
