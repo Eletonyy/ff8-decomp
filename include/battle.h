@@ -660,15 +660,25 @@ extern BattleCharState g_battleChars;
 /**
  * @brief Battle/scene context struct pointed to by D_800D244C.
  *
+ * The @c primList array at +0x70 holds per-bone OT chain heads (indexed
+ * by bone id via @c D_800C53B8 in we_object4). Two specific slots are
+ * also accessed by name:
+ *  - @c primList[1] (+0x74) is the @c colorTag consumed by
+ *    @c renderBattleDisplayList
+ *  - @c primList[3] (+0x7C) is the main @c otHead chain head used by
+ *    @c addPrim-style inserts.
+ *
  * At least 0x4070 bytes based on observed accesses in world.
  */
 typedef struct {
-    /* 0x0000 */ u8 pad0000[0x74];
-    /* 0x0074 */ s32 colorTag;          /**< P_TAG consumed by renderBattleDisplayList. */
-    /* 0x0078 */ u8 pad0078[4];
-    /* 0x007C */ s32 otHead;            /**< P_TAG head — addPrim-style chain. */
-    /* 0x0080 */ u8 pad0080[0x3FEC];
+    /* 0x0000 */ u8  pad0000[0x70];
+    /* 0x0070 */ s32 primList[4];
+    /* 0x0080 */ u8  pad0080[0x3FEC];
 } BattleSceneCtx;
+
+/* Named aliases for the two specifically-purposed primList slots. */
+#define BSC_COLORTAG_IDX 1   /**< primList[1] @ +0x74 — renderBattleDisplayList color tag. */
+#define BSC_OTHEAD_IDX   3   /**< primList[3] @ +0x7C — main addPrim chain head. */
 
 extern BattleSceneCtx *D_800D244C;
 

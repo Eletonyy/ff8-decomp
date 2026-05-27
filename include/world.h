@@ -4,6 +4,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
+#include "battle.h"
 
 /** @brief World-map tile size in world units (one tile = 2048 units). */
 #define WORLD_TILE_SIZE 2048
@@ -303,13 +304,7 @@ typedef struct {
     u8    pad[0x58];     /**< 0x08..0x5F: rest of the slot (stride 0x60). */
 } OTSlot;
 
-/** @brief Entity model with a per-bone prim pointer table at @c +0x70. */
-typedef struct {
-    u8  pad00[0x70];
-    u32 primList[1];     /**< +0x70: per-bone prim addr, indexed by bone id. */
-} EntityModel;
-
-extern EntityModel D_800CA040;          /**< Canonical worldmap entity model. */
+extern BattleSceneCtx D_800CA040;       /**< Worldmap "no-battle" sentinel — also functions as an empty BattleSceneCtx. */
 extern s16         D_800C53B8[];        /**< Bone-id table (used by we_object4). */
 extern OTSlot      D_800D3E98[2][3];    /**< Primary worldmap OT slot-B[cond][bone]. */
 extern OTSlot      D_800D40D8[2][3];    /**< Secondary worldmap OT slot-B[cond][bone]. */

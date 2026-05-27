@@ -212,7 +212,7 @@ void func_8009D44C(s32 marker) {
         fadeOutSfxFast(sfx);
     }
     renderAndUpdateDisplay(2);
-    renderBattleDisplayList(&D_800D244C->colorTag);
+    renderBattleDisplayList(&D_800D244C->primList[BSC_COLORTAG_IDX]);
 }
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D510);
@@ -400,7 +400,7 @@ void func_8009D954(void) {
         fadeOutSfxFast(sfxIdx);
     }
     renderAndUpdateDisplay(2);
-    renderBattleDisplayList(&D_800D244C->colorTag);
+    renderBattleDisplayList(&D_800D244C->primList[BSC_COLORTAG_IDX]);
 }
 
 extern s32 getSfxField28(s32 idx);

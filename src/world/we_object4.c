@@ -23,7 +23,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A6BE0);
  *
  * @param a0 Entity model whose @c primList holds the prims to splice.
  */
-void func_800A735C(EntityModel *a0) {
+void func_800A735C(BattleSceneCtx *a0) {
     s32 cond = (a0 != &D_800CA040) ? 1 : 0;
 
     addPrims(&a0->primList[D_800C53B8[0]], &D_800D3E50[cond][0].link, &D_800D3E98[cond][0].link);
@@ -135,7 +135,7 @@ extern void func_80048C50(s32 arg);
  * entity bit — @c 0 for @c &D_800CA040, @c 1 otherwise — which selects the
  * @c [0] or @c [1] row of the pool array via the @c 0x120-byte bias.
  */
-void func_800A9E24(EntityModel *a0) {
+void func_800A9E24(BattleSceneCtx *a0) {
     s32 cond = (a0 != &D_800CA040) ? 1 : 0;
     s32 bias = cond * 0x120;
     func_800491E8(D_800D3E50 + bias);
@@ -232,9 +232,9 @@ s32 func_800AB02C(PrimLink *p, s32 unused, s32 maskTake, s32 maskKeep) {
 
     p->prim_len = 0xC;
     ctx = D_800D244C;
-    p->link = (p->link & maskKeep) | (ctx->otHead & maskTake);
-    result = (ctx->otHead & maskKeep) | ((s32)p & maskTake);
-    ctx->otHead = result;
+    p->link = (p->link & maskKeep) | (ctx->primList[BSC_OTHEAD_IDX] & maskTake);
+    result = (ctx->primList[BSC_OTHEAD_IDX] & maskKeep) | ((s32)p & maskTake);
+    ctx->primList[BSC_OTHEAD_IDX] = result;
     return result;
 }
 

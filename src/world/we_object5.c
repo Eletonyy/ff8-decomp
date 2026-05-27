@@ -48,7 +48,7 @@ void func_800AB540(s32 screenX, s32 screenY, s32 mode) {
     s32       i, c;
     s32       dim;
 
-    slot = (D_800D244C == (BattleSceneCtx *)&D_800CA040) ? D_800D8860 : D_800D8810;
+    slot = (D_800D244C == &D_800CA040) ? D_800D8860 : D_800D8810;
 
     m.t[2] = 0;
     m.t[1] = 0;
@@ -130,7 +130,7 @@ void func_800AB540(s32 screenX, s32 screenY, s32 mode) {
         *(s32 *)&slot->x2 = *(s32 *)&corners[2];
         *(s32 *)&slot->x3 = *(s32 *)&corners[3];
 
-        addPrim(&D_800D244C->otHead, slot);
+        addPrim(&D_800D244C->primList[BSC_OTHEAD_IDX], slot);
         slot++;
     }
 }

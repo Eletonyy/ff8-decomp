@@ -785,7 +785,7 @@ void func_800BEA34(void) {
     D_800C5D54 = 0;
     fadeOutSfxFast(0);
     renderAndUpdateDisplay(2);
-    renderBattleDisplayList(&D_800D244C->colorTag);
+    renderBattleDisplayList(&D_800D244C->primList[BSC_COLORTAG_IDX]);
 }
 
 extern s32 D_800C4D38;
