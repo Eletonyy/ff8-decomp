@@ -181,70 +181,76 @@ void initBattleEntity(s32 idx) {
  * empty: width or height is forced to 0 and the function returns 0;
  * otherwise returns 1.
  *
- * The args are typed as a @c CustomRECT union view (s16 fields + RectWords
- * packed s32 view), reflecting the developer's "rect as packed (xy, wh) word
- * pair" mental model also used in @c clipBlitRects via
- * @c savedPos = *(s32 *)&rect.
+ * Per-frame battle window clipping hot-path — the original developer
+ * hand-optimized to beat gcc 2.7.2's weak optimizer:
+ *  - Batched @c lw loads via @c *(s32 *)&rect rather than per-field @c lh
+ *    (saves on load-delay scheduling).
+ *  - In-place variable reuse: each packed s32 is progressively transformed
+ *    (xy → just X → LEFT → overlapLeft) in the same register, no copies.
+ *  - The @c new_var alias on @c sx (and @c result = (new_var = 0)) shifts
+ *    gcc's reg allocation to put @c srcX in @c v0 (matching the original).
+ *  - Ternary order @c cx MAX before @c cy MAX (despite the source-order
+ *    reading more naturally as top-then-left) matches the original asm's
+ *    actual emission order.
  *
  * @param overlap Output RECT receiving the clipped rectangle.
  * @param clip    Clipping rectangle (input).
  * @param src     Source rectangle to clip (input).
  * @return 1 if @p clip and @p src overlap (positive area), 0 otherwise.
- *
- * Best attempt: ~88.81% match (up from 68% baseline) using a CustomRECT
- * union view + several "dead-variable reuse" tricks the permuter discovered.
- * The remaining diffs are gcc 2.7.2 register-allocation choices that we
- * cannot reach from clean source — would require either further permuter
- * iterations or a specific original-source idiom we haven't deduced.
- * The version below is the cleanest semantically-correct form:
- * @code
- * typedef struct { s32 xy; s32 wh; } RectWords;
- * typedef union {
- *     struct { s16 x, y, w, h; } r;
- *     RectWords words;
- * } CustomRECT;
- *
- * s32 func_8002B080(CustomRECT *overlap, CustomRECT *clip, CustomRECT *src) {
- *     s32 hasOverlap = 1;
- *     s32 clipXY = clip->words.xy;
- *     s32 srcXY = src->words.xy;
- *     s32 clipWH = clip->words.wh;
- *     s32 srcWH = src->words.wh;
- *     s32 clipY, clipX, srcY, srcX, clipH, clipW, srcH, srcW;
- *     s32 clipRight, srcRight, clipBottom, srcBottom;
- *     s32 left, top, right, bottom;
- *
- *     clipY = clipXY >> 16;
- *     clipX = (clipXY << 16) >> 16;
- *     srcY = srcXY >> 16;
- *     do {
- *         srcX = (srcXY << 16) >> 16;
- *         clipH = clipWH >> 16;  clipW = (clipWH << 16) >> 16;
- *         srcH  = srcWH >> 16;   srcW  = (srcWH << 16) >> 16;
- *         clipRight = clipW + clipX;
- *         srcRight  = srcW + srcX;
- *     } while (0);
- *     clipBottom = clipH + clipY;
- *     left = srcX;
- *     if (clipX >= srcX) left = clipX;
- *     srcBottom = srcH + srcY;
- *     top = srcY;
- *     if (clipY >= srcY) top = clipY;
- *     right = srcRight;
- *     if (srcRight >= clipRight) right = clipRight;
- *     bottom = srcBottom;
- *     if (srcBottom >= clipBottom) bottom = clipBottom;
- *     if (left >= right) { right = left; hasOverlap = 0; }
- *     if (top >= bottom) { bottom = top; hasOverlap = 0; }
- *     overlap->r.w = right - left;
- *     overlap->r.h = bottom - top;
- *     overlap->r.x = left;
- *     overlap->r.y = top;
- *     return hasOverlap;
- * }
- * @endcode
  */
-INCLUDE_ASM("asm/nonmatchings/btl_display", func_8002B080);
+s32 func_8002B080(RECT *overlap, RECT *clip, RECT *src) {
+    s32 result = 1;
+    s32 cx = *(s32 *)&clip->x;
+    s32 sx = *(s32 *)&src->x;
+    int new_var;
+    s32 cw = *(s32 *)&clip->w;
+    s32 sw = *(s32 *)&src->w;
+    s32 cy = cx >> 16;
+    s32 sy;
+    s32 ch;
+    s32 sh;
+
+    cx = cx << 16;
+    cx = cx >> 16;
+
+    sy = sx >> 16;
+    sx = (sx << 16) >> 16;
+
+    ch = cw >> 16;
+    cw <<= 16;
+    cw >>= 16;
+
+    sh = sw >> 16;
+    sw = sw << 16;
+    sw = sw >> 16;
+
+    cw += cx;
+    sw += sx;
+    ch += cy;
+    sh += sy;
+
+    new_var = sx;
+    cx = (cx < new_var) ? sx : cx;
+    cy = (cy < sy)      ? sy : cy;
+    cw = (cw > sw)      ? sw : cw;
+    ch = (ch > sh)      ? sh : ch;
+
+    if (!(cw > cx)) {
+        cw = cx;
+        result = (new_var = 0);
+    }
+    if (!(cy < ch)) {
+        ch = cy;
+        result = 0;
+    }
+
+    overlap->w = cw - cx;
+    overlap->h = ch - cy;
+    overlap->x = cx;
+    overlap->y = cy;
+
+    return result;
+}
 
 
 /**
