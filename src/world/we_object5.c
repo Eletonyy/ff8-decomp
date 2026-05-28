@@ -352,9 +352,138 @@ void func_800ABDD8(CVECTOR *input, u16 *output, s32 z, s16 count) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object5", func_800ABEF0);
+extern MATRIX D_800C9838;
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object5", func_800AC0A0);
+/**
+ * @brief Project 4 SVECTORs through (custom rot+trans) × (camera) to screen.
+ *
+ * Builds an inner matrix from @p rot via @c RotMatrix and sign-extends
+ * @p trans into its translation row, then transforms each of the 4
+ * @p src vertices through it (mvmva). Loads the camera matrix
+ * @c D_800C9838 and projects the 4 transformed vertices to screen XY
+ * via @c RTPT (vertices 0–2) + @c RTPS (vertex 3), writing the four
+ * packed SXY values to @p outSXY. Finally @c AVSZ4 averages the
+ * resulting Z values and writes the result to @p outOTZ.
+ *
+ * @param src     4 input SVECTORs (stride 8 — packed array).
+ * @param rot     Rotation angles for the inner matrix (passed to @c RotMatrix).
+ * @param trans   Translation (s16 components sign-extended into @c matrix.t).
+ * @param outSXY  4 packed s32 SXY outputs (16 bytes total).
+ * @param outOTZ  s32 average-Z output.
+ */
+void func_800ABEF0(SVECTOR *src, SVECTOR *rot, SVECTOR *trans,
+                   s32 *outSXY, s32 *outOTZ) {
+    MATRIX  m;
+    SVECTOR transformed[4];
+    s32     i;
+
+    RotMatrix(rot, &m);
+    gte_SetRotMatrix(&m);
+    m.t[0] = trans->vx;
+    m.t[1] = trans->vy;
+    m.t[2] = trans->vz;
+    gte_SetTransMatrix(&m);
+
+    for (i = 0; i < 4; i++) {
+        gte_ldv0(&src[i]);
+        gte_mvmva(1, 0, 0, 0, 0);
+        gte_stsv(&transformed[i]);
+    }
+
+    gte_SetRotMatrix(&D_800C9838);
+    gte_SetTransMatrix(&D_800C9838);
+
+    gte_ldv3(&transformed[0]);
+    gte_RTPT();
+    gte_stsxy3(outSXY);
+
+    gte_ldv0(&transformed[3]);
+    gte_RTPS();
+    gte_stsxy(outSXY + 3);
+
+    gte_AVSZ4();
+    gte_stotz(outOTZ);
+}
+
+extern s32 func_8009CC3C(void);
+
+/**
+ * @brief Spawn an inactive slot in the @c D_800D9CB0 particle pool.
+ *
+ * Finds the first slot in @c D_800D9CB0[64] where @c count @>= @c limit
+ * (= inactive/reusable), initializes it from (@p type, @p pos, @p vec),
+ * optionally jitters @c life and @c limit via the RNG @c func_8009CC3C,
+ * builds a rotation matrix from @p vec via @c RotMatrix, pushes it to
+ * the GTE (zero translation), then projects the kind's per-axis
+ * @c offset through the matrix into the slot's @c proj_xyz.
+ *
+ * @note The two sentinel checks (pre-loop and post-loop) use the same
+ *       expression @c &D_800D9CB0[64] so gcc CSEs both branches into a
+ *       single target. Using the @c D_800DA8B0 alias for the post-check
+ *       would prevent the fold and leave the pre-loop branch pointing at
+ *       the post-check instead of the epilogue (matches target's encoded
+ *       branch destination once both checks share an expression).
+ *
+ * @param type   Slot kind — also index into the @c D_800C5480 KindParams table.
+ * @param pos    Source world position (12 bytes — only low s16 of each coord read).
+ * @param vec    Source rotation vector (8 bytes, unaligned-tolerant copy).
+ * @param flags  Bit 1 → RNG-jitter @c life by [-0x80, +0x7F].
+ *               Bit 0 → RNG-jitter @c limit by [-4, +3].
+ */
+s32 func_800AC0A0(s32 type, VECTOR *pos, SVECTOR *vec, u16 flags) {
+    Slot30     *slot;
+    KindParams *kp;
+    SVECTOR    *vcp;
+    VECTOR      projected;
+    SVECTOR    *vcp2;
+    SVECTOR     vec_copy;
+    MATRIX      m;
+
+    slot = D_800D9CB0;
+    kp = &D_800C5480[type];
+
+    while (slot < &D_800D9CB0[64]) {
+        if (slot->count >= slot->limit) break;
+        slot++;
+    }
+    if (slot >= &D_800D9CB0[64]) return;
+
+    slot->kind  = (u8)type;
+    slot->count = 0;
+    slot->limit = kp->limit;
+    slot->life  = 0x1000;
+    slot->pos.vx = pos->vx;
+    slot->pos.vy = pos->vy;
+    slot->pos.vz = pos->vz;
+
+    vcp = &vec_copy;
+    vcp2 = vcp;
+    memcpy(vcp2, vec, 8);
+
+    if (flags & 2) {
+        slot->life += func_8009CC3C() - 0x80;
+    }
+    if (flags & 1) {
+        slot->limit += (func_8009CC3C() & 7) - 4;
+    }
+
+    memcpy(&slot->rot, vcp, 8);
+
+    RotMatrix(vcp, &m);
+    gte_SetRotMatrix(&m);
+    m.t[2] = 0;
+    m.t[1] = 0;
+    m.t[0] = 0;
+    gte_SetTransMatrix(&m);
+
+    gte_ldv0(&kp->offset);
+    gte_mvmva(1, 0, 0, 0, 0);
+    gte_stlvnl(&projected);
+
+    slot->proj_x = (s16)projected.vx;
+    slot->proj_y = (s16)projected.vy;
+    slot->proj_z = (s16)projected.vz;
+}
 
 extern s32 D_800D23D0;
 extern void func_80048FBC(RECT *r, s32 src_x, s32 src_y);
@@ -457,10 +586,100 @@ s32 func_800AC3EC(s32 idx, s32 divisor, s32 use_alt) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object5", func_800AC468);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object5", func_800AC778);
+extern s32  func_8003F4A4(s32 a);
+extern s32  func_80041E84(s32 y, s32 x);
+extern s32  func_800A40F8(VECTOR *pos, SVECTOR *out_buf);
+extern s32  func_800A4700(s32 a, s32 b);
+extern s32  func_800A475C(s32 a, s32 b);
+extern void func_800ACC68(MATRIX *out_mat, SVECTOR *angles,
+                          SVECTOR *rotBuf, SVECTOR *offset);
 
-extern s32 func_800A4700(s32 a, s32 b);
-extern s32 func_800A475C(s32 a, s32 b);
+/**
+ * @brief Compute a 3D pitch/yaw frame between two world positions and build
+ *        the camera-relative rotation matrix for the chained target.
+ *
+ * Treating each @c VECTOR as low-s16 world coords, this:
+ *  -# Computes the s16 component-wise delta and its squared distance via
+ *     the GTE @c SQR instruction.
+ *  -# Takes the 3D and horizontal sqrts (@c func_8003F4A4) for the slant
+ *     and ground-plane distances.
+ *  -# Resolves @c pitch and @c yaw via @c func_80041E84 (atan2-like).
+ *  -# Calls @c func_800A40F8 (with @p posB) to seed @c rotBuf[0] with the
+ *     view-yaw projection and returns the view-yaw.
+ *  -# Wraps the view-yaw and @p angleArg into per-axis tile deltas
+ *     (@c func_800A4700 / @c func_800A475C), scales them by
+ *     @c WORLD_TILE_SIZE into a @c (tileX,0,-tileZ) 3D delta vector,
+ *     writes that delta into @c rotBuf[1] and adds it to @c rotBuf[0].
+ *  -# Calls @c func_800ACC68 to compose the final rotation matrix.
+ *  -# Each non-null output pointer receives a copy of the corresponding
+ *     piece: @p outMat ← matrix, @p outAngles ← (pitch,yaw,0),
+ *     @p outOffset ← (0,0,-distFull), @p outRotBuf ← @c rotBuf[0].
+ *
+ * @param posA       World position A (delta source).
+ * @param posB       World position B (delta target; also fed to @c func_800A40F8).
+ * @param angleArg   Camera yaw wrapped together with view-yaw into tile deltas.
+ * @param outMat     Optional 32-byte rotation matrix output.
+ * @param outAngles  Optional 8-byte SVECTOR output ← (pitch, yaw, 0).
+ * @param outOffset  Optional 8-byte SVECTOR output ← (0, 0, -distFull).
+ * @param outRotBuf  Optional 8-byte SVECTOR output ← biased @c rotBuf[0].
+ */
+void func_800AC778(VECTOR *posA, VECTOR *posB, s16 angleArg,
+                   MATRIX *outMat, SVECTOR *outAngles, SVECTOR *outOffset,
+                   SVECTOR *outRotBuf) {
+    SVECTOR delta;
+    SVECTOR offset;
+    SVECTOR angles;
+    SVECTOR rotBuf[2];
+    MATRIX  m;
+    VECTOR  sq;
+    s32     distFull;
+    s32     distXZ;
+    s16     viewYaw;
+    s16     tileX, tileZ;
+    s32     tileX_scaled, tileY_scaled, tileZ_scaled;
+
+    delta.vx = (s16)posB->vx - (s16)posA->vx;
+    delta.vy = (s16)posB->vy - (s16)posA->vy;
+    delta.vz = (s16)posB->vz - (s16)posA->vz;
+
+    gte_ldsv(&delta);
+    gte_SQR(0);
+    gte_stlvnl(&sq);
+
+    distFull = func_8003F4A4(sq.vx + sq.vy + sq.vz);
+    distXZ   = func_8003F4A4(sq.vx + sq.vz);
+
+    angles.vx = func_80041E84(-delta.vy, distXZ);
+    angles.vy = func_80041E84(delta.vx, delta.vz);
+    angles.vz = 0;
+
+    offset.vx = 0;
+    offset.vy = 0;
+    offset.vz = -distFull;
+
+    viewYaw = func_800A40F8(posB, &rotBuf[0]);
+    tileX = func_800A4700(viewYaw, angleArg);
+    tileZ = func_800A475C(viewYaw, angleArg);
+
+    tileX_scaled =   tileX * WORLD_TILE_SIZE;
+    tileY_scaled = 0;
+    tileZ_scaled = -(tileZ * WORLD_TILE_SIZE);
+
+    rotBuf[1].vx = tileX_scaled;
+    rotBuf[1].vy = tileY_scaled;
+    rotBuf[1].vz = tileZ_scaled;
+
+    rotBuf[0].vx += tileX_scaled;
+    rotBuf[0].vy += tileY_scaled;
+    rotBuf[0].vz += tileZ_scaled;
+
+    func_800ACC68(&m, &angles, &rotBuf[0], &offset);
+
+    if (outMat   ) *outMat    = m;
+    if (outAngles) *outAngles = angles;
+    if (outOffset) *outOffset = offset;
+    if (outRotBuf) *outRotBuf = rotBuf[0];
+}
 
 /**
  * @brief Compute an @c SVECTOR offset from two angle-like inputs and write
@@ -497,7 +716,7 @@ void func_800AC9F4(SVECTOR *out, s16 x, s16 z) {
 extern void     func_800423DC(VECTOR *a, s32 *b_pos, VECTOR *out);
 extern WorldPos D_800C9868;
 extern s32      func_800A5DC8(s32 x, s32 y);
-extern void     func_800ACB70(s16 angle, VECTOR *out);
+void            func_800ACB70(s16 angle, VECTOR *out);   /* forward — defined below func_800ACA70. */
 
 /**
  * @brief 32-byte input passed to @ref func_800ACA70. Contains two
@@ -555,7 +774,32 @@ void func_800ACA70(VECTOR *out, Input32 *input) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object5", func_800ACB70);
+/**
+ * @brief Expand a 16-bit @p angle into a world-axis @c VECTOR via
+ *        @c angle / 128 and @c angle % 128 decomposition.
+ *
+ * Splits @p angle into:
+ *  - @c mod @c = @c angle @c % @c 128 — low-7-bit residue, used to drive
+ *    the X axis: @c out->vx @c = @c mod @c * @c 0x800 @c - @c 0x20000.
+ *  - @c div @c = @c angle @c / @c 128 — high bits, used for Z:
+ *    @c out->vz @c = @c 0x18000 @c - @c div @c * @c 0x800.
+ *  - @c out->vy stays @c 0.
+ *
+ * The @c / and @c % are signed (round-toward-zero), matching the
+ * @c bgez @c +0x7F @c sra fix-up pattern in the asm.
+ *
+ * @param angle Input angle (s16).
+ * @param out   Destination @c VECTOR; @c NULL skips the writes.
+ */
+void func_800ACB70(s16 angle, VECTOR *out) {
+    s32 mod = angle % 128;
+    s32 div = angle / 128;
+    if (out != NULL) {
+        out->vx = mod * 0x800 - 0x20000;
+        out->vy = 0;
+        out->vz = 0x18000 - div * 0x800;
+    }
+}
 
 /**
  * @brief Bias an @c SVECTOR by the camera-angle-projected world offset

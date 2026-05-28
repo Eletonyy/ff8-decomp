@@ -77,15 +77,14 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A8A28);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A8C1C);
 
-extern u8 D_800D9CB0[];
 extern POLY_FT4 D_800D88B0[2][64];
 extern TILE D_800DA8D0[2][64];
 
 /**
  * @brief Initialise three world-render pools in one go:
  *
- *  1. Clear bytes @c 0x28 and @c 0x29 of every 0x30-stride entry in
- *     the @c D_800D9CB0 pool (size @c 0xC00 bytes ⇒ 64 entries).
+ *  1. Reset @c limit and @c count to zero on every entry of the 64-slot
+ *     @c D_800D9CB0 particle pool (mark all slots inactive/reusable).
  *  2. Prime each @c POLY_FT4 in @c D_800D88B0[2][64] with
  *     @c len = @c 9 and @c code = @c 0x2C.
  *  3. Prime each @c TILE in @c D_800DA8D0[2][64] with
@@ -94,13 +93,13 @@ extern TILE D_800DA8D0[2][64];
  * Used at world setup time to prepare the per-frame prim templates.
  */
 void func_800A9254(void) {
-    u8 *p = D_800D9CB0;
+    Slot30 *p = D_800D9CB0;
     s32 j, i;
 
-    while (p < &D_800D9CB0[0xC00]) {
-        p[0x28] = 0;
-        p[0x29] = 0;
-        p += 0x30;
+    while (p < &D_800D9CB0[64]) {
+        p->limit = 0;
+        p->count = 0;
+        p++;
     }
 
     for (j = 0; j < 2; j++) {

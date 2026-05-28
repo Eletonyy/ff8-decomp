@@ -122,6 +122,30 @@ s32 rcos(s32 a);
     :                                                    \
     : "r"( r0 ) )
 
+/* Load short vector — fills IR1/IR2/IR3 from the three s16 components of
+ * the SVECTOR @p r0 (mtc2 to GTE data regs $9/$10/$11). */
+#define gte_ldsv( r0 ) __asm__ volatile (                \
+    "lhu    $12, 0( %0 );"                               \
+    "lhu    $13, 2( %0 );"                               \
+    "lhu    $14, 4( %0 );"                               \
+    "mtc2   $12, $9;"                                    \
+    "mtc2   $13, $10;"                                   \
+    "mtc2   $14, $11"                                    \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "$12", "$13", "$14" )
+
+/* SQR — square IR1/IR2/IR3 into MAC1/MAC2/MAC3 (and back to IR via the
+ * limiter). @p sf is the shift fraction (0 = full precision, 1 = >>12).
+ * Encoding: COP2 funct 0x28 with sf at bit 19. Two nops cover the GTE
+ * data-reg load stall before SQR can read the IR registers. */
+#define gte_SQR( sf ) __asm__ volatile (                 \
+    "nop;"                                               \
+    "nop;"                                               \
+    ".word  %0"                                          \
+    :                                                    \
+    : "g"( 0x4AA00428 | ((sf) << 19) ) )
+
 #define gte_ldtr( x, y, z ) __asm__ volatile (           \
     "ctc2   %0, $5;"                                     \
     "ctc2   %1, $6;"                                     \
@@ -152,5 +176,70 @@ s32 rcos(s32 a);
     0x4A400012 | ((sf) << 19) | ((mx) << 17)             \
                | ((v)  << 15) | ((cv) << 13)             \
                | ((lm) << 10) )
+
+/* Load V0/V1/V2 simultaneously from 3 consecutive SVECTORs (24 bytes). */
+#define gte_ldv3( r0 ) __asm__ volatile (                \
+    "lwc2   $0,  0( %0 );"                               \
+    "lwc2   $1,  4( %0 );"                               \
+    "lwc2   $2,  8( %0 );"                               \
+    "lwc2   $3, 12( %0 );"                               \
+    "lwc2   $4, 16( %0 );"                               \
+    "lwc2   $5, 20( %0 )"                                \
+    :                                                    \
+    : "r"( r0 ) )
+
+/* Store IR1/IR2/IR3 as a 3-component s16 vector (mfc2 + sh). */
+#define gte_stsv( r0 ) __asm__ volatile (                \
+    "mfc2   $12, $9;"                                    \
+    "mfc2   $13, $10;"                                   \
+    "mfc2   $14, $11;"                                   \
+    "sh     $12, 0( %0 );"                               \
+    "sh     $13, 2( %0 );"                               \
+    "sh     $14, 4( %0 )"                                \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "$12", "$13", "$14", "memory" )
+
+/* Store SXY0/SXY1/SXY2 (3 projected screen XY values). */
+#define gte_stsxy3( r0 ) __asm__ volatile (              \
+    "swc2   $12, 0( %0 );"                               \
+    "swc2   $13, 4( %0 );"                               \
+    "swc2   $14, 8( %0 )"                                \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "memory" )
+
+/* Store the single projected SXY from $14. */
+#define gte_stsxy( r0 ) __asm__ volatile (               \
+    "swc2   $14, 0( %0 )"                                \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "memory" )
+
+/* Store OTZ (depth) from $7. */
+#define gte_stotz( r0 ) __asm__ volatile (               \
+    "swc2   $7, 0( %0 )"                                 \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "memory" )
+
+/* Bare GTE ops (each emits 2 nops + the encoded instruction word). */
+#define gte_RTPT() __asm__ volatile (                    \
+    "nop;"                                               \
+    "nop;"                                               \
+    ".word  0x4A280030"                                  \
+    : : )
+
+#define gte_RTPS() __asm__ volatile (                    \
+    "nop;"                                               \
+    "nop;"                                               \
+    ".word  0x4A180001"                                  \
+    : : )
+
+#define gte_AVSZ4() __asm__ volatile (                   \
+    "nop;"                                               \
+    "nop;"                                               \
+    ".word  0x4B68002E"                                  \
+    : : )
 
 #endif /* LIBGTE_H */
