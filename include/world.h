@@ -250,6 +250,47 @@ typedef struct {
 extern ActorRecord D_800DD6A8[];
 
 /**
+ * @brief Slot in the 64-entry world-particle pool at @c D_800D9CB0.
+ *
+ * Stride 0x30. Used by @c func_800AC0A0 (spawn) and friends. The
+ * @c count vs @c limit fields drive slot lifecycle: a slot with
+ * @c count @>= @c limit is inactive and reusable.
+ */
+typedef struct {
+    /* 0x00 */ VECTOR  pos;             /**< World position (12 bytes used + pad). */
+    /* 0x10 */ u8      pad10[0x08];
+    /* 0x18 */ SVECTOR rot;             /**< Rotation vector (8 bytes). */
+    /* 0x20 */ s16     proj_x;          /**< Projected screen X. */
+    /* 0x22 */ s16     proj_y;          /**< Projected screen Y. */
+    /* 0x24 */ s16     proj_z;          /**< Projected depth. */
+    /* 0x26 */ u8      pad26[0x02];
+    /* 0x28 */ u8      limit;           /**< Active-slot kill threshold for @c count. */
+    /* 0x29 */ u8      count;           /**< Lifecycle tick counter. */
+    /* 0x2A */ u8      kind;            /**< Slot kind (= index into @c D_800C5480). */
+    /* 0x2B */ u8      pad2B;
+    /* 0x2C */ u16     life;            /**< Per-frame life decrement. */
+    /* 0x2E */ u8      pad2E[0x02];
+} Slot30;                              /* 0x30 bytes */
+
+/**
+ * @brief Per-kind spawn parameters at @c D_800C5480.
+ *
+ * Stride 0x28. Indexed by @c Slot30::kind. Most fields are still
+ * opaque; only @c limit (0x12) and @c offset (0x18) are known.
+ */
+typedef struct {
+    /* 0x00 */ u8      unk00[0x12];
+    /* 0x12 */ u8      limit;           /**< Initial @c Slot30::limit value. */
+    /* 0x13 */ u8      unk13[0x05];
+    /* 0x18 */ SVECTOR offset;          /**< Per-kind GTE-projected offset. */
+    /* 0x20 */ u8      unk20[0x08];
+} KindParams;                          /* 0x28 bytes */
+
+extern Slot30     D_800D9CB0[64];
+extern Slot30     D_800DA8B0[];        /* end-sentinel = &D_800D9CB0[64] */
+extern KindParams D_800C5480[];
+
+/**
  * @brief 12-byte transform track (translation + y-rotation).
  *
  * Two of these live inside @c Slot at offsets 0x18 (track A) and 0x24
