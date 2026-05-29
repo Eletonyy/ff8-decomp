@@ -524,13 +524,36 @@ s32 addItemToInventory(s32 itemId, s32 amount) {
 
 
 /**
- * @brief Check if an entity has a specific ability and whether its count is maxed.
- * Searches 32 ability slots (2 bytes each: ID + count) in g_gameState at offset 0x4A0.
- * @param entityIdx Entity index (stride 152 in g_gameState).
- * @param abilityId Ability ID to search for.
- * @return 0 if abilityId is 0 or empty slot exists, 1 if ability count >= 100, 2 if all slots full.
+ * @brief Classify the stock state of a spell in a character's magic inventory.
+ *
+ * Scans the 32-entry @ref MagicSlot magic array of
+ * @c g_gameState.chars[charId] (offset 0x4A0) for @p magicId.
+ *
+ * @param charId  Character index into @c g_gameState.chars.
+ * @param magicId Magic spell ID to look for.
+ * @return 0 if @p magicId is 0, the spell is stocked but below max, or it is
+ *           not stocked yet a free slot remains;
+ *         1 if the spell is stocked at max quantity (>= 100);
+ *         2 if the spell is not stocked and all 32 slots are full.
  */
-INCLUDE_ASM("asm/nonmatchings/game", func_80021108);
+s32 func_80021108(s32 charId, s32 magicId) {
+    s32 i;
+
+    if (magicId == 0) {
+        return 0;
+    }
+    for (i = 0; i < 32; i++) {
+        if (g_gameState.chars[charId].magic[i].magicId == magicId) {
+            return g_gameState.chars[charId].magic[i].quantity >= 100;
+        }
+    }
+    for (i = 0; i < 32; i++) {
+        if (g_gameState.chars[charId].magic[i].magicId == 0) {
+            return 0;
+        }
+    }
+    return 2;
+}
 
 
 /**
@@ -594,11 +617,31 @@ s32 hasJunctionedAbility(s32 partySlot, s32 abilityId) {
 }
 
 
+/** @brief 0xFFFF-terminated table of battle scene IDs that need special
+ *         load/render handling (consulted via @ref func_80021300). */
+extern u16 D_8005289C[];
+
 /**
- * @brief Search D_8005289C array for the value stored at g_battleConfig.
- * @return 1 if found, 0 if not found or array is empty (0xFFFF terminated).
+ * @brief Test whether the upcoming battle's scene is in the special-scene table.
+ *
+ * Scans the @c 0xFFFF-terminated @ref D_8005289C table for an entry equal to
+ * @c g_battleConfig.battleSceneId.
+ *
+ * @return 1 if the current scene ID is listed, 0 otherwise (also 0 if the
+ *         table is empty).
  */
-INCLUDE_ASM("asm/nonmatchings/game", func_80021300);
+s32 func_80021300(void) {
+    s32 found = 0;
+    s32 i;
+
+    for (i = 0; D_8005289C[i] != 0xFFFF; i++) {
+        if (g_battleConfig.battleSceneId == D_8005289C[i]) {
+            found = 1;
+            break;
+        }
+    }
+    return found;
+}
 
 
 /**
