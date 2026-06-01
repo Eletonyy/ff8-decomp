@@ -188,7 +188,9 @@ extern u32 D_800D34F0;
 extern WorldObject D_800D33E0[16];
 extern WorldObject D_800C9EF0[16];
 extern WorldObject *D_800CA030;
+extern WorldSection *D_800C4D5C;
 extern u16 D_800C4D60;
+void func_800A62E0(s16 val, u16 *coarse, u16 *fine);
 
 /**
  * @brief Initialise the world-engine subsystem's object pools.
@@ -352,7 +354,47 @@ s32 func_800A5E40(s32 x, s32 y) {
     return xtile + ((((y + 0x48000) % 0x30000) / 0x2000) * 32);
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A5EC4);
+/**
+ * @brief Resolve a world id to a pointer into its data section.
+ *
+ * @c func_800A62E0 splits @p id into a coarse key and a fine index. The coarse
+ * key is matched against the @c id of each WorldObject in the @c D_800CA030
+ * list; the matching node's @c sectionIdx selects a WorldSection in the
+ * @c D_800C4D5C region table, and the section's @c offsets[fine] (low 2 flag
+ * bits stripped by the @c >>2 word index) gives the target's location within
+ * that section.
+ *
+ * @param id World id to resolve.
+ * @return Pointer into the matched section, or NULL if no node matches.
+ */
+u32 *func_800A5EC4(s16 id) {
+    s16 objId;
+    u16 coarse;
+    u16 fine;
+    WorldObject *node;
+    WorldObject *found;
+    s32 idx;
+    u32 *result;
+
+    result = NULL;
+    func_800A62E0(id, &coarse, &fine);
+    objId = coarse;
+    for (node = D_800CA030; node != NULL; node = node->next) {
+        if (objId == node->id) {
+            found = node;
+            goto done;
+        }
+    }
+    found = NULL;
+done:
+    if (found != NULL) {
+        WorldSection *section = &D_800C4D5C[found->sectionIdx];
+        idx = (s16)fine;
+        /* idx[offsets] == offsets[idx]; index-first form matches the addu operand order */
+        result = (u32 *)section + (idx[section->offsets] >> 2);
+    }
+    return result;
+}
 
 /**
  * @brief Set up a draw environment for screen @p screenIdx and submit it.
@@ -442,8 +484,6 @@ void func_800A6030(WorldObject **pp) {
         curr = *pp;
     } while (curr != NULL);
 }
-
-extern WorldSection *D_800C4D5C;
 
 /**
  * @brief Walk a WorldObject list and return the first node whose section

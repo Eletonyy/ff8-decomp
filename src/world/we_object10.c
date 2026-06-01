@@ -662,7 +662,67 @@ void func_800BE69C(XformGroup *group) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE720);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE7FC);
+#define OBJ_SLOT_COUNT 0x40 /* id slots scanned */
+#define FIRST_OBJ_ID   0x40 /* ids below this are skipped */
+#define OBJ_LIST_END   0xFF /* terminator id */
+
+/** Object-id list: a 6-byte header followed by a 0xFF-terminated id array. */
+typedef struct {
+    u8 header[6];           /* header (purpose not yet identified) */
+    u8 ids[OBJ_SLOT_COUNT]; /* object ids present in this list */
+} WorldObjList;
+
+extern void func_8009C5FC(s32 *data);
+
+/**
+ * @brief Load each unique object referenced by an object-id list.
+ *
+ * Walks the @c ids array of @p objList (up to @c OBJ_SLOT_COUNT entries,
+ * stopping at the @c OBJ_LIST_END terminator). Ids below @c FIRST_OBJ_ID are
+ * skipped, and an id that already appeared earlier in the list is skipped too,
+ * so each distinct object is handled exactly once. For every new id, its data
+ * offset is read from @p section's leading @c u32 offset table (keyed by
+ * @c id @c - @c FIRST_OBJ_ID) and the record at that offset is dispatched to
+ * @c func_8009C5FC.
+ *
+ * @param objList Object-id list (header + id array).
+ * @param section Section base; starts with the @c u32 offset table and is the
+ *                base that the looked-up byte offsets are relative to.
+ * @return @c s32 to match the engine dispatch signature; no value is set.
+ */
+s32 func_800BE7FC(WorldObjList *objList, u8 *section) {
+    s32 i;
+    s32 j;
+    u32 id;
+    u32 off;
+    u8 *cur;
+
+    i = 0;
+    cur = objList->header;
+loop:
+    id = cur[sizeof(objList->header)];
+    if (id == OBJ_LIST_END) {
+        goto done;
+    }
+    if (id < FIRST_OBJ_ID) {
+        goto next;
+    }
+    /* skip ids already handled earlier in the list */
+    for (j = 0; j < i; j++) {
+        if (objList->ids[j] == id) {
+            goto next;
+        }
+    }
+    off = ((u32 *)section)[cur[sizeof(objList->header)] - FIRST_OBJ_ID];
+    func_8009C5FC((s32 *)(section + off));
+next:
+    i++;
+    cur++;
+    if (i < OBJ_SLOT_COUNT) {
+        goto loop;
+    }
+done:;
+}
 
 extern void func_800BC51C(VECTOR *src, VECTOR *dst);
 extern void func_800BC544(VECTOR *src, VECTOR *dst);

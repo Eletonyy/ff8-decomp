@@ -271,6 +271,20 @@ INCLUDE_ASM("asm/nonmatchings/item", func_80023D60);
 INCLUDE_ASM("asm/nonmatchings/item", func_80024064);
 
 
+/**
+ * @brief Item-acquired full-screen render/animation routine.
+ *
+ * Re-entrancy guarded by @c D_8005F17D; a frame-counter-driven effect with
+ * double-buffered ordering tables / prim buffers and GTE transforms: a
+ * POLY_FT4 textured-quad strip (frames < 0x30) and a POLY_G4 gouraud gradient
+ * column (frames >= 0x30), finishing with @c DrawSync.
+ *
+ * @note This is an @c -O0 function (frame pointer, reload-per-access) embedded in
+ *       the @c -O2 item.c, so it needs its own @c -O0 translation unit to
+ *       integrate once matched.
+ * @note Work-in-progress decomp (clean C, ~80% matched; blocked on a cc1 @c -O0
+ *       v0/t0 reload-register idiom): https://decomp.me/scratch/Hl8Lx
+ */
 INCLUDE_ASM("asm/nonmatchings/item", func_800242C8);
 
 

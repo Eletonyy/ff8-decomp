@@ -584,15 +584,148 @@ s32 func_800AC3EC(s32 idx, s32 divisor, s32 use_alt) {
     return (D_800C53E4[idx] - D_800C53EC[idx]) / divisor;
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object5", func_800AC468);
-
 extern s32  func_8003F4A4(s32 a);
 extern s32  func_80041E84(s32 y, s32 x);
 extern s32  func_800A40F8(VECTOR *pos, SVECTOR *out_buf);
 extern s32  func_800A4700(s32 a, s32 b);
 extern s32  func_800A475C(s32 a, s32 b);
+extern s32  func_800A5DC8(s32 x, s32 y);
+extern void func_800423DC(VECTOR *a, s32 *b_pos, VECTOR *out);
 extern void func_800ACC68(MATRIX *out_mat, SVECTOR *angles,
                           SVECTOR *rotBuf, SVECTOR *offset);
+extern void func_800B5C60(s32 ctx, s16 count, MATRIX *outMat, SVECTOR *outAngles,
+                          SVECTOR *rotBuf, u8 *xform, ActorRecord *recs);
+extern void func_800BC51C(VECTOR *src, VECTOR *dst);
+extern void func_800BC544(VECTOR *src, VECTOR *dst);
+
+extern VECTOR   D_800C9858;     /* live camera world position (VECTOR view)     */
+extern WorldPos D_800C9868;     /* target/previous camera world position        */
+extern SVECTOR  D_800C97F8[2];  /* composed rotation pair fed to func_800ACC68  */
+extern u8       D_800D2390[];   /* world transform buffer (passed by address)   */
+extern VECTOR   D_800DD658;     /* source position for func_800BC51C            */
+extern VECTOR   D_800DB0E8;     /* translation reference for func_800423DC       */
+extern s32      D_800C4D38;     /* world dispatch code                          */
+
+/**
+ * @brief Per-frame world-view transform record: an actor's offset/angles
+ *        inputs followed by its composed rotation matrix output.
+ *
+ * @c func_800AC468 reads @c offset / @c angles and writes @c matrix; its two
+ * pointer params normally alias the same actor record. The layout mirrors
+ * the leading 0x30 bytes a world actor reserves for its camera transform.
+ */
+typedef struct {
+    /* 0x00 */ SVECTOR offset;
+    /* 0x08 */ SVECTOR angles;
+    /* 0x10 */ MATRIX  matrix;
+} WorldViewXform;  /* 0x30 */
+
+/**
+ * @brief Update a world actor's view rotation matrix for the current frame.
+ *
+ * Two paths:
+ *  - @b Chained (@p mode == 0 and @c D_800C9878 set): defers to
+ *    @c func_800B5C60 to build the matrix/angles for the linked actor
+ *    (record @c &D_800DD6A8[opParam==4 ? 1 : 0]), bumps the chain counter
+ *    @c D_800C987C, and re-seeds the live camera position from @c D_800DD658.
+ *  - @b Free-look (otherwise): critically damps the live camera position
+ *    @c D_800C9858 toward @c D_800C9868 — the per-axis delta is clamped to
+ *    ±0x20000 (X) / ±0x18000 (Y) with ±0x40000 / ±0x30000 wraparound, then a
+ *    1:1 XY and biased 3:1 Z blend — projects it via @c func_800BC544 /
+ *    @c func_800A40F8 to seed @c D_800C97F8[0], folds in a tile-space yaw
+ *    offset (@c func_800A4700 / @c func_800A475C scaled by @c WORLD_TILE_SIZE),
+ *    floors the pitch (vy) to @c -0x80 when @c D_800C4D38 == @c 0x30, and
+ *    composes the matrix via @c func_800ACC68.
+ *
+ * Both paths finish by pushing @p mh's matrix to the GTE (@c func_800423DC
+ * then @c gte_SetRotMatrix / @c gte_SetTransMatrix).
+ *
+ * @param unused_a0 Unused.
+ * @param oa        Supplies @c offset / @c angles (read).
+ * @param mh        Receives the composed rotation @c matrix (written).
+ * @param mode      0 selects the chained path when a linked actor exists.
+ *
+ * @note @c m and @c sq are unused here — leftover locals from the shared
+ *       camera-update template (cf. @c func_800AC778, where they are the
+ *       working matrix and squared-distance vector). gcc 2.8.0 still reserves
+ *       their 0x30 of stack, which the original @c sp,-0x88 frame depends on.
+ */
+void func_800AC468(void *unused_a0, WorldViewXform *oa, WorldViewXform *mh, s32 mode) {
+    MATRIX   m;
+    VECTOR   sq;
+    VECTOR   viewPos;
+    MATRIX  *outMat;
+    SVECTOR  tileVec;
+    s16      viewYaw, viewAngle;
+    s32      tileX, tileY, tileZ;
+    s32      tileX_scaled, tileY_scaled, tileZ_scaled;
+    s32      delta;
+
+    if (mode == 0 && D_800C9878 != 0) {
+        func_800B5C60(D_800C9878, D_800C987C, &mh->matrix, &oa->angles,
+                      D_800C97F8, D_800D2390,
+                      ((WorldFlags *)D_800D23D8)->opParam == 4 ? &D_800DD6A8[1]
+                                                              : &D_800DD6A8[0]);
+        D_800C987C++;
+        func_800BC51C(&D_800DD658, &D_800C9858);
+    } else {
+        /* Critically damp delta-X to [-0x20000, 0x20000] with ±0x40000 wraparound. */
+        delta = D_800C9858.vx - D_800C9868.x;
+        if (delta >  0x20000) D_800C9858.vx -= 0x40000;
+        if (delta < -0x20000) D_800C9858.vx += 0x40000;
+
+        /* Critically damp delta-Y to [-0x18000, 0x18000] with ±0x30000 wraparound. */
+        delta = D_800C9858.vy - D_800C9868.y;
+        if (delta >  0x18000) D_800C9858.vy -= 0x30000;
+        if (delta < -0x18000) D_800C9858.vy += 0x30000;
+
+        /* Blend XY 1:1 with the target. */
+        D_800C9858.vx = ((D_800C9858.vx + D_800C9868.x) << 1) >> 2;
+        D_800C9858.vy = ((D_800C9858.vy + D_800C9868.y) << 1) >> 2;
+
+        /* Blend Z 3:1 with a -0x100 bias (gated by D_800C5924 being 0). */
+        if (D_800C5924 == 0) {
+            s32 z3 = D_800C9858.vz * 3;
+            z3 -= 0x100;
+            z3 += D_800C9868.z;
+            D_800C9858.vz = z3 >> 2;
+        }
+
+        viewAngle = func_800A5DC8(D_800C9868.x, D_800C9868.y);
+        {
+            VECTOR *vp = &viewPos;
+            func_800BC544(&D_800C9858, vp);
+            viewYaw = func_800A40F8(vp, &D_800C97F8[0]);
+        }
+
+        tileX = func_800A4700(viewYaw, viewAngle);
+        tileY = 0;
+        tileZ = func_800A475C(viewYaw, viewAngle);
+        tileX_scaled =   (s16)tileX << 11;
+        tileY_scaled =   (s16)tileY << 11;
+        tileZ_scaled = -((s16)tileZ << 11);
+
+        tileVec.vx = tileX_scaled;
+        tileVec.vy = tileY_scaled;
+        tileVec.vz = tileZ_scaled;
+
+        D_800C97F8[0].vx = tileVec.vx + D_800C97F8[0].vx;
+        D_800C97F8[0].vy = tileVec.vy + D_800C97F8[0].vy;
+        D_800C97F8[0].vz = tileVec.vz + D_800C97F8[0].vz;
+
+        if (D_800C4D38 == 0x30) {
+            D_800C97F8[0].vy = D_800C97F8[0].vy >= -0x7F ? -0x80 : D_800C97F8[0].vy;
+        }
+
+        outMat = &mh->matrix;
+        func_800ACC68(outMat, &oa->angles, &D_800C97F8[0], &oa->offset);
+    }
+
+    /* Common tail: build & push the GTE matrix. */
+    func_800423DC((VECTOR *)&mh->matrix, mh->matrix.t, &D_800DB0E8);
+    gte_SetRotMatrix(&mh->matrix);
+    gte_SetTransMatrix(&mh->matrix);
+}
 
 /**
  * @brief Compute a 3D pitch/yaw frame between two world positions and build
@@ -713,10 +846,7 @@ void func_800AC9F4(SVECTOR *out, s16 x, s16 z) {
     out->vz = vz;
 }
 
-extern void     func_800423DC(VECTOR *a, s32 *b_pos, VECTOR *out);
-extern WorldPos D_800C9868;
-extern s32      func_800A5DC8(s32 x, s32 y);
-void            func_800ACB70(s16 angle, VECTOR *out);   /* forward — defined below func_800ACA70. */
+void func_800ACB70(s16 angle, VECTOR *out);   /* forward — defined below func_800ACA70. */
 
 /**
  * @brief 32-byte input passed to @ref func_800ACA70. Contains two

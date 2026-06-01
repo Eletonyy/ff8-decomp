@@ -74,7 +74,44 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B840);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B954);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009BFA0);
+/* Cached world-map scroll position, stored at HALF resolution (x, y). */
+extern s32 D_800C4DA0;
+extern s32 D_800C4DA4;
+
+/**
+ * @brief Snap the cached scroll position to the nearest candidate vector.
+ *
+ * Scans @p coords (an array of @p count 2D vectors) for the first whose (x, y)
+ * lies within ±8 of the cached scroll position. That position
+ * (@c D_800C4DA0 = x, @c D_800C4DA4 = y) is stored at half resolution, so it is
+ * doubled for the comparison and the matched vector is halved on store. If no
+ * candidate is close enough, the cache is left unchanged.
+ *
+ * @param coords Candidate 2D positions.
+ * @param count  Number of candidates.
+ */
+void func_8009BFA0(DVECTOR *coords, s16 count) {
+    DVECTOR *v = coords;
+    s32 i;
+
+    for (i = 0; i < count; i++, v++) {
+        /* accept when |vx - x*2| < 8, tested per sign so it compiles to the
+           original's two-branch (blez/slti) form rather than an abs() */
+        s32 dx = v->vx - D_800C4DA0 * 2;
+        if (dx > 0 ? (dx < 8) : (D_800C4DA0 * 2 - v->vx < 8)) {
+            s32 dy = v->vy - D_800C4DA4 * 2;
+            if (dy > 0 ? (dy < 8) : (D_800C4DA4 * 2 - v->vy < 8)) {
+                D_800C4DA0 = (s16)v->vx >> 1;
+                D_800C4DA4 = (s16)v->vy >> 1;
+                return;
+            }
+        }
+    }
+    /* no-op that keeps coords live to the end, so the loop walker is held in a
+       saved register — matches the original's register allocation */
+    coords++;
+    coords--;
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C070);
 
@@ -134,7 +171,48 @@ void func_8009C528(s32 rc) {
     SystemError(0x57, rc);
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C54C);
+extern void *memcpy(void *dst, const void *src, u32 n);
+extern u8 D_800980CC[]; /* "x:\USPC\WORLD" — dev-filesystem prefix (13 chars + NUL) */
+
+/**
+ * @brief Rewrite an ISO9660 disc path into a dev-filesystem path.
+ *
+ * Copies @p src to @p dst with two transforms:
+ *  - if the path starts with @c '\\' it is prefixed with @c D_800980CC
+ *    (@c "x:\USPC\WORLD"): 14 bytes are copied (13 chars + NUL) and the write
+ *    cursor advances 13, so the NUL is overwritten by the copied path;
+ *  - a @c ';' (the start of an ISO @c ;1 version suffix) skips two source
+ *    characters, dropping the suffix.
+ *
+ * The copy runs until (and including) the source NUL terminator. Example:
+ * @c "\DAT\WMX.OBJ;1" becomes @c "x:\USPC\WORLD\DAT\WMX.OBJ".
+ *
+ * @param dst Destination buffer for the rewritten path.
+ * @param src Source ISO9660 path string.
+ */
+void func_8009C54C(u8 *dst, u8 *src) {
+    u8 ch;
+    s32 i; /* source index */
+    s32 j; /* destination index */
+
+    i = 0;
+    j = 0;
+    for (;;) {
+        if ((i == 0) && (src[i] == '\\')) {
+            memcpy(&dst[j], D_800980CC, 14);
+            j += 13;
+        }
+        if (src[i] == ';') {
+            i += 2;
+        }
+        ch = src[i];
+        dst[j++] = ch;
+        if (ch == '\0') {
+            break;
+        }
+        i++;
+    }
+}
 
 extern RECT D_800C8640;
 
@@ -431,7 +509,64 @@ top:
     if (e->marker != 0) goto top;
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009CB70);
+#define CD_SECTOR_SIZE 0x800 /* bytes per CD sector */
+#define ID_LIST_END    0xFF  /* terminator id */
+#define ID_LIST_MAX    2     /* id slots in the descriptor */
+#define ID_OFFSET      2     /* id bytes begin 2 into the descriptor */
+
+/** Section descriptor: provides the base sector that object ids index from. */
+typedef struct {
+    u8  pad0[8];
+    s32 baseLba; /* sector number of id 0; cdRead reads baseLba + id */
+} CdSection;
+
+/**
+ * @brief Load up to two CD sectors named by an object descriptor.
+ *
+ * Reads the id bytes at @c desc[ID_OFFSET] and @c desc[ID_OFFSET+1] (at most
+ * @c ID_LIST_MAX, stopping at the @c ID_LIST_END terminator). For each id it
+ * reads one @c CD_SECTOR_SIZE sector at @c section->baseLba @c + @c id into a
+ * destination buffer — @p dest0 for the first id, @p dest1 for the rest — and
+ * spins on @c func_800393C8 until that read finishes.
+ *
+ * @param desc    Object descriptor; the id bytes begin at offset @c ID_OFFSET.
+ * @param section Provides the base sector the ids are added to.
+ * @param dest0   Destination buffer for the first id's sector.
+ * @param dest1   Destination buffer for any subsequent id's sector.
+ */
+void func_8009CB70(u8 *desc, CdSection *section, u8 *dest0, u8 *dest1) {
+    u8 *p;
+    u8 *first;
+    u8 *end;
+    u32 id;
+    s32 term;
+
+    if (desc[ID_OFFSET] == ID_LIST_END) {
+        return;
+    }
+    /* hold the terminator in a local so it stays in a saved register across
+       the cdRead / func_800393C8 calls rather than being reloaded each pass */
+    term = ID_LIST_END;
+    p = desc;
+    end = p + ID_LIST_MAX;
+    first = p;
+loop:
+    /* signed compare matches the original's slt (the ids sit just past the
+       descriptor header, so the addresses never cross the sign boundary) */
+    if ((s32)p >= (s32)end) {
+        goto done;
+    }
+    id = p[ID_OFFSET];
+    cdRead(section->baseLba + id, CD_SECTOR_SIZE, (p != first) ? dest1 : dest0, 0);
+    while (func_800393C8()) {
+        ;
+    }
+    p++;
+    if (p[ID_OFFSET] != term) {
+        goto loop;
+    }
+done:;
+}
 
 void func_8009CC34(void) {
 }
