@@ -22,6 +22,12 @@ typedef struct {
     s32 z;             /* 0x08 */
 } WorldPos;
 
+/** 4-byte slot read as either a full word or just the low halfword. */
+typedef union {
+    u32 word;
+    u16 half;
+} AngleSlot;
+
 /**
  * @brief World-engine object node — singly-linked, keyed by s16 id.
  *
@@ -219,6 +225,24 @@ typedef struct {
 } ScriptOp;
 
 /**
+ * @brief Large struct (~0x6A bytes) holding per-entity flags and state.
+ *
+ * Only the fields touched so far are known; remaining bytes are padding.
+ * @c field46 is a packed state word whose low bits select a mode:
+ * @c func_800BD540 writes it from selector tables, and @c func_80099B48
+ * gates its script-image walk on @c (field46 & 1).
+ */
+typedef struct {
+    u8  pad00[0x46];
+    u16 field46;        /**< 0x46: packed-word state flags (low bits = mode). */
+    u8  pad48[0x66 - 0x48];
+    u8  flag66;         /**< 0x66: mode-selector flags consulted after write. */
+    u8  pad67;
+    u8  sel68;          /**< 0x68: 5-bit selector consumed when D_800C971C == 0. */
+    u8  sel69;          /**< 0x69: 2-bit selector consumed when D_800C971C != 0. */
+} Entity;
+
+/**
  * @brief Per-actor 36-byte state record indexed by actor id.
  *
  * Used by the dialogue/animation orchestrator.  Currently mapped fields:
@@ -314,7 +338,9 @@ typedef struct {
 typedef struct {
     /* 0x00 */ u8 pad00[0x18];
     /* 0x18 */ Track tracks[2];   /**< Track A at 0x18, Track B at 0x24. */
-    /* 0x30 */ u8 pad30[0x44];
+    /* 0x30 */ u8 pad30[0x3C];
+    /* 0x6C */ s32 unk6C;         /**< Flags word; bit 0x100 mirrors a CmdDesc flag. */
+    /* 0x70 */ u8 pad70[0x4];
     /* 0x74 */ u32 flags[2];      /**< 64-bit flag set (low/high). */
     /* 0x7C */ u8 bytes[2];       /**< Action bytes selectable by 0xFF2E. */
     /* 0x7E */ u8 pad7E[2];
@@ -376,5 +402,18 @@ typedef struct {
 
 extern RotationSources *D_800DD6C0;
 extern RotationSources *D_800DD6E4;
+
+/**
+ * @brief Two back-to-back offset arrays at the start of the string-table blob
+ *        @c D_800C97D4 points to. Each entry in @c first / @c second is a byte
+ *        offset (from the table base) to a null-terminated string stored later
+ *        in the same blob.
+ */
+typedef struct {
+    s32 first[30];
+    s32 second[1];
+} StringTable;
+
+extern StringTable *D_800C97D4;
 
 #endif /* WORLD_H */

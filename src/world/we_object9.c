@@ -3,11 +3,7 @@
 
 extern u8 g_gameState[];
 
-/* 4-byte slot read as either a full word or just the low halfword */
-typedef union {
-    u32 word;
-    u16 half;
-} AngleSlot;
+/* AngleSlot now lives in world.h */
 
 /* 16-byte position descriptor (first 12 bytes = vec3 used by spawner) */
 typedef struct {
@@ -525,18 +521,7 @@ s32 func_800BC688(s32 key, s32 start) {
     return -1;
 }
 
-/**
- * @brief Two back-to-back offset arrays at the start of the string-table blob
- *        @c D_800C97D4 points to. Each entry in @c first / @c second is a
- *        byte offset (from the table base) to a null-terminated string stored
- *        later in the same blob.
- */
-typedef struct {
-    s32 first[30];
-    s32 second[1];
-} StringTable;
-
-extern StringTable *D_800C97D4;
+/* StringTable and D_800C97D4 are declared in world.h. */
 
 /**
  * @brief Copy a null-terminated string from the first offset table to @p dst.
@@ -1346,22 +1331,6 @@ s32 func_800BD460(s16 *outLow, s16 *outHigh) {
     }
     return result;
 }
-
-/**
- * @brief Large struct (~0x6A bytes) holding per-entity flags and state.
- *
- * Only the fields touched by @c func_800BD540 are known; remaining bytes
- * are padding.
- */
-typedef struct {
-    u8  pad00[0x46];
-    u16 field46;        /**< 0x46: packed-word state flags (low bits = mode). */
-    u8  pad48[0x66 - 0x48];
-    u8  flag66;         /**< 0x66: mode-selector flags consulted after write. */
-    u8  pad67;
-    u8  sel68;          /**< 0x68: 5-bit selector consumed when D_800C971C == 0. */
-    u8  sel69;          /**< 0x69: 2-bit selector consumed when D_800C971C != 0. */
-} Entity;
 
 extern s32 D_800C971C;
 

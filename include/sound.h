@@ -258,10 +258,13 @@ typedef struct {
  * associated signed index values.
  */
 typedef struct {
-    /* 0x00 */ s8 field00;      /**< Slot enable flag; -1 = inactive. */
-    /* 0x01 */ u8 pad01;
-    /* 0x02 */ s8 field02;      /**< Signed SFX index. */
-    /* 0x03 */ u8 pad03[13];
+    /* 0x00 */ s8  field00;     /**< Slot enable flag; -1 = inactive, -2 = direct. */
+    /* 0x01 */ s8  field01;     /**< Text-box position/alignment mode (0..3). */
+    /* 0x02 */ s8  field02;     /**< Signed SFX index. */
+    /* 0x03 */ s8  field03;     /**< Reverb mode. */
+    /* 0x04 */ u16 field04;     /**< Text-box anchor X. */
+    /* 0x06 */ u16 field06;     /**< Text-box anchor Y. */
+    /* 0x08 */ u8  pad08[8];
 } SfxSlot; /* 0x10 = 16 bytes */
 
 /**

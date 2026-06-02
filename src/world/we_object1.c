@@ -16,7 +16,66 @@ extern u8 D_800D23D8[];
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_800997E8);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099B48);
+extern RECT D_800C8640;
+extern u8 D_800D2440;
+extern s32 func_8009CA34(s32 *src, ImageDesc *desc);
+extern void func_80048EFC(RECT *r, u32 *data);
+extern void func_80048DD4(RECT *r, s32 a, s32 b, s32 c);
+
+/**
+ * @brief Walk an entity's world-engine script, blitting each entry's image(s),
+ *        then refresh a fixed VRAM region unless the display mode forbids it.
+ *
+ * When @c entity->field46 bit 0 is set, walks the 0-terminated @p script offset
+ * table: each non-zero entry is a byte-offset to a streaming-image record at
+ * @c (u8 *)script + offset, which @c func_8009CA34 parses into an @ref ImageDesc.
+ * @c rect1 / @c data1 are blitted through the scratch @c D_800C8640
+ * (via @c func_80048EFC), and — when bit 3 of @c desc.flag is set —
+ * @c rect2 / @c data2 are blitted too.
+ *
+ * Afterwards, unconditionally: if the low 5 bits of @c D_800D2440 are neither 3
+ * nor 4, the fixed VRAM rectangle @c {0x360,0x100,0x10,0x40} is refreshed via
+ * @c func_80048DD4.
+ *
+ * @param entity Source entity; bit 0 of @c field46 gates the script walk.
+ * @param script World-engine script — a 0-terminated table of byte-offsets,
+ *               each pointing to an image record within the same buffer.
+ */
+void func_80099B48(Entity *entity, s32 *script) {
+    s32 mode;
+
+    if (entity->field46 & 1) {
+        s32 i = 0;
+        s32 off = script[0];
+        while (off != 0) {
+            ImageDesc desc;
+            func_8009CA34((s32 *)((u8 *)script + off), &desc);
+            D_800C8640.x = desc.rect1.x;
+            D_800C8640.y = desc.rect1.y;
+            D_800C8640.w = desc.rect1.w;
+            D_800C8640.h = desc.rect1.h;
+            func_80048EFC(&D_800C8640, desc.data1);
+            if ((desc.flag >> 3) & 1) {
+                D_800C8640.x = desc.rect2.x;
+                D_800C8640.y = desc.rect2.y;
+                D_800C8640.w = desc.rect2.w;
+                D_800C8640.h = desc.rect2.h;
+                func_80048EFC(&D_800C8640, desc.data2);
+            }
+            i++;
+            off = script[i];
+        }
+    }
+    mode = D_800D2440 & 0x1F;
+    if (mode != 3 && mode != 4) {
+        RECT rect;
+        rect.x = 0x360;
+        rect.y = 0x100;
+        rect.w = 0x10;
+        rect.h = 0x40;
+        func_80048DD4(&rect, 0, 0, 0);
+    }
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099C84);
 
@@ -52,25 +111,439 @@ void func_80099EDC(s32 idx) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099F78);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009A4DC);
+extern POLY_F4 D_800C89A8[];    /* dim-overlay quad buffer (sentinel ctx)  */
+extern POLY_F4 D_800C86A8[];    /* dim-overlay quad buffer (normal ctx)    */
+extern DR_TPAGE D_800C8CA8[2];  /* draw-mode tpage paired with each buffer  */
+extern s16 D_800C97EA;          /* worldmap screen width reference  */
+extern s16 D_800C97E8;          /* worldmap screen height reference */
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009A638);
+/**
+ * @brief Build a screen-covering dim overlay: @p count semi-transparent dark
+ *        quads plus a draw-mode tpage, linked into the @c primList[0] chain.
+ *
+ * Picks the quad buffer / DR_TPAGE pair by whether the active scene context
+ * @c D_800D244C is the worldmap sentinel @c D_800CA040 (@c D_800C89A8 +
+ * @c &D_800C8CA8[1]) or not (@c D_800C86A8 + @c D_800C8CA8). Each @ref POLY_F4
+ * is a semi-transparent (code @c 0x2A) flat quad spanning @c (0,0) ..
+ * @c (D_800C97EA, D_800C97E8) in dark grey @c (8,8,8); the trailing DR_TPAGE
+ * carries GP0 draw-mode @c 0xE1000255.
+ *
+ * @param count Number of overlay quads to emit.
+ */
+void func_8009A4DC(s32 count) {
+    POLY_F4 *quad;
+    DR_TPAGE *tp;
+    /* Kept live across the loop (assigned here, consumed by the final addPrim)
+       so %hi(D_800D244C) is re-materialised each iteration rather than hoisted
+       into a spare register — required to match the original register alloc. */
+    u32 new_var;
+    s32 i;
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009A7C0);
+    quad = (D_800D244C == &D_800CA040) ? D_800C89A8 : D_800C86A8;
+    tp   = (D_800D244C == &D_800CA040) ? &D_800C8CA8[1] : D_800C8CA8;
+    for (i = 0; i < count; i++) {
+        new_var = 0;
+        setlen(quad, 5);
+        setcode(quad, 0x2A);
+        setXYWH(quad, 0, 0, D_800C97EA, D_800C97E8);
+        setRGB0(quad, 8, 8, 8);
+        addPrim(&D_800D244C->primList[0], quad);
+        quad++;
+    }
+    setlen(tp, 1);
+    tp->code[0] = 0xE1000255;
+    new_var = getaddr(&D_800D244C->primList[0]);
+    setaddr(tp, new_var);
+    setaddr(&D_800D244C->primList[0], tp);
+}
+
+/* --- World-map engine control block (reset by func_8009A638) --- */
+extern s16 D_800C4D04;
+extern s32 D_800C4D18;
+extern s32 D_800C4D1C;
+extern s32 D_800C4D20;
+extern s32 D_800C4D24;
+extern s32 D_800C4D2C;
+extern s32 D_800C4D30;
+extern s32 D_800C4D34;
+extern s32 D_800C4D38;          /* world dispatch code / map id */
+extern s32 D_800C4D3C;
+extern s32 D_800C4D40;
+extern s32 D_800C4D44;
+extern s16 D_800C4D48;
+extern s32 D_800C4D4C;
+extern s32 D_800C4D50;          /* external trigger flag */
+extern s32 D_800C4D54;
+extern s32 D_800C4D58;
+extern WorldSection *D_800C4D5C;
+extern u16 D_800C4D60;
+extern CmdDesc *D_800C4D64;
+extern CmdDesc *D_800C4D68;
+extern CmdDesc *D_800C4D74;
+extern s32 D_800C4D78;
+extern s32 D_800C4D7C;
+extern s32 D_800C4D84;
+extern s32 D_800C4D88;
+extern s32 D_800C4D90;
+extern s32 D_800C4D94;
+extern s32 D_800C4DA8;
+extern s32 D_800C4DAC;
+extern s32 D_800C4DB0;
+extern s32 D_800C4DB4;
+extern u8  D_800C5398[];         /* 4-byte flag block */
+extern s32 D_800C9714;
+extern u8  D_800C9758[];         /* 15-byte light-matrix work buffer */
+extern s32 D_800C97A0;
+extern s32 D_800D212C;
+extern s32 D_800D2458;
+
+extern void func_8009FEDC(u8 *work, u8 type);
+
+/**
+ * @brief Reset the world-map engine control block to its initial state.
+ *
+ * Clears the large @c D_800C4D04 .. @c D_800C4DB4 control block plus a few related
+ * globals, seeding the non-zero defaults: @c D_800C4D44 = @c 0x10,
+ * @c D_800C4D30 = @c 0x1460, @c D_800C4D20 = @c 1, @c D_800C4D60 = @c 0xFFFF, the
+ * section pointer @c D_800C4D5C = @c 0x80122000, and the "inactive" markers
+ * @c D_800C4D78 / @c D_800C4D7C / @c D_800C4D88 / @c D_800C4D90 / @c D_800C4D94 = @c -1.
+ * It then fills the 4-byte @c D_800C5398 flag block with @c 0xFF and clears the
+ * light-matrix work buffer @c D_800C9758 via @c func_8009FEDC.
+ */
+void func_8009A638(void) {
+    s32 i;
+
+    D_800C4D34 = 0;
+    D_800C4D3C = 0;
+    D_800C4D38 = 0;
+    D_800C4D40 = 0;
+    D_800C4D44 = 0x10;
+    D_800C4D48 = 0;
+    D_800C4D4C = 0;
+    D_800C4D50 = 0;
+    D_800C4D54 = 0;
+    D_800C4D58 = 0;
+    D_800C4D5C = (WorldSection *)0x80122000;
+    D_800C4D60 = 0xFFFF;
+    D_800C4D64 = NULL;
+    D_800C4D74 = NULL;
+    D_800C4D78 = -1;
+    D_800C4D7C = -1;
+    D_800C4D04 = 0;
+    D_800C4D18 = 0;
+    D_800C4D1C = 0;
+    D_800C4D20 = 1;
+    D_800C4D24 = 0;
+    D_800C4D2C = 0;
+    D_800C4D30 = 0x1460;
+    D_800D2458 = 0;
+    D_800C9714 = 0;
+    D_800C4D84 = 0;
+    D_800C4D88 = -1;
+    D_800C4D68 = NULL;
+    D_800C4D90 = -1;
+    D_800C4D94 = -1;
+    D_800D212C = 0;
+    D_800C97A0 = 0;
+    D_800C4DA8 = 0;
+    D_800C4DAC = 0;
+    D_800C4DB0 = 0;
+    D_800C4DB4 = 0;
+    for (i = 0; i < 4; i++) {
+        D_800C5398[i] = 0xFF;
+    }
+    func_8009FEDC(D_800C9758, 0);
+}
+
+extern s32 D_800C4CA4[];   /* source config table */
+extern s32 D_800C4F2C[];   /* destination slot table A */
+extern s32 D_800C4F4C[];   /* destination slot table B (0x10-byte stride records) */
+
+extern s32 D_800C97E0, D_800C97E4, D_800C9E58, D_800C9E80, D_800C4F14;
+extern s32 D_800C9FE0, D_800C97DC, D_800C9718, D_800C9710;
+extern s32 D_800C9FC8, D_800C9FB0, D_800C9FCC, D_800C9FB4, D_800C9FD0, D_800C9FB8;
+extern s32 D_800C9FD8, D_800C9FBC, D_800C9FDC, D_800C9FC0, D_800C9FE4, D_800C9FC4;
+
+/**
+ * @brief Scatter the world-map configuration table @c D_800C4CA4 into the
+ *        active working globals.
+ *
+ * Walks @c D_800C4CA4 with a moving pointer and copies its words out to a set
+ * of scattered scalar globals; several values are mirrored into the
+ * @c D_800C4F2C / @c D_800C4F4C slot tables as well. The table's leading
+ * entries are 8 bytes (only the first word is consumed); the remainder are
+ * packed 4-byte words — hence the @c +2 then @c +1 pointer steps.
+ *
+ * @note Field meanings are not individually known; this is a bulk config load.
+ */
+void func_8009A7C0(void) {
+    s32 *p = D_800C4CA4;
+    p += 2;
+
+    D_800C97E0 = D_800C4CA4[0];
+    D_800C97E4 = *p; p += 2;
+    D_800C9E58 = *p; p += 2;
+    D_800C4F14 = D_800C9E80 = *p; p += 2;
+    D_800C4F2C[2] = D_800C9FE0 = *p; p += 1;
+    D_800C4F2C[3] = D_800C97DC = *p; p += 1;
+    D_800C9718 = *p; p += 1;
+    D_800C9710 = *p; p += 1;
+    D_800C4F4C[2] = D_800C9FC8 = *p; p += 1;
+    D_800C4F4C[3] = D_800C9FB0 = *p; p += 1;
+    D_800C4F4C[6] = D_800C9FCC = *p; p += 1;
+    D_800C4F4C[7] = D_800C9FB4 = *p; p += 1;
+    D_800C4F4C[10] = D_800C9FD0 = *p; p += 1;
+    D_800C4F4C[11] = D_800C9FB8 = *p; p += 1;
+    D_800C4F4C[14] = D_800C9FD8 = *p; p += 1;
+    D_800C4F4C[15] = D_800C9FBC = *p; p += 1;
+    D_800C4F4C[18] = D_800C9FDC = *p; p += 1;
+    D_800C4F4C[19] = D_800C9FC0 = *p; p += 1;
+    D_800C4F4C[22] = D_800C9FE4 = *p;
+    D_800C4F4C[23] = D_800C9FC4 = p[1];
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009A954);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009AD3C);
+extern DRAWENV D_80082C30;      /* active draw environment */
+extern DISPENV D_80082C18;      /* active display environment */
+extern DRAWENV *g_activeDrawEnv;
+extern s32 D_8005F138;          /* current display-env window (holds a DISPENV*) */
+extern SceneState D_80082C8C;
+
+extern void func_80042634(s32 a);
+extern void func_80048FBC(RECT *r, s32 srcX, s32 srcY);
+extern void func_80048C50(s32 a);
+extern void func_800A5F78(s32 screen);
+extern void func_800A5FD4(s32 screen);
+extern void func_800A5D10(void);
+extern void func_80048BB8(s32 a);
+
+/** View of the sentinel ctx exposing the DISPENV template that sits past the
+ *  tracked @c BattleSceneCtx body (at @c +0x40CC). */
+typedef struct { u8 pad[0x40CC]; DISPENV disp; } CtxDispView;
+
+/**
+ * @brief Install the world-map display/draw environment and (optionally) re-init the screen.
+ *
+ * Selects a load RECT from the active scene context @c D_800D244C — at @c +0x5C when it is
+ * not the @c D_800CA040 sentinel, else at @c +0x40CC — and, if its width field is non-zero,
+ * loads its image (@c func_80048FBC) after a @c func_80042634 prep. It then copies the
+ * sentinel's DRAWENV and DISPENV templates into the active @c D_80082C30 / @c D_80082C18 and
+ * publishes them via @c g_activeDrawEnv / @c D_8005F138. Finally, when the scene mode
+ * @c D_80082C8C is 5, it re-initialises both screen buffers (16 passes of
+ * @c func_800A5D10 bracketed by @c func_800A5FD4) and flushes via @c func_80048BB8.
+ */
+void func_8009AD3C(void) {
+    RECT *r;
+    s32 i;
+
+    /* Pointer difference (0 only when D_800D244C is the sentinel itself). */
+    if (D_800D244C - &D_800CA040 != 0) {
+        r = (RECT *)((u8 *)&D_800CA040 + 0x5C);
+    } else {
+        r = (RECT *)((u8 *)&D_800CA040 + 0x40CC);
+    }
+    func_80042634(0);
+    if (r->x != 0) {
+        func_80048FBC(r, 0, 0);
+        func_80048C50(0);
+    }
+    D_80082C30 = D_800CA040.drawEnv;
+    D_80082C18 = ((CtxDispView *)&D_800CA040)->disp;
+    g_activeDrawEnv = &D_80082C30;
+    D_8005F138 = (s32)&D_80082C18;
+    if (D_80082C8C.mode == 5) {
+        func_800A5F78(0);
+        func_800A5FD4(0);
+        for (i = 0; i < 0x10; i++) {
+            func_80042634(0);
+            func_800A5D10();
+            func_800A5FD4(0);
+        }
+        func_80048BB8(0);
+    }
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009AEE4);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B358);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B550);
+extern SfxSlot D_800C526C[];
+extern s32  getCurrentFieldMusic(void); /* defined u16 in btl_sfx; used full-width here */
+extern void setSfxPitch(s32 idx, s32 val);
+extern void setSfxEntityType(s32 idx, s32 val);
+extern void setSfxReverbMode(s32 idx, s32 val);
+extern void setSfxGlobalFlag(s32 val);
+extern void startSfxSlow(s32 idx);
+extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
+extern void func_8002E064(s32 index, RECT *srcRect);
+extern s32  func_8002E680(u8 *text);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B748);
+/**
+ * @brief Configure and start a positioned world-map SFX/voice clip on a slot.
+ *
+ * Resolves the clip's data pointer: the caller-supplied @p text when non-NULL,
+ * otherwise — unless @p strIdx is the @c -2 sentinel — a self-relative lookup
+ * @c (u8 *)D_800C97D4 + D_800C97D4->first[strIdx] into the string table. The
+ * slot's @c field00 records @p strIdx (or @c -2). After priming the voice via
+ * @c func_8002D784, it sets pitch from the current field music, entity type 6,
+ * reverb from @c field03, and the global flag.
+ *
+ * It then sizes a text box: @c func_8002E680 returns the rendered dimensions
+ * packed as @c width|(height<<16); the @ref RECT is placed relative to the
+ * slot's anchor (@c field04, @c field06) per the alignment mode @c field01
+ * (0 = top-left, 1/3 = right-aligned, 2 = centered, 3 = also bottom-aligned),
+ * submitted via @c func_8002E064, and the SFX is started with @c startSfxSlow.
+ *
+ * @param slotIdx Index into the @c D_800C526C SFX-slot table.
+ * @param strIdx  String-table index for the clip text (@c -2 = none).
+ * @param text    Explicit text/data pointer; overrides @p strIdx when non-NULL.
+ * @param arg3..arg6 Forwarded to @c func_8002D784.
+ */
+void func_8009B550(s32 slotIdx, s32 strIdx, u8 *text, s32 arg3, s32 arg4, s32 arg5, s32 arg6) {
+    RECT rect;
+    s32 id;
+    u8 *ptr;
+    s32 dim;
+    StringTable *tbl;
+    s32 *offsets;
+    s32 off;
+    s32 v;
+    s32 hi;
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B840);
+    ptr = text;
+    tbl = D_800C97D4;
+    offsets = tbl->first;
+    off = offsets[strIdx];
+    id = D_800C526C[slotIdx].field02;
+    if (text == 0 && strIdx != -2) {
+        ptr = (u8 *)tbl + off;
+        D_800C526C[slotIdx].field00 = strIdx;
+    } else {
+        D_800C526C[slotIdx].field00 = -2;
+    }
+
+    func_8002D784(id, ptr, arg3, arg4, arg5, arg6);
+    setSfxPitch(id, getCurrentFieldMusic());
+    setSfxEntityType(id, 6);
+    setSfxReverbMode(id, D_800C526C[slotIdx].field03);
+    setSfxGlobalFlag(id);
+
+    dim = func_8002E680(ptr);
+    v = dim + 0x20;
+    hi = (u32)dim >> 16;
+    if (D_800C526C[slotIdx].field01 == 1) {
+        setRECT(&rect, D_800C526C[slotIdx].field04 - v - 0x10, D_800C526C[slotIdx].field06, dim + 0x30, hi + 0x10);
+    } else if (D_800C526C[slotIdx].field01 == 0) {
+        setRECT(&rect, D_800C526C[slotIdx].field04, D_800C526C[slotIdx].field06, dim + 0x30, hi + 0x10);
+    } else if (D_800C526C[slotIdx].field01 == 2) {
+        setRECT(&rect, D_800C526C[slotIdx].field04 - ((s16)v >> 1) - 8, D_800C526C[slotIdx].field06, dim + 0x30, hi + 0x10);
+    } else if (D_800C526C[slotIdx].field01 == 3) {
+        setRECT(&rect, D_800C526C[slotIdx].field04 - v - 0x10, D_800C526C[slotIdx].field06 - hi - 0x10, dim + 0x30, hi + 0x10);
+    }
+    func_8002E064(id, &rect);
+    startSfxSlow(id);
+}
+
+extern s32 D_800C4DBC;
+extern u32 D_800D2278[];
+extern void fadeOutSfxSlow(s32 idx);
+
+/**
+ * @brief One-shot: silence the high SFX slots when a trigger fires.
+ *
+ * Gated by two early-outs — the global disable byte @c D_800D23D8[0] and the
+ * one-shot latch @c D_800C4DBC (so the body runs at most once until the latch
+ * is cleared elsewhere).
+ *
+ * Reads the double-buffered input state @c D_800D2278: @c D_800C4D04 selects the
+ * active buffer and @c (idx+1)%2 is the previous frame's buffer. If input bit
+ * @c 0x40 is newly pressed this frame — @c cur & ~prev & 0x40, written as
+ * @c cur & (cur ^ prev) & 0x40 — or the external trigger @c D_800C4D50 is set,
+ * it fades out @c D_800C526C SFX slots 9..12 (@c fadeOutSfxSlow on each active
+ * slot's @c field02, then marks @c field00 inactive) and latches @c D_800C4DBC.
+ *
+ * @note The exact meaning of input bit @c 0x40 is uncertain.
+ */
+void func_8009B748(void) {
+    u32 *buf;
+    s32 idx;
+    u32 cur;
+    u32 prev;
+    s32 i;
+
+    if (D_800D23D8[0] != 0) {
+        return;
+    }
+    if (D_800C4DBC != 0) {
+        return;
+    }
+    buf = D_800D2278;
+    idx = D_800C4D04;
+    cur = buf[idx];
+    prev = buf[(idx + 1) % 2];
+    if (((cur & (cur ^ prev) & 0x40) != 0) || (D_800C4D50 != 0)) {
+        for (i = 9; i < 13; i++) {
+            s32 field00 = D_800C526C[i].field00;
+            s32 field02 = D_800C526C[i].field02;
+            if (field00 != -1) {
+                D_800C526C[i].field00 = -1;
+                fadeOutSfxSlow(field02);
+            }
+        }
+        D_800C4DBC = 1;
+    }
+}
+
+extern void initSfxPlayback(s32 index, u8 *data);
+
+/**
+ * @brief Sync the world-map voice/SFX on channel 1 to the requested clip.
+ *
+ * Drives a one-voice state machine from the request slot @c D_800C4D90 and the
+ * currently-playing tracker @c D_800C4D94 (both @c -1 when idle):
+ *  - Request pending (@c D_800C4D90 @c >= @c 0) and nothing playing
+ *    (@c D_800C4D94 @c < @c 0): resolve the clip record from the @c D_800C97D4
+ *    string-table blob (@c table @c + @c table->first[req]), start playback
+ *    (@c initSfxPlayback), set its pitch from the current field music and its
+ *    entity type to 6, build a horizontally-centered display @c RECT from the
+ *    clip's packed dimensions (@c func_8002E680 returns @c width|height<<16) and
+ *    submit it (@c func_8002E064), then @c startSfxSlow and latch
+ *    @c D_800C4D94 @c = @c D_800C4D90.
+ *  - No request (@c D_800C4D90 @c < @c 0) but a clip is playing
+ *    (@c D_800C4D94 @c >= @c 0): @c fadeOutSfxSlow and clear the tracker to -1.
+ *
+ * Centering uses screen half-width @c D_800C97EA:
+ * @c x @c = @c D_800C97EA/2 @c - @c width/2, with a 16px margin on the others.
+ */
+void func_8009B840(void) {
+    if (D_800C4D90 >= 0) {
+        if (D_800C4D94 < 0) {
+            StringTable *table = D_800C97D4;
+            s32 *offsets = table->first;
+            u8 *record = (u8 *)table + offsets[D_800C4D90];
+            RECT rect;
+            u32 dims;
+
+            initSfxPlayback(1, record);
+            setSfxPitch(1, getCurrentFieldMusic());
+            setSfxEntityType(1, 6);
+            dims = func_8002E680(record);
+            rect.x = (D_800C97EA >> 1) - ((dims & 0xFFFF) >> 1);
+            rect.y = 0x10;
+            rect.w = dims + 0x10;
+            rect.h = (dims >> 16) + 0x10;
+            func_8002E064(1, &rect);
+            startSfxSlow(1);
+            D_800C4D94 = D_800C4D90;
+        }
+    } else {
+        if (D_800C4D94 >= 0) {
+            fadeOutSfxSlow(1);
+            D_800C4D94 = -1;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B954);
 
@@ -113,13 +586,170 @@ void func_8009BFA0(DVECTOR *coords, s16 count) {
     coords--;
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C070);
+extern s16 D_800C977A;
+extern s16 D_800D239A;
+extern VECTOR D_800980DC;   /* constant view offset {0, 0, -0x1800, 0} */
+extern VECTOR D_800C9868;   /* source world position (transformed by func_800BC544) */
+extern MATRIX D_800C9838;   /* world-to-screen matrix loaded into the GTE */
+extern WorldPos D_800D23C0; /* composed camera/world position output */
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C1A4);
+extern s32 func_800A00B4(s32 a, s32 b);
+/* func_800ACD38 is void func_800ACD38(s32) in we_object6; this call site sees an
+   int-returning function (K&R-era view), which the matching codegen requires. */
+extern s32 func_800ACD38(MATRIX *out);
+extern void func_8003FD84(MATRIX *xform, VECTOR *in, VECTOR *out);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C294);
+/**
+ * @brief Compose the world-map view transform and the resulting camera position.
+ *
+ * Transforms the constant view offset @c D_800980DC by a rotation matrix into a
+ * local vector. The matrix is normally the global @c D_800C9838, but a per-frame
+ * matrix from @c func_800ACD38 is used instead when a special mode is active:
+ * @c D_800C4D38 == 0x32, @c D_800C4D3C == 0, @c D_800D23D8[0] == 0, and the angle
+ * from @c func_800A00B4(D_800C977A, D_800D239A) is within @c ±0x241.
+ *
+ * The transformed offset's X and Z are added to the base position @c D_800C9868
+ * to form @c D_800D23C0 (Z cleared), then the rotation and translation matrices
+ * @c D_800C9838 are loaded into the GTE.
+ */
+void func_8009C070(void) {
+    VECTOR localA;
+    VECTOR localB;
+    MATRIX localMtx;
+    s16 angle;
+    s32 v;
 
-extern s32 func_8009CA34(s32 *src, ImageDesc *desc);
+    localA = D_800980DC;
+    angle = func_800A00B4(D_800C977A, D_800D239A);
+    /* Special mode when the three flags hold and the angle's absolute value (in
+       @c v) is within ±0x241 of zero — build a per-frame matrix; else use the
+       global one. @c v is assigned in the condition so the lazy @c abs() compares
+       a plain variable (a narrow operand would split the compare in two). */
+    if (D_800C4D38 == 0x32 && D_800C4D3C == 0 && D_800D23D8[0] == 0 &&
+        (v = angle, abs(v) < 0x241)) {
+        func_800ACD38(&localMtx);
+        func_8003FD84(&localMtx, &localA, &localB);
+    } else {
+        func_8003FD84(&D_800C9838, &localA, &localB);
+    }
+    D_800D23C0.z = 0;
+    D_800D23C0.x = D_800C9868.vx + localB.vx;
+    D_800D23C0.y = D_800C9868.vy + localB.vz;
+    SetRotMatrix(&D_800C9838);
+    SetTransMatrix(&D_800C9838);
+}
+
+extern VECTOR D_800C9748;   /* mirrored copy of the transformed position */
+extern AngleSlot D_800C97F4;
+extern CmdDesc *D_800C4D6C;
+extern s16 D_800C9E38[3];
+
+extern void func_800BC544(VECTOR *src, VECTOR *dst);
+extern s32 func_800A40F8(VECTOR *pos, VECTOR *out);
+extern CmdDesc *func_800A3870(VECTOR *v, AngleSlot *out);
+
+/* Projection scratch: func_800A40F8 writes @c proj and returns @c angle. The
+   trailing @c pad keeps the buffer 0x20 bytes (gcc reserves the full slot). */
+typedef struct {
+    VECTOR proj;
+    s16 angle;
+    s16 pad[7];
+} ProjBuf;
+
+/**
+ * @brief Set up the world-to-screen transform and refresh the active command
+ *        descriptors.
+ *
+ * Transforms @c D_800C9868 with @c func_800BC544 into a local vector, mirrors
+ * it into @c D_800C9748, then projects it with @c func_800A40F8 (whose return
+ * angle is stashed for @c D_800D212C) and resolves a command descriptor with
+ * @c func_800A3870. That descriptor is published to @c D_800C4D64 / @c D_800C4D74
+ * (and to @c D_800C4D6C / @c D_800C4D68 when @c D_800C4D38 holds 0x31). Per-frame
+ * scratch (@c D_800C4D48, @c D_800C9E38[0..2]) is cleared, and the rotation and
+ * translation matrices @c D_800C9838 are loaded into the GTE.
+ */
+void func_8009C1A4(void) {
+    VECTOR local;
+    ProjBuf buf;
+    CmdDesc *desc;
+
+    func_800BC544(&D_800C9868, &local);
+    D_800C9748 = local;
+    buf.angle = func_800A40F8(&local, &buf.proj);
+    desc = func_800A3870(&local, &D_800C97F4);
+    D_800C4D64 = desc;
+    D_800C4D74 = desc;
+    if (D_800C4D38 == 0x31) {
+        D_800C4D6C = desc;
+        D_800C4D68 = desc;
+    }
+    D_800C4D48 = 0;
+    D_800C9E38[0] = 0;
+    D_800C9E38[1] = 0;
+    D_800C9E38[2] = 0;
+    D_800D212C = buf.angle;
+    SetRotMatrix(&D_800C9838);
+    SetTransMatrix(&D_800C9838);
+}
+
+extern s32 D_800C9778[];     /* scratch buffer passed to the visibility check */
+
+extern s32 func_800BEC1C(s32 kind);
+extern s32 func_800A2D50(s32 a0, s32 a1, s32 *out, s32 a3, s32 a4, s32 a5);
+extern void func_8009D630(void);
+extern void func_800B3FD4(Slot *slot, s32 arg);
+extern void fadeOutSfxFast(s32 idx);
+extern void renderAndUpdateDisplay(s32 frames);
+extern s32 renderBattleDisplayList(s32 *colorTag);
+
+/**
+ * @brief Tear down the current world-map scene and hand off for the given command.
+ *
+ * For the relevant dispatch modes (@c D_800C4D38 of 0x30 / 0x32) and commands
+ * @c cmd of 0x2C / 0x41 / 0x11, runs two @c func_800A2D50 visibility checks and
+ * toggles display bit @c 0x20 of @c D_800780D8[0x108] / @c D_800D23D8[0x66]
+ * (cleared when both pass, set otherwise). Then @c func_8009D630 tears down prior
+ * state; if a command descriptor @c D_800C4D64 is active, its flag bit is mirrored
+ * into @c D_800D226C->unk6C (bit @c 0x100). Finally it stamps the scene state
+ * @c D_80082C8C (mode 1, dispatch code, markers), calls @c func_800B3FD4, clears
+ * the slot's action byte, fades out all @c D_800C526C SFX, pushes 2 display frames,
+ * and submits the scene color tag.
+ *
+ * @param cmd Dispatch command code being handed off.
+ */
+void func_8009C294(s32 cmd) {
+    s32 i;
+
+    if ((D_800C4D38 == 0x32 || D_800C4D38 == 0x30) &&
+        ((cmd & 0xFFFF) == 0x2C || (cmd & 0xFFFF) == 0x41 || (cmd & 0xFFFF) == 0x11)) {
+        if (func_800A2D50(0, (s16)func_800BEC1C(D_800C4D38), D_800C9778, 0, 0, 0) &&
+            func_800A2D50(D_800C4D38, 0, D_800C9778, 0, 0, 0)) {
+            D_800780D8[0x108] &= ~0x20;
+            D_800D23D8[0x66] &= ~0x20;
+        } else {
+            D_800780D8[0x108] |= 0x20;
+            D_800D23D8[0x66] |= 0x20;
+        }
+    }
+    func_8009D630();
+    if (D_800C4D64 != 0) {
+        D_800D226C->unk6C = (D_800D226C->unk6C & ~0x100) | ((D_800C4D64->flag << 5) & 0x100);
+    }
+    D_80082C8C.mode = 1;
+    D_80082C8C.unk02 = cmd;
+    D_80082C8C.unk03 = -1;
+    D_80082C8C.cmd = D_800C4D38;
+    func_800B3FD4(D_800D226C, 1);
+    D_800D226C->bytes[1] = 0;
+    for (i = 0; i < 13; i++) {
+        s32 sfxIdx = D_800C526C[i].field02;
+        D_800C526C[i].field00 = -1;
+        fadeOutSfxFast(sfxIdx);
+    }
+    renderAndUpdateDisplay(2);
+    renderBattleDisplayList(&D_800D244C->primList[BSC_COLORTAG_IDX]);
+}
+
 extern RECT D_800C8698;
 
 /**
@@ -192,17 +822,17 @@ extern u8 D_800980CC[]; /* "x:\USPC\WORLD" — dev-filesystem prefix (13 chars +
  */
 void func_8009C54C(u8 *dst, u8 *src) {
     u8 ch;
-    s32 i; /* source index */
-    s32 j; /* destination index */
+    s32 i;
+    s32 j;
 
     i = 0;
     j = 0;
-    for (;;) {
-        if ((i == 0) && (src[i] == '\\')) {
+    while (1) {
+        if ((i == 0) && (src[i] == '\\')) { /* 0x5C == '\' */
             memcpy(&dst[j], D_800980CC, 14);
             j += 13;
         }
-        if (src[i] == ';') {
+        if (src[i] == ';') { /* 0x3B == ';' */
             i += 2;
         }
         ch = src[i];
@@ -213,8 +843,6 @@ void func_8009C54C(u8 *dst, u8 *src) {
         i++;
     }
 }
-
-extern RECT D_800C8640;
 
 /**
  * @brief Pull a two-image descriptor from @p src and stream both TIMs
@@ -345,9 +973,6 @@ void func_8009C808(void) {
     D_800D23D8[0x66] &= ~0x20;
 }
 
-extern s32 D_800C4D94;
-extern void fadeOutSfxSlow(s32 idx);
-
 /**
  * @brief Fade out SFX slot tracked by D_800C4D94 (if any) and clear the slot.
  *
@@ -379,7 +1004,48 @@ void func_8009C8CC(s32 val) {
     D_800C4FD5 = val;
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009C8E0);
+extern POLY_FT4 D_800C8648[2]; /* double-buffered worldmap quad primitive */
+extern void func_8004D604(POLY_FT4 *prim, s32 frame);
+
+/**
+ * @brief Build and queue a textured quad (@c POLY_FT4) for the world map.
+ *
+ * Picks one of the two @c D_800C8648 prim slots — slot 1 when the active
+ * @c D_800D244C scene context is the worldmap sentinel @c D_800CA040, else
+ * slot 0 — and fills a @c POLY_FT4 covering @c (x,y) to
+ * @c (x + scale*128, y + scale*96) at neutral RGB, mapping the full
+ * @c 0..0xFF × 0..0xBF texture region (CLUT chosen from @p frame, fixed
+ * tpage). @c func_8004D604 finishes the prim setup from @p frame, then it is
+ * linked into the scene's main OT chain (@c primList[BSC_OTHEAD_IDX]).
+ *
+ * @param x     Quad left edge (screen X).
+ * @param y     Quad top edge (screen Y).
+ * @param scale Size multiplier (quad is @c scale*128 wide, @c scale*96 tall).
+ * @param frame Texture frame index — feeds the CLUT and @c func_8004D604.
+ */
+void func_8009C8E0(u16 x, s32 y, s32 scale, s32 frame) {
+    POLY_FT4 *p;
+
+    p = &D_800C8648[0];
+    if (D_800D244C == &D_800CA040) {
+        p = &D_800C8648[1];
+    }
+    setPolyFT4(p);
+    func_8004D604(p, frame);
+    setRGB0(p, 0x80, 0x80, 0x80);
+    /* Four corners, paired by the coordinate they share: x1/x3 = right edge,
+       y2/y3 = bottom edge, x0/x2 = left, y0/y1 = top. */
+    p->x1 = p->x3 = x + scale * 128;
+    p->y2 = p->y3 = y + scale * 96;
+    p->clut = getClut(0x340, frame + 0xE9);
+    p->tpage = 0xC;
+    p->u1 = p->u3 = 0xFF;
+    p->v0 = p->v1 = p->u0 = p->u2 = 0;
+    p->v2 = p->v3 = 0xBF;
+    p->x0 = p->x2 = x;
+    p->y0 = p->y1 = y;
+    addPrim(&D_800D244C->primList[BSC_OTHEAD_IDX], p);
+}
 
 /**
  * @brief Parse a streaming-image header out of @p src into @p desc,
@@ -468,8 +1134,6 @@ typedef struct {
     /* 0x08 */ s32 lba;
     /* 0x0C */ u32 size;
 } CdLoadEntry;
-
-extern void func_80042634(s32 a);
 
 /**
  * @brief Walk a NULL-terminated @ref CdLoadEntry list, issuing a @c cdRead

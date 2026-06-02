@@ -671,10 +671,11 @@ extern BattleCharState g_battleChars;
  * At least 0x4070 bytes based on observed accesses in world.
  */
 typedef struct {
-    /* 0x0000 */ u8  pad0000[0x70];
+    /* 0x0000 */ DRAWENV drawEnv;       /**< Draw-env template, copied to the active env. */
+    /* 0x005C */ u8  pad005C[0x14];
     /* 0x0070 */ s32 primList[4];
-    /* 0x0080 */ u8  pad0080[0x3FEC];
-} BattleSceneCtx;
+    /* 0x0080 */ u8  pad0080[0x3FF0];
+} BattleSceneCtx;                       /* 0x4070 */
 
 /* Named aliases for the two specifically-purposed primList slots. */
 #define BSC_COLORTAG_IDX 1   /**< primList[1] @ +0x74 — renderBattleDisplayList color tag. */
