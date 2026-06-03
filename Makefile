@@ -212,6 +212,11 @@ split:
 	$(SPLAT) split $(SPLAT_YAML)
 	$(foreach ovl,$(OVERLAYS),$(SPLAT) split $($(ovl)_YAML);)
 
+# Symbol-hygiene audit (see tools/check_symbols.py and cleanuptask.md).
+# Optional args narrow output, e.g. `make check ARGS=world` or `make check ARGS=[A]`.
+check:
+	$(PYTHON) tools/check_symbols.py $(ARGS)
+
 clean:
 	rm -rf $(BUILD_DIR)
 
@@ -326,6 +331,6 @@ report: objdiff-config
 	@$(OBJDIFF) report generate -p . -o $(BUILD_DIR)/report.json
 	@python3 tools/objdiff/progress_html.py $(BUILD_DIR)/report.json $(BUILD_DIR)/progress.html
 
-.PHONY: all full build verify setup split clean permute build-overlays \
+.PHONY: all full build verify check setup split clean permute build-overlays \
         expected objdiff-config report \
         $(foreach ovl,$(OVERLAYS),split-$(ovl) build-$(ovl) verify-$(ovl))

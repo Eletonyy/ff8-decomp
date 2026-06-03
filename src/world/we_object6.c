@@ -1,46 +1,9 @@
 #include "common.h"
 #include "world.h"
-
-/**
- * @brief 8-byte world-transform block — four packed halfwords.
- *
- * Layout inferred from cross-overlay halfword accesses to @c D_800D2390
- * in @c we_object2/4/6/7 — every field is read/written as @c lh / @c sh
- * at a fixed offset. Only @c angle has a semantically identified role
- * (it's the input to the rotation helper @c func_800A00B4); the
- * @c unkN slots are placeholders for fields whose purpose is not yet
- * mapped.
- */
-typedef struct {
-    /* 0x00 */ s16 unk0;
-    /* 0x02 */ s16 angle;
-    /* 0x04 */ s16 unk4;
-    /* 0x06 */ s16 unk6;
-} WorldXformBlock; /* 0x08 */
-
-/**
- * @brief 16-byte world-transform record at @c D_800D2390.
- *
- * Pair of @ref WorldXformBlock entries — @c head occupies the first 8
- * bytes and @c tail the last 8. @c func_800ACD38 snapshots @c tail,
- * adjusts its @c angle, and forwards the modified copy to
- * @c func_800ACC68.
- */
-typedef struct {
-    /* 0x00 */ WorldXformBlock head;
-    /* 0x08 */ WorldXformBlock tail;
-} WorldXform; /* 0x10 */
-
-extern s16 D_800C977A;
-extern u8 D_800C97F8[];
-extern WorldXform D_800D2390;
-
-extern s32 func_800A00B4(s32 a, s32 b);
-extern void *memcpy(void *dst, const void *src, u32 n);
+#include "world/we_object6.h"
+#include "psxsdk/libc.h"
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object6", func_800ACC68);
-
-extern void func_800ACC68(s32 a, WorldXformBlock *buf, u8 *p1, WorldXform *xform);
 
 /**
  * @brief Snapshot @c D_800D2390.tail with an angle-adjusted @c angle
@@ -73,7 +36,7 @@ void func_800ACD38(s32 arg) {
 
     buf.angle += delta;
 
-    func_800ACC68(arg, &buf, D_800C97F8, &D_800D2390);
+    func_800ACC68(arg, &buf, (u8 *)D_800C97F8, &D_800D2390);
 }
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object6", func_800ACDC4);

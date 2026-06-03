@@ -1,26 +1,16 @@
 #include "common.h"
 #include "cd.h"
 #include "sound.h"
+#include "field.h"
 #include "world.h"
+#include "world/we_object1.h"
 #include "psxsdk/libapi.h"
 #include "psxsdk/libgpu.h"
+#include "psxsdk/libc.h"
 
-extern u8 D_800780D8[];
-extern u8 D_800C4DCC[];
-extern u8 D_800C4FD3;
-extern u8 D_800C4FD4;
-extern u8 D_800C4FD5;
-extern u8 D_800C4FD6;
-extern u8 D_800C4FD7;
-extern u8 D_800D23D8[];
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_800997E8);
 
-extern RECT D_800C8640;
-extern u8 D_800D2440;
-extern s32 func_8009CA34(s32 *src, ImageDesc *desc);
-extern void func_80048EFC(RECT *r, u32 *data);
-extern void func_80048DD4(RECT *r, s32 a, s32 b, s32 c);
 
 /**
  * @brief Walk an entity's world-engine script, blitting each entry's image(s),
@@ -77,9 +67,81 @@ void func_80099B48(Entity *entity, s32 *script) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099C84);
+/**
+ * @brief (Re)initialise the world-map sound sequence and reload the sample banks.
+ *
+ * Decides whether to reload the current sequence: it skips the reload (just issuing
+ * @c sndCmdC1(0,0x1E,0x7F)) only when the scatter key @c D_800D2442 already matches
+ * @c g_fieldVars->audioChannel0State AND the scene is not mode 2. Otherwise it parses
+ * the sequence for @c (s8)D_800D2442 via @c func_8009CE70 (which fills bank selector,
+ * a "ready" flag, and three handles), wires it up with @c func_80039678, records the
+ * bank selector, and then either — for an active mode-2 scene — drains the audio
+ * engine and pushes the new sequence (@c sndProcessAudio + @c func_8009CDC4), or stops
+ * the old one and caches its handles in @c D_800C4FC0 / @c D_800C4FBC. The new channel
+ * state is latched via @c func_8009D7D8.
+ *
+ * Afterwards it always drains the sound engine, uploads the sample bank selected by the
+ * scene command @c D_80082C8D (@c D_800C9EE0 for @c 0x40..0x42, else @c D_800C9EDC),
+ * rebinds @c D_800C4FD8 sequence slots 4-9/12 to self-relative pointers in the bank
+ * header @c D_800C97A8, and clears every slot's runtime state (@c field12).
+ */
+void func_80099C84(void) {
+    u8  b18;
+    s32 w1C, w20, w24, w28;
+    s32 result;
+    s32 mode2;
+    s32 key;
+    s32 i;
+    s32 *bank;
+    s32 *offs;
 
-extern SeqEntry D_800C4FD8[];
+    D_800C4FBC = 0;
+    D_800C4FC0 = 0;
+    mode2 = (D_80082C8C.mode == 2);
+    key = D_800D2442;
+    if (key != g_fieldVars->audioChannel0State || mode2) {
+        result = func_8009CE70((s8)key, &b18, &w1C, &w20, &w24, &w28);
+        if (result != 0) {
+            func_80039678(w24, result, w28);
+            g_fieldVars->soundBankSelector = b18;
+            if (mode2 && w1C != 0) {
+                while (sndGetEngineState() > 0) {}
+                sndProcessAudio(w20, 1);
+                func_8009CDC4(w24, 0x7F);
+            } else {
+                if (sndGetStatus() != 0) {
+                    sndCmdC1(0, 0x1E, 0);
+                }
+                D_800C4FC0 = w20;
+                D_800C4FBC = w24;
+            }
+            g_fieldVars->audioChannel0State = func_8009D7D8(result);
+        } else {
+            func_8009CE40();
+        }
+    } else {
+        sndCmdC1(0, 0x1E, 0x7F);
+    }
+    while (sndGetEngineState() > 0) {}
+    if ((u32)(D_80082C8D - 0x40) < 3) {
+        while (sndUploadSamples(D_800C9EE0, 1) != 0) {}
+    } else {
+        while (sndUploadSamples(D_800C9EDC, 1) != 0) {}
+    }
+    bank = D_800C97A8;
+    offs = bank + 1;
+    D_800C4FD8[4].bankHandle = D_800C97AC;
+    D_800C4FD8[5].bankHandle = (s32)bank + offs[1];
+    D_800C4FD8[6].bankHandle = (s32)bank + offs[2];
+    D_800C4FD8[7].bankHandle = (s32)bank + offs[3];
+    D_800C4FD8[8].bankHandle = (s32)bank + offs[4];
+    D_800C4FD8[9].bankHandle = (s32)bank + offs[5];
+    D_800C4FD8[12].bankHandle = (s32)bank + offs[6];
+    for (i = 0x1F; i >= 0; i--) {
+        D_800C4FD8[i].field12 = 0;
+    }
+}
+
 
 /**
  * @brief Kick off the SFX for @c D_800C4FD8[idx] and mark it active.
@@ -111,11 +173,6 @@ void func_80099EDC(s32 idx) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_80099F78);
 
-extern POLY_F4 D_800C89A8[];    /* dim-overlay quad buffer (sentinel ctx)  */
-extern POLY_F4 D_800C86A8[];    /* dim-overlay quad buffer (normal ctx)    */
-extern DR_TPAGE D_800C8CA8[2];  /* draw-mode tpage paired with each buffer  */
-extern s16 D_800C97EA;          /* worldmap screen width reference  */
-extern s16 D_800C97E8;          /* worldmap screen height reference */
 
 /**
  * @brief Build a screen-covering dim overlay: @p count semi-transparent dark
@@ -158,46 +215,7 @@ void func_8009A4DC(s32 count) {
 }
 
 /* --- World-map engine control block (reset by func_8009A638) --- */
-extern s16 D_800C4D04;
-extern s32 D_800C4D18;
-extern s32 D_800C4D1C;
-extern s32 D_800C4D20;
-extern s32 D_800C4D24;
-extern s32 D_800C4D2C;
-extern s32 D_800C4D30;
-extern s32 D_800C4D34;
-extern s32 D_800C4D38;          /* world dispatch code / map id */
-extern s32 D_800C4D3C;
-extern s32 D_800C4D40;
-extern s32 D_800C4D44;
-extern s16 D_800C4D48;
-extern s32 D_800C4D4C;
-extern s32 D_800C4D50;          /* external trigger flag */
-extern s32 D_800C4D54;
-extern s32 D_800C4D58;
-extern WorldSection *D_800C4D5C;
-extern u16 D_800C4D60;
-extern CmdDesc *D_800C4D64;
-extern CmdDesc *D_800C4D68;
-extern CmdDesc *D_800C4D74;
-extern s32 D_800C4D78;
-extern s32 D_800C4D7C;
-extern s32 D_800C4D84;
-extern s32 D_800C4D88;
-extern s32 D_800C4D90;
-extern s32 D_800C4D94;
-extern s32 D_800C4DA8;
-extern s32 D_800C4DAC;
-extern s32 D_800C4DB0;
-extern s32 D_800C4DB4;
-extern u8  D_800C5398[];         /* 4-byte flag block */
-extern s32 D_800C9714;
-extern u8  D_800C9758[];         /* 15-byte light-matrix work buffer */
-extern s32 D_800C97A0;
-extern s32 D_800D212C;
-extern s32 D_800D2458;
 
-extern void func_8009FEDC(u8 *work, u8 type);
 
 /**
  * @brief Reset the world-map engine control block to its initial state.
@@ -255,14 +273,7 @@ void func_8009A638(void) {
     func_8009FEDC(D_800C9758, 0);
 }
 
-extern s32 D_800C4CA4[];   /* source config table */
-extern s32 D_800C4F2C[];   /* destination slot table A */
-extern s32 D_800C4F4C[];   /* destination slot table B (0x10-byte stride records) */
 
-extern s32 D_800C97E0, D_800C97E4, D_800C9E58, D_800C9E80, D_800C4F14;
-extern s32 D_800C9FE0, D_800C97DC, D_800C9718, D_800C9710;
-extern s32 D_800C9FC8, D_800C9FB0, D_800C9FCC, D_800C9FB4, D_800C9FD0, D_800C9FB8;
-extern s32 D_800C9FD8, D_800C9FBC, D_800C9FDC, D_800C9FC0, D_800C9FE4, D_800C9FC4;
 
 /**
  * @brief Scatter the world-map configuration table @c D_800C4CA4 into the
@@ -304,23 +315,8 @@ void func_8009A7C0(void) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009A954);
 
-extern DRAWENV D_80082C30;      /* active draw environment */
-extern DISPENV D_80082C18;      /* active display environment */
-extern DRAWENV *g_activeDrawEnv;
-extern s32 D_8005F138;          /* current display-env window (holds a DISPENV*) */
-extern SceneState D_80082C8C;
 
-extern void func_80042634(s32 a);
-extern void func_80048FBC(RECT *r, s32 srcX, s32 srcY);
-extern void func_80048C50(s32 a);
-extern void func_800A5F78(s32 screen);
-extern void func_800A5FD4(s32 screen);
-extern void func_800A5D10(void);
-extern void func_80048BB8(s32 a);
 
-/** View of the sentinel ctx exposing the DISPENV template that sits past the
- *  tracked @c BattleSceneCtx body (at @c +0x40CC). */
-typedef struct { u8 pad[0x40CC]; DISPENV disp; } CtxDispView;
 
 /**
  * @brief Install the world-map display/draw environment and (optionally) re-init the screen.
@@ -366,18 +362,71 @@ void func_8009AD3C(void) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009AEE4);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B358);
+/**
+ * @brief Set up a positioned world-map SFX/voice clip, skipping if already current.
+ *
+ * Sibling of @c func_8009B550. Resolves the clip's data pointer (explicit @p text,
+ * else a self-relative @c D_800C97D4 string-table lookup) but first early-outs when
+ * the slot already records this @p strIdx and no explicit @p text was given. Primes
+ * the voice via @c initSfxPlayback, then sets pitch (from the current field music),
+ * entity type 6 and reverb (@c field03). Finally it sizes a text box —
+ * @c func_8002E680 returns the rendered dimensions packed as @c width|(height<<16) —
+ * positioned relative to the slot anchor (@c field04, @c field06) per the alignment
+ * mode @c field01, submits it via @c func_8002E064, and starts the SFX.
+ *
+ * @note Declared non-void to match the original's codegen: a non-void return keeps
+ *       @c v0 live, which leaves the early-return branch-delay slot as a @c nop.
+ *       No meaningful value is returned.
+ *
+ * @param slotIdx Index into the @c D_800C526C SFX-slot table.
+ * @param strIdx  String-table index (@c -2 = none); also the "already current" key.
+ * @param text    Explicit clip pointer; overrides @p strIdx when non-NULL.
+ */
+s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text) {
+    RECT rect;
+    s32 id;
+    u8 *ptr;
+    s32 dim;
+    StringTable *tbl;
+    s32 *offsets;
+    s32 off;
+    s32 hi;
 
-extern SfxSlot D_800C526C[];
-extern s32  getCurrentFieldMusic(void); /* defined u16 in btl_sfx; used full-width here */
-extern void setSfxPitch(s32 idx, s32 val);
-extern void setSfxEntityType(s32 idx, s32 val);
-extern void setSfxReverbMode(s32 idx, s32 val);
-extern void setSfxGlobalFlag(s32 val);
-extern void startSfxSlow(s32 idx);
-extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
-extern void func_8002E064(s32 index, RECT *srcRect);
-extern s32  func_8002E680(u8 *text);
+    ptr = text;
+    tbl = D_800C97D4;
+    offsets = tbl->first;
+    off = offsets[strIdx];
+    if (text == 0 && strIdx == D_800C526C[slotIdx].field00) {
+        return;
+    }
+    id = D_800C526C[slotIdx].field02;
+    if (text == 0 && strIdx != -2) {
+        ptr = (u8 *)tbl + off;
+        D_800C526C[slotIdx].field00 = strIdx;
+    } else {
+        D_800C526C[slotIdx].field00 = -2;
+    }
+
+    initSfxPlayback(id, ptr);
+    setSfxPitch(id, getCurrentFieldMusic());
+    setSfxEntityType(id, 6);
+    setSfxReverbMode(id, D_800C526C[slotIdx].field03);
+
+    dim = func_8002E680(ptr);
+    hi = (u32)dim >> 16;
+    if (D_800C526C[slotIdx].field01 == 1) {
+        setRECT(&rect, D_800C526C[slotIdx].field04 - dim - 0x10, D_800C526C[slotIdx].field06, dim + 0x10, hi + 0x10);
+    } else if (D_800C526C[slotIdx].field01 == 0) {
+        setRECT(&rect, D_800C526C[slotIdx].field04, D_800C526C[slotIdx].field06, dim + 0x10, hi + 0x10);
+    } else if (D_800C526C[slotIdx].field01 == 2) {
+        setRECT(&rect, D_800C526C[slotIdx].field04 - ((s16)dim >> 1) - 8, D_800C526C[slotIdx].field06, dim + 0x10, hi + 0x10);
+    } else if (D_800C526C[slotIdx].field01 == 3) {
+        setRECT(&rect, D_800C526C[slotIdx].field04 - dim - 0x10, D_800C526C[slotIdx].field06 - hi - 0x10, dim + 0x10, hi + 0x10);
+    }
+    func_8002E064(id, &rect);
+    startSfxSlow(id);
+}
+
 
 /**
  * @brief Configure and start a positioned world-map SFX/voice clip on a slot.
@@ -445,9 +494,6 @@ void func_8009B550(s32 slotIdx, s32 strIdx, u8 *text, s32 arg3, s32 arg4, s32 ar
     startSfxSlow(id);
 }
 
-extern s32 D_800C4DBC;
-extern u32 D_800D2278[];
-extern void fadeOutSfxSlow(s32 idx);
 
 /**
  * @brief One-shot: silence the high SFX slots when a trigger fires.
@@ -495,7 +541,6 @@ void func_8009B748(void) {
     }
 }
 
-extern void initSfxPlayback(s32 index, u8 *data);
 
 /**
  * @brief Sync the world-map voice/SFX on channel 1 to the requested clip.
@@ -548,8 +593,6 @@ void func_8009B840(void) {
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009B954);
 
 /* Cached world-map scroll position, stored at HALF resolution (x, y). */
-extern s32 D_800C4DA0;
-extern s32 D_800C4DA4;
 
 /**
  * @brief Snap the cached scroll position to the nearest candidate vector.
@@ -586,18 +629,9 @@ void func_8009BFA0(DVECTOR *coords, s16 count) {
     coords--;
 }
 
-extern s16 D_800C977A;
-extern s16 D_800D239A;
-extern VECTOR D_800980DC;   /* constant view offset {0, 0, -0x1800, 0} */
-extern VECTOR D_800C9868;   /* source world position (transformed by func_800BC544) */
-extern MATRIX D_800C9838;   /* world-to-screen matrix loaded into the GTE */
-extern WorldPos D_800D23C0; /* composed camera/world position output */
 
-extern s32 func_800A00B4(s32 a, s32 b);
 /* func_800ACD38 is void func_800ACD38(s32) in we_object6; this call site sees an
    int-returning function (K&R-era view), which the matching codegen requires. */
-extern s32 func_800ACD38(MATRIX *out);
-extern void func_8003FD84(MATRIX *xform, VECTOR *in, VECTOR *out);
 
 /**
  * @brief Compose the world-map view transform and the resulting camera position.
@@ -633,28 +667,14 @@ void func_8009C070(void) {
         func_8003FD84(&D_800C9838, &localA, &localB);
     }
     D_800D23C0.z = 0;
-    D_800D23C0.x = D_800C9868.vx + localB.vx;
-    D_800D23C0.y = D_800C9868.vy + localB.vz;
+    D_800D23C0.x = D_800C9868.x + localB.vx;
+    D_800D23C0.y = D_800C9868.y + localB.vz;
     SetRotMatrix(&D_800C9838);
     SetTransMatrix(&D_800C9838);
 }
 
-extern VECTOR D_800C9748;   /* mirrored copy of the transformed position */
-extern AngleSlot D_800C97F4;
-extern CmdDesc *D_800C4D6C;
-extern s16 D_800C9E38[3];
 
-extern void func_800BC544(VECTOR *src, VECTOR *dst);
-extern s32 func_800A40F8(VECTOR *pos, VECTOR *out);
-extern CmdDesc *func_800A3870(VECTOR *v, AngleSlot *out);
 
-/* Projection scratch: func_800A40F8 writes @c proj and returns @c angle. The
-   trailing @c pad keeps the buffer 0x20 bytes (gcc reserves the full slot). */
-typedef struct {
-    VECTOR proj;
-    s16 angle;
-    s16 pad[7];
-} ProjBuf;
 
 /**
  * @brief Set up the world-to-screen transform and refresh the active command
@@ -673,7 +693,7 @@ void func_8009C1A4(void) {
     ProjBuf buf;
     CmdDesc *desc;
 
-    func_800BC544(&D_800C9868, &local);
+    func_800BC544((VECTOR *)&D_800C9868, &local);
     D_800C9748 = local;
     buf.angle = func_800A40F8(&local, &buf.proj);
     desc = func_800A3870(&local, &D_800C97F4);
@@ -692,15 +712,7 @@ void func_8009C1A4(void) {
     SetTransMatrix(&D_800C9838);
 }
 
-extern s32 D_800C9778[];     /* scratch buffer passed to the visibility check */
 
-extern s32 func_800BEC1C(s32 kind);
-extern s32 func_800A2D50(s32 a0, s32 a1, s32 *out, s32 a3, s32 a4, s32 a5);
-extern void func_8009D630(void);
-extern void func_800B3FD4(Slot *slot, s32 arg);
-extern void fadeOutSfxFast(s32 idx);
-extern void renderAndUpdateDisplay(s32 frames);
-extern s32 renderBattleDisplayList(s32 *colorTag);
 
 /**
  * @brief Tear down the current world-map scene and hand off for the given command.
@@ -750,7 +762,6 @@ void func_8009C294(s32 cmd) {
     renderBattleDisplayList(&D_800D244C->primList[BSC_COLORTAG_IDX]);
 }
 
-extern RECT D_800C8698;
 
 /**
  * @brief Variant of @c func_8009C5FC that overrides the first
@@ -801,8 +812,6 @@ void func_8009C528(s32 rc) {
     SystemError(0x57, rc);
 }
 
-extern void *memcpy(void *dst, const void *src, u32 n);
-extern u8 D_800980CC[]; /* "x:\USPC\WORLD" — dev-filesystem prefix (13 chars + NUL) */
 
 /**
  * @brief Rewrite an ISO9660 disc path into a dev-filesystem path.
@@ -879,9 +888,6 @@ void func_8009C5FC(s32 *src) {
     }
 }
 
-extern void sndSeqSetTempoAlt(s32 tempo);
-extern void sndSetMasterVolume(s32 vol);
-extern void sndCmdF1(void);
 
 /**
  * @brief Silence the audio subsystem: zero tempo, zero master volume, send cmd F1.
@@ -895,7 +901,6 @@ void func_8009C69C(void) {
     sndCmdF1();
 }
 
-extern void sndSetChannelVolume(s32 channel, s32 vol);
 
 /**
  * @brief Set a sound channel's volume, narrowing the volume arg to signed 8 bits.
@@ -911,8 +916,6 @@ void func_8009C6CC(s32 channel, s8 vol) {
     sndSetChannelVolume(channel, vol);
 }
 
-extern SeqEntry D_800C4FD8[];
-extern void sndSeqStartPan(s32 a0, s32 a1, s32 a2, s32 a3);
 
 /**
  * @brief Start a sound sequence with pan for entry @p idx of the table.
@@ -942,7 +945,6 @@ void func_8009C738(s32 idx) {
     D_800C4FD8[idx].field12 = 0;
 }
 
-extern void sndSeqPlayPan7bit(s32 a0, s32 a1, s32 a2, s32 a3);
 
 /**
  * @brief Start a panned sound sequence with a 7-bit-clamped pan value.
@@ -1004,8 +1006,6 @@ void func_8009C8CC(s32 val) {
     D_800C4FD5 = val;
 }
 
-extern POLY_FT4 D_800C8648[2]; /* double-buffered worldmap quad primitive */
-extern void func_8004D604(POLY_FT4 *prim, s32 frame);
 
 /**
  * @brief Build and queue a textured quad (@c POLY_FT4) for the world map.
@@ -1122,18 +1122,6 @@ s32 func_8009CA34(s32 *src, ImageDesc *desc) {
     return count;
 }
 
-/**
- * @brief 16-byte CD load list entry — NULL-terminated by @c marker = 0.
- *
- * @c marker holds an arbitrary non-zero value while the entry is live; the
- * walker stops on the first entry whose @c marker is 0.
- */
-typedef struct {
-    /* 0x00 */ s32 marker;
-    /* 0x04 */ u8 *dest;
-    /* 0x08 */ s32 lba;
-    /* 0x0C */ u32 size;
-} CdLoadEntry;
 
 /**
  * @brief Walk a NULL-terminated @ref CdLoadEntry list, issuing a @c cdRead
@@ -1178,11 +1166,6 @@ top:
 #define ID_LIST_MAX    2     /* id slots in the descriptor */
 #define ID_OFFSET      2     /* id bytes begin 2 into the descriptor */
 
-/** Section descriptor: provides the base sector that object ids index from. */
-typedef struct {
-    u8  pad0[8];
-    s32 baseLba; /* sector number of id 0; cdRead reads baseLba + id */
-} CdSection;
 
 /**
  * @brief Load up to two CD sectors named by an object descriptor.

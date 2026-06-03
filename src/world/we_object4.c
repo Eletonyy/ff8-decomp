@@ -2,6 +2,7 @@
 #include "battle.h"
 #include "psxsdk/libgpu.h"
 #include "world.h"
+#include "world/we_object4.h"
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A64DC);
 
@@ -49,7 +50,6 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A8270);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A8400);
 
-extern DR_MODE D_800D4FB0[2][96];
 
 /**
  * @brief Initialise two 96-slot DR_MODE pools with fixed tag fields.
@@ -77,8 +77,6 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A8A28);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A8C1C);
 
-extern POLY_FT4 D_800D88B0[2][64];
-extern TILE D_800DA8D0[2][64];
 
 /**
  * @brief Initialise three world-render pools in one go:
@@ -116,12 +114,14 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A9300);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A9CC0);
 
+/* Local byte-array view of the OT pools: world.h exposes D_800D3E50 /
+ * D_800D4090 as OTSlot-array macros (used above), but the loop below walks
+ * them as a flat u8[] at stride 0x18, so shadow the macros with the real
+ * linker symbols here. This #undef + extern pair must stay file-scope. */
 #undef D_800D3E50
 #undef D_800D4090
 extern u8 D_800D3E50[];
 extern u8 D_800D4090[];
-extern void func_800491E8(void *p);
-extern void func_80048C50(s32 arg);
 
 /**
  * @brief Initialise 8 sub-OT slots (4 from each of two pools) for the
@@ -148,8 +148,6 @@ void func_800A9E24(BattleSceneCtx *a0) {
     func_80048C50(0);
 }
 
-extern POLY_GT4 D_800D5A00[2][64];
-extern POLY_GT3 D_800D7400[2][64];
 
 /**
  * @brief Initialise two double-buffered prim pools with their tag headers.
@@ -195,16 +193,6 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AAEAC);
 
 
 
-
-/**
- * @brief 0x1C-byte prim link — first word is an addPrim-style P_TAG, the
- *        @c prim_len halfword at @c 0x1A is set to @c 0xC by the inserter.
- */
-typedef struct {
-    /* 0x00 */ s32 link;
-    /* 0x04 */ u8 pad04[0x16];
-    /* 0x1A */ s16 prim_len;
-} PrimLink;
 
 /**
  * @brief Set @p p's length to @c 0xC and splice it onto the

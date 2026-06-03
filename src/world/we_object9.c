@@ -1,40 +1,8 @@
 #include "common.h"
+#include "psxsdk/libc.h"
+#include "gamestate.h"
 #include "world.h"
-
-extern u8 g_gameState[];
-
-/* AngleSlot now lives in world.h */
-
-/* 16-byte position descriptor (first 12 bytes = vec3 used by spawner) */
-typedef struct {
-    u32       pad0;
-    AngleSlot pos;
-    u32       pad8;
-    u32       padC;
-} PosDesc;
-
-/* 8-byte unaligned velocity (copied via lwl/lwr to spawner's slot[0x18..0x1F]) */
-typedef struct {
-    u16 pad0;
-    u16 angle;
-    u16 height;
-    u16 pad6;
-} Velocity;
-
-/* Particle source: position + velocity (with 4-byte gap between). Stride 0x28. */
-typedef struct {
-    PosDesc  pos;
-    u32      pad10;
-    Velocity vel;
-} ParticleSource;
-
-extern AngleSlot D_800C97F4;
-extern s32       D_800C4D4C;
-extern s32       D_800C5B50;
-extern SlotEntry D_800DBFB8[];
-
-extern s32 func_8009CC3C(void);
-extern s32 func_800AC0A0(s32 type, PosDesc *pos, Velocity *vel, s32 flags);
+#include "world/we_object9.h"
 
 #define SPAWN_FLAG_LIFETIME_JITTER 1
 #define SPAWN_FLAG_SIZE_JITTER     2
@@ -374,7 +342,6 @@ void func_800BC09C(ParticleSource *src) {
  */
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object9", func_800BC218);
 
-extern void func_800BFFEC(void);
 
 /**
  * @brief Thin wrapper that forwards to func_800BFFEC with no arguments.
@@ -387,8 +354,6 @@ void func_800BC44C(void) {
     func_800BFFEC();
 }
 
-extern CmdDesc *D_800C4D64;
-extern u8      *D_800C96D0;
 
 /**
  * @brief Walk the cmd-stream at @c D_800C96D0 to extract a halfword into @p out.
@@ -438,17 +403,7 @@ void func_800BC544(VECTOR *src, VECTOR *dst) {
     dst->vz = -src->vy;
 }
 
-/** Two-word state blob assembled from @c D_800C9718 / @c D_800C9710. */
-typedef struct {
-    s32 a;
-    s32 b;
-} U64;
 
-extern s32 D_800C9718;
-extern s32 D_800C9710;
-extern s32 D_800C96CC;
-
-extern void func_800C2C00(s32 a, s32 b, s32 c, s32 d, s32 e, U64 *f, s32 g, U64 *h);
 
 /**
  * @brief Dispatch to @c func_800C2C00 with the current two-word state blob.
@@ -646,7 +601,6 @@ u8 *func_800BC82C(u8 *dst, s32 idx) {
     return dst;
 }
 
-extern u8 *func_800BC8D8(u8 *buf, s32 magicId);
 
 /**
  * @brief Zero-terminate buf and fill it with a magic spell's display name.
@@ -751,7 +705,6 @@ u8 *func_800BC974(u8 *dst, s32 num) {
     return dst;
 }
 
-extern u8 *func_800BC974(u8 *buf, s32 id);
 
 /**
  * @brief Zero-terminate buf and fill it with a name string via func_800BC974.
@@ -767,19 +720,7 @@ void func_800BCA54(u8 *buf, s32 id) {
     func_800BC974(buf, id);
 }
 
-/**
- * @brief Second relocatable offset-table pointing at template strings.
- *
- * Same layout as @c StringTable but used by @c func_800BCA74 for template
- * format strings containing @c 0x0A marker bytes.
- */
-typedef struct {
-    s32 offsets[1];
-} TemplateTable;
 
-extern TemplateTable *D_800C9FE8;
-
-extern void func_80047C74(u8 *dst, u8 *src);
 
 /**
  * @brief Format a template string with up to four parameter substitutions.
@@ -911,7 +852,6 @@ u8 *func_800BCC70(u8 *dst, s32 idx, u8 *p1, u8 *p2, u8 *p3, u8 *p4) {
     return dst;
 }
 
-extern u8 *getStatName(s32 statId);
 
 /**
  * @brief Append a stat-name string to @p dst (strcat variant).
@@ -954,7 +894,6 @@ u8 *func_800BCE74(u8 *dst, s32 statId) {
     return dst;
 }
 
-extern u8 *func_800BCE74(u8 *buf, s32 statId);
 
 /**
  * @brief Zero-terminate buf and fill it with a stat name via func_800BCE74.
@@ -970,8 +909,6 @@ void func_800BCF10(u8 *buf, s32 statId) {
     func_800BCE74(buf, statId);
 }
 
-/** @brief 3D vector used by func_800BCF30's angle-to-position conversion. */
-typedef struct { s32 x, y, z; } Vec3;
 
 /**
  * @brief Convert a 16-bit angle into a Vec3 position on a 128x48 tile grid.
@@ -1007,33 +944,7 @@ void func_800BCF30(s32 angle, Vec3 *out) {
     }
 }
 
-/** Lookup table entry: matches an (id, param) pair. */
-typedef struct {
-    s16 id;
-    u8 param;
-    u8 pad3;
-} LookupEntry;
 
-/** Range into the lookup-entry pool (offsets from blob base). */
-typedef struct {
-    s32 start_off;
-    s32 end_off;
-} SubRange;
-
-/** Scatter table: 5-bit scatter key -> up to 4 sub-range indices. */
-typedef struct {
-    s8 ranges[4];
-} ScatterEntry;
-
-/** Lookup blob at @c D_800C96F8: range directory, entry-pool offset, then pool. */
-typedef struct {
-    SubRange ranges[5];       /* 0x00: table ranges, indexed by scatter entry */
-    s32      entry_base_off;  /* 0x28: offset from blob base to first pool entry */
-} LookupBlob;
-
-extern u8 D_800D2440;                 /* scatter key (5 bits) */
-extern ScatterEntry D_800C5D70[];     /* scatter table, 32 entries */
-extern LookupBlob *D_800C96F8;        /* pointer to lookup blob */
 
 /**
  * @brief Look up an (id, param) pair in a scattered multi-subtable index.
@@ -1073,7 +984,6 @@ s32 func_800BCF84(s32 id, s32 param) {
     return -1;
 }
 
-extern u32 D_80077E84;
 
 /** Checks if a counter has reached threshold 0xBB8. */
 s32 func_800BD040(void) {
@@ -1084,7 +994,7 @@ s32 func_800BD040(void) {
  * @brief Subtract a clamped value from the HP-like counter at g_gameState+0xB0C.
  */
 s32 func_800BD058(s32 amount) {
-    s32 base = (s32)g_gameState;
+    s32 base = (s32)&g_gameState;
     s32 max;
 
     if (amount >= 0) {
@@ -1099,11 +1009,7 @@ s32 func_800BD058(s32 amount) {
     return amount;
 }
 
-extern s32 D_800C4D38;
 
-extern s32 func_800A4670(u32 a, s32 b);
-extern s32 func_800A358C(s32 a, SlotEntry *b, u8 *c, s32 d);
-extern s32 func_800B00D8(s32 a);
 
 /**
  * @brief Test if a candidate slot fits the current command and insert it.
@@ -1148,18 +1054,7 @@ s32 func_800BD09C(SlotEntry *slot, s32 arg1, CmdDesc *cmd, s32 worldAngle) {
     return 0;
 }
 
-extern s32      D_800C4DC8;
-extern s32      D_800C4D38;
-extern s32      D_800C4D3C;
-extern u8       D_800C9770[0x10];
-extern WorldPos D_800C9868;
-extern VECTOR   D_800DD680;
-extern u8       D_800DD690[8];
-extern s32      D_800DD698;
-extern s32      D_800DD69C;
 
-extern void func_800A40F8(VECTOR *src, u8 *dst);
-extern void *memcpy(void *dst, const void *src, u32 n);
 
 /**
  * @brief Initialize scene-relative state from the template at @c D_800DD680 et al.
@@ -1207,9 +1102,7 @@ void func_800BD22C(VECTOR *src, u8 *rot, s32 cmd, s32 cmd2) {
     D_800DD69C = cmd2;
 }
 
-extern s32 D_800C5C2C;
 
-extern s32 func_800A5DC8(s32 x, s32 y);
 
 /**
  * @brief Compute two coarse-angle outputs for the current active slot.
@@ -1253,7 +1146,6 @@ s32 func_800BD2A0(s16 *outLow, s16 *outHigh) {
     return result;
 }
 
-extern s32 D_800C5C28;
 
 /**
  * @brief Twin of @c func_800BD2A0 that reads the secondary slot index.
@@ -1295,7 +1187,6 @@ s32 func_800BD380(s16 *outLow, s16 *outHigh) {
     return result;
 }
 
-extern s32 D_800C5C24;
 
 /**
  * @brief Third variant of the slot angle splitter, sourcing @c D_800C5C24.
@@ -1332,7 +1223,6 @@ s32 func_800BD460(s16 *outLow, s16 *outHigh) {
     return result;
 }
 
-extern s32 D_800C971C;
 
 /**
  * @brief Populate @c field46 from one of two selector tables based on mode.
@@ -1371,16 +1261,6 @@ void func_800BD540(Entity *e) {
     }
 }
 
-/**
- * @brief 32-byte record with two signed sentinel bytes near its tail.
- */
-typedef struct {
-    u8  pad00[3];
-    u8  byte3;          /**< 0x03: zone byte, must be 1 or 2 for a match. */
-    u8  pad04[0x1A];
-    s8  sb1E;           /**< 0x1E: signed sentinel byte (-1 = open slot). */
-    s8  sb1F;           /**< 0x1F: signed marker byte (0, 1, ...). */
-} SlotTarget;
 
 /**
  * @brief Classify a @c SlotTarget against an expected @p kind.

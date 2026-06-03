@@ -40,10 +40,9 @@ VSync = 0x80042634;
 MoveImage = 0x80048FBC;
 ClearImage = 0x80048DD4;
 
-/* Data blobs in bin section that are called/referenced by real code */
-func_800C4CA4 = 0x800C4CA4;
-func_800C5D58 = 0x800C5D58;
-func_800C5DD8 = 0x800C5DD8;
+/* Data blobs in bin section that are called/referenced by real code.
+   (D_800C4CA4 / D_800C5D58 / D_800C5DD8 are auto-named data; see
+    undefined_syms_auto.world.txt — no duplicate func_ alias needed.) */
 func_800A5F78 = 0x800A5F78;
 func_800B3FD4 = 0x800B3FD4;
 

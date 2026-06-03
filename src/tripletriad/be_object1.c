@@ -11,19 +11,7 @@ typedef struct {
     s32 offset;
 } ResHeader;
 
-/** @brief PsyQ TIM image block (CLUT or image): block-length + RECT + pixel data. */
-typedef struct {
-    s32  blockLength;   /**< Total bytes including this field. */
-    RECT rect;          /**< VRAM target/source rectangle. */
-    u32  data[1];       /**< Pixel data (variable). */
-} TIM_BLOCK;
-
-/** @brief PsyQ TIM file: id+flag header followed by CLUT then image block. */
-typedef struct {
-    u32       id;       /**< Magic 0x10. */
-    u32       flag;     /**< bpp + CLUT-present flag. */
-    TIM_BLOCK clut;     /**< CLUT block; image block follows in memory. */
-} TIM;
+/* TIM file structs (Tim / TimSection) come from tim.h via battle.h. */
 
 /** @brief Deferred VRAM transfer dispatched by @c func_800988E0. */
 typedef enum {
@@ -339,12 +327,12 @@ void func_800988E0(void) {
                 LoadImage(&p->rect, p->src);
                 break;
             case POOL_LOAD_TIM: {
-                TIM *tim = p->src;
-                TIM_BLOCK *image;
+                Tim *tim = p->src;
+                TimSection *image;
                 LoadImage(&tim->clut.rect, tim->clut.data);
                 /* Re-derive image block from p->src (not cached @c tim) so gcc
                    reloads the pointer — matches the original instruction order. */
-                image = (TIM_BLOCK *)((u8 *)&((TIM *)p->src)->clut + tim->clut.blockLength);
+                image = (TimSection *)((u8 *)&((Tim *)p->src)->clut + tim->clut.len);
                 LoadImage(&image->rect, image->data);
                 break;
             }

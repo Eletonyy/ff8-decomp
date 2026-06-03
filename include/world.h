@@ -5,6 +5,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 #include "battle.h"
+#include "sound.h"
 
 /** @brief World-map tile size in world units (one tile = 2048 units). */
 #define WORLD_TILE_SIZE 2048
@@ -179,6 +180,75 @@ extern s32 D_800C9878;
 extern s16 D_800C987C;
 extern u8  D_800D23D8[];
 extern s32 D_800DCB48;
+
+/**
+ * @brief 8-byte world-transform block — four packed halfwords.
+ *
+ * Every field is read/written as @c lh / @c sh at a fixed offset. Only
+ * @c angle has an identified role (input to rotation helper @c func_800A00B4).
+ */
+typedef struct {
+    /* 0x00 */ s16 unk0;
+    /* 0x02 */ s16 angle;
+    /* 0x04 */ s16 unk4;
+    /* 0x06 */ s16 unk6;
+} WorldXformBlock; /* 0x08 */
+
+/**
+ * @brief 16-byte world-transform record at @c D_800D2390 (pair of blocks).
+ *
+ * @c head occupies the first 8 bytes and @c tail the last 8. @c func_800ACD38
+ * snapshots @c tail, adjusts its @c angle, and forwards the modified copy.
+ */
+typedef struct {
+    /* 0x00 */ WorldXformBlock head;
+    /* 0x08 */ WorldXformBlock tail;
+} WorldXform; /* 0x10 */
+
+/* Shared world-overlay state referenced by more than one we_object*.c.
+ * Consolidated here so each symbol has a single canonical declaration.
+ * (Cross-overlay main-binary symbols D_800780D8 and g_fieldVars are owned
+ * by field.h / gamestate.h respectively and are not redeclared here.) */
+extern s32            D_8005F138;        /**< Active display-env window (holds a DISPENV*). */
+extern SceneState     D_80082C8C;       /**< Scene-state block (mode/cmd/markers). */
+extern s32            D_800C4D20;
+extern s32            D_800C4D38;        /**< World dispatch code / map id. */
+extern s32            D_800C4D3C;
+extern s32            D_800C4D4C;
+extern WorldSection  *D_800C4D5C;        /**< World data region table base (stride 0x9000). */
+extern u16            D_800C4D60;
+extern CmdDesc       *D_800C4D64;        /**< Active command descriptor (slot 0). */
+extern CmdDesc       *D_800C4D74;        /**< Active command descriptor (slot 1). */
+extern s32            D_800C4D84;
+extern s32            D_800C4D88;
+extern s32            D_800C4DA8;
+extern s32            D_800C4DAC;
+extern s32            D_800C4DB0;
+extern s32            D_800C4DB4;
+extern s32            D_800C4DBC;
+extern SeqEntry       D_800C4FD8[];      /**< Sequence/SFX clip table. */
+extern SfxSlot        D_800C526C[];      /**< Active SFX voice slots. */
+extern s16            D_800C53C4[];      /**< Per-map halfword param table. */
+extern s16            D_800C53D0[];
+extern s16            D_800C53DC[];
+extern s16            D_800C53E4[];
+extern s16            D_800C53EC[];
+extern u8            *D_800C96D0;
+extern s32            D_800C9710;
+extern s16            D_800C977A;
+extern AngleSlot      D_800C97F4;        /**< Camera angle slot (word/half view). */
+extern MATRIX         D_800C9838;        /**< World-to-screen matrix loaded into the GTE. */
+extern WorldPos       D_800C9868;        /**< Source camera world position (cast to VECTOR* for GTE transform func_800BC544). */
+extern s16            D_800D239A;
+extern u8             D_800C5398[];      /**< 4-byte flag block. */
+extern s32            D_800C9718;
+extern s16            D_800C97E8;        /**< Worldmap screen height reference. */
+extern s16            D_800C97EA;        /**< Worldmap screen width reference. */
+extern SVECTOR        D_800C97F8[2];     /**< Composed rotation pair fed to func_800ACC68. */
+extern WorldXform     D_800D2390;        /**< World-transform record (16 bytes). */
+extern WorldPos       D_800D23C0;        /**< Composed camera/world position output. */
+extern u8             D_800D2440;        /**< Scatter key (5 bits). */
+extern SlotEntry      D_800DBFB8[];       /**< Battle/world slot table (stride 0x28). */
 
 /**
  * @brief Struct view over @c D_800D23D8 (world-state flag buffer).

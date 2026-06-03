@@ -1,18 +1,14 @@
 #include "common.h"
 #include "battle.h"
 #include "field.h"
+#include "gamestate.h"
 #include "sound.h"
+#include "btl_sfx.h"
 #include "world.h"
-
-extern u8 D_800780D8[];
-extern u8 D_800D23D8[];
-extern FieldVars *g_fieldVars;
-extern s32 D_800C9E68;
-extern s32 D_800C9E70;
+#include "world/we_object2.h"
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009CCE8);
 
-extern s32 sndCmd1A(s32 a0, s32 a1, s32 a2);
 
 /**
  * @brief Dispatch SPU cmd 0x1A with (@p a0, 0x78, @p val), stash return as handle.
@@ -68,11 +64,6 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009CE70);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009CFB4);
 
-extern s32 D_8005F138;
-
-extern void VSync(s32 mode);
-extern void func_800A5F78(s32 screen);
-extern void func_800A5FD4(s32 screen);
 
 /**
  * @brief Vsync, scroll any partial display window back to origin, then
@@ -111,9 +102,6 @@ void func_8009D0F0(void) {
     DrawSync(0);
 }
 
-extern SeqEntry D_800C4FD8[];
-extern void func_80099EDC(s32 idx);
-
 /**
  * @brief If sequence @p idx isn't already running, kick it off via func_80099EDC.
  *
@@ -151,10 +139,6 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D214);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D2D8);
 
-extern SceneState D_80082C8C;
-extern u8 D_800C4D38;
-extern void func_800B3FD4(Slot *a0, s32 a1);
-extern void func_8009D630(void);
 
 /**
  * @brief Reset the scene state block and kick off the scene loader.
@@ -174,12 +158,6 @@ void func_8009D3F4(void) {
     func_800B3FD4(D_800D226C, 5);
 }
 
-extern s16 D_800C8CEA;
-extern BattleSceneCtx *D_800D244C;
-extern SfxSlot D_800C526C[];
-extern void fadeOutSfxFast(s32 sfx);
-extern void renderAndUpdateDisplay(s32 mode);
-extern s32 renderBattleDisplayList(s32 *colorTag);
 
 /**
  * @brief Enter scene mode @c 3 with a packed @c marker, then mass-reset
@@ -217,9 +195,6 @@ void func_8009D44C(s32 marker) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D510);
 
-extern s32 D_800C4D84;
-extern s32 D_800C4D88;
-extern void func_800C4450(void);
 
 /**
  * @brief Tear down the active session tracked by D_800C4D84/D_800C4D88.
@@ -244,14 +219,6 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009D688);
 /**
  * @brief 4-byte slot (two halfwords). Default value is two @c -1s.
  */
-typedef struct {
-    s16 a;
-    s16 b;
-} HalfwordPair;
-
-extern s32 func_800BD380(s16 *outLow, s16 *outHigh);
-extern s32 func_800BD2A0(s16 *outLow, s16 *outHigh);
-extern s32 func_800BD460(s16 *outLow, s16 *outHigh);
 
 /**
  * @brief Fill three adjacent @ref HalfwordPair slots from three lookup
@@ -316,8 +283,6 @@ void func_8009D840(s32 a0) {
     *(u8 *)(a0 + (s32)base2 + 0x6B) = 0;
 }
 
-extern SfxSlot D_800C526C[];
-extern s32 func_8002CE84(s32 idx);
 
 /**
  * @brief Dispatch a table-driven SFX slot cleanup if the slot is active.
@@ -333,7 +298,6 @@ void func_8009D864(s32 idx) {
     }
 }
 
-extern void fadeOutSfxSlow(s32 idx);
 
 /**
  * @brief Fade out the SFX referenced by slot @p idx and mark the slot inactive.
@@ -373,10 +337,6 @@ void func_8009D8F0(void) {
     }
 }
 
-extern BattleSceneCtx *D_800D244C;
-extern void fadeOutSfxFast(s32 idx);
-extern void renderAndUpdateDisplay(s32 frameCount);
-extern s32 renderBattleDisplayList(s32 *colorTag);
 
 /**
  * @brief Hard tear-down: fade every @c D_800C526C SFX slot fast, then push
@@ -403,7 +363,6 @@ void func_8009D954(void) {
     renderBattleDisplayList(&D_800D244C->primList[BSC_COLORTAG_IDX]);
 }
 
-extern s32 getSfxField28(s32 idx);
 
 /**
  * @brief Return whether SFX slot @p idx is active AND its SFX has pending state.
@@ -443,7 +402,6 @@ s32 func_8009DA10(void) {
     return -1;
 }
 
-extern KeyBuffer *D_800C9880;
 
 /**
  * @brief Linear-search the D_800C9880 key table for an entry with matching @p key.
@@ -577,7 +535,6 @@ void func_8009FE80(SVECTOR *a0, MATRIX *a1) {
     SetLightMatrix(&m);
 }
 
-extern s32 func_800A017C(SVECTOR *v);
 
 /**
  * @brief Forward @p vec to func_800A017C, ignoring the first arg register.
@@ -637,9 +594,6 @@ s32 func_8009FF0C(s32 mapId, s32 mode) {
     return mode == 1 ? 0x280 : 1;
 }
 
-extern u16 D_800C5354[3];
-extern u16 D_800C535C[3];
-extern u16 D_800C5364[3];
 
 /**
  * @brief Copy a per-map 3-halfword parameter triple into @p out, keyed by
@@ -681,8 +635,6 @@ void func_8009FF70(s32 mapId, s32 mode, u16 *out) {
     out[2] = src[2];
 }
 
-extern s16 D_800C534C;
-extern s16 D_800C5344;
 
 /**
  * @brief Pick a per-map screen-scroll offset, with special handling for

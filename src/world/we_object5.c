@@ -1,5 +1,6 @@
 #include "common.h"
 #include "world.h"
+#include "world/we_object5.h"
 #include "battle.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
@@ -32,11 +33,6 @@
  *                both kinds (kind 0 first, then kind 1).
  *
  */
-extern POLY_FT4     D_800D8810[2];
-extern POLY_FT4     D_800D8860[2];
-extern s16          D_800C977A;
-extern s16          D_800D239A;
-extern s32          D_800D23D0;
 
 void func_800AB540(s32 screenX, s32 screenY, s32 mode) {
     MATRIX    m;
@@ -162,31 +158,7 @@ void func_800AB540(s32 screenX, s32 screenY, s32 mode) {
  */
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object5", func_800AB8C0);
 
-/**
- * @brief 36-byte prim slot used by @c D_800D4F10[4] — P_TAG header followed
- *        by a 28-byte payload. Seeded with @c len=8 (8-word body) and
- *        @c code=0x38 by @ref func_800ABC98.
- */
-typedef struct {
-    /* 0x00 */ P_TAG tag;
-    /* 0x08 */ u8 pad08[0x1C];
-} Prim36;
 
-/**
- * @brief 8-byte short DR_MODE-like used by @c D_800D4FA0[2] — a P_TAG word
- *        (containing @c len) followed by a single GPU command word.
- */
-typedef struct {
-    /* 0x00 */ u32 tag;   /**< P_TAG-compatible: addr:24 + len:8. */
-    /* 0x04 */ u32 cmd;   /**< Raw GP0 command word (e.g. @c 0xE1000220 TPAGE). */
-} DrSetMode8;
-
-extern Prim36     D_800D4F10[4];
-extern DrSetMode8 D_800D4FA0[2];
-extern u8         D_800C5448[];
-extern u8         D_800DB0D0[];
-
-extern void func_800A84D0(void);
 
 /**
  * @brief Seed three world-render prim pools and kick off the DR_MODE
@@ -242,7 +214,6 @@ void func_800ABC98(void) {
     func_800A84D0();
 }
 
-extern POLY_FT4 D_800D4EC0[2];
 
 /**
  * @brief Initialise the two-element @c POLY_FT4 prim pool at
@@ -289,8 +260,6 @@ void func_800ABD54(void) {
     } while (i < 2);
 }
 
-extern CVECTOR D_8009811C;
-extern s32 func_8003F9F4(CVECTOR *input, CVECTOR *cue, s32 w1, s32 w2, CVECTOR *out);
 
 /**
  * @brief Per-pixel depth-cued shade-and-pack — feed each @c CVECTOR
@@ -352,7 +321,6 @@ void func_800ABDD8(CVECTOR *input, u16 *output, s32 z, s16 count) {
     }
 }
 
-extern MATRIX D_800C9838;
 
 /**
  * @brief Project 4 SVECTORs through (custom rot+trans) × (camera) to screen.
@@ -405,7 +373,6 @@ void func_800ABEF0(SVECTOR *src, SVECTOR *rot, SVECTOR *trans,
     gte_stotz(outOTZ);
 }
 
-extern s32 func_8009CC3C(void);
 
 /**
  * @brief Spawn an inactive slot in the @c D_800D9CB0 particle pool.
@@ -485,9 +452,6 @@ s32 func_800AC0A0(s32 type, VECTOR *pos, SVECTOR *vec, u16 flags) {
     slot->proj_z = (s16)projected.vz;
 }
 
-extern s32 D_800D23D0;
-extern void func_80048FBC(RECT *r, s32 src_x, s32 src_y);
-extern s32  func_80048C50(s32 arg);
 
 /**
  * @brief Stream two consecutive 8x32 sprite slots into VRAM, advancing
@@ -531,9 +495,6 @@ void func_800AC2B8(void) {
     func_80048C50(0);
 }
 
-extern s16 D_800C53B8[];
-extern s16 D_800C53C4[];
-extern s16 D_800C53D0[];
 
 /**
  * @brief Sibling of @ref func_800AC3EC for a different table triple —
@@ -557,9 +518,6 @@ s32 func_800AC370(s32 idx, s32 divisor, s32 use_alt) {
     return (D_800C53D0[idx] - D_800C53B8[idx]) / divisor;
 }
 
-extern s16 D_800C53DC[];
-extern s16 D_800C53E4[];
-extern s16 D_800C53EC[];
 
 /**
  * @brief Per-axis tile delta between two map-layout tables, scaled by
@@ -584,41 +542,7 @@ s32 func_800AC3EC(s32 idx, s32 divisor, s32 use_alt) {
     return (D_800C53E4[idx] - D_800C53EC[idx]) / divisor;
 }
 
-extern s32  func_8003F4A4(s32 a);
-extern s32  func_80041E84(s32 y, s32 x);
-extern s32  func_800A40F8(VECTOR *pos, SVECTOR *out_buf);
-extern s32  func_800A4700(s32 a, s32 b);
-extern s32  func_800A475C(s32 a, s32 b);
-extern s32  func_800A5DC8(s32 x, s32 y);
-extern void func_800423DC(VECTOR *a, s32 *b_pos, VECTOR *out);
-extern void func_800ACC68(MATRIX *out_mat, SVECTOR *angles,
-                          SVECTOR *rotBuf, SVECTOR *offset);
-extern void func_800B5C60(s32 ctx, s16 count, MATRIX *outMat, SVECTOR *outAngles,
-                          SVECTOR *rotBuf, u8 *xform, ActorRecord *recs);
-extern void func_800BC51C(VECTOR *src, VECTOR *dst);
-extern void func_800BC544(VECTOR *src, VECTOR *dst);
 
-extern VECTOR   D_800C9858;     /* live camera world position (VECTOR view)     */
-extern WorldPos D_800C9868;     /* target/previous camera world position        */
-extern SVECTOR  D_800C97F8[2];  /* composed rotation pair fed to func_800ACC68  */
-extern u8       D_800D2390[];   /* world transform buffer (passed by address)   */
-extern VECTOR   D_800DD658;     /* source position for func_800BC51C            */
-extern VECTOR   D_800DB0E8;     /* translation reference for func_800423DC       */
-extern s32      D_800C4D38;     /* world dispatch code                          */
-
-/**
- * @brief Per-frame world-view transform record: an actor's offset/angles
- *        inputs followed by its composed rotation matrix output.
- *
- * @c func_800AC468 reads @c offset / @c angles and writes @c matrix; its two
- * pointer params normally alias the same actor record. The layout mirrors
- * the leading 0x30 bytes a world actor reserves for its camera transform.
- */
-typedef struct {
-    /* 0x00 */ SVECTOR offset;
-    /* 0x08 */ SVECTOR angles;
-    /* 0x10 */ MATRIX  matrix;
-} WorldViewXform;  /* 0x30 */
 
 /**
  * @brief Update a world actor's view rotation matrix for the current frame.
@@ -663,7 +587,7 @@ void func_800AC468(void *unused_a0, WorldViewXform *oa, WorldViewXform *mh, s32 
 
     if (mode == 0 && D_800C9878 != 0) {
         func_800B5C60(D_800C9878, D_800C987C, &mh->matrix, &oa->angles,
-                      D_800C97F8, D_800D2390,
+                      D_800C97F8, (u8 *)&D_800D2390,
                       ((WorldFlags *)D_800D23D8)->opParam == 4 ? &D_800DD6A8[1]
                                                               : &D_800DD6A8[0]);
         D_800C987C++;
@@ -848,20 +772,6 @@ void func_800AC9F4(SVECTOR *out, s16 x, s16 z) {
 
 void func_800ACB70(s16 angle, VECTOR *out);   /* forward — defined below func_800ACA70. */
 
-/**
- * @brief 32-byte input passed to @ref func_800ACA70. Contains two
- *        16-byte halves: a 4-word @c a block (opaque, forwarded as-is
- *        to @c func_800423DC) and a @c b block whose first u32 is
- *        kept while the trailing 3 s32s are negated to invert a
- *        position before the call.
- */
-typedef struct {
-    /* 0x00 */ VECTOR a;       /**< Opaque 16-byte block, passed through. */
-    /* 0x10 */ s32    b_pre;   /**< Untouched (likely a tag / mode byte). */
-    /* 0x14 */ s32    b_x;     /**< Negated before @c func_800423DC. */
-    /* 0x18 */ s32    b_y;     /**< Negated. */
-    /* 0x1C */ s32    b_z;     /**< Negated. */
-} Input32;
 
 /**
  * @brief Combine a transformed @ref Input32 with the camera-angle world

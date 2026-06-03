@@ -2,17 +2,10 @@
 #include "battle.h"
 #include "gamestate.h"
 #include "world.h"
+#include "world/we_object10.h"
 
-extern u8 D_800786D8;
-extern u8 D_800780D8[];
-extern u8 D_800DCE78[];
-extern SlotEntry D_800DBFB8[];
-extern s32 D_800C5B50;
 
-extern void func_800BAC84(u8 *p);
-extern s32 func_800BA870(u8 *p);
 
-extern s32 func_800B0010(void);
 
 /**
  * @brief Search @c D_800DBFB8 for the slot whose @c marker matches the
@@ -69,7 +62,6 @@ s32 func_800BD754(s32 target) {
     return -1;
 }
 
-extern CmdDesc *D_800C4D64;
 
 /**
  * @brief Scale @p amount based on the current command's type byte.
@@ -177,8 +169,6 @@ s32 func_800BD998(u32 mapId) {
     if (mapId == 0x31) return 0x78;
 }
 
-extern CmdDesc *D_800C4D74;
-extern s32 D_800C5DAC;
 
 /**
  * @brief Tick @c D_800C5DAC down by @c 0x10, clamped to @c [0, @c 0x40],
@@ -275,7 +265,6 @@ s32 func_800BDAE4(s32 pos, s32 radius) {
     return result;
 }
 
-extern void func_800AC0A0(s32 marker, VECTOR *position, SVECTOR *vec, s32 zero);
 
 /**
  * @brief Snapshot an 8-byte payload from @p input, nudge its halfword
@@ -320,8 +309,6 @@ void func_800BDB5C(u8 *input, s32 flag, s32 mode) {
     func_800AC0A0(marker, (VECTOR *)input, (SVECTOR *)buf, 0);
 }
 
-extern void *func_80047CE4(void *dst, s32 c, u32 n);
-extern s32 func_8009CC3C(void);
 
 /**
  * @brief Emit @c unitCount*8 randomized samples around the @p target via
@@ -352,7 +339,6 @@ void func_800BDBE0(u8 *target, s32 unitCount) {
     }
 }
 
-extern s32 D_800C4D4C;
 
 /**
  * @brief Visibility-gated double emit: snapshot @p input+0x14 twice and
@@ -426,7 +412,6 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BDEF4);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE040);
 
-extern LookupTarget *D_800DDB00[];
 
 /**
  * @brief Fetch the @c field52 halfword of the lookup target for slot @p idx.
@@ -521,7 +506,6 @@ void func_800BE4D8(s32 *a, s32 *b, s32 t, s32 *out) {
     out[2] = b[2] + (val >> 12);
 }
 
-extern s32 ratan2(s32 y, s32 x);
 
 /**
  * @brief Convert a direction vector to (pitch, yaw, 0) Euler angles.
@@ -546,11 +530,6 @@ void func_800BE578(SVECTOR *dir, SVECTOR *out) {
     out->vz = 0;
 }
 
-/** @brief 32-byte record used by func_800BE5F8's table walker. */
-typedef struct {
-    s16 marker;         /**< 0x00: Scan terminator (-1 = end, -2 = continuation). */
-    u8 pad02[0x1E];     /**< 0x02: Rest of the record — payload not yet mapped. */
-} Record;
 
 /**
  * @brief Walk a table of Records to the first -1/-2 marker and return context.
@@ -602,35 +581,7 @@ s32 func_800BE63C(s32 reset) {
     return result;
 }
 
-/**
- * @brief 0x34-byte transform entry — only the snapshot pair at @c 0x20
- *        and @c 0x28 is mapped here. The trailing fields are consumed
- *        by the per-entry handler @c func_800AEB58.
- */
-typedef struct {
-    /* 0x00 */ u8 pad0[0x20];
-    /* 0x20 */ s32 prevWord;    /**< Snapshot of @c currWord, refreshed each tick. */
-    /* 0x24 */ s32 currWord;
-    /* 0x28 */ u16 prevHalf;    /**< Snapshot of @c currHalf. */
-    /* 0x2A */ u16 currHalf;
-    /* 0x2C */ u8 pad2C[0x8];
-} XformEntry; /* 0x34 */
 
-/**
- * @brief Header for the transform-entry table walked by @c func_800BE69C.
- *
- * Only the @c count byte at @c 0x02 and the @c entries pointer at
- * @c 0x18 are mapped — the surrounding padding holds fields used by
- * other handlers in the same overlay.
- */
-typedef struct {
-    /* 0x00 */ u8 pad0[2];
-    /* 0x02 */ s8 count;
-    /* 0x03 */ u8 pad3[0x15];
-    /* 0x18 */ XformEntry *entries;
-} XformGroup;
-
-extern void func_800AEB58(XformEntry *entry, XformGroup *group);
 
 /**
  * @brief Snapshot each entry's @c curr fields into @c prev and invoke
@@ -662,17 +613,7 @@ void func_800BE69C(XformGroup *group) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BE720);
 
-#define OBJ_SLOT_COUNT 0x40 /* id slots scanned */
-#define FIRST_OBJ_ID   0x40 /* ids below this are skipped */
-#define OBJ_LIST_END   0xFF /* terminator id */
 
-/** Object-id list: a 6-byte header followed by a 0xFF-terminated id array. */
-typedef struct {
-    u8 header[6];           /* header (purpose not yet identified) */
-    u8 ids[OBJ_SLOT_COUNT]; /* object ids present in this list */
-} WorldObjList;
-
-extern void func_8009C5FC(s32 *data);
 
 /**
  * @brief Load each unique object referenced by an object-id list.
@@ -724,9 +665,6 @@ next:
 done:;
 }
 
-extern void func_800BC51C(VECTOR *src, VECTOR *dst);
-extern void func_800BC544(VECTOR *src, VECTOR *dst);
-extern void func_800A40F8(VECTOR *src, u8 *dst);
 
 /**
  * @brief Pick a rotation source from a one-byte selector, copy/negate via
@@ -758,8 +696,6 @@ void func_800BE8B0(u8 *byteIn, VECTOR *transform, u8 *output) {
     func_800A40F8(&buf, output);
 }
 
-extern u8 *D_800C9E34;
-extern ScriptOp *func_800AF004(u8 *base, s32 flag);
 
 /**
  * @brief Walk the @c D_800C9E34 script and return the last
@@ -802,8 +738,6 @@ s32 func_800BE958(void) {
     return result;
 }
 
-extern void func_8009B358(s32 a0, s32 a1, s32 a2);
-extern void func_8009D8A8(s32 a0);
 
 /**
  * @brief Dispatch to one of two kind-2 handlers based on sign of @p arg.
@@ -824,11 +758,6 @@ void func_800BE9F8(s32 arg) {
     }
 }
 
-extern s32 D_800C5D54;
-extern void func_80048C50(s32 a0);
-extern void fadeOutSfxFast(s32 idx);
-extern void renderAndUpdateDisplay(s32 frameCount);
-extern s32 renderBattleDisplayList(s32 *colorTag);
 
 /**
  * @brief Tear down the battle scene: clear state flag, fade SFX, render two frames.
@@ -848,8 +777,6 @@ void func_800BEA34(void) {
     renderBattleDisplayList(&D_800D244C->primList[BSC_COLORTAG_IDX]);
 }
 
-extern s32 D_800C4D38;
-extern s32 D_800C5C1C;
 
 /**
  * @brief Pick a per-map screen/mode constant keyed off @c D_800C4D38.
@@ -881,12 +808,6 @@ s32 func_800BEA7C(void) {
     return -1;
 }
 
-extern s32 D_800C5C18;
-extern s32 D_800C5C20;
-extern s32 D_800C5C24;
-extern s32 D_800C5C28;
-extern s32 D_800C5C2C;
-extern s32 D_800C5C30;
 
 /**
  * @brief Check if @p val matches any of the 7 entries in the
@@ -1009,11 +930,6 @@ s32 func_800BED90(s32 *outIndex, s32 *outCount) {
     return found;
 }
 
-extern s32 D_800C4DA8;
-extern s32 D_800C4DAC;
-extern s32 D_800C4DB0;
-extern s32 D_800C4DB4;
-extern u8 *D_800C96D0;
 
 /**
  * @brief Scan the @c D_800C96D0 script for non-control opcodes and snapshot
@@ -1063,7 +979,6 @@ s32 func_800BEDF0(u8 *output) {
 void func_800BEECC(void) {
 }
 
-extern s32 func_800A358C(s32 a0, void *a1, void *a2, s32 a3);
 
 /**
  * @brief When dialogue-mode 0xD is pending and the current scene is active,
@@ -1128,7 +1043,7 @@ s32 func_800BEF6C(void) {
 
 /** Checks two flag bits and returns status. */
 s32 func_800BEFC4(void) {
-    u8 val = D_800786D8;
+    u8 val = g_chocoboWorld;
     s32 result = 0;
     if (val & 1) {
         s32 bit = val & 2;
