@@ -13,6 +13,11 @@ It exits non-zero when it finds any of:
   D. The same physical symbol (address) declared with different names across
      the splat configs (symbol_addrs.* / undefined_syms*.*).
   E. The same data symbol declared with conflicting types across headers.
+  F. The same function prototype declared in more than one header within a
+     scope (R1: one prototype, one owning header). Prototypes that differ only
+     in argument names count as duplicates; genuinely divergent signatures
+     (the matching-driven exceptions) are reported separately as [F:divergent]
+     and are not failures.
 
 Scope / overlay constraint: overlays load to the same address range, so a
 symbol at a given address in one overlay is a different object than the same
@@ -232,26 +237,114 @@ def check_header_type_conflicts():
 
 
 # ---------------------------------------------------------------------------
+# Check F — duplicate function prototypes across headers
+# ---------------------------------------------------------------------------
+
+HDR_PROTO_RE = re.compile(r'^\s*extern\s+(.+?\([^;]*\))\s*;')
+
+
+def header_scope(rel):
+    """Resolve a header to its link-unit scope. Overlay-local headers live in
+    include/<overlay>/; func_8009XXXX names mean different things in different
+    overlays, so duplicate detection is scoped per directory."""
+    parts = rel.split('/')
+    if parts[0] == 'include' and len(parts) >= 3:
+        return parts[1]          # 'world', 'field', 'psxsdk', ...
+    return 'shared'              # include/*.h (battle.h, world.h, common.h, ...)
+
+
+def split_proto(sig):
+    """Return (name, return_type, (param_types,...)) with parameter *names*
+    stripped, so prototypes that differ only in argument names compare equal."""
+    lp = sig.index('(')
+    rp = sig.rindex(')')
+    head = sig[:lp].strip()
+    m = re.match(r'^(.*?)([A-Za-z_]\w*)$', head)
+    ret, name = (m.group(1).strip(), m.group(2)) if m else ('', head)
+    params = sig[lp + 1:rp].strip()
+    ptypes = []
+    if params and params != 'void':
+        for p in params.split(','):
+            p = p.strip()
+            pm = re.match(r'^(.*?)([A-Za-z_]\w*)\s*(\[\s*\])?$', p)
+            if pm and pm.group(1).strip():
+                ptypes.append(norm_type(pm.group(1).strip() + (pm.group(3) or '')))
+            else:
+                ptypes.append(norm_type(p))   # unnamed param: keep as-is
+    elif params == 'void':
+        ptypes = ['void']
+    return name, norm_type(ret), tuple(ptypes)
+
+
+def check_duplicate_prototypes():
+    """Flag functions whose prototype is declared in more than one header
+    within the same scope. Identical duplicates are R1 violations (consolidate
+    into the definer's header); divergent ones are the matching-driven
+    exceptions and are reported separately, not as failures."""
+    fails, infos = [], []
+    # scope -> funcname -> list of (header, (ret, params))
+    seen = defaultdict(lambda: defaultdict(list))
+    for h in glob.glob(os.path.join(ROOT, 'include', '**', '*.h'), recursive=True):
+        rel = os.path.relpath(h, ROOT)
+        scope = header_scope(rel)
+        if scope in ('psxsdk',):           # SDK headers own their decls
+            continue
+        for ln in open(h, errors='replace').read().splitlines():
+            m = HDR_PROTO_RE.match(ln)
+            if not m:
+                continue
+            sig = re.sub(r'\s+', ' ', m.group(1)).strip()
+            if '(*' in sig or '(' not in sig:   # skip function pointers
+                continue
+            try:
+                name, ret, params = split_proto(sig)
+            except ValueError:
+                continue
+            if not re.match(r'^(func_[0-9A-Fa-f]+|[A-Za-z_]\w*)$', name):
+                continue
+            seen[scope][name].append((rel, (ret, params)))
+    for scope in sorted(seen):
+        for name, decls in sorted(seen[scope].items()):
+            headers = sorted({h for h, _ in decls})
+            if len(headers) < 2:
+                continue
+            shapes = {sh for _, sh in decls}
+            if len(shapes) == 1:
+                fails.append(f"[F] {scope}: {name} prototype duplicated in "
+                             + ", ".join(headers)
+                             + " (consolidate into the definer's header)")
+            else:
+                variants = "; ".join(
+                    f"{h}: {ret} ({', '.join(p)})" for h, (ret, p) in sorted(decls))
+                infos.append(f"[F:divergent] {scope}: {name} declared with "
+                             f"{len(shapes)} signatures -> {variants}")
+    return fails, infos
+
+
+# ---------------------------------------------------------------------------
 
 def main():
     only = sys.argv[1:] if len(sys.argv) > 1 else None
     af, infos = scan_c_files()
     df = check_name_consistency()
     ef = check_header_type_conflicts()
+    ff, finfos = check_duplicate_prototypes()
+    infos = infos + finfos
 
-    all_fails = af + df + ef
+    all_fails = af + df + ef + ff
     if only:
         all_fails = [f for f in all_fails if any(o in f for o in only)]
+        infos = [i for i in infos if any(o in i for o in only)]
 
     for line in infos:
         print(line)
     for line in all_fails:
         print(line)
 
-    n_a = sum(1 for f in af if f.startswith('[A]') or f.startswith('[B]') or f.startswith('[C]'))
     print()
     print(f"check_symbols: {len(af)} structural (.c), {len(df)} name, "
-          f"{len(ef)} header-type findings; {len(infos)} allowed exceptions")
+          f"{len(ef)} header-type, {len(ff)} duplicate-prototype findings; "
+          f"{len(infos)} allowed exceptions")
     return 1 if all_fails else 0
 
 
