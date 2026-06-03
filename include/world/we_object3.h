@@ -16,16 +16,8 @@ typedef struct {
     u16 y;
 } ImageCoord;
 
-typedef struct {
-    /* 0x0000 */ u32 id;                /**< TIM magic */
-    /* 0x0004 */ u32 flags;             /**< TIM flags */
-    /* 0x0008 */ u32 size1;             /**< First image block size */
-    /* 0x000C */ RECT rect1;            /**< First image rect (unused here) */
-    /* 0x0014 */ u32 image1[0x800];     /**< First image pixel data (256*16 16bpp) */
-    /* 0x2014 */ u32 size2;             /**< Second image block size */
-    /* 0x2018 */ RECT rect2;            /**< Second image rect (unused here) */
-    /* 0x2020 */ u32 image2[1];         /**< Second image pixel data */
-} PackedTIMPair;
+/* func_800A6188 loads a TIM with two fixed-size, back-to-back image blocks
+ * (the canonical Tim struct from tim.h, reached via world.h -> battle.h). */
 
 extern FeaEntry40C0  D_800D24A8[12];
 extern WorldObject   D_800D3320[16];

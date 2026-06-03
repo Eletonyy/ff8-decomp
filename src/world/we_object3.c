@@ -523,15 +523,12 @@ s32 func_800A610C(WorldObject *head) {
  * the second image (128×256, 16bpp) is uploaded to @c D_800C5378[tableIdx].
  *
  * Uses @c D_800D32F0 as a scratch @c RECT for each upload.
- *
- * @note The @c tim++/tim-- and @c img1++/img1-- pairs are load-bearing —
- *       they coerce gcc's register allocator into keeping @c img1 in s2
- *       (the canonical target allocation) instead of keeping raw @c tim.
- *       Without these pairs gcc sees @c img1 and @c tim as equivalent and
- *       arbitrarily picks @c tim.
  */
-void func_800A6188(PackedTIMPair *tim, u8 tableIdx) {
-    u32 *img1 = tim->image1;
+void func_800A6188(Tim *tim, u8 tableIdx) {
+    u32 *img1 = (u32 *)tim->clut.data;
+    /* The tim/img1 ++/-- pairs pin img1 into a callee-saved register so it
+       survives the LoadImage/DrawSync calls and is reused for the second
+       image; without them the register allocation doesn't match. */
     tim++;
     img1++;
     img1--;
@@ -542,9 +539,13 @@ void func_800A6188(PackedTIMPair *tim, u8 tableIdx) {
     DrawSync(0);
 
     setRECT(&D_800D32F0, D_800C5378[tableIdx].x, D_800C5378[tableIdx].y, 128, 256);
-    /* FIXME: 0x803 is (sizeof(tim->image1) + sizeof(TIM block header)) / sizeof(u32) =
-       byte-distance from image1 to image2 in u32 units. Can't express as tim->image2
-       without breaking the s-reg allocation match. */
+    // FIXME: hard-coded offset to the second image block (0x803 u32 words =
+    // 0x200C bytes past the first image). This should be derived from the TIM
+    // itself (the first block's length) rather than baked in — as written it
+    // silently assumes a fixed first-image size. Every structural form tried
+    // (tim->image2, or walking clut.len) breaks the register-allocation match
+    // with the current toolchain. Figure out how to reach the second block
+    // structurally without losing the match.
     LoadImage(&D_800D32F0, img1 + 0x803);
     DrawSync(0);
 }

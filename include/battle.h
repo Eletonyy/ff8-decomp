@@ -4,6 +4,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
+#include "tim.h"
 
 /** @brief Battle result values (BattleConfig.result). */
 #define BATTLE_RESULT_UNDETERMINED  0
@@ -107,19 +108,8 @@ typedef struct {
 
 extern BattleAnimState g_battleAnims;
 
-/** @brief TIM image section (CLUT or pixel data). */
-typedef struct {
-    s32 len;            /**< 0x00: Section length in bytes (including this header). */
-    RECT rect;          /**< 0x04: Destination rectangle in VRAM. */
-    u16 data[0];        /**< 0x0C: Section data (variable length). */
-} TimSection;
-
-/** @brief TIM image file header (PS1 standard texture format). */
-typedef struct {
-    u32 id;             /**< 0x00: Magic ID (0x10). */
-    u32 flags;          /**< 0x04: Format flags. */
-    TimSection clut;    /**< 0x08: CLUT section (followed by pixel section). */
-} Tim;
+/* Tim / TimSection are the canonical PS1 TIM file structs — now in tim.h
+ * (included above), shared with the world and tripletriad overlays. */
 
 struct BattleDisplayEntity;
 typedef void (*EntityCallback)(struct BattleDisplayEntity *);
