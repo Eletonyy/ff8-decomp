@@ -20,13 +20,13 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A2350);
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A246C);
 
 /**
- * @brief Program the GTE for world-map rendering: screen offset, far color, color matrix.
+ * @brief Program the GTE for world-map rendering: screen offset, back color, color matrix.
  *
  * Sets the GTE projection screen offset to half the worldmap screen dimensions
- * (@c D_800C97EA, @c D_800C97E8), copies the far (fog) color @c D_800C53F8 into
- * the active far-color cache @c D_800DB0E0 and programs it via @c SetFarColor,
- * then copies the lighting color matrix @c D_800C5428 into @c D_800DA8B0 and
- * loads it via @c SetColorMatrix.
+ * (@c D_800C97EA, @c D_800C97E8), copies the background (ambient) color
+ * @c D_800C53F8 into the active back-color cache @c D_800DB0E0 and programs it
+ * via @c SetBackColor, then copies the lighting color matrix @c D_800C5428 into
+ * @c D_800DA8B0 and loads it via @c SetColorMatrix.
  */
 void setupWorldRenderParams(void) {
     func_800488D4(3);
@@ -35,10 +35,10 @@ void setupWorldRenderParams(void) {
     D_800DB0E0.r = D_800C53F8.r;
     D_800DB0E0.g = D_800C53F8.g;
     D_800DB0E0.b = D_800C53F8.b;
-    func_80040884(D_800DB0E0.r, D_800DB0E0.g, D_800DB0E0.b);
+    SetBackColor(D_800DB0E0.r, D_800DB0E0.g, D_800DB0E0.b);
 
     D_800DA8B0 = D_800C5428;
-    func_80040704(&D_800DA8B0);
+    SetColorMatrix(&D_800DA8B0);
 }
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A26E8);

@@ -44,6 +44,8 @@ MATRIX *TransposeMatrix(MATRIX *m0, MATRIX *m1);
 void SetRotMatrix(MATRIX *m);
 void SetTransMatrix(MATRIX *m);
 void SetLightMatrix(MATRIX *m);
+void SetColorMatrix(MATRIX *m);
+void SetBackColor(s32 rbk, s32 gbk, s32 bbk);
 void SetFarColor(s32 rfc, s32 gfc, s32 bfc);
 
 /* --- GTE transform operations --- */

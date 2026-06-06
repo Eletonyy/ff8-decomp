@@ -41,7 +41,5 @@ extern s32 func_800A629C(WorldObject *target);
 extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
 
 extern void func_800488D4(s32 a);
-extern void func_80040884(s32 r, s32 g, s32 b);   /* libgte SetFarColor */
-extern void func_80040704(MATRIX *m);             /* libgte SetColorMatrix */
 
 #endif /* WORLD_WE_OBJECT3_H */
