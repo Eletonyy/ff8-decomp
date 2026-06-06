@@ -945,7 +945,7 @@ s32 func_800A0F34(SVECTOR *v, s32 *sxy) {
     func_8003FEE4();
     SetRotMatrix((u8 *)D_800C71F8);
     SetTransMatrix((u8 *)D_800C71F8);
-    func_800408C4(0, 0);
+    SetGeomOffset(0, 0);
     result = func_80040DE4(v, sxy, &unk_p, &unk_flag);
     func_8003FF88();
     return result;

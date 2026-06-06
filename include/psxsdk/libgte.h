@@ -62,6 +62,7 @@ void DpqColor(CVECTOR *v0, s32 p, CVECTOR *v1);
 /* --- GTE initialization --- */
 
 void InitGeom(void);
+void SetGeomOffset(s32 ofx, s32 ofy);   /**< Set GTE screen offset OFX/OFY (signed, scaled <<16). */
 void SetGeomScreen(s32 h);   /**< Set GTE projection-plane distance H (screen depth). */
 
 /* --- GTE math --- */

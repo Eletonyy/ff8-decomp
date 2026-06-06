@@ -59,7 +59,6 @@ extern u8  D_801A2DC8[2][0x10000];  /* primitive pool, 64KB per buffer */
 extern DRAWENV *g_activeDrawEnv;
 extern void func_800988D4(void);
 extern void func_800988E0(void);
-extern void func_800408C4(s32, s32);   /* SetGeomOffset */
 extern u8 D_801D3028[];
 extern u8 D_801D3038[];
 extern u8 D_8012E66C[];
@@ -225,7 +224,7 @@ void func_800984DC(void) {
     D_801C2EB4 = &D_801A2DC8[D_801C2DCA][0];
 
     InitGeom();
-    func_800408C4(0xC0, 0x70);
+    SetGeomOffset(0xC0, 0x70);
     SetGeomScreen(0x200);
     SetDispMask(0);
 
