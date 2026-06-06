@@ -49,7 +49,51 @@ void func_800A40C0(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A40F8);
+/* Dual view of a world coordinate: full position (@c word) and its
+ * low-16-bit angle component (@c half). */
+typedef union {
+    s32 word;
+    u16 half;
+} WorldCoord;
+
+typedef struct {
+    WorldCoord x, y, z;
+} WorldVec;
+
+/**
+ * @brief Project a world position to a grid-cell index, optionally emitting its angle triple.
+ *
+ * When @p out is non-NULL, copies @p pos's three low-16-bit angle components into
+ * @p out — the X/Y components masked to 11 bits, the Z component additionally
+ * wrapped into the @c [-0x800, 0] half-revolution range.
+ *
+ * Always returns a grid-cell index derived from @p pos's X/Z world coordinates:
+ * the X coordinate (biased by @c 0x60000) folds modulo @c 0x40000 into one of
+ * @c 0x80 columns, and the Z coordinate (taken as @c 0x48000 - z) folds modulo
+ * @c 0x30000 into one of @c 0x60 rows, combined as @c col + row * 0x80.
+ *
+ * @param pos World position; each coordinate is read both as a full word and as
+ *            a low-u16 angle component.
+ * @param out Optional destination for the angle triple (s16 x/y/z); may be NULL.
+ * @return    Grid-cell index @c col + row * 0x80.
+ */
+s32 func_800A40F8(VECTOR *pos, SVECTOR *out) {
+    WorldVec *p = (WorldVec *)pos;
+
+    if (out != NULL) {
+        out->vx = p->x.half & 0x7FF;
+        out->vy = p->y.half;
+        {
+            s32 t = p->z.half & 0x7FF;
+            out->vz = t;
+            if (t != 0) out->vz = t - 0x800;
+        }
+        if (out->vz < -0x7FF) out->vz = (u16)out->vz + 0x800;
+    }
+
+    return ((p->x.word + 0x60000) % 0x40000) / 0x800
+         + ((0x48000 - p->z.word) % 0x30000) / 0x800 * 0x80;
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A41E0);
 

@@ -37,4 +37,7 @@ extern RECT          D_800D32F0;
 
 extern s32 func_800A629C(WorldObject *target);
 
+/* Project a world position to a grid-cell index; optionally emit its angle triple. */
+extern s32 func_800A40F8(VECTOR *pos, SVECTOR *out);
+
 #endif /* WORLD_WE_OBJECT3_H */
