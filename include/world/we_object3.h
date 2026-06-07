@@ -11,6 +11,14 @@ typedef struct {
     s16 pad;    /* +0x06 */
 } FeaEntry40C0; /* size 0x08 */
 
+/* Object glyph header returned by func_800A5EC4: a count byte followed by an
+   array of @c CmdDesc entries (16-byte stride). */
+typedef struct {
+    u8      count;        /* 0x00 */
+    u8      pad01[3];
+    CmdDesc entries[1];   /* 0x04 — [count] entries, stride 0x10 */
+} GlyphHeader;
+
 typedef struct {
     u16 x;
     u16 y;
@@ -36,6 +44,13 @@ extern ImageCoord    D_800C5378[];
 extern RECT          D_800D32F0;
 
 extern s32 func_800A629C(WorldObject *target);
+
+/* Resolve the object glyph header for a cell key (NULL if none). */
+extern u32 *func_800A5EC4(s16 id);
+
+/* Point-in-descriptor hit test: returns nonzero and writes a result word to
+   @p out when @p point falls inside the region of command descriptor @p cand. */
+extern s32 func_800BF024(CmdDesc *cand, VECTOR *point, AngleSlot *out, CmdDesc *end);
 
 /* Project a world position to a grid-cell index; optionally emit its angle triple. */
 extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);

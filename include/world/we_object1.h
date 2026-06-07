@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "world.h"
+#include "gamestate.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 
@@ -13,6 +14,14 @@ typedef struct {
     s16 angle;
     s16 pad[7];
 } ProjBuf;
+
+/* Argument to glyphAt (func_800A3870): a world position followed by its
+   projection. @c buf.proj is the query point and @c buf.angle the cell key;
+   the caller stages these as adjacent locals (a @c VECTOR and a @c ProjBuf). */
+typedef struct {
+    VECTOR  pos;   /* 0x00 */
+    ProjBuf buf;   /* 0x10 */
+} GlyphQuery;      /* 0x30 */
 
 /**
  * @brief 16-byte CD load list entry — NULL-terminated by @c marker = 0.
@@ -119,7 +128,7 @@ extern s32 func_800ACD38(MATRIX *out);
 extern void func_8003FD84(MATRIX *xform, VECTOR *in, VECTOR *out);
 extern void func_800BC544(VECTOR *src, VECTOR *dst);
 extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
-extern CmdDesc *func_800A3870(VECTOR *v, AngleSlot *out);
+extern CmdDesc *func_800A3870(GlyphQuery *v, AngleSlot *out);
 extern s32 func_800BEC1C(s32 kind);
 extern s32 func_800A2D50(s32 a0, s32 a1, s32 *out, s32 a3, s32 a4, s32 a5);
 extern void func_8009D630(void);

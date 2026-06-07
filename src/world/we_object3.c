@@ -1,6 +1,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "world.h"
+#include "world/we_object1.h"
 #include "world/we_object3.h"
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A01DC);
@@ -75,7 +76,53 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A2D50);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A358C);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A3870);
+/**
+ * @brief Resolve the command descriptor (glyph) for the projected world query @p v.
+ *
+ * Fetches the object glyph header for the query's cell key (@c v->buf.angle)
+ * via @c func_800A5EC4, then searches two tables for the descriptor whose
+ * region contains the projected point @c v->buf.proj (tested by
+ * @c func_800BF024): first the @c D_800D24A8 cell cache, then the header's own
+ * @c entries[]. On a hit the test's result word is copied to @p out (when
+ * non-NULL) and the matching @c CmdDesc is returned; otherwise NULL.
+ *
+ * @param v   Projected world query (position + projection + cell key).
+ * @param out Optional slot to receive the hit's result word.
+ * @return The matching command descriptor, or NULL.
+ */
+CmdDesc *func_800A3870(GlyphQuery *v, AngleSlot *out) {
+    GlyphHeader *hdr;
+    FeaEntry40C0 *e = &D_800D24A8[0];
+    CmdDesc *g;
+    AngleSlot res1, res2;
+
+    hdr = (GlyphHeader *)func_800A5EC4(v->buf.angle);
+    if (hdr == NULL) {
+        return NULL;
+    }
+
+    for (; e < &D_800D24A8[12]; e++) {
+        if (e->val != 0 && v->buf.angle == e->hval) {
+            if (func_800BF024((CmdDesc *)e->val, &v->buf.proj, &res1, &hdr->entries[hdr->count])) {
+                if (out != NULL) {
+                    *out = res1;
+                }
+                return (CmdDesc *)e->val;
+            }
+        }
+    }
+
+    for (g = &hdr->entries[0]; g < &hdr->entries[hdr->count]; g++) {
+        if (func_800BF024(g, &v->buf.proj, &res2, &hdr->entries[hdr->count])) {
+            if (out != NULL) {
+                *out = res2;
+            }
+            return g;
+        }
+    }
+
+    return NULL;
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A39BC);
 

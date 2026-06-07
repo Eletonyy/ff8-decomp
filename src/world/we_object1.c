@@ -697,7 +697,7 @@ void func_8009C1A4(void) {
     func_800BC544((VECTOR *)&D_800C9868, &local);
     D_800C9748 = local;
     buf.angle = worldPosToCell(&local, &buf.proj);
-    desc = func_800A3870(&local, &D_800C97F4);
+    desc = func_800A3870((GlyphQuery *)&local, &D_800C97F4);
     D_800C4D64 = desc;
     D_800C4D74 = desc;
     if (D_800C4D38 == 0x31) {
