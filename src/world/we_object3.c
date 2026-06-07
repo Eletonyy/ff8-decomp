@@ -350,7 +350,70 @@ void func_800A581C(void) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A58EC);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A5A3C);
+/**
+ * @brief Drain the pending @c WorldObject list at @c D_800D34E4.
+ *
+ * For each node on the @c D_800D34E4 list: look it up in the @c D_800C9EF0[16]
+ * id table; if its @c id is present, append a copy (id + sectionIdx) to the
+ * @c D_800CA030 active list — which grows in place through the @c D_800D33E0[16]
+ * pool via @c tail->next = tail + 1 — otherwise clear @c D_800D34A0 for the
+ * node's section. Either way the node is then pushed onto the @c D_800D3318
+ * free list. Iterates until the pending list is empty.
+ *
+ * @note The match needs the search to leave its result in a @c found flag that
+ *       is set only at the two loop exits (1 on a hit, 0 on exhaustion), which
+ *       requires the @c goto over the @c found=0 — a plain @c break cannot skip
+ *       it.
+ */
+void func_800A5A3C(void) {
+    WorldObject *node;
+    WorldObject *entry;
+
+    node = D_800D34E4;
+    if (node == 0) {
+        return;
+    }
+
+    do {
+        WorldObject *search;
+        s32 found;
+
+        D_800D34E4 = node->next;
+        search = &D_800C9EF0[0];
+        while (search != 0) {
+            if (node->id == search->id) {
+                found = 1;
+                goto matched;
+            }
+            search = search->next;
+        }
+        found = 0;
+    matched:
+        if (found) {
+            if (D_800CA030 != 0) {
+                entry = D_800CA030;
+                while (entry->next != 0) {
+                    entry = entry->next;
+                }
+                entry->next = entry + 1;
+                entry += 1;
+            } else {
+                entry = &D_800D33E0[0];
+                D_800CA030 = &D_800D33E0[0];
+            }
+            entry->id = node->id;
+            entry->sectionIdx = node->sectionIdx;
+            entry->next = 0;
+        } else {
+            D_800D34A0[node->sectionIdx] = 0;
+        }
+
+        node->next = D_800D3318;
+        D_800D3318 = node;
+
+        node = D_800D34E4;
+    } while (node != 0);
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A5B48);
 
