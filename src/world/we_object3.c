@@ -15,7 +15,33 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A1678);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A1F10);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A2350);
+/**
+ * @brief Initialize the world's two double-buffered graphics contexts.
+ *
+ * Sets up the draw/display environments for both @c BattleSceneCtx buffers
+ * (the sentinel @c D_800CA040 and its successor at @c +0x4070) at VRAM x=0 /
+ * x=384, sized by @c D_800C97EA x @c D_800C97E8. Then, for each buffer, clears
+ * the 0x1000-entry ordering table, patches the display screen region to the
+ * NTSC active area (@c y=8, @c h=224), and enables dithering. Finally installs
+ * the first buffer as the active scene context (@c D_800D244C).
+ */
+void func_800A2350(void) {
+    s32 i;
+
+    SetDefDrawEnv(&(&D_800CA040)[1].drawEnv, 0, 0, D_800C97EA, D_800C97E8);
+    SetDefDrawEnv(&(&D_800CA040)[0].drawEnv, 384, 0, D_800C97EA, D_800C97E8);
+    SetDefDispEnv(&(&D_800CA040)[1].disp, 384, 0, D_800C97EA, D_800C97E8);
+    SetDefDispEnv(&(&D_800CA040)[0].disp, 0, 0, D_800C97EA, D_800C97E8);
+
+    for (i = 0; i < 2; i++) {
+        ClearOTagR((u32 *)(&D_800CA040)[i].primList, 0x1000);
+        (&D_800CA040)[i].disp.screen.y = 8;
+        (&D_800CA040)[i].disp.screen.h = 224;
+        (&D_800CA040)[i].drawEnv.dtd = 1;
+    }
+
+    D_800D244C = &D_800CA040;
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A246C);
 
