@@ -10,7 +10,55 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A0388);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A05E8);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A1540);
+/**
+ * @brief Program the GTE translation vector (TR, control regs 5/6/7) for world-map rendering.
+ *
+ * Each coordinate packs a coarse tile index (@c /128) and a fine sub-tile offset
+ * (@c %128). The view offset is the delta from @p coord0 to @p coord1, taken
+ * separately on the sub-tile axis (X) and the tile axis (Z), each wrapped into a
+ * half-range so the world map scrolls seamlessly across the wrap seam:
+ *  - @c off.vx = wrap(coord1%128 - coord0%128) into [-64,64] (via ±128), scaled *2048
+ *  - @c off.vy = 0
+ *  - @c off.vz = -wrap(coord1/128 - coord0/128) into [-48,48] (via ±96), scaled *2048
+ * The offset is added to the camera base @c D_800DB0E8 and loaded via @c gte_ldtr.
+ *
+ * @note Handwritten GTE routine. The block-2 conditions re-evaluate the tile delta
+ *       @c (coord1/128 - coord0/128) (rather than reusing @c d) to match the original
+ *       codegen, which keeps both dividends live through the signed-division rounding.
+ *
+ * @param coord0 Reference world-map coordinate.
+ * @param coord1 Current world-map coordinate; the view tracks the delta to @p coord0.
+ */
+void setWorldMapTransVector(s16 coord0, s16 coord1) {
+    SVECTOR off;
+    s32 d;
+
+    d = (coord1 % 128) - (coord0 % 128);
+    if (d < 65) {
+        if (d < -64) {
+            off.vx = (d + 128) * 2048;
+        } else {
+            off.vx = d * 2048;
+        }
+    } else {
+        off.vx = (d - 128) * 2048;
+    }
+    off.vy = 0;
+
+    d = (coord1 / 128) - (coord0 / 128);
+    if (((coord1 / 128) - (coord0 / 128)) < 49) {
+        if (((coord1 / 128) - (coord0 / 128)) < -48) {
+            off.vz = -(d + 96) * 2048;
+        } else {
+            off.vz = -d * 2048;
+        }
+    } else {
+        s32 t = d - 96;
+        off.vz = -t * 2048;
+    }
+
+    gte_ldtr(D_800DB0E8.vx + off.vx, D_800DB0E8.vy + off.vy, D_800DB0E8.vz + off.vz);
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A1678);
 
@@ -26,7 +74,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A1F10);
  * NTSC active area (@c y=8, @c h=224), and enables dithering. Finally installs
  * the first buffer as the active scene context (@c D_800D244C).
  */
-void func_800A2350(void) {
+void initWorldDoubleBuffer(void) {
     s32 i;
 
     SetDefDrawEnv(&(&D_800CA040)[1].drawEnv, 0, 0, D_800C97EA, D_800C97E8);
@@ -90,7 +138,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A358C);
  * @param out Optional slot to receive the hit's result word.
  * @return The matching command descriptor, or NULL.
  */
-CmdDesc *func_800A3870(GlyphQuery *v, AngleSlot *out) {
+CmdDesc *glyphAt(GlyphQuery *v, AngleSlot *out) {
     GlyphHeader *hdr;
     FeaEntry40C0 *e = &D_800D24A8[0];
     CmdDesc *g;
@@ -188,7 +236,75 @@ s32 worldPosToCell(VECTOR *pos, SVECTOR *out) {
          + ((0x48000 - p->z.word) % 0x30000) / 0x800 * 0x80;
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A41E0);
+/**
+ * @brief Place a fan of 5 world-map sprites around @p origin, oriented by @p angles.
+ *
+ * Builds a rotation matrix from @p angles and transforms @p v through it to get a
+ * base offset; then asks @c func_800B5ADC for up to 4 spread vectors and
+ * @c func_800BC5E0 for a per-scene angle bias, builds a second (Y-axis) rotation
+ * from @c arg4 + that bias whose translation is the base offset, and emits one
+ * @ref WorldSprite per source vector at @c origin + transformedOffset. Each sprite
+ * is projected with @c worldPosToCell (filling @c cell / @c cellId) and tagged
+ * @c flag = 2. The first sprite uses @p v's offset directly; the remaining four
+ * use the spread vectors transformed by the second matrix.
+ *
+ * @param out    Output array of 5 @ref WorldSprite entries.
+ * @param v      Base offset vector, transformed by the @p angles matrix.
+ * @param angles Rotation angles for the primary matrix.
+ * @param arg3   Scene context id passed to @c func_800B5ADC / @c func_800BC5E0.
+ * @param arg4   Base Y-axis angle for the secondary (spread) rotation.
+ * @param origin World-space origin the sprites are placed relative to.
+ */
+void placeWorldSpriteFan(WorldSprite *out, VECTOR *v, SVECTOR *angles, s32 arg3, s32 arg4,
+                   VECTOR *origin) {
+    MATRIX m;
+    VECTOR xf;
+    SVECTOR pts[4];
+    SVECTOR yang;
+    WorldSprite *e;
+    s32 i;
+    s32 ret;
+
+    RotMatrix(angles, &m);
+    gte_SetRotMatrix(&m);
+    m.t[2] = 0;
+    m.t[1] = 0;
+    m.t[0] = 0;
+    gte_SetTransMatrix(&m);
+    e = out;
+    gte_ldv0(v);
+    gte_mvmva(1, 0, 0, 0, 0);
+    gte_stlvnl(&xf);
+
+    func_800B5ADC(arg3, pts, 0, 0);
+    ret = func_800BC5E0(arg3);
+
+    yang.vx = 0;
+    yang.vz = 0;
+    yang.vy = arg4 + ret;
+    RotMatrix(&yang, &m);
+    gte_SetRotMatrix(&m);
+    gte_SetTransVector(&xf);
+
+    e->pos.vx = origin->vx + xf.vx;
+    e->pos.vy = origin->vy + xf.vy;
+    e->pos.vz = origin->vz + xf.vz;
+    e->cellId = worldPosToCell(&e->pos, &e->cell);
+    e->flag = 2;
+    e++;
+
+    for (i = 1; i < 5; i++) {
+        gte_ldv0(&pts[i - 1]);
+        gte_mvmva(1, 0, 0, 0, 0);
+        gte_stlvnl(&xf);
+        e->pos.vx = origin->vx + xf.vx;
+        e->pos.vy = origin->vy + xf.vy;
+        e->pos.vz = origin->vz + xf.vz;
+        e->cellId = worldPosToCell(&e->pos, &e->cell);
+        e->flag = 2;
+        e++;
+    }
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A4420);
 
@@ -301,7 +417,71 @@ s32 func_800A475C(s32 a, s32 b) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A47A4);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A4EF4);
+s32 func_800A5E40(s32 x, s32 y);
+
+/**
+ * @brief Build a linked list of the world-map grid cells inside the camera
+ *        viewport, writing it into @p out.
+ *
+ * Projects the two opposite corners of a fixed 0x2FFF-radius box around the
+ * camera position @c D_800D23C0 to packed cell coordinates via
+ * @c func_800A5E40, then walks every cell in the spanned rectangle. Columns
+ * (the low @c %32 axis) wrap modulo 32 and rows (the @c /32 axis) wrap modulo
+ * 24, so the enumeration covers a torus-shaped region across the world-map
+ * grid edges. Each visited cell is written to a fresh @ref WorldObject node
+ * (@c id = @c row*32+col), chained through @c next at a 0xC-byte stride, and
+ * the final node's @c next is cleared to terminate the list.
+ *
+ * @param arg0 Unused (the incoming register is overwritten immediately).
+ * @param out  Output buffer; receives the 0xC-byte node list, NULL-terminated.
+ */
+void buildViewportCellList(s32 arg0, WorldObject *out) {
+    s32 r1, r2;
+    s32 row, col;
+    s32 colSpan, rowSpan;
+    s32 i, j;
+
+    r1 = func_800A5E40(D_800D23C0.x - 0x2FFF, D_800D23C0.y - 0x2FFF);
+    r2 = func_800A5E40(D_800D23C0.x + 0x2FFF, D_800D23C0.y + 0x2FFF);
+
+    {
+        s32 f1 = r1 % 32;
+        s32 f2 = r2 % 32;
+        if (r2 % 32 < r1 % 32) {
+            s32 lo = f2 + 32;
+            colSpan = lo - f1;
+        } else {
+            colSpan = f2 - f1;
+        }
+    }
+    {
+        s32 c1 = r1 / 32;
+        s32 c2 = r2 / 32;
+        if (r2 / 32 < r1 / 32) {
+            s32 lo = c2 + 24;
+            rowSpan = lo - c1;
+        } else {
+            rowSpan = c2 - c1;
+        }
+    }
+
+    row = r1 / 32;
+    for (i = 0; i <= rowSpan; i++) {
+        col = r1 % 32;
+        for (j = 0; j <= colSpan; j++) {
+            if (col >= 32) col -= 32;
+            if (row >= 24) row -= 24;
+            if (col < 0) col += 32;
+            if (row < 0) row += 24;
+            out->id = row * 32 + col;
+            out->next = out + 1;
+            out++;
+            col++;
+        }
+        row++;
+    }
+    out[-1].next = 0;
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A50A0);
 
@@ -348,7 +528,61 @@ void func_800A581C(void) {
     D_800D34F0 = 0;
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A58EC);
+/**
+ * @brief Register world objects from the master list that aren't yet tracked.
+ *
+ * Walks the master object list @c D_800C9EF0 and, for each entry whose @c id is
+ * not already present in any of the three tracking lists (@c D_800CA030, the
+ * active list @c D_800D34E0, or @c D_800D34E4), pops a node from the free pool
+ * @c D_800D3318, stamps it with that @c id, and pushes it onto the active list
+ * @c D_800D34E0. If the free pool is exhausted, @c func_8009C528(0x6E) raises a
+ * system error.
+ *
+ * @note Each search re-reads @c node->id (re-loaded per list) and uses a
+ *       found-pointer walk; objects already tracked anywhere are skipped.
+ */
+void registerNewWorldObjects(void) {
+    WorldObject *node;
+    WorldObject *p;
+    WorldObject *found;
+    WorldObject *freeNode;
+    s16 id;
+
+    for (node = D_800C9EF0; node != NULL; node = node->next) {
+        id = node->id;
+        for (p = D_800CA030; p != NULL; p = p->next) {
+            if (id == p->id) { found = p; goto tracked0; }
+        }
+        found = NULL;
+    tracked0:
+        if (found != NULL) continue;
+
+        id = node->id;
+        for (p = D_800D34E0; p != NULL; p = p->next) {
+            if (id == p->id) { found = p; goto tracked1; }
+        }
+        found = NULL;
+    tracked1:
+        if (found != NULL) continue;
+
+        id = node->id;
+        for (p = D_800D34E4; p != NULL; p = p->next) {
+            if (id == p->id) { found = p; goto tracked2; }
+        }
+        found = NULL;
+    tracked2:
+        if (found != NULL) continue;
+
+        freeNode = D_800D3318;
+        if (freeNode == NULL) {
+            func_8009C528(0x6E);
+        }
+        D_800D3318 = freeNode->next;
+        freeNode->id = node->id;
+        freeNode->next = D_800D34E0;
+        D_800D34E0 = freeNode;
+    }
+}
 
 /**
  * @brief Drain the pending @c WorldObject list at @c D_800D34E4.
@@ -365,7 +599,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A58EC);
  *       requires the @c goto over the @c found=0 — a plain @c break cannot skip
  *       it.
  */
-void func_800A5A3C(void) {
+void drainPendingObjects(void) {
     WorldObject *node;
     WorldObject *entry;
 

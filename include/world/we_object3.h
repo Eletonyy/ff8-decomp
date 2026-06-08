@@ -55,6 +55,33 @@ extern s32 func_800BF024(CmdDesc *cand, VECTOR *point, AngleSlot *out, CmdDesc *
 /* Project a world position to a grid-cell index; optionally emit its angle triple. */
 extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
 
+/* Program the GTE translation vector for world-map rendering from two packed coords. */
+extern void setWorldMapTransVector(s16 coord0, s16 coord1);
+
+/* Register master-list objects not yet present in any tracking list onto the active list. */
+extern void registerNewWorldObjects(void);
+
+/**
+ * @brief One placed world-map sprite produced by @c placeWorldSpriteFan (0x2C stride).
+ *
+ * @c pos is the final world position; @c cell receives the @c worldPosToCell
+ * projection; @c cellId/flag are the projected grid-cell id and a fixed marker.
+ * @note Field purpose partly uncertain — named from the access pattern.
+ */
+typedef struct {
+    VECTOR  pos;        /* 0x00 */
+    SVECTOR cell;       /* 0x10 — worldPosToCell output */
+    u8      pad18[0x8]; /* 0x18 */
+    s16     cellId;     /* 0x20 — worldPosToCell return */
+    s16     flag;       /* 0x22 */
+    u8      pad24[0x8]; /* 0x24 */
+} WorldSprite;          /* 0x2C */
+
+/* Generate up to 5 spread-positioned SVECTOR offsets for the scene @p ctx. */
+extern void func_800B5ADC(s32 ctx, SVECTOR *out, s32 c, s32 d);
+/* Returns a per-scene angle bias used to orient the placed sprites. */
+extern s32  func_800BC5E0(s32 ctx);
+
 extern void func_800488D4(s32 a);
 
 #endif /* WORLD_WE_OBJECT3_H */

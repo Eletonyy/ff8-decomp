@@ -684,7 +684,7 @@ void func_8009C070(void) {
  * Transforms @c D_800C9868 with @c func_800BC544 into a local vector, mirrors
  * it into @c D_800C9748, then projects it with @c worldPosToCell (whose return
  * angle is stashed for @c D_800D212C) and resolves a command descriptor with
- * @c func_800A3870. That descriptor is published to @c D_800C4D64 / @c D_800C4D74
+ * @c glyphAt. That descriptor is published to @c D_800C4D64 / @c D_800C4D74
  * (and to @c D_800C4D6C / @c D_800C4D68 when @c D_800C4D38 holds 0x31). Per-frame
  * scratch (@c D_800C4D48, @c D_800C9E38[0..2]) is cleared, and the rotation and
  * translation matrices @c D_800C9838 are loaded into the GTE.
@@ -697,7 +697,7 @@ void func_8009C1A4(void) {
     func_800BC544((VECTOR *)&D_800C9868, &local);
     D_800C9748 = local;
     buf.angle = worldPosToCell(&local, &buf.proj);
-    desc = func_800A3870((GlyphQuery *)&local, &D_800C97F4);
+    desc = glyphAt((GlyphQuery *)&local, &D_800C97F4);
     D_800C4D64 = desc;
     D_800C4D74 = desc;
     if (D_800C4D38 == 0x31) {
