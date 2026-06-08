@@ -400,6 +400,7 @@ extern MATRIX     D_800DA8B0;          /**< GTE lighting color matrix (sits at &
 extern MATRIX     D_800C5428;          /**< Source color matrix copied into D_800DA8B0. */
 extern CVECTOR    D_800C53F8;          /**< Background (ambient) color source. */
 extern CVECTOR    D_800DB0E0;          /**< Active background-color cache (programmed via SetBackColor). */
+extern VECTOR     D_800DB0E8;          /**< World camera-base translation (GTE TR bias; used by setWorldMapTransVector and func_800423DC). */
 extern KindParams D_800C5480[];
 
 /**

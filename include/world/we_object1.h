@@ -15,7 +15,7 @@ typedef struct {
     s16 pad[7];
 } ProjBuf;
 
-/* Argument to glyphAt (func_800A3870): a world position followed by its
+/* Argument to glyphAt: a world position followed by its
    projection. @c buf.proj is the query point and @c buf.angle the cell key;
    the caller stages these as adjacent locals (a @c VECTOR and a @c ProjBuf). */
 typedef struct {
@@ -98,6 +98,7 @@ extern u8        D_800980CC[]; /* "x:\USPC\WORLD" — dev-filesystem prefix (13 
 extern POLY_FT4  D_800C8648[2]; /* double-buffered worldmap quad primitive */
 
 extern void func_80048DD4(RECT *r, s32 a, s32 b, s32 c);
+extern void func_8009C528(s32 rc);
 extern void func_8009FEDC(u8 *work, u8 type);
 extern void func_80042634(s32 a);
 extern void func_80048FBC(RECT *r, s32 srcX, s32 srcY);
@@ -128,7 +129,7 @@ extern s32 func_800ACD38(MATRIX *out);
 extern void func_8003FD84(MATRIX *xform, VECTOR *in, VECTOR *out);
 extern void func_800BC544(VECTOR *src, VECTOR *dst);
 extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
-extern CmdDesc *func_800A3870(GlyphQuery *v, AngleSlot *out);
+extern CmdDesc *glyphAt(GlyphQuery *v, AngleSlot *out);
 extern s32 func_800BEC1C(s32 kind);
 extern s32 func_800A2D50(s32 a0, s32 a1, s32 *out, s32 a3, s32 a4, s32 a5);
 extern void func_8009D630(void);

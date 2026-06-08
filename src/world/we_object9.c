@@ -292,7 +292,7 @@ void func_800BC09C(ParticleSource *src) {
  *     extern s32    ratan2(s32 y, s32 x);                     // = func_80041E84
  *     extern void  *memset(void *dst, s32 val, s32 n);        // = func_80047CE4
  *     extern s32    project(VECTOR *src, VECTOR *out);        // = worldPosToCell
- *     extern GlyphHeader *glyphAt(VECTOR *v, DVECTOR *out);   // = func_800A3870
+ *     extern GlyphHeader *glyphAt(VECTOR *v, DVECTOR *out);
  *     extern s32    lookupKey(u32 key);                       // = func_800A45D8
  *
  *     s32 func_800BC218(s32 kind, VECTOR *trans, SVECTOR *angles) {

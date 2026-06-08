@@ -65,7 +65,6 @@ extern POLY_FT4   D_800D4EC0[2];
 extern CVECTOR    D_8009811C;
 extern VECTOR     D_800C9858;     /* live camera world position (VECTOR view)     */
 extern VECTOR     D_800DD658;     /* source position for func_800BC51C            */
-extern VECTOR     D_800DB0E8;     /* translation reference for func_800423DC      */
 
 extern void func_800A84D0(void);
 extern s32  func_8003F9F4(CVECTOR *input, CVECTOR *cue, s32 w1, s32 w2, CVECTOR *out);
