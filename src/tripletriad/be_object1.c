@@ -1,7 +1,9 @@
 #include "common.h"
 #include "battle.h"
+#include "tripletriad.h"
 #include "psxsdk/libc.h"
 #include "psxsdk/libgpu.h"
+#include "tripletriad/be_object1.h"
 
 #define BE_OT_LEN 28  /**< OT entries per buffer (D_801A2CE8). */
 
@@ -27,6 +29,32 @@ typedef struct {
     RECT rect;          /**< Destination/source RECT (unused when @c active == POOL_LOAD_TIM). */
     void *src;          /**< TIM pointer / pixel buffer / packed dest coords (depends on @c active). */
 } PoolEntry;
+
+/** @brief 0x28 per-frame transform scratch for the card-flip handler: a
+ *  scratch position vector followed by the composed rotation+translation
+ *  matrix handed to the GTE. Allocated/freed each frame (func_80098B80/BA0). */
+typedef struct {
+    SVECTOR vec;   /* 0x00 — scratch position (morph target)        */
+    MATRIX  mat;   /* 0x08 — composed YXZ rotation + translation     */
+} TransformBuf;    /* 0x28 */
+
+/** @brief Battle-state handler node: sub-state selector, frame counter, and
+ *  phase bit (which side the card is showing). */
+typedef struct {
+    u8 pad00[0x10];
+    u8 state;      /* 0x10 — sub-state (0..3)        */
+    u8 counter;    /* 0x11 — per-state frame counter */
+    u8 phase;      /* 0x12 — flip phase / card side  */
+} HandlerNode;
+
+extern SVECTOR D_80182BF8;          /* +Z unit scratch vector (morph source)   */
+extern SVECTOR D_80182C00;          /* scratch target vector                   */
+extern SVECTOR D_80182C08;          /* per-frame YXZ rotation angles           */
+extern s32 D_801D300C;              /* spin direction delta (+/-0x400)         */
+extern TransformBuf *D_801D3010;    /* current frame's transform scratch       */
+extern s32 D_801D30F8;              /* phase latched at the idle->flip handoff */
+extern s32  func_80023D04(void);    /* RNG */
+extern void func_800A233C(s32 a);
 
 extern s32 D_801C2FD0;
 extern s32 D_801C2FD8;
@@ -1100,123 +1128,125 @@ POLY_G3 *func_800995F8(void *ot, POLY_G3 *prims) {
 }
 
 /**
- * @brief Per-frame 4-state animation handler for a 3D icon transform.
+ * @brief Triple Triad card-flip animation handler (battle-state table @c D_800A4588).
  *
- * Allocates a 40-byte scratch @c TransformBuf (8-byte rotation @c SVECTOR
- * + 32-byte @c MATRIX) and dispatches on the node's state byte:
- *
- *  - **State 0** (init): pick a random phase (0 or 1) via @c func_80023D04,
- *    set the directional @c D_801D300C (±0x400) and @c D_80182C00.vx (±0x8C)
+ * Allocates a per-frame ::TransformBuf (@c D_801D3010) and advances the card's
+ * flip animation by @c node->state, then composes the GTE transform and emits
+ * the card's @c POLY_G3 batch:
+ *  - **State 0** (init): pick a random flip phase (0/1) via @c func_80023D04,
+ *    set the spin delta @c D_801D300C (+/-0x400) and @c D_80182C00.vx (+/-0x8C)
  *    from the phase, seed the scratch vector from the +Z unit @c D_80182BF8,
  *    call @c func_800A233C(0x70), advance to state 1.
- *  - **State 1** (entry arc, 85 frames total): three sub-phases driven by
- *    the counter — 0..59 = sin-driven Y arc, 60..69 = hold (vector reset),
- *    70..84 = blend back to @c D_80182C00 with an oscillating Y dip; on
- *    counter >= 85 latches the phase to @c D_801D30F8 and goes to state 2.
- *  - **State 2** (idle): nudges @c D_80182C08.vy by 0x10 per frame and
- *    writes the static pose (-0x5C / 0x200 / ±0x8C). Transitions to state 3
- *    when @c D_801D30F8 disagrees with the node's phase.
- *  - **State 3** (flip): 10-frame swing using @c rsin to interpolate X/Z;
- *    on completion flips the phase bit and returns to state 2.
+ *  - **State 1** (entry arc): counter 0..59 = sine-driven X spin / Y dip,
+ *    60..69 = hold, 70..84 = ease back toward @c D_80182C00 (a short-vector
+ *    lerp via @c func_8003F884 with an oscillating Y dip); at >=85 latch the
+ *    phase into @c D_801D30F8 and go to state 2.
+ *  - **State 2** (idle): nudge @c D_80182C08.vy each frame and write the static
+ *    pose; transition to state 3 when @c D_801D30F8 disagrees with the phase.
+ *  - **State 3** (re-flip): a 10-frame sine swing, then toggle the phase bit
+ *    and return to state 2.
  *
- * Always runs the common tail: build a @c YXZ rotation matrix from
- * @c D_80182C08, copy the scratch vector into the matrix translation,
- * apply a constant +0x100 X tilt, set the GTE rotation + translation
- * matrices, and emit one batch of @c POLY_G3 primitives via
+ * The common tail builds a YXZ rotation from @c D_80182C08, copies the scratch
+ * vector into the matrix translation, applies a fixed +0x100 X tilt, loads the
+ * GTE rotation/translation matrices, and emits one @c POLY_G3 batch via
  * @c func_800995F8 into the active OT.
  *
- * @note Near-match (92.24%): remaining gap is gcc 2.7.2 register naming and
- *       scheduling choices that no clean C structure reproduces. The C body
- *       in @c permuter/func_80099798/base.c — reproduced below — is the
- *       most natural form that holds up under both readability and match
- *       criteria. Higher scores (up to ~99%) are achievable with permuter
- *       tricks (anchor variables like @c new_var = 0x8C, @c c=d aliases,
- *       @c short r narrowing) but produce non-idiomatic source.
+ * @param node Battle-state handler node (state/counter/phase at 0x10..0x12).
+ * @return Always 0 (the handler keeps running).
  *
- * @verbatim
- * s32 func_80099798(HandlerNode *node) {
- *     D_801D3010 = (TransformBuf *)func_80098B80(0x28);
- *     switch (node->state) {
- *         case 0: {
- *             s32 r = func_80023D04() % 2;
- *             s32 delta = -0x400;
- *             s32 xPos  = -0x8C;
- *             node->phase = r;
- *             if (r) delta = 0x400;
- *             D_801D300C = delta;
- *             if (r) xPos = 0x8C;
- *             D_80182C00.vx = xPos;
- *             D_801D3010->vec = D_80182BF8;
- *             func_800A233C(0x70);
- *             node->state = 1;  node->counter = 0;
- *             break;
- *         }
- *         case 1: {
- *             s32 c = node->counter;
- *             if (c < 60) {
- *                 s32 t = (c << 12) / 60;
- *                 D_80182C08.vx = (u32)t >> 2;   // t is non-negative; srl
- *                 D_80182C08.vy = ((D_801D300C + 0xA000) * rsin(t / 4)) >> 12;
- *                 D_801D3010->vec = D_80182BF8;
- *             } else if ((c -= 60) < 10) {
- *                 D_801D3010->vec = D_80182BF8;
- *             } else if ((c -= 10) < 15) {
- *                 s32 d = (c << 12) / 15;
- *                 D_80182C08.vx = (-(d << 10) >> 12) + 0x400;
- *                 D_80182C08.vy = D_801D300C + (((-D_801D300C) * d) >> 12);
- *                 LoadAverageShort12(&D_80182BF8, &D_80182C00, 0x1000 - d, d,
- *                                    &D_801D3010->vec);
- *                 D_801D3010->vec.vy -= (rsin(d / 2) << 4) >> 12;
- *             } else {
- *                 D_80182C08.vx = 0;
- *                 D_801D3010->vec = D_80182C00;
- *                 D_801D30F8 = node->phase;
- *                 node->state = 2;  node->counter = 0;
- *             }
- *             node->counter++;
- *             break;
- *         }
- *         case 2: {
- *             s32 xPos = -0x8C;
- *             D_80182C08.vy += 0x10;
- *             if (node->phase) xPos = 0x8C;
- *             D_801D3010->vec.vy = -0x5C;
- *             D_801D3010->vec.vz =  0x200;
- *             D_801D3010->vec.vx = xPos;
- *             if (D_801D30F8 != node->phase) {
- *                 node->state = 3;  node->counter = 0;
- *             }
- *             break;
- *         }
- *         case 3: {
- *             s32 t    = (node->counter << 12) / 10;
- *             s32 sinv = rsin(t / 4);
- *             if (node->phase) sinv = 0x1000 - sinv;
- *             D_801D3010->vec.vx = ((sinv * 0x118) >> 12) - 0x8C;
- *             D_801D3010->vec.vy = -0x5C;
- *             D_801D3010->vec.vz = (-(rsin(t / 2) << 6) >> 12) + 0x200;
- *             node->counter++;
- *             if (node->counter >= 10) {
- *                 node->state = 2;  node->counter = 0;
- *                 node->phase ^= 1;
- *             }
- *             break;
- *         }
- *     }
- *     RotMatrixYXZ(&D_80182C08, &D_801D3010->mat);
- *     D_801D3010->mat.t[0] = D_801D3010->vec.vx;
- *     D_801D3010->mat.t[1] = D_801D3010->vec.vy;
- *     D_801D3010->mat.t[2] = D_801D3010->vec.vz;
- *     RotMatrixX(0x100, &D_801D3010->mat);
- *     SetTransMatrix(&D_801D3010->mat);
- *     SetRotMatrix(&D_801D3010->mat);
- *     D_801C2EB4 = func_800995F8(&D_801C2EB0[4], D_801C2EB4);
- *     func_80098BA0(0x28);
- *     return 0;
- * }
- * @endverbatim
+ * @note Two locals pin the original build's register allocation: @c tmp is a
+ *       single scratch reused for the state-1 lerp weight and the state-2
+ *       transition test (two separate locals do not match), and the OT slot
+ *       pointer is cached in @c ot before the emit call (inlining it reorders
+ *       the @c %hi loads).
  */
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object1", func_80099798);
+s32 cardFlipHandler(HandlerNode *node) {
+    s32 tmp;
+    u32 *ot;
+
+    D_801D3010 = (TransformBuf *)func_80098B80(0x28);
+    switch (node->state) {
+    case 0:
+        node->phase = func_80023D04() % 2;
+        D_801D300C = !node->phase ? -0x400 : 0x400;
+        D_80182C00.vx = !node->phase ? -0x8C : 0x8C;
+        D_801D3010->vec = D_80182BF8;
+        func_800A233C(0x70);
+        node->state = 1;
+        node->counter = 0;
+        break;
+    case 1: {
+        s32 c = node->counter;
+        if (c < 60) {
+            s32 t = (c << 12) / 60;
+            s32 sv = func_8003ED64(t / 4);
+            D_80182C08.vx = (u32)t >> 2;
+            D_80182C08.vy = ((D_801D300C + 0xA000) * sv) >> 12;
+            D_801D3010->vec = D_80182BF8;
+        } else if ((c -= 60) < 10) {
+            D_801D3010->vec = D_80182BF8;
+        } else if ((c -= 10) < 15) {
+            s32 d = (c << 12) / 15;
+            tmp = d;
+            D_80182C08.vx = (-(d << 10) >> 12) + 0x400;
+            D_80182C08.vy = D_801D300C + (((-D_801D300C) * d) >> 12);
+            func_8003F884(&D_80182BF8, &D_80182C00, 0x1000 - tmp, d, &D_801D3010->vec);
+            d = (func_8003ED64(d / 2) << 4) >> 12;
+            D_801D3010->vec.vy -= d;
+        } else {
+            D_80182C08.vx = 0;
+            D_801D3010->vec = D_80182C00;
+            D_801D30F8 = node->phase;
+            node->state = 2;
+            node->counter = 0;
+        }
+        node->counter++;
+        break;
+    }
+    case 2: {
+        s32 xPos = 0x8C;
+        D_80182C08.vy += 0x10;
+        xPos = !node->phase ? -0x8C : xPos;
+        D_801D3010->vec.vy = -0x5C;
+        D_801D3010->vec.vz = 0x200;
+        D_801D3010->vec.vx = xPos;
+        tmp = D_801D30F8 != node->phase;
+        if (tmp) {
+            node->state = 3;
+            node->counter = 0;
+        }
+        break;
+    }
+    case 3: {
+        s32 t = (node->counter << 12) / 10;
+        s32 sinv = func_8003ED64(t / 4);
+        if (node->phase) {
+            sinv = 0x1000 - sinv;
+        }
+        D_801D3010->vec.vx = ((sinv * 0x118) >> 12) - 0x8C;
+        D_801D3010->vec.vy = -0x5C;
+        D_801D3010->vec.vz = (-(func_8003ED64(t / 2) << 6) >> 12) + 0x200;
+        node->counter++;
+        if (node->counter >= 10) {
+            node->state = 2;
+            node->counter = 0;
+            node->phase ^= 1;
+        }
+        break;
+    }
+    }
+    func_80041274(&D_80182C08, &D_801D3010->mat);
+    D_801D3010->mat.t[0] = D_801D3010->vec.vx;
+    D_801D3010->mat.t[1] = D_801D3010->vec.vy;
+    D_801D3010->mat.t[2] = D_801D3010->vec.vz;
+    func_80041794(0x100, &D_801D3010->mat);
+    SetRotMatrix(&D_801D3010->mat);
+    SetTransMatrix(&D_801D3010->mat);
+    ot = &D_801C2EB0[4];
+    D_801C2EB4 = func_800995F8(ot, D_801C2EB4);
+    func_80098BA0(0x28);
+    return 0;
+}
 
 /**
  * @brief Triple Triad match controller — 10-state machine driving the post-game
@@ -1232,7 +1262,7 @@ INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object1", func_80099798);
  *
  * State outline:
  *   - **0** (init): on first frame allocate a sub-handler running
- *     @c func_80099798, mark @c D_801D30F8 = @c -1, clear the substate
+ *     @c cardFlipHandler, mark @c D_801D30F8 = @c -1, clear the substate
  *     parameter slots. Stays here until @c D_801D30F8 becomes non-negative
  *     (the sub-handler picks a starting player), then advances to state 1.
  *   - **1** (player turn): on first frame dispatch on
@@ -1292,7 +1322,7 @@ INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object1", func_80099798);
  *         switch (ctl->state) {
  *             case 0: {
  *                 if (ctl->counter == 0) {
- *                     HandlerNode *sub = (HandlerNode *)func_80098C44(D_801D3028, (s32)func_80099798);
+ *                     HandlerNode *sub = (HandlerNode *)func_80098C44(D_801D3028, (s32)cardFlipHandler);
  *                     sub->state = 0;
  *                     sub->counter = 0;
  *                     D_801D30F8 = -1;
@@ -1348,7 +1378,7 @@ INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object1", func_80099798);
  *                     ctl->counter++;
  *                 } else {
  *                     ctl->retryFlag = 1;
- *                     func_8009D058(&D_801D3398);
+ *                     resolveCaptures(&D_801D3398);
  *                     ctl->state = 5;  ctl->counter = 0;
  *                 }
  *                 break;
@@ -1360,7 +1390,7 @@ INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object1", func_80099798);
  *                     u8 next = applyCardRules(&D_801D3398, ctl->rulesFlags);
  *                     ctl->rulesFlags = next;
  *                     if (next != 0 && ctl->retryFlag != 0) func_8009EB30(5);
- *                     func_8009D058(&D_801D3398);
+ *                     resolveCaptures(&D_801D3398);
  *                 }
  *                 break;
  *             }
@@ -1465,9 +1495,9 @@ s32 func_8009A2F4(s32 a0) {
  *        the back-buffer's draw-env entry.
  *
  * Per-frame renderer that walks the 3x3 active play area (rows/cols 1..3).
- * Each board slot carries a @c pad05 bitmask whose set bits each represent a
- * captured-from direction (or similar overlay sprite) to render at that cell.
- * The function finds the lowest set bit of @c pad05, packs a 6-word combined
+ * Each board slot carries an @c element bitmask whose set bits select the
+ * element icon(s) to render at that cell.
+ * The function finds the lowest set bit of @c element, packs a 6-word combined
  * @c DR_TPAGE + @c SPRT primitive (24 bytes) into the active primitive pool
  * via @c D_801C2EB4, and links it into the OT at @c D_801C2EB0[0x1B] (the
  * 0x6C byte slot in the sort tree) using @c AddPrim. The U/V coordinates are
@@ -1505,7 +1535,7 @@ typedef struct {
     /* 0x08 */ u32 sprtCmd;    /**< GP0(0x66) textured sprite + grey-tint RGB = @c 0x66808080. */
     /* 0x0C */ s16 x0, y0;     /**< Screen-space sprite origin (top-left). */
     /* 0x10 */ u8  u0, v0;     /**< Texture-page UV (bit-position derived). */
-    /* 0x12 */ u16 clut;       /**< CLUT id (varies by lowest set bit of @c pad05). */
+    /* 0x12 */ u16 clut;       /**< CLUT id (varies by lowest set bit of @c element). */
     /* 0x14 */ s16 w, h;       /**< Sprite size in pixels (15x15). */
 } TripleTriadCellPrim;
 

@@ -1061,34 +1061,20 @@ typedef struct {
 /**
  * @brief 40-byte animation work node allocated by @c func_80098B80.
  *
- * Used by the be_object2 per-frame handlers to stage a transformed
- * position + sort key for one overlay element before linking display-list
- * primitives. Fields at 0x00-0x13 are scratch (written by @c func_80041274
- * as a small transform/matrix). The position fields are populated as:
- *  - @c func_8009A6EC writes @c baseX/baseY/baseZ/sortKey at 0x20-0x27 from
- *    the source entity.
- *  - The caller adds @c BattleObject.offX/Y/Z (and @c offSort) into
- *    @c worldX/Y/Z (and @c sortKey).
- *  - Sprite-emitting helpers (@c func_8009A970) then read the low 16 bits
- *    of @c worldX/worldY as the screen-space anchor via the @c spriteX/
- *    @c spriteY union members.
+ * The first 0x20 bytes are a @c MATRIX (so the GTE setup calls take it
+ * directly): @c func_80041274 fills the rotation @c mat.m, and the translation
+ * @c mat.t[0..2] holds the element's world X/Y/Z. The low 16 bits of
+ * @c mat.t[0]/@c mat.t[1] double as the screen-space sprite anchor read by
+ * @c func_8009A970. The trailing @c base is the pre-transform position written
+ * by @c func_8009A6EC (its @c pad slot carries the display-list sort key).
+ *
+ * Per-frame: @c func_8009A6EC writes @c base, then the caller adds
+ * @c BattleObject.offX/Y/Z into @c mat.t[0..2] and @c offSort into @c base.pad.
  */
 typedef struct {
-    /* 0x00 */ u8  pad00[0x14];
-    /* 0x14 */ union {
-        u16 spriteX;             /**< Low 16 bits — screen-space sprite X. */
-        s32 worldX;              /**< Full 32-bit accumulator. */
-    } x;
-    /* 0x18 */ union {
-        u16 spriteY;
-        s32 worldY;
-    } y;
-    /* 0x1C */ s32 worldZ;
-    /* 0x20 */ s16 baseX;        /**< Transformed base X from @c func_8009A6EC. */
-    /* 0x22 */ s16 baseY;
-    /* 0x24 */ s16 baseZ;
-    /* 0x26 */ u16 sortKey;      /**< Display-list bucket index (added to offSort). */
-} BattleAnimNode;                /* 40 bytes */
+    /* 0x00 */ MATRIX  mat;   /**< Transform: rotation + translation (t[0..2] = world X/Y/Z). */
+    /* 0x20 */ SVECTOR base;  /**< Base position from @c func_8009A6EC; @c pad = OT sort key. */
+} BattleAnimNode;             /* 40 bytes */
 
 /**
  * @brief Per-frame handler context wrapping a @c BattleObject.
@@ -1106,14 +1092,16 @@ typedef struct {
 
 extern s32  func_80023B14(s32 idx);
 extern s32  func_8003ED64();
+extern void func_8003F884(SVECTOR *a, SVECTOR *b, s32 wa, s32 wb, SVECTOR *out);
 extern void func_80041274();
+extern void func_80041794(s32 angle, MATRIX *m);
 extern s32  func_80098B80(s32 size);
 extern void func_80098BA0(s32 size);
 extern void *func_8009AE6C(s32 a, s32 b, void *ot, void *out);
 extern TSPRT *func_8009A970(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out);
 extern u8 *func_8009A6EC(u8 *src, s16 *dst);
 extern void func_8009C12C(BattleObject *entity);
-extern void func_8009C59C(BattleObject *entity, BattleAnimNode *node, void *otBucket);
+extern void transformCardEffect(BattleObject *entity, BattleAnimNode *node, void *otBucket);
 
 /* --- Battle animation lifecycle --- */
 extern void activateBattleAnim(s32 idx);
@@ -1123,159 +1111,6 @@ extern void func_800406A4(u8 *p);
 extern void func_80040734(u8 *p);
 extern s32  func_80040DE4(SVECTOR *v, s32 *sxy, s32 *p, s32 *flag);
 
-/* ======================================================================== */
-/* Triple Triad (card mini-game, played inside the battle overlay)          */
-/* ======================================================================== */
-
-/**
- * @brief One slot on the Triple Triad board (8 bytes).
- *
- * The board is laid out as a 5-cell-wide grid (@c TT_BOARD_COLS) with the
- * 3x3 active play area at rows/cols 1..3 and a 1-cell sentinel border
- * around it. Border slots have @c flags = 0, so neighbor lookups at the
- * edges of the play area fall through cleanly without bounds checks.
- *
- * Multiple bits in @c flags are stateful across a turn:
- *   - @c 0x01 : sentinel/wall slot (set only on border cells; used by the
- *               Same-Wall rule when a rank-A edge faces a wall).
- *   - @c 0x02 : occupied — a card has been placed here.
- *   - @c 0x04 : just-placed — the card was placed this turn, triggering
- *               rule evaluation. Cleared by the orchestrator after each turn.
- *   - @c 0x08..0x40 : captured-from-direction marks (bit @c 0x08<<dir set
- *               when this slot was captured by a neighbor in direction
- *               @c dir, where dir is 0=UP, 1=DOWN, 2=LEFT, 3=RIGHT).
- *   - @c 0x80 : matched in the Same-rule pass-1 (matching edge value).
- *   - @c 0x100 : involved in a Plus-rule combo this turn (set on both the
- *               placer and the captured neighbors).
- */
-typedef struct {
-    /* 0x00 */ u16 flags;       /**< See @c TT_CELL_* flag table below. */
-    /* 0x02 */ u8  cardId;      /**< Index into @c g_tripleTriadCardStats. */
-    /* 0x03 */ u8  entityIdx;   /**< @c D_801D31C0 slot index (battle object) driving this cell's animation. */
-    /* 0x04 */ u8  owner;       /**< Player 0 or 1. */
-    /* 0x05 */ u8  pad05;
-    /* 0x06 */ s8  elementMod;  /**< FF8 Elemental rule: +1/-1 added to each edge if card's
-                                     element matches/differs from cell's element. */
-    /* 0x07 */ u8  pad07;
-} TripleTriadBoardSlot;
-
-/** @brief Bits in @c TripleTriadBoardSlot.flags. */
-#define TT_CELL_WALL          0x0001  /**< Sentinel border slot (rank-A vs wall triggers Same-Wall). */
-#define TT_CELL_OCCUPIED      0x0002  /**< A card has been placed in this slot. */
-#define TT_CELL_JUST_PLACED   0x0004  /**< Placed this turn; triggers rule evaluation. */
-#define TT_CELL_CAP_FROM_BASE 0x0008  /**< Shift left by @c dir (0..3) for captured-from-direction bit. */
-#define TT_CELL_CAP_FROM_UP   0x0008
-#define TT_CELL_CAP_FROM_DOWN 0x0010
-#define TT_CELL_CAP_FROM_LEFT 0x0020
-#define TT_CELL_CAP_FROM_RIGHT 0x0040
-#define TT_CELL_SAME_MATCHED  0x0080  /**< Matched in Same-rule pass 1, or "Same fired here" on the placer. */
-#define TT_CELL_PLUS_COMBO    0x0100  /**< Involved in a Plus-rule combo this turn. */
-
-/**
- * @brief Per-card stat block (8 bytes) — one entry of @c g_tripleTriadCardStats.
- *
- * The four @c sides values are the edge ranks (1..10, where rank 10 = "A")
- * stored in the order {top, bottom, left, right}. This ordering is chosen
- * specifically so @c i^1 yields the opposing edge: 0(top)↔1(bottom),
- * 2(left)↔3(right). The same ordering is used by @c TripleTriadDirection,
- * letting rule evaluators compare @c myCard.sides[dir] against
- * @c neighborCard.sides[dir^1] without a lookup table.
- */
-typedef struct {
-    /* 0x00 */ u8 sides[4];   /**< Edge ranks 1..10, in {top, bottom, left, right} order. */
-    /* 0x04 */ u8 pad04[4];   /**< Element / level / other per-card metadata. */
-} TripleTriadCard;
-
-/**
- * @brief 4-cardinal neighbor offset (4 bytes).
- *
- * One entry of @c g_tripleTriadDirectionOffsets, which holds the four
- * cardinal direction vectors in this exact order:
- *   index 0: UP    (0, -1)
- *   index 1: DOWN  (0, +1)
- *   index 2: LEFT  (-1, 0)
- *   index 3: RIGHT (+1, 0)
- *
- * The pairing is deliberate: @c i^1 flips a direction to its opposite
- * (0↔1, 2↔3), matching the @c TripleTriadCard.sides[] layout so that
- * "my edge facing direction @c i" lines up with "my neighbor's edge
- * facing direction @c i^1".
- */
-typedef struct {
-    /* 0x00 */ s16 dx;        /**< Column delta. */
-    /* 0x02 */ s16 dy;        /**< Row delta. */
-} TripleTriadDirection;
-
-/**
- * @brief One bucket in the Plus-rule edge-sum histogram (2 bytes).
- *
- * Used only inside @c applyPlusRule. After a placed card is identified,
- * one bucket per possible edge sum (0..20) accumulates how many of the
- * four neighbors produced that sum. The Plus rule fires when any bucket
- * reaches @c count >= 2, at which point @c dirMask tells which neighbor
- * directions to flip.
- */
-typedef struct {
-    /* 0x00 */ u8 count;      /**< Number of neighbors that hit this edge sum. */
-    /* 0x01 */ u8 dirMask;    /**< Bitmask of which directions (bit @c i set if dir @c i hit). */
-} TripleTriadPlusBucket;
-
-/** @brief Number of columns per row, including the 1-cell sentinel border. */
-#define TT_BOARD_COLS  5
-/** @brief Number of rows in the board, including sentinel borders. */
-#define TT_BOARD_ROWS  5
-
-/**
- * @brief Full 5x5 Triple Triad board (rows × cols, 200 bytes total).
- *
- * The active play area is at rows/cols 1..3; the 0th and 4th rows/cols
- * are sentinel slots with @c flags=0 used to keep neighbor lookups
- * branch-free at the edges of the play area.
- */
-typedef struct {
-    /* 0x00 */ TripleTriadBoardSlot cells[TT_BOARD_ROWS][TT_BOARD_COLS];
-} TripleTriadBoard;
-
-/** @brief Global 5x5 Triple Triad board (sentinel-padded). */
-extern TripleTriadBoard D_801D3398;
-
-/**
- * @brief 60-byte work buffer staged by @c func_80098B80 for one card
- *        render pass (used by @c func_8009AE6C and related helpers).
- *
- * Holds the 4 digit-corner SVECTORs computed for each rank inside the
- * digit loop, the 4 transformed screen positions of the card outline
- * (from @c RotTransPers4), and the GTE P/flag outputs.
- */
-typedef struct {
-    /* 0x00 */ SVECTOR digitVerts[4];   /**< Per-rank digit quad corners. */
-    /* 0x20 */ s32     outXY[4];         /**< Packed @c (s16 x, s16 y) screen verts. */
-    /* 0x30 */ s32     P;                /**< RotTransPers4 perspective output. */
-    /* 0x34 */ s32     flag;             /**< RotTransPers4 flag output. */
-    /* 0x38 */ u8      pad38[4];
-} CardRenderWork;                        /* 60 bytes */
-
-/** @brief 4-cardinal direction indices into @c g_tripleTriadDirectionOffsets and
- *         @c TripleTriadCard.sides[]. The pairing @c dir^1 yields the opposite. */
-typedef enum {
-    TT_DIR_UP    = 0,
-    TT_DIR_DOWN  = 1,
-    TT_DIR_LEFT  = 2,
-    TT_DIR_RIGHT = 3,
-    TT_DIR_COUNT = 4
-} TripleTriadDir;
-
-/** @brief Rank value that triggers the Same-Wall rule when facing a wall. */
-#define TT_RANK_A          0x0A
-
-/** @brief Bits in @c g_tripleTriadRules controlling which optional rules are active. */
-#define TT_RULE_SAME       0x02   /**< Same rule enabled. */
-#define TT_RULE_PLUS       0x04   /**< Plus rule enabled. */
-#define TT_RULE_SAME_WALL  0x40   /**< Same-Wall extension (A facing wall counts as a match). */
-
-extern TripleTriadCard      g_tripleTriadCardStats[];          /**< Card stats table (~110 cards). */
-extern TripleTriadDirection g_tripleTriadDirectionOffsets[4];  /**< UP, DOWN, LEFT, RIGHT (see TripleTriadDirection). */
-extern s32                  g_tripleTriadRules;                /**< Active rule flags (TT_RULE_*). */
 extern u8                   D_801A2C70[2];                     /**< Per-player layout type; 3 selects the offset-hand layout. */
 
 /** @brief Reset battle-transition state (clears @c btl_color flags). */

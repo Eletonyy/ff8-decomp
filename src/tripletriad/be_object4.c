@@ -1,5 +1,6 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
+#include "tripletriad/be_object4.h"
 
 extern s16 D_801D49E2;
 extern s16 D_801D49F8[];

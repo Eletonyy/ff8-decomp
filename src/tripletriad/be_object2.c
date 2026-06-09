@@ -1,5 +1,7 @@
 #include "common.h"
 #include "battle.h"
+#include "tripletriad.h"
+#include "tripletriad/be_object2.h"
 
 extern u8 D_801D3110[];
 extern u8 D_801D3120[];
@@ -120,9 +122,9 @@ TSPRT *func_8009A970(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out) {
         out->tag      = 0x05000000;
         out->drawMode = 0xE100060C;
         *(u32 *)&out->r0 = 0x64808080;
-        out->x0 = node->x.spriteX + 0xB4;
+        out->x0 = (u16)node->mat.t[0] + 0xB4;
         {
-            s32 y0 = node->y.spriteY;
+            s32 y0 = (u16)node->mat.t[1];
             out->w  = 24;
             out->h  = 16;
             out->y0 = y0 + 0x68;
@@ -161,7 +163,7 @@ TSPRT *func_8009A970(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out) {
  *    cell's @c elementMod in @c D_801D3398 — if non-zero, emits the
  *    elemental modifier overlay sprite via @c func_8009A970.
  *  - Calls the per-frame render helpers (@c func_8009AE6C and
- *    @c func_8009C59C) to draw the rest of the object.
+ *    @c transformCardEffect) to draw the rest of the object.
  *  - Frees the @c BattleAnimNode.
  *
  * @param ctl Handler context whose @c entry slot points at the
@@ -195,19 +197,19 @@ s32 func_8009AA68(BattleObjectCtl *ctl) {
     }
 
     func_8009C12C(entity);
-    func_8009A6EC(&entity->groupId, &node->baseX);
+    func_8009A6EC(&entity->groupId, &node->base.vx);
     func_80041274(&entity->posData[0], node);
 
-    node->x.worldX  = node->baseX + entity->offX;
-    node->y.worldY  = node->baseY + entity->offY;
-    node->worldZ    = node->baseZ + entity->offZ;
-    node->sortKey  += entity->offSort;
+    node->mat.t[0]  = node->base.vx + entity->offX;
+    node->mat.t[1]  = node->base.vy + entity->offY;
+    node->mat.t[2]    = node->base.vz + entity->offZ;
+    node->base.pad  += entity->offSort;
 
     if (entity->angle != 0) {
         if (entity->groupId == 0) {
-            node->x.worldX += (func_8003ED64(entity->angle / 4) * 12) >> 12;
+            node->mat.t[0] += (func_8003ED64(entity->angle / 4) * 12) >> 12;
         } else {
-            node->x.worldX -= (func_8003ED64(entity->angle / 4) * 12) >> 12;
+            node->mat.t[0] -= (func_8003ED64(entity->angle / 4) * 12) >> 12;
         }
     }
 
@@ -216,16 +218,16 @@ s32 func_8009AA68(BattleObjectCtl *ctl) {
         s8 elementMod = D_801D3398.cells[entity->priority + 1][col].elementMod;
         if (elementMod != 0) {
             D_801C2EB4 = func_8009A970(node, elementMod,
-                                        &D_801C2EB0[(s16)node->sortKey], D_801C2EB4);
+                                        &D_801C2EB0[(s16)node->base.pad], D_801C2EB4);
         }
     }
 
-    SetRotMatrix(node);
-    SetTransMatrix(node);
+    SetRotMatrix(&node->mat);
+    SetTransMatrix(&node->mat);
 
     D_801C2EB4 = func_8009AE6C(entity->entityType, entity->initFlags,
-                                &D_801C2EB0[(s16)node->sortKey], D_801C2EB4);
-    func_8009C59C(entity, node, &D_801C2EB0[(s16)node->sortKey]);
+                                &D_801C2EB0[(s16)node->base.pad], D_801C2EB4);
+    transformCardEffect(entity, node, &D_801C2EB0[(s16)node->base.pad]);
 
     func_80098BA0(0x28);
     return 0;
@@ -1214,10 +1216,10 @@ u8 *func_8009C440(BattleAnimNode *node, s32 angle, void *ot, u8 *primBuf) {
     poly->tag  = 0x08000000;
     poly->code = 0x3A;
 
-    poly->x0 = poly->x2 = node->x.spriteX + 0xA1;
-    poly->x1 = poly->x3 = node->x.spriteX + 0xDF;
-    poly->y0 = poly->y1 = node->y.spriteY + 0x51;
-    poly->y2 = poly->y3 = node->y.spriteY + 0x8F;
+    poly->x0 = poly->x2 = (u16)node->mat.t[0] + 0xA1;
+    poly->x1 = poly->x3 = (u16)node->mat.t[0] + 0xDF;
+    poly->y0 = poly->y1 = (u16)node->mat.t[1] + 0x51;
+    poly->y2 = poly->y3 = (u16)node->mat.t[1] + 0x8F;
 
     AddPrim(ot, poly);
 
@@ -1239,56 +1241,97 @@ u8 *func_8009C440(BattleAnimNode *node, s32 angle, void *ot, u8 *primBuf) {
  *    @c cardScale, set @c worldZ to @c 0x200, push rotation/translation
  *    into the GTE, then walk the next display primitive via
  *    @c func_8009B3EC into @p otBucket.
- *  - @b 6 (flip): drive an angle from @c field02 (0..19, divided over 20
+ *  - @b 6 (flip): drive an angle from @c field02 (0..19, swept over 20
  *    frames as @c (n+1)*4096/20 — a 12-bit fixed-point sweep through
- *    [0, 4096]) and emit the gouraud quad via @c func_8009C440 into
- *    @c &D_801C2EB0[6] (a fixed OT bucket). @c field02 advances; when it
- *    reaches @c 20 the state is cleared.
+ *    [0, 4096]) and emit the gouraud quad via @c func_8009C440 into a fixed
+ *    OT layer (@c &D_801C2EB0[6], vs the per-card sort-key layer used by the
+ *    normal render). @c field02 advances; when it reaches @c 20 the state is
+ *    cleared.
  *
- * The C below compiles to 95.51% match — gcc 2.7.2 won't fill the
- * dispatch branch delay slots with a state-copy / node-copy pair the way
- * the target does without an introduced `new_var` temp (which we don't
- * use). Keep as @c INCLUDE_ASM for the byte match.
+ * The C below is the believed-original source — it reads cleanly but only
+ * ~88% byte-matches; the residual is gcc 2.7.2 delay-slot scheduling that the
+ * target reproduces only via a register anchor we don't write. Kept as
+ * @c INCLUDE_ASM for the byte match.
  *
  * @verbatim
- * void func_8009C59C(BattleObject *entity, BattleAnimNode *node,
+ * void transformCardEffect(BattleObject *entity, BattleAnimNode *node,
  *                    void *otBucket) {
- *     static const VECTOR cardScale = { 0x1000, 0x1000, 0, 0 };
- *     VECTOR scaleVec;
- *     s32 state;
- *     s32 field02;
+ *     VECTOR scaleVec = func_80098154;        // cardScale {0x1000,0x1000,0,0}
+ *     s32 state   = entity->state;
+ *     s32 field02 = entity->field02;
  *
- *     scaleVec = cardScale;
- *     state = entity->state;
- *     field02 = entity->field02;
- *
- *     if (state >= 6 || state == 0) {
- *         if (state == 0) return;
- *         if (state != 6) return;
- *         field02 = ((field02 + 1) * 4096) / 20;
- *         D_801C2EB4 = func_8009C440(node, field02,
- *                                     &D_801C2EB0[6], D_801C2EB4);
- *         entity->field02++;
- *         if ((s16)entity->field02 >= 20) {
- *             entity->state = 0;
- *             entity->field02 = 0;
+ *     if (state >= 6) {                        // 6 = flip, >6 = idle
+ *         if (state == 6) {
+ *             s32 angle = ((field02 + 1) * 4096) / 20;
+ *             // flip prims link into a fixed OT layer (not the per-card layer)
+ *             D_801C2EB4 = func_8009C440(node, angle, &D_801C2EB0[6], D_801C2EB4);
+ *             entity->field02++;
+ *             if ((s16)entity->field02 >= 20) {
+ *                 entity->state = 0;
+ *                 entity->field02 = 0;
+ *             }
  *         }
- *         return;
+ *     } else if (state != 0) {                 // 1..5 = slide-in
+ *         ScaleMatrix(&node->mat, &scaleVec);
+ *         node->mat.t[2] = 0x200;
+ *         SetRotMatrix(&node->mat);
+ *         SetTransMatrix(&node->mat);
+ *         D_801C2EB4 = func_8009B3EC(otBucket, D_801C2EB4);
  *     }
- *
- *     ScaleMatrix((MATRIX *)node, &scaleVec);
- *     node->worldZ = 0x200;
- *     SetRotMatrix((MATRIX *)node);
- *     SetTransMatrix((MATRIX *)node);
- *     D_801C2EB4 = func_8009B3EC(otBucket, D_801C2EB4);
  * }
  * @endverbatim
  */
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009C59C);
+INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", transformCardEffect);
 
 INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009C6D8);
 
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009C890);
+/**
+ * @brief Place a Triple Triad card on the board and apply the Elemental rule.
+ *
+ * Clears the per-turn flags (@c JUST_PLACED / @c SAME_MATCHED / @c PLUS_COMBO)
+ * across the playable 3x3 cells, then writes the card into
+ * @c board->cells[row+1][col+1]: stores @c cardId and @c owner and marks the
+ * cell @c OCCUPIED | @c JUST_PLACED. If the cell carries an element and the
+ * Elemental rule (@c TT_RULE_ELEMENTAL) is active, sets @c elementMod to +1
+ * when the card's element matches the cell's element, or -1 when it differs
+ * (the modifier is later added to each of the placed card's edges).
+ *
+ * @param board  The Triple Triad board.
+ * @param cardId Card stat index (into @c g_tripleTriadCardStats).
+ * @param owner  Placing player (0 or 1).
+ * @param col    Play-area column (cell column is @c col+1).
+ * @param row    Play-area row (cell row is @c row+1).
+ * @return The placed board cell.
+ */
+TripleTriadBoardSlot *placeCard(TripleTriadBoard *board, s32 cardId, s32 owner, s32 col, s32 row) {
+    s32 r, c;
+    TripleTriadBoardSlot *cell;
+    s32 e;
+
+    for (r = 1; r < 4; r++) {
+        for (c = 1; c < 4; c++) {
+            board->cells[r][c].flags &= ~(TT_CELL_JUST_PLACED | TT_CELL_SAME_MATCHED | TT_CELL_PLUS_COMBO);
+        }
+    }
+
+    cell = &board->cells[row + 1][col + 1];
+    cell->owner = owner;
+    e = cell->element;
+    cell->cardId = cardId;
+    cell->flags |= TT_CELL_OCCUPIED | TT_CELL_JUST_PLACED;
+    if (e != 0) {
+        if (g_tripleTriadCardStats[cardId & 0xFF].element & e) {
+            if (g_tripleTriadRules & TT_RULE_ELEMENTAL) {
+                cell->elementMod = 1;
+            }
+        } else {
+            if (g_tripleTriadRules & TT_RULE_ELEMENTAL) {
+                cell->elementMod = -1;
+            }
+        }
+    }
+    return cell;
+}
 
 /**
  * Starts an animation sequence on a battle entity.
@@ -1307,7 +1350,7 @@ void func_8009C978(s32 a0, s32 a1, s32 a2, s32 a3) {
     u8 *result;
 
     entry = base + a1 * 36;
-    result = (u8 *)func_8009C890(a0, entry[0], *(s32 *)(entry + 8) & 1, a2, a3);
+    result = (u8 *)placeCard((TripleTriadBoard *)a0, entry[0], *(s32 *)(entry + 8) & 1, a2, a3);
     result[3] = a1;
 }
 
@@ -1620,7 +1663,38 @@ s32 applyCardRules(TripleTriadBoard *board, s32 mode) {
     return result;
 }
 
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D058);
+/**
+ * @brief Resolve captured cells: trigger flip animations and clear capture bits.
+ *
+ * Walks the playable 3x3 cells. For each cell that was captured this turn
+ * (any @c TT_CELL_CAP_FROM_* bit set), finds the capture direction via the
+ * @c D_80182D54 table (matching the cell's captured-from bit against
+ * @c CaptureDir.capBit) and drives that cell entity's flip animation with
+ * @c func_8009C0A0. It then clears the captured-from bits and marks the cell
+ * @c TT_CELL_JUST_PLACED so the next rule pass re-evaluates it.
+ *
+ * @param board The Triple Triad board.
+ */
+void resolveCaptures(TripleTriadBoard *board) {
+    s32 row, col, dir;
+
+    for (row = 1; row <= 3; row++) {
+        for (col = 1; col <= 3; col++) {
+            s32 flags = board->cells[row][col].flags;
+            if (flags & TT_CELL_CAP_FROM_MASK) {
+                for (dir = 0; dir < 4; dir++) {
+                    if (flags & D_80182D54[dir].capBit) {
+                        func_8009C0A0(board->cells[row][col].entityIdx, D_80182D54[dir].animType);
+                        break;
+                    }
+                }
+                flags &= ~TT_CELL_CAP_FROM_MASK;
+                flags |= TT_CELL_JUST_PLACED;
+                board->cells[row][col].flags = flags;
+            }
+        }
+    }
+}
 
 INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D154);
 
