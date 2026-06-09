@@ -98,7 +98,13 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BCE4);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BD60);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009BDD0);
+s32 func_8009BDD0(s32 arg0, s32 arg1) {
+    if ((D_800ED148.entities[arg1].flags & (1 | 8)) || (D_800EEBBB == 255)) {
+        return 1;
+    }
+    
+    return 0;
+}
 
 /**
  * @brief Check entity stat against limit and set overflow flag.
@@ -214,7 +220,24 @@ s32 func_8009C090(s32 arg0, s32 arg1, s32* arg2, u32 arg3) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C104);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C300);
+s32 func_8009C300(s32 arg0, s32 arg1) {
+    u8 var_a1;
+    s32 index = 1;
+    
+    if (arg1 == 0) {
+        var_a1 = (D_800ED148.entities + arg0)->unkCE;
+    } 
+    
+    else {
+        var_a1 = (D_800ED148.entities + arg0 + index)->unk0;
+    }
+    
+    if ((D_800ED148.entities + arg0)->flags & 0x01000000) {
+        var_a1 = 0;
+    }
+    
+    return var_a1;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C390);
 
@@ -229,9 +252,33 @@ s32 func_8009C570(s32 id) {
     return buf[0];
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C598);
+u16 func_8009C598(s32 arg0, s32 arg1) {
+    if (D_800ED148.entities[arg0].status & CTRL_FLAG_40) {
+        if (arg1 == 7) {
+            return 700;
+        }
+    }
+    return D_800ED148.entities[arg0].unk54[arg1];
+}
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C610);
+s32 func_8009C610(s32 arg0, s32 arg1, s32 arg2) {    
+    if (!(D_800ED148.entities[arg0].status & CTRL_FLAG_40)) {
+        if (D_800ED148.entities[arg1].status & CTRL_FLAG_40) {
+            arg2 = -arg2;
+        }
+    } 
+    
+    else if (!(D_800ED148.entities[arg1].status & CTRL_FLAG_40)) {
+        arg2 = -arg2;
+    }
+    
+    arg2 = -arg2;
+    if (arg2 < 0) {
+        D_800EE4C0.unkA |= 1;
+        arg2 = ~arg2 + 1;
+    }
+    return arg2;
+}
 
 /**
  * @brief Clamp a damage value to a maximum of 9999.
@@ -245,11 +292,51 @@ s32 func_8009C6CC(s32 val) {
     return val;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C6E4);
+void func_8009C6E4(s32 arg0, s32 arg1, s32 arg2) {
+    s32 temp_v1;
+    s32 temp_v2;
+    s32 temp_v3;
+    
+    D_800EE4C0.unk7 = arg0;
+    temp_v1 = D_800EEBBA - D_800ED148.entities[arg1].unkB7;
+    if (temp_v1 > 0) {
+        temp_v2 = (arg2 * temp_v1) / 100;
+        temp_v3 = func_8009C610(arg0, arg1, temp_v2);
+        D_800EE4C0.unk14 = func_8009C6CC(temp_v3);
+        return;
+    }
+    
+    D_800EE4C0.unk14 = 0;
+    D_800EE4C0.unkA |= 1;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C798);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C8B8);
+void func_8009C8B8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+    D_800EEBC4 &= 0xFBFFFFFF;
+    
+    if (D_800EEBC4 & 0x8000) {
+        func_8009C6E4(arg1, arg2, arg4);
+        D_800EEBC4 &= 0xFFFF7FFF;
+    }
+    
+    if (D_800ED148.entities[arg2].flags & 0x400000) {
+        if (D_800ED148.entities[arg1].controlFlags & 0x1000) {
+            if (arg0 == 0) {
+                func_8009C798(arg1, arg2, arg3);
+            }
+        }
+    }
+    
+    if (!(func_8009C390(arg1, arg2, arg0) & 0xFF)) {
+        if (arg3 == 0) {
+            D_800EE4C0.flags6 |= 4;
+        }
+        
+    } else if (arg3 == 0) {
+        D_800EE4C0.flags5 |= 1;
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009CA14);
 
