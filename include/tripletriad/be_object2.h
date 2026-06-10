@@ -24,7 +24,7 @@ typedef struct {
 extern CaptureDir D_80182D54[4];
 
 /** @brief Set a battle entity's type (which selects its animation); triggers a
- *         flip effect for types 2..5. @c entityIdx indexes @c D_801D31C0. */
+ *         flip effect for types 2..5. @c entityIdx indexes @c g_tripleTriadCardHands. */
 extern void func_8009C0A0(s32 entityIdx, s32 type);
 
 /** @brief Resolve captured cells: trigger each captured cell's flip animation

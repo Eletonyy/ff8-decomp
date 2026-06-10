@@ -160,4 +160,28 @@ typedef union {
         : "v0", "v1", "memory");                         \
 } while (0)
 
+/**
+ * @brief Battle encounter setup parameters at @ref D_80082C90.
+ *
+ * Resident scratch populated by the field-VM @c initiateBattleEncounter opcode
+ * just before it kicks off a battle/card-game transition; the trailing @c result
+ * is written by the battle overlay once the fight finishes and read back on the
+ * @c return-pass of the same field opcode. The Triple Triad AI setup
+ * (@c func_8009DECC) reads @c field_06 / @c field_07 here as its difficulty
+ * selectors (weight-table and search-depth indices).
+ */
+typedef struct {
+    /* 0x00 */ s32 encounterPtr;
+    /* 0x04 */ u8 field_04;
+    /* 0x05 */ u8 field_05;
+    /* 0x06 */ u8 field_06;
+    /* 0x07 */ u8 field_07;
+    /* 0x08 */ u8 field_08;
+    /* 0x09 */ u8 field_09;
+    /* 0x0A */ u8 pad0A[2];
+    /* 0x0C */ u8 result;
+} EncounterParams;
+
+extern EncounterParams D_80082C90;
+
 #endif /* COMMON_H */

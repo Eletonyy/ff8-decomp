@@ -1009,8 +1009,8 @@ void func_80099464(void) {
 /**
  * @brief Initialize the 10 Triple Triad battle-object slots for a new match.
  *
- * Calls @c func_8009C6D8 for one-shot setup, then assigns each of the 10
- * @c D_801D31C0 slots to a player by tagging it with that player's index
+ * Calls @c resetTriadBoard for one-shot setup, then assigns each of the 10
+ * @c g_tripleTriadCardHands slots to a player by tagging it with that player's index
  * (low bit of @c initFlags) and a sequence number (0..N) within that
  * player's hand. The @c fieldD reset clears any stale sub-state.
  *
@@ -1029,16 +1029,16 @@ void func_8009953C(void) {
     s32 cnt[2];
     s32 i;
     s32 owner;
-    BattleObject *entry;
+    TripleTriadCardObject *entry;
 
-    func_8009C6D8();
+    resetTriadBoard();
 
     cnt[1] = 0;
     cnt[0] = 0;
 
     for (i = 0; i < 10; i++) {
         s32 c;
-        entry = &D_801D31C0[i];
+        entry = &g_tripleTriadCardHands[i];
         owner = entry->initFlags & 1;
         entry->fieldD = 0;
         entry->groupId = owner;
@@ -1283,7 +1283,7 @@ s32 cardFlipHandler(HandlerNode *node) {
  *     all 9 are filled, advance to state 7. Otherwise flip @c D_801D30F8
  *     and loop back to state 1 (next player's turn).
  *   - **7** (card count): wait one frame; then tally cards in
- *     @c D_801D31C0 by owner (low bit of @c initFlags). Stash the winner
+ *     @c g_tripleTriadCardHands by owner (low bit of @c initFlags). Stash the winner
  *     in @c D_801D30FC (@c 0/1 for winner, @c 2 for draw). Wait until
  *     @c counter >= 12, then advance to state 8.
  *   - **8** (result SFX + input wait): on first frame pick the result SFX
@@ -1413,7 +1413,7 @@ s32 cardFlipHandler(HandlerNode *node) {
  *                 if (ctl->counter == 1) {
  *                     u8 cnt[2]; s32 i;
  *                     cnt[1] = 0;  cnt[0] = 0;
- *                     for (i = 0; i < 10; i++) cnt[D_801D31C0[i].initFlags & 1]++;
+ *                     for (i = 0; i < 10; i++) cnt[g_tripleTriadCardHands[i].initFlags & 1]++;
  *                     if (cnt[0] > cnt[1])      D_801D30FC = 0;
  *                     else if (cnt[1] > cnt[0]) D_801D30FC = 1;
  *                     else                       D_801D30FC = 2;
@@ -1609,7 +1609,7 @@ s32 func_8009A4E0(CallbackNode *node) {
  * @brief Triple Triad: tally per-player card ownership and render the two
  *        score-digit sprites for the end-of-game tally screen.
  *
- * Walks all 10 @c BattleObject slots in @c D_801D31C0 and bins each by the
+ * Walks all 10 @c TripleTriadCardObject slots in @c g_tripleTriadCardHands and bins each by the
  * low bit of @c initFlags (owner: player 0 or player 1) into a 2-element
  * stack-local @c cnt[]. Then emits two 6-word combined @c DR_TPAGE + @c SPRT
  * primitives — one per player — placed at fixed screen positions
@@ -1639,7 +1639,7 @@ s32 func_8009A508(void) {
     cnt[0] = 0;
 
     for (; i < 10; i++) {
-        cnt[D_801D31C0[i].initFlags & 1]++;
+        cnt[g_tripleTriadCardHands[i].initFlags & 1]++;
     }
 
     prim = (TripleTriadCellPrim *)D_801C2EB4;
@@ -1668,10 +1668,10 @@ s32 func_8009A508(void) {
 /**
  * @brief Initialize the D_801D3028 linked list with battle update callbacks.
  *
- * Calls func_8009C6D8 for initial setup, then initializes D_801D3028
+ * Calls resetTriadBoard for initial setup, then initializes D_801D3028
  * as a linked list (pool at D_801D3038, node size 0x18, capacity 8).
  * Registers four callback functions as nodes. Clears fields on the
- * first callback's node. Finally calls func_8009AD24 and returns
+ * first callback's node. Finally calls setupTripleTriadHands and returns
  * the list pointer.
  *
  * @return Pointer to D_801D3028 list header.
@@ -1679,7 +1679,7 @@ s32 func_8009A508(void) {
 u8 *func_8009A650(void) {
     u8 *list;
     u8 *node;
-    func_8009C6D8();
+    resetTriadBoard();
     list = D_801D3028;
     func_80098BC0(list, D_801D3038, 0x18, 8);
     node = (u8 *)func_80098C44(list, (s32)func_80099C78);
@@ -1689,7 +1689,7 @@ u8 *func_8009A650(void) {
     func_80098C44(list, (s32)func_8009A2F4);
     func_80098C44(list, (s32)func_8009A314);
     func_80098C44(list, (s32)func_8009A508);
-    func_8009AD24();
+    setupTripleTriadHands();
     return list;
 }
 
@@ -1746,7 +1746,7 @@ u8 *func_8009A6EC(u8 *a0, s16 *a1) {
 }
 
 /**
- * @brief Find a battle-object slot in @c D_801D31C0 matching a search key.
+ * @brief Find a battle-object slot in @c g_tripleTriadCardHands matching a search key.
  *
  * Three search modes are dispatched off @p groupId:
  *  - @c groupId @c <0: invalid — returns @c -1.
@@ -1758,9 +1758,9 @@ u8 *func_8009A6EC(u8 *a0, s16 *a1) {
  *    matches @p priority.
  *  - @c groupId @c >2: invalid — returns @c -1.
  *
- * @param groupId  Search-mode selector and target @c BattleObject.groupId.
- * @param fieldD   Target @c BattleObject.fieldD (only used in mode 2).
- * @param priority Target @c BattleObject.priority.
+ * @param groupId  Search-mode selector and target @c TripleTriadCardObject.groupId.
+ * @param fieldD   Target @c TripleTriadCardObject.fieldD (only used in mode 2).
+ * @param priority Target @c TripleTriadCardObject.priority.
  * @return Slot index @c 0..9 of the first matching entry, or @c -1 if
  *         none found / invalid mode.
  */
@@ -1773,9 +1773,9 @@ s32 func_8009A7A4(s32 groupId, s32 fieldD, s32 priority) {
     case 0:
     case 1:
         for (i = 0; i < 10; i++) {
-            if (D_801D31C0[i].flags & 1) {
-                if (D_801D31C0[i].groupId == groupId) {
-                    if (D_801D31C0[i].priority == priority) {
+            if (g_tripleTriadCardHands[i].flags & 1) {
+                if (g_tripleTriadCardHands[i].groupId == groupId) {
+                    if (g_tripleTriadCardHands[i].priority == priority) {
                         return i;
                     }
                 }
@@ -1785,9 +1785,9 @@ s32 func_8009A7A4(s32 groupId, s32 fieldD, s32 priority) {
 
     case 2:
         for (i = 0; i < 10; i++) {
-            if (D_801D31C0[i].groupId == groupId) {
-                if (D_801D31C0[i].fieldD == fieldD) {
-                    if (D_801D31C0[i].priority == priority) {
+            if (g_tripleTriadCardHands[i].groupId == groupId) {
+                if (g_tripleTriadCardHands[i].fieldD == fieldD) {
+                    if (g_tripleTriadCardHands[i].priority == priority) {
                         return i;
                     }
                 }
@@ -1804,7 +1804,7 @@ s32 func_8009A7A4(s32 groupId, s32 fieldD, s32 priority) {
  *
  * Looks up an entity index via func_8009A7A4, then sets bit 1 (0x2)
  * in the flags halfword at offset +4 of the entity's 36-byte entry
- * in D_801D31C0.
+ * in g_tripleTriadCardHands.
  *
  * @param a0 Entity search key passed to func_8009A7A4.
  * @param a1 Secondary parameter passed as third arg to func_8009A7A4.
@@ -1812,6 +1812,6 @@ s32 func_8009A7A4(s32 groupId, s32 fieldD, s32 priority) {
 void func_8009A878(s32 a0, s32 a1) {
     s32 idx = func_8009A7A4(a0, 0, a1);
     if (idx >= 0) {
-        D_801D31C0[idx].flags |= 2;
+        g_tripleTriadCardHands[idx].flags |= 2;
     }
 }

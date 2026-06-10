@@ -14,6 +14,85 @@ extern s32 D_801A2C74;
 extern u16 D_801C2EC4;
 extern u8  D_801C2DCA;
 
+/** @brief Game RNG — returns a pseudo-random value. */
+extern s32 func_80023D04(void);
+
+/**
+ * @brief One entry of the AI move-search workspace (@ref func_8009D72C fills it).
+ *
+ * @c D_801D3460 holds 9 of these (one per playable interior board cell). Entry
+ * @c [0] is the chosen move once the search completes: @c col / @c row give the
+ * target board cell and @c handSlot selects the card in the player's hand.
+ * @note @c D_801D3462 / @c D_801D3466 are separate splat symbols that alias
+ *       @c D_801D3460[0].unk02 / @c D_801D3460[0].handSlot.
+ */
+typedef struct {
+    /* 0x00 */ u8 unk00;
+    /* 0x01 */ u8 unk01;
+    /* 0x02 */ u8 unk02;       /* reset to 0 each search; reachable as D_801D3462 */
+    /* 0x03 */ u8 unk03;       /* reset to 1 each search */
+    /* 0x04 */ u8 col;         /* target board column */
+    /* 0x05 */ u8 row;         /* target board row */
+    /* 0x06 */ u8 handSlot;    /* hand-card index (0..4); reachable as D_801D3466 */
+    /* 0x07 */ u8 unk07;
+    /* 0x08 */ u8 unk08[0x10];
+} AiMove;                      /* 0x18 */
+
+/**
+ * @brief AI turn/placement controller — a 0x14-byte callback list node.
+ *
+ * Allocated by @ref func_8009DECC via @c func_80098C44 with @ref func_8009DBE8
+ * registered as its per-frame callback; the leading 0xC bytes are the list-node
+ * header (links/callback managed by the @c func_80098Bxx pool routines).
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[0xC];  /* list-node header (links / callback) */
+    /* 0x0C */ u8 seat;        /* player / seat index */
+    /* 0x0D */ u8 cardSlot;    /* hand-slot index of the card being worked */
+    /* 0x0E */ u8 state;       /**< Outer state — see @ref AiTurnState. */
+    /* 0x0F */ u8 sub;         /**< Phase within SEARCH (@ref AiSearchPhase); reused as a
+                                    frame counter within ANIMATE. */
+    /* 0x10 */ u8 unk10;       /* search-depth parameter passed to func_8009D72C */
+    /* 0x11 */ u8 result;      /* func_8009D72C result status */
+    /* 0x12 */ u8 pad12[2];
+} func_8009DBE8_arg0;          /* 0x14 */
+
+/** @brief Outer state machine driven by @ref func_8009DBE8 (@c func_8009DBE8_arg0.state). */
+enum AiTurnState {
+    AI_TURN_INIT    = 0,  /**< Reset the move-search workspace @c D_801D3460, then SEARCH. */
+    AI_TURN_SEARCH  = 1,  /**< Run the move search (@ref AiSearchPhase sub-machine). */
+    AI_TURN_ANIMATE = 2,  /**< Play the card-selection animation, then PLACE. */
+    AI_TURN_PLACE   = 3   /**< Commit the chosen card to the board, then return 2. */
+};
+
+/** @brief Phase within @ref AI_TURN_SEARCH (@c func_8009DBE8_arg0.sub). */
+enum AiSearchPhase {
+    AI_SEARCH_PREP = 0,   /**< Arm the search timer; latch the candidate card slot. */
+    AI_SEARCH_RUN  = 1,   /**< Run @ref func_8009D72C and handle its result. */
+    AI_SEARCH_WAIT = 2    /**< Tick the timer; re-search (result 3) or advance to ANIMATE. */
+};
+
+/** @brief Frames the picked card is shown during @ref AI_TURN_ANIMATE before placement. */
+#define AI_ANIM_FRAMES 15
+
+extern AiMove D_801D3460[9];   /* AI move-search workspace */
+extern u8     D_801D3462;      /* = D_801D3460[0].unk02 (chosen card slot) */
+extern u8     D_801D3466;      /* = D_801D3460[0].handSlot (placement card) */
+extern s32    D_801D3538;      /* placement-phase frame timer */
+extern s32    D_801D353C;      /* search-phase frame timer */
+extern s32    D_801D35C0;      /* current player / seat index */
+
+extern s32 func_8009D72C(TripleTriadBoard *board, s32 player, AiMove *moves, s32 arg);
+
+/** @brief One row of the AI evaluation-weight table (@ref D_80182DAC). */
+typedef struct { s32 w0, w1, w2, w3, w4; } WeightSet;  /* 0x14 */
+
+extern u8        D_80182D64[8][9]; /* [difficulty][cards-left] → AI search-depth param */
+extern WeightSet D_80182DAC[8];    /* per-difficulty AI evaluation-weight rows */
+extern u8        D_80082C97;       /* = D_80082C90.field_07 (distinct splat symbol) */
+extern u8        D_801D3540[];     /* AI turn-node pool */
+extern u8        D_801D3560[];     /* AI turn-node list head */
+
 /**
  * @brief 20-byte linked-list node owned by the @c D_801D3380 list and
  *        driven by the @ref func_8009BDC0 callback.
@@ -35,7 +114,7 @@ typedef struct {
 extern s32  func_8009BDC0(SubstateMachineNode *p);
 extern void func_8009BD24(s32 idx, s32 mask, u8 stateByte, s32 suppressFlags);
 extern void func_8009B4CC(s32 mode, SubstateSlot *slot);
-extern void func_8009C978(s32 a0, s32 a1, s32 a2, s32 a3);
+extern void func_8009C978(TripleTriadBoard *board, s32 entityIdx, s32 col, s32 row);
 extern void func_800A26C8(void);
 
 /* Per-player Triple Triad match state (region starts at 0x801A2C40). */
@@ -80,14 +159,14 @@ extern void func_8009B8D8(SubstateSlot *slot, s32 idx);
 void setBattleObjectAction(s32 idx, s32 param0, s32 param1, s32 param2) {
     s32 i;
 
-    D_801D31C0[idx].param0 = param0;
-    D_801D31C0[idx].param1 = param1;
-    D_801D31C0[idx].param2 = param2;
+    g_tripleTriadCardHands[idx].param0 = param0;
+    g_tripleTriadCardHands[idx].param1 = param1;
+    g_tripleTriadCardHands[idx].param2 = param2;
     func_8009C0A0(idx, 1);
 
     for (i = 0; i < 10; i++) {
-        if (D_801D31C0[i].groupId == D_801D31C0[idx].groupId
-            && D_801D31C0[i].priority < D_801D31C0[idx].priority) {
+        if (g_tripleTriadCardHands[i].groupId == g_tripleTriadCardHands[idx].groupId
+            && g_tripleTriadCardHands[i].priority < g_tripleTriadCardHands[idx].priority) {
             func_8009C0A0(i, 7);
         }
     }
@@ -147,10 +226,10 @@ TSPRT *func_8009A970(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out) {
 }
 
 /**
- * @brief Per-frame update for a @c BattleObject — rotation, transform, render.
+ * @brief Per-frame update for a @c TripleTriadCardObject — rotation, transform, render.
  *
  * Called by the be_object2 dispatch (registered via @c func_80098C44 in
- * @c func_8009AD24). For one @c BattleObject the function:
+ * @c setupTripleTriadHands). For one @c TripleTriadCardObject the function:
  *  - Advances @c angle toward 0x1000 (clockwise) or 0 (counter-clockwise)
  *    based on the @c CTRL_FLAG_02 bit, and clamps the result.
  *  - Allocates a 40-byte @c BattleAnimNode work buffer.
@@ -167,11 +246,11 @@ TSPRT *func_8009A970(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out) {
  *  - Frees the @c BattleAnimNode.
  *
  * @param ctl Handler context whose @c entry slot points at the
- *            @c BattleObject being driven.
+ *            @c TripleTriadCardObject being driven.
  * @return 0 (kept on the stack for compat with @c s32 callback signature).
  */
 s32 func_8009AA68(BattleObjectCtl *ctl) {
-    BattleObject *entity;
+    TripleTriadCardObject *entity;
     BattleAnimNode *node;
 
     node = func_80098B80(0x28);
@@ -225,7 +304,7 @@ s32 func_8009AA68(BattleObjectCtl *ctl) {
     SetRotMatrix(&node->mat);
     SetTransMatrix(&node->mat);
 
-    D_801C2EB4 = func_8009AE6C(entity->entityType, entity->initFlags,
+    D_801C2EB4 = func_8009AE6C(entity->cardId, entity->initFlags,
                                 &D_801C2EB0[(s16)node->base.pad], D_801C2EB4);
     transformCardEffect(entity, node, &D_801C2EB0[(s16)node->base.pad]);
 
@@ -241,15 +320,15 @@ void func_8009AD00(void) {
 }
 
 /**
- * @brief Initialize the 10 hand-card @c BattleObject slots for a Triple Triad match.
+ * @brief Initialize the 10 hand-card @c TripleTriadCardObject slots for a Triple Triad match.
  *
  * Builds the linked list at @c D_801D3110 (10 nodes from the @c D_801D3120 pool,
  * 16 bytes each), then for each of the two players sets up 5 hand-card entries
- * in @c D_801D31C0. Each entry is wired up so that its per-frame
+ * in @c g_tripleTriadCardHands. Each entry is wired up so that its per-frame
  * @c func_8009AA68 callback can find it via @c BattleObjectCtl.entry.
  *
  * Per-entry fields:
- *  - @c entityType   ← @c D_801A2C48[player][slot] (card id into @c g_tripleTriadCardStats).
+ *  - @c cardId   ← @c D_801A2C48[player][slot] (card id into @c g_tripleTriadCardStats).
  *  - @c flags        ← 1 (active).
  *  - @c initFlags    ← @c 0x12 | player (flag bits read by the card render path).
  *  - @c groupId      ← player.
@@ -258,16 +337,16 @@ void func_8009AD00(void) {
  *                       (hand-position mode for that player type); 0 otherwise.
  *  - all remaining fields cleared to 0.
  */
-void func_8009AD24(void) {
+void setupTripleTriadHands(void) {
     s32 player;
     s32 slot;
-    BattleObject *entity;
+    TripleTriadCardObject *entity;
     BattleObjectCtl *node;
     u8 *hand;
 
     func_80098BC0(D_801D3110, D_801D3120, 0x10, 0xA);
 
-    entity = D_801D31C0;
+    entity = g_tripleTriadCardHands;
     for (player = 0; player < 2; player++) {
         u8 *playerType;
         hand = D_801A2C48[player];
@@ -275,7 +354,7 @@ void func_8009AD24(void) {
             playerType = &D_801A2C70[player];
             node = (BattleObjectCtl *)func_80098C44(D_801D3110, (s32)func_8009AA68);
             node->entry = entity;
-            entity->entityType = hand[slot];
+            entity->cardId = hand[slot];
             entity->state      = 0;
             entity->initFlags  = 0x12 | player;
             entity->groupId    = (u8)player;
@@ -575,7 +654,7 @@ void func_8009B4CC(s32 mode, SubstateSlot *slot) {
  *
  * Forwards @p a / @p b / @p c through to @c func_8009A7A4 (the function
  * never touches a-regs itself, so the args land in the helper unchanged).
- * If the helper returns a valid index, passes the slot's @c entityType
+ * If the helper returns a valid index, passes the slot's @c cardId
  * byte to @c func_800A2114.
  *
  * @param a Search key (passed through to @c func_8009A7A4 as arg 0).
@@ -585,7 +664,7 @@ void func_8009B4CC(s32 mode, SubstateSlot *slot) {
 void func_8009B644(s32 a, s32 b, s32 c) {
     s32 idx = func_8009A7A4(a, b, c);
     if (idx >= 0) {
-        func_800A2114(D_801D31C0[idx].entityType);
+        func_800A2114(g_tripleTriadCardHands[idx].cardId);
     }
 }
 
@@ -967,7 +1046,7 @@ s32 func_8009BDC0(SubstateMachineNode *p) {
                 if (func_8009A7A4(2, D_801D335C.field0, D_801D335C.field2) < 0) {
                     s32 entIdx = func_8009A7A4(p->fieldD, 0, p->snapshot.field2);
                     setBattleObjectAction(entIdx, 2, D_801D335C.field0, D_801D335C.field2);
-                    func_8009C978((s32)&D_801D3398, entIdx, D_801D335C.field0, D_801D335C.field2);
+                    func_8009C978(&D_801D3398, entIdx, D_801D335C.field0, D_801D335C.field2);
                     func_800A233C(1);
                     return 2;
                 }
@@ -1016,16 +1095,16 @@ u8 *func_8009C010(s32 a0, s32 a1) {
 }
 
 /**
- * @brief Set the type for a battle entity in D_801D31C0 and optionally trigger an effect.
+ * @brief Set the type for a battle entity in g_tripleTriadCardHands and optionally trigger an effect.
  *
- * Computes entry at D_801D31C0 + a0 * 36, sets entry[1] = a1 (type),
+ * Computes entry at g_tripleTriadCardHands + a0 * 36, sets entry[1] = a1 (type),
  * clears entry[2..3]. If type is in range [2, 5], calls func_800A2364(0x5A, 1).
  *
  * @param a0 Entity index.
  * @param a1 Entity type.
  */
 void func_8009C0A0(s32 a0, s32 a1) {
-    u8 *base = (u8 *)D_801D31C0;
+    u8 *base = (u8 *)g_tripleTriadCardHands;
     u8 *entry = base + a0 * 36;
     entry[1] = a1;
     *(s16 *)(entry + 2) = 0;
@@ -1037,7 +1116,7 @@ void func_8009C0A0(s32 a0, s32 a1) {
 }
 
 /**
- * @brief Check if any battle entity in D_801D31C0 has a non-zero type.
+ * @brief Check if any battle entity in g_tripleTriadCardHands has a non-zero type.
  *
  * Iterates up to 10 entries (stride 36) and checks byte at offset 1.
  *
@@ -1045,7 +1124,7 @@ void func_8009C0A0(s32 a0, s32 a1) {
  */
 s32 func_8009C0F4(void) {
     s32 i = 0;
-    u8 *entry = (u8 *)D_801D31C0;
+    u8 *entry = (u8 *)g_tripleTriadCardHands;
     do {
         if (entry[1] != 0) {
             return 1;
@@ -1057,7 +1136,7 @@ s32 func_8009C0F4(void) {
 }
 
 /**
- * @brief Per-frame transform for a card-effect @c BattleObject (state machine).
+ * @brief Per-frame transform for a card-effect @c TripleTriadCardObject (state machine).
  *
  * Drives the per-frame animation update for a card's render state. The
  * function is dispatched once per frame from @c func_8009AA68 and chooses
@@ -1084,7 +1163,7 @@ s32 func_8009C0F4(void) {
  *
  * @param entity Battle object slot being driven this frame.
  */
-void func_8009C12C(BattleObject *entity) {
+void func_8009C12C(TripleTriadCardObject *entity) {
     s32 state;
     s32 field02;
     s32 t;
@@ -1231,8 +1310,12 @@ u8 *func_8009C440(BattleAnimNode *node, s32 angle, void *ot, u8 *primBuf) {
     }
 }
 
+/** @brief Card scale constant {0x1000, 0x1000, 0, 0} (1.0 in 12-bit fixed point),
+ *         applied to a card's matrix during the slide-in animation. */
+extern const VECTOR func_80098154;
+
 /**
- * @brief Per-frame transform stage 2 for a card-effect @c BattleObject.
+ * @brief Per-frame transform stage 2 for a card-effect @c TripleTriadCardObject.
  *
  * Dispatches on @c state, mirroring the small state machine in
  * @c func_8009C12C but handling the matrix transform + render side:
@@ -1248,42 +1331,91 @@ u8 *func_8009C440(BattleAnimNode *node, s32 angle, void *ot, u8 *primBuf) {
  *    normal render). @c field02 advances; when it reaches @c 20 the state is
  *    cleared.
  *
- * The C below is the believed-original source — it reads cleanly but only
- * ~88% byte-matches; the residual is gcc 2.7.2 delay-slot scheduling that the
- * target reproduces only via a register anchor we don't write. Kept as
- * @c INCLUDE_ASM for the byte match.
+ * @note The dispatch is written with @c goto so gcc emits a flat three-way
+ *       branch (@c >=6 to the flip block, @c !=0 to the slide block, else
+ *       fall through to return) with both bodies out-of-line. @c state is also
+ *       copied into a second local (@c stateCopy) so the flip-state check binds
+ *       a separate register, matching the original's codegen.
  *
- * @verbatim
- * void transformCardEffect(BattleObject *entity, BattleAnimNode *node,
- *                    void *otBucket) {
- *     VECTOR scaleVec = func_80098154;        // cardScale {0x1000,0x1000,0,0}
- *     s32 state   = entity->state;
- *     s32 field02 = entity->field02;
- *
- *     if (state >= 6) {                        // 6 = flip, >6 = idle
- *         if (state == 6) {
- *             s32 angle = ((field02 + 1) * 4096) / 20;
- *             // flip prims link into a fixed OT layer (not the per-card layer)
- *             D_801C2EB4 = func_8009C440(node, angle, &D_801C2EB0[6], D_801C2EB4);
- *             entity->field02++;
- *             if ((s16)entity->field02 >= 20) {
- *                 entity->state = 0;
- *                 entity->field02 = 0;
- *             }
- *         }
- *     } else if (state != 0) {                 // 1..5 = slide-in
- *         ScaleMatrix(&node->mat, &scaleVec);
- *         node->mat.t[2] = 0x200;
- *         SetRotMatrix(&node->mat);
- *         SetTransMatrix(&node->mat);
- *         D_801C2EB4 = func_8009B3EC(otBucket, D_801C2EB4);
- *     }
- * }
- * @endverbatim
+ * @param entity   The card object being animated.
+ * @param node     Its render node (transform matrix + base position).
+ * @param otBucket OT layer the slide-in primitive links into.
  */
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", transformCardEffect);
+void transformCardEffect(TripleTriadCardObject *entity, BattleAnimNode *node, void *otBucket) {
+    VECTOR scaleVec = func_80098154;
+    s32 state = entity->state;
+    u8 stateCopy;
+    s32 field02 = entity->field02;
 
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009C6D8);
+    stateCopy = state;
+    if (state >= 6) {
+        goto flip;
+    }
+    if (state != 0) {
+        goto slide;
+    }
+    return;
+
+flip:
+    if (stateCopy == 6) {
+        D_801C2EB4 = func_8009C440(node, ((field02 + 1) * 4096) / 20, &D_801C2EB0[6], D_801C2EB4);
+        entity->field02++;
+        if ((s16)entity->field02 >= 20) {
+            entity->state = 0;
+            entity->field02 = 0;
+        }
+    }
+    return;
+
+slide:
+    ScaleMatrix(&node->mat, &scaleVec);
+    node->mat.t[2] = 0x200;
+    SetRotMatrix(&node->mat);
+    SetTransMatrix(&node->mat);
+    D_801C2EB4 = func_8009B3EC(otBucket, D_801C2EB4);
+}
+
+/**
+ * @brief Reset the Triple Triad board for a new game.
+ *
+ * Clears every slot's @c flags / @c element / @c elementMod across the 5x5
+ * grid, marks the sentinel border (row/col 0 and 4) with @c TT_CELL_WALL so
+ * edge neighbor lookups see a wall, and — when the Elemental rule is active
+ * (@c TT_RULE_ELEMENTAL) — gives each interior cell (rows/cols 1..3) a 30%
+ * chance of a random board element (@c 1 << rand%8).
+ */
+void resetTriadBoard(void) {
+    s32 row;
+    s32 col;
+
+    for (row = 0; row < 5; row++) {
+        for (col = 0; col < 5; col++) {
+            D_801D3398.cells[row][col].flags = 0;
+            D_801D3398.cells[row][col].element = 0;
+            D_801D3398.cells[row][col].elementMod = 0;
+        }
+    }
+
+    for (col = 0; col < 5; col++) {
+        D_801D3398.cells[0][col].flags |= TT_CELL_WALL;
+        D_801D3398.cells[4][col].flags |= TT_CELL_WALL;
+    }
+
+    for (row = 1; row < 4; row++) {
+        D_801D3398.cells[row][0].flags |= TT_CELL_WALL;
+        D_801D3398.cells[row][4].flags |= TT_CELL_WALL;
+    }
+
+    if (g_tripleTriadRules & TT_RULE_ELEMENTAL) {
+        for (row = 1; row < 4; row++) {
+            for (col = 1; col < 4; col++) {
+                if (func_80023D04() % 100 < 30) {
+                    D_801D3398.cells[row][col].element = 1 << (func_80023D04() % 8);
+                }
+            }
+        }
+    }
+}
 
 /**
  * @brief Place a Triple Triad card on the board and apply the Elemental rule.
@@ -1334,24 +1466,24 @@ TripleTriadBoardSlot *placeCard(TripleTriadBoard *board, s32 cardId, s32 owner, 
 }
 
 /**
- * Starts an animation sequence on a battle entity.
+ * @brief Place a battle entity's card onto the Triple Triad board.
  *
- * Looks up entity data from the global entity table, then calls the
- * animation handler with the entity's type flag and callback info.
+ * Looks up the @c TripleTriadCardObject at @p entityIdx, places its
+ * @c cardId (owner taken from @c initFlags & @c TT_OWNER_MASK) at board
+ * cell (@p col, @p row) via @ref placeCard, then tags the placed cell
+ * with @p entityIdx so the cell's flip animation is driven by that card.
  *
- * @param a0 Animation command or mode.
- * @param a1 Entity index.
- * @param a2 Animation parameter.
- * @param a3 Additional parameter (passed as 5th stack arg to handler).
+ * @param board     The 5x5 Triple Triad board.
+ * @param entityIdx Slot index into @c g_tripleTriadCardHands.
+ * @param col       Board column.
+ * @param row       Board row.
  */
-void func_8009C978(s32 a0, s32 a1, s32 a2, s32 a3) {
-    u8 *base = (u8 *)D_801D31C0;
-    u8 *entry;
-    u8 *result;
+void func_8009C978(TripleTriadBoard *board, s32 entityIdx, s32 col, s32 row) {
+    TripleTriadBoardSlot *cell;
 
-    entry = base + a1 * 36;
-    result = (u8 *)placeCard((TripleTriadBoard *)a0, entry[0], *(s32 *)(entry + 8) & 1, a2, a3);
-    result[3] = a1;
+    cell = placeCard(board, g_tripleTriadCardHands[entityIdx].cardId,
+                     g_tripleTriadCardHands[entityIdx].initFlags & TT_OWNER_MASK, col, row);
+    cell->entityIdx = entityIdx;
 }
 
 /**
@@ -1696,15 +1828,250 @@ void resolveCaptures(TripleTriadBoard *board) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D154);
+/**
+ * @brief Score a Triple Triad board for @p player (AI board evaluation).
+ *
+ * The static evaluator the minimax (@ref func_8009D2B0) calls at its leaves.
+ * Sums three contributions into a signed score (higher = better for @p player):
+ *  - **Board material**: for every occupied cell in the 3x3 play area, take
+ *    @c D_801D35C8 + the card's value (@c D_801D35E0[cardId]) and add it if
+ *    @p player owns the cell, subtract it otherwise.
+ *  - **Hand potential**: for each still-playable card in @p player's hand
+ *    (@c id != 0xFF), add @c (cardValue * D_801D35D8) >> 12.
+ *  - **Random tiebreaker**: when @c D_801D35D0 is nonzero, add
+ *    @c rand() % (D_801D35D0 + 1) so equal positions don't always tie.
+ *
+ * @param board  The 5x5 board (the play area is rows/cols 1..3).
+ * @param player The seat (0 or 1) to score for.
+ * @return The position's heuristic score for @p player.
+ */
+s32 evaluateBoard(TripleTriadBoard *board, s32 player) {
+    s32 score;
+    s32 row, col;
+    s32 slot;
+
+    score = 0;
+    for (row = 0; row < 3; row++) {
+        for (col = 0; col < 3; col++) {
+            TripleTriadBoardSlot *cell = &board->cells[row + 1][col + 1];
+            if (cell->flags & TT_CELL_OCCUPIED) {
+                s32 val = D_801D35C8 + D_801D35E0[cell->cardId];
+                if (cell->owner == player) {
+                    score += val;
+                } else {
+                    score -= val;
+                }
+            }
+        }
+    }
+
+    for (slot = 0; slot < 5; slot++) {
+        if (D_801D3570[player].cards[slot].id != 0xFF) {
+            score += (D_801D35E0[D_801D3570[player].cards[slot].id] * D_801D35D8) >> 12;
+        }
+    }
+
+    if (D_801D35D0 != 0) {
+        return score + func_80023D04() % (D_801D35D0 + 1);
+    }
+
+    return score;
+}
 
 INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D2B0);
 
 INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D72C);
 
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009DBE8);
+/**
+ * @brief Advance the AI player's Triple Triad turn: search for a move, play the
+ *        selection animation, then commit the chosen card to the board.
+ *
+ * Runs a small state machine over @p a (re-entered once per frame) and is a
+ * no-op while card input is globally disabled (@c D_801A2C74 bit @c 0x4).
+ *
+ *  - @b State @b 0 — reset the 9-entry move workspace @c D_801D3460, enter state 1.
+ *  - @b State @b 1 — three sub-steps:
+ *      - @e sub @e 0: arm the search timer (@c D_801D353C = 10), latch the chosen
+ *        card slot (@c D_801D3462) into @p a, advance.
+ *      - @e sub @e 1: highlight the card (@ref func_8009A878), arm the placement
+ *        timer (@c D_801D3538 = 100) and run the move search (@ref func_8009D72C).
+ *        If it reports busy (result 2) tick the search timer and yield; otherwise,
+ *        if the chosen card is already played (id @c 0xFF) clear the timer, advance.
+ *      - @e sub @e 2: keep highlighting; while the search timer is positive tick it
+ *        and yield. Once it expires, restart the search (sub 0) if the result was 3,
+ *        else advance to state 2.
+ *  - @b State @b 2 — animate the placement card (@c D_801D3466) for 15 frames, then
+ *    enter state 3.
+ *  - @b State @b 3 — set the card object's action (@ref setBattleObjectAction) and
+ *    commit it to the board (@ref func_8009C978).
+ *
+ * @param a AI turn/placement controller for the current player.
+ * @return 2 once the card has been placed (state 3); 0 while still working or when
+ *         input is disabled.
+ */
+s32 func_8009DBE8(func_8009DBE8_arg0 *a) {
+    TripleTriadBoard board;
 
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009DECC);
+    if (D_801A2C74 & 4) {
+        return 0;
+    }
+
+    while (1) {
+        switch (a->state) {
+        case AI_TURN_INIT: {
+            s32 i;
+            for (i = 0; i < 9; i++) {
+                D_801D3460[i].unk00 = 0;
+                D_801D3460[i].unk01 = 0;
+                D_801D3460[i].unk02 = 0;
+                D_801D3460[i].unk03 = 1;
+                D_801D3460[i].unk07 = 0;
+            }
+            a->state = AI_TURN_SEARCH;
+            a->sub = AI_SEARCH_PREP;
+            break;
+        }
+        case AI_TURN_SEARCH: {
+            s32 sub = a->sub;
+            switch (sub) {
+            case AI_SEARCH_PREP:
+                D_801D353C = 10;
+                a->cardSlot = D_801D3462;
+                a->sub++;
+                break;
+            case AI_SEARCH_RUN:
+                func_8009A878(D_801D35C0, a->cardSlot);
+                D_801D3538 = 100;
+                a->result = func_8009D72C(&D_801D3398, D_801D35C0, D_801D3460, a->unk10);
+                if ((a->result & 0xFF) == 2) {
+                    D_801D353C--;
+                    return 0;
+                }
+                if (D_801D3570[D_801D35C0].cards[a->cardSlot].id == 0xFF) {
+                    D_801D353C = 0;
+                }
+                a->sub++;
+                break;
+            case AI_SEARCH_WAIT:
+                func_8009A878(D_801D35C0, a->cardSlot);
+                if (D_801D353C > 0) {
+                    D_801D353C--;
+                    return 0;
+                }
+                if (a->result == 3) {
+                    a->sub = AI_SEARCH_PREP;  /* re-run the search from the top */
+                } else {
+                    /* sub == AI_TURN_ANIMATE here; assign the cached local (not the
+                       literal) — that variable reuse is what makes the prologue match. */
+                    a->state = sub;
+                    a->sub = 0;               /* start the ANIMATE frame counter */
+                }
+                break;
+            }
+            break;
+        }
+        case AI_TURN_ANIMATE:
+            func_8009A878(D_801D35C0, D_801D3466);
+            a->sub++;
+            if ((a->sub & 0xFF) < AI_ANIM_FRAMES) {
+                return 0;
+            }
+            a->state = AI_TURN_PLACE;
+            a->sub = 0;
+            break;
+        case AI_TURN_PLACE:
+            setBattleObjectAction(
+                D_801D3570[D_801D35C0].cards[D_801D3460[0].handSlot].entityIdx, 2,
+                D_801D3460[0].col, D_801D3460[0].row);
+            func_8009C978(&D_801D3398,
+                D_801D3570[D_801D35C0].cards[D_801D3460[0].handSlot].entityIdx,
+                D_801D3460[0].col, D_801D3460[0].row);
+            return 2;
+        }
+    }
+}
+
+/**
+ * @brief Set up the AI player's Triple Triad turn and spawn its turn handler.
+ *
+ * Runs once when it becomes seat @p seat's turn:
+ *  1. Builds both players' working search hands @c D_801D3570 from the live card
+ *     objects @c g_tripleTriadCardHands (via @ref func_8009A7A4): each slot's
+ *     @c entityIdx is the object index and @c id its card id (@c 0xFF if the slot
+ *     holds no card); @c slotCount tracks how many cards remain in play.
+ *  2. If the Open rule is off (@c g_tripleTriadRules bit 0) and the matching
+ *     config bit is clear, randomizes the opponent's hidden hand — each guessed
+ *     id is @c (rand()%(cardLevel+1))*11 + rand()%11, seeded from the real hand
+ *     card levels in @c D_801A2C48.
+ *  3. Spawns the per-frame turn handler: a list node with @ref func_8009DBE8 as
+ *     its callback, seeds its search-depth @c unk10 from @c D_80182D64, loads the
+ *     difficulty weight row from @c D_80182DAC into @c D_801D35C8..D_801D35D8, and
+ *     fills the per-card value table @c D_801D35E0[0..109].
+ *
+ * @param seat Player/seat index taking the turn.
+ * @return The AI turn-node list head (@c D_801D3560).
+ */
+u8 *func_8009DECC(s32 seat) {
+    func_8009DBE8_arg0 *node;
+    s32 mult;
+    s32 slotCount;
+    s32 player;
+    s32 weight;
+    s32 card;
+    s32 i;
+
+    slotCount = 9;
+    for (player = 0; player < 2; player++) {
+        for (card = 0; card < 5; card++) {
+            s32 entity;
+            entity = func_8009A7A4(player, 0, card);
+            D_801D3570[player].cards[card].entityIdx = entity;
+            if (entity < 0) {
+                slotCount--;
+                D_801D3570[player].cards[card].id = 0xFF;
+            } else {
+                D_801D3570[player].cards[card].id = g_tripleTriadCardHands[entity].cardId;
+            }
+        }
+    }
+
+    if (!(g_tripleTriadRules & 1) && !(D_80082C97 & 0x10)) {
+        s32 opp = seat ^ 1;
+        for (i = 0; i < 5; i++) {
+            s32 r1, r2, divisor;
+            D_801D3570[opp].cards[i].entityIdx = -1;
+            r1 = func_80023D04();
+            r2 = func_80023D04();
+            divisor = D_801A2C48[seat][i] / 11 + 1;
+            D_801D3570[opp].cards[i].id = (r1 % divisor) * 11 + r2 % 11;
+        }
+    }
+
+    func_80098BC0(D_801D3560, D_801D3540, 0x14, 1);
+    node = (func_8009DBE8_arg0 *)func_80098C44(D_801D3560, (s32)func_8009DBE8);
+    D_801D35C0 = seat;
+    node->seat = seat;
+    {
+        s32 depth = D_80182D64[D_80082C90.field_07 & 7][slotCount - 1];
+        node->state = 0;
+        node->sub = 0;
+        node->unk10 = depth;
+    }
+
+    mult = D_80182DAC[D_80082C90.field_06 & 7].w1;
+    D_801D35C8 = D_80182DAC[D_80082C90.field_06 & 7].w0;
+    D_801D35CC = mult;
+    D_801D35D0 = D_80182DAC[D_80082C90.field_06 & 7].w2;
+    D_801D35D4 = D_80182DAC[D_80082C90.field_06 & 7].w3;
+    D_801D35D8 = D_80182DAC[D_80082C90.field_06 & 7].w4;
+    weight = mult;
+
+    for (i = 0; i < 110; i++) {
+        D_801D35E0[i] = (g_tripleTriadCardStats[i].pad05[0] * weight / 200) >> 12;
+    }
+
+    return D_801D3560;
+}
 
 /**
  * @brief Initialize the D_801D3C58 list with node pool D_801D3798.
