@@ -18,7 +18,7 @@ extern u8  D_801C2DCA;
 extern s32 func_80023D04(void);
 
 /**
- * @brief Per-ply state of the AI move search (one node of @ref func_8009D2B0).
+ * @brief Per-ply state of the AI move search (one node of @ref searchBestMoveStack).
  *
  * @c D_801D3460 holds 9 of these — one per search ply. Each node carries the
  * (card, row, col) iterators the resumable minimax is currently trying at that
@@ -46,7 +46,7 @@ typedef struct {
 /**
  * @brief AI turn/placement controller — a 0x14-byte callback list node.
  *
- * Allocated by @ref func_8009DECC via @c func_80098C44 with @ref func_8009DBE8
+ * Allocated by @ref spawnAiTurn via @c func_80098C44 with @ref updateAiTurn
  * registered as its per-frame callback; the leading 0xC bytes are the list-node
  * header (links/callback managed by the @c func_80098Bxx pool routines).
  */
@@ -57,12 +57,12 @@ typedef struct {
     /* 0x0E */ u8 state;       /**< Outer state — see @ref AiTurnState. */
     /* 0x0F */ u8 sub;         /**< Phase within SEARCH (@ref AiSearchPhase); reused as a
                                     frame counter within ANIMATE. */
-    /* 0x10 */ u8 unk10;       /* search-depth parameter passed to func_8009D72C */
-    /* 0x11 */ u8 result;      /* func_8009D72C result status */
+    /* 0x10 */ u8 unk10;       /* search-depth parameter passed to searchBestMove */
+    /* 0x11 */ u8 result;      /* searchBestMove result status */
     /* 0x12 */ u8 pad12[2];
 } func_8009DBE8_arg0;          /* 0x14 */
 
-/** @brief Outer state machine driven by @ref func_8009DBE8 (@c func_8009DBE8_arg0.state). */
+/** @brief Outer state machine driven by @ref updateAiTurn (@c func_8009DBE8_arg0.state). */
 enum AiTurnState {
     AI_TURN_INIT    = 0,  /**< Reset the move-search workspace @c D_801D3460, then SEARCH. */
     AI_TURN_SEARCH  = 1,  /**< Run the move search (@ref AiSearchPhase sub-machine). */
@@ -73,7 +73,7 @@ enum AiTurnState {
 /** @brief Phase within @ref AI_TURN_SEARCH (@c func_8009DBE8_arg0.sub). */
 enum AiSearchPhase {
     AI_SEARCH_PREP = 0,   /**< Arm the search timer; latch the candidate card slot. */
-    AI_SEARCH_RUN  = 1,   /**< Run @ref func_8009D72C and handle its result. */
+    AI_SEARCH_RUN  = 1,   /**< Run @ref searchBestMove and handle its result. */
     AI_SEARCH_WAIT = 2    /**< Tick the timer; re-search (result 3) or advance to ANIMATE. */
 };
 
@@ -83,7 +83,7 @@ enum AiSearchPhase {
 extern AiMove D_801D3460[9];   /* AI move-search workspace (root = [0], one entry per ply) */
 extern u8     D_801D3462;      /* = D_801D3460[0].card (root card iterator / latched slot) */
 extern u8     D_801D3466;      /* = D_801D3460[0].bestCard (chosen placement card) */
-extern s32    D_801D3538;      /* minimax placement budget per search slice (see func_8009D2B0) */
+extern s32    D_801D3538;      /* minimax placement budget per search slice (see searchBestMoveStack) */
 extern s32    D_801D353C;      /* search-phase frame timer */
 extern s32    D_801D35C0;      /* current player / seat index */
 
@@ -98,7 +98,7 @@ extern u8        D_801D3560[];     /* AI turn-node list head */
 
 /**
  * @brief 20-byte linked-list node owned by the @c D_801D3380 list and
- *        driven by the @ref func_8009BDC0 callback.
+ *        driven by the @ref updateCardSelectCursor callback.
  *
  * @c state is a small dispatch index (0..3) for the card-selection
  * cursor; @c fieldD and @c fieldE seed the row-cursor substate
@@ -109,15 +109,15 @@ typedef struct {
     u8           pad00[0xC];   /* linked-list header (flags / next / callback) */
     u8           state;        /* 0x0C: dispatch state (0..3) */
     u8           fieldD;       /* 0x0D: cursor row index seed */
-    u8           fieldE;       /* 0x0E: state byte forwarded to func_8009BD24 */
+    u8           fieldE;       /* 0x0E: state byte forwarded to activateMenuSubstate */
     u8           pad0F;        /* 0x0F */
     SubstateSlot snapshot;     /* 0x10: copy of D_801D335C after the user's pick */
 } SubstateMachineNode;
 
-extern s32  func_8009BDC0(SubstateMachineNode *p);
-extern void func_8009BD24(s32 idx, s32 mask, u8 stateByte, s32 suppressFlags);
-extern void func_8009B4CC(s32 mode, SubstateSlot *slot);
-extern void func_8009C978(TripleTriadBoard *board, s32 entityIdx, s32 col, s32 row);
+extern s32  updateCardSelectCursor(SubstateMachineNode *p);
+extern void activateMenuSubstate(s32 idx, s32 mask, u8 stateByte, s32 suppressFlags);
+extern void drawMenuPrim(s32 mode, SubstateSlot *slot);
+extern void commitCardToBoard(TripleTriadBoard *board, s32 entityIdx, s32 col, s32 row);
 extern void func_800A26C8(void);
 
 /* Per-player Triple Triad match state (region starts at 0x801A2C40). */
@@ -139,20 +139,20 @@ extern SVECTOR D_80182C90[4];   /* per-rank digit center positions */
 extern SVECTOR D_80182CD0[4];   /* element marker quad corners */
 extern SVECTOR D_80182CF0[4];   /* shadow quad corners (card drop-shadow) */
 
-/* Substate handlers dispatched from func_8009BAF4. Same names exist in
+/* Substate handlers dispatched from updateTriadMenu. Same names exist in
  * the battle overlay with different signatures; keep these as
  * file-local externs so the two overlays don't collide. */
-extern void func_8009B690(SubstateSlot *slot, s32 idx);
-extern void func_8009B7B4(SubstateSlot *slot, s32 idx);
-extern void func_8009B8D8(SubstateSlot *slot, s32 idx);
+extern void handleCursorSubstate1(SubstateSlot *slot, s32 idx);
+extern void handleCursorSubstate2(SubstateSlot *slot, s32 idx);
+extern void handleCursorSubstate3(SubstateSlot *slot, s32 idx);
 
 /**
  * @brief Set up a battle object slot and cancel lower-priority siblings in its group.
  *
  * Stores the three action params in slot @p idx, marks it active via
- * @c func_8009C0A0(idx, 1), then sweeps the 10 slots: any sibling sharing
+ * @c setCardEntityType(idx, 1), then sweeps the 10 slots: any sibling sharing
  * @c groupId with strictly lower @c priority gets reset via
- * @c func_8009C0A0(i, 7).
+ * @c setCardEntityType(i, 7).
  *
  * @param idx     Index of the slot being placed (0..9).
  * @param param0  First action parameter (stored at @c slot.param0).
@@ -165,12 +165,12 @@ void setBattleObjectAction(s32 idx, s32 param0, s32 param1, s32 param2) {
     g_tripleTriadCardHands[idx].param0 = param0;
     g_tripleTriadCardHands[idx].param1 = param1;
     g_tripleTriadCardHands[idx].param2 = param2;
-    func_8009C0A0(idx, 1);
+    setCardEntityType(idx, 1);
 
     for (i = 0; i < 10; i++) {
         if (g_tripleTriadCardHands[i].groupId == g_tripleTriadCardHands[idx].groupId
             && g_tripleTriadCardHands[i].priority < g_tripleTriadCardHands[idx].priority) {
-            func_8009C0A0(i, 7);
+            setCardEntityType(i, 7);
         }
     }
 }
@@ -197,7 +197,7 @@ void setBattleObjectAction(s32 idx, s32 param0, s32 param1, s32 param2) {
  * @param out      Output primitive buffer (pre-allocated by caller).
  * @return         Pointer to the next free TSPRT slot in @p out.
  */
-TSPRT *func_8009A970(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out) {
+TSPRT *drawCardOverlaySprite(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out) {
     s32 i = 0;
 
     do {
@@ -243,7 +243,7 @@ TSPRT *func_8009A970(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out) {
  *    (@c (sin(angle/4) * 12) >> 12), sign-flipped by @c groupId.
  *  - For Triple-Triad cards (@c state==0, @c groupId==2), looks up the
  *    cell's @c elementMod in @c D_801D3398 — if non-zero, emits the
- *    elemental modifier overlay sprite via @c func_8009A970.
+ *    elemental modifier overlay sprite via @c drawCardOverlaySprite.
  *  - Calls the per-frame render helpers (@c func_8009AE6C and
  *    @c transformCardEffect) to draw the rest of the object.
  *  - Frees the @c BattleAnimNode.
@@ -252,7 +252,7 @@ TSPRT *func_8009A970(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out) {
  *            @c TripleTriadCardObject being driven.
  * @return 0 (kept on the stack for compat with @c s32 callback signature).
  */
-s32 func_8009AA68(BattleObjectCtl *ctl) {
+s32 updateCardObject(BattleObjectCtl *ctl) {
     TripleTriadCardObject *entity;
     BattleAnimNode *node;
 
@@ -299,7 +299,7 @@ s32 func_8009AA68(BattleObjectCtl *ctl) {
         s32 col = entity->fieldD + 1;
         s8 elementMod = D_801D3398.cells[entity->priority + 1][col].elementMod;
         if (elementMod != 0) {
-            D_801C2EB4 = func_8009A970(node, elementMod,
+            D_801C2EB4 = drawCardOverlaySprite(node, elementMod,
                                         &D_801C2EB0[(s16)node->base.pad], D_801C2EB4);
         }
     }
@@ -318,7 +318,7 @@ s32 func_8009AA68(BattleObjectCtl *ctl) {
 /**
  * @brief Call func_80098D28 with D_801D3110.
  */
-void func_8009AD00(void) {
+void processCardObjects(void) {
     func_80098D28(D_801D3110);
 }
 
@@ -328,7 +328,7 @@ void func_8009AD00(void) {
  * Builds the linked list at @c D_801D3110 (10 nodes from the @c D_801D3120 pool,
  * 16 bytes each), then for each of the two players sets up 5 hand-card entries
  * in @c g_tripleTriadCardHands. Each entry is wired up so that its per-frame
- * @c func_8009AA68 callback can find it via @c BattleObjectCtl.entry.
+ * @c updateCardObject callback can find it via @c BattleObjectCtl.entry.
  *
  * Per-entry fields:
  *  - @c cardId   ← @c D_801A2C48[player][slot] (card id into @c g_tripleTriadCardStats).
@@ -355,7 +355,7 @@ void setupTripleTriadHands(void) {
         hand = D_801A2C48[player];
         for (slot = 0; slot < 5; slot++) {
             playerType = &D_801A2C70[player];
-            node = (BattleObjectCtl *)func_80098C44(D_801D3110, (s32)func_8009AA68);
+            node = (BattleObjectCtl *)func_80098C44(D_801D3110, (s32)updateCardObject);
             node->entry = entity;
             entity->cardId = hand[slot];
             entity->state      = 0;
@@ -567,7 +567,7 @@ INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009AE6C);
  * @return     @p prim incremented past this primitive (i.e. the next free
  *             @c POLY_F4 slot).
  */
-POLY_F4 *func_8009B3EC(u32 *ot, POLY_F4 *prim) {
+POLY_F4 *drawCardShadow(u32 *ot, POLY_F4 *prim) {
     CardRenderWork *work;
 
     work = func_80098B80(0x3C);
@@ -591,7 +591,7 @@ POLY_F4 *func_8009B3EC(u32 *ot, POLY_F4 *prim) {
  * @c D_801D3340 (zeroing most fields, but setting both halves of slot 3
  * to 1 — slot 3 is the only substate that uses both halfwords).
  */
-void func_8009B494(void) {
+void resetTriadMenuState(void) {
     D_801D3328 = 0;
     D_801D3359 = 0;
     D_801D3340[1].field2 = 0;
@@ -622,7 +622,7 @@ void func_8009B494(void) {
  * @param mode  Substate index (1..5; other values are ignored).
  * @param slot  Substate parameter slot supplying @c field0 / @c field2 anchors.
  */
-void func_8009B4CC(s32 mode, SubstateSlot *slot) {
+void drawMenuPrim(s32 mode, SubstateSlot *slot) {
     switch (mode) {
     case 1:
         D_801C2EB4 = func_8002FF34(&D_801C2EB0[4], D_801C2EB4,
@@ -664,7 +664,7 @@ void func_8009B4CC(s32 mode, SubstateSlot *slot) {
  * @param b Filter mask (passed through as arg 1).
  * @param c Row/column key (passed through as arg 2).
  */
-void func_8009B644(s32 a, s32 b, s32 c) {
+void initMenuObjectHandler(s32 a, s32 b, s32 c) {
     s32 idx = func_8009A7A4(a, b, c);
     if (idx >= 0) {
         func_800A2114(g_tripleTriadCardHands[idx].cardId);
@@ -689,14 +689,14 @@ void func_8009B644(s32 a, s32 b, s32 c) {
  *    @c 2 into @c D_801D3358 and return.
  *
  * The common dispatch at the bottom calls @c func_8009A878(0, field2) and
- * @c func_8009B644(0, 0, field2) — the latter forwards its three args
+ * @c initMenuObjectHandler(0, 0, field2) — the latter forwards its three args
  * through to @c func_8009A7A4 inside the helper.
  *
  * @param slot Substate parameter slot — @c field2 is the row cursor.
  * @param idx  Substate index (unused here; preserved for the dispatcher
  *             callback signature).
  */
-void func_8009B690(SubstateSlot *slot, s32 idx) {
+void handleCursorSubstate1(SubstateSlot *slot, s32 idx) {
     if ((D_801D332E & 0x1000) && func_8009A7A4(0, 0, slot->field2 - 1) >= 0) {
         func_800A233C(1);
         slot->field2 = slot->field2 - 1;
@@ -715,13 +715,13 @@ void func_8009B690(SubstateSlot *slot, s32 idx) {
     }
 
     func_8009A878(0, slot->field2);
-    func_8009B644(0, 0, slot->field2);
+    initMenuObjectHandler(0, 0, slot->field2);
 }
 
 /**
  * @brief Substate-2 handler: cursor left/right movement on the substate row.
  *
- * Mirror of @ref func_8009B690 but with @c a0=1 (substate-2 search key)
+ * Mirror of @ref handleCursorSubstate1 but with @c a0=1 (substate-2 search key)
  * and a different cancel mapping. Reads input bits from @c D_801D332E and
  * the controller mask @c D_801D3328 to update @c slot->field2 (column
  * cursor) and/or queue a sub-dispatch:
@@ -735,13 +735,13 @@ void func_8009B690(SubstateSlot *slot, s32 idx) {
  *    = 1 and return.
  *
  * Common dispatch: @c func_8009A878(1, field2) and
- * @c func_8009B644(1, 0, field2).
+ * @c initMenuObjectHandler(1, 0, field2).
  *
  * @param slot Substate parameter slot — @c field2 is the column cursor.
  * @param idx  Substate index (unused; preserved for the dispatcher
  *             callback signature).
  */
-void func_8009B7B4(SubstateSlot *slot, s32 idx) {
+void handleCursorSubstate2(SubstateSlot *slot, s32 idx) {
     if ((D_801D332E & 0x1000) && func_8009A7A4(1, 0, slot->field2 - 1) >= 0) {
         func_800A233C(1);
         slot->field2 = slot->field2 - 1;
@@ -760,7 +760,7 @@ void func_8009B7B4(SubstateSlot *slot, s32 idx) {
     }
 
     func_8009A878(1, slot->field2);
-    func_8009B644(1, 0, slot->field2);
+    initMenuObjectHandler(1, 0, slot->field2);
 }
 
 /**
@@ -787,13 +787,13 @@ void func_8009B7B4(SubstateSlot *slot, s32 idx) {
  *  - if @c field0 >= 3 : set @c field0 = 2; if @c D_801D3328 has bit 0x4
  *    set, @c D_801D3358 = 2.
  *
- * Common dispatch at the end: @c func_8009B644(2, field0, field2).
+ * Common dispatch at the end: @c initMenuObjectHandler(2, field0, field2).
  *
  * @param slot Substate parameter slot — @c field0 row, @c field2 column.
  * @param idx  Substate index (unused; preserved for the dispatcher
  *             callback signature).
  */
-void func_8009B8D8(SubstateSlot *slot, s32 idx) {
+void handleCursorSubstate3(SubstateSlot *slot, s32 idx) {
     if (D_801D332E & 0x8000) {
         slot->field0 = slot->field0 - 1;
         if (slot->field0 >= 0) {
@@ -824,7 +824,7 @@ void func_8009B8D8(SubstateSlot *slot, s32 idx) {
         }
     }
 
-    func_8009B644(2, slot->field0, slot->field2);
+    initMenuObjectHandler(2, slot->field0, slot->field2);
 }
 
 /**
@@ -837,7 +837,7 @@ void func_8009B8D8(SubstateSlot *slot, s32 idx) {
  *
  * @param a0 Pointer to a halfword value to adjust.
  */
-void func_8009BA4C(u16 *a0) {
+void adjustConfigParam(u16 *a0) {
     u16 val;
 
     if (D_801D332E & 0x8000) {
@@ -869,9 +869,9 @@ store:
  * OR of the first two entries; state < 0 or > 2 skips the latch.
  *
  * If @c D_801D3359 == 1, dispatches to one of four substate handlers
- * (@c func_8009B690 / @c func_8009B7B4 / @c func_8009B8D8 /
- * @c func_8009BA4C) based on @c D_801D3358 (0..5), then calls
- * @c func_8009B4CC. Finally checks two completion triggers against
+ * (@c handleCursorSubstate1 / @c handleCursorSubstate2 / @c handleCursorSubstate3 /
+ * @c adjustConfigParam) based on @c D_801D3358 (0..5), then calls
+ * @c drawMenuPrim. Finally checks two completion triggers against
  * @c D_801D3334 / @c D_801D3330: bit-0xC0 sets @c D_801D3359=2 and
  * snapshots @c D_801D3340[D_801D3358] to @c D_801D335C; bit-0x10 sets
  * @c D_801D3359=3.
@@ -883,7 +883,7 @@ store:
  *       @c be_object2.o(.rodata) (which contains the gcc-generated
  *       jtbl) at exactly that offset.
  */
-void func_8009BAF4(void) {
+void updateTriadMenu(void) {
     s32 state = (s32)*(u8 *)&D_801D3338;
 
     switch (state) {
@@ -906,14 +906,14 @@ void func_8009BAF4(void) {
 
         switch (D_801D3358) {
         case 0: break;
-        case 1: func_8009B690(p, idx); break;
-        case 2: func_8009B7B4(p, idx); break;
-        case 3: func_8009B8D8(p, idx); break;
+        case 1: handleCursorSubstate1(p, idx); break;
+        case 2: handleCursorSubstate2(p, idx); break;
+        case 3: handleCursorSubstate3(p, idx); break;
         case 4:
-        case 5: func_8009BA4C(p);      break;
+        case 5: adjustConfigParam(p);      break;
         }
 
-        func_8009B4CC(D_801D3358, &D_801D3340[D_801D3358]);
+        drawMenuPrim(D_801D3358, &D_801D3340[D_801D3358]);
 
         if (!(D_801D3334 & 1)) {
             if (D_801D3330 & 0xC0) {
@@ -952,7 +952,7 @@ void func_8009BAF4(void) {
  * @param stateByte     State byte to latch into @c D_801D3338.
  * @param suppressFlags Completion-suppress flags to latch into @c D_801D3334.
  */
-void func_8009BD24(s32 idx, s32 mask, u8 stateByte, s32 suppressFlags) {
+void activateMenuSubstate(s32 idx, s32 mask, u8 stateByte, s32 suppressFlags) {
     D_801D3358 = idx;
     D_801D3328 = mask | (1 << idx);
     D_801D3359 = 1;
@@ -970,30 +970,30 @@ void func_8009BD24(s32 idx, s32 mask, u8 stateByte, s32 suppressFlags) {
 /**
  * @brief Per-frame state machine for the player's Triple Triad card-selection cursor.
  *
- * Linked-list callback registered by @ref func_8009C010 on the
+ * Linked-list callback registered by @ref spawnCardSelectCursor on the
  * @c D_801D3380 list. Drives a 4-state machine stored in @p p->state
  * (offset @c 0x0C of the 20-byte node):
  *
  *  - state 0 : prime the column cursor for substate (@c fieldD+1) via
- *              @ref func_8009BD24, then advance to state 1.
+ *              @ref activateMenuSubstate, then advance to state 1.
  *  - state 1 : if @c D_801D3359 already equals the current state (= 1),
  *              the selection has already been committed — bail with @c 0.
  *              Otherwise probe the snapshot's column at @c D_801D335C.field2
  *              via @ref func_8009A7A4: on success, copy
  *              @c D_801D335C into the node's @c snapshot field, advance to
  *              state 2 and play SFX 1; on failure, fall back to state 0.
- *  - state 2 : arm row-cursor substate 3 via @ref func_8009BD24, advance
+ *  - state 2 : arm row-cursor substate 3 via @ref activateMenuSubstate, advance
  *              to state 3.
  *  - state 3 : per-frame display tick:
  *              - if @c D_801C2DCA is set, draw the snapshot via
- *                @ref func_8009B4CC.
+ *                @ref drawMenuPrim.
  *              - update the active cursor entity via @ref func_8009A878.
  *              - inspect @c D_801D3359 (= a UI trigger code):
  *                  * @c 2 : commit the chosen card. If the destination
  *                          board slot is already occupied (returned >= 0),
  *                          play SFX @c 0x10 and stay; otherwise allocate
  *                          a new battle entity, prime it with
- *                          @ref setBattleObjectAction and @ref func_8009C978,
+ *                          @ref setBattleObjectAction and @ref commitCardToBoard,
  *                          play SFX 1, and return 2 (placement done).
  *                  * @c 1 : exit (return 0).
  *                  * @c 3 (matches current state) : cancel — play SFX 9,
@@ -1008,7 +1008,7 @@ void func_8009BD24(s32 idx, s32 mask, u8 stateByte, s32 suppressFlags) {
  * @return  @c 0 normally / when bailing on commit; @c 2 once a card has
  *          been placed on the board.
  */
-s32 func_8009BDC0(SubstateMachineNode *p) {
+s32 updateCardSelectCursor(SubstateMachineNode *p) {
     s32 s1;
 
     if (!(D_801A2C74 & 0x4) && (D_801C2EC4 & 0x20)) {
@@ -1020,7 +1020,7 @@ s32 func_8009BDC0(SubstateMachineNode *p) {
         s1 = p->state;
         switch (s1) {
         case 0:
-            func_8009BD24(p->fieldD + 1, 0, p->fieldE, 2);
+            activateMenuSubstate(p->fieldD + 1, 0, p->fieldE, 2);
             p->state = 1;
             break;
         case 1:
@@ -1034,13 +1034,13 @@ s32 func_8009BDC0(SubstateMachineNode *p) {
             }
             break;
         case 2:
-            func_8009BD24(3, 0, p->fieldE, 0);
+            activateMenuSubstate(3, 0, p->fieldE, 0);
             p->state = 3;
             break;
         case 3: {
             s32 trig;
             if (D_801C2DCA != 0) {
-                func_8009B4CC(p->fieldD + 1, &p->snapshot);
+                drawMenuPrim(p->fieldD + 1, &p->snapshot);
             }
             func_8009A878(p->fieldD, p->snapshot.field2);
             trig = D_801D3359;
@@ -1049,7 +1049,7 @@ s32 func_8009BDC0(SubstateMachineNode *p) {
                 if (func_8009A7A4(2, D_801D335C.field0, D_801D335C.field2) < 0) {
                     s32 entIdx = func_8009A7A4(p->fieldD, 0, p->snapshot.field2);
                     setBattleObjectAction(entIdx, 2, D_801D335C.field0, D_801D335C.field2);
-                    func_8009C978(&D_801D3398, entIdx, D_801D335C.field0, D_801D335C.field2);
+                    commitCardToBoard(&D_801D3398, entIdx, D_801D335C.field0, D_801D335C.field2);
                     func_800A233C(1);
                     return 2;
                 }
@@ -1075,7 +1075,7 @@ s32 func_8009BDC0(SubstateMachineNode *p) {
  * @brief Initialize the D_801D3380 linked list with a battle callback.
  *
  * Sets up D_801D3380 as a linked list (pool at D_801D3360, node size 0x14,
- * capacity 1), then appends func_8009BDC0 as a callback. Sets byte fields
+ * capacity 1), then appends updateCardSelectCursor as a callback. Sets byte fields
  * 0xC, 0xD, 0xE on the node from the parameters. Resets D_801D3340 fields
  * at +0xC and +0xE to 1.
  *
@@ -1083,12 +1083,12 @@ s32 func_8009BDC0(SubstateMachineNode *p) {
  * @param a1 Value stored at node byte 0xE.
  * @return Pointer to D_801D3380 list header.
  */
-u8 *func_8009C010(s32 a0, s32 a1) {
+u8 *spawnCardSelectCursor(s32 a0, s32 a1) {
     u8 *list = D_801D3380;
     u8 *node;
 
     func_80098BC0(list, D_801D3360, 0x14, 1);
-    node = (u8 *)func_80098C44(list, (s32)func_8009BDC0);
+    node = (u8 *)func_80098C44(list, (s32)updateCardSelectCursor);
     node[0xC] = 0;
     node[0xD] = a0;
     node[0xE] = a1;
@@ -1106,7 +1106,7 @@ u8 *func_8009C010(s32 a0, s32 a1) {
  * @param a0 Entity index.
  * @param a1 Entity type.
  */
-void func_8009C0A0(s32 a0, s32 a1) {
+void setCardEntityType(s32 a0, s32 a1) {
     u8 *base = (u8 *)g_tripleTriadCardHands;
     u8 *entry = base + a0 * 36;
     entry[1] = a1;
@@ -1125,7 +1125,7 @@ void func_8009C0A0(s32 a0, s32 a1) {
  *
  * @return 1 if any entity has non-zero type, 0 otherwise.
  */
-s32 func_8009C0F4(void) {
+s32 anyCardEffectActive(void) {
     s32 i = 0;
     u8 *entry = (u8 *)g_tripleTriadCardHands;
     do {
@@ -1142,7 +1142,7 @@ s32 func_8009C0F4(void) {
  * @brief Per-frame transform for a card-effect @c TripleTriadCardObject (state machine).
  *
  * Drives the per-frame animation update for a card's render state. The
- * function is dispatched once per frame from @c func_8009AA68 and chooses
+ * function is dispatched once per frame from @c updateCardObject and chooses
  * its behavior from @c state (0..7):
  *  - @b 0 / @b 6 — idle: no update this frame.
  *  - @b 1 — open/flip sequence keyed by @c field02:
@@ -1278,7 +1278,7 @@ extern s32     D_80182D30[];     /**< Per-corner phase offsets for the gouraud f
 extern CVECTOR D_80182D40;        /**< Base colour passed to @c DpqColor. */
 extern CVECTOR *D_801D3390;       /**< Scratch walker: current vertex-colour slot in the @c POLY_G4. */
 
-u8 *func_8009C440(BattleAnimNode *node, s32 angle, void *ot, u8 *primBuf) {
+u8 *drawCardEffectQuad(BattleAnimNode *node, s32 angle, void *ot, u8 *primBuf) {
     POLY_G4 *poly = (POLY_G4 *)primBuf;
 
     D_801D3390 = ((CVECTOR *)poly) + 1;
@@ -1326,10 +1326,10 @@ extern const VECTOR func_80098154;
  *  - @b 1..5 (slide-in trajectory): scale @c node's matrix by the constant
  *    @c cardScale, set @c worldZ to @c 0x200, push rotation/translation
  *    into the GTE, then walk the next display primitive via
- *    @c func_8009B3EC into @p otBucket.
+ *    @c drawCardShadow into @p otBucket.
  *  - @b 6 (flip): drive an angle from @c field02 (0..19, swept over 20
  *    frames as @c (n+1)*4096/20 — a 12-bit fixed-point sweep through
- *    [0, 4096]) and emit the gouraud quad via @c func_8009C440 into a fixed
+ *    [0, 4096]) and emit the gouraud quad via @c drawCardEffectQuad into a fixed
  *    OT layer (@c &D_801C2EB0[6], vs the per-card sort-key layer used by the
  *    normal render). @c field02 advances; when it reaches @c 20 the state is
  *    cleared.
@@ -1361,7 +1361,7 @@ void transformCardEffect(TripleTriadCardObject *entity, BattleAnimNode *node, vo
 
 flip:
     if (stateCopy == 6) {
-        D_801C2EB4 = func_8009C440(node, ((field02 + 1) * 4096) / 20, &D_801C2EB0[6], D_801C2EB4);
+        D_801C2EB4 = drawCardEffectQuad(node, ((field02 + 1) * 4096) / 20, &D_801C2EB0[6], D_801C2EB4);
         entity->field02++;
         if ((s16)entity->field02 >= 20) {
             entity->state = 0;
@@ -1375,7 +1375,7 @@ slide:
     node->mat.t[2] = 0x200;
     SetRotMatrix(&node->mat);
     SetTransMatrix(&node->mat);
-    D_801C2EB4 = func_8009B3EC(otBucket, D_801C2EB4);
+    D_801C2EB4 = drawCardShadow(otBucket, D_801C2EB4);
 }
 
 /**
@@ -1481,7 +1481,7 @@ TripleTriadBoardSlot *placeCard(TripleTriadBoard *board, s32 cardId, s32 owner, 
  * @param col       Board column.
  * @param row       Board row.
  */
-void func_8009C978(TripleTriadBoard *board, s32 entityIdx, s32 col, s32 row) {
+void commitCardToBoard(TripleTriadBoard *board, s32 entityIdx, s32 col, s32 row) {
     TripleTriadBoardSlot *cell;
 
     cell = placeCard(board, g_tripleTriadCardHands[entityIdx].cardId,
@@ -1805,7 +1805,7 @@ s32 applyCardRules(TripleTriadBoard *board, s32 mode) {
  * (any @c TT_CELL_CAP_FROM_* bit set), finds the capture direction via the
  * @c D_80182D54 table (matching the cell's captured-from bit against
  * @c CaptureDir.capBit) and drives that cell entity's flip animation with
- * @c func_8009C0A0. It then clears the captured-from bits and marks the cell
+ * @c setCardEntityType. It then clears the captured-from bits and marks the cell
  * @c TT_CELL_JUST_PLACED so the next rule pass re-evaluates it.
  *
  * @param board The Triple Triad board.
@@ -1819,7 +1819,7 @@ void resolveCaptures(TripleTriadBoard *board) {
             if (flags & TT_CELL_CAP_FROM_MASK) {
                 for (dir = 0; dir < 4; dir++) {
                     if (flags & D_80182D54[dir].capBit) {
-                        func_8009C0A0(board->cells[row][col].entityIdx, D_80182D54[dir].animType);
+                        setCardEntityType(board->cells[row][col].entityIdx, D_80182D54[dir].animType);
                         break;
                     }
                 }
@@ -1834,7 +1834,7 @@ void resolveCaptures(TripleTriadBoard *board) {
 /**
  * @brief Score a Triple Triad board for @p player (AI board evaluation).
  *
- * The static evaluator the minimax (@ref func_8009D2B0) calls at its leaves.
+ * The static evaluator the minimax (@ref searchBestMoveStack) calls at its leaves.
  * Sums three contributions into a signed score (higher = better for @p player):
  *  - **Board material**: for every occupied cell in the 3x3 play area, take
  *    @c D_801D35C8 + the card's value (@c D_801D35E0[cardId]) and add it if
@@ -1917,7 +1917,7 @@ s32 evaluateBoard(TripleTriadBoard *board, s32 player) {
  *         2 if the @c D_801D3538 budget ran out (yield; resume next slice),
  *         3 if the root advanced to its next hand card.
  */
-s32 func_8009D2B0(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) {
+s32 searchBestMoveStack(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) {
     TripleTriadBoard boardCopy;
     s32 cardId;
     s32 weight;
@@ -1948,7 +1948,7 @@ s32 func_8009D2B0(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) 
                 }
 
                 D_801D3570[player].cards[node->card].id = 0xFF;
-                result = func_8009D2B0(&boardCopy, player ^ 1, &node[1], depth - 1);
+                result = searchBestMoveStack(&boardCopy, player ^ 1, &node[1], depth - 1);
                 D_801D3570[player].cards[node->card].id = cardId;
 
                 switch (result) {
@@ -2035,14 +2035,14 @@ s32 func_8009D2B0(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) 
 
 /**
  * @brief Live entry point of the AI move search (pool-allocated twin of
- *        @ref func_8009D2B0).
+ *        @ref searchBestMoveStack).
  *
- * Identical search to @ref func_8009D2B0 — same resumable time-sliced minimax
+ * Identical search to @ref searchBestMoveStack — same resumable time-sliced minimax
  * over the @c D_801D3460 ply workspace, same scoring, pruning and return codes —
  * but each recursion level draws its scratch board from the per-frame work pool
  * (@c func_80098B80) instead of the CPU stack, returning it (@c func_80098BA0)
- * on every exit after the allocation. This is the variant @ref func_8009DBE8
- * actually runs each AI turn; @ref func_8009D2B0 (stack-allocated copy, no
+ * on every exit after the allocation. This is the variant @ref updateAiTurn
+ * actually runs each AI turn; @ref searchBestMoveStack (stack-allocated copy, no
  * in-overlay caller) appears to be its unused sibling.
  *
  * @param board  Position to search (copied per placement; never modified).
@@ -2056,7 +2056,7 @@ s32 func_8009D2B0(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) 
  *         2 if the @c D_801D3538 budget ran out (yield; resume next slice),
  *         3 if the root advanced to its next hand card.
  */
-s32 func_8009D72C(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) {
+s32 searchBestMove(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) {
     TripleTriadBoard *boardCopy;
     s32 cardId;
     s32 weight;
@@ -2088,7 +2088,7 @@ s32 func_8009D72C(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) 
                 }
 
                 D_801D3570[player].cards[node->card].id = 0xFF;
-                result = func_8009D72C(boardCopy, player ^ 1, &node[1], depth - 1);
+                result = searchBestMove(boardCopy, player ^ 1, &node[1], depth - 1);
                 D_801D3570[player].cards[node->card].id = cardId;
 
                 switch (result) {
@@ -2190,7 +2190,7 @@ s32 func_8009D72C(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) 
  *        card slot (@c D_801D3462) into @p a, advance.
  *      - @e sub @e 1: highlight the card (@ref func_8009A878), refill the minimax
  *        placement budget (@c D_801D3538 = 100) and run the move search
- *        (@ref func_8009D72C). If it reports busy (result 2 — budget exhausted)
+ *        (@ref searchBestMove). If it reports busy (result 2 — budget exhausted)
  *        tick the search timer and yield; otherwise, if the chosen card is
  *        already played (id @c 0xFF) clear the timer, advance.
  *      - @e sub @e 2: keep highlighting; while the search timer is positive tick it
@@ -2199,13 +2199,13 @@ s32 func_8009D72C(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) 
  *  - @b State @b 2 — animate the placement card (@c D_801D3466) for 15 frames, then
  *    enter state 3.
  *  - @b State @b 3 — set the card object's action (@ref setBattleObjectAction) and
- *    commit it to the board (@ref func_8009C978).
+ *    commit it to the board (@ref commitCardToBoard).
  *
  * @param a AI turn/placement controller for the current player.
  * @return 2 once the card has been placed (state 3); 0 while still working or when
  *         input is disabled.
  */
-s32 func_8009DBE8(func_8009DBE8_arg0 *a) {
+s32 updateAiTurn(func_8009DBE8_arg0 *a) {
     TripleTriadBoard board;
 
     if (D_801A2C74 & 4) {
@@ -2238,7 +2238,7 @@ s32 func_8009DBE8(func_8009DBE8_arg0 *a) {
             case AI_SEARCH_RUN:
                 func_8009A878(D_801D35C0, a->cardSlot);
                 D_801D3538 = 100;
-                a->result = func_8009D72C(&D_801D3398, D_801D35C0, D_801D3460, a->unk10);
+                a->result = searchBestMove(&D_801D3398, D_801D35C0, D_801D3460, a->unk10);
                 if ((a->result & 0xFF) == 2) {
                     D_801D353C--;
                     return 0;
@@ -2279,7 +2279,7 @@ s32 func_8009DBE8(func_8009DBE8_arg0 *a) {
             setBattleObjectAction(
                 D_801D3570[D_801D35C0].cards[D_801D3460[0].bestCard].entityIdx, 2,
                 D_801D3460[0].bestCol, D_801D3460[0].bestRow);
-            func_8009C978(&D_801D3398,
+            commitCardToBoard(&D_801D3398,
                 D_801D3570[D_801D35C0].cards[D_801D3460[0].bestCard].entityIdx,
                 D_801D3460[0].bestCol, D_801D3460[0].bestRow);
             return 2;
@@ -2299,7 +2299,7 @@ s32 func_8009DBE8(func_8009DBE8_arg0 *a) {
  *     config bit is clear, randomizes the opponent's hidden hand — each guessed
  *     id is @c (rand()%(cardLevel+1))*11 + rand()%11, seeded from the real hand
  *     card levels in @c D_801A2C48.
- *  3. Spawns the per-frame turn handler: a list node with @ref func_8009DBE8 as
+ *  3. Spawns the per-frame turn handler: a list node with @ref updateAiTurn as
  *     its callback, seeds its search-depth @c unk10 from @c D_80182D64, loads the
  *     difficulty weight row from @c D_80182DAC into @c D_801D35C8..D_801D35D8, and
  *     fills the per-card value table @c D_801D35E0[0..109].
@@ -2307,7 +2307,7 @@ s32 func_8009DBE8(func_8009DBE8_arg0 *a) {
  * @param seat Player/seat index taking the turn.
  * @return The AI turn-node list head (@c D_801D3560).
  */
-u8 *func_8009DECC(s32 seat) {
+u8 *spawnAiTurn(s32 seat) {
     func_8009DBE8_arg0 *node;
     s32 mult;
     s32 slotCount;
@@ -2344,7 +2344,7 @@ u8 *func_8009DECC(s32 seat) {
     }
 
     func_80098BC0(D_801D3560, D_801D3540, 0x14, 1);
-    node = (func_8009DBE8_arg0 *)func_80098C44(D_801D3560, (s32)func_8009DBE8);
+    node = (func_8009DBE8_arg0 *)func_80098C44(D_801D3560, (s32)updateAiTurn);
     D_801D35C0 = seat;
     node->seat = seat;
     {
@@ -2374,13 +2374,13 @@ u8 *func_8009DECC(s32 seat) {
  *
  * Sets up a linked list with node size 0x4C and capacity 0x10.
  */
-void func_8009E1F0(void) {
+void initTriadTaskPool(void) {
     func_80098BC0(D_801D3C58, D_801D3798, 0x4C, 0x10);
 }
 
 /**
  * @brief Call func_80098D28 with D_801D3C58.
  */
-void func_8009E224(void) {
+void processTriadTasks(void) {
     func_80098D28(D_801D3C58);
 }

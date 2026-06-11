@@ -167,7 +167,7 @@ typedef union {
  * just before it kicks off a battle/card-game transition; the trailing @c result
  * is written by the battle overlay once the fight finishes and read back on the
  * @c return-pass of the same field opcode. The Triple Triad AI setup
- * (@c func_8009DECC) reads @c field_06 / @c field_07 here as its difficulty
+ * (@c spawnAiTurn) reads @c field_06 / @c field_07 here as its difficulty
  * selectors (weight-table and search-depth indices).
  */
 typedef struct {

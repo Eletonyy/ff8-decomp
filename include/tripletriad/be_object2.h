@@ -18,14 +18,14 @@
  */
 typedef struct {
     s16 capBit;    /* 0x00 — matching TT_CELL_CAP_FROM_* bit */
-    s16 animType;  /* 0x02 — entity type passed to func_8009C0A0 (selects flip animation) */
+    s16 animType;  /* 0x02 — entity type passed to setCardEntityType (selects flip animation) */
 } CaptureDir;      /* 0x04 */
 
 extern CaptureDir D_80182D54[4];
 
 /** @brief Set a battle entity's type (which selects its animation); triggers a
  *         flip effect for types 2..5. @c entityIdx indexes @c g_tripleTriadCardHands. */
-extern void func_8009C0A0(s32 entityIdx, s32 type);
+extern void setCardEntityType(s32 entityIdx, s32 type);
 
 /** @brief Resolve captured cells: trigger each captured cell's flip animation
  *         and clear its captured-from bits. */

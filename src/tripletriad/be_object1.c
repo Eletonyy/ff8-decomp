@@ -104,9 +104,9 @@ extern s32 func_80099C78();
 extern s32 func_8009A314();
 extern s32 func_8009A508();
 extern void func_800A271C(void);
-extern void func_8009E224(void);
+extern void processTriadTasks(void);
 extern void func_8009EBCC(void);
-extern void func_8009BAF4(void);
+extern void updateTriadMenu(void);
 extern void func_800A1C6C(void);
 extern void func_800A2214(void);
 extern void func_800A21C4(void);
@@ -126,10 +126,10 @@ void func_8009822C(void) {
     i = 0;
     func_800981BC();
     func_80098B70();
-    func_8009E1F0();
+    initTriadTaskPool();
     func_80098B68();
     func_800984DC();
-    func_8009B494();
+    resetTriadMenuState();
     func_800A1BE0();
     func_800A2208();
     func_80098DD4();
@@ -187,9 +187,9 @@ s32 func_80098304(void) {
         }
 
         if (D_801A2C40 != 0) func_80098D28(D_801A2C40);
-        func_8009E224();
+        processTriadTasks();
         func_8009EBCC();
-        func_8009BAF4();
+        updateTriadMenu();
         func_800A1C6C();
         func_80098690();
         func_80098828();
@@ -1267,15 +1267,15 @@ s32 cardFlipHandler(HandlerNode *node) {
  *     (the sub-handler picks a starting player), then advances to state 1.
  *   - **1** (player turn): on first frame dispatch on
  *     @c D_801A2C70[D_801D30F8] (player type: 0/1 human, 2 AI, 3 demo) into
- *     @c func_8009C010 / @c func_8009DECC to create a per-turn handler,
+ *     @c spawnCardSelectCursor / @c spawnAiTurn to create a per-turn handler,
  *     stashed at @c ctl->subHandler. Subsequent frames poll
  *     @c func_80098D28(subHandler); on completion advance to state 4.
- *   - **4** (rule resolution, first pass): wait for @c func_8009C0F4 (UI
+ *   - **4** (rule resolution, first pass): wait for @c anyCardEffectActive (UI
  *     idle). On entry call @c applyCardRules to evaluate Same/Plus chains.
  *     If the result flags either bit 2 (Same) or bit 3 (Plus), play the
  *     matching SFX (@c func_8009EB30 0/1), then sweep the 3x3 play area
  *     for cells marked with the corresponding flag bit and animate them via
- *     @c func_8009C0A0. After @c counter == 1, finalize and advance to 5.
+ *     @c setCardEntityType. After @c counter == 1, finalize and advance to 5.
  *   - **5** (rule resolution, chain pass): keep applying @c applyCardRules
  *     until the result returns 0, playing the chain SFX (@c 5) once. Then
  *     advance to state 6.
@@ -1338,10 +1338,10 @@ s32 cardFlipHandler(HandlerNode *node) {
  *                 if (ctl->counter == 0) {
  *                     u8 playerType = D_801A2C70[D_801D30F8];
  *                     switch (playerType) {
- *                         case 0: ctl->subHandler = (void *)func_8009C010(D_801D30F8, 0); break;
- *                         case 1: ctl->subHandler = (void *)func_8009C010(D_801D30F8, 1); break;
- *                         case 2: ctl->subHandler = (void *)func_8009C010(D_801D30F8, 2); break;
- *                         case 3: ctl->subHandler = (void *)func_8009DECC(D_801D30F8); break;
+ *                         case 0: ctl->subHandler = (void *)spawnCardSelectCursor(D_801D30F8, 0); break;
+ *                         case 1: ctl->subHandler = (void *)spawnCardSelectCursor(D_801D30F8, 1); break;
+ *                         case 2: ctl->subHandler = (void *)spawnCardSelectCursor(D_801D30F8, 2); break;
+ *                         case 3: ctl->subHandler = (void *)spawnAiTurn(D_801D30F8); break;
  *                     }
  *                     ctl->counter++;
  *                     return 0;
@@ -1353,7 +1353,7 @@ s32 cardFlipHandler(HandlerNode *node) {
  *                 return 0;
  *             }
  *             case 4: {
- *                 if (func_8009C0F4()) return 0;
+ *                 if (anyCardEffectActive()) return 0;
  *                 if (ctl->counter == 0) {
  *                     u8 rules = applyCardRules(&D_801D3398, 1);
  *                     ctl->rulesFlags = rules;
@@ -1370,7 +1370,7 @@ s32 cardFlipHandler(HandlerNode *node) {
  *                         for (row = 1; row <= 3; row++) {
  *                             for (col = 1; col <= 3; col++) {
  *                                 if (D_801D3398.cells[row][col].flags & ownerMask)
- *                                     func_8009C0A0(D_801D3398.cells[row][col].entityIdx, 6);
+ *                                     setCardEntityType(D_801D3398.cells[row][col].entityIdx, 6);
  *                             }
  *                         }
  *                         func_800A233C(TT_HOLD_FRAMES_RULE);
@@ -1384,7 +1384,7 @@ s32 cardFlipHandler(HandlerNode *node) {
  *                 break;
  *             }
  *             case 5: {
- *                 if (func_8009C0F4()) return 0;
+ *                 if (anyCardEffectActive()) return 0;
  *                 if (ctl->rulesFlags == 0) { ctl->state = 6; ctl->counter = 0; break; }
  *                 {
  *                     u8 next = applyCardRules(&D_801D3398, ctl->rulesFlags);
@@ -1477,16 +1477,16 @@ s32 cardFlipHandler(HandlerNode *node) {
 INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object1", func_80099C78);
 
 /**
- * @brief Execute cleanup via func_8009AD00 and return success.
+ * @brief Execute cleanup via processCardObjects and return success.
  *
- * Calls func_8009AD00 to perform cleanup/finalization, then always
+ * Calls processCardObjects to perform cleanup/finalization, then always
  * returns 0 to indicate success.
  *
- * @param a0 Entity or context pointer passed to func_8009AD00.
+ * @param a0 Entity or context pointer passed to processCardObjects.
  * @return Always 0.
  */
 s32 func_8009A2F4(s32 a0) {
-    func_8009AD00(a0);
+    processCardObjects(a0);
     return 0;
 }
 

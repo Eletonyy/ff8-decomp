@@ -2,7 +2,7 @@
 #define TRIPLETRIAD_H
 
 #include "common.h"
-#include "psxsdk/libgpu.h"  /* TSPRT (func_8009A970) */
+#include "psxsdk/libgpu.h"  /* TSPRT (drawCardOverlaySprite) */
 #include "psxsdk/libgte.h"  /* SVECTOR / MATRIX (CardRenderWork, BattleAnimNode) */
 
 /* Types, constants, and globals for the Triple Triad card mini-game
@@ -133,7 +133,7 @@ extern TripleTriadBoard D_801D3398;
  *
  * The be_object2 dispatch layer drives each object by @c groupId (category)
  * and @c priority: setting a new high-priority entry in a group resets all
- * lower-priority siblings. When the card is placed (@ref func_8009C978), its
+ * lower-priority siblings. When the card is placed (@ref commitCardToBoard), its
  * @c cardId and owner are copied onto the board and the board cell's
  * @c entityIdx points back to this object so its flip animation plays.
  */
@@ -169,7 +169,7 @@ extern TripleTriadCardObject g_tripleTriadCardHands[10];
 /**
  * @brief One slot of a player's working hand for the AI search (8 bytes).
  *
- * The minimax (@ref func_8009D2B0) and board evaluator (@ref evaluateBoard)
+ * The minimax (@ref searchBestMoveStack) and board evaluator (@ref evaluateBoard)
  * read these card ids; @c id == 0xFF marks a slot whose card has been played
  * (or is otherwise unavailable) during the search.
  */
@@ -202,7 +202,7 @@ extern s32 D_801D35E0[];  /**< Per-card value table, indexed by card id. */
  * directly): @c func_80041274 fills the rotation @c mat.m, and the translation
  * @c mat.t[0..2] holds the element's world X/Y/Z. The low 16 bits of
  * @c mat.t[0]/@c mat.t[1] double as the screen-space sprite anchor read by
- * @c func_8009A970. The trailing @c base is the pre-transform position written
+ * @c drawCardOverlaySprite. The trailing @c base is the pre-transform position written
  * by @c func_8009A6EC (its @c pad slot carries the display-list sort key).
  *
  * Per-frame: @c func_8009A6EC writes @c base, then the caller adds
@@ -217,7 +217,7 @@ typedef struct {
  * @brief Per-frame handler context wrapping a @c TripleTriadCardObject.
  *
  * Allocated by @c func_80098C44 with the per-frame callback (e.g.
- * @c func_8009AA68) stored at offset @c 0x08. Different handlers in
+ * @c updateCardObject) stored at offset @c 0x08. Different handlers in
  * this overlay reuse the node's @c 0x0C slot for different purposes;
  * the be_object2 dispatch stores a back-pointer to the @c TripleTriadCardObject
  * entry being driven.
@@ -227,7 +227,7 @@ typedef struct {
     /* 0x0C */ TripleTriadCardObject *entry;
 } BattleObjectCtl;
 
-extern TSPRT *func_8009A970(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out);
+extern TSPRT *drawCardOverlaySprite(BattleAnimNode *node, s32 variant, void *ot, TSPRT *out);
 extern void   func_8009C12C(TripleTriadCardObject *entity);
 extern void   transformCardEffect(TripleTriadCardObject *entity, BattleAnimNode *node, void *otBucket);
 
