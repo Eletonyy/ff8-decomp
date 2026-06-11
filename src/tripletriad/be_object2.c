@@ -18,24 +18,29 @@ extern u8  D_801C2DCA;
 extern s32 func_80023D04(void);
 
 /**
- * @brief One entry of the AI move-search workspace (@ref func_8009D72C fills it).
+ * @brief Per-ply state of the AI move search (one node of @ref func_8009D2B0).
  *
- * @c D_801D3460 holds 9 of these (one per playable interior board cell). Entry
- * @c [0] is the chosen move once the search completes: @c col / @c row give the
- * target board cell and @c handSlot selects the card in the player's hand.
+ * @c D_801D3460 holds 9 of these — one per search ply. Each node carries the
+ * (card, row, col) iterators the resumable minimax is currently trying at that
+ * ply, the best move found so far, and its scores. Entry @c [0] is the root:
+ * once the search completes its @c bestCol / @c bestRow give the chosen board
+ * cell and @c bestCard the chosen hand slot.
  * @note @c D_801D3462 / @c D_801D3466 are separate splat symbols that alias
- *       @c D_801D3460[0].unk02 / @c D_801D3460[0].handSlot.
+ *       @c D_801D3460[0].card / @c D_801D3460[0].bestCard.
  */
 typedef struct {
-    /* 0x00 */ u8 unk00;
-    /* 0x01 */ u8 unk01;
-    /* 0x02 */ u8 unk02;       /* reset to 0 each search; reachable as D_801D3462 */
-    /* 0x03 */ u8 unk03;       /* reset to 1 each search */
-    /* 0x04 */ u8 col;         /* target board column */
-    /* 0x05 */ u8 row;         /* target board row */
-    /* 0x06 */ u8 handSlot;    /* hand-card index (0..4); reachable as D_801D3466 */
-    /* 0x07 */ u8 unk07;
-    /* 0x08 */ u8 unk08[0x10];
+    /* 0x00 */ u8 col;          /* board column currently being tried (0..2) */
+    /* 0x01 */ u8 row;          /* board row currently being tried (0..2) */
+    /* 0x02 */ u8 card;         /* hand slot currently being tried (0..4); reachable as D_801D3462 */
+    /* 0x03 */ u8 noBest;       /* 1 = no best move recorded yet in this pass */
+    /* 0x04 */ u8 bestCol;      /* best/chosen board column */
+    /* 0x05 */ u8 bestRow;      /* best/chosen board row */
+    /* 0x06 */ u8 bestCard;     /* best/chosen hand slot; reachable as D_801D3466 */
+    /* 0x07 */ u8 checkBound;   /* 1 = prune this pass against `bound` (a prior pass completed) */
+    /* 0x08 */ u8 pad08[4];
+    /* 0x0C */ s32 bestWeighted; /* best difficulty-weighted score (raw * weight >> 12) */
+    /* 0x10 */ s32 bestScore;    /* best raw board score */
+    /* 0x14 */ s32 bound;        /* pruning threshold carried over from the completed pass */
 } AiMove;                      /* 0x18 */
 
 /**
@@ -75,14 +80,12 @@ enum AiSearchPhase {
 /** @brief Frames the picked card is shown during @ref AI_TURN_ANIMATE before placement. */
 #define AI_ANIM_FRAMES 15
 
-extern AiMove D_801D3460[9];   /* AI move-search workspace */
-extern u8     D_801D3462;      /* = D_801D3460[0].unk02 (chosen card slot) */
-extern u8     D_801D3466;      /* = D_801D3460[0].handSlot (placement card) */
-extern s32    D_801D3538;      /* placement-phase frame timer */
+extern AiMove D_801D3460[9];   /* AI move-search workspace (root = [0], one entry per ply) */
+extern u8     D_801D3462;      /* = D_801D3460[0].card (root card iterator / latched slot) */
+extern u8     D_801D3466;      /* = D_801D3460[0].bestCard (chosen placement card) */
+extern s32    D_801D3538;      /* minimax placement budget per search slice (see func_8009D2B0) */
 extern s32    D_801D353C;      /* search-phase frame timer */
 extern s32    D_801D35C0;      /* current player / seat index */
-
-extern s32 func_8009D72C(TripleTriadBoard *board, s32 player, AiMove *moves, s32 arg);
 
 /** @brief One row of the AI evaluation-weight table (@ref D_80182DAC). */
 typedef struct { s32 w0, w1, w2, w3, w4; } WeightSet;  /* 0x14 */
@@ -1878,9 +1881,301 @@ s32 evaluateBoard(TripleTriadBoard *board, s32 player) {
     return score;
 }
 
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D2B0);
+/**
+ * @brief Recursive Triple Triad AI move search (resumable depth-limited minimax).
+ *
+ * Tries every move at this ply: for each (card, row, col) combination selected
+ * by the iterators in @p node, skips played cards (id 0xFF) and occupied cells,
+ * then copies @p board, places the card (@ref placeCard), cascades the capture
+ * rules (@ref applyCardRules), and recurses one ply deeper with the opponent to
+ * move (child state in @c node[1], the played card masked out of the hand). A
+ * child that ran out of depth (result 1) is scored with @ref evaluateBoard from
+ * the AI seat's perspective; a child that completed its own pass (result 0)
+ * reports back through its @c bestScore / @c bestWeighted fields. The raw score
+ * is tracked in @c node->bestScore and its difficulty-weighted counterpart
+ * (scaled by @c D_801D35D4 in 4.12 fixed point whenever a capture cascade
+ * occurred on the AI seat's own placement) in @c node->bestWeighted; the AI
+ * seat maximizes the weighted score while the opponent minimizes the raw one,
+ * and the winning move is recorded in @c bestCol / @c bestRow / @c bestCard.
+ * After a node completes a full pass it latches its result into @c bound and
+ * sets @c checkBound, letting later passes prune (by forcing the iterators to
+ * the wrap position) as soon as a partial result already beats it.
+ *
+ * The search is time-sliced: every placement decrements the shared budget
+ * @c D_801D3538, and the recursion unwinds with result 2 once it hits zero.
+ * Because each ply's iterators persist in @c D_801D3460, the next slice
+ * resumes exactly where this one yielded.
+ *
+ * @param board  Position to search (copied per placement; never modified).
+ * @param player Seat to move at this ply (0/1).
+ * @param node   This ply's search state in the @c D_801D3460 workspace; the
+ *               child ply uses @c node[1].
+ * @param depth  Remaining search depth in plies.
+ *
+ * @return 0 when this node completed a full pass (best move/scores recorded),
+ *         1 if @p depth was already exhausted (caller evaluates the position),
+ *         2 if the @c D_801D3538 budget ran out (yield; resume next slice),
+ *         3 if the root advanced to its next hand card.
+ */
+s32 func_8009D2B0(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) {
+    TripleTriadBoard boardCopy;
+    s32 cardId;
+    s32 weight;
+    s32 weighted;
+    s32 score;
+    s32 ruleMode;
+    s32 result;
+    s32 product;
 
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D72C);
+    if (depth <= 0) {
+        return 1;
+    }
+    while (D_801D3538 > 0) {
+        cardId = D_801D3570[player].cards[node->card].id;
+        if (cardId != 0xFF) {
+            if (!(board->cells[node->row + 1][node->col + 1].flags & TT_CELL_OCCUPIED)) {
+                D_801D3538--;
+                boardCopy = *board;
+
+                placeCard(&boardCopy, cardId, player, node->col, node->row);
+                ruleMode = 1;
+                weight = 0x1000;
+                while (applyCardRules(&boardCopy, ruleMode) != 0) {
+                    ruleMode &= -2;
+                    if (player == D_801D35C0) {
+                        weight = D_801D35D4;
+                    }
+                }
+
+                D_801D3570[player].cards[node->card].id = 0xFF;
+                result = func_8009D2B0(&boardCopy, player ^ 1, &node[1], depth - 1);
+                D_801D3570[player].cards[node->card].id = cardId;
+
+                switch (result) {
+                case 0:
+                    score = node[1].bestScore;
+                    product = node[1].bestWeighted * weight;
+                    weighted = product >> 12;
+                    break;
+                case 1: {
+                    s32 eval = evaluateBoard(&boardCopy, D_801D35C0);
+                    product = eval * weight;
+                    score = eval;
+                    weighted = product >> 12;
+                    break;
+                }
+                case 2:
+                    return 2;
+                }
+
+                if (player == D_801D35C0) {
+                    if (node->noBest || node->bestWeighted < weighted) {
+                        node->bestWeighted = weighted;
+                        node->bestScore = score;
+                        node->noBest = 0;
+                        node->bestCol = node->col;
+                        node->bestRow = node->row;
+                        node->bestCard = node->card;
+                    }
+                } else {
+                    if (node->noBest || score < node->bestScore) {
+                        node->bestWeighted = weighted;
+                        node->bestScore = score;
+                        node->noBest = 0;
+                        node->bestCol = node->col;
+                        node->bestRow = node->row;
+                        node->bestCard = node->card;
+                    }
+                }
+
+                if (node->checkBound) {
+                    if (player == D_801D35C0) {
+                        if (node->bound < score) {
+                            node->col = 2;
+                            node->row = 2;
+                            node->card = 4;
+                        }
+                    } else {
+                        if (weighted < node->bound) {
+                            node->col = 2;
+                            node->row = 2;
+                            node->card = 4;
+                        }
+                    }
+                }
+            }
+        }
+
+        node->col++;
+        if ((u8)node->col >= 3) {
+            node->col = 0;
+            node->row++;
+            if ((u8)node->row >= 3) {
+                node->row = 0;
+                node->card++;
+                if ((u8)node->card >= 5) {
+                    node->card = 0;
+                    node->noBest = 1;
+                    node->checkBound = 1;
+                    if (player == D_801D35C0) {
+                        node->bound = node->bestScore;
+                    } else {
+                        node->bound = node->bestWeighted;
+                    }
+                    return 0;
+                }
+                if (node == D_801D3460) {
+                    return 3;
+                }
+            }
+        }
+    }
+    return 2;
+}
+
+/**
+ * @brief Live entry point of the AI move search (pool-allocated twin of
+ *        @ref func_8009D2B0).
+ *
+ * Identical search to @ref func_8009D2B0 — same resumable time-sliced minimax
+ * over the @c D_801D3460 ply workspace, same scoring, pruning and return codes —
+ * but each recursion level draws its scratch board from the per-frame work pool
+ * (@c func_80098B80) instead of the CPU stack, returning it (@c func_80098BA0)
+ * on every exit after the allocation. This is the variant @ref func_8009DBE8
+ * actually runs each AI turn; @ref func_8009D2B0 (stack-allocated copy, no
+ * in-overlay caller) appears to be its unused sibling.
+ *
+ * @param board  Position to search (copied per placement; never modified).
+ * @param player Seat to move at this ply (0/1).
+ * @param node   This ply's search state in the @c D_801D3460 workspace; the
+ *               child ply uses @c node[1].
+ * @param depth  Remaining search depth in plies.
+ *
+ * @return 0 when this node completed a full pass (best move/scores recorded),
+ *         1 if @p depth was already exhausted (caller evaluates the position),
+ *         2 if the @c D_801D3538 budget ran out (yield; resume next slice),
+ *         3 if the root advanced to its next hand card.
+ */
+s32 func_8009D72C(TripleTriadBoard *board, s32 player, AiMove *node, s32 depth) {
+    TripleTriadBoard *boardCopy;
+    s32 cardId;
+    s32 weight;
+    s32 weighted;
+    s32 score;
+    s32 ruleMode;
+    s32 result;
+    s32 product;
+
+    if (depth <= 0) {
+        return 1;
+    }
+    boardCopy = (TripleTriadBoard *)func_80098B80(sizeof(TripleTriadBoard));
+    while (D_801D3538 > 0) {
+        cardId = D_801D3570[player].cards[node->card].id;
+        if (cardId != 0xFF) {
+            if (!(board->cells[node->row + 1][node->col + 1].flags & TT_CELL_OCCUPIED)) {
+                D_801D3538--;
+                *boardCopy = *board;
+
+                placeCard(boardCopy, cardId, player, node->col, node->row);
+                ruleMode = 1;
+                weight = 0x1000;
+                while (applyCardRules(boardCopy, ruleMode) != 0) {
+                    ruleMode &= -2;
+                    if (player == D_801D35C0) {
+                        weight = D_801D35D4;
+                    }
+                }
+
+                D_801D3570[player].cards[node->card].id = 0xFF;
+                result = func_8009D72C(boardCopy, player ^ 1, &node[1], depth - 1);
+                D_801D3570[player].cards[node->card].id = cardId;
+
+                switch (result) {
+                case 0:
+                    score = node[1].bestScore;
+                    product = node[1].bestWeighted * weight;
+                    weighted = product >> 12;
+                    break;
+                case 1: {
+                    s32 eval = evaluateBoard(boardCopy, D_801D35C0);
+                    product = eval * weight;
+                    score = eval;
+                    weighted = product >> 12;
+                    break;
+                }
+                case 2:
+                    func_80098BA0(sizeof(TripleTriadBoard));
+                    return 2;
+                }
+
+                if (player == D_801D35C0) {
+                    if (node->noBest || node->bestWeighted < weighted) {
+                        node->bestWeighted = weighted;
+                        node->bestScore = score;
+                        node->noBest = 0;
+                        node->bestCol = node->col;
+                        node->bestRow = node->row;
+                        node->bestCard = node->card;
+                    }
+                } else {
+                    if (node->noBest || score < node->bestScore) {
+                        node->bestWeighted = weighted;
+                        node->bestScore = score;
+                        node->noBest = 0;
+                        node->bestCol = node->col;
+                        node->bestRow = node->row;
+                        node->bestCard = node->card;
+                    }
+                }
+
+                if (node->checkBound) {
+                    if (player == D_801D35C0) {
+                        if (node->bound < score) {
+                            node->col = 2;
+                            node->row = 2;
+                            node->card = 4;
+                        }
+                    } else {
+                        if (weighted < node->bound) {
+                            node->col = 2;
+                            node->row = 2;
+                            node->card = 4;
+                        }
+                    }
+                }
+            }
+        }
+
+        node->col++;
+        if ((u8)node->col >= 3) {
+            node->col = 0;
+            node->row++;
+            if ((u8)node->row >= 3) {
+                node->row = 0;
+                node->card++;
+                if ((u8)node->card >= 5) {
+                    node->card = 0;
+                    node->noBest = 1;
+                    node->checkBound = 1;
+                    if (player == D_801D35C0) {
+                        node->bound = node->bestScore;
+                    } else {
+                        node->bound = node->bestWeighted;
+                    }
+                    func_80098BA0(sizeof(TripleTriadBoard));
+                    return 0;
+                }
+                if (node == D_801D3460) {
+                    func_80098BA0(sizeof(TripleTriadBoard));
+                    return 3;
+                }
+            }
+        }
+    }
+    func_80098BA0(sizeof(TripleTriadBoard));
+    return 2;
+}
 
 /**
  * @brief Advance the AI player's Triple Triad turn: search for a move, play the
@@ -1893,10 +2188,11 @@ INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object2", func_8009D72C);
  *  - @b State @b 1 — three sub-steps:
  *      - @e sub @e 0: arm the search timer (@c D_801D353C = 10), latch the chosen
  *        card slot (@c D_801D3462) into @p a, advance.
- *      - @e sub @e 1: highlight the card (@ref func_8009A878), arm the placement
- *        timer (@c D_801D3538 = 100) and run the move search (@ref func_8009D72C).
- *        If it reports busy (result 2) tick the search timer and yield; otherwise,
- *        if the chosen card is already played (id @c 0xFF) clear the timer, advance.
+ *      - @e sub @e 1: highlight the card (@ref func_8009A878), refill the minimax
+ *        placement budget (@c D_801D3538 = 100) and run the move search
+ *        (@ref func_8009D72C). If it reports busy (result 2 — budget exhausted)
+ *        tick the search timer and yield; otherwise, if the chosen card is
+ *        already played (id @c 0xFF) clear the timer, advance.
  *      - @e sub @e 2: keep highlighting; while the search timer is positive tick it
  *        and yield. Once it expires, restart the search (sub 0) if the result was 3,
  *        else advance to state 2.
@@ -1921,11 +2217,11 @@ s32 func_8009DBE8(func_8009DBE8_arg0 *a) {
         case AI_TURN_INIT: {
             s32 i;
             for (i = 0; i < 9; i++) {
-                D_801D3460[i].unk00 = 0;
-                D_801D3460[i].unk01 = 0;
-                D_801D3460[i].unk02 = 0;
-                D_801D3460[i].unk03 = 1;
-                D_801D3460[i].unk07 = 0;
+                D_801D3460[i].col = 0;
+                D_801D3460[i].row = 0;
+                D_801D3460[i].card = 0;
+                D_801D3460[i].noBest = 1;
+                D_801D3460[i].checkBound = 0;
             }
             a->state = AI_TURN_SEARCH;
             a->sub = AI_SEARCH_PREP;
@@ -1981,11 +2277,11 @@ s32 func_8009DBE8(func_8009DBE8_arg0 *a) {
             break;
         case AI_TURN_PLACE:
             setBattleObjectAction(
-                D_801D3570[D_801D35C0].cards[D_801D3460[0].handSlot].entityIdx, 2,
-                D_801D3460[0].col, D_801D3460[0].row);
+                D_801D3570[D_801D35C0].cards[D_801D3460[0].bestCard].entityIdx, 2,
+                D_801D3460[0].bestCol, D_801D3460[0].bestRow);
             func_8009C978(&D_801D3398,
-                D_801D3570[D_801D35C0].cards[D_801D3460[0].handSlot].entityIdx,
-                D_801D3460[0].col, D_801D3460[0].row);
+                D_801D3570[D_801D35C0].cards[D_801D3460[0].bestCard].entityIdx,
+                D_801D3460[0].bestCol, D_801D3460[0].bestRow);
             return 2;
         }
     }
