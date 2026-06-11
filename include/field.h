@@ -850,27 +850,8 @@ extern u8 D_800DE878[];
 /* Battle encounter params (populated by field-VM opcode 0x14C)             */
 /* ======================================================================== */
 
-/**
- * @brief Battle encounter setup parameters at @ref D_80082C90.
- *
- * Populated by the field-VM @c initiateBattleEncounter opcode just
- * before it kicks off the battle transition. The trailing @c result
- * is written by the battle overlay once the fight finishes and is
- * read back on the @c return-pass of the same field opcode.
- */
-typedef struct {
-    /* 0x00 */ s32 encounterPtr;
-    /* 0x04 */ u8 field_04;
-    /* 0x05 */ u8 field_05;
-    /* 0x06 */ u8 field_06;
-    /* 0x07 */ u8 field_07;
-    /* 0x08 */ u8 field_08;
-    /* 0x09 */ u8 field_09;
-    /* 0x0A */ u8 pad0A[2];
-    /* 0x0C */ u8 result;
-} EncounterParams;
-
-extern EncounterParams D_80082C90;
+/* EncounterParams / D_80082C90 moved to common.h (resident, shared with the
+ * Triple Triad overlay's AI setup). */
 
 /** @brief Mirrored from @ref FieldVars.fieldF3 when @c stateFlags & 0x800 is set. */
 extern u8 D_80082C10;
