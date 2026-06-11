@@ -1,6 +1,8 @@
 #include "common.h"
 #include "battle.h"
+#include "tripletriad.h"
 #include "psxsdk/libgpu.h"
+#include "tripletriad/be_object3.h"
 
 /**
  * @brief Script-action entry in the D_801D3EC0 2x5 table.
@@ -420,4 +422,23 @@ INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A15C8);
 
 INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A18D0);
 
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object3", func_800A1BC4);
+/**
+ * @brief Unconditional hang.
+ *
+ * @note Not referenced by the @c D_800A4588 battle-state table or any caller —
+ *       appears to be an unused/stub state that simply spins forever.
+ */
+void hangForever(void) {
+    while (1) {}
+}
+
+/**
+ * @brief Battle state-5 handler (@c D_800A4588[5]).
+ *
+ * Sets the next state to 2 (@c D_801A2CE6 = 2) and returns 0 so the
+ * state-dispatch loop keeps running.
+ */
+s32 battleState5Handler(void) {
+    D_801A2CE6 = 2;
+    return 0;
+}

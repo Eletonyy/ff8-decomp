@@ -1,7 +1,9 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
+#include "tripletriad/be_object4.h"
 
 extern s16 D_801D49E2;
+extern s16 D_801D49F8[];
 extern s16 D_801D4B18;
 extern s16 D_801D4B1A;
 extern s32 D_801A2C74;
@@ -251,7 +253,29 @@ INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object4", func_800A2D34);
 
 INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object4", func_800A2E44);
 
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object4", func_800A2F78);
+/**
+ * @brief Build the geometric falloff table @c D_801D49F8 (each step * 9/10).
+ *
+ * Fills the s16 entries @c D_801D49F8[0..64], writing index 64 first then
+ * 63 down to 0. Index 64 starts at @c 0x1000; the running value is stored and
+ * then scaled by @c 9/10 (a ~0.9 attenuation) for the next lower index — so the
+ * table decays from @c 0x1000 at the top toward index 0.
+ */
+void func_800A2F78(void) {
+    s16 *p;
+    s32 v;
+    s32 i;
+
+    p = D_801D49F8;
+    v = 0x1000;
+    p += 64;
+    *p = v;
+    for (i = 0; i < 64; i++) {
+        p--;
+        *p = v;
+        v = v * 9 / 10;
+    }
+}
 
 INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object4", func_800A2FCC);
 
