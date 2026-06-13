@@ -221,22 +221,22 @@ s32 func_8009C090(s32 arg0, s32 arg1, s32* arg2, u32 arg3) {
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C104);
 
 s32 func_8009C300(s32 arg0, s32 arg1) {
-    u8 var_a1;
+    u8 result;
     s32 index = 1;
     
     if (arg1 == 0) {
-        var_a1 = (D_800ED148.entities + arg0)->unkCE;
+        result = D_800ED148.entities[arg0].unkCE;
     } 
     
     else {
-        var_a1 = (D_800ED148.entities + arg0 + index)->unk0;
+        result = (D_800ED148.entities + arg0 + index)->unk0;
     }
     
-    if ((D_800ED148.entities + arg0)->flags & 0x01000000) {
-        var_a1 = 0;
+    if (D_800ED148.entities[arg0].flags & 0x01000000) {
+        result = 0;
     }
     
-    return var_a1;
+    return result;
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object2", func_8009C390);
