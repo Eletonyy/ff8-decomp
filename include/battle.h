@@ -284,6 +284,8 @@ typedef struct { u8 a, b, c, d; } Tetra4;
 /** @brief 4-entry direction-vector table used by @c func_8009C12C (cases 2..5). */
 extern SVECTOR D_80182D10[];
 
+#define ENTITY_FLAG_1 1
+#define ENTITY_FLAG_8 8
 typedef struct {
     s32 unk0;             /* 0x00: 4-byte field (semantics unknown). */
     /* 0x04: state machine value. Byte 3 (offset 0x07) is also accessed
