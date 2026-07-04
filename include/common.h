@@ -149,6 +149,17 @@ typedef union {
 #define getAddrFast(ot, dst) __asm__ __volatile__("lwl %0, 2(%1)" : "+r"(dst) : "r"(ot) : "memory")
 #define setAddrFast(p, val)  __asm__ __volatile__("swl %0, 2(%1)" : : "r"(val), "r"(p) : "memory")
 
+/* Chain-builder variants of the pair above (used by the be_object4 glyph
+ * renderers). getAddrNewFast reads the OT next-pointer into a FRESH variable:
+ * lwl only writes the top 3 bytes, so the macro supplies the untouched low
+ * byte from a scratch merge-operand (the value is never inspected).
+ * addOtFast prepends packet p to the chain: stores the current head into p's
+ * tag and leaves p's own tag image (p << 8) as the new head; the scratch
+ * input's register carries the image (clobbered by the template, in the
+ * addPrimFast style). */
+#define getAddrNewFast(ot, dst) { u32 _pad; __asm__ __volatile__("lwl %0, 2(%2)" : "=r"(dst) : "0"(_pad), "r"(ot) : "memory"); }
+#define addOtFast(p, head) { u32 _tmp; __asm__ __volatile__("sll %1, %2, 8\n\tswl %0, 2(%2)\n\taddu %0, %1, $0" : "+r"(head) : "r"(_tmp), "r"(p) : "memory"); }
+
 /**
  * @brief Battle encounter setup parameters at @ref D_80082C90.
  *
