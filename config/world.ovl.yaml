@@ -63,7 +63,7 @@ segments:
       - [0x20C70, c, we_object8]
       - [0x22870, c, we_object9]
       - [0x256EC, c, we_object10]
-      - [0x275D4, c, we_object11]
+      - [0x2780C, c, we_object11]
       - [0x2C0F8, c, we_object13]
       - [0x2CCA4, bin]
   - [0x30635]
