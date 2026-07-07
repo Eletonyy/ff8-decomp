@@ -8,29 +8,7 @@
 #include "common.h"
 #include "battle.h"
 #include "gamestate.h"
-extern u8  D_800EEBC8;
-
-#define BATTLE_ENTITY_FLAG_BIT_11  (1 << 11) /* 0x800     */
-#define BATTLE_ENTITY_FLAG_BIT_13  (1 << 13) /* 0x2000    */
-#define BATTLE_ENTITY_FLAG_BIT_14  (1 << 14) /* 0x4000    */
-#define BATTLE_ENTITY_FLAG_BIT_15  (1 << 15) /* 0x8000    */
-#define BATTLE_ENTITY_FLAG_BIT_17  (1 << 17) /* 0x20000   */
-#define BATTLE_ENTITY_FLAG_BIT_19  (1 << 19) /* 0x80000   */
-#define BATTLE_ENTITY_FLAG_BIT_20  (1 << 20) /* 0x100000  */
-#define BATTLE_ENTITY_FLAG_BIT_21  (1 << 21) /* 0x200000  */
-#define BATTLE_ENTITY_FLAG_BIT_26  (1 << 26) /* 0x4000000 */
-
-
-extern u8 D_800786D9[];
-
-extern u8 *getMenuString(s32 id);
-extern u8 *getStatName(s32 statId);
-
-s32 func_8009D594(s32 unused, s32 arg1);
-s32 func_8009D508(s32 a0, s32 a1);
-s32 func_8009DCCC(s32 a0, s32 a1, s32 a2);
-void func_8009DD2C(s32 a0, s32 a1, u16 a2, s32 a3);
-
+#include "battle/bc_object2.h"
 /**
  * @brief Look up entity ability flags with index-based table lookup.
  *
