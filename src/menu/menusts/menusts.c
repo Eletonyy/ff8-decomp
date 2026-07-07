@@ -13,6 +13,17 @@ extern s32 D_801E961C[];
 extern StatusEntry D_801E95CC[];
 extern BattleCharData D_801E9EE4;
 extern u8 D_80083858;
+/** @brief Status table entry (8-byte stride) used by func_801E582C/48/6C. */
+typedef struct {
+    u16 xOff; /**< Offset into D_801E99AC for x-position. */
+    u16 yOff; /**< Offset into D_801E99AC for y-position. */
+    u8  type; /**< Status display type byte. */
+    u8  pad;
+    u16 unk6;
+} MenustsStatusEntry;
+
+extern MenustsStatusEntry D_801E9964[]; /**< Status table (8-byte entries). */
+extern u8 D_801E99AC[]; /**< Coordinate/string base data. */
 
 extern void *func_801F6AFC(s32 a0);
 extern s32 func_8002FF34(s32 displayList, s32 ot, s32 textId, s32 x, s32 y, s32 color);
@@ -31,35 +42,40 @@ u16 func_801E5800(s32 a0) {
 /**
  * @brief Look up status display type byte.
  *
- * Indexes into D_801E9964 (8-byte stride) and returns the byte
- * at offset 4.
- *
- * @param a0 Status entry index.
+ * @param index Status entry index.
  * @return Type byte.
  */
-INCLUDE_ASM("asm/ovl/menusts/nonmatchings/menusts", func_801E582C);
+u8 func_801E582C(s32 index) {
+    MenustsStatusEntry *entry = D_801E9964;
+    entry += index;
+    return entry->type;
+}
 
 /**
  * @brief Compute status display x-position.
  *
- * Indexes into D_801E9964 (8-byte stride), loads halfword at offset 0,
- * and adds D_801E99AC base.
- *
- * @param a0 Status entry index.
+ * @param index Status entry index.
  * @return Computed address.
  */
-INCLUDE_ASM("asm/ovl/menusts/nonmatchings/menusts", func_801E5848);
+s32 func_801E5848(s32 index) {
+    MenustsStatusEntry *entry = D_801E9964;
+    u8 *coordBase = D_801E99AC;
+    entry += index;
+    return (s32)coordBase + entry->xOff;
+}
 
 /**
  * @brief Compute status display y-position.
  *
- * Indexes into D_801E9964 (8-byte stride), loads halfword at offset 2,
- * and adds D_801E99AC base.
- *
- * @param a0 Status entry index.
+ * @param index Status entry index.
  * @return Computed address.
  */
-INCLUDE_ASM("asm/ovl/menusts/nonmatchings/menusts", func_801E586C);
+s32 func_801E586C(s32 index) {
+    MenustsStatusEntry *entry = D_801E9964;
+    u8 *coordBase = D_801E99AC;
+    entry += index;
+    return (s32)coordBase + entry->yOff;
+}
 
 /**
  * @brief Wrapper that calls getMagicNamePtr with a0 offset by 0x33.
