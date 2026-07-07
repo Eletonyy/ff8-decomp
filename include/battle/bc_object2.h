@@ -31,7 +31,7 @@ void func_8009BCE4(void);
 
 s32 func_8009BD60(s32 arg0);
 
-s32 func_8009BDD0(s32 arg0, s32 arg1);
+s32 func_8009BDD0(s32 unused, s32 arg1);
 
 void func_8009BE24(s32 a0, s32 unused);
 
@@ -61,7 +61,7 @@ s32 func_8009C6CC(s32 val);
 
 void func_8009C6E4(s32 arg0, s32 arg1, s32 arg2);
 
-void func_8009C798(s32 arg0, s32 arg1, s32 arg2);
+void func_8009C798(s32 arg0, s32 unused, s32 unused2);
 
 void func_8009C8B8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4);
 
@@ -83,11 +83,11 @@ s32 func_8009D174(s32 arg0, s32 arg1, s32 arg2, s32 arg3);
 
 s32 func_8009D228(s32 arg0, s32 arg1, s32 arg2);
 
-s32 func_8009D420(s32 a0, s32 a1);
+s32 func_8009D420(s32 unused, s32 a1);
 
-s32 func_8009D474(s32 arg0, s32 arg1);
+s32 func_8009D474(s32 unused, s32 arg1);
 
-s32 func_8009D508(s32 arg0, s32 arg1);
+s32 func_8009D508(s32 unused, s32 arg1);
 
 s32 func_8009D594(s32 unused, s32 arg1);
 
@@ -175,7 +175,7 @@ s32 func_800A085C(void);
 
 s32 func_800A08C0(void);
 
-void func_800A08E0(s32 arg0, s32 arg1);
+void func_800A08E0(s32 unused, s32 unused2);
 
 void func_800A0978(s32 entityIdx);
 

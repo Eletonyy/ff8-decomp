@@ -132,7 +132,7 @@ s32 func_8009BD60(s32 arg0) {
     return 0;
 }
 
-s32 func_8009BDD0(s32 arg0, s32 arg1) {
+s32 func_8009BDD0(s32 unused, s32 arg1) {
     if ((D_800ED148.entities[arg1].flags & (ENTITY_FLAG_1 | ENTITY_FLAG_4)) || (D_800EEBBB == 255)) {
         return 1;
     }
@@ -416,7 +416,7 @@ s32 func_8009C610(s32 arg0, s32 arg1, s32 arg2) {
  * @return val if < 10000, otherwise 9999.
  */
 s32 func_8009C6CC(s32 val) {
-    if (val >= 10000) {
+    if (val > 9999) {
         val = 9999;
     }
     return val;
@@ -440,7 +440,7 @@ void func_8009C6E4(s32 arg0, s32 arg1, s32 arg2) {
     D_800EE4C0.unkA |= 1;
 }
 
-void func_8009C798(s32 arg0, s32 arg1, s32 arg2) {
+void func_8009C798(s32 arg0, s32 unused, s32 unused2) {
     s32 var_a2;
     
     if (D_800EE4C0.unkA & 1) {
@@ -827,7 +827,7 @@ s32 func_8009D228(s32 arg0, s32 arg1, s32 arg2) {
  * @param a1 Entity index.
  * @return 1 if entity has bit 2 set and global flag is clear, 0 otherwise.
  */
-s32 func_8009D420(s32 a0, s32 a1) {
+s32 func_8009D420(s32 unused, s32 a1) {
     s32 base;
     s32 flags;
     if (!(D_800EEBC4 & BATTLE_ENTITY_FLAG_BIT_26)) {
@@ -840,7 +840,7 @@ s32 func_8009D420(s32 a0, s32 a1) {
     return 0;
 }
 
-s32 func_8009D474(s32 arg0, s32 arg1) {
+s32 func_8009D474(s32 unused, s32 arg1) {
     if ((D_800EEBC4 & BATTLE_ENTITY_FLAG_BIT_26) == 0) {
         if ((D_800ED148.entities[arg1].flags & (BATTLE_ENTITY_FLAG_BIT_21 | BATTLE_ENTITY_FLAG_BIT_11)) || (D_800ED148.entities[arg1].status & 1)) {
             return 1;
@@ -853,7 +853,7 @@ s32 func_8009D474(s32 arg0, s32 arg1) {
     return 0;
 }
 
-s32 func_8009D508(s32 arg0, s32 arg1) {
+s32 func_8009D508(s32 unused, s32 arg1) {
     if (!(D_800EEBC4 & BATTLE_ENTITY_FLAG_BIT_26)) { 
         if (D_800ED148.entities[arg1].flags & BATTLE_ENTITY_FLAG_BIT_21) {
             return 1;
@@ -2281,7 +2281,7 @@ s32 func_800A08C0(void) {
     return val;
 }
 
-void func_800A08E0(s32 arg0, s32 arg1) {
+void func_800A08E0(s32 unused, s32 unused2) {
     u8 temp_a0;
 
     if (D_800ED148.unk1319 != 0xFF) {
