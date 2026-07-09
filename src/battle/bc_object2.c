@@ -52,6 +52,7 @@ s32 func_8009BB3C(s32 arg0) {
     
     result = func_800B0F9C(D_80078E00.rows132[arg0 - 64].unk7);
     result |= func_800B0F7C(D_80078E00.rows132[arg0 - 64].unk7);
+    
     return result;
 }
 
@@ -126,7 +127,7 @@ void func_8009BCE4(void) { // might be related to renzokuken finishing blow
 }
 
 s32 func_8009BD60(s32 arg0) {
-    if ((D_800EEBC4 & BATTLE_ENTITY_FLAG_BIT_26) == 0) {
+    if (!(D_800EEBC4 & BATTLE_ENTITY_FLAG_BIT_26)) {
         if ((D_800ED148.entities[arg0].status & 4) || (D_800ED148.entities[arg0].flags & (BATTLE_ENTITY_FLAG_BIT_11 | BATTLE_ENTITY_FLAG_BIT_19 | BATTLE_ENTITY_FLAG_BIT_20))) {
             return 1;
         }
@@ -285,7 +286,9 @@ s32 func_8009C104(s32 unused, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5, 
         if (var_v0 != 0) {
             return 0;
         }
-    } else {
+    } 
+    
+    else {
         var_v0 = D_800ED148.entities[arg1].flags & arg3;
         if (var_v0 != 0) {
             return 0;
@@ -297,6 +300,7 @@ s32 func_8009C104(s32 unused, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5, 
         if (D_800ED148.entities[arg1].unkA0[arg2] >= 200) {
             goto bail;
         }
+
         if ((arg7 + 300 + (arg5 / 4) - D_800ED148.entities[arg1].unkA0[arg2] - (arg6 / 4) <= 300) || 
             (arg7 < 250 && func_8009B79C((arg7 + (arg5 / 4) - D_800ED148.entities[arg1].unkA0[arg2] - (arg6 / 4)) * 255 / 100, 255) == 0)) {
             return 0;
@@ -394,6 +398,7 @@ s32 func_8009C598(s32 arg0, s32 arg1) {
             return 700;
         }
     }
+
     return D_800ED148.entities[arg0].unk54[arg1];
 }
 
@@ -413,6 +418,7 @@ s32 func_8009C610(s32 arg0, s32 arg1, s32 arg2) {
         D_800EE4C0.unkA |= 1;
         arg2 = ~arg2 + 1;
     }
+
     return arg2;
 }
 
@@ -425,6 +431,7 @@ s32 func_8009C6CC(s32 val) {
     if (val > 9999) {
         val = 9999;
     }
+
     return val;
 }
 
@@ -613,10 +620,10 @@ void func_8009CAD8(s32 srcIdx, s32 dstIdx) {
             }
             break;
         case 0:
-            func_800A432C(0x11);
+            func_800A432C(17);
             break;
         case 2:
-            func_800A432C(0x12);
+            func_800A432C(18);
             break;
         }
     }
@@ -733,9 +740,11 @@ s32 func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, u32 type) {
             if (D_800ED148.entities[targetIdx].controlFlags & BATTLE_ENTITY_FLAG_BIT_16) {
                 dmg = 0;
                 D_800EE4C0.flags6 |= 4;
-            } else {
+            } 
+            
+            else {
                 dmg = D_800ED148.entities[targetIdx].field28 * power / 16;
-            }
+            }    
             break;
 
         case 3:
@@ -745,7 +754,9 @@ s32 func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, u32 type) {
         case 16:
             if (targetIdx < 3) {
                 dmg = g_gameState.chars[g_gameState.mainData.party.party[targetIdx]].kills * power;
-            } else {
+            } 
+            
+            else {
                 dmg = 0;
             }
             break;
@@ -954,7 +965,6 @@ s32 func_8009D7D8(s32 arg0, s32 arg1, s32 arg2, u32 arg3) {
         }
 
         goto case_0;
-
     case 6:
         var_s0 = 0;
         /* Fallthrough */
@@ -971,7 +981,6 @@ s32 func_8009D7D8(s32 arg0, s32 arg1, s32 arg2, u32 arg3) {
         if (arg0 > 2) {
             var_s0 = var_v1 >> 1;
         }
-
         break;
 
     case 1:
@@ -1164,6 +1173,7 @@ s32 func_8009DEF0(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 
     s1 = func_8009DCCC(arg0, arg1, s1);
     func_8009DD2C(arg1, arg2, D_800EEBC2, D_800EEBC4);
+    
     return s1;
 }
 
@@ -1470,6 +1480,7 @@ void func_8009EAEC(s32 charIdx) {
             D_800ED148.entities[charIdx].hpDisplay = g_battleChars.chars[charIdx].currentHp;
         }
     }
+    
     D_800ED148.entities[charIdx].controlFlags &= ~BATTLE_ENTITY_FLAG_BIT_17;
 }
 
@@ -1529,9 +1540,11 @@ s32 func_8009EF64(s32 arg0, s32 unused, s32 unused2, s32 arg3) {
     case 0:
         arg3 = curr->unkFB;
         break;
+
     case 1:
         arg3 = curr->unkFC;
         break;
+
     case 2:
         arg3 = curr->unkFD;
         break;
@@ -1756,9 +1769,10 @@ void func_8009F570(s32 bitIndex) {
 }
 
 void func_8009F5B4(s32 arg0) {
-    if (!(D_80077E5C & CTRL_FLAG_100) && (func_8009F52C(D_800ED148.entities[arg0].linkedIdx) != 0)) {
+    if (!(D_80077E5C & CTRL_FLAG_100) && (func_8009F52C(D_800ED148.entities[arg0].linkedIdx))) {
         D_800EE4C0.flags5 |= 2;
     }
+
     func_8009F570(D_800ED148.entities[arg0].linkedIdx);
 }
 
@@ -2038,7 +2052,11 @@ s32 func_8009FD28(s32 arg0, s32 arg1) {
  * @return 1 if val >= 20, 0 otherwise.
  */
 s32 func_8009FDD4(s32 val) {
-    return val >= 20;
+    if(val >= 20) {
+        return 1;
+    }
+    
+    return 0;
 }
 
 /**
@@ -2096,7 +2114,6 @@ void func_8009FE14(s32 arg0) {
             D_800EEBC2 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D2;
             D_800EEBC4 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D4;
         }
-
         break;
     }
 
@@ -2223,9 +2240,7 @@ void func_8009FE14(s32 arg0) {
             D_800EEBC2 = 1;
             D_800EEBC4 = 0;
             break;
-
         }
-
         break;
 
     case 249:
@@ -2282,22 +2297,25 @@ s32 func_800A08C0(void) {
     if (val == 0) {
         return 1;
     }
+
     return val;
 }
 
 void func_800A08E0(s32 unused, s32 unused2) {
     u8 temp_a0;
 
-    if (D_800ED148.unk1319 != 0xFF) {
-        temp_a0 = D_800EE4C0.flags6 & 0x3F;
+    if (D_800ED148.unk1319 != 255) {
+        temp_a0 = D_800EE4C0.flags6 & 63;
     
         switch (D_800ED148.unk1319) {
             case 0:
                 D_800EE4C0.flags6 = temp_a0;
                 break;
+
             case 1:
                 D_800EE4C0.flags6 = temp_a0 | CTRL_FLAG_40;;
                 break;
+
             case 2:
                 D_800EE4C0.flags6 = temp_a0 | CTRL_FLAG_80;
                 break;
@@ -2337,32 +2355,32 @@ void func_800A09D0(u32 arg0) { // no return value here
 
     bs = &D_800ED148;
     temp_a0 = &bs->entities[arg0];
-    temp_a0->controlFlags &= ~0x4000;
+    temp_a0->controlFlags &= ~BATTLE_ENTITY_FLAG_BIT_14;
     if (temp_a0[1].slot8.byteView.unk09 != 0) {
-        temp_a0[1].slot8.byteView.unk09-= 1;
+        temp_a0[1].slot8.byteView.unk09--;
     }
 
     D_800ED148.unk1329 = 0;
     D_800ED148.unk12F3 = arg0;
     func_8009FCF4(3);
-    D_800EE4C0.unk18 = 0;
-    D_800EE4C0.unk20 = 0;
-    D_800EE4C0.unkA = 0;
-    D_800EE4C0.unk09 = 0;
-    D_800EE4C0.unk14 = 0;
-    D_800EE4C0.unk08 = 0;
-    D_800EE4C0.unk4 = 0;
-    D_800EE4C0.unk10 = 0;
-    D_800EE4C0.unk1E = 0;
+    D_800EE4C0.unk18  = 0;
+    D_800EE4C0.unk20  = 0;
+    D_800EE4C0.unkA   = 0;
+    D_800EE4C0.unk09  = 0;
+    D_800EE4C0.unk14  = 0;
+    D_800EE4C0.unk08  = 0;
+    D_800EE4C0.unk4   = 0;
+    D_800EE4C0.unk10  = 0;
+    D_800EE4C0.unk1E  = 0;
     D_800EE4C0.flags6 = 0;
     D_800EE4C0.flags5 = 0;
-    D_800EE4C0.unk0C = 0;
+    D_800EE4C0.unk0C  = 0;
+    D_800EE4C0.unk7   = 255;
     temp_s4 = D_800EE4C0.unk0;
-    D_800EE4C0.unk7 = 255;
     func_8009FE14(temp_s4);
 
     switch (D_800EE4C0.unk1) {
-    case 0x0:        
+    case 0:        
         D_800EE43D = 1;
         switch (D_800EE4DC) {
         case 10:
@@ -2402,24 +2420,24 @@ void func_800A09D0(u32 arg0) { // no return value here
     default:         
         break;
 
-    case 0x5:        
-    case 0xB:        
-    case 0xFA:       
+    case 5:        
+    case 11:        
+    case 250:       
         D_800EE448 = 1;
         break;
 
-    case 0xEF:       
+    case 239:       
         D_800EE448 = 0;
         goto not_another_goto;
 
-    case 0xF1:       
+    case 241:       
         switch (D_800EE4C0.statusCode) {     
-        case 0xFFFA:
+        case 65530:
             D_800EE448 = 1;
             D_800EE4C0.flags5 |= 1;
             break;
 
-        case 0xFFFC:
+        case 65532:
             D_800EE4C0.unk7 = temp_s4;
             D_800EE448 = 0;
             D_800EE4C0.flags5 |= 1;
@@ -2431,7 +2449,6 @@ void func_800A09D0(u32 arg0) { // no return value here
             goto not_another_goto;
         }       
         break;
-
         not_another_goto:
         func_8009FCF4(D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C3);
         var_s3 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48BF;
@@ -2440,11 +2457,11 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C = func_8009F930(D_80078E00.array48BC[D_800EE4C0.statusCode].unk48BE, temp_s4, arg0, var_s3);
         break;
 
-    case 0xC:        
+    case 12:        
         func_8009CAD8(temp_s4, arg0);
         /* fallthrough */
-    case 0x1:        
-    case 0x1C:
+    case 1:        
+    case 28:
         if (D_800ED148.entities[temp_s4].linkedIdx != 0 && D_800ED148.entities[temp_s4].linkedIdx != 6) {
             func_8009FCF4(0);
             var_s3 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk2;
@@ -2460,7 +2477,7 @@ void func_800A09D0(u32 arg0) { // no return value here
         func_800A0978(temp_s4);
         break;
 
-    case 0x1D:       
+    case 29:       
         func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk13);
         var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk12;
         D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk10;
@@ -2468,10 +2485,10 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 
-    case 0x6:        
+    case 6:        
         switch (D_800EE4C0.unk3) {           
         case 9:     
-            D_800EE4C0.unk0C = (func_8009FD28(arg0, temp_s4) * (func_8009B15C() + 0xA)) / 150;
+            D_800EE4C0.unk0C = (func_8009FD28(arg0, temp_s4) * (func_8009B15C() + 10)) / 150;
             break;
 
         case 10:    
@@ -2481,15 +2498,15 @@ void func_800A09D0(u32 arg0) { // no return value here
         }
         break;
 
-    case 0xF4:       
+    case 244:       
         if (D_800EE469 != 0) {
             D_800EEBBF = func_800A08C0();
         } 
 
         else {
-        case 0x26:   
-        case 0xF0:   
-        case 0xF5:   
+        case 38:   
+        case 240:   
+        case 245:   
             D_800EEBBF = func_800A085C();
         }
 
@@ -2503,19 +2520,19 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 
-    case 0xF6:       
+    case 246:       
         D_800ED148.entities[arg0].status |= 1;
         D_800EE4C0.unk0C = 0;
         D_800EE4C0.flags5 |= 1;
         break;
 
-    case 0x2:        
-    case 0x10:       
-    case 0xF7:       
+    case 2:        
+    case 16:       
+    case 247:       
         D_800EE4CC = func_8009FD28(arg0, temp_s4);
         break;
 
-    case 0x13:       
+    case 19:       
         func_8009FCF4(D_80078E00.array4A70[D_800EE4C0.unk3].unkunk);
         var_s3 = D_80078E00.array4A70[D_800EE4C0.unk3].unk1;
         D_800EE4C0.unk4 = D_80078E00.array4A70[D_800EE4C0.unk3].unk2;
@@ -2523,11 +2540,11 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 
-    case 0x11:       
-    case 0x12:       
-    case 0x14:       
-    case 0x15:       
-    case 0x16:       
+    case 17:       
+    case 18:       
+    case 20:       
+    case 21:       
+    case 22:       
         func_8009FCF4(D_80078E00.array4484[D_800EE4C0.statusCode].var3);
         var_s3 = D_80078E00.array4484[D_800EE4C0.statusCode].var1;
         D_800EE4C0.unk4 = D_80078E00.array4484[D_800EE4C0.statusCode].var2;
@@ -2535,7 +2552,7 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 
-    case 0xF:        
+    case 15:        
         func_8009FCF4(D_80078E00.array44FC[D_800EE4C0.statusCode].unk13);
         var_s3 = D_80078E00.array45F8[func_8009FDE0(temp_s4, D_800EE4C0.statusCode)].unk6;
         D_800EE4C0.unk4 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk09;
@@ -2543,8 +2560,8 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 
-    case 0x4:        
-    case 0xD:        
+    case 4:        
+    case 13:        
         func_8009FCF4(D_80078E00.abilities[D_800EE4C0.statusCode].unk2);
         var_s3 = D_80078E00.array3920[D_800EE4C0.statusCode].unk18;
         D_800EE4C0.unk4 = D_80078E00.abilities[D_800EE4C0.statusCode].unk3;
@@ -2552,17 +2569,17 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 
-    case 0x7:        
-    case 0x17:       
-    case 0x18:       
-    case 0x19:       
-    case 0x1A:       
-    case 0x1B:       
-    case 0x1E:       
-    case 0x1F:       
-    case 0x20:       
-    case 0x21:       
-    case 0x22:       
+    case 7:        
+    case 23:       
+    case 24:       
+    case 25:       
+    case 26:       
+    case 27:       
+    case 30:       
+    case 31:       
+    case 32:       
+    case 33:       
+    case 34:       
         func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk13);
         var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk12;
         D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk10;
@@ -2570,13 +2587,13 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 
-    case 0xE:        
+    case 14:        
         D_800ED148.unk1300 = 1;
         D_800EE4C4 = 0;
         D_800ED148.unk12F5 = 1;
         goto ohno_plz_halp;
 
-    case 0xEE:       
+    case 238:       
         D_800ED148.unk1300 = 0;
         if (D_800ED148.entities[arg0].status & 1) {
             D_800EE4C4 = D_80078E00.array47FC[D_800ED148.unk1324].var2;
@@ -2591,7 +2608,7 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.flags5 |= 1;
         break;
 
-    case 0xED:       
+    case 237:       
         D_800ED148.unk1300 = 1;
         func_8009FCF4(D_80078E00.array47FC[D_800ED148.unk1324].var3);
         var_s3 = D_80078E00.array47FC[D_800ED148.unk1324].var1;
@@ -2600,8 +2617,8 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C = func_8009F930(var_a0, temp_s4, arg0, var_s3); 
         break;
 
-    case 0x8:        
-    case 0xEC:       
+    case 8:        
+    case 236:       
         func_8009FCF4(D_80078E00.entries17[D_800EE4C0.statusCode].unk8);
         var_s3 = D_80078E00.entries17[D_800EE4C0.statusCode].unk7;
         D_800EE4C0.unk4 = D_80078E00.entries17[D_800EE4C0.statusCode].unk5;
@@ -2609,11 +2626,11 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 
-    case 0xFC:       
+    case 252:       
         D_800EE4C0.flags5 |= 1;
         break;
 
-    case 0xFE:       
+    case 254:       
         if (D_800EE466 != 0) {
             D_800EEBBD = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk83;
             D_800EEBBE = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk84;
@@ -2627,7 +2644,7 @@ void func_800A09D0(u32 arg0) { // no return value here
         }       
         break;
 
-    case 0xF9:       
+    case 249:       
         D_800EE448 = 0;
         func_8009FCF4(D_80078E00.unk3738[D_800EE4C0.unk3].unk18);
         var_s3 = D_80078E00.unk3738[D_800EE4C0.unk3].unk15;
@@ -2636,13 +2653,13 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C = func_8009F930(var_a0, temp_s4, arg0, var_s3); 
         break;
 
-    case 0xFB:       
+    case 251:       
         var_s3 = D_80078E00.array37A9[g_gameState.chars[g_gameState.mainData.party.party[temp_s4]].characterId].unk0;
         goto wait_oh_god_make_it_stop;
 
-    case 0xF3:       
-    case 0xF8:       
-    case 0xFD:       
+    case 243:       
+    case 248:       
+    case 253:       
         var_s3 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk2;
         wait_oh_god_make_it_stop:
         func_8009FCF4(0);
@@ -2660,7 +2677,7 @@ void func_800A09D0(u32 arg0) { // no return value here
         D_800EE4C0.unk0C *= 3;
     }
 
-    if (D_800ED148.entities[temp_s4].flags & 0x02000000) {
+    if (D_800ED148.entities[temp_s4].flags & BATTLE_ENTITY_FLAG_BIT_25) {
         if (D_800EE4C0.unk1 == 2) {
             D_800EE4C0.unk0C *= 5;
         }
@@ -2690,25 +2707,33 @@ void func_800A1760(s32 arg0, BattleCharData* arg1) {
                     if (!(g_battleConfig.unk8 & 2)) {
                         arg1->cmdSlots[i].field3 &= ~2;
                     }
-                } else {
+                } 
+                
+                else {
                     arg1->cmdSlots[i].field3 |= 2;
                 }
             break;
+
             case 3:
                 if (arg0 == 0) {
                     if (!(g_battleConfig.unk8 & 4)) {
                         arg1->cmdSlots[i].field3 &= ~2;
                     }
-                } else {
+                } 
+                
+                else {
                     arg1->cmdSlots[i].field3 |= 2;
                 }
             break;
+
             case 6:
                 if (arg0 == 0) {
                     if (!(g_battleConfig.unk8 & 8)) {
                         arg1->cmdSlots[i].field3 &= ~2;
                     }
-                } else {
+                } 
+                
+                else {
                     arg1->cmdSlots[i].field3 |= 2;
                 }
             break;
@@ -2743,7 +2768,7 @@ void func_800A184C(s32 idx, s32 attr, s32 flags) {
 void func_800A1888(s32 arg0) {
     BattleCharData* temp_a1 = &g_battleChars.chars[arg0];
     
-    if (temp_a1->displayStatus & 0x10) {
+    if (temp_a1->displayStatus & CTRL_FLAG_10) {
         func_800A1760(1, temp_a1);
     }
         
