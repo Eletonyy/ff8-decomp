@@ -159,6 +159,7 @@ typedef enum {
     CTRL_FLAG_02    = 0x02,
     CTRL_FLAG_10    = 0x10,
     CTRL_FLAG_20    = 0x20,
+    CTRL_FLAG_30    = 0x30,
     CTRL_FLAG_40    = 0x40,
     CTRL_FLAG_80    = 0x80,
     CTRL_FLAG_100   = 0x100
@@ -355,7 +356,8 @@ typedef struct {
 } Struct_12CC; /* used in func_8009D594 */
 
 typedef struct {
-    /* 0x0000 */ BattleEntity entities[7];      /**< 7 × 0xD0 = 0x5B0. Index 0 is also the header proxy. */
+    /* 0x0000 */ BattleEntity entities[1];      /**< 7 × 0xD0 = 0x5B0. Index 0 is also the header proxy. */
+                 u8 padder[0x05B0 - 0xD0];
     /* 0x05B0 */ u8 pad5B0[0x10];               /**< Pre-control padding. */
     /* 0x05C0 */ u8 unk5C0;                     /**< Action queue head index (used by func_800B06DC). */
     /* 0x05C1 */ u8 pad5C1[0x1];
@@ -585,7 +587,7 @@ typedef struct {
 typedef struct {
     u8 pad00[0x08];
     u16 maxHp;          /* 0x08: max HP cap (used to restore hp on revive) */
-    u16 hp;             /* 0x0A: current HP */
+    s16 hp;             /* 0x0A: current HP */
 } BattleGfEntry;
 
 /** @brief GF battle level entry (12 bytes). */
@@ -728,7 +730,8 @@ typedef struct {
     u8 pad2[4];
     u8 unk4;
     u8 unk5;
-    u8 pad3[2];
+    u8 pad3;
+    u8 unk7;
     u8 unk8;
     u8 unk9;
     u8 pad4;

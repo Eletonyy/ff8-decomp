@@ -2,15 +2,25 @@
 #define BC_OBJECT2_H
 
 
-#define BATTLE_ENTITY_FLAG_BIT_11  (1 << 11) /* 0x800     */
-#define BATTLE_ENTITY_FLAG_BIT_13  (1 << 13) /* 0x2000    */
-#define BATTLE_ENTITY_FLAG_BIT_14  (1 << 14) /* 0x4000    */
-#define BATTLE_ENTITY_FLAG_BIT_15  (1 << 15) /* 0x8000    */
-#define BATTLE_ENTITY_FLAG_BIT_17  (1 << 17) /* 0x20000   */
-#define BATTLE_ENTITY_FLAG_BIT_19  (1 << 19) /* 0x80000   */
-#define BATTLE_ENTITY_FLAG_BIT_20  (1 << 20) /* 0x100000  */
-#define BATTLE_ENTITY_FLAG_BIT_21  (1 << 21) /* 0x200000  */
-#define BATTLE_ENTITY_FLAG_BIT_26  (1 << 26) /* 0x4000000 */
+
+#define BATTLE_ENTITY_FLAG_BIT_0   (1 << 0)  /* 0x00000000 */
+#define BATTLE_ENTITY_FLAG_BIT_10  (1 << 10) /* 0x00000400 */
+#define BATTLE_ENTITY_FLAG_BIT_11  (1 << 11) /* 0x00000800 */
+#define BATTLE_ENTITY_FLAG_BIT_12  (1 << 12) /* 0x00001000 */
+#define BATTLE_ENTITY_FLAG_BIT_13  (1 << 13) /* 0x00002000 */
+#define BATTLE_ENTITY_FLAG_BIT_14  (1 << 14) /* 0x00004000 */
+#define BATTLE_ENTITY_FLAG_BIT_15  (1 << 15) /* 0x00008000 */
+#define BATTLE_ENTITY_FLAG_BIT_16  (1 << 16) /* 0x00010000 */
+#define BATTLE_ENTITY_FLAG_BIT_17  (1 << 17) /* 0x00020000 */
+#define BATTLE_ENTITY_FLAG_BIT_19  (1 << 19) /* 0x00080000 */
+#define BATTLE_ENTITY_FLAG_BIT_20  (1 << 20) /* 0x00100000 */ 
+#define BATTLE_ENTITY_FLAG_BIT_21  (1 << 21) /* 0x00200000 */
+#define BATTLE_ENTITY_FLAG_BIT_22  (1 << 22) /* 0x00400000 */
+#define BATTLE_ENTITY_FLAG_BIT_23  (1 << 23) /* 0x00800000 */
+#define BATTLE_ENTITY_FLAG_BIT_24  (1 << 24) /* 0x01000000 */
+#define BATTLE_ENTITY_FLAG_BIT_25  (1 << 25) /* 0x02000000 */
+#define BATTLE_ENTITY_FLAG_BIT_26  (1 << 26) /* 0x04000000 */
+                                                
 
 
 extern u8 *getMenuString(s32 id);
@@ -19,7 +29,7 @@ extern u8 *getStatName(s32 statId);
 
 u16 func_8009BAC4(s32 arg0, u16 arg1);
 
-s32 func_8009BB3C(s32 a0);
+s32 func_8009BB3C(s32 arg0);
 
 s32 func_8009BB98(void);
 
@@ -33,7 +43,7 @@ s32 func_8009BD60(s32 arg0);
 
 s32 func_8009BDD0(s32 unused, s32 arg1);
 
-void func_8009BE24(s32 a0, s32 unused);
+void func_8009BE24(s32 arg0, s32 unused);
 
 s32 func_8009BEA4(s32 arg0, s32 arg1);
 
@@ -51,7 +61,7 @@ s32 func_8009C300(s32 arg0, s32 arg1);
 
 u8 func_8009C390(s32 arg0, s32 arg1, s32 arg2);
 
-u8 func_8009C570(s32 id);
+u8 func_8009C570(u16 arg0);
 
 s32 func_8009C598(s32 arg0, s32 arg1);
 
@@ -69,21 +79,21 @@ void func_8009CA14(s32 arg0);
 
 void func_8009CAD8(s32 srcIdx, s32 dstIdx);
 
-void func_8009CD10(s32 a0);
+void func_8009CD10(s32 arg0);
 
-void func_8009CD44(s32 a0);
+void func_8009CD44(s32 arg0);
 
 s32 func_8009CD78(s32 arg0, s32 arg1, s32 arg2, s32 arg3);
 
 s32 func_8009CF18(void);
 
-s32 func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, s32 type);
+s32 func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, u32 type);
 
 s32 func_8009D174(s32 arg0, s32 arg1, s32 arg2, s32 arg3);
 
 s32 func_8009D228(s32 arg0, s32 arg1, s32 arg2);
 
-s32 func_8009D420(s32 unused, s32 a1);
+s32 func_8009D420(s32 unused, s32 arg1);
 
 s32 func_8009D474(s32 unused, s32 arg1);
 
@@ -139,7 +149,7 @@ s32 func_8009F350(s32 arg0);
 
 s32 func_8009F3F8(s32 entityIdx);
 
-s32 func_8009F428(s32 a0);
+s32 func_8009F428(s32 arg0);
 
 s32 func_8009F46C(s32 entityIdx);
 
@@ -167,7 +177,7 @@ s32 func_8009FD28(s32 arg0, s32 arg1);
 
 s32 func_8009FDD4(s32 val);
 
-s32 func_8009FDE0(s32 a0, s32 a1);
+s32 func_8009FDE0(s32 arg0, s32 arg1);
 
 void func_8009FE14(s32 arg0);
 
