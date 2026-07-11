@@ -171,7 +171,7 @@ void func_8009F824(void);
 
 s32 func_8009F930(s32 arg0, s32 arg1, s32 arg2, s32 arg3);
 
-void func_8009FCF4(s32 cmd);
+void func_8009FCF4(u8 cmd);
 
 s32 func_8009FD28(s32 arg0, s32 arg1);
 
@@ -183,7 +183,7 @@ void func_8009FE14(s32 arg0);
 
 s32 func_800A085C(void);
 
-s32 func_800A08C0(void);
+u8 func_800A08C0(void);
 
 void func_800A08E0(s32 unused, s32 unused2);
 

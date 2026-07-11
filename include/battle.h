@@ -225,7 +225,8 @@ typedef struct {
         struct {
             u8 trigKey;     /* 0x08 */
             u8 unk09;       /* 0x09 */
-            u8 pad10[2];
+            u8 unkA;
+            u8 padB;
         } byteView;
         s32 initFlags;        /* 0x08-0x0B as a single word. */
     } slot8;
@@ -649,7 +650,8 @@ typedef struct {
     u8 pad2; 
     u8 magicId; /**< [0x4 (0x226)] Magic/spell ID byte (input to ability flag funcs) */
     u8 unk7;
-    u8 pad3[2];
+    u8 unk8;
+    u8 pad3;
     u8 unkA;
     u8 pad4;
     u32 unkC;
@@ -1035,7 +1037,7 @@ extern BattleCharState g_battleChars;
 extern BattleConfig    g_battleConfig;
 extern s16             D_8005F11C;
 extern u16             D_80077E5C;
-extern u8              D_800786D9[];
+extern u8              D_800786D9;
 extern BattleSceneData D_80078E00;
 extern u16             D_80082C0A;
 extern u8              D_80082C0F;
