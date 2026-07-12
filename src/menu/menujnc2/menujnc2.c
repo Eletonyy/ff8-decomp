@@ -49,7 +49,6 @@ extern u8 D_801EF1B0[];
 extern s16 D_801EEB1C[];
 extern void func_801EFBB4(s32 renderCtx, s32 param, void *callback);
 extern s32 renderMagicItemCallback();
-extern void renderMagicJunctionEntry();
 extern s32 func_801F5F60(s32 renderCtx, s32 result, s32 color, s32 arg3);
 extern s32 func_801F5F30(s32 renderCtx, s32 result, s32 x, s32 y, s32 color, s32 count);
 extern JunctionGfEntry D_801EEDD0;
@@ -3701,15 +3700,73 @@ s32 renderStatDeltaBar(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, 
  * @brief Render extended stat delta bar with negative/positive delta computation.
  *
  * Extended version of renderStatDeltaBar with additional scaling math
- * for computing stat changes from junction previews.
+ * for computing stat changes from junction previews: the bar X position
+ * slides left proportionally to the animation scale and the bar width
+ * interpolates between the full width and the stat delta segment.
  *
  * @param ctx Junction menu context.
  * @param renderCtx Render context.
  * @param cursorY Current cursor Y position.
  * @param x Base X position.
  * @param y Base Y position (on stack).
+ * @return Updated cursor Y position.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderStatDeltaBarExt);
+s32 renderStatDeltaBarExt(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+    s16 statBuf[36];
+    s32 scale;
+    MenuDisplayConfig *cfg;
+    s32 delta;
+    s32 prod;
+    s32 rem;
+    s32 rem244;
+    s32 barX;
+    s32 barW;
+    s32 barY;
+    s32 h;
+    s32 type5A;
+    s32 statIdx;
+    s32 count;
+
+    scale = ctx->unk40;
+    type5A = ctx->unk5A;
+    cfg = &g_menuDisplayCfg;
+    statIdx = ctx->unk4E;
+
+    func_801F5984(D_801EEB1C, statBuf, 11);
+
+    barX = -(scale * statBuf[statIdx]) / 4096;
+    barX += (0x1A + x);
+    barY = y + 6;
+    count = 11;
+    delta = statBuf[statIdx + 1] - statBuf[statIdx];
+    rem = 0x1000 - scale;
+    rem244 = 61 * (rem * 4);
+
+    prod = (delta + 2) * scale / 4096;
+
+    cursorY = func_801EF8D8(renderCtx, cursorY);
+    cursorY = func_801F5A38(renderCtx, cursorY, barX, barY, count, D_801EEB1C, type5A);
+
+    prod = (delta + 0x1A) * scale;
+    barW = (rem244 + prod) / 4096;
+
+    g_menuDisplayCfg.x = x + 0x1A;
+    g_menuDisplayCfg.y = y;
+    g_menuDisplayCfg.w = barW - 0x26;
+    h = 0x12;
+    g_menuDisplayCfg.h = 0x12;
+
+    cursorY = func_801EF800(renderCtx, cursorY, cfg);
+
+    g_menuDisplayCfg.iconType = 0;
+    g_menuDisplayCfg.iconSubType = 0;
+    g_menuDisplayCfg.x = x;
+    g_menuDisplayCfg.y = y;
+    g_menuDisplayCfg.w = barW;
+    g_menuDisplayCfg.h = h;
+
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+}
 
 /**
  * @brief Rendering callback for individual magic list items.
@@ -3969,10 +4026,10 @@ s32 checkJunctionCompat(s32 currentMask, s32 availMask, s32 abilityBit) {
  * @param cursorY Current cursor Y position.
  * @param x Panel X position.
  * @param y Panel Y position.
- * @param slotType Junction slot type index.
+ * @param slotType Slot type (1 = header/main stat slot, 0 = grid stat slot).
+ * @param slotIdx Stat slot index (0-8).
  * @param charIdx Character index (0-7).
  * @param gfIdx GF index (-1 for default).
- * @param showValues Whether to show numeric stat values.
  * @return Updated cursor Y position.
  */
 INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderJunctionSlotDetail);
@@ -3985,13 +4042,14 @@ INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderJunctionSlotDetail);
  * if available, grayed out (0x1C0) if not.
  *
  * @param renderCtx Render context.
+ * @param cursorY Current cursor Y position.
  * @param x X position.
  * @param y Y position.
- * @param color Base text color.
  * @param charIdx Character index (0-7).
  * @param gfIdx GF index (-1 for default/none).
+ * @return Updated cursor Y position.
  */
-void renderHpJunctionSlot(s32 renderCtx, s32 x, s32 y, s32 color, s32 charIdx, s32 gfIdx) {
+s32 renderHpJunctionSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32 gfIdx) {
     JunctionGfEntry *gfEntry;
     s32 available;
 
@@ -4005,18 +4063,18 @@ void renderHpJunctionSlot(s32 renderCtx, s32 x, s32 y, s32 color, s32 charIdx, s
 
     {
         s32 menuCol = g_menuColor;
-        /* Regalloc: color++/-- and do{x++/--}while(0) raise reference counts
-           to assign x→s0, color→s1 (instead of default renderCtx→s0). */
-        color++;
-        color--;
-        do { x++; x--; } while (0);
+        /* Regalloc: y++/-- and do{cursorY++/--}while(0) raise reference counts
+           to assign cursorY→s0, y→s1 (instead of default renderCtx→s0). */
+        y++;
+        y--;
+        do { cursorY++; cursorY--; } while (0);
 
-        func_800300F8(renderCtx, x, 0x128, y, color, menuCol, (!available) ? 0x1C0 : 0x80);
+        return func_800300F8(renderCtx, cursorY, 0x128, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
     }
 }
 
 /** @brief Render junction ability slot — checks combined ability bits 0x19000. */
-void renderStatusDefSlot(s32 renderCtx, s32 x, s32 y, s32 color, s32 charIdx, s32 gfIdx) {
+s32 renderStatusDefSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32 gfIdx) {
     JunctionGfEntry *gfEntry;
     s32 available;
 
@@ -4031,16 +4089,16 @@ void renderStatusDefSlot(s32 renderCtx, s32 x, s32 y, s32 color, s32 charIdx, s3
     {
         s32 menuCol = g_menuColor;
         /* Regalloc: see renderHpJunctionSlot comment. */
-        color++;
-        color--;
-        do { x++; x--; } while (0);
+        y++;
+        y--;
+        do { cursorY++; cursorY--; } while (0);
 
-        func_800300F8(renderCtx, x, 0x129, y, color, menuCol, (!available) ? 0x1C0 : 0x80);
+        return func_800300F8(renderCtx, cursorY, 0x129, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
     }
 }
 
 /** @brief Render junction ability slot — checks ability bit 0x200. */
-void renderElemAtkSlot(s32 renderCtx, s32 x, s32 y, s32 color, s32 charIdx, s32 gfIdx) {
+s32 renderElemAtkSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32 gfIdx) {
     JunctionGfEntry *gfEntry;
     s32 available;
 
@@ -4055,16 +4113,16 @@ void renderElemAtkSlot(s32 renderCtx, s32 x, s32 y, s32 color, s32 charIdx, s32 
     {
         s32 menuCol = g_menuColor;
         /* Regalloc: see renderHpJunctionSlot comment. */
-        color++;
-        color--;
-        do { x++; x--; } while (0);
+        y++;
+        y--;
+        do { cursorY++; cursorY--; } while (0);
 
-        func_800300F8(renderCtx, x, 0x12A, y, color, menuCol, (!available) ? 0x1C0 : 0x80);
+        return func_800300F8(renderCtx, cursorY, 0x12A, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
     }
 }
 
 /** @brief Render junction ability slot — checks ability bits 0x6800. */
-void renderElemDefSlot(s32 renderCtx, s32 x, s32 y, s32 color, s32 charIdx, s32 gfIdx) {
+s32 renderElemDefSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32 gfIdx) {
     JunctionGfEntry *gfEntry;
     s32 available;
 
@@ -4079,11 +4137,11 @@ void renderElemDefSlot(s32 renderCtx, s32 x, s32 y, s32 color, s32 charIdx, s32 
     {
         s32 menuCol = g_menuColor;
         /* Regalloc: see renderHpJunctionSlot comment. */
-        color++;
-        color--;
-        do { x++; x--; } while (0);
+        y++;
+        y--;
+        do { cursorY++; cursorY--; } while (0);
 
-        func_800300F8(renderCtx, x, 0x12B, y, color, menuCol, (!available) ? 0x1C0 : 0x80);
+        return func_800300F8(renderCtx, cursorY, 0x12B, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
     }
 }
 
@@ -4123,22 +4181,63 @@ INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderElemJunctionPanel);
 INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderStatusJunctionPanel);
 
 /**
- * @brief Render the main stat junction panel (8 stats + ability slots).
+ * @brief Render the main stat junction panel (9 stat slots + ability slots).
  *
- * Reads the current stat slot and GF index from the junction context,
- * renders the stat header row, 8 stat entries, 4 ability slot types,
- * and the command/GF ability sections. Dispatches to elem/status/stat
- * sub-renderers based on the stat slot type.
+ * Resolves the GF index for the currently selected stat slot via the
+ * available-GF index list (D_801EEDE0), bounded by the available-GF count
+ * (-1 when out of range or when showGf is 0). Renders the header stat slot,
+ * the 8 remaining stat slots in a 4-row/2-column grid, the four ability
+ * junction slots (HP-J, ST-Def-J, Elem-Atk-J, Elem-Def-J), and the
+ * elemental/status junction panels.
  *
  * @param ctx Junction menu context.
  * @param renderCtx Render context.
  * @param cursorY Current cursor Y position.
  * @param x Panel X position.
  * @param y Panel Y position.
- * @param showGf Whether to show GF index info.
+ * @param showGf Whether to show GF junction preview info.
  * @return Updated cursor Y position.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderJunctionStatPanel);
+s32 renderJunctionStatPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 showGf) {
+    s32 i;
+    s32 col;
+    s32 row;
+    s32 xOff;
+    s32 gfIdx;
+    s32 charIdx;
+    s32 statSlot;
+    s32 yBase;
+
+    statSlot = ctx->statSlot;
+    charIdx = ctx->charIdx;
+    if (statSlot < ctx->discCount && statSlot >= 0) {
+        gfIdx = D_801EEDE0[statSlot];
+    } else {
+        gfIdx = -1;
+    }
+    if (showGf == 0) {
+        gfIdx = -1;
+    }
+
+    cursorY = renderJunctionSlotDetail(renderCtx, cursorY, x + 0x150, y + 4, 1, 0, charIdx, gfIdx);
+    for (i = 1; i < 9; i++) {
+        col = (i - 1) / 4;
+        row = (i - 1) % 4;
+        xOff = col * 160 + 0x150;
+        cursorY = renderJunctionSlotDetail(renderCtx, cursorY, x + xOff,
+                                           row * 13 + y + 0x11, 0, i, charIdx, gfIdx);
+    }
+
+    yBase = y + 4;
+    cursorY = renderHpJunctionSlot(renderCtx, cursorY, x + 0x240, yBase, charIdx, gfIdx);
+    cursorY = renderStatusDefSlot(renderCtx, cursorY, x + 0x250, yBase, charIdx, gfIdx);
+    cursorY = renderElemAtkSlot(renderCtx, cursorY, x + 0x260, yBase, charIdx, gfIdx);
+    cursorY = renderElemDefSlot(renderCtx, cursorY, x + 0x270, yBase, charIdx, gfIdx);
+    yBase = y;
+    y += 4;
+    cursorY = renderElemJunctionPanel(renderCtx, cursorY, x + 0xA0, yBase, charIdx, gfIdx);
+    return renderStatusJunctionPanel(renderCtx, cursorY, x, yBase, charIdx, gfIdx);
+}
 
 /**
  * @brief Configure display panel and invoke rendering callback.
@@ -4219,17 +4318,61 @@ void renderJunctionComposite(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s
 /**
  * @brief Render a single magic junction entry (name + icon + quantity).
  *
- * Looks up magic data from g_gameState for the given character/slot,
- * renders the spell name, junction icon, and quantity with availability
- * check against the junction GF table.
+ * Per-item callback of the magic junction list (registered via
+ * func_801EFBB4) for a 4-rows-per-column grid. Reads the character's
+ * magic slot col * 4 + row from g_gameState (the character is
+ * g_menuDisplayCfg.itemId), skips empty slots (no spell or zero
+ * quantity), and renders the spell name colored 7 when free, 1 when
+ * currently junctioned (func_801F1CE8, which also earns the 0xC0
+ * junction marker icon), or 0 when unavailable per the availability
+ * bitmask in g_menuDisplayCfg.dataPtr. The stocked quantity is drawn
+ * via drawColorByMenuPalette at a packed (y << 16 | x) position.
  *
- * @param ctx Junction menu context.
  * @param renderCtx Render context.
- * @param cursorY Current cursor Y position.
- * @param itemIdx Item index in the list.
- * @param x Panel X position (on stack).
+ * @param cursorY Current draw cursor position (chained through each call).
+ * @param col Grid column index.
+ * @param row Grid row index (13 px per row).
+ * @param xOff Column X offset (on stack).
+ * @return Updated draw cursor position.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderMagicJunctionEntry);
+s32 renderMagicJunctionEntry(s32 renderCtx, s32 cursorY, s32 col, s32 row, s32 xOff) {
+    s32 slot;
+    s32 color;
+    s32 magicId;
+    s32 qty;
+    s32 mask;
+    s32 bit;
+    s32 ysum;
+    s32 xsum;
+    s32 charIdx;
+    u8 *namePtr;
+
+    charIdx = g_menuDisplayCfg.itemId;
+    slot = col * 4 + row;
+    magicId = g_gameState.chars[charIdx].magic[slot].magicId;
+    qty = g_gameState.chars[charIdx].magic[slot].quantity;
+    mask = g_menuDisplayCfg.dataPtr;
+    color = 7;
+
+    if (magicId != 0 && qty != 0) {
+        if (func_801F1CE8(charIdx, magicId) != 0) {
+            ysum = 7 + g_menuDisplayCfg.y + row * 13;
+            xsum = 0x49 + g_menuDisplayCfg.x + xOff;
+            cursorY = func_8002FF34(renderCtx, cursorY, 0xC0, xsum, ysum, g_menuColor);
+            color = 1;
+        }
+        bit = 1 << slot;
+        if ((mask & bit) == 0) {
+            color = 0;
+        }
+        namePtr = getMagicNamePtr(magicId);
+        cursorY = func_801F0FEC(renderCtx, cursorY, 0xC + g_menuDisplayCfg.x + xOff, 7 + g_menuDisplayCfg.y + row * 13, namePtr, color);
+        ysum = 7 + g_menuDisplayCfg.y + row * 13;
+        xsum = 0x6C + g_menuDisplayCfg.x + xOff;
+        cursorY = drawColorByMenuPalette(renderCtx, cursorY, (ysum << 16) | (xsum & 0xFFFF), qty, color);
+    }
+    return cursorY;
+}
 
 /**
  * @brief Set up and render the magic junction list panel.
