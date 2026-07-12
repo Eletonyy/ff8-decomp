@@ -5,6 +5,12 @@
 #include "gf.h"
 #include "ability_list.h"
 
+/* This file calls the PsyQ libc abs(), which gcc expands inline via the
+   `abssi2` pattern (bgez / move / negu dst,dst). The common.h abs macro
+   (blez compare form) would shadow it, so drop the macro for this TU. */
+#undef abs
+extern int abs(int);
+
 /** @brief Auto-junction priority tables (Atk/Mag/Def), each a 0xFF-terminated slot type list. */
 extern u8 *g_autoJunctionPriority[];
 
@@ -43,11 +49,21 @@ extern u8 D_801EF1B0[];
 extern s16 D_801EEB1C[];
 extern void func_801EFBB4(s32 renderCtx, s32 param, void *callback);
 extern s32 renderMagicItemCallback();
+extern void renderMagicJunctionEntry();
+extern s32 func_801F5F60(s32 renderCtx, s32 result, s32 color, s32 arg3);
+extern s32 func_801F5F30(s32 renderCtx, s32 result, s32 x, s32 y, s32 color, s32 count);
 extern JunctionGfEntry D_801EEDD0;
 extern s32 func_800300F8(s32 renderCtx, s32 x, s32 w, s32 y, s32 color, s32 menuColor, s32 selColor);
 extern s32 func_801F3FB4(u16 statusFlags);
-extern s32 getCharNamePtr(u8 characterId);
-extern u32 func_801F0FEC(s32 renderCtx, s32 cursorY, s32 x, s32 height, s32 namePtr, s32 gfInfo);
+extern u8 *getCharName(s32 charId);
+extern u32 func_801F0FEC(s32 renderCtx, s32 cursorY, s32 x, s32 height, u8 *namePtr, s32 gfInfo);
+extern u8 *getMagicNamePtr(s32 id);
+extern s32 drawColorByMenuPalette(s32 renderCtx, s32 cursorY, s32 packedXY, s32 value, s32 color);
+extern CharacterData D_80077808[]; /**< g_gameState.chars viewed at its absolute address (0x80077808). */
+extern s32 func_801F65F0(s32 renderCtx, s32 cursorY, s32 x, s32 y, CharacterData *chr, CharMenuInfo *info);
+extern void decodeMessage(u8 *src, u8 *dst, s32 maxLen);
+extern u8 *func_8002F548(u8 *src);
+extern void func_8002C734(s32 value);
 extern s32 func_801EF9AC(s32 renderCtx, s32 cursorY, s32 scale, s32 color);
 extern s32 func_8002FF34(s32 renderCtx, s32 cursorY, s32 stringId, s32 x, s32 y, s32 color);
 extern u8 *getAbilityName(s32 id);
@@ -116,12 +132,87 @@ extern s32 func_80037ADC(void);
  * 0x0A+0x27 = character name substitution, 0x05 = control callback,
  * 0x10-0x18 = control codes, 0x19-0x1F = two-byte sequences.
  *
- * @param src Source encoded string (NULL = immediate return).
+ * @param src Source encoded string list (NULL = decode nothing).
  * @param dst Destination buffer for decoded text.
  * @param charIdx Character index for name substitution.
- * @return Pointer to scratchpad decode buffer.
+ * @return Pointer to the scratchpad decode buffer.
+ *
+ * @note Handwritten function: manually retargets $gp at the PS1 scratchpad
+ * (0x1F800300) for the intermediate decode buffer, restoring it on exit
+ * (GP_SAVE_SCRATCH / GP_ALLOC / GP_FREE / GP_RESTORE_RET in common.h).
+ * The unused @c pad array reproduces the original's oversized stack frame.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", decodeMenuString);
+u8 *decodeMenuString(u8 *src, u8 *dst, s32 charIdx) {
+    s32 ch;
+    u8 *name;
+    s32 nameId;
+    u8 *tempGp;
+    u8 *savedGp;
+    u8 *buf;
+    u8 *ret;
+    u8 *pos;
+    u8 pad[0x40];
+
+    nameId = charIdx;
+
+    GP_SAVE_SCRATCH(tempGp);
+    savedGp = tempGp;
+    GP_ALLOC(buf, 0x80);
+
+    if (src == NULL) {
+        goto end;
+    }
+
+next_string:
+    if (src == NULL) {
+        goto end;
+    }
+    decodeMessage(src, buf, -1);
+    src = func_8002F548(src);
+    pos = buf;
+
+    for (;;) {
+        ch = *pos++;
+        if (ch == 1 || ch == 7 || ch == 0) {
+            goto end;
+        }
+        if (ch == 0xA) {
+            ch = *pos++;
+            if (ch == 0x27) {
+                for (name = getCharName(nameId); *name != 0; name++) {
+                    *dst++ = *name;
+                }
+                continue;
+            }
+        }
+        *dst++ = ch;
+        if (ch >= 0x19) {
+            if (ch < 0x20) {
+                *dst++ = *pos++;
+            }
+            continue;
+        }
+        if (ch == 2) {
+            goto next_string;
+        }
+        if (ch >= 0x10) {
+            continue;
+        }
+        *dst++ = *pos;
+        if (ch == 5) {
+            ch = *pos++;
+            func_8002C734(ch);
+        } else if (ch != 6) {
+            pos++;
+        }
+    }
+
+end:
+    *dst = 0;
+    GP_FREE(0x80);
+    GP_RESTORE_RET(savedGp, ret);
+    return ret;
+}
 
 /**
  * @brief Auto-junction the best magic for a given slot type.
@@ -1795,11 +1886,11 @@ dispatch:
         case 0x4:
             sendSpuCommand(1);
             renderStatValueBar(ctx, 1, ctx->unk4E);
-            ctx->unk5D = ctx->charIdx;
+            ctx->prevCharIdx = ctx->charIdx;
             ctx->charIdx = func_801F565C(ctx->charIdx, ctx->parentParam);
             snapshotJunctionPreview(ctx->charIdx);
             buildMagicLookupTable(ctx->charIdx);
-            ctx->unk3E = -0xF80;
+            ctx->slideOffset = -0xF80;
             if (g_junctionChars[ctx->charIdx].availFlags == 0) {
                 ctx->unk4A = 0;
                 ctx->unk4E = 0;
@@ -1812,9 +1903,9 @@ dispatch:
             break;
         case 0x5:
             renderStatValueBar(ctx, 1, ctx->unk4E);
-            ctx->unk3E += 0x80;
-            if (ctx->unk3E >= 0) {
-                ctx->unk3E = 0;
+            ctx->slideOffset += 0x80;
+            if (ctx->slideOffset >= 0) {
+                ctx->slideOffset = 0;
                 *statePtr = 3;
             }
             if (inputRepeat & 4) {
@@ -1827,11 +1918,11 @@ dispatch:
         case 0x6:
             sendSpuCommand(1);
             renderStatValueBar(ctx, 1, ctx->unk4E);
-            ctx->unk5D = ctx->charIdx;
+            ctx->prevCharIdx = ctx->charIdx;
             ctx->charIdx = func_801F56E4(ctx->charIdx, ctx->parentParam);
             snapshotJunctionPreview(ctx->charIdx);
             buildMagicLookupTable(ctx->charIdx);
-            ctx->unk3E = 0xF80;
+            ctx->slideOffset = 0xF80;
             if (g_junctionChars[ctx->charIdx].availFlags == 0) {
                 ctx->unk4A = 0;
                 ctx->unk4E = 0;
@@ -1844,9 +1935,9 @@ dispatch:
             break;
         case 0x7:
             renderStatValueBar(ctx, 1, ctx->unk4E);
-            ctx->unk3E -= 0x80;
-            if ((ctx->unk3E << 0x10) <= 0) {
-                ctx->unk3E = 0;
+            ctx->slideOffset -= 0x80;
+            if ((ctx->slideOffset << 0x10) <= 0) {
+                ctx->slideOffset = 0;
                 *statePtr = 3;
             }
             if (inputRepeat & 4) {
@@ -3503,7 +3594,7 @@ void renderStatGrid(s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     s32 xOff;
     s32 gfInfo;
     s32 yOff;
-    s32 namePtr;
+    u8 *namePtr;
     s32 ctx = renderCtx + 0x10;
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
     AbilityListEntry *table;
@@ -3519,7 +3610,7 @@ void renderStatGrid(s32 renderCtx, s32 cursorY, s32 x, s32 y) {
             yPos = y + yOff;
             cursorY = func_8002FF34(ctx, cursorY, table->category + 0xD8, xPos, yPos - 2, g_menuColor);
             xPos += 14;
-            namePtr = (s32)getAbilityName(table->slotIndex);
+            namePtr = getAbilityName(table->slotIndex);
             gfInfo = 7;
             table++;
             i++;
@@ -3632,9 +3723,23 @@ INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderStatDeltaBarExt);
  * @param itemIdx Index into the item data pointer array.
  * @param columnIdx Column index (unused).
  * @param xOffset X offset from stack argument.
- * @return Updated cursor Y position.
+ * @return Updated cursor Y position, unchanged when the item slot is empty.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderMagicItemCallback);
+s32 renderMagicItemCallback(s32 renderCtx, s32 cursorY, s32 itemIdx, s32 columnIdx, s32 xOffset) {
+    u8  buf[0x80];
+    s32 result = cursorY;
+    u8 *itemText = ((u8 **)g_menuDisplayCfg.dataPtr)[itemIdx];
+
+    if (itemText != NULL) {
+        s32 deltaX = xOffset + 0xA;
+        s32 x = g_menuDisplayCfg.x + deltaX;
+        s32 y = g_menuDisplayCfg.y + 9;
+
+        decodeMessage(itemText, buf, -1);
+        result = func_801F0FEC(renderCtx, cursorY, x, y, buf, 7);
+    }
+    return result;
+}
 
 /**
  * @brief Set up menu display config and render a junction panel with callback.
@@ -3699,7 +3804,7 @@ void renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBa
     s32 row, col;
     s32 x, y;
     s32 xOff, yOff;
-    s32 namePtr;
+    u8 *namePtr;
     s32 junctedGfs;
     u16 numGfs;
     s32 mask;
@@ -3743,36 +3848,94 @@ void renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBa
 }
 
 /**
- * @brief Render a single GF magic entry from the junction list.
+ * @brief Render a single GF magic entry of the junction GF list.
  *
- * Checks whether the GF at the given list index is junctioned (charIdx
- * != 0xFF) and determines the display color. Renders the magic name,
- * GF level icon (if junctioned), and compatibility indicator.
+ * Per-item callback registered by renderGfMagicPanel (via func_801EFBB4)
+ * for a 4-rows-per-column grid. Looks up the GF for list slot
+ * col * 4 + row through the available-GF index list (D_801EEDE0), then
+ * renders the GF magic name (id + 0x40) colored 7 when not junctioned,
+ * 1 when junctioned to the displayed character (g_menuDisplayCfg.itemAttr),
+ * or 0 when junctioned to another character. Junctioned GFs also get the
+ * 0xC0 marker icon. Finally draws the GF level via drawColorByMenuPalette
+ * at a packed (y << 16 | x) position.
  *
  * @param renderCtx Render context.
- * @param cursorY Current cursor Y position.
- * @param itemIdx Index into the GF list (offset by scroll).
- * @param tableBase Base pointer for column/row computation.
- * @param yBase Base Y position (on stack).
- * @return Updated cursor Y position.
+ * @param cursorY Current draw cursor position (chained through each call).
+ * @param col Grid column index.
+ * @param row Grid row index (13 px per row).
+ * @param xOff Column X offset (on stack).
+ * @return Updated draw cursor position.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderGfMagicEntry);
+s32 renderGfMagicEntry(s32 renderCtx, s32 cursorY, s32 col, s32 row, s32 xOff) {
+    s32 idx;
+    s32 color;
+    s32 ysum;
+    s32 xsum;
+    JunctionGfEntry *gf;
+    u8 *namePtr;
+
+    if (g_menuDisplayCfg.itemId > (idx = col * 4 + row)) {
+        idx = D_801EEDE0[idx];
+        gf = &g_junctionGfTable[idx];
+        color = 7;
+        if (gf->charIdx != 0xFF) {
+            color = gf->charIdx == g_menuDisplayCfg.itemAttr;
+        }
+        namePtr = getMagicNamePtr(idx + 0x40);
+        cursorY = func_801F0FEC(renderCtx, cursorY, 0xC + g_menuDisplayCfg.x + xOff, 7 + g_menuDisplayCfg.y + row * 13, namePtr, color);
+        if (gf->charIdx != 0xFF) {
+            ysum = 7 + g_menuDisplayCfg.y + row * 13;
+            xsum = 0x6C + g_menuDisplayCfg.x + xOff;
+            cursorY = func_8002FF34(renderCtx, cursorY, 0xC0, xsum, ysum, g_menuColor);
+        }
+        ysum = 7 + g_menuDisplayCfg.y + row * 13;
+        xsum = 0x90 + g_menuDisplayCfg.x + xOff;
+        cursorY = drawColorByMenuPalette(renderCtx, cursorY, (ysum << 16) | (xsum & 0xFFFF), gf->level, color);
+    }
+    return cursorY;
+}
 
 /**
  * @brief Set up and render the GF magic list panel.
  *
  * Configures g_menuDisplayCfg for a scrollable GF list (icon 0x50,
- * 4 columns), loads ctx fields for page/scroll state, then calls
- * func_8002FF34 for the header and func_801EFBB4 with
- * renderGfMagicEntry as the per-item callback.
+ * 0x9A x 0x40, 4 columns), copies page/scroll/disc state from @p ctx,
+ * renders a header icon via func_8002FF34, optionally draws a disc-count
+ * indicator via func_801F5F60 when five or more discs are present, draws
+ * the list frame via func_801F5F30, and finally registers
+ * renderGfMagicEntry as the per-item callback via func_801EFBB4.
  *
  * @param ctx Junction menu context.
  * @param renderCtx Render context.
  * @param cursorY Current cursor Y position.
- * @param xBase Base X position.
- * @param yBase Base Y position (on stack).
+ * @param x Base X position.
+ * @param y Base Y position (on stack).
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderGfMagicPanel);
+void renderGfMagicPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+    s32 result;
+
+    g_menuDisplayCfg.iconType = 0x50;
+    g_menuDisplayCfg.iconSubType = 0;
+    g_menuDisplayCfg.x = x;
+    g_menuDisplayCfg.w = 0x9A;
+    g_menuDisplayCfg.h = 0x40;
+    g_menuDisplayCfg.columnCount = 4;
+    g_menuDisplayCfg.y = y;
+    g_menuDisplayCfg.pageStart = ctx->unk44;
+    g_menuDisplayCfg.pageEnd = ctx->unk45;
+    g_menuDisplayCfg.scrollOffset = ctx->unk34;
+    g_menuDisplayCfg.itemId = ctx->discCount;
+    g_menuDisplayCfg.itemAttr = ctx->charIdx;
+
+    result = func_8002FF34(renderCtx, cursorY, 0x17, x + 0x7F, y, g_menuColor);
+
+    if (ctx->discCount >= 5) {
+        result = func_801F5F60(renderCtx, result, g_menuColor, 3);
+    }
+
+    result = func_801F5F30(renderCtx, result, x + 0x16, y, g_menuColor, ctx->unk44);
+    func_801EFBB4(renderCtx, result, renderGfMagicEntry);
+}
 
 /**
  * @brief Check junction ability mask compatibility.
@@ -4026,9 +4189,32 @@ INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderJunctionHeader);
  * @param cursorY Current cursor Y position.
  * @param x Panel X position.
  * @param y Panel Y position (on stack).
- * @param scale Scale factor (on stack).
+ * @param scale Scale factor (on stack); when 0x1000 a scroll-indicator panel is drawn.
+ * @param showGf Whether to show GF index info (passed to renderJunctionStatPanel).
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderJunctionComposite);
+void renderJunctionComposite(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 scale, s32 showGf) {
+    s32 result;
+
+    result = func_801EF8D8(renderCtx, cursorY);
+    result = renderJunctionStatPanel(ctx, renderCtx, result, x + ctx->unk38, y, showGf);
+
+    if (scale == 0x1000) {
+        struct {
+            s16 x;
+            s16 y;
+            s16 w;
+            s16 h;
+        } rect;
+
+        rect.x = x + 8;
+        rect.y = y;
+        rect.w = 0x140;
+        rect.h = 0x48;
+        result = func_801EF800(renderCtx, result, &rect);
+    }
+
+    setupStatBorderPanel(renderCtx, result, x, y, scale);
+}
 
 /**
  * @brief Render a single magic junction entry (name + icon + quantity).
@@ -4048,9 +4234,13 @@ INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderMagicJunctionEntry);
 /**
  * @brief Set up and render the magic junction list panel.
  *
- * Configures g_menuDisplayCfg (icon 0x4A, width 0x78), loads page/scroll
- * state from ctx, then calls func_8002FF34 for the header and
- * func_801EFBB4 with renderMagicJunctionEntry as the callback.
+ * Configures g_menuDisplayCfg for the scrollable magic list (icon 0x4A,
+ * 0x78 x 0x40, 4 columns), copies page/scroll/character state from @p ctx
+ * (including the ability data pointer into cfg.dataPtr), optionally draws a
+ * disc-count indicator via func_801F5F60 when five or more discs are present,
+ * renders a header icon via func_8002FF34, draws the list frame via
+ * func_801F5F30, and finally registers renderMagicJunctionEntry as the
+ * per-item callback via func_801EFBB4.
  *
  * @param ctx Junction menu context.
  * @param renderCtx Render context.
@@ -4058,7 +4248,28 @@ INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderMagicJunctionEntry);
  * @param x Panel X position.
  * @param y Panel Y position (on stack).
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderMagicListPanel);
+void renderMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+    g_menuDisplayCfg.iconType = 0x4A;
+    g_menuDisplayCfg.iconSubType = 0;
+    g_menuDisplayCfg.x = x;
+    g_menuDisplayCfg.w = 0x78;
+    g_menuDisplayCfg.h = 0x40;
+    g_menuDisplayCfg.columnCount = 4;
+    g_menuDisplayCfg.y = y;
+    g_menuDisplayCfg.pageStart = ctx->unk44;
+    g_menuDisplayCfg.pageEnd = ctx->unk45;
+    g_menuDisplayCfg.scrollOffset = ctx->unk34;
+    g_menuDisplayCfg.itemId = ctx->charIdx;
+    g_menuDisplayCfg.dataPtr = ctx->dataPtr2;
+
+    if (ctx->discCount >= 5) {
+        cursorY = func_801F5F60(renderCtx, cursorY, g_menuColor, 3);
+    }
+
+    cursorY = func_8002FF34(renderCtx, cursorY, 0x4D, x + 0x54, y, g_menuColor);
+    cursorY = func_801F5F30(renderCtx, cursorY, x + 0x24, y, g_menuColor, ctx->unk44);
+    func_801EFBB4(renderCtx, cursorY, renderMagicJunctionEntry);
+}
 
 /**
  * @brief Render a single ability list entry with flag-based categorization.
@@ -4153,7 +4364,7 @@ s32 renderAbilityListEntry(s32 ctx, s32 cursorY, s32 row, s32 col, s32 panelX) {
                     }
                 }
             }
-            cursorY = func_801F0FEC(ctx, cursorY, stringX, textY, (s32)getAbilityName(abilityId), highlight);
+            cursorY = func_801F0FEC(ctx, cursorY, stringX, textY, getAbilityName(abilityId), highlight);
         }
     }
     return cursorY;
@@ -4162,10 +4373,13 @@ s32 renderAbilityListEntry(s32 ctx, s32 cursorY, s32 row, s32 col, s32 panelX) {
 /**
  * @brief Set up and render the ability list panel.
  *
- * Configures g_menuDisplayCfg (icon 0x5E, various widths depending on
- * ability type), determines the list type from ctx->unk56 (commands vs
- * abilities), then calls func_801EFBB4 with renderAbilityListEntry
- * as the callback.
+ * Configures g_menuDisplayCfg for the ability list (icon 0x5E, 0xA2 x 0xA0,
+ * 11 columns) at offset (x + 0xC6, y + 0x38). Selects the data table and
+ * count byte from ctx->unk56 (1 = commands via D_801EEF10/D_801EEF38,
+ * 2 = abilities via D_801EEF40/D_801EEF9A, 0 = none), draws the list frame
+ * via func_801F5F30, optionally draws a paging indicator via func_801F5F60
+ * when the item count is 0xC or more, and registers renderAbilityListEntry
+ * as the per-item callback via func_801EFBB4.
  *
  * @param ctx Junction menu context.
  * @param renderCtx Render context.
@@ -4173,7 +4387,48 @@ s32 renderAbilityListEntry(s32 ctx, s32 cursorY, s32 row, s32 col, s32 panelX) {
  * @param x Panel X position.
  * @param y Panel Y position (on stack).
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderAbilityListPanel);
+void renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+    MenuDisplayConfig *cfg = &g_menuDisplayCfg;
+    s32 panelX = x + 0xC6;
+    s32 type;
+
+    cfg->iconType = 0x5E;
+    cfg->iconSubType = 0;
+    cfg->x = panelX;
+    cfg->w = 0xA2;
+    cfg->h = 0xA0;
+    cfg->columnCount = 0xB;
+    y = y + 0x38;
+    cfg->y = y;
+    cfg->pageStart = ctx->unk44;
+    cfg->pageEnd = ctx->unk45;
+    cfg->scrollOffset = ctx->unk34;
+
+    type = ctx->unk56;
+    switch (type) {
+    case 0:
+        cfg->dataPtr = 0;
+        break;
+    case 1:
+        cfg->dataPtr = (s32)D_801EEF10;
+        cfg->itemAttr = type;
+        cfg->itemId = D_801EEF38;
+        break;
+    case 2:
+        cfg->dataPtr = (s32)D_801EEF40;
+        cfg->itemAttr = type;
+        cfg->itemId = D_801EEF9A;
+        break;
+    }
+
+    cursorY = func_801F5F30(renderCtx, cursorY, panelX + 0x28, y, g_menuColor, ctx->unk44);
+
+    if (cfg->itemId >= 0xC) {
+        cursorY = func_801F5F60(renderCtx, cursorY, g_menuColor, 3);
+    }
+
+    func_801EFBB4(renderCtx, cursorY, renderAbilityListEntry);
+}
 
 /**
  * @brief Render a 3-row stat grid with command/ability icons.
@@ -4206,25 +4461,72 @@ INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderStatRowGrid);
 INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderGfCompatGrid);
 
 /**
- * @brief Render scaling stat comparison panel with delta visualization.
+ * @brief Render the character info panels during a character-switch slide.
  *
- * Reads unk3E from ctx as a scale factor, looks up values from
- * D_801FA3C8, and renders dual stat bars comparing current vs preview
- * values with a bordered panel via func_801EF9AC.
+ * Drives the junction menu's character-switch animation. The slide offset
+ * (ctx->slideOffset, animated ±0xF80 -> 0 by junctionMenuUpdate) is eased
+ * through the D_801FA3C8 scale table and converted to a pixel offset
+ * (0x180 = one panel width). While the slide is active, the outgoing
+ * character's panel (ctx->prevCharIdx) is drawn one panel width to the
+ * side, then the current character's panel (ctx->charIdx) is drawn at the
+ * slid position. Both panels render via func_801F65F0.
  *
- * @param ctx Junction menu context.
- * @param renderCtx Render context.
- * @param cursorY Current cursor Y position.
- * @param x Panel X position.
- * @param y Panel Y position (on stack).
+ * @param ctx       Junction menu context.
+ * @param renderCtx Render context handle.
+ * @param cursorY   Draw cursor position, chained through func_801F65F0.
+ * @param x         Panel X position.
+ * @param y         Panel Y position (on stack).
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderScalingStatPanel);
+void renderCharSwitchPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+    s16 slide;
+    s32 scale;
+    s32 idx;
+    s32 x2;
+    s32 y2;
+    u8 chr;
+    CharacterData *rec;
+    CharMenuInfo *info;
+
+    x2 = x;
+    /* Empty loop: scheduling barrier that keeps the slide load below the
+       incoming-argument moves (matches the original instruction order). */
+    do { } while (0);
+    slide = ctx->slideOffset;
+
+    scale = slide;
+    idx = abs(scale);
+    y2 = y;
+    scale = D_801FA3C8[idx / 64];
+    if (slide < 0) {
+        scale = -scale;
+    }
+
+    if (scale != 0) {
+        scale = scale * 0x180 / 0x1000;
+        x2 += scale;
+        if (slide > 0) {
+            x2 -= 0x180;
+        } else {
+            x2 += 0x180;
+        }
+        chr = ctx->prevCharIdx;
+        rec = &D_80077808[chr];
+        info = &g_charMenuInfo[chr];
+        cursorY = func_801F65F0(renderCtx, cursorY, x2, y2, rec, info);
+        x2 = x + scale;
+        y2 = y;
+    }
+    chr = ctx->charIdx;
+    rec = &D_80077808[chr];
+    info = &g_charMenuInfo[chr];
+    func_801F65F0(renderCtx, cursorY, x2, y2, rec, info);
+}
 
 /**
  * @brief Render a character name and status bar in the junction menu.
  *
  * Sets up g_menuDisplayCfg dimensions, optionally renders the character
- * name (looked up via getCharNamePtr from the character's ID in g_gameState),
+ * name (looked up via getCharName from the character's ID in g_gameState),
  * then draws a color bar via func_801EF9AC.
  *
  * @param renderCtx Render context handle.
@@ -4249,7 +4551,7 @@ s32 renderCharNameBar(s32 renderCtx, s32 cursorY, s32 x, s32 height, s32 charIdx
     do {
         if (charIdx != 0xFF) {
             s32 gfInfo = func_801F3FB4((*(menuInfo = &g_charMenuInfo[charIdx])).statusFlags);
-            s32 namePtr = getCharNamePtr(g_gameState.chars[charIdx].characterId);
+            u8 *namePtr = getCharName(g_gameState.chars[charIdx].characterId);
             cursorY = func_801F0FEC(renderCtx, cursorY, x, height, namePtr, gfInfo);
         }
         return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
@@ -4311,7 +4613,7 @@ void initJunctionGfTable(void) {
         gf->cmdSlotCount = 0;
         gf->ablSlotCount = 0;
         gf->maxAbilitySlots = 2;
-        gf->pad04 = level;
+        gf->level = level;
 
         abilityCount = func_800369CC(i, D_801EEC50, 0);
         for (j = 0; j < abilityCount; j++) {

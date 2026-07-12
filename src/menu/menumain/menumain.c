@@ -80,7 +80,7 @@ void func_801EFBB4(s32, s32, s32);
 s32 func_801F64A4(s32, s32, s32, s32, s32, s32, s32);
 s32 func_801F3DE4(s32, s32, s32, s32, s32, s32, s32);
 s32 func_801F6234(s32, s32, s32, s32, s32);
-void func_801F605C(s32, s32, s32, s32, s32);
+s32 func_801F605C(s32, s32, s32, s32, s32);
 s32 func_801F776C(s32, s32);
 void setAnimEntityParams(s32, s32, s32);
 void func_801F2458(s32);
@@ -1258,13 +1258,13 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F64A4);
  * Chains: func_801F64A4 (header/portrait), func_801F3DE4 (stats block),
  * func_801F6234 (HP/status bar), func_801F605C (ability/junction summary).
  */
-void func_801F65F0(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
+s32 func_801F65F0(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
     s32 ret;
 
     ret = func_801F64A4(a0, a1, a2, a3, a4, a5, 1);
     ret = func_801F3DE4(*(s32 *)a5, *(s32 *)(a5 + 4), a0, ret, a2 + 0x20, a3 + 0x7C, 7);
     ret = func_801F6234(a0, ret, a2 + 0xD0, a3 + 0x39, *(u16 *)(a5 + 0xE));
-    func_801F605C(a0, ret, a2 + 0x10E, a3 + 0x38, a5);
+    return func_801F605C(a0, ret, a2 + 0x10E, a3 + 0x38, a5);
 }
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F66B0);

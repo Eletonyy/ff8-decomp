@@ -86,7 +86,7 @@ typedef struct {
     /* 0x38 */ s16 unk38;              /**< Offset added to Y position in stat panel rendering. */
     /* 0x3A */ s16 unk3A;              /**< Fade/transition scale value. */
     /* 0x3C */ s16 statScale;          /**< Stat scale value (0x1000 = 1.0). */
-    /* 0x3E */ s16 unk3E;              /**< Slide-in offset for the character-switch panel. */
+    /* 0x3E */ s16 slideOffset;        /**< Character-switch panel slide offset (±0xF80, stepped toward 0). */
     /* 0x40 */ s16 unk40;              /**< Unknown s16 (scaling factor, similar to statScale). */
     /* 0x42 */ u8 unk42;               /**< Panel display mode. */
     /* 0x43 */ u8 charIdx;             /**< Selected character index (0-7). */
@@ -109,7 +109,7 @@ typedef struct {
     /* 0x5A */ u8 unk5A;               /**< Stat display type byte. */
     /* 0x5B */ u8 discCount;           /**< Number of discs (from popcount). */
     /* 0x5C */ s8 unk5C;               /**< GF navigation index. */
-    /* 0x5D */ u8 unk5D;               /**< Character index for scaling panel comparison. */
+    /* 0x5D */ u8 prevCharIdx;         /**< Outgoing character during the character-switch slide. */
     /* 0x5E */ s8 unk5E;               /**< Column/stat selection index. */
     /* 0x5F */ u8 unk5F;               /**< GF ability slot count. */
     /* 0x60 */ u8 unk60;               /**< Junction modification flags. */
@@ -161,7 +161,7 @@ typedef enum {
  */
 typedef struct {
     /* 0x00 */ u32 abilityFlags;      /**< OR'd into g_junctionChars[].availFlags. */
-    /* 0x04 */ u8 pad04;              /**< Unknown. */
+    /* 0x04 */ u8 level;              /**< GF level (from g_battleChars.levelEntries). */
     /* 0x05 */ u8 charIdx;            /**< Character this GF is junctioned to. */
     /* 0x06 */ u8 cmdSlotCount;       /**< Command slot count from this GF. */
     /* 0x07 */ u8 ablSlotCount;       /**< Ability slot count from this GF. */
