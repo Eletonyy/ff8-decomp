@@ -1168,7 +1168,7 @@ s32 func_800AF134(s32 entityIdx, u8 *outStat, u8 *outCount, s32 typeByte);
 u8 *func_800B04A0(s32 a0, u8 *buf);
 
 /** @brief Concatenate two parts into the @c D_800EEBE8 message buffer. */
-u8 *func_800B0248(s32 part1, s32 sepByte, s32 part2);
+u8* func_800B0248(u8* arg0, u8 arg1, u8* arg2);
 
 /** @brief Finalize the @c D_800EEBE8 message buffer. */
 u8 *func_800B02AC(u8 *buf);
