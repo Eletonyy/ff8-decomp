@@ -1978,12 +1978,12 @@ s32 compareBytes(u8 *a, u8 *b, s32 count) {
 }
 
 
-/** @brief Wrapper for getCharNamePtr. */
-void getCharNamePtrWrapper(void) { getCharNamePtr(); }
+/** @brief Wrapper for getCharName. */
+void getCharNameWrapper(void) { getCharName(); }
 
 
-/** @brief Wrapper for getCharNamePtr (duplicate of getCharNamePtrWrapper). */
-void getCharNamePtrWrapper2(void) { getCharNamePtr(); }
+/** @brief Wrapper for getCharName (duplicate of getCharNameWrapper). */
+void getCharNameWrapper2(void) { getCharName(); }
 
 
 /** @brief Wrapper for getBattleCharName. */

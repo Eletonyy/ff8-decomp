@@ -431,7 +431,7 @@ void func_801E7E38(u8 *a0, s32 a1, s32 a2, s32 a3, s32 arg5) {
 /** @brief Per-character cached menu data (stride 0x98, 8 entries). */
 typedef struct {
     /* 0x00 */ u8 pad00[8];
-    /* 0x08 */ u8 charId;        /**< Character id (input to getCharNamePtr). */
+    /* 0x08 */ u8 charId;        /**< Character id (input to getCharName). */
     /* 0x09 */ u8 pad09[0x8B];
     /* 0x94 */ u16 status;        /**< Character status flags (bit 1 = ready, bit 2 = available). */
     /* 0x96 */ u8 pad96[2];
@@ -452,7 +452,7 @@ extern s32 g_menuColor;
 
 extern u32 func_801F57A4(s32 a0);
 extern s32 func_801F3FB4(s32 a0);
-extern u8 *getCharNamePtr(s32 charId);
+extern u8 *getCharName(s32 charId);
 extern u8 *getMagicNamePtr(s32 magicId);
 extern u32 func_801F0FEC(s32 renderCtx, s32 cursorY, s32 x, s32 y, u8 *text, s32 attr);
 extern s32 drawColorByMenuPalette(s32 renderCtx, s32 cursorY, s32 packedYX, s32 byteVal, s32 attr);
@@ -489,7 +489,7 @@ s32 func_801E7EB4(ExtMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
         textY = y + 8;
         charEntry = &D_80077808[ctx->charIdx];
         cursorY = func_801F0FEC(renderCtx, cursorY, textX, textY,
-                                getCharNamePtr(charEntry->charId), textAttr);
+                                getCharName(charEntry->charId), textAttr);
 
         textAttr = 7;
         textX = x + 0x22;

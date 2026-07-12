@@ -102,7 +102,7 @@ typedef struct {
  * Holds experience curve coefficients used by calcHpFromLevel.
  */
 typedef struct {
-    u16 lookupParam;  /**< +0x00: Lookup param (getBattleCharName/getCharNamePtr). */
+    u16 lookupParam;  /**< +0x00: Lookup param (getBattleCharName/getCharName). */
     u8 pad02;         /**< +0x02: Unknown. */
     u8 field03;       /**< +0x03: Bit 0 enables @c BattleSlot.slotFlags @c 0x100 in @c func_800A7518. */
     u8 pad04[2];      /**< +0x04..+0x05: Unknown. */
