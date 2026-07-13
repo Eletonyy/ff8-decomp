@@ -357,8 +357,7 @@ typedef struct {
 } Struct_12CC; /* used in func_8009D594 */
 
 typedef struct {
-    /* 0x0000 */ BattleEntity entities[1];      /**< 7 × 0xD0 = 0x5B0. Index 0 is also the header proxy. */
-                 u8 padder[0x05B0 - 0xD0];
+    /* 0x0000 */ BattleEntity entities[7];      /**< 7 × 0xD0 = 0x5B0. Index 0 is also the header proxy. */
     /* 0x05B0 */ u8 pad5B0[0x10];               /**< Pre-control padding. */
     /* 0x05C0 */ u8 unk5C0;                     /**< Action queue head index (used by func_800B06DC). */
     /* 0x05C1 */ u8 pad5C1[0x1];
