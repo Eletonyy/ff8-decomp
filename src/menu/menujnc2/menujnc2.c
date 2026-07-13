@@ -29,9 +29,17 @@ extern s32 g_assignedAbilities[];
 extern s32 g_availableAbilities[];
 extern u8 D_801EEF10[];
 extern u8 D_801EEF38;
+
+/** @brief Per-character GF ability-grid descriptor (stride 0x1C). Only @c count (row count) is currently understood. */
+typedef struct {
+    u8 pad00[0xA];
+    u8 count;         /**< Number of ability rows to render for this character. */
+    u8 pad0B[0x1C - 0xB];
+} GfCompatEntry;
+extern GfCompatEntry D_801EEDF0[];
 extern u8 D_801EEF40[];
 extern u8 D_801EEF9A;
-extern u8 getAbilityCategory(s32 id);
+extern s32 getAbilityCategory(s32 id);
 extern u8 g_characterAbilities[];
 extern u8 D_801EEED0[];
 extern s32 func_801F776C(s32 magicId, s32 slotType);
@@ -4274,7 +4282,55 @@ void setupStatBorderPanel(s32 ctx, s32 mode, s32 x, s32 y, s32 renderParam) {
  * @param x Panel X position.
  * @param y Panel Y position (on stack).
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderJunctionHeader);
+s32 renderJunctionHeader(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+    MenuDisplayConfig *cfg = &g_menuDisplayCfg;
+    s32 p1, p2;
+    s32 xPos, yPos;
+    s32 icon1, icon2;
+    s32 seven = 7;
+
+    switch (ctx->unk58 / 5) {
+    case 0:
+        p1 = renderInnerPanel(0x12);
+        p2 = renderInnerPanel(0x13);
+        icon1 = 0x7E;
+        icon2 = 0x7F;
+        break;
+    case 1:
+        p1 = renderInnerPanel(0x11);
+        p2 = renderInnerPanel(0x13);
+        icon1 = 0x7C;
+        icon2 = 0x7E;
+        break;
+    case 2:
+    case 3:
+        p1 = renderInnerPanel(0x11);
+        p2 = renderInnerPanel(0x12);
+        icon1 = 0x7D;
+        icon2 = 0x7C;
+        break;
+    }
+
+    xPos = x + 0x10;
+    yPos = y + 6;
+    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, (u8 *)p1, seven);
+    xPos = x + 0x4B;
+    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, (u8 *)p2, seven);
+
+    xPos = x + 8;
+    yPos = y + 7;
+    cursorY = func_8002FF34(renderCtx, cursorY, icon1, xPos, yPos, g_menuColor);
+    xPos = x + 0x41;
+    cursorY = func_8002FF34(renderCtx, cursorY, icon2, xPos, yPos, g_menuColor);
+
+    cfg->iconType = 0;
+    cfg->iconSubType = 0;
+    cfg->x = x;
+    cfg->y = y;
+    cfg->w = 0xAE;
+    cfg->h = 0x16;
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+}
 
 /**
  * @brief Render composite junction view (stat panel + optional scroll + border).
@@ -4589,19 +4645,59 @@ void renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s3
 INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderStatRowGrid);
 
 /**
- * @brief Render GF compatibility grid for junctioned GFs.
+ * @brief Render the character's ability grid (icon + name per row).
  *
- * Iterates over the character's junctioned GFs (up to 16), rendering
- * each GF's compatibility rating in a grid layout with name strings
- * and numeric values.
+ * Reads the character index from @c ctx[0x43] and renders up to
+ * @c D_801EEDF0[charIdx].count ability rows for that character. Each nonzero
+ * ability slot draws a category icon (via @c getAbilityCategory) and the
+ * ability name (via @c getAbilityName), plus a fixed separator glyph; the
+ * running display-list pointer is threaded through @c func_8002FF34 /
+ * @c func_801F0FEC and the surrounding panel is closed with @c func_801EF9AC.
  *
- * @param ctx Junction menu context.
+ * @param ctx       Junction menu context (byte 0x43 = character index).
  * @param renderCtx Render context.
- * @param cursorY Current cursor Y position.
- * @param x Panel X position.
- * @param y Panel Y position (on stack).
+ * @param cursorY   Current display-list cursor.
+ * @param x         Panel X position.
+ * @param y         Panel Y position (on stack).
+ * @return Updated display-list cursor from @c func_801EF9AC.
+ * @note The @c result++/result-- pair is a no-op that pins the accumulator to
+ *       the register the original codegen used; it emits no instructions.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderGfCompatGrid);
+s32 renderGfCompatGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+    MenuDisplayConfig *cfg;
+    s32 result;
+    s32 gf, y2, i;
+    s32 new_var = 7;
+    s32 charIdx = ctx[0x43];
+
+    cfg = &g_menuDisplayCfg;
+    result = cursorY;
+    result++;
+    result--;
+    x += 0x18;
+    y += 0x90;
+    i = 0;
+    if (D_801EEDF0[charIdx].count != 0) {
+        do {
+            y2 = y + 9 + i * 13;
+            gf = g_gameState.chars[charIdx].abilities[i];
+            if (gf != 0) {
+                result = func_8002FF34(renderCtx, result, getAbilityCategory(gf) + 0xD8, x + 0x2E, y2 - 2, g_menuColor);
+                cursorY = x + 0x3C;
+                result = func_801F0FEC(renderCtx, result, cursorY, y2, getAbilityName(gf), new_var);
+            }
+            result = func_8002FF34(renderCtx, result, 0x7E, x + 0x22, y2 + 2, g_menuColor);
+            i++;
+        } while (i < D_801EEDF0[charIdx].count);
+    }
+    cfg->iconType = 0x5E;
+    cfg->iconSubType = 0;
+    cfg->x = x;
+    cfg->y = y;
+    cfg->w = 0xAE;
+    cfg->h = 0x48;
+    return func_801EF9AC(renderCtx, result, 0x1000, g_menuColor);
+}
 
 /**
  * @brief Render the character info panels during a character-switch slide.
