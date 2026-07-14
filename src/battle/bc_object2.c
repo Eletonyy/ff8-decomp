@@ -555,7 +555,7 @@ void func_8009CAD8(s32 arg0, s32 arg1) { //entity [1]
 
     D_800ED148.actionType = 0;
     if (D_800ED148.entities[arg1].controlFlags & BATTLE_ENTITY_FLAG_BIT_11) {
-        func_800A432C(0x12);
+        func_800A432C(18);
         return;
     }
 
