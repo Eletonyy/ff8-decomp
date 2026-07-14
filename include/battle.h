@@ -18,11 +18,11 @@
 /** @brief Battle command config (g_battleConfig). */
 typedef struct {
     u16 battleSceneId;
-    u16 unk2; // Flags?, when first bit is set, escape it not possible
-    u8 unk4[3]; // Post battle command queue?
-    u8 result;          /**< Battle result (BATTLE_RESULT_*). */
-    u8 unk8;
-    u8 unk9;            /**< Bit 0 toggles the @c FieldVars.soundBankSelector at field-VM init. */
+    u16 unk2;            // Flags?, when first bit is set, escape it not possible
+    u8  unk4[3];         // Post battle command queue?
+    u8  result;          /**< Battle result (BATTLE_RESULT_*). */
+    u8  unk8;
+    u8  unk9;            /**< Bit 0 toggles the @c FieldVars.soundBankSelector at field-VM init. */
 } BattleConfig;
 
 /* AnimFrame, BattleAnimEntity, DisplayListBuf, BattleAnimState, OT_SIZE and
@@ -357,14 +357,33 @@ typedef struct {
 } Struct_12CC; /* used in func_8009D594 */
 
 typedef struct {
+    u8 unk0;
+    u8 unk1;
+    u8 unk2;
+    u8 unk3;
+    u16 unk4;
+    u16 unk6;
+    u32 unk8;
+    u8 unkC;
+    u8 unkD;
+    u8 unkE;
+    u8 unkF;
+    u16 unk10;
+    u16 unk12;
+    u32 unk14;
+} Struct_func_800A5210; // 24 bytes
+
+typedef struct {
     /* 0x0000 */ BattleEntity entities[7];      /**< 7 × 0xD0 = 0x5B0. Index 0 is also the header proxy. */
     /* 0x05B0 */ u8 pad5B0[0x10];               /**< Pre-control padding. */
     /* 0x05C0 */ u8 unk5C0;                     /**< Action queue head index (used by func_800B06DC). */
-    /* 0x05C1 */ u8 pad5C1[0x1];
+    /* 0x05C1 */ u8 unk5C1;
     /* 0x05C2 */ u8 unk5C2;                     /**< Misc state byte (init to 1 by func_8009A1E0/ACEC). */
     /* 0x05C3 */ u8 unk5C3;                     /**< Misc state byte (init to 1 by func_80099FE8). */
-    /* 0x05C4 */ BattleEntry entries[90];       /**< Action queue (stride 0x14)*/
-    /* 0x0CCC */ u8 padCDC[0x0CE4 - 0x0CCC];                /**< Pad to unkCE4. */
+    /* 0x05C4 */ BattleEntry entries[1];       /**< Action queue (stride 0x14)*/
+    /* 0x05D8 */ u8 pad5D8[0x0844 - 0x05D8];
+    /* 0x0844 */ Struct_func_800A5210 Array844[1];
+    /* 0x085C */ u8 pad85C[0x0CE4 - 0x085C];
     /* 0x0CE4 */ BattleVec3u unkCE4[8];         /**< 8-entry x/y/z position table (read by @c func_8009A528). */
     /* 0x0D14 */ u8 unkD14[0x8];                /**< Hit-type byte table (8 entries). */
     /* 0x0D1C */ u8 padD1C[0x40];               /**< Misc state. */
@@ -388,11 +407,14 @@ typedef struct {
     /* 0x12E8 */ u8 unk12E8;                    /**< Misc state byte. */
     /* 0x12E9 */ u8 unk12E9;                    /**< Misc state byte (touched by 12EA-gated path). */
     /* 0x12EA */ u8 unk12EA;                    /**< Misc state gate byte. */
-    /* 0x12EB */ u8 pad12EB[0x1];               /**< Misc state. */
+    /* 0x12EB */ u8 unk12EB;                    /**< Misc state. */
     /* 0x12EC */ u8 unk12EC;                    /**< Misc state byte (init to 0xFF). */
     /* 0x12ED */ u8 unk12ED;                    /**< Misc state byte. */
     /* 0x12EE */ u8 unk12EE;                    /**< Misc state byte. */
-    /* 0x12EF */ u8 pad12EF[0x4];               /**< Misc state. */
+    /* 0x12EF */ u8 pad12EF;               /**< Misc state. */
+    /* 0x12EF */ u8 unk12F0;
+    /* 0x12EF */ u8 pad12F1;               /**< Misc state. */
+    /* 0x12EF */ u8 unk12F2;
     /* 0x12F3 */ u8 unk12F3;                    /* used as index in func_8009F824 */
     /* 0x12F4 */ u8 pad12F4;                    /**< Misc state. */
     /* 0x12F5 */ u8 unk12F5;                    /**< Misc state. */

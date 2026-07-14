@@ -574,7 +574,25 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A5004);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A517C);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A5210);
+void func_800A5210(s32 arg0) {
+    Struct_func_800A5210* temp_v1;
+
+    temp_v1 = &D_800ED148.Array844[D_800ED148.unk5C1++];
+    temp_v1->unk0 = arg0;
+    temp_v1->unk1 = D_800EE4C0.unk4;
+    temp_v1->unk2 = D_800EE4C0.flags5;
+    temp_v1->unk3 = D_800EE4C0.flags6;
+    temp_v1->unk4 = D_800EE4C0.unk1E;
+    temp_v1->unk6 = D_800EE4C0.unk0C;
+    temp_v1->unk8 = D_800EE4C0.unk10;
+    temp_v1->unkC = D_800EE4C0.unk7;
+    temp_v1->unkD = D_800EE4C0.unk08;
+    temp_v1->unkE = D_800EE4C0.unk09;
+    temp_v1->unkF = D_800EE4C0.unkA;
+    temp_v1->unk10 = D_800EE4C0.unk20;
+    temp_v1->unk12 = D_800EE4C0.unk14;
+    temp_v1->unk14 = D_800EE4C0.unk18;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A52E4);
 
