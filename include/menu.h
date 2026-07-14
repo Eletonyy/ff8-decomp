@@ -170,6 +170,21 @@ typedef struct {
 } JunctionGfEntry; /* 0x0C = 12 bytes */
 
 /**
+ * @brief One stat row of the junction slot-detail table (9 entries, HP..LCK).
+ *
+ * statOffset indexes the battle character stat block (g_battleChars /
+ * g_junctionPreview) in bytes; HP (entry 0) is a u16 stat, STR..LCK are u8.
+ * junctionSlot is the JunctionType index of the stat's junction slot.
+ */
+typedef struct {
+    /* 0x00 */ u16 statOffset;    /**< Byte offset of the stat within battle char data. */
+    /* 0x02 */ u16 labelId;       /**< Stat label string id (0x130-0x138). */
+    /* 0x04 */ u8 flags;          /**< 0x01 right value column, 0x20/0x40 percent transforms, 0x80 show max. */
+    /* 0x05 */ u8 junctionSlot;   /**< JunctionType slot index for this stat. */
+    /* 0x06 */ u8 pad06[2];       /**< Padding. */
+} JunctionSlotDetail; /* 0x08 = 8 bytes */
+
+/**
  * @brief Character display info for menu rendering (stride 32).
  *
  * Cached summary of character data used by the menu system.

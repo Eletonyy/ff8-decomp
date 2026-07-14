@@ -37,6 +37,7 @@ typedef struct {
     u8 pad0B[0x1C - 0xB];
 } GfCompatEntry;
 extern GfCompatEntry D_801EEDF0[];
+extern JunctionSlotDetail D_801EEAD4[]; /**< Junction slot-detail table (overlay rodata, 9 entries HP..LCK). */
 extern u8 D_801EEF40[];
 extern u8 D_801EEF9A;
 extern s32 getAbilityCategory(s32 id);
@@ -75,6 +76,7 @@ extern s32 func_801EF9AC(s32 renderCtx, s32 cursorY, s32 scale, s32 color);
 extern s32 func_8002FF34(s32 renderCtx, s32 cursorY, s32 stringId, s32 x, s32 y, s32 color);
 extern u8 *getAbilityName(s32 id);
 extern s32 func_801F79F8(s32 mask);
+extern u8 *func_80020EF4(s32 id);
 extern u32 D_801EEFC0[];
 extern s32 D_801EED00;
 extern AbilityListEntry D_801EEC50[];
@@ -101,6 +103,8 @@ extern u8 D_801EF1A5;                        /**< Panel-C preview stat value. */
 extern u8 D_800788E4;                        /**< Panel-C current ability flags. */
 extern u8 D_800788E5;                        /**< Panel-C current stat value. */
 extern s32 func_801F6AFC(s32 param);
+extern s32 func_801F7BAC(s32 val);           /**< menumain.c: percent-scale a stat value (Eva/Hit). */
+extern s32 func_801F7BE4(s32 val);           /**< menumain.c: secondary display transform. */
 extern u32 func_801F5104(u8 statByte);
 extern s32 func_801F510C(s32 statValue);     /**< Panel-D: format a raw stat value for display. */
 extern s32 func_801F5144(s32 statValue);     /**< Panel-D: nonzero if the elemental '%' glyph applies. */
@@ -4034,13 +4038,130 @@ s32 checkJunctionCompat(s32 currentMask, s32 availMask, s32 abilityBit) {
  * @param cursorY Current cursor Y position.
  * @param x Panel X position.
  * @param y Panel Y position.
- * @param slotType Slot type (1 = header/main stat slot, 0 = grid stat slot).
- * @param slotIdx Stat slot index (0-8).
+ * @param wideMode Nonzero to read the stat as u16 (HP row), zero for u8 stats.
+ * @param slotIdx Stat slot index (0-8, indexes D_801EEAD4).
  * @param charIdx Character index (0-7).
  * @param gfIdx GF index (-1 for default).
  * @return Updated cursor Y position.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderJunctionSlotDetail);
+s32 renderJunctionSlotDetail(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 wideMode, s32 slotIdx,
+                             s32 charIdx, s32 gfIdx) {
+    /* Regalloc: availFlags declared before entry — the pair spills, and the
+       declaration order sets their stack-slot order. */
+    s32 availFlags, gfFlags;
+    JunctionSlotDetail *entry;
+    s32 available;
+    s32 flags;
+    s32 baseVal, curVal;
+    s32 dispBase, dispCur;
+    s32 icon;
+    s32 magicId;
+    s32 slot;
+    u8 *name;
+    s32 xPos, yPos;
+    s32 val;
+    s32 magicBit;
+    s32 abilityBit;
+
+    entry = &D_801EEAD4[slotIdx];
+    abilityBit = 1 << slotIdx;
+    flags = entry->flags;
+    availFlags = g_junctionChars[charIdx].availFlags;
+
+    if (gfIdx >= 0) {
+        gfFlags = g_junctionGfTable[gfIdx].abilityFlags;
+    } else {
+        gfFlags = 0;
+    }
+    available = checkJunctionCompat(availFlags, gfFlags, abilityBit);
+
+    xPos = x;
+    cursorY = func_800300F8(renderCtx, cursorY, entry->labelId, xPos, y, g_menuColor,
+                            (!available) ? 0x1C0 : 0x80);
+
+    if (wideMode) {
+        /* Regalloc: the address goes through `name` (reused as scratch) — a fresh
+           pointer variable colors differently. */
+        name = (u8 *)&g_junctionPreview + D_801EEAD4[slotIdx].statOffset;
+        baseVal = *(u16 *)name;
+        name = (u8 *)&g_battleChars + D_801EEAD4[slotIdx].statOffset;
+        curVal = *(u16 *)name;
+    } else {
+        name = (u8 *)&g_junctionPreview + D_801EEAD4[slotIdx].statOffset;
+        /* Regalloc: preview byte staged through yPos (dead here) before baseVal. */
+        yPos = *name;
+        baseVal = yPos;
+        name = (u8 *)&g_battleChars + D_801EEAD4[slotIdx].statOffset;
+        curVal = *name;
+    }
+    xPos = x + 0x20;
+
+    slot = entry->junctionSlot;
+    magicId = g_gameState.chars[charIdx].junctions[slot];
+    yPos = y;
+    if (magicId != 0) {
+        /* Regalloc: magicBit computed inside the branch so the constant 1 stays
+           in the second test's block (delay-slot placement). */
+        magicBit = 1 << slot;
+        if (availFlags & magicBit) {
+            name = getMagicNamePtr(magicId);
+        } else {
+            name = (u8 *)renderInnerPanel(0x1A);
+        }
+    } else {
+        name = (u8 *)renderInnerPanel(0x1A);
+    }
+    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, available);
+
+    dispCur = curVal;
+    dispBase = baseVal;
+    if (flags & 0x40) {
+        dispBase = func_801F7BAC(baseVal);
+        dispCur = func_801F7BAC(curVal);
+    }
+    if (dispBase < dispCur) {
+        icon = 0x6E;
+        available = 2;
+    } else if (dispCur < dispBase) {
+        icon = 0x6D;
+        available = 3;
+    } else {
+        icon = 7;
+        available = icon;
+    }
+    xPos = x + 0x6A;
+    yPos = y + 2;
+    if (icon != 7) {
+        cursorY = func_800300F8(renderCtx, cursorY, icon, xPos, yPos, g_menuColor, (available * 64) + 2);
+    }
+
+    if (flags & 1) {
+        xPos = x + 0x90;
+    } else {
+        xPos = x + 0x98;
+    }
+    xPos = (y << 16) | (xPos & 0xFFFF);
+    val = curVal;
+    if (flags & 0x40) {
+        val = func_801F7BAC(val);
+    }
+    if (flags & 0x20) {
+        val = func_801F7BE4(val);
+    }
+    cursorY = drawColorByMenuPalette(renderCtx, cursorY, xPos, val, available);
+
+    if (flags & 0x80) {
+        if (entry->flags & 1) {
+            xPos = x + 0x90;
+        } else {
+            xPos = x + 0x98;
+        }
+        yPos = y + 2;
+        name = (u8 *)func_801F6AFC(0x14);
+        cursorY = func_8002C56C(renderCtx, cursorY, xPos, yPos, name, available);
+    }
+    return cursorY;
+}
 
 /**
  * @brief Render a junction ability slot with availability coloring.
@@ -4169,7 +4290,73 @@ s32 renderElemDefSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32
  * @param gfIdx GF index (-1 for default).
  * @return Updated cursor Y position.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderElemJunctionPanel);
+s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32 gfIdx) {
+    JunctionGfEntry *gfEntry;
+    JunctionMenuEntry *junc;
+    s32 available;
+    s32 charSlots, gfSlots, numSlots;
+    s32 magicId;
+    u8 *name;
+    s32 i;
+    s32 xPos, yPos;
+    /* Regalloc: keeping the name-column offset in a variable stops CSE from
+       merging the header's x + 0x30 with the later rows' (cf. renderJunctionHeader's
+       `seven`); combine folds the constant back, so the emitted code is identical. */
+    s32 nameCol = 0x30;
+
+    if (gfIdx < 0) {
+        gfEntry = &D_801EEDD0;
+    } else {
+        gfEntry = &g_junctionGfTable[gfIdx];
+    }
+    junc = &g_junctionChars[charIdx];
+
+    /* Elem-Atk-J header row. */
+    available = checkJunctionCompat(junc->availFlags, gfEntry->abilityFlags, 0x200);
+    xPos = x + 0x10;
+    yPos = y + 4;
+    cursorY = func_800300F8(renderCtx, cursorY, 0x12A, xPos, yPos, g_menuColor,
+                            (!available) ? 0x1C0 : 0x80);
+    magicId = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_ELEM];
+    if (magicId == 0) {
+        name = (u8 *)renderInnerPanel(0x1A);
+    } else {
+        name = getMagicNamePtr(magicId);
+    }
+    cursorY = func_801F0FEC(renderCtx, cursorY, x + nameCol, yPos, name, available);
+
+    /* Elem-Def-J rows: as many as the larger of the character's and GF's slot counts. */
+    charSlots = (junc->availFlags & 0x6800) ? junc->abilityCount[1] : 0;
+    gfSlots = (gfEntry->abilityFlags & 0x6800) ? gfEntry->ablSlotCount : 0;
+    numSlots = (charSlots < gfSlots) ? gfSlots : charSlots;
+
+    if (numSlots == 0) {
+        /* No defensive slots available — draw a single empty row. */
+        xPos = x + 0x10;
+        yPos = y + 0x11;
+        cursorY = func_800300F8(renderCtx, cursorY, 0x12B, xPos, yPos, g_menuColor, 0x1C0);
+        xPos = x + 0x30;
+        name = (u8 *)renderInnerPanel(0x1A);
+        cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, 0);
+    } else {
+        for (i = 0; i < numSlots; i++) {
+            available = checkJunctionCompat(i < charSlots, i < gfSlots, 1);
+            xPos = x + 0x10;
+            yPos = y + 0x11 + i * 13;
+            cursorY = func_800300F8(renderCtx, cursorY, 0x12B, xPos, yPos, g_menuColor,
+                                    (!available) ? 0x1C0 : 0x80);
+            xPos = x + 0x30;
+            magicId = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_ELEM_0 + i];
+            if (magicId == 0) {
+                name = (u8 *)renderInnerPanel(0x1A);
+            } else {
+                name = getMagicNamePtr(magicId);
+            }
+            cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, available);
+        }
+    }
+    return cursorY;
+}
 
 /**
  * @brief Render the status junction panel (ST-Atk-J + ST-Def-J).
@@ -4186,7 +4373,72 @@ INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderElemJunctionPanel);
  * @param gfIdx GF index (-1 for default).
  * @return Updated cursor Y position.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderStatusJunctionPanel);
+s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32 gfIdx) {
+    JunctionGfEntry *gfEntry;
+    JunctionMenuEntry *junc;
+    s32 available;
+    s32 charSlots, gfSlots, numSlots;
+    s32 magicId;
+    u8 *name;
+    s32 i;
+    s32 xPos, yPos;
+    /* Regalloc: see renderElemJunctionPanel — keeps CSE from merging the header's
+       x + 0x30 with the later rows'. */
+    s32 nameCol = 0x30;
+
+    if (gfIdx < 0) {
+        gfEntry = &D_801EEDD0;
+    } else {
+        gfEntry = &g_junctionGfTable[gfIdx];
+    }
+    junc = &g_junctionChars[charIdx];
+
+    /* ST-Atk-J header row. */
+    available = checkJunctionCompat(junc->availFlags, gfEntry->abilityFlags, 0x400);
+    xPos = x + 0x10;
+    yPos = y + 4;
+    cursorY = func_800300F8(renderCtx, cursorY, 0x128, xPos, yPos, g_menuColor,
+                            (!available) ? 0x1C0 : 0x80);
+    magicId = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_STATUS];
+    if (magicId == 0) {
+        name = (u8 *)renderInnerPanel(0x1A);
+    } else {
+        name = getMagicNamePtr(magicId);
+    }
+    cursorY = func_801F0FEC(renderCtx, cursorY, x + nameCol, yPos, name, available);
+
+    /* ST-Def-J rows: as many as the larger of the character's and GF's slot counts. */
+    charSlots = (junc->availFlags & 0x19000) ? junc->abilityCount[0] : 0;
+    gfSlots = (gfEntry->abilityFlags & 0x19000) ? gfEntry->cmdSlotCount : 0;
+    numSlots = (charSlots < gfSlots) ? gfSlots : charSlots;
+
+    if (numSlots == 0) {
+        /* No defensive slots available — draw a single empty row. */
+        xPos = x + 0x10;
+        yPos = y + 0x11;
+        cursorY = func_800300F8(renderCtx, cursorY, 0x129, xPos, yPos, g_menuColor, 0x1C0);
+        xPos = x + 0x30;
+        name = (u8 *)renderInnerPanel(0x1A);
+        cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, 0);
+    } else {
+        for (i = 0; i < numSlots; i++) {
+            available = checkJunctionCompat(i < charSlots, i < gfSlots, 1);
+            xPos = x + 0x10;
+            yPos = y + 0x11 + i * 13;
+            cursorY = func_800300F8(renderCtx, cursorY, 0x129, xPos, yPos, g_menuColor,
+                                    (!available) ? 0x1C0 : 0x80);
+            xPos = x + 0x30;
+            magicId = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_STATUS_0 + i];
+            if (magicId == 0) {
+                name = (u8 *)renderInnerPanel(0x1A);
+            } else {
+                name = getMagicNamePtr(magicId);
+            }
+            cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, available);
+        }
+    }
+    return cursorY;
+}
 
 /**
  * @brief Render the main stat junction panel (9 stat slots + ability slots).
@@ -4630,19 +4882,84 @@ void renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s3
 }
 
 /**
- * @brief Render a 3-row stat grid with command/ability icons.
+ * @brief Render the character's 3 equipped-command rows with junction highlighting.
  *
- * Calls func_801F79F8 for initial count, then iterates 3 rows rendering
- * stat name, icon, and optional highlighting via func_800300F8. Uses
- * func_801F1CE8 to check each stat entry's assignment state.
+ * Reads the character index from @c ctx[0x43], renders the character title (looked
+ * up via @c func_80020EF4 from @c g_charMenuInfo[charIdx].unk12), then loops over the
+ * 3 equipped commands (@c g_gameState.chars[charIdx].commands[i]). Each command is
+ * drawn with its category icon (@c getAbilityCategory) and name (@c getAbilityName),
+ * highlighted (color 1 instead of 7) when the junction slot being edited — queried
+ * per-category via @c func_801F79F8(mask) — matches the command id (0x14-0x18). The
+ * surrounding panel is closed via @c func_801EF9AC.
  *
- * @param ctx Junction menu context.
+ * @param ctx Junction menu context (byte 0x43 = character index).
  * @param renderCtx Render context.
- * @param cursorY Current cursor Y position.
+ * @param cursorY Current display-list cursor.
  * @param x Panel X position.
  * @param y Panel Y position (on stack).
+ * @return Updated display-list cursor from @c func_801EF9AC.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderStatRowGrid);
+s32 renderStatRowGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+    MenuDisplayConfig *cfg = &g_menuDisplayCfg;
+    /* FIXME: regalloc hack — the inline base-pointer assignment below (a pointer to the
+     * whole array, not an element) is what forces g_charMenuInfo's base into the register
+     * the original codegen used; a plain pointer or a separate assignment does not match. */
+    CharMenuInfo (*cmiTable)[];
+    s32 cmdId;
+    s32 highlight;
+    s32 i;
+    u8 *title;
+    s32 xPos;
+    s32 yPos;
+    s32 tmp;
+
+    func_801F79F8(0x10);
+    x += 0x18;
+    y += 0x48;
+    xPos = x + 0x21;
+    yPos = y + 9;
+    highlight = 7;
+    title = func_80020EF4((*(cmiTable = &g_charMenuInfo))[ctx[0x43]].unk12);
+    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, title, highlight);
+
+    for (i = 0; i < 3; i++) {
+        highlight = 7;
+        yPos = (y + 0x16) + (i * 0xD);
+        cmdId = g_gameState.chars[ctx[0x43]].commands[i];
+
+        tmp = func_801F79F8(2);
+        if (tmp && cmdId == 0x14) highlight = 1;
+        tmp = func_801F79F8(4);
+        if (tmp && cmdId == 0x15) highlight = 1;
+        tmp = func_801F79F8(8);
+        if (tmp && cmdId == 0x16) highlight = 1;
+        tmp = func_801F79F8(1);
+        if (tmp) {
+            if (cmdId == 0x18) highlight = 1;
+            if (cmdId == 0x17) highlight = 1;
+        }
+        tmp = func_801F79F8(0x10);
+        if (tmp && (u32)(cmdId - 0x14) >= 3 && cmdId != 0x18 && cmdId != 0x17) highlight = 1;
+
+        if (cmdId != 0) {
+            /* FIXME: regalloc hack — xPos is reused here as scratch for the category icon */
+            xPos = getAbilityCategory(cmdId) + 0xD8;
+            cursorY = func_8002FF34(renderCtx, cursorY, xPos, x + 0x13, yPos - 2, g_menuColor);
+            xPos = x + 0x21;
+            cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, getAbilityName(cmdId), highlight);
+        }
+        xPos = x + 7;
+        cursorY = func_8002FF34(renderCtx, cursorY, 0x7E, xPos, yPos + 2, g_menuColor);
+    }
+
+    cfg->iconType = 0x48;
+    cfg->iconSubType = 0;
+    cfg->x = x;
+    cfg->y = y;
+    cfg->w = 0xAE;
+    cfg->h = 0x48;
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+}
 
 /**
  * @brief Render the character's ability grid (icon + name per row).
