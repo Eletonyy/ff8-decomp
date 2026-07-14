@@ -1639,15 +1639,15 @@ s32 func_8009F350(s32 arg0) {
  * @param entityIdx Entity index.
  * @return Pending damage value divided by 4.
  */
-s32 func_8009F3F8(s32 entityIdx) { // entity[1]
-    u8 *base = (u8 *)&D_800ED148;
-    u8 *entity;
-    s32 val;
-    asm("");
-    entity = base + entityIdx * 0xD0;
-    val = *(u16 *)(entity + 0xDC);
-    *(u16 *)(entity + 0xDC) = 0;
-    return val >> 2;
+s32 func_8009F3F8(s32 arg0) { // entity[1]
+    BattleSystem* bs;
+    BattleEntity* temp_v1;
+    u16 temp_v0;
+    bs = &D_800ED148;
+    temp_v1 = &bs->entities[arg0];
+    temp_v0 = temp_v1[1].timers.bigTimer / 4; //timer is u16 instead of u8
+    temp_v1[1].timers.bigTimer = 0;
+    return temp_v0;
 }
 
 /*

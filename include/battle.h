@@ -230,8 +230,13 @@ typedef struct {
         } byteView;
         s32 initFlags;        /* 0x08-0x0B as a single word. */
     } slot8;
-    u8 timer;
-    u8 control;
+    union {
+        struct {
+            u8 timer;
+            u8 control;
+        } SplitTimer;
+        u16 bigTimer;
+    } timers;
     u8 pad0E;
     u8 entityRef;
     BattleEntityLinked *linkedPtr;

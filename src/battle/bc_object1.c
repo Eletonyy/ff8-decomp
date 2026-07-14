@@ -121,7 +121,7 @@ void func_80099FE8(void) {
     D_800ED148.unk5C3 = 1;
     D_800ED148.entities[0].state.word = 0;
     D_800ED148.unk12EC = 0xFF;
-    D_800ED148.entities[0].timer = 0xFF;
+    D_800ED148.entities[0].timers.SplitTimer.timer = 0xFF;
     g_battleConfig.result = BATTLE_RESULT_UNDETERMINED;
     D_800ED148.unk1319 = 0xFF;
 
@@ -718,14 +718,16 @@ void func_8009ACB4(void) {
  */
 void func_8009ACEC(void) {
     s32 i;
+    
     D_800ED148.unk12E8 = 2;
-    D_800ED148.entities[0].control = 0;
+    D_800ED148.entities[0].timers.SplitTimer.control = 0;
     D_800ED148.unk12FD = 1;
     D_800ED148.unk12EA = 0;
     D_800ED148.unk5C2 = 0;
+    
     for (i = 0; i < 3; i++) {
         func_800A6288(i);
-        D_800ED148.entities[i].flags &= 0x7FFFFFFF;
+        D_800ED148.entities[i].flags &= ~(1 << 31);
     }
     func_800A62B0();
 }
@@ -754,7 +756,7 @@ void func_8009AD7C(void) {
             break;
     }
     func_8009AB54(frames - 15);
-    D_800ED148.entities[0].timer = frames;
+    D_800ED148.entities[0].timers.SplitTimer.timer = frames;
 }
 
 /**
