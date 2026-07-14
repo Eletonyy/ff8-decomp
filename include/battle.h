@@ -159,6 +159,7 @@ typedef enum {
     CTRL_FLAG_02    = 0x02,
     CTRL_FLAG_10    = 0x10,
     CTRL_FLAG_20    = 0x20,
+    CTRL_FLAG_30    = 0x30,
     CTRL_FLAG_40    = 0x40,
     CTRL_FLAG_80    = 0x80,
     CTRL_FLAG_100   = 0x100
@@ -224,7 +225,8 @@ typedef struct {
         struct {
             u8 trigKey;     /* 0x08 */
             u8 unk09;       /* 0x09 */
-            u8 pad10[2];
+            u8 unkA;
+            u8 padB;
         } byteView;
         s32 initFlags;        /* 0x08-0x0B as a single word. */
     } slot8;
@@ -463,7 +465,7 @@ typedef struct {
     /* 0x0A3 */ BattleAnimSubEntry subEntries[3];  /**< 3 × 0x47 = 0xD5 bytes. */
 } BattleAnimTable;
 
-extern BattleAnimTable D_800EE9E8;
+
 
 /** @brief Battle magic slot entry (5 bytes). */
 typedef struct {
@@ -585,7 +587,7 @@ typedef struct {
 typedef struct {
     u8 pad00[0x08];
     u16 maxHp;          /* 0x08: max HP cap (used to restore hp on revive) */
-    u16 hp;             /* 0x0A: current HP */
+    s16 hp;             /* 0x0A: current HP */
 } BattleGfEntry;
 
 /** @brief GF battle level entry (12 bytes). */
@@ -606,7 +608,7 @@ typedef struct {
     /* 0x620 */ BattleLevelEntry levelEntries[16]; /* 16 × 12 bytes */
 } BattleCharState;/* 0x6E0 */
 
-extern BattleCharState g_battleChars;
+
 
 /**
  * @brief Battle/scene context struct pointed to by D_800D244C.
@@ -632,7 +634,7 @@ typedef struct {
 #define BSC_COLORTAG_IDX 1   /**< primList[1] @ +0x74 — renderBattleDisplayList color tag. */
 #define BSC_OTHEAD_IDX   3   /**< primList[3] @ +0x7C — main addPrim chain head. */
 
-extern BattleSceneCtx *D_800D244C;
+
 
 /**
  * @brief Spell record in the battle scene buffer (D_80078E00.spells, stride 60).
@@ -647,7 +649,8 @@ typedef struct {
     u8 pad2; 
     u8 magicId; /**< [0x4 (0x226)] Magic/spell ID byte (input to ability flag funcs) */
     u8 unk7;
-    u8 pad3[2];
+    u8 unk8;
+    u8 pad3;
     u8 unkA;
     u8 pad4;
     u32 unkC;
@@ -728,7 +731,8 @@ typedef struct {
     u8 pad2[4];
     u8 unk4;
     u8 unk5;
-    u8 pad3[2];
+    u8 pad3;
+    u8 unk7;
     u8 unk8;
     u8 unk9;
     u8 pad4;
@@ -923,13 +927,6 @@ typedef struct {
     /* 0x4CCC */ u8 unk_4CCC[14];
 } BattleSceneData;
 
-extern BattleSceneData D_80078E00;
-
-/** @brief Top-level battle config block (g_battleConfig at 0x...). */
-extern BattleConfig g_battleConfig;
-
-/** @brief The battle system block at @c 0x800ED148. */
-extern BattleSystem D_800ED148;
 
 /** @brief Battle slot data block at @c D_800ED158 (alias for D_800ED148+0x10). */
 typedef struct {
@@ -938,7 +935,7 @@ typedef struct {
     u8 unkD04[8];
 } BattleSlotData;
 
-extern BattleSlotData D_800ED158;
+
 
 /** @brief Sound-command queue slot returned by @c func_8009B134.
  *
@@ -950,35 +947,11 @@ typedef struct {
     U16Split unk2;
 } SoundCmd;
 
-/* ---------------------------------------------------------------- *
- *  Battle data symbols (battle overlay region).
- * ---------------------------------------------------------------- */
-
-extern s16 D_8005F11C;      /**< 0x8005F11C: misc sound state (used by bc_object1 / fe_object7). */
-extern u16 D_80082C0A;      /**< 0x80082C0A: input/effect flag word; bit 1 gates timed sound, bit 2 gates vibrate. */
-extern u8  D_80082C0F;      /**< 0x80082C0F: deferred trigger gate byte (non-zero suppresses processing). */
-extern u8 D_800ED157[];     /**< 0x800ED157: misc battle state. */
-extern u8 D_800ED1D8[];     /**< 0x800ED1D8: misc battle state. */
-extern BattleEntry D_800ED70C[];     /**< 0x800ED70C: entity status table (stride 20). */
-extern s32 D_800E19BC[];    /**< 0x800E19BC: CdRead (sector,length) pair table. */
-extern u8 D_800E19B4[];     /**< 0x800E19B4: misc state byte. */
 /** @brief 4-byte (x,z) position pair used by @c func_8009A74C battle slot layout tables. */
 typedef struct {
     u16 x;
     u16 z;
 } BattlePosXZ;
-
-extern u16 D_800E3CA4[];          /**< 0x800E3CA4: solo-slot (x,z) position (single entry, 2 halfwords). */
-extern BattlePosXZ D_800E3CA8[];  /**< 0x800E3CA8: 2-active-slot layout (2 entries). */
-extern BattlePosXZ D_800E3CB0[];  /**< 0x800E3CB0: 3-active-slot layout (3 entries). */
-extern u8 D_800EDE24[];     /**< 0x800EDE24: misc state. */
-extern u8 D_800EE24B[];     /**< 0x800EE24B: misc state byte. */
-extern u8 D_800EE28C[];     /**< 0x800EE28C: misc state. */
-extern u8 D_800EE449[];     /**< 0x800EE449: misc state byte. */
-extern u8 D_800EE456;     /**< 0x800EE456: status flags byte. */
-extern u8 D_800EE45D;
-extern u8 D_800EE46E;
-extern u8 D_800EE476;     /**< 0x800EE476: entity index latch. */
 
 /**
  * @brief Battle command queue / scratch buffer at @c 0x800EE4C0.
@@ -1013,34 +986,110 @@ typedef struct {
     /* 0x21 */ u8 pad21[0x1E];
 } BattleCmdBuf;     /* 64 bytes */
 
-extern BattleCmdBuf D_800EE4C0; /**< 0x800EE4C0: command queue buffer. */
-extern u8 D_800EE4C1;     /**< 0x800EE4C1: misc state byte. */
-extern u8 D_800EEBA8[];     /**< 0x800EEBA8: misc state. */
-extern u8 D_80098030[];
-extern u8 D_800EEBB0;     /**< 0x800EEBB0: misc state. */
-extern u8 D_800EEBB8;     /**< 0x800EEBB8: misc state byte. */
-extern u8 D_800EEBB9;     /**< 0x800EEBB9: misc state byte. */
-extern u8 D_800EEBBA;     /**< 0x800EEBBA: misc state byte. */
-extern u8 D_800EEBBB;     /**< 0x800EEBBB: misc state byte. */
-extern u8 D_800EEBBC;     /**< 0x800EEBBC: stat clamp threshold. */
-extern u8 D_800EEBC0;
-extern u8 D_800EEBBF;
-extern u16 D_800EEBC2;      /**< 0x800EEBC2: status code halfword. */
-extern s32 D_800EEBC4;      /**< 0x800EEBC4: status flags word (bit 0x4000000). */
-extern u8  D_800EE470;      /*   0x800EE470: used in func_8009F040*/
-extern u8  D_800EE471;
-extern u8  D_800EE4C4;
-extern u16 D_800EE4DC;
-extern s32 D_800EE4CC;
-extern u8  D_800EE469;
-extern u8  D_800EE466;
-extern u8  D_800EE461;
-extern s8  D_800EE448;
-extern s8  D_800EE43D;
-extern s16 D_800EE3DC;
-extern u8  D_800EEBBD;
-extern u8  D_800EEBBE;
-extern u16 D_80077E5C;
+/** @brief Animated 3D particle/effect entry processed by @c bc_object16.c. */
+typedef struct {
+    /* 0x00 */ u8  pad00[0xC];
+    /* 0x0C */ u16 frame;            /**< Frame counter, increments each tick. */
+    /* 0x0E */ s16 delay;            /**< Wait counter; skip render until 0 (used by @c func_800CDF3C). */
+    /* 0x10 */ s16 posX;             /**< Translation X. */
+    /* 0x12 */ s16 posY;             /**< Translation Y. */
+    /* 0x14 */ s16 posZ;             /**< Translation Z. */
+    /* 0x16 */ u16 cmdWord;          /**< Per-particle prim cmd word (used by @c func_800CDF3C). */
+    /* 0x18 */ u16 angle;            /**< Y rotation angle. */
+    /* 0x1A */ u16 angVel;           /**< Angular velocity (decays by >>4 each tick). */
+    /* 0x1C */ s16 sizeX;            /**< Scale X (also reused as Z). */
+    /* 0x1E */ s16 sizeXVel;         /**< Scale X velocity. */
+    /* 0x20 */ s16 sizeY;            /**< Scale Y. */
+    /* 0x22 */ s16 sizeYVel;         /**< Scale Y velocity (decays by >>3 each tick). */
+} ParticleEntry;
+
+/**
+ * @brief 0x58-byte primitive packet built by @c func_800CD35C and processed
+ *        by @c func_800CBC68.
+ *
+ * @c func_800CBC68 dispatches through @c dispatch (an offset list) and feeds
+ * the BG color triple at @c bgR/bgG/bgB into the GTE BG color registers
+ * (RBK/GBK/BBK at COP2 $21/$22/$23) after a @c <<4 scale. Most of the
+ * remaining bytes are still unmapped.
+ */
+typedef struct {
+    /* 0x00 */ s32 *dispatch;        /**< Pointer to dispatch list (handler addr at @c [0]). */
+    /* 0x04 */ u8  pad04[0x4];       /**< Tail pointer (set to dispatch+8 in some flag paths). */
+    /* 0x08 */ u8  bgR;              /**< GTE background red (loaded into RBK after @c <<4). */
+    /* 0x09 */ u8  bgG;              /**< GTE background green (loaded into GBK). */
+    /* 0x0A */ u8  bgB;              /**< GTE background blue (loaded into BBK). */
+    /* 0x0B */ u8  pad0B;
+    /* 0x0C */ s32 depth;            /**< Depth/sort key. */
+    /* 0x10 */ u8  pad10[0x4];
+    /* 0x14 */ s32 cmd;              /**< Packet command word (set to @c 0x3867 here). */
+    /* 0x18 */ u8  pad18[0x4];       /**< Cleared when flag bit @c 0x1000 unset. */
+    /* 0x1C */ s32 flags;            /**< Attribute/flag word (bits @c 0x1000 / @c 0x2000 read by @c func_800CBC68). */
+    /* 0x20 */ u8  pad20[0x38];      /**< Working pointer + remaining unmapped fields. */
+} EffectPrim; /* 0x58 */
+
+
+/* ---------------------------------------------------------------- *
+ *  Battle data symbols (battle overlay region).
+ * ---------------------------------------------------------------- */
+
+extern BattleCharState g_battleChars;
+extern BattleConfig    g_battleConfig;
+extern s16             D_8005F11C;
+extern u16             D_80077E5C;
+extern u8              D_800786D9;
+extern BattleSceneData D_80078E00;
+extern u16             D_80082C0A;
+extern u8              D_80082C0F;
+extern u8              D_80098030[];
+extern BattleSceneCtx* D_800D244C;
+extern u8              D_800E19B4[];
+extern s32             D_800E19BC[];
+extern u16             D_800E3CA4[];
+extern BattlePosXZ     D_800E3CA8[];
+extern BattlePosXZ     D_800E3CB0[];
+extern BattleSystem    D_800ED148;
+extern u8              D_800ED157[];
+extern BattleSlotData  D_800ED158;
+extern u8              D_800ED1D8[];
+extern BattleEntry     D_800ED70C[];
+extern u8              D_800EDE24[];
+extern u8              D_800EE24B[];
+extern u8              D_800EE28C[];
+extern s16             D_800EE3DC;
+extern s8              D_800EE43D;
+extern s8              D_800EE448;
+extern u8              D_800EE449[];
+extern u8              D_800EE456;
+extern u8              D_800EE45D;
+extern u8              D_800EE461;
+extern u8              D_800EE466;
+extern u8              D_800EE469;
+extern u8              D_800EE46E;
+extern u8              D_800EE470;
+extern u8              D_800EE471;
+extern u8              D_800EE476;
+extern BattleCmdBuf    D_800EE4C0;
+extern u8              D_800EE4C1;
+extern u8              D_800EE4C4;
+extern s32             D_800EE4CC;
+extern u16             D_800EE4DC;
+extern BattleAnimTable D_800EE9E8;
+extern u8              D_800EEBA8[];
+extern u8              D_800EEBB0;
+extern u8              D_800EEBB8;
+extern u8              D_800EEBB9;
+extern u8              D_800EEBBA;
+extern u8              D_800EEBBB;
+extern u8              D_800EEBBC;
+extern u8              D_800EEBBD;
+extern u8              D_800EEBBE;
+extern u8              D_800EEBBF;
+extern u8              D_800EEBC0;
+extern u16             D_800EEBC2;
+extern s32             D_800EEBC4;
+extern u8              D_800EEBC8;
+
+
 /* ---------------------------------------------------------------- *
  *  Battle-overlay function prototypes (battle internals).
  * ---------------------------------------------------------------- */
@@ -1118,7 +1167,7 @@ s32 func_800AF134(s32 entityIdx, u8 *outStat, u8 *outCount, s32 typeByte);
 u8 *func_800B04A0(s32 a0, u8 *buf);
 
 /** @brief Concatenate two parts into the @c D_800EEBE8 message buffer. */
-u8 *func_800B0248(s32 part1, s32 sepByte, s32 part2);
+u8* func_800B0248(u8* arg0, u8 arg1, u8* arg2);
 
 /** @brief Finalize the @c D_800EEBE8 message buffer. */
 u8 *func_800B02AC(u8 *buf);
@@ -1129,47 +1178,6 @@ void func_800A4320(s32 value);
 /** @brief Store @c getMenuString(id) result into @c D_800EE424. */
 void func_800A432C(s32 stringId);
 
-/** @brief Animated 3D particle/effect entry processed by @c bc_object16.c. */
-typedef struct {
-    /* 0x00 */ u8  pad00[0xC];
-    /* 0x0C */ u16 frame;            /**< Frame counter, increments each tick. */
-    /* 0x0E */ s16 delay;            /**< Wait counter; skip render until 0 (used by @c func_800CDF3C). */
-    /* 0x10 */ s16 posX;             /**< Translation X. */
-    /* 0x12 */ s16 posY;             /**< Translation Y. */
-    /* 0x14 */ s16 posZ;             /**< Translation Z. */
-    /* 0x16 */ u16 cmdWord;          /**< Per-particle prim cmd word (used by @c func_800CDF3C). */
-    /* 0x18 */ u16 angle;            /**< Y rotation angle. */
-    /* 0x1A */ u16 angVel;           /**< Angular velocity (decays by >>4 each tick). */
-    /* 0x1C */ s16 sizeX;            /**< Scale X (also reused as Z). */
-    /* 0x1E */ s16 sizeXVel;         /**< Scale X velocity. */
-    /* 0x20 */ s16 sizeY;            /**< Scale Y. */
-    /* 0x22 */ s16 sizeYVel;         /**< Scale Y velocity (decays by >>3 each tick). */
-} ParticleEntry;
-
-/**
- * @brief 0x58-byte primitive packet built by @c func_800CD35C and processed
- *        by @c func_800CBC68.
- *
- * @c func_800CBC68 dispatches through @c dispatch (an offset list) and feeds
- * the BG color triple at @c bgR/bgG/bgB into the GTE BG color registers
- * (RBK/GBK/BBK at COP2 $21/$22/$23) after a @c <<4 scale. Most of the
- * remaining bytes are still unmapped.
- */
-typedef struct {
-    /* 0x00 */ s32 *dispatch;        /**< Pointer to dispatch list (handler addr at @c [0]). */
-    /* 0x04 */ u8  pad04[0x4];       /**< Tail pointer (set to dispatch+8 in some flag paths). */
-    /* 0x08 */ u8  bgR;              /**< GTE background red (loaded into RBK after @c <<4). */
-    /* 0x09 */ u8  bgG;              /**< GTE background green (loaded into GBK). */
-    /* 0x0A */ u8  bgB;              /**< GTE background blue (loaded into BBK). */
-    /* 0x0B */ u8  pad0B;
-    /* 0x0C */ s32 depth;            /**< Depth/sort key. */
-    /* 0x10 */ u8  pad10[0x4];
-    /* 0x14 */ s32 cmd;              /**< Packet command word (set to @c 0x3867 here). */
-    /* 0x18 */ u8  pad18[0x4];       /**< Cleared when flag bit @c 0x1000 unset. */
-    /* 0x1C */ s32 flags;            /**< Attribute/flag word (bits @c 0x1000 / @c 0x2000 read by @c func_800CBC68). */
-    /* 0x20 */ u8  pad20[0x38];      /**< Working pointer + remaining unmapped fields. */
-} EffectPrim; /* 0x58 */
-
 /** @brief Battle slot stat/AI hook called by @c func_800A7518. */
 void func_800A554C(s32 idx);
 
@@ -1178,15 +1186,16 @@ void func_800A554C(s32 idx);
 void func_800A559C(s32 idx);
 
 /* --- Battle animation lifecycle --- */
-extern void activateBattleAnim(s32 idx);
+void activateBattleAnim(s32 idx);
 
 /* --- Spatial / matrix helpers (defined in field overlay) --- */
-extern void func_800406A4(u8 *p);
-extern void func_80040734(u8 *p);
-extern s32  func_80040DE4(SVECTOR *v, s32 *sxy, s32 *p, s32 *flag);
+void func_800406A4(u8 *p);
+void func_80040734(u8 *p);
+s32  func_80040DE4(SVECTOR *v, s32 *sxy, s32 *p, s32 *flag);
 
 /** @brief Reset battle-transition state (clears @c btl_color flags). */
-extern void initBattleTransition(void);
-extern void func_800D0608(void); /* bc_object17: overlay VSync handler (RENDER_OVERLAY) */
+void initBattleTransition(void);
+void func_800D0608(void); /* bc_object17: overlay VSync handler (RENDER_OVERLAY) */
+
 
 #endif /* BATTLE_H */

@@ -11,7 +11,6 @@ void decrementItemByType(s32);
 s32 func_800AA4E8(void);
 void func_800E1850(void);
 s32 func_8009B74C(s32, s32); /* overlay-conflict: also in field_engine */
-extern u8 D_800EEBC8[];
 void func_800A8578(void);
 
 /**
@@ -128,7 +127,7 @@ void func_800A6310(s32 a0) {
     u8 *entry;
 
     base[0x131E] = 1;
-    *(u8 *)D_800EEBC8 = a0;
+    D_800EEBC8 = a0;
     status = base + 0x5C4;
     base[0x1300] = 0;
     base[0x5C1] = 0;
