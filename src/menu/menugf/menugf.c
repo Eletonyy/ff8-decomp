@@ -140,7 +140,7 @@ void func_801E6C84(s32 a0, s32 a1) {
  * @param a2    X position
  * @param a3    Y position
  * @param arg4  GF index (stride 152 into g_gameState)
- * @param arg5  Parameter passed to getCharNamePtr
+ * @param arg5  Parameter passed to getCharName
  * @param arg6  Bit shift amount for ability flag test
  * @param arg7  Icon type (u16)
  * @param arg8  Extra parameter for func_801F0FEC
@@ -156,7 +156,7 @@ void func_801E6D20(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4, volatile unsigned i
     s32 result;
 
     new_var = arg5;
-    ret = getCharNamePtr(new_var);
+    ret = getCharName(new_var);
     new_var3 = 2;
     new_var5 = 0x4E8;
     base = (s32)g_gameState;

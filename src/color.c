@@ -1,4 +1,5 @@
 #include "common.h"
+#include "color.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
 #include "battle.h"
@@ -49,7 +50,7 @@ void drawColorDefault(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
  * @param a3 Fourth argument passed through.
  * @param arg4 Mode index; values >= 8 select the alternate color table.
  */
-void drawColorByMenuPalette(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
+s32 drawColorByMenuPalette(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
     s32 idx;
     if (arg4 >= 8) {
         arg4 -= 8;

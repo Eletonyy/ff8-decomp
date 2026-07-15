@@ -1233,4 +1233,7 @@ void initBattleTransition(void);
 void func_800D0608(void); /* bc_object17: overlay VSync handler (RENDER_OVERLAY) */
 
 
+void func_8002A2C4(u8 *, s32);
+s32 func_80037ADC(void);
+
 #endif /* BATTLE_H */

@@ -31,7 +31,6 @@ extern u8 D_801ECB60[];
 extern u8 g_gameState[];
 extern s32 func_801E2EA8(s32);
 extern s32 func_801EFFD4(void);
-extern s32 func_801F79F8(s32);
 extern void func_801E80D0();
 
 void func_801E4EA4(s32);

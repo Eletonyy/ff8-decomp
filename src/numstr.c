@@ -18,8 +18,8 @@ extern SfxSystem g_sfxEntries;
 extern u8 *getMagicNamePtr(s32 magicId);
 extern s32 getStatName(s32 statId);
 extern u8 *getBattleCharNameWrapper(s32 entityIdx);
-extern u8 *getCharNamePtrWrapper(s32 charId);
-extern u8 *getCharNamePtrWrapper2(s32 charId);
+extern u8 *getCharNameWrapper(s32 charId);
+extern u8 *getCharNameWrapper2(s32 charId);
 extern u8 getDigitBaseCode(void);
 extern void copyString(u8 *dst, u8 *src);
 extern s32 btlStrlen(u8 *str);
@@ -345,8 +345,8 @@ u8 *func_8002F610(s32 index, u8 *dst) {
  * Types 3, 4, and 0x10-0x18 share a sub-command dispatch based on cmd >> 8:
  *   hiCmd 0: getBattleCharNameWrapper(cmd & 0x1F) — direct name pointer
  *   hiCmd 3: Name lookup switch (65-entry jump table, 0x20-0x60):
- *     0x20-0x22 → getCharNamePtrWrapper2 (character name type A)
- *     0x30-0x3F → getCharNamePtrWrapper (character name type B)
+ *     0x20-0x22 → getCharNameWrapper2 (character name type A)
+ *     0x30-0x3F → getCharNameWrapper (character name type B)
  *     0x40 → D_800773A8, 0x5C → D_80077E74, 0x60 → D_800773B4
  *     default  → D_80052A30
  *   hiCmd 4: SFX numeric format switch (40-entry jump table, 0x20-0x47):

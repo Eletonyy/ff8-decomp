@@ -442,4 +442,8 @@ extern void func_80036B90(s32 charIndex);
  *         flags to the active-party char records. */
 extern void func_80036D44(s32 mask);
 
+extern CharacterData D_80077808[];
+extern u8 D_800788E4;
+extern u8 D_800788E5;
+
 #endif /* GAMESTATE_H */
