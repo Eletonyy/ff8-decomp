@@ -14,8 +14,6 @@ extern void byteToHexString(s32 byte, u8 *buf);
 extern void advanceAndDecodeMessage(s32 *stream, s32 arg1);
 extern void decodeMessageDirect(s32 *stream, s32 arg1);
 
-
-/* Number/string formatters referenced by menu overlays. */
 u8 *func_8002F548(u8 *src);
 void func_8002F294(s32 value, u8 *dst, u8 digits);
 void func_8002F2EC(u8 *dst, s32 base, u8 digits, u8 width);

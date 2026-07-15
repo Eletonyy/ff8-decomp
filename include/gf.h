@@ -323,10 +323,6 @@ typedef struct {
     u8 pad2A[0x12];           /**< +0x2A: Remaining fields (total 60 bytes). */
 } MagicJunctionData; /* 60 bytes */
 
-
-
-
-/* GF/junction data and helpers referenced by menu overlays. */
 extern MagicJunctionData g_magicJunctionData[];
 s32 getGfAvailabilityMask(void);
 u8 *func_80020EF4(s32);

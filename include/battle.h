@@ -1189,9 +1189,6 @@ extern s32  func_80040DE4(SVECTOR *v, s32 *sxy, s32 *p, s32 *flag);
 extern void initBattleTransition(void);
 extern void func_800D0608(void); /* bc_object17: overlay VSync handler (RENDER_OVERLAY) */
 
-
-
-/* Battle helpers referenced by menu overlays. */
 void func_8002A2C4(u8 *, s32);
 s32 func_80037ADC(void);
 
