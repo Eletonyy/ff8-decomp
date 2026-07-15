@@ -51,4 +51,9 @@ extern u32  getBattleAllocBase(void);
 extern s32  getBattleAllocSize(void);
 extern void flipBattleOtBuffer(void);
 
+
+/* Referenced by menujnc2 (menu-junction) — owned by this unit. */
+extern s32 func_800300F8(s32 renderCtx, s32 x, s32 w, s32 y, s32 color, s32 menuColor, s32 selColor);
+extern s32 drawColorByMenuPalette(s32 renderCtx, s32 cursorY, s32 packedXY, s32 value, s32 color);
+
 #endif

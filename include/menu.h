@@ -2,6 +2,7 @@
 #define MENU_H
 
 #include "common.h"
+#include "character.h"
 
 /**
  * @brief Display/rendering configuration for menu panels.
@@ -55,7 +56,7 @@ typedef struct {
     /* 0x04 */ u16 currentHp;             /**< Cached character HP. */
     /* 0x06 */ u16 junctedGfs;            /**< Cached juncted GFs bitmask. */
     /* 0x08 */ u8 abilityCount[2];        /**< Ability counts per sub-slot. */
-    /* 0x0A */ u8 unk0A;                  /**< Unknown. */
+    /* 0x0A */ u8 abilityRows;            /**< Ability rows to render (was GfCompatEntry.count @D_801EEDF0). */
     /* 0x0B */ u8 gfCompat;               /**< GF compatibility byte. */
     /* 0x0C */ u8 commandsBackup[2][4];   /**< Command backups (2 sub-slots × 4). */
     /* 0x14 */ u8 abilitiesBackup[2][4];  /**< Ability backups (2 sub-slots × 4). */
@@ -213,5 +214,25 @@ extern CharMenuInfo g_charMenuInfo[];
  * specific contexts where the original code used signed-byte arithmetic.
  */
 extern u8 D_800780AB;
+
+
+/* Referenced by menujnc2 (menu-junction) — owned by this unit. */
+extern s32 func_801F776C(s32 magicId, s32 slotType);
+extern u16 D_801FA3C8[];
+extern u8 D_801EF1B0[];
+extern s32 func_801F5F60(s32 renderCtx, s32 result, s32 color, s32 arg3);
+extern s32 func_801F5F30(s32 renderCtx, s32 result, s32 x, s32 y, s32 color, s32 count);
+extern s32 func_801F3FB4(u16 statusFlags);
+extern u32 func_801F0FEC(s32 renderCtx, s32 cursorY, s32 x, s32 height, u8 *namePtr, s32 gfInfo);
+extern s32 func_801F65F0(s32 renderCtx, s32 cursorY, s32 x, s32 y, CharacterData *chr, CharMenuInfo *info);
+extern s32 func_801F79F8(s32 mask);
+extern u8 D_801EF1A4;                        /**< Panel-C preview ability flags. */
+extern u8 D_801EF1A5;                        /**< Panel-C preview stat value. */
+extern s32 func_801F6AFC(s32 param);
+extern s32 func_801F7BAC(s32 val);           /**< menumain.c: percent-scale a stat value (Eva/Hit). */
+extern s32 func_801F7BE4(s32 val);           /**< menumain.c: secondary display transform. */
+extern u32 func_801F5104(u8 statByte);
+extern s32 func_801F510C(s32 statValue);     /**< Panel-D: format a raw stat value for display. */
+extern s32 func_801F5144(s32 statValue);     /**< Panel-D: nonzero if the elemental '%' glyph applies. */
 
 #endif /* MENU_H */

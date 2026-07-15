@@ -5,109 +5,11 @@
 #include "gf.h"
 #include "ability_list.h"
 
-/** @brief Auto-junction priority tables (Atk/Mag/Def), each a 0xFF-terminated slot type list. */
-extern u8 *g_autoJunctionPriority[];
+#include "btl_color.h"
+#include "btl_entity.h"
+#include "menujnc2.h"
 
-extern u8 D_801EEAC0[];
-extern JunctionMenuEntry g_junctionChars[];
-extern JunctionGfEntry g_junctionGfTable[];
-extern u8 g_junctionBackup[20];
-extern s16 D_801EEB28[];
-extern BattleCharData g_junctionPreview;
-extern u8 g_junctionMenuActive;
-extern MenuDisplayConfig g_menuDisplayCfg;
-extern s32 g_menuColor;
-extern void junctionMenuUpdate();
-extern void renderJunctionMenu();
-extern s32 g_assignedAbilities[];
-extern s32 g_availableAbilities[];
-extern u8 D_801EEF10[];
-extern u8 D_801EEF38;
 
-/** @brief Per-character GF ability-grid descriptor (stride 0x1C). Only @c count (row count) is currently understood. */
-typedef struct {
-    u8 pad00[0xA];
-    u8 count;         /**< Number of ability rows to render for this character. */
-    u8 pad0B[0x1C - 0xB];
-} GfCompatEntry;
-extern GfCompatEntry D_801EEDF0[];
-extern JunctionSlotDetail D_801EEAD4[]; /**< Junction slot-detail table (overlay rodata, 9 entries HP..LCK). */
-extern u8 D_801EEF40[];
-extern u8 D_801EEF9A;
-extern s32 getAbilityCategory(s32 id);
-extern u8 g_characterAbilities[];
-extern u8 D_801EEED0[];
-extern s32 func_801F776C(s32 magicId, s32 slotType);
-extern s32 getAbilityEntryDesc(s32 arg);
-extern void playSoundEffect(s32 soundId);
-extern void sendSpuCommand(s32 soundId);
-extern s32 getAbilityDesc(s32 arg);
-extern u16 D_801FA3C8[];
-extern s16 D_801EEB20;
-extern s16 D_801EEB22[];
-extern s16 D_801EEB30[];
-extern s16 D_801EEB38[];
-extern u8 D_801EED04;
-extern u8 D_801EF1B0[];
-extern s16 D_801EEB1C[];
-extern void func_801EFBB4(s32 renderCtx, s32 param, void *callback);
-extern s32 renderMagicItemCallback();
-extern s32 func_801F5F60(s32 renderCtx, s32 result, s32 color, s32 arg3);
-extern s32 func_801F5F30(s32 renderCtx, s32 result, s32 x, s32 y, s32 color, s32 count);
-extern JunctionGfEntry D_801EEDD0;
-extern s32 func_800300F8(s32 renderCtx, s32 x, s32 w, s32 y, s32 color, s32 menuColor, s32 selColor);
-extern s32 func_801F3FB4(u16 statusFlags);
-extern u8 *getCharName(s32 charId);
-extern u32 func_801F0FEC(s32 renderCtx, s32 cursorY, s32 x, s32 height, u8 *namePtr, s32 gfInfo);
-extern u8 *getMagicNamePtr(s32 id);
-extern s32 drawColorByMenuPalette(s32 renderCtx, s32 cursorY, s32 packedXY, s32 value, s32 color);
-extern CharacterData D_80077808[]; /**< g_gameState.chars viewed at its absolute address (0x80077808). */
-extern s32 func_801F65F0(s32 renderCtx, s32 cursorY, s32 x, s32 y, CharacterData *chr, CharMenuInfo *info);
-extern void decodeMessage(u8 *src, u8 *dst, s32 maxLen);
-extern u8 *func_8002F548(u8 *src);
-extern void func_8002C734(s32 value);
-extern s32 func_801EF9AC(s32 renderCtx, s32 cursorY, s32 scale, s32 color);
-extern s32 func_8002FF34(s32 renderCtx, s32 cursorY, s32 stringId, s32 x, s32 y, s32 color);
-extern u8 *getAbilityName(s32 id);
-extern s32 func_801F79F8(s32 mask);
-extern u8 *func_80020EF4(s32 id);
-extern u32 D_801EEFC0[];
-extern s32 D_801EED00;
-extern AbilityListEntry D_801EEC50[];
-extern u8 D_801EEDE0[];
-
-extern MagicJunctionData g_magicJunctionData[];
-extern s32 popcount(s32 flags);
-extern s32 getGfAvailabilityMask(void);
-
-/** @brief Stat-table layout entry: grid cell + label string ID (stride 8). */
-typedef struct {
-    /* 0x00 */ u8 col;        /**< Grid column index. */
-    /* 0x01 */ u8 row;        /**< Grid row index. */
-    /* 0x02 */ u16 statOffset;/**< Byte offset of the stat within char data (panel B). */
-    /* 0x04 */ u16 labelId;   /**< Stat label string ID. */
-    /* 0x06 */ u8 pad_06[2];
-} StatTableEntry; /* 0x8 bytes */
-
-extern StatTableEntry D_801EEBA8[];          /**< Panel-A stat-table layout (13 entries). */
-extern StatTableEntry D_801EEB40[];          /**< Panel-B stat-table layout (13 entries). */
-extern StatTableEntry D_801EEC10[];          /**< Panel-C stat-table layout (8 entries). */
-extern u8 D_801EF1A4;                        /**< Panel-C preview ability flags. */
-extern u8 D_801EF1A5;                        /**< Panel-C preview stat value. */
-extern u8 D_800788E4;                        /**< Panel-C current ability flags. */
-extern u8 D_800788E5;                        /**< Panel-C current stat value. */
-extern s32 func_801F6AFC(s32 param);
-extern s32 func_801F7BAC(s32 val);           /**< menumain.c: percent-scale a stat value (Eva/Hit). */
-extern s32 func_801F7BE4(s32 val);           /**< menumain.c: secondary display transform. */
-extern u32 func_801F5104(u8 statByte);
-extern s32 func_801F510C(s32 statValue);     /**< Panel-D: format a raw stat value for display. */
-extern s32 func_801F5144(s32 statValue);     /**< Panel-D: nonzero if the elemental '%' glyph applies. */
-extern u8 *func_80020F84(s32 fontId);
-extern void func_8002F294(s32 value, u8 *dst, u8 digits);
-extern void func_8002F2EC(u8 *dst, s32 base, u8 digits, u8 width);
-extern void func_8002A2C4(u8 *str, s32 fmtResult);
-extern s32 func_8002C56C(s32 renderCtx, s32 cursorY, s32 x, s32 y, u8 *str, s32 color);
-extern s32 func_80037ADC(void);
 
 /** @brief Junction menu layout constants (pixel positions). */
 #define JNC_ROW_HEIGHT      13   /**< Row height in pixels. */
@@ -231,12 +133,7 @@ end:
  * @param flagMask Available magic bitmask.
  * @return Updated flagMask with selected slot's bit cleared.
  */
-s32 autoJunctionSlot(charIdx, magicSlots, slotType, flagMask)
-    s32 charIdx;
-    MagicSlot *magicSlots;
-    s32 slotType;
-    s32 flagMask;
-{
+s32 autoJunctionSlot(s32 charIdx, MagicSlot *magicSlots, s32 slotType, s32 flagMask) {
     s32 bestScore = 0;
     s32 bestMagicId = bestScore; /* Regalloc: chained init for prologue save order */
     MagicJunctionData *tableBase;
@@ -336,7 +233,7 @@ s32 renderJunctionSlots(s32 charIdx, s32 abilityList, s32 slotType, s32 pos) {
         count = g_junctionChars[charIdx].abilityCount[1];
         if (count > 0) {
             do {
-                pos = autoJunctionSlot(charIdx, abilityList, slotType);
+                pos = autoJunctionSlot(charIdx, abilityList, slotType, pos);
                 count--;
             } while (count > 0);
         }
@@ -344,12 +241,12 @@ s32 renderJunctionSlots(s32 charIdx, s32 abilityList, s32 slotType, s32 pos) {
         count = g_junctionChars[charIdx].abilityCount[0];
         if (count > 0) {
             do {
-                pos = autoJunctionSlot(charIdx, abilityList, slotType);
+                pos = autoJunctionSlot(charIdx, abilityList, slotType, pos);
                 count--;
             } while (count > 0);
         }
     } else {
-        pos = autoJunctionSlot(charIdx, abilityList, slotType);
+        pos = autoJunctionSlot(charIdx, abilityList, slotType, pos);
     }
     return pos;
 }
@@ -574,13 +471,13 @@ void buildAssignedAbilities(s32 charIdx) {
     }
 
     i = 0;
-    if (g_junctionChars[charIdx].unk0A != 0) {
+    if (g_junctionChars[charIdx].abilityRows != 0) {
         do {
             s32 abl = g_gameState.chars[charIdx].abilities[i];
             if (abl != 0) {
                 g_assignedAbilities[abl / 32] |= (1 << (abl & 0x1F));
             }
-        } while (++i < g_junctionChars[charIdx].unk0A);
+        } while (++i < g_junctionChars[charIdx].abilityRows);
     }
 }
 
@@ -729,19 +626,19 @@ s32 getJunctionSlotFlags(s32 charIdx, s32 slotOffset) {
     charIdx = D_801EEAC0[slotOffset];
     switch (charIdx) {
         case 10:
-            return flags & 0x400;
+            return flags & JNC_AVAIL_STATUS_ATK;
         case 15:
         case 16:
         case 17:
         case 18:
-            return flags & 0x19000;
+            return flags & (JNC_AVAIL_STATUS_DEF | JNC_AVAIL_STATUS_DEF_X2 | JNC_AVAIL_STATUS_DEF_X4);
         case 9:
-            return flags & 0x200;
+            return flags & JNC_AVAIL_ELEM_ATK;
         case 11:
         case 12:
         case 13:
         case 14:
-            return flags & 0x6800;
+            return flags & (JNC_AVAIL_ELEM_DEF | JNC_AVAIL_ELEM_DEF_X2 | JNC_AVAIL_ELEM_DEF_X4);
         case 0:
         case 1:
         case 2:
@@ -957,7 +854,7 @@ void validateAbilitySlots(s32 charIdx) {
         }
     }
 
-    maxSlots = g_junctionChars[charIdx].unk0A;
+    maxSlots = g_junctionChars[charIdx].abilityRows;
     {
         u8 *src = g_gameState.chars[charIdx].abilities;
         u8 *dst = buf;
@@ -1182,7 +1079,7 @@ void rebuildJunctionFlags(s32 charIdx) {
     g_junctionChars[charIdx].availFlags = flags;
     g_junctionChars[charIdx].abilityCount[0] = cmdSlots;
     g_junctionChars[charIdx].abilityCount[1] = ablSlots;
-    g_junctionChars[charIdx].unk0A = maxAbl;
+    g_junctionChars[charIdx].abilityRows = maxAbl;
 }
 
 /**
@@ -1207,7 +1104,7 @@ void initJunctionChars(s32 mask) {
         g_junctionChars[i].junctedGfs = 0;
         g_junctionChars[i].abilityCount[0] = 0;
         g_junctionChars[i].abilityCount[1] = 0;
-        g_junctionChars[i].unk0A = 0;
+        g_junctionChars[i].abilityRows = 0;
         g_junctionChars[i].gfCompat = 0;
 
         pairs = (u8 *)g_gameState.chars[i].magic;
@@ -1403,12 +1300,22 @@ void compactCommandSlots(s32 charIdx) {
         return;
     }
 
+    /*
+     * Clear the just-compacted DEF_ELEM slots, i.e.
+     * g_gameState.chars[charIdx].junctions[JUNCTION_DEF_ELEM_0 + 0..3].
+     * The compiler's base/offset split (base + charIdx*stride + index, store
+     * at the junctions offset, walked with q--) is not reproduced by plain
+     * struct-field or struct-pointer access (both verified to change codegen),
+     * so the pointer walk is matching-required. The stride and store offset
+     * are struct-derived (sizeof / offsetof-style) rather than magic literals,
+     * so they track any GameState/CharacterData layout change.
+     */
     i = 3;
     {
         s32 base = (s32)&g_gameState;
-        u8 *q = (u8 *)(base + charIdx * 152 + 3);
+        u8 *q = (u8 *)(base + charIdx * sizeof(CharacterData) + 3);
         do {
-            *(u8 *)((s32)q + 0x4F7) = 0;
+            *(u8 *)((s32)q + (s32)&((GameState *)0)->chars[0].junctions[JUNCTION_DEF_ELEM_0]) = 0;
             q--;
         } while (--i >= 0);
     }
@@ -1463,12 +1370,18 @@ void compactAbilitySlots(s32 charIdx) {
         return;
     }
 
+    /*
+     * Clear the just-compacted DEF_STATUS slots, i.e.
+     * g_gameState.chars[charIdx].junctions[JUNCTION_DEF_STATUS_0 + 0..3].
+     * Same matching-required pointer walk as compactCommandSlots above; stride
+     * and store offset are struct-derived (sizeof / offsetof-style).
+     */
     i = 3;
     {
         s32 base = (s32)&g_gameState;
-        u8 *q = (u8 *)(base + charIdx * 152 + 3);
+        u8 *q = (u8 *)(base + charIdx * sizeof(CharacterData) + 3);
         do {
-            *(u8 *)((s32)q + 0x4FB) = 0;
+            *(u8 *)((s32)q + (s32)&((GameState *)0)->chars[0].junctions[JUNCTION_DEF_STATUS_0]) = 0;
             q--;
         } while (--i >= 0);
     }
@@ -1772,7 +1685,7 @@ void junctionMenuUpdate(JunctionMenuCtx *ctx) {
     s32 var_a2;
     s32 idx;
 
-    if ((D_801EED04 != 0) && (func_801F1200() != 0)) {
+    if ((g_junctionMenuActive != 0) && (func_801F1200() != 0)) {
         if (ctx->state != 0x49) {
             ctx->state = 0x49;
         }
@@ -2175,7 +2088,7 @@ dispatch:
             break;
         }
         case 0x17:
-            ctx->unk5F = g_junctionChars[ctx->charIdx].unk0A + 3;
+            ctx->unk5F = g_junctionChars[ctx->charIdx].abilityRows + 3;
             *statePtr = 0x18;
             /* fallthrough */
         case 0x18:
@@ -3170,7 +3083,7 @@ dispatch:
         }
 
     ctx->unk5A = getJunctionCapabilities(ctx->charIdx);
-    if (D_801EED04 != 0) {
+    if (g_junctionMenuActive != 0) {
         func_801F1DB0(ctx->unk3A);
     }
 }
@@ -3188,12 +3101,12 @@ s32 encodeBattleAbilityFlags(BattleCharData *charData) {
     s32 result = charData->abilityValue & 0x7F;
     s32 flags = charData->abilityFlags;
 
-    if (flags & 0x1) result |= 0x80;
-    if (flags & 0x4) result |= 0x100;
-    if (flags & 0x8) result |= 0x200;
-    if (flags & 0x200) result |= 0x400;
-    if (flags & 0x4000) result |= 0x800;
-    if (flags & 0x8000) result |= 0x1000;
+    if (flags & BTL_ABL_HIT_J)      result |= JNC_AVAIL_HIT;
+    if (flags & BTL_ABL_LCK_J)      result |= JNC_AVAIL_LCK;
+    if (flags & BTL_ABL_ELEM_ATK_J) result |= JNC_AVAIL_ELEM_ATK;
+    if (flags & BTL_ABL_ST_ATK_J)   result |= JNC_AVAIL_STATUS_ATK;
+    if (flags & BTL_ABL_ELEM_DEF_J) result |= JNC_AVAIL_ELEM_DEF;
+    if (flags & BTL_ABL_ST_DEF_J)   result |= JNC_AVAIL_STATUS_DEF;
     return result;
 }
 
@@ -4959,7 +4872,7 @@ s32 renderStatRowGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
  * @brief Render the character's ability grid (icon + name per row).
  *
  * Reads the character index from @c ctx[0x43] and renders up to
- * @c D_801EEDF0[charIdx].count ability rows for that character. Each nonzero
+ * @c g_junctionChars[charIdx].abilityRows ability rows for that character. Each nonzero
  * ability slot draws a category icon (via @c getAbilityCategory) and the
  * ability name (via @c getAbilityName), plus a fixed separator glyph; the
  * running display-list pointer is threaded through @c func_8002FF34 /
@@ -4988,7 +4901,7 @@ s32 renderGfCompatGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     x += 0x18;
     y += 0x90;
     i = 0;
-    if (D_801EEDF0[charIdx].count != 0) {
+    if (g_junctionChars[charIdx].abilityRows != 0) {
         do {
             y2 = y + 9 + i * 13;
             gf = g_gameState.chars[charIdx].abilities[i];
@@ -4999,7 +4912,7 @@ s32 renderGfCompatGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
             }
             result = func_8002FF34(renderCtx, result, 0x7E, x + 0x22, y2 + 2, g_menuColor);
             i++;
-        } while (i < D_801EEDF0[charIdx].count);
+        } while (i < g_junctionChars[charIdx].abilityRows);
     }
     cfg->iconType = 0x5E;
     cfg->iconSubType = 0;

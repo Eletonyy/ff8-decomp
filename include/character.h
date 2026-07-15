@@ -247,4 +247,8 @@ typedef struct {
 #define PARTY_SLOT_COUNT 3
 #define PARTY_SLOT_EMPTY 0xFF
 
+
+/* Referenced by menujnc2 (menu-junction) — owned by this unit. */
+extern u8 g_characterAbilities[];
+
 #endif /* CHARACTER_H */

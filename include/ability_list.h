@@ -37,4 +37,10 @@ typedef struct {
  */
 extern s32 func_800369CC(s32 gfIndex, AbilityListEntry *output, s32 includeJunction);
 
+
+/* Referenced by menujnc2 (menu-junction) — owned by this unit. */
+extern s32 getAbilityEntryDesc(s32 arg);
+extern s32 getAbilityDesc(s32 arg);
+extern u8 *getAbilityName(s32 id);
+
 #endif /* ABILITY_LIST_H */
