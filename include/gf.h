@@ -324,13 +324,5 @@ typedef struct {
 } MagicJunctionData; /* 60 bytes */
 
 
-/* Referenced by menujnc2 (menu-junction) — owned by this unit. */
-extern u8 *func_80020EF4(s32 id);
-extern s32 getGfAvailabilityMask(void);
-extern u8 *func_80020F84(s32 fontId);
-
-
-/* Referenced by menujnc2 (menu-junction). */
-extern MagicJunctionData g_magicJunctionData[];
 
 #endif /* GF_H */

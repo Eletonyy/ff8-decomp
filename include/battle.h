@@ -1190,13 +1190,4 @@ extern void initBattleTransition(void);
 extern void func_800D0608(void); /* bc_object17: overlay VSync handler (RENDER_OVERLAY) */
 
 
-/* Referenced by menujnc2 (menu-junction) — owned by this unit. */
-extern u8 *func_8002F548(u8 *src);
-extern s32 func_8002FF34(s32 renderCtx, s32 cursorY, s32 stringId, s32 x, s32 y, s32 color);
-extern void func_8002F294(s32 value, u8 *dst, u8 digits);
-extern void func_8002F2EC(u8 *dst, s32 base, u8 digits, u8 width);
-extern void func_8002A2C4(u8 *str, s32 fmtResult);
-extern s32 func_8002C56C(s32 renderCtx, s32 cursorY, s32 x, s32 y, u8 *str, s32 color);
-extern s32 func_80037ADC(void);
-
 #endif /* BATTLE_H */

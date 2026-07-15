@@ -443,9 +443,4 @@ extern void func_80036B90(s32 charIndex);
 extern void func_80036D44(s32 mask);
 
 
-/* Referenced by menujnc2 (menu-junction) — owned by this unit. */
-extern CharacterData D_80077808[]; /**< g_gameState.chars viewed at its absolute address (0x80077808). */
-extern u8 D_800788E4;                        /**< Panel-C current ability flags. */
-extern u8 D_800788E5;                        /**< Panel-C current stat value. */
-
 #endif /* GAMESTATE_H */

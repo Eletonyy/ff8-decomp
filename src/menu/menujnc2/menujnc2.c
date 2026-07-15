@@ -5,9 +5,53 @@
 #include "gf.h"
 #include "ability_list.h"
 
-#include "btl_color.h"
-#include "btl_entity.h"
 #include "menujnc2.h"
+
+/*
+ * Foreign symbols owned by other units (menumain/gamestate/battle/...). Kept
+ * as local externs: their signatures differ per unit (the "same symbol,
+ * different types" debt), so they cannot yet share a single owner-header decl.
+ */
+extern s32 func_801F776C(s32 magicId, s32 slotType);
+extern u16 D_801FA3C8[];
+extern u8 D_801EF1B0[];
+extern s32 func_801F5F60(s32 renderCtx, s32 result, s32 color, s32 arg3);
+extern s32 func_801F5F30(s32 renderCtx, s32 result, s32 x, s32 y, s32 color, s32 count);
+extern s32 func_801F3FB4(u16 statusFlags);
+extern u32 func_801F0FEC(s32 renderCtx, s32 cursorY, s32 x, s32 height, u8 *namePtr, s32 gfInfo);
+extern s32 func_801F65F0(s32 renderCtx, s32 cursorY, s32 x, s32 y, CharacterData *chr, CharMenuInfo *info);
+extern s32 func_801F79F8(s32 mask);
+extern u8 D_801EF1A4;                        /**< Panel-C preview ability flags. */
+extern u8 D_801EF1A5;                        /**< Panel-C preview stat value. */
+extern s32 func_801F6AFC(s32 param);
+extern s32 func_801F7BAC(s32 val);           /**< menumain.c: percent-scale a stat value (Eva/Hit). */
+extern s32 func_801F7BE4(s32 val);           /**< menumain.c: secondary display transform. */
+extern u32 func_801F5104(u8 statByte);
+extern s32 func_801F510C(s32 statValue);     /**< Panel-D: format a raw stat value for display. */
+extern s32 func_801F5144(s32 statValue);     /**< Panel-D: nonzero if the elemental '%' glyph applies. */
+extern CharacterData D_80077808[]; /**< g_gameState.chars viewed at its absolute address (0x80077808). */
+extern u8 D_800788E4;                        /**< Panel-C current ability flags. */
+extern u8 D_800788E5;                        /**< Panel-C current stat value. */
+extern u8 g_characterAbilities[];
+extern u8 *func_80020EF4(s32 id);
+extern s32 getGfAvailabilityMask(void);
+extern u8 *func_80020F84(s32 fontId);
+extern MagicJunctionData g_magicJunctionData[];
+extern s32 getAbilityEntryDesc(s32 arg);
+extern s32 getAbilityDesc(s32 arg);
+extern u8 *getAbilityName(s32 id);
+extern u8 *func_8002F548(u8 *src);
+extern s32 func_8002FF34(s32 renderCtx, s32 cursorY, s32 stringId, s32 x, s32 y, s32 color);
+extern void func_8002F294(s32 value, u8 *dst, u8 digits);
+extern void func_8002F2EC(u8 *dst, s32 base, u8 digits, u8 width);
+extern void func_8002A2C4(u8 *str, s32 fmtResult);
+extern s32 func_8002C56C(s32 renderCtx, s32 cursorY, s32 x, s32 y, u8 *str, s32 color);
+extern s32 func_80037ADC(void);
+extern s32 func_800300F8(s32 renderCtx, s32 x, s32 w, s32 y, s32 color, s32 menuColor, s32 selColor);
+extern s32 drawColorByMenuPalette(s32 renderCtx, s32 cursorY, s32 packedXY, s32 value, s32 color);
+extern void playSoundEffect(s32 soundId);
+extern void sendSpuCommand(s32 soundId);
+extern void func_8002C734(s32 value);
 
 
 
