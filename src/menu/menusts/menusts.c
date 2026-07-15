@@ -24,7 +24,6 @@ typedef struct {
 extern MenustsStatusEntry D_801E9964[]; /**< Status table (8-byte entries). */
 extern u8 D_801E99AC[]; /**< Coordinate/string base data. */
 
-extern void *func_801F6AFC(s32 a0);
 extern s32 func_8002FF34(s32 displayList, s32 ot, s32 textId, s32 x, s32 y, s32 color);
 extern s32 func_8002C56C(s32 displayList, s32 ot, s32 x, s32 y, void *data, s32 size);
 extern s32 func_801EF9AC(s32 displayList, s32 ot, s32 mode, s32 color);

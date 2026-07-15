@@ -32,7 +32,6 @@ extern s32  func_801F0BB0(void);
 extern void func_801F7BEC(s32 cfg);
 extern void func_801F23D0(s32 a0, s32 size, void *buf);
 extern void *func_801F6AA4(s32 id);
-extern void *func_801F6AFC(s32 id);
 extern void initSfxPlayback(s32 ch, u8 *buf);
 extern void sendSpuCommand(s32 cmd);
 extern void setSfxPitch(s32 ch, s32 pitch);

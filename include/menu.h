@@ -217,6 +217,7 @@ extern u8 D_800780AB;
 
 
 /* menumain-owned shared symbols (canonical signatures from menumain.c). */
+s32 func_801F6AFC(s32);
 u32 func_801F0FEC(s32, s32, s32, s32, s32, s32);
 s32 func_801F3FB4(s32);
 s32 func_801F5104(s32);

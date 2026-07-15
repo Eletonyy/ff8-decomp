@@ -14,7 +14,6 @@
  */
 extern u8 D_801EF1A4;                        /**< Panel-C preview ability flags. */
 extern u8 D_801EF1A5;                        /**< Panel-C preview stat value. */
-extern s32 func_801F6AFC(s32 param);
 extern s32 func_801F7BAC(s32 val);           /**< menumain.c: percent-scale a stat value (Eva/Hit). */
 extern s32 func_801F7BE4(s32 val);           /**< menumain.c: secondary display transform. */
 extern s32 func_801F510C(s32 statValue);     /**< Panel-D: format a raw stat value for display. */
