@@ -29,15 +29,6 @@ typedef union {
     struct { u8 lo; u8 hi; } b;
 } U16Split;
 
-/*
- * ---- Codegen-steering devices ----------------------------------------
- * The macros in this block emit NO instructions of their own; they exist
- * only to steer the compiler's register allocation for matching. Deleting
- * one never changes program behavior, only codegen — which is the project's
- * working definition of a matching hack. Use only when a clean source shape
- * is not (yet) known; every use is a re-attack candidate.
- */
-
 /* No-op barrier to control register allocation for decomp matching.
    Compiles to nothing; safe to remove if byte-matching is not needed. */
 #ifdef __GNUC__
@@ -51,10 +42,11 @@ typedef union {
 /* Clamp value to [lo, hi] range. */
 #define CLAMP(val, lo, hi) ((val) < (lo) ? (lo) : (val) > (hi) ? (hi) : (val))
 
-/* Absolute value. Uses `<=` (rather than `<`) on the sign test so the
+/* Absolute value. Uppercase so it does not shadow libc/builtin abs() (some
+ * TUs need that form). Uses `<=` rather than `<` on the sign test so the
  * compiler emits `blez` for the branch, matching the original codegen
  * (`x == 0` falls into the negation arm, which still yields 0). */
-#define abs(x) ((x) <= 0 ? -(x) : (x))
+#define ABS(x) ((x) <= 0 ? -(x) : (x))
 
 /*
  * Set/clear bit @c bitPos in a 64-bit flag set stored as @c u32 flags[2].
@@ -72,17 +64,6 @@ typedef union {
 #define KEEP_ALIVE(x) asm volatile("" :: "r"(x))
 
 /*
- * ---- Handwritten-code reconstruction ---------------------------------
- * The macros below are the opposite of the steering devices above: they
- * ARE the program. Each reproduces instructions the original developers
- * wrote as assembly inside otherwise-compiled functions ($gp scratchpad
- * juggling, the 4-instruction addPrim splice). Deleting one removes real
- * behavior. Register names appearing in these bodies/parameters are
- * transcription of the original author's (often arbitrary) scratch-register
- * picks, recovered from the bytes — not compiler coercion.
- */
-
-/*
  * GP stack allocation — allocates `size` bytes from the GP-relative area,
  * returning the current GP in `ptr`. Used for temporary scratchpad structs.
  */
@@ -96,11 +77,7 @@ typedef union {
 
 /*
  * Combined GP save+set scratchpad macro — saves $gp to `saved`, then points
- * $gp at the scratchpad (0x1F800300). The scratchpad address is an ordinary
- * compiler-materialized operand: gcc emits the lui/ori pair itself and picks
- * the staging register from what is free at the site ($a2 in the btl_anim /
- * btl_sfx functions, $a3 in menujnc2's decodeMenuString) — the register
- * variance between sites is the allocator's, not a human choice.
+ * $gp at the scratchpad (0x1F800300). The compiler materializes the address.
  */
 #define GP_SAVE_SCRATCH(saved) \
     asm volatile("addu %0, $gp, $zero" : "=r"(saved)); \

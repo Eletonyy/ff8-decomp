@@ -1015,7 +1015,7 @@ DR_AREA *func_800A3320(P_TAG *ot, DR_AREA *prim, RECT *rect) {
  * @param out   Destination rectangle.
  */
 void func_800A3398(s32 scale, RECT *in, RECT *out) {
-    if (abs(scale) == 0x1000) {
+    if (ABS(scale) == 0x1000) {
         *out = *in;
     } else {
         s32 x = in->x;

@@ -5,12 +5,6 @@
 #include "gf.h"
 #include "ability_list.h"
 
-/* This file calls the PsyQ libc abs(), which gcc expands inline via the
-   `abssi2` pattern (bgez / move / negu dst,dst). The common.h abs macro
-   (blez compare form) would shadow it, so drop the macro for this TU. */
-#undef abs
-extern int abs(int);
-
 /** @brief Auto-junction priority tables (Atk/Mag/Def), each a 0xFF-terminated slot type list. */
 extern u8 *g_autoJunctionPriority[];
 
