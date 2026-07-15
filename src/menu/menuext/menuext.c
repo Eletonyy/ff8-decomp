@@ -451,10 +451,8 @@ extern CharRecord D_80077808[];
 extern s32 g_menuColor;
 
 extern u32 func_801F57A4(s32 a0);
-extern s32 func_801F3FB4(s32 a0);
 extern u8 *getCharName(s32 charId);
 extern u8 *getMagicNamePtr(s32 magicId);
-extern u32 func_801F0FEC(s32 renderCtx, s32 cursorY, s32 x, s32 y, u8 *text, s32 attr);
 extern s32 drawColorByMenuPalette(s32 renderCtx, s32 cursorY, s32 packedYX, s32 byteVal, s32 attr);
 extern s32 func_801EF9AC(s32 renderCtx, s32 cursorY, s32 width, s32 color);
 

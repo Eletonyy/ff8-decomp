@@ -7,11 +7,9 @@
 extern s32 getMagicNamePtr(s32 a0);
 extern u8 *getCharName(s32 a0);
 extern void copyString(s32 a0, s32 a1);
-extern s32 func_801F79F8(s32 a0);
 extern u8 D_801EC814[];
 
 extern void decodeMessage(s32 itemId, u8 *dst, s32 arg3);
-extern s32 func_801F0FEC(void *ctx, s32 arg1, s32 x, s32 y, u8 *str, s32 arg6);
 
 typedef struct {
     u8 flags;

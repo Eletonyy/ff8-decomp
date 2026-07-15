@@ -8,7 +8,6 @@ typedef struct {
     u16 padOrType;    /**< Type/position byte. */
 } StatusEntry;
 
-extern u16 D_801FA3C8[];
 extern s32 D_801E961C[];
 extern StatusEntry D_801E95CC[];
 extern BattleCharData D_801E9EE4;

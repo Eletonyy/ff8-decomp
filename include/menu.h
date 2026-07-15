@@ -215,4 +215,23 @@ extern CharMenuInfo g_charMenuInfo[];
 extern u8 D_800780AB;
 
 
+
+/* menumain-owned shared symbols (canonical signatures from menumain.c). */
+u32 func_801F0FEC(s32, s32, s32, s32, s32, s32);
+s32 func_801F3FB4(s32);
+s32 func_801F5104(s32);
+s32 func_801F510C(s32);
+s32 func_801F5144(s32);
+s32 func_801F5F30(s32, s32, s32, s32, s32, s32);
+s32 func_801F5F60(s32, s32, s32, s32);
+s32 func_801F65F0(s32, s32, s32, s32, s32, s32);
+s32 func_801F776C(s32, s32);
+s32 func_801F79F8(s32);
+s32 func_801F7BAC(s32);
+s32 func_801F7BE4(s32);
+extern u8 D_801EF1A4;
+extern u8 D_801EF1A5;
+extern u8 D_801EF1B0[];
+extern u16 D_801FA3C8[];
+
 #endif /* MENU_H */

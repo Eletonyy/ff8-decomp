@@ -3,7 +3,6 @@
 #include "gamestate.h"
 #include "menuabl.h"
 
-extern u16           D_801FA3C8[];
 extern AbilityEntry  D_8007CEE0[];
 
 extern void decodeMessage(u8 *src, u8 *dst, s32 mode);
@@ -16,12 +15,9 @@ extern s32  func_8002FF34(s32 ctx, s32 a1, s32 a2, s32 x, s32 y, s32 color);
 extern s32  func_801EF9AC(s32 dl, s32 ot, s32 opaque, s32 color);
 extern s32  func_801EFBB4(s32 dl, s32 ot, s32 callback);
 extern void func_801F0A78(s32 ctx, s32 idx, s32 unused, s32 x, s32 y);
-extern s32  func_801F0FEC(s32 ctx, s32 state, s32 x, s32 y, u8 *buf, s32 mode);
 extern s32  func_801F179C(s32 tickCb, s32 drawCb);
 extern void func_801F1AFC(void);
 extern void func_801F1B10(void);
-extern s32  func_801F5F30(s32 dl, s32 ot, s32 x, s32 y, s32 color, s32 pageStart);
-extern s32  func_801F5F60(s32 dl, s32 ot, s32 color, s32 arrows);
 extern s32  func_801F72B4(void);
 
 extern u8 D_8007809A;
