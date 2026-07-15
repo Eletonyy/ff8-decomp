@@ -379,6 +379,12 @@ typedef struct {
 } Struct_func_800A5210; // 24 bytes
 
 typedef struct {
+    u8 unk0;
+    u8 pad1[5];
+    u16 unk6[3];
+} BattleUnkDE8;    /* 12 bytes */
+
+typedef struct {
     /* 0x0000 */ BattleEntity entities[7];      /**< 7 × 0xD0 = 0x5B0. Index 0 is also the header proxy. */
     /* 0x05B0 */ u8 pad5B0[0x10];               /**< Pre-control padding. */
     /* 0x05C0 */ u8 unk5C0;                     /**< Action queue head index (used by func_800B06DC). */
@@ -393,7 +399,9 @@ typedef struct {
     /* 0x0D14 */ u8 unkD14[0x8];                /**< Hit-type byte table (8 entries). */
     /* 0x0D1C */ u8 padD1C[0x40];               /**< Misc state. */
     /* 0x0D5C */ u8 unkD5C[0x8];                /**< Per-trigger flag array (8 entries). */
-    /* 0x0D64 */ u8 padD64[0x39F];              /**< Misc state. */
+    /* 0x0D64 */ u8 padD64[0x84];
+    /* 0x0DE8 */ BattleUnkDE8 arrayDE8[3][11][2]; /**< (792 bytes: 0x318) size tied to func_800A5948 */
+    /* 0x1100 */ u8 pad1100[3];
     /* 0x1103 */ TaskLink taskLinks[16];        /**< Task queue link table (16 × 4 bytes). */
     /* 0x1143 */ u8 pad1143[1];                 /**< Pad to taskData. */
     /* 0x1144 */ TaskEntry taskData[16];        /**< Task queue data slots (16 × 16 bytes). */

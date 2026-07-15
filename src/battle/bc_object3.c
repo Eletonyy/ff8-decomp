@@ -1,4 +1,4 @@
-#include "common.h"
+    #include "common.h"
 #include "battle.h"
 
 extern u8 D_800786D8[];
@@ -689,7 +689,18 @@ top:
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A589C);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A5948);
+void func_800A5948(s32 arg0, s32 arg1) {
+    s32 i;
+    s32 j;
+
+    for (i = 0; i < 2; i++) {
+        D_800ED148.arrayDE8[arg1][arg0][i].unk0 = 255;
+        
+        for (j = 2; j > -1; j--) {
+            D_800ED148.arrayDE8[arg1][arg0][i].unk6[j] = 0;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A59AC);
 
