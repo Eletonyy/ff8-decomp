@@ -21,4 +21,8 @@ extern void setSfxEntryField34(s32 idx, s32 val);
 extern void setSfxEntryField38(s32 idx, s32 val);
 extern void setSfxEntryVolume(s32 idx, s32 val);
 
+
+/* Glyph-string renderer referenced by menu overlays. */
+s32 func_8002C56C(s32 renderCtx, s32 cursorY, s32 x, s32 y, u8 *str, s32 color);
+
 #endif

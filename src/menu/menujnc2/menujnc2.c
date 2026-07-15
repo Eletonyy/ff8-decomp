@@ -2,6 +2,11 @@
 #include "menu.h"
 #include "gamestate.h"
 #include "battle.h"
+#include "btl_color.h"
+#include "btl_entity.h"
+#include "game.h"
+#include "numstr.h"
+#include "color.h"
 #include "gf.h"
 #include "ability_list.h"
 
@@ -12,29 +17,6 @@
  * as local externs: their signatures differ per unit (the "same symbol,
  * different types" debt), so they cannot yet share a single owner-header decl.
  */
-extern CharacterData D_80077808[]; /**< g_gameState.chars viewed at its absolute address (0x80077808). */
-extern u8 D_800788E4;                        /**< Panel-C current ability flags. */
-extern u8 D_800788E5;                        /**< Panel-C current stat value. */
-extern u8 g_characterAbilities[];
-extern u8 *func_80020EF4(s32 id);
-extern s32 getGfAvailabilityMask(void);
-extern u8 *func_80020F84(s32 fontId);
-extern MagicJunctionData g_magicJunctionData[];
-extern s32 getAbilityEntryDesc(s32 arg);
-extern s32 getAbilityDesc(s32 arg);
-extern u8 *getAbilityName(s32 id);
-extern u8 *func_8002F548(u8 *src);
-extern s32 func_8002FF34(s32 renderCtx, s32 cursorY, s32 stringId, s32 x, s32 y, s32 color);
-extern void func_8002F294(s32 value, u8 *dst, u8 digits);
-extern void func_8002F2EC(u8 *dst, s32 base, u8 digits, u8 width);
-extern void func_8002A2C4(u8 *str, s32 fmtResult);
-extern s32 func_8002C56C(s32 renderCtx, s32 cursorY, s32 x, s32 y, u8 *str, s32 color);
-extern s32 func_80037ADC(void);
-extern s32 func_800300F8(s32 renderCtx, s32 x, s32 w, s32 y, s32 color, s32 menuColor, s32 selColor);
-extern s32 drawColorByMenuPalette(s32 renderCtx, s32 cursorY, s32 packedXY, s32 value, s32 color);
-extern void playSoundEffect(s32 soundId);
-extern void sendSpuCommand(s32 soundId);
-extern void func_8002C734(s32 value);
 
 
 

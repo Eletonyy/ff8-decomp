@@ -325,4 +325,11 @@ typedef struct {
 
 
 
+
+/* GF/junction data and helpers referenced by menu overlays. */
+extern MagicJunctionData g_magicJunctionData[];
+s32 getGfAvailabilityMask(void);
+u8 *func_80020EF4(s32);
+u8 *func_80020F84(s32);
+
 #endif /* GF_H */
