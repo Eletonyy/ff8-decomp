@@ -12,12 +12,6 @@
  * as local externs: their signatures differ per unit (the "same symbol,
  * different types" debt), so they cannot yet share a single owner-header decl.
  */
-extern u8 D_801EF1A4;                        /**< Panel-C preview ability flags. */
-extern u8 D_801EF1A5;                        /**< Panel-C preview stat value. */
-extern s32 func_801F7BAC(s32 val);           /**< menumain.c: percent-scale a stat value (Eva/Hit). */
-extern s32 func_801F7BE4(s32 val);           /**< menumain.c: secondary display transform. */
-extern s32 func_801F510C(s32 statValue);     /**< Panel-D: format a raw stat value for display. */
-extern s32 func_801F5144(s32 statValue);     /**< Panel-D: nonzero if the elemental '%' glyph applies. */
 extern CharacterData D_80077808[]; /**< g_gameState.chars viewed at its absolute address (0x80077808). */
 extern u8 D_800788E4;                        /**< Panel-C current ability flags. */
 extern u8 D_800788E5;                        /**< Panel-C current stat value. */
