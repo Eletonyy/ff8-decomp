@@ -2,14 +2,14 @@
 #include "character.h"
 #include "gamestate.h"
 #include "gf.h"
+#include "menu.h"
 
 extern s32 getMagicNamePtr(s32 a0);
-extern s32 getCharNamePtr(s32 a0);
+extern u8 *getCharName(s32 a0);
 extern void copyString(s32 a0, s32 a1);
-extern s32 func_801F79F8(s32 a0);
 extern u8 D_801EC814[];
-extern u8 g_menuDisplayCfg[];
-extern void func_801EB1A0();
+
+extern void decodeMessage(s32 itemId, u8 *dst, s32 arg3);
 
 typedef struct {
     u8 flags;
@@ -37,7 +37,7 @@ extern void func_801F5400(s32 a0);
  * - `0x0A 0x26`: substitutes a numeric value derived from @p spellId via
  *   getMagicNamePtr, converted to a string by copyString.
  * - `0x0A 0x27`: substitutes the name of the character identified by
- *   g_gameState.chars[@p charIdx].characterId, looked up via getCharNamePtr
+ *   g_gameState.chars[@p charIdx].characterId, looked up via getCharName
  *   and converted to a string by copyString.
  * Unrecognized escape sequences are silently skipped.
  * The output string is null-terminated.
@@ -75,8 +75,8 @@ esc26:
             }
 esc27:
             {
-                s32 val = getCharNamePtr(g_gameState.chars[charIdx].characterId);
-                copyString((s32)local_buf, val);
+                u8 *val = getCharName(g_gameState.chars[charIdx].characterId);
+                copyString((s32)local_buf, (s32)val);
             }
 copy_check:
             while (*p)
@@ -559,7 +559,21 @@ INCLUDE_ASM("asm/ovl/menumgc/nonmatchings/menumgc", func_801EB0F4);
  * @param arg4 Additional Y offset from caller (5th stack arg, at sp+0xC0).
  * @return Updated display state from func_801F0FEC, or a1 if item is null.
  */
-INCLUDE_ASM("asm/ovl/menumgc/nonmatchings/menumgc", func_801EB1A0);
+s32 func_801EB1A0(void *ctx, s32 arg1, s32 index, s32 a3_unused, s32 xExtra) {
+    u8 buf[0x80];
+    s32 result = arg1;
+    s32 itemId = ((s32 *)g_menuDisplayCfg.dataPtr)[index];
+
+    if (itemId != 0) {
+        s32 deltaX = xExtra + 0xA;
+        s32 x = g_menuDisplayCfg.x + deltaX;
+        s32 y = g_menuDisplayCfg.y + 9;
+
+        decodeMessage(itemId, buf, -1);
+        result = func_801F0FEC(ctx, arg1, x, y, buf, 7);
+    }
+    return result;
+}
 
 /**
  * @brief Register a list-style menu display callback with header config.
@@ -575,7 +589,7 @@ INCLUDE_ASM("asm/ovl/menumgc/nonmatchings/menumgc", func_801EB1A0);
  * @param arg4 Y2 position for menu display.
  */
 void func_801EB250(u8 *a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
-    u8 *cfg = g_menuDisplayCfg;
+    u8 *cfg = (u8 *)&g_menuDisplayCfg;
 
     *(u8 *)(cfg + 0x10) = 0x55;
     *(u8 *)(cfg + 0x11) = 0;

@@ -112,7 +112,6 @@ extern u8 D_801E4EC2;
 /* ======================================================================== */
 
 /** @brief CLUT lookup table, indexed by an angle/64 (shared across menu overlays). */
-extern u16 D_801FA3C8[];
 
 /** @brief Buttons-with-repeat alias of g_menuDisplayCfg.inputRepeat. */
 extern u16 D_801FAB1C;
@@ -124,11 +123,8 @@ extern u8 D_801FABC7;
 /* External menu functions (defined in menumain overlay)                    */
 /* ======================================================================== */
 
-extern u32 func_801F0FEC(s32, s32, s32, s32, s32, s32);
 extern s32 func_801EF9AC(s32, s32, s32, s32);
 extern u32 func_801EFBB4(s32, s32, s32);
-extern u32 func_801F5F60(s32, s32, s32, s32);
-extern s32 func_801F6AFC(s32);
 extern s32 func_801F7A54(void);
 extern s32 drawColorByMenuPalette(s32, s32, s32, s32, s32);
 extern void decodeMessage(u8 *, u8 *, s32);

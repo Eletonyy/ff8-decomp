@@ -662,7 +662,7 @@ void func_8009C070(void) {
        global one. @c v is assigned in the condition so the lazy @c abs() compares
        a plain variable (a narrow operand would split the compare in two). */
     if (D_800C4D38 == 0x32 && D_800C4D3C == 0 && D_800D23D8[0] == 0 &&
-        (v = angle, abs(v) < 0x241)) {
+        (v = angle, ABS(v) < 0x241)) {
         func_800ACD38(&localMtx);
         func_8003FD84(&localMtx, &localA, &localB);
     } else {

@@ -8,7 +8,6 @@ extern u8 D_801E7ADC;
 extern u8 D_801E69BC;
 extern u8 D_801E71BC;
 extern u8 D_801E79BC;
-extern u16 D_801FA3C8;
 extern MenuDisplayConfig g_menuDisplayCfg;
 extern u8 D_801FABD4;
 extern s32 g_menuColor;

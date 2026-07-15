@@ -247,4 +247,5 @@ typedef struct {
 #define PARTY_SLOT_COUNT 3
 #define PARTY_SLOT_EMPTY 0xFF
 
+
 #endif /* CHARACTER_H */

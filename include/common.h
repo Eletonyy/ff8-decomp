@@ -42,10 +42,11 @@ typedef union {
 /* Clamp value to [lo, hi] range. */
 #define CLAMP(val, lo, hi) ((val) < (lo) ? (lo) : (val) > (hi) ? (hi) : (val))
 
-/* Absolute value. Uses `<=` (rather than `<`) on the sign test so the
+/* Absolute value. Uppercase so it does not shadow libc/builtin abs() (some
+ * TUs need that form). Uses `<=` rather than `<` on the sign test so the
  * compiler emits `blez` for the branch, matching the original codegen
  * (`x == 0` falls into the negation arm, which still yields 0). */
-#define abs(x) ((x) <= 0 ? -(x) : (x))
+#define ABS(x) ((x) <= 0 ? -(x) : (x))
 
 /*
  * Set/clear bit @c bitPos in a 64-bit flag set stored as @c u32 flags[2].
@@ -75,14 +76,12 @@ typedef union {
     asm volatile("addi $gp, $gp, -%0" : : "i"(size))
 
 /*
- * Combined GP save+set scratchpad macro — saves $gp to `saved`, sets $gp to
- * scratchpad (0x1F800300) via $a2. Used by btl_anim display list functions.
+ * Combined GP save+set scratchpad macro — saves $gp to `saved`, then points
+ * $gp at the scratchpad (0x1F800300). The compiler materializes the address.
  */
 #define GP_SAVE_SCRATCH(saved) \
     asm volatile("addu %0, $gp, $zero" : "=r"(saved)); \
-    asm volatile("lui $a2, 0x1F80"); \
-    asm volatile("ori $a2, $a2, 0x0300"); \
-    asm volatile("addu $gp, $a2, $zero")
+    asm volatile("addu $gp, %0, $zero" : : "r"((u8 *)0x1F800300))
 
 /*
  * Combined GP get return + restore macro — captures $gp (scratchpad pointer)
