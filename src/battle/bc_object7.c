@@ -254,7 +254,7 @@ mid:
  * @param a2 Second part data.
  * @return Pointer to D_800EEBE8 buffer.
  */
-u8 *func_800B0248(s32 a0, s32 a1, s32 a2) {
+u8 *func_800B0248(u8* a0, u8 a1, u8* a2) {
     u8 *buf = D_800EEBE8;
     s32 offset = func_800B0204(buf, a0, 0, (u8)a1);
     func_800B0204(buf + offset, a2, offset, 0);

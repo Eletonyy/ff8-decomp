@@ -630,7 +630,7 @@ void func_8009AB54(s32 a0) {
  * func_800AED9C, func_800AEB50.
  */
 void func_8009AB98(void) {
-    if (D_800ED148.entities[0].unk0 == 0) {
+    if (D_800ED148.entities[0].stateMachine.unk0 == 0) {
         func_800AECD4();
         func_800AED30();
         func_800AEC04();
@@ -674,7 +674,7 @@ void func_8009AC14(void) {
  * func_800A30E4 (animation), and func_800A79A0 (state reset).
  */
 void func_8009AC34(void) {
-    *(s32 *)&D_800ED148.entities[0].unk0 = 0;
+    *(s32 *)&D_800ED148.entities[0].stateMachine.unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
@@ -688,7 +688,7 @@ void func_8009AC34(void) {
  * calls func_800AF8A4 with it.
  */
 void func_8009AC68(void) {
-    D_800ED148.entities[0].unk0 = 0;
+    D_800ED148.entities[0].stateMachine.unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
@@ -770,7 +770,7 @@ void func_8009AD7C(void) {
 void func_8009AE08(s32 cmd) {
     switch (cmd) {
         case 5:
-            *(s32 *)&D_800ED148.entities[0].unk0 = 1;
+            *(s32 *)&D_800ED148.entities[0].stateMachine.unk0 = 1;
             break;
         case 6:
             func_8009AF14(func_8009AC14);
@@ -955,11 +955,10 @@ SoundCmd *func_8009B134(s32 cmd, s32 vol, s32 entry) {
  * @return Random byte value from the lookup table.
  */
 s32 func_8009B15C(void) {
-    s32 idx = D_800EEBB0[0];
-    u8 *entry = D_800EEBA8 + idx;
-    s32 val = *entry;
-    *entry = val + 1;
-    return D_80098030[val];
+    u8 index;
+
+    index = D_800EEBA8[D_800EEBB0]++;
+    return D_80098030[index];
 }
 
 /**
@@ -974,7 +973,7 @@ void func_8009B198(s32 a0) {
     s32 buf;
     s32 i;
 
-    D_800EEBB0[0] = 0;
+    D_800EEBB0 = 0;
     i = 0;
     buf = (s32)D_800EEBA8;
 
@@ -984,7 +983,7 @@ void func_8009B198(s32 a0) {
         i++;
     } while (i < 8);
 
-    D_800EEBB0[0] = func_8009B15C() & 7;
+    D_800EEBB0 = func_8009B15C() & 7;
 }
 
 /**

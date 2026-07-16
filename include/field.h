@@ -286,7 +286,7 @@ extern SystemState g_fieldEntity;
  */
 typedef struct {
     /* 0x00 */ u32 pad00;
-    /* 0x04 */ s32 stepCounter;         /**< Total step delta accumulator, mirrored to D_80082C14. */
+    /* 0x04 */ u32 stepCounter;         /**< Total step delta accumulator, mirrored to D_80082C14. */
     /* 0x08 */ s32 seedExpStepAcc;      /**< Step accumulator: fires the SeeD level-up tick at @c 0x6000. */
     /* 0x0C */ s32 hpRegenStepAcc;      /**< Step accumulator: fires HP regen ticks at @c 8. */
     /* 0x10 */ u16 seedExp;             /**< SeeD experience (clamped to [100, 3100]; level = exp/100). */
@@ -916,7 +916,7 @@ extern u8  D_800780D8[];
 extern u8  D_8007809A;
 
 /** @brief Mirror of @c g_fieldVars->stepCounter (s32). */
-extern s32 D_80082C14;
+extern u32 D_80082C14;
 
 /** @brief Pool sizer for entity/script tables; called from @c fe_object10. */
 extern s32 func_80037AEC(u8 *header, u16 *table, s32 **outBase);

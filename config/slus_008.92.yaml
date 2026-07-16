@@ -60,6 +60,7 @@ segments:
     subsegments:
       - [0x800, .rodata, main]
       - [0x840, rodata]
+      - [0x988, .rodata, thread]
       - [0x9C4, .rodata, btl_anim]
       - [0x9FC, rodata]
       - [0xF54, .rodata, btl_color]

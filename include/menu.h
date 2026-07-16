@@ -55,7 +55,7 @@ typedef struct {
     /* 0x04 */ u16 currentHp;             /**< Cached character HP. */
     /* 0x06 */ u16 junctedGfs;            /**< Cached juncted GFs bitmask. */
     /* 0x08 */ u8 abilityCount[2];        /**< Ability counts per sub-slot. */
-    /* 0x0A */ u8 unk0A;                  /**< Unknown. */
+    /* 0x0A */ u8 abilityRows;            /**< Ability rows to render (was GfCompatEntry.count @D_801EEDF0). */
     /* 0x0B */ u8 gfCompat;               /**< GF compatibility byte. */
     /* 0x0C */ u8 commandsBackup[2][4];   /**< Command backups (2 sub-slots × 4). */
     /* 0x14 */ u8 abilitiesBackup[2][4];  /**< Ability backups (2 sub-slots × 4). */
@@ -86,7 +86,7 @@ typedef struct {
     /* 0x38 */ s16 unk38;              /**< Offset added to Y position in stat panel rendering. */
     /* 0x3A */ s16 unk3A;              /**< Fade/transition scale value. */
     /* 0x3C */ s16 statScale;          /**< Stat scale value (0x1000 = 1.0). */
-    /* 0x3E */ s16 unk3E;              /**< Slide-in offset for the character-switch panel. */
+    /* 0x3E */ s16 slideOffset;        /**< Character-switch panel slide offset (±0xF80, stepped toward 0). */
     /* 0x40 */ s16 unk40;              /**< Unknown s16 (scaling factor, similar to statScale). */
     /* 0x42 */ u8 unk42;               /**< Panel display mode. */
     /* 0x43 */ u8 charIdx;             /**< Selected character index (0-7). */
@@ -109,7 +109,7 @@ typedef struct {
     /* 0x5A */ u8 unk5A;               /**< Stat display type byte. */
     /* 0x5B */ u8 discCount;           /**< Number of discs (from popcount). */
     /* 0x5C */ s8 unk5C;               /**< GF navigation index. */
-    /* 0x5D */ u8 unk5D;               /**< Character index for scaling panel comparison. */
+    /* 0x5D */ u8 prevCharIdx;         /**< Outgoing character during the character-switch slide. */
     /* 0x5E */ s8 unk5E;               /**< Column/stat selection index. */
     /* 0x5F */ u8 unk5F;               /**< GF ability slot count. */
     /* 0x60 */ u8 unk60;               /**< Junction modification flags. */
@@ -161,13 +161,28 @@ typedef enum {
  */
 typedef struct {
     /* 0x00 */ u32 abilityFlags;      /**< OR'd into g_junctionChars[].availFlags. */
-    /* 0x04 */ u8 pad04;              /**< Unknown. */
+    /* 0x04 */ u8 level;              /**< GF level (from g_battleChars.levelEntries). */
     /* 0x05 */ u8 charIdx;            /**< Character this GF is junctioned to. */
     /* 0x06 */ u8 cmdSlotCount;       /**< Command slot count from this GF. */
     /* 0x07 */ u8 ablSlotCount;       /**< Ability slot count from this GF. */
     /* 0x08 */ u8 maxAbilitySlots;    /**< Max ability slots from this GF. */
     /* 0x09 */ u8 pad09[3];           /**< Padding. */
 } JunctionGfEntry; /* 0x0C = 12 bytes */
+
+/**
+ * @brief One stat row of the junction slot-detail table (9 entries, HP..LCK).
+ *
+ * statOffset indexes the battle character stat block (g_battleChars /
+ * g_junctionPreview) in bytes; HP (entry 0) is a u16 stat, STR..LCK are u8.
+ * junctionSlot is the JunctionType index of the stat's junction slot.
+ */
+typedef struct {
+    /* 0x00 */ u16 statOffset;    /**< Byte offset of the stat within battle char data. */
+    /* 0x02 */ u16 labelId;       /**< Stat label string id (0x130-0x138). */
+    /* 0x04 */ u8 flags;          /**< 0x01 right value column, 0x20/0x40 percent transforms, 0x80 show max. */
+    /* 0x05 */ u8 junctionSlot;   /**< JunctionType slot index for this stat. */
+    /* 0x06 */ u8 pad06[2];       /**< Padding. */
+} JunctionSlotDetail; /* 0x08 = 8 bytes */
 
 /**
  * @brief Character display info for menu rendering (stride 32).
@@ -198,5 +213,26 @@ extern CharMenuInfo g_charMenuInfo[];
  * specific contexts where the original code used signed-byte arithmetic.
  */
 extern u8 D_800780AB;
+
+
+
+/* menumain-owned shared symbols (canonical signatures from menumain.c). */
+s32 func_801F6AFC(s32);
+u32 func_801F0FEC(s32, s32, s32, s32, s32, s32);
+s32 func_801F3FB4(s32);
+s32 func_801F5104(s32);
+s32 func_801F510C(s32);
+s32 func_801F5144(s32);
+s32 func_801F5F30(s32, s32, s32, s32, s32, s32);
+s32 func_801F5F60(s32, s32, s32, s32);
+s32 func_801F65F0(s32, s32, s32, s32, s32, s32);
+s32 func_801F776C(s32, s32);
+s32 func_801F79F8(s32);
+s32 func_801F7BAC(s32);
+s32 func_801F7BE4(s32);
+extern u8 D_801EF1A4;
+extern u8 D_801EF1A5;
+extern u8 D_801EF1B0[];
+extern u16 D_801FA3C8[];
 
 #endif /* MENU_H */

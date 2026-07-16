@@ -1,5 +1,6 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
+#include "psxsdk/kernel.h"
 #include "battle.h"
 #include "thread.h"
 
@@ -52,7 +53,24 @@ void closeThreadSafe(s32 a0) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/thread", func_80026F4C);
+/**
+ * @brief Manually switch the current thread without a syscall.
+ *
+ * Resolves the thread control block for @p handle through the kernel
+ * table of tables and, if that thread is active, stores it as the
+ * current thread in the TCB header.
+ *
+ * @param handle Thread handle (low 24 bits index the TCB table).
+ */
+void func_80026F4C(s32 handle) {
+    ToT *tot = KERNEL_TOT;
+    TCB *tcbTable = (TCB *)tot[2].head;
+    TCBH *tcbh = (TCBH *)tot[1].head;
+    TCB *tcb = &tcbTable[handle & 0xFFFFFF];
+    if (tcb->status == TcbStACTIVE) {
+        tcbh->entry = tcb;
+    }
+}
 
 
 /**
@@ -101,10 +119,112 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_80027038);
 INCLUDE_ASM("asm/nonmatchings/thread", func_800270B0);
 
 
-INCLUDE_ASM("asm/nonmatchings/thread", func_80027220);
+/**
+ * @brief Poll the CD stream state and update an animation entity accordingly.
+ *
+ * Queries the current stream status via func_8003AC10 and stores it in
+ * @c field1A, then dispatches on it:
+ * - 1: flag the entity active (field0A) and pending (field19).
+ * - 2: same, but also clear opacity.
+ * - 4, 5: no-op.
+ * - 6: on the first tick after a pending flag (field19 == 1), start the
+ *      stream (func_800270B0, func_8003AF50, func_8003AFD0); on later
+ *      ticks refresh field01/field02 from field06/field07 masked by the
+ *      current opacity.
+ * - other (0, 3, out of range): reset to active/pending with zero opacity.
+ *
+ * @param a0 Base context passed through to func_800270B0.
+ * @param ent Entity to update.
+ * @param a2 Stream channel selector passed to the CD helpers.
+ */
+void func_80027220(s32 a0, BattleAnimEntity *ent, s32 a2) {
+    s32 status;
+    func_80047384();
+    status = func_8003AC10(a2);
+    ent->field1A = status;
+    switch (status) {
+    case 1:
+        ent->field0B = 0;
+        ent->field0A = 1;
+        ent->field19 = 1;
+        break;
+    case 2:
+        ent->field0B = 0;
+        ent->field19 = 1;
+        ent->field0A = 1;
+        ent->opacity = 0;
+        break;
+    case 4:
+    case 5:
+        break;
+    case 6: {
+        u8 mask = ent->opacity;
+        if (ent->field19 == 1) {
+            func_800270B0(a0, ent, a2);
+            ent->field0A = 1;
+            ent->field19 = 0;
+            ent->field01 = 0;
+            ent->field02 = 0;
+            func_8003AF50(a2, ent->padBC);
+            func_8003AFD0(a2, ent, 6);
+        } else {
+            u8 f6 = ent->field06;
+            u8 f7 = ent->field07;
+            u8 sh7 = ent->field09;
+            u8 sh6;
+            s32 v6;
+            s32 v7;
+            /* The do-while(0) wrapper is load-bearing for the byte-match: it
+               keeps the scheduler from tearing the statement pair apart,
+               and likely mirrors a macro in the original source. */
+            do { ent->field0A = 1; v6 = f6 & mask; } while (0);
+            v7 = f7 & mask;
+            sh6 = ent->field08;
+            ent->field02 = v7 >> sh7;
+            ent->field01 = v6 >> sh6;
+        }
+        break;
+    }
+    case 0:
+    case 3:
+    default:
+        ent->field0B = 0;
+        ent->field0A = 1;
+        ent->opacity = 0;
+        ent->field19 = 1;
+        break;
+    }
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/thread", func_80027360);
+/**
+ * @brief Check the CD stream status, restarting playback if it has ended.
+ *
+ * @param a0 Stream channel selector.
+ * @return 1 if the stream is in state 2, the result of func_8003AF88 if
+ *         it is in state 6, 0 otherwise.
+ */
+s32 func_80027360(s32 a0) {
+    s32 status;
+    s32 ret;
+    status = func_8003AC10(a0);
+    ret = 0;
+    switch (status) {
+    case 2:
+        ret = 1;
+        break;
+    case 6:
+        ret = func_8003AF88(a0, 1, 1);
+        break;
+    case 0:
+    case 1:
+    case 3:
+    case 4:
+    case 5:
+        break;
+    }
+    return ret;
+}
 
 
 /**
@@ -124,12 +244,60 @@ void activateBattleAnim(s32 idx) {
  * @note Initializes the first entry with mode 0, and the second (at +0xC4) with mode 0x10.
  */
 void initBattleAnimPair(s32 a0) {
-    func_80027220(a0, a0, 0);
-    func_80027220(a0, a0 + 0xC4, 0x10);
+    func_80027220(a0, (BattleAnimEntity *)a0, 0);
+    func_80027220(a0, (BattleAnimEntity *)(a0 + 0xC4), 0x10);
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/thread", func_80027448);
+/**
+ * @brief Drive both animation entities' CD streams until they settle.
+ *
+ * For each of the two entities: clears field06/field07, then repeatedly
+ * waits for the CD to become ready (cdReadStatusWrapper) and polls the
+ * stream via func_80027220 until the status is 0 or 2 (settled), or
+ * status 6 (playing) has been observed twice.
+ */
+void func_80027448(void) {
+    BattleAnimEntity *ent = &g_battleAnims.entities[0];
+    BattleAnimEntity *base = g_battleAnims.entities;
+    s32 count;
+    /* Without this barrier the register allocator gives s0 to count
+       instead of ent. */
+    REGALLOC_BARRIER(ent);
+    count = 0;
+    ent->field06 = 0;
+    ent->field07 = 0;
+    for (;;) {
+        while (cdReadStatusWrapper() == 0) {}
+        func_80027220((s32)base, ent, 0);
+        if (ent->field1A == 0 || ent->field1A == 2) {
+            break;
+        }
+        if (ent->field1A == 6) {
+            count++;
+            if (count >= 2) {
+                break;
+            }
+        }
+    }
+    ent = &base[1];
+    count = 0;
+    ent->field06 = 0;
+    ent->field07 = 0;
+    for (;;) {
+        while (cdReadStatusWrapper() == 0) {}
+        func_80027220((s32)base, ent, 0x10);
+        if (ent->field1A == 0 || ent->field1A == 2) {
+            break;
+        }
+        if (ent->field1A == 6) {
+            count++;
+            if (count >= 2) {
+                break;
+            }
+        }
+    }
+}
 
 
 /**
@@ -287,7 +455,22 @@ end:
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/thread", func_80027B7C);
+/**
+ * @brief Map an angle to a quadrant bit mask.
+ *
+ * Rotates the angle by -0x600, inverts it, and reduces the result to a
+ * quadrant index 0-3 (each quadrant spanning 0x400 units), returning a
+ * single bit in the range 0x1000-0x8000.
+ *
+ * @param a0 Angle in fixed-point (0x1000 = 360 degrees).
+ * @return 1 << (quadrant + 12).
+ */
+s32 func_80027B7C(s32 a0) {
+    s32 v = a0 + 0x600;
+    v = ~v & 0xFFF;
+    v = v / 0x400;
+    return 1 << (v + 0xC);
+}
 
 /**
  * @brief Look up a battle animation byte through a two-level table.
@@ -307,7 +490,31 @@ s32 getBattleAnimLinkedValue(s32 a0) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/thread", func_80027C00);
+/**
+ * @brief Set the low 7 bits of a linked entity's fieldC3 from a squared level.
+ *
+ * Clamps @p a1 to [0, 0x7F], squares it, and divides by 256, giving a
+ * quadratic response curve. The result replaces bits [6:0] of the linked
+ * entity's fieldC3 while preserving the high bit
+ * (see setBattleAnimLinkedHighBit).
+ *
+ * @param a0 Entity index (only bit 0 used).
+ * @param a1 Input level, clamped to [0, 0x7F].
+ */
+void func_80027C00(s32 a0, s32 a1) {
+    s32 slot;
+    BattleAnimEntity *linked;
+    s32 sq;
+    s32 clamped;
+    sq = a1;
+    a0 &= 1;
+    slot = g_battleAnims.entities[a0].linkedIdx;
+    linked = &g_battleAnims.entities[slot];
+    clamped = (sq < 0) ? 0 : (sq > 0x7F) ? 0x7F : a1;
+    sq = clamped * clamped;
+    sq = sq / 0x100;
+    linked->fieldC3 = (linked->fieldC3 & 0x80) | sq;
+}
 
 
 /**

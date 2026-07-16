@@ -8,6 +8,8 @@ extern s32 D_800834CC;
 extern u8 g_digitBaseCode;
 extern SfxSystem g_sfxEntries;
 extern DisplayListBuf *D_800834C0;
+extern u16 D_80052974[];
+extern s32 reverseButtonRemap(s32 index);
 
 
 INCLUDE_ASM("asm/nonmatchings/btl_entity", func_8002BAA0);
@@ -169,7 +171,41 @@ INCLUDE_ASM("asm/nonmatchings/btl_entity", func_8002C3AC);
 INCLUDE_ASM("asm/nonmatchings/btl_entity", func_8002C56C);
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_entity", func_8002C734);
+/**
+ * @brief Map a message character code to its glyph/sprite index.
+ *
+ * Translates a raw character byte @p c into the index used to fetch the glyph's
+ * dimensions and sprite data:
+ *   - @c c @c >= @c 0x40 : looked up directly in the @ref D_80052974 table
+ *     (letters and the bulk of the character set), offset by @c 0x40.
+ *   - @c [0x30,0x40) : digits/symbols, mapped linearly to @c c @c + @c 0x50.
+ *   - @c [0x20,0x30) : button-icon codes, remapped via @c reverseButtonRemap;
+ *     a valid result is biased by @c 0x80, an invalid one yields 0.
+ *   - @c c @c < @c 0x20 : control codes, which have no glyph (returns 0).
+ *
+ * @param c Character code from a battle message string.
+ * @return Glyph/sprite index, or 0 if @p c has no printable glyph.
+ */
+s32 func_8002C734(s32 c) {
+    if (c >= 0x40) {
+        c -= 0x40;
+        return D_80052974[c];
+    }
+    if (c >= 0x20) {
+        if (c >= 0x30) {
+            if (c < 0x40) {
+                return c + 0x50;
+            }
+        } else {
+            c = reverseButtonRemap(c - 0x20);
+            if (c >= 0) {
+                return c + 0x80;
+            }
+            return 0;
+        }
+    }
+    return 0;
+}
 
 
 /**

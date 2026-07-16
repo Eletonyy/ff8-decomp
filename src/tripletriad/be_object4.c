@@ -98,11 +98,11 @@ void func_800A1D68(s32 id, u8 *str, s32 param) {
     GlyphSize sfx;   /* "Play / Quit" suffix size (id 5 only) */
     RECT rect;
 
-    dim.raw[0] = getGlyphWidthA((s32)str);
+    dim.raw[0] = getGlyphWidthA(str);
 
     if (id == 5) {
         s16 m;
-        sfx.raw[0] = getGlyphWidthA((s32)((u8 *)&D_801826E2 - 0x62 + D_801826E2));
+        sfx.raw[0] = getGlyphWidthA((u8 *)&D_801826E2 - 0x62 + D_801826E2);
         m = (u16)sfx.wh[0] + 0x20;
         sfx.wh[0] = m;
         if (dim.wh[0] < m) {
@@ -1015,7 +1015,7 @@ DR_AREA *func_800A3320(P_TAG *ot, DR_AREA *prim, RECT *rect) {
  * @param out   Destination rectangle.
  */
 void func_800A3398(s32 scale, RECT *in, RECT *out) {
-    if (abs(scale) == 0x1000) {
+    if (ABS(scale) == 0x1000) {
         *out = *in;
     } else {
         s32 x = in->x;

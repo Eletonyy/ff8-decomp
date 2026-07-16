@@ -386,7 +386,7 @@ u8 *getBattleCharName(s32 entityIdx) {
  * @param a0 Character ID (see CharacterId).
  * @return Pointer to the character's encoded name string.
  */
-u8 *getCharNamePtr(CharacterId charId) {
+u8 *getCharName(CharacterId charId) {
     if (charId == CHAR_SQUALL) {
         return g_gameState.squallName;
     }

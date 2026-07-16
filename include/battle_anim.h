@@ -23,10 +23,14 @@ typedef struct {
 } AnimFrame; /* 0x14 = 20 bytes */
 
 typedef struct {
-    u8 pad00[6];
+    u8 field00;
+    u8 field01;   /**< field06 masked by opacity, shifted right by field08 (func_80027220). */
+    u8 field02;   /**< field07 masked by opacity, shifted right by field09 (func_80027220). */
+    u8 pad03[3];
     u8 field06;
     u8 field07;
-    u8 pad08[2];
+    u8 field08;   /**< Shift amount applied to field06 in func_80027220. */
+    u8 field09;   /**< Shift amount applied to field07 in func_80027220. */
     u8 field0A;
     u8 field0B;
     u8 field0C;
@@ -35,7 +39,7 @@ typedef struct {
     u8 field0F;
     s16 unk10[4];
     u8 frameCounter;
-    u8 field19;
+    s8 field19;   /**< Read back as a signed byte in func_80027220. */
     s8 field1A;
     u8 opacity;
     AnimFrame frames[8];

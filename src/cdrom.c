@@ -1,26 +1,10 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
+#include "psxsdk/libcd.h"
 #include "overlay.h"
 #include "cd.h"
-
-extern u8 D_8008A3DC[];
-extern CdDriveState D_8008A3C8;
-extern u8 D_8001092C[];
-extern u8 D_8001093C[];
-extern u8 D_8001094C[];
-extern u8 D_8001095C[];
-extern s16 D_8008A3D0;
-extern s8 D_8008A3DA;
-extern u16 D_8008A3D2;
-extern u8 D_8008A3D9;
-extern s32 D_8008A3B8;
-extern u8 D_800853B8[];
-
-s32 func_80039444(u8 *buf, u8 *dest);
-
-void resetCdDrive(void);
-void setDiscNumber(s32 a0);
-void CdIntToPos(s32 lba, u8 *pos);
+#include "cdrom.h"
+#include "snd_cd.h"
 
 /**
  * @brief Detect the disc number by searching for disc-specific files.
@@ -61,7 +45,7 @@ void setAudioVolume(s32 a0) {
 /**
  * @brief Initialize the CD-ROM subsystem.
  *
- * Clears CD state variables (D_8008A3D8, D_8008A3D0). If a0 is nonzero,
+ * Clears CD state variables (D_8008A3D8, D_8008A3C8.state). If a0 is nonzero,
  * spins until CdInit succeeds, disables CD debug output, sends a
  * CdControlB command (0xE = SetMode, double-speed 0x80), waits 3 vsyncs,
  * then reads the disc ID via detectDiscNumber and stores it.
@@ -75,7 +59,7 @@ void initCdSubsystem(s32 a0) {
 
     D_8008A3D8.flags = 0;
     D_8008A3D8.status = 0;
-    D_8008A3D0 = 0;
+    D_8008A3C8.state = 0;
 
     if (a0 != 0) {
         do { } while (!CdInit());
@@ -84,7 +68,7 @@ void initCdSubsystem(s32 a0) {
         CdControlB(0xE, &buf, 0);
         VSync(3);
         result = detectDiscNumber();
-        D_8008A3DA = result;
+        D_8008A3C8.discId = result;
         setDiscNumber((s8)result);
     }
 }
@@ -134,16 +118,13 @@ void flushCdAndWait(void) {
  * @param callback Completion callback (stored at callback/0x20, may be NULL).
  */
 void func_80038760(s32 mode, s32 lba, u32 size, u8 *dest, void (*callback)(void)) {
-    CdReadState *req;
-
     while (func_800393C8()) {}
 
-    CdIntToPos(lba, &D_8008A3DC[0]);
-    req = (CdReadState *)(&D_8008A3DC[0] - 4);
-    req->sectorCount = (size + 0x7FF) >> 11;
-    req->readBuffer = dest;
-    req->callback = callback;
-    req->status = mode;
+    CdIntToPos(lba, &D_8008A3D8.params);
+    D_8008A3D8.sectorCount = (size + 0x7FF) >> 11;
+    D_8008A3D8.readBuffer = dest;
+    D_8008A3D8.callback = callback;
+    D_8008A3D8.status = mode;
     D_8008A3C8.timeout = 0;
 }
 
@@ -284,43 +265,150 @@ void resetCdDrive(void) {
  *
  * Sends CdControlB command 0xE (SetMode) with null parameters, waits
  * 3 VSync periods, sends command 0x8 (Pause), then marks the CD state
- * byte D_8008A3D9 as 0xB (complete).
+ * byte D_8008A3C8.cdState as 0xB (complete).
  */
 void resetCdDriveMode(void) {
     CdControlB(0xE, 0, 0);
     VSync(3);
     CdControlB(8, 0, 0);
-    D_8008A3D9 = 0xB;
+    D_8008A3C8.cdState = 0xB;
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/cdrom", func_80038A60);
+/**
+ * @brief Verify the disc in the drive and classify its state.
+ *
+ * Polls the CD drive and writes a status code to the global @c D_8008A3C8.state,
+ * which it also returns:
+ *   - 0: valid FF8 data disc; disc number recorded in @c D_8008A3D8.discNum.
+ *   - 1: error / unrecognized disc.
+ *   - 2: drive still spinning up (busy) — caller should retry.
+ *   - 3: drive shell (lid) is open.
+ *   - 4: audio (CD-DA) disc.
+ *   - 5: drive-ready timeout, or empty tray.
+ *   - 6: data disc whose disc number could not be identified.
+ *
+ * Issues @c CdlNop (command 1) to read the drive status; if the shell-open bit
+ * is set, returns 3. Otherwise waits up to 600 vsync frames for the drive to
+ * report ready (returns 5 on timeout), then dispatches on @c CdDiskReady and
+ * @c CdGetDiskType. For a data disc it seeks, re-reads the header, selects
+ * double-speed mode and calls @ref detectDiscNumber. While the drive reports
+ * "seeking" (@c CdDiskReady == 5) it periodically pulses @ref sndKeyOn as a
+ * keep-alive and reports busy (2).
+ *
+ * @return CD state code (see above), also stored in @c D_8008A3C8.state.
+ */
+s32 func_80038A60(void) {
+    CdlLOC loc;
+    u8 result[8];
+    s32 ready;
+    s32 i;
+    s32 discNum;
+    u8 mode;
+
+    CdControlB(1, 0, result);
+    if (result[0] & 0x10) {
+        D_8008A3C8.state = 3;
+        return 3;
+    }
+
+    i = 0x258;
+    CdControlB(7, 0, 0);
+    do {
+        VSync(0);
+        if (--i == 0) {
+            D_8008A3C8.state = 5;
+            return 5;
+        }
+        CdControlB(1, 0, result);
+    } while (!(result[0] & 2));
+
+    ready = CdDiskReady(0);
+    switch (ready) {
+    case 2:
+        D_8008A3C8.timeout = 0;
+        break;
+    case 5:
+        D_8008A3C8.timeout++;
+        if (D_8008A3C8.timeout >= 0x708) {
+            D_8008A3C8.timeout = 0;
+            sndKeyOn(0x10, 0, 0x80, 0x7F, 0);
+        }
+        VSync(0);
+        D_8008A3C8.state = 2;
+        return 2;
+    case 0x10:
+        D_8008A3C8.state = 3;
+        return 3;
+    default:
+        D_8008A3C8.state = 1;
+        return 1;
+    }
+
+    mode = 0;
+    CdControlB(0xE, &mode, result);
+    switch (CdGetDiskType()) {
+    case 1:
+        D_8008A3C8.state = 4;
+        return 4;
+    case 0:
+        D_8008A3C8.state = 5;
+        return 5;
+    case 2:
+        break;
+    case 0x10:
+        D_8008A3C8.state = 3;
+        return 3;
+    default:
+        D_8008A3C8.state = 1;
+        return 1;
+    }
+
+    CdIntToPos(0x17, &loc);
+    CdControlB(0x15, (u8 *)&loc, result);
+    if ((result[0] & 1) || (result[1] & 0x40)) {
+        do { D_8008A3C8.state = 1; } while (0);
+        return 1;
+    }
+    mode = 0x80;
+    CdControlB(0xE, &mode, result);
+    VSync(3);
+    D_8008A3D8.status = 0;
+    discNum = detectDiscNumber();
+    if (discNum == -1) {
+        D_8008A3C8.state = 6;
+        return 6;
+    }
+    D_8008A3D8.discNum = discNum;
+    D_8008A3C8.state = 0;
+    return 0;
+}
 
 
 /**
  * @brief Get the current disc ID.
- * @return Disc identifier as a signed byte (D_8008A3DA).
+ * @return Disc identifier as a signed byte (D_8008A3C8.discId).
  */
 s8 getDiscId(void) {
-    return D_8008A3DA;
+    return D_8008A3C8.discId;
 }
 
 
 /**
  * @brief Set the current disc number.
- * @param a0 Disc number to store in D_8008A3D2.
+ * @param a0 Disc number to store in D_8008A3C8.discNumber.
  */
 void setDiscNumber(s32 a0) {
-    D_8008A3D2 = a0;
+    D_8008A3C8.discNumber = a0;
 }
 
 
 /**
  * @brief Get the current CD-ROM subsystem state.
- * @return CD state machine phase (D_8008A3D9).
+ * @return CD state machine phase (D_8008A3C8.cdState).
  */
 u32 getCdState(void) {
-    return D_8008A3D9;
+    return D_8008A3C8.cdState;
 }
 
 

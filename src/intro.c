@@ -2,6 +2,7 @@
 #include "battle.h"
 #include "gamestate.h"
 #include "intro.h"
+#include "cdrom.h"
 #include "snd_init.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"

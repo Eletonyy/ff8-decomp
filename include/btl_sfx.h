@@ -42,10 +42,10 @@ extern void func_8002E1B4(s32 index, s32 value);
 extern void resetAllSfx(void);
 extern void dispatchSfxAnimSpeed(s32 idx);
 extern s32  getNibbleValue(s32 idx);
-extern s32  getGlyphWidthA(s32 code);
-extern void getGlyphWidthB(s32 code);
-extern u16  getGlyphWidthU16(s32 code);
-extern u16  getGlyphStatusU16(s32 code);
+extern s32  getGlyphWidthA(u8 *code);
+extern void getGlyphWidthB(u8 *code);
+extern u16  getGlyphWidthU16(u8 *code);
+extern u16  getGlyphStatusU16(u8 *code);
 extern void setMenuColorIntensity(s32 intensity);
 
 #endif

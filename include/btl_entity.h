@@ -6,6 +6,7 @@
 
 extern s32 *getEntityTablePtr(s32 idx);
 extern s32  func_8002BF24(s32 ot, s32 head);
+extern s32  func_8002C734(s32 c);
 extern void dispatchBattleEntity(s32 idx);
 extern s32  allocBattleEntitySlot(void);
 extern void initAllBattleEntities(void);
@@ -19,5 +20,7 @@ extern void setSfxEntryField2B(s32 idx, s32 val);
 extern void setSfxEntryField34(s32 idx, s32 val);
 extern void setSfxEntryField38(s32 idx, s32 val);
 extern void setSfxEntryVolume(s32 idx, s32 val);
+
+s32 func_8002C56C(s32 renderCtx, s32 cursorY, s32 x, s32 y, u8 *str, s32 color);
 
 #endif

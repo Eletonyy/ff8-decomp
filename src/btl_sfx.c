@@ -2,6 +2,7 @@
 #include "psxsdk/libgpu.h"
 #include "battle.h"
 #include "btl_sfx.h"
+#include "btl_entity.h"
 
 extern SfxSystem g_sfxEntries;
 extern s32 g_flashColor;
@@ -12,7 +13,8 @@ extern s32 g_menuColor[2];
 extern u8 D_800834D8[];
 void func_8002D970(void);
 void func_8002DBF8(void);
-void func_8002CDE4(RECT *rect, s16 offsetX, s16 offsetY);
+void func_8002CC4C(s32 idx, s32 arg0);
+void func_8002CDE4(RECT *rect, s32 scale, s32 arg2);
 void setBattleEntityBoundRect(s32 idx, RECT *src);
 void setBattleEntityRectClamp(s32 idx, RECT *src);
 void func_8002E064(s32 index, RECT *srcRect);
@@ -169,7 +171,55 @@ INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002CAE0);
 INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002CC4C);
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002CDE4);
+/**
+ * @brief Scale a battle SFX rectangle about its center by a fixed-point factor.
+ *
+ * @p scale is a signed Q12 fixed-point multiplier where @c 0x1000 (4096 == ONE)
+ * is 1.0; at exactly 1.0 the rectangle is left unchanged. Otherwise each axis is
+ * recentered: the origin moves to @c center @c - @c (dimension @c * @c scale) @c /
+ * @c 8192 (unscale the Q12 product, then halve) and the dimension becomes
+ * @c (dimension @c * @c scale) @c / @c 4096.
+ *
+ * Written in the in-place register-reuse style of the sibling RECT helpers
+ * (cf. @ref func_8002B080, and @c func_800A3398 which scales a RECT the same
+ * way): the packed @c s16 pairs are read once as words and each value is
+ * progressively transformed in its own variable, which keeps gcc 2.7.2 from
+ * spilling copies. The @c do/while(0) wraps the arithmetic as a single basic
+ * block so the compiler emits both extractions before the multiplies rather
+ * than interleaving them.
+ *
+ * @param rect  Rectangle to scale in place.
+ * @param scale Q12 fixed-point scale factor (@c 0x1000 == 1.0).
+ * @param arg2  Unused by this routine (the caller passes @c rateDelta).
+ */
+void func_8002CDE4(RECT *rect, s32 scale, s32 arg2) {
+    s32 x, y, w, h, prodW, prodH;
+
+    if (scale == 0x1000) {
+        return;
+    }
+
+    x = *(s32 *)&rect->x;
+    y = x >> 16;
+    x = x << 16;
+    x = x >> 16;
+    w = *(s32 *)&rect->w;
+    h = w >> 16;
+    w = w << 16;
+    do {
+        w = w >> 16;
+        x = x + ((u32)w / 2);
+        y = y + ((u32)h / 2);
+        prodW = w * scale;
+        prodH = h * scale;
+        w = (u32)prodW / 4096;
+        rect->x = x - ((u32)prodW / 8192);
+        rect->w = w;
+        h = (u32)prodH / 4096;
+        rect->y = y - ((u32)prodH / 8192);
+        rect->h = h;
+    } while (0);
+}
 
 
 /** @brief Set the global SFX flag. */
@@ -208,7 +258,72 @@ s32 func_8002CE84(s32 idx) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002CECC);
+/** @brief Holds the packed auto-repeat delays for @ref func_8002CECC (@c a0).
+ *  @note Real type TBD — a structure that sits before @c g_sfxEntries; the
+ *        caller @c func_8002CF54 passes @c &g_sfxEntries-0x220. */
+typedef struct {
+    u8 pad00[0x1E0];
+    u16 delays; /**< 0x1E0: repeatInterval (high byte) | restartDelay (low byte). */
+} SfxRepeatBase;
+
+/** @brief Per-item element carrying the per-channel edge masks (@c a1).
+ *  @note Real type TBD — a @c 0xC4-byte element within @ref SfxRepeatBase. */
+typedef struct {
+    u8 pad00[0x10];
+    u16 masks[4]; /**< 0x10: per-channel edge mask. */
+} SfxRepeatElem;
+
+/**
+ * @brief Keyboard-style auto-repeat for one SFX channel's edge bits.
+ *
+ * Latches @p newVal into @c sys->state.stored[channel] and, using the per-channel
+ * mask, decides whether the (masked) edge bits should fire this frame. If the new
+ * and previous masked bits overlap (a held cue) it ticks the per-channel countdown
+ * @c sys->state.counters[channel]: while it is running the event is suppressed
+ * (returns 0), and when it expires the countdown reloads to the repeat interval and
+ * fires. When the bits do not overlap the countdown resets to the restart delay and
+ * fires. Mirrors @c func_800A29D4 (the Triple Triad edge auto-repeat).
+ *
+ * @param base    Packed repeat delays (@c base->delays).
+ * @param elem    Per-channel edge masks (@c elem->masks).
+ * @param sys     SFX system (@c &g_sfxEntries); holds the stored bits and counters.
+ * @param newVal  Raw new edge bitmask for this frame.
+ * @param channel SFX channel index, 0..3.
+ * @return The masked edge bits that should fire this frame, or 0 while suppressed.
+ */
+s32 func_8002CECC(SfxRepeatBase *base, SfxRepeatElem *elem, SfxSystem *sys, u16 newVal, s32 channel) {
+    s32 counter;
+    s32 restartDelay;
+    s32 repeatInterval;
+    u16 mask;
+    u16 prevMasked;
+
+    prevMasked = sys->state.stored[channel];
+    sys->state.stored[channel] = newVal;
+    restartDelay = base->delays;
+    counter = sys->state.counters[channel];
+    mask = elem->masks[channel];
+
+    repeatInterval = restartDelay >> 8;
+    restartDelay &= 0xFF;
+    newVal &= mask;
+    prevMasked &= mask;
+    if (newVal & prevMasked) {
+        if (newVal != prevMasked) {
+            counter = restartDelay;
+        }
+        counter--;
+        if (counter < 0) {
+            counter = repeatInterval;
+        } else {
+            newVal = 0;
+        }
+    } else {
+        counter = restartDelay;
+    }
+    sys->state.counters[channel] = counter;
+    return newVal;
+}
 
 
 INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002CF54);
@@ -303,7 +418,27 @@ void func_8002D818(s32 arg0, u8 *str, s32 count, s32 min, s32 max, s32 val, s32 
  * @param index SFX entry index.
  * @see https://decomp.me/scratch/mYKYb
  */
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002D8CC);
+void func_8002D8CC(s32 arg0, s32 index) {
+    SfxEntry *entry = &g_sfxEntries.entries[index];
+
+    if (entry->flags.fields.state != 0) {
+        s32 savedGp;
+        s16 saved;
+        s32 ret;
+
+        GP_SAVE_SCRATCH(savedGp);
+        /* Narrowing the saved GP to s16 here (it never leaves a register, so no
+         * truncation happens) forces the same GP-save register routing the
+         * original compiler emitted. */
+        saved = savedGp;
+        if (entry->field34 != 0) {
+            ((void (*)(SfxEntry *, s32))entry->field34)(entry, arg0);
+        }
+        dispatchSfxColorUpdate(index);
+        func_8002CC4C(index, arg0);
+        GP_RESTORE_RET(saved, ret);
+    }
+}
 
 
 INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002D970);
@@ -587,10 +722,10 @@ void resetAllSfx(void) {
         func_8002DF5C(i);
     }
     D_800831D3 = 0;
-    sys->state.field18 = 0;
-    sys->state.field1A = 0;
-    sys->state.field14 = 0;
-    sys->state.field15 = 0;
+    sys->state.stored[0] = 0;
+    sys->state.stored[1] = 0;
+    sys->state.counters[0] = 0;
+    sys->state.counters[1] = 0;
     func_8002C130();
 }
 
@@ -613,7 +748,76 @@ void dispatchSfxAnimSpeed(s32 idx) {
 INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002E298);
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002E3A4);
+/**
+ * @brief One 8-byte sprite cell of a glyph in the @c D_80052A68 font table.
+ *
+ * A glyph is drawn from one or more of these cells. @c texInfo carries the PS1
+ * sprite attributes (texture page / CLUT / UV) and @c metrics packs the cell's
+ * placement as four bytes: @c x + (s8)@c xExtent give the cell's right edge,
+ * @c y + (s8)@c yExtent its bottom edge.
+ */
+typedef struct {
+    /* 0x00 */ u32 texInfo; /**< PS1 sprite/texture attributes for the cell. */
+    /* 0x04 */ u32 metrics; /**< x | (s8)xExtent<<8 | y<<16 | (s8)yExtent<<24. */
+} GlyphCell;
+
+/**
+ * @brief Header view of the @c D_80052A68 font table (baked into executable data).
+ *
+ * A glyph count followed by one descriptor per glyph. Each descriptor packs the
+ * glyph's cell @c count (high 16 bits) and the byte offset from the table base
+ * to that glyph's @ref GlyphCell list (low 16 bits). The cell lists themselves
+ * live in the trailing area the descriptors point at.
+ */
+typedef struct {
+    /* 0x00 */ u32 glyphCount;
+    /* 0x04 */ u32 descriptors[1]; /**< cellCount<<16 | byteOffsetToCells. */
+} GlyphTable;
+
+/** @brief Font glyph table (glyph count + per-glyph descriptors + cell lists). */
+extern GlyphTable D_80052A68;
+
+/**
+ * @brief Compute the bounding width of a multi-cell glyph.
+ *
+ * Walks glyph @p idx's cells and tracks the unsigned running maximum of each
+ * cell's right edge (@c x + (s8)@c xExtent) and bottom edge (@c y +
+ * (s8)@c yExtent), returning the peak width (low byte).
+ *
+ * @note The peak height is computed but unused by the return value — the caller
+ *       presumably only needs the advance width. Purpose inferred from the
+ *       neighbouring glyph-metric routines.
+ *
+ * @param idx Glyph index into @c D_80052A68.
+ * @return Bounding width of the glyph, masked to 8 bits.
+ */
+s32 func_8002E3A4(s32 idx) {
+    GlyphCell *cell = (GlyphCell *)&D_80052A68;
+    u32 word = D_80052A68.descriptors[idx];
+    s32 cellCount = word >> 16;
+    s32 maxWidth = 0;
+    s32 maxHeight = 0;
+
+    word &= 0xFFFF;
+    cell = (GlyphCell *)((u8 *)cell + word);
+    while (cellCount != 0) {
+        s32 width, height;
+        word = cell->metrics;
+        width = word & 0xFF;
+        width += (s8)(word >> 8);
+        height = (word >> 16) & 0xFF;
+        height += (s8)(word >> 24);
+        if ((u32)maxWidth < (u32)width) {
+            maxWidth = width;
+        }
+        if ((u32)maxHeight < (u32)height) {
+            do { maxHeight = height; } while (0);
+        }
+        cellCount--;
+        cell++;
+    }
+    return maxWidth & 0xFF;
+}
 
 
 /** @brief Extracts a 4-bit nibble from packed byte array D_800834D8.
@@ -631,29 +835,145 @@ s32 getNibbleValue(s32 idx) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002E454);
+/**
+ * @brief Remap a battle SFX id into a range, then extract its 4-bit nibble.
+ *
+ * Folds the SFX id @p idx into a compact table index depending on which of
+ * three ranges it falls in (< 0x100, < 0x1C00, or higher — the last range is
+ * offset and tagged with bit 0x400), then reads the packed nibble table
+ * @c D_800834D8 exactly like @ref getNibbleValue: even indices take the low
+ * nibble, odd indices the high nibble.
+ *
+ * @param idx SFX id to look up.
+ * @return The 4-bit table value (0-15).
+ */
+s32 func_8002E454(s32 idx) {
+    u8 *base;
+    u32 val;
+
+    if (idx < 0x100) {
+        idx -= 0x20;
+    } else if (idx < 0x1C00) {
+        idx -= 0x1820;
+    } else {
+        idx -= 0x1C20;
+        idx |= 0x400;
+    }
+
+    base = D_800834D8;
+    val = base[idx >> 1];
+    if (idx & 1) {
+        val >>= 4;
+    }
+    return val & 0xF;
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002E4AC);
+/**
+ * @brief Measure a battle-message string's packed {width, height}.
+ *
+ * Scans the string @p s, interpreting control codes (1/2/7 = line breaks,
+ * 5 = special glyph resolved via @c func_8002C734 / @c func_8002E3A4,
+ * 0x18-0x1F = multi-byte glyphs) and accumulating each line's pixel width from
+ * the packed nibble-width table @ref D_800834D8. Tracks the widest line and the
+ * line count; codes below 0x10 (other than 1/2/5/7) consume a following
+ * argument byte. When @p flag is 0 the scan stops at the first line break.
+ *
+ * @param s    Null-terminated message string.
+ * @param flag If nonzero, measure every line; if zero, stop at the first break.
+ * @return Packed dimensions: width in the low 16 bits, @c (lines*16 - 4) in the
+ *         high 16 bits.
+ */
+s32 func_8002E4AC(u8 *s, s32 flag) {
+    s32 width = 0;
+    s32 maxWidth = 0;
+    s32 lines = 1;
+    s32 maxLines = 1;
+    s32 height;
+
+    for (;;) {
+        s32 c = *s++;
+        if (c == 0) {
+            if (maxWidth < width) {
+                maxWidth = width;
+            }
+            if (maxLines < lines) {
+                maxLines = lines;
+            }
+            height = maxLines * 16;
+            break;
+        }
+        if ((u32) (c - 1) < 2 || c == 7) {
+            /* control codes 1, 2, 7: line break */
+            lines++;
+            if (c == 1) {
+                lines = 1;
+            }
+            if (c == 7) {
+                lines = 1;
+            }
+            if (maxLines < lines) {
+                maxLines = lines;
+            }
+            if (maxWidth < width) {
+                maxWidth = width;
+            }
+            width = 0;
+            if (flag == 0) {
+                height = maxLines * 16;
+                break;
+            }
+        } else if (c == 5) {
+            c = *s++;
+            width += func_8002E3A4(func_8002C734(c));
+            width++;
+        } else if (c < 0x10) {
+            s++;
+        } else if (c >= 0x18) {
+            u8 packed;
+            s32 nib;
+            if (c >= 0x20) {
+                c = c - 0x20;
+            } else if (c < 0x1C) {
+                c *= 0xE0;
+                c += *s++;
+                c -= 0x1520;
+            } else {
+                c *= 0xE0;
+                c += *s++;
+                c -= 0x18A0;
+                c |= 0x400;
+            }
+            packed = D_800834D8[c >> 1];
+            if (c & 1) {
+                packed >>= 4;
+            }
+            nib = packed & 0xF;
+            width += nib;
+        }
+    }
+
+    return maxWidth | (((maxLines * 16) - 4) << 16);
+}
 
 
 INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002E680);
 
 
 /** @brief Get a string's packed {width, height} (variant A). */
-s32 getGlyphWidthA(s32 code) {
+s32 getGlyphWidthA(u8 *code) {
     return func_8002E4AC(code, 1);
 }
 
 
 /** @brief Get glyph width (variant B). */
-void getGlyphWidthB(s32 code) {
+void getGlyphWidthB(u8 *code) {
     func_8002E4AC(code, 1);
 }
 
 
 /** @brief Get glyph width as u16. */
-u16 getGlyphWidthU16(s32 code) {
+u16 getGlyphWidthU16(u8 *code) {
     return (u16)func_8002E4AC(code, 1);
 }
 
@@ -663,7 +983,7 @@ u16 getGlyphWidthU16(s32 code) {
  * @param code Glyph code.
  * @return Status value truncated to 16 bits.
  */
-u16 getGlyphStatusU16(s32 code) {
+u16 getGlyphStatusU16(u8 *code) {
     return (u16)func_8002E4AC(code, 0);
 }
 

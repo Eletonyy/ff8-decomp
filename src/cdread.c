@@ -1,14 +1,13 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
+#include "psxsdk/libcd.h"
 #include "overlay.h"
 #include "sound.h"
 #include "cd.h"
+#include "cdread.h"
 
-extern CdDriveState D_8008A3C8;
-extern s32 D_8008A3B8;
-extern u8 D_8008A3DC[];
+/* D_8008A3C8 / D_8008A3B8 / D_8008A3DC / D_800853B8 come from cd.h. */
 extern u8 *D_80039418;
-extern u8 D_800853B8[];
 extern s32 D_80056558;
 
 typedef void (*CdHandler)(void);
@@ -44,7 +43,7 @@ void cdStartSyncRead(void) {
     s32 result = CdSync(1, 0);
 
     if (result == 2) {
-        CdControl(2, D_8008A3D8.params, 0);
+        CdControl(2, (u8 *)&D_8008A3D8.params, 0);
         D_8008A3D8.status = 1;
         cdClearStatusAndCallback();
     }
@@ -62,7 +61,7 @@ void cdStartAsyncRead(void) {
     s32 result = CdSync(1, 0);
 
     if (result == 2) {
-        CdControlF(2, D_8008A3D8.params);
+        CdControlF(2, (u8 *)&D_8008A3D8.params);
         D_8008A3D8.status = 4;
         cdPollReadState();
     }
@@ -171,7 +170,7 @@ void cdStartAsyncSeek(void) {
     s32 result = CdSync(1, 0);
 
     if (result == 2) {
-        CdControlF(2, D_8008A3D8.params);
+        CdControlF(2, (u8 *)&D_8008A3D8.params);
         D_8008A3D8.status = 8;
         cdPollSeekState();
     }
@@ -266,7 +265,7 @@ void func_80039218(void) {
             D_8008A3D8.status = 1;
             cdClearStatusAndCallback();
         } else {
-            CdIntToPos(D_8008A3B8, D_8008A3D8.params);
+            CdIntToPos(D_8008A3B8, &D_8008A3D8.params);
             D_8008A3D8.status = 7;
         }
         break;
@@ -278,7 +277,7 @@ void func_80039218(void) {
             sndKeyOn(0x10, 0, 0x80, 0x7F, 0);
         }
         VSync(0);
-        CdIntToPos(D_8008A3B8, D_8008A3D8.params);
+        CdIntToPos(D_8008A3B8, &D_8008A3D8.params);
         D_8008A3D8.status = 7;
         CdFlush();
         CdControl(9, 0, 0);
