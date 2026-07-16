@@ -188,8 +188,8 @@ extern s32 g_menuColor[];
 extern u8  D_801A1B88[];       /**< Start of the Triple Triad sound region uploaded to a bank. */
 extern s16 D_801D49E2;
 extern s16 D_801D49F8[];
-extern s16 D_801D4B18;
-extern s16 D_801D4B1A;
+extern u16 D_801D4B18;
+extern u16 D_801D4B1A;
 extern u16 D_801D4AF8[2][4]; /**< Per-(entity,side) previous edge flags (see func_800A29D4). */
 extern s16 D_801D4B08[2][4]; /**< Per-(entity,side) edge countdown timer (see func_800A29D4). */
 extern s32 D_801D4B20[]; /**< Per-controller current held-button mask. */
