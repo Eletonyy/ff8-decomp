@@ -257,9 +257,9 @@ s32 func_800BDA78(s32 pos, u8 *flags) {
  */
 s32 func_800BDAE4(s32 pos, s32 radius) {
     s32 result = -1;
-    if (abs(pos - 0x130) < radius) {
+    if (ABS(pos - 0x130) < radius) {
         result = 0;
-    } else if (abs(pos - 0x90) < radius) {
+    } else if (ABS(pos - 0x90) < radius) {
         result = 1;
     }
     return result;

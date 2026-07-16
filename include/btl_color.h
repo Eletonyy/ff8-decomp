@@ -51,4 +51,7 @@ extern u32  getBattleAllocBase(void);
 extern s32  getBattleAllocSize(void);
 extern void flipBattleOtBuffer(void);
 
+s32 func_8002FF34(s32 renderCtx, s32 cursorY, s32 stringId, s32 x, s32 y, s32 color);
+s32 func_800300F8(s32 renderCtx, s32 x, s32 w, s32 y, s32 color, s32 menuColor, s32 selColor);
+
 #endif

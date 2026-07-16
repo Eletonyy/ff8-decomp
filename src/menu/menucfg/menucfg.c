@@ -23,7 +23,6 @@ typedef struct {
 } CfgContext;
 
 extern CfgEntry D_801E7094[];
-extern u16 D_801FA3C8[];
 
 /**
  * @brief Count available config menu entries.
@@ -131,7 +130,6 @@ s32 func_801E59CC(s32 a0) {
 INCLUDE_ASM("asm/ovl/menucfg/nonmatchings/menucfg", func_801E59F8);
 
 extern s32 func_801EF9AC(void *arg0, s32 arg1, s32 arg2, s32 arg3);
-extern s32 func_801F0FEC(void *arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5);
 extern s32 g_menuColor;
 extern MenuDisplayConfig g_menuDisplayCfg;
 
