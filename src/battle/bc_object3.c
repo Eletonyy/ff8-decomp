@@ -495,11 +495,20 @@ void func_800A47E4(s32 a0) {
     } while (i < 7);
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4844);
+s32 func_800A4844(s32 arg0) {
+    s32 status = D_800ED148.entities[arg0].status;
+    s32 flags = D_800ED148.entities[arg0].flags;
+    
+    if((status & 0x25) || (flags & 0x02004009)) {
+        return 0;
+    }
+    
+    return 1;
+}
 
 s32 func_800A4898(s32 arg0) {
     if (D_800ED148.entities[arg0].linkedIdx != 255) {
-        if ((g_battleChars.chars[arg0].statusFlags & 0x10) && (func_800A4844() != 0)) {
+        if ((g_battleChars.chars[arg0].statusFlags & 0x10) && (func_800A4844(arg0) != 0)) {
             return arg0;
         }
 
