@@ -497,7 +497,17 @@ void func_800A47E4(s32 a0) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4844);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4898);
+s32 func_800A4898(s32 arg0) {
+    if (D_800ED148.entities[arg0].linkedIdx != 255) {
+        if ((g_battleChars.chars[arg0].statusFlags & 0x10) && (func_800A4844() != 0)) {
+            return arg0;
+        }
+
+        return 255;
+    }
+    
+    return 254;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A493C);
 
