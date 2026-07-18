@@ -835,16 +835,14 @@ void func_8009AF14(void *callback) {
  * @param a3 Volume / priority.
  * @param stack_arg Extra flag byte 2 (5th argument on stack).
  */
-void func_8009AF3C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stack_arg) {
-    s32 entity_id = a1;
-    s32 flag1 = a2;
-    SoundCmd *cmd;
-    s32 flag2 = stack_arg;
 
-    cmd = func_8009B134(8, a3, a0);
-    cmd->unk0 = entity_id;
-    cmd->unk2.b.lo = flag1;
-    cmd->unk2.b.hi = flag2;
+void func_8009AF3C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+    SoundCmd* temp_v0;
+
+    temp_v0 = func_8009B134(8, arg3, arg0);
+    temp_v0->unk0 = arg1;
+    temp_v0->unk2.b.lo = arg2;
+    temp_v0->unk2.b.hi = arg4;
 }
 
 /**
@@ -944,8 +942,8 @@ void func_8009B0F8(s32 a0) {
  * @param entry Caller-supplied context pointer / value.
  * @return Pointer to the command buffer, or NULL if the queue is full.
  */
-SoundCmd *func_8009B134(s32 cmd, s32 vol, s32 entry) {
-    return func_800B8564((s16)cmd, vol & 0xFF);
+SoundCmd* func_8009B134(s16 arg0, s32 arg1, s32 unused) {
+    return func_800B8564(arg0, arg1 & 0xFF);
 }
 
 /**

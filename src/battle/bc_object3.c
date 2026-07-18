@@ -1,4 +1,4 @@
-    #include "common.h"
+#include "common.h"
 #include "battle.h"
 
 extern u8 D_800786D8[];
@@ -437,16 +437,12 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4350);
  *
  * @param a0 Entity index (stride 0xD0).
  */
-void func_800A43C0(s32 a0) {
-    volatile u8 *base = (u8 *)&D_800ED148;
-    u8 *entity = (u8 *)base + a0 * 0xD0;
-    if (*(u16 *)(entity + 0x90) & 1) {
-        return;
-    }
-    func_800AF8A4(a0);
-    {
-        u8 *result = func_8009B134(0x72, 0xF0, 0);
-        *(s16 *)result = (s16)a0;
+
+
+void func_800A43C0(s32 arg0) {
+    if (!(D_800ED148.entities[arg0].status & 1)) {
+        func_800AF8A4(arg0);
+        func_8009B134(114, 240, 0)->unk0 = arg0;
     }
 }
 
@@ -589,7 +585,45 @@ s32 func_800A4FC4(s32 mask, u8 *dst) {
     return count & 0xFF;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A5004);
+s32 func_800A5004(void) {
+    if ((D_800ED148.unk12F2 == 0) || (D_800ED148.unk12F0 == 0)) {
+        return 1;
+    }
+    
+    if(D_800ED148.unk130C != 0) {
+        return 1;
+    }
+    
+    if (D_800EE4C0.unk1 == 16) {
+        if (D_800ED148.entities[D_800EE4C0.unk0].status & 1) {
+            goto x;
+        }
+
+        return 1;
+    }
+
+    
+    if (D_800ED148.unk12F0 == 1) {
+        if (!(D_800ED148.entities[D_800EE4C0.unk0].flags & 0x20000) && !(D_800ED148.entities[D_800EE4C0.unk0].flags & 0x40000)) {
+            return 0;
+        }
+    }
+    
+    if ((D_800ED148.unk12F0 == 2) && !((D_800ED148.entities[D_800EE4C0.unk0].flags & 0x40000))) {
+      return 0;
+    }
+
+    if ((D_800ED148.entities[D_800EE4C0.unk0].status & 0x35)) {
+        return 0;    
+    }
+    
+    if ((D_800ED148.entities[D_800EE4C0.unk0].flags & 0x4009)) {
+        x:
+        return 0;
+    }
+    
+    return 1;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A517C);
 

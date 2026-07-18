@@ -1142,10 +1142,10 @@ void func_8009AE08(s32 cmd);
 void func_8009AF14(void *callback);
 
 /** @brief Queue a custom sound command (id @c 8) with entity / flag params. */
-void func_8009AF3C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stack_arg);
+void func_8009AF3C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4);
 
 /** @brief Allocate a slot in the sound-command queue; caller fills the buffer. */
-SoundCmd *func_8009B134(s32 cmd, s32 vol, s32 entry);
+SoundCmd* func_8009B134(s16 arg0, s32 arg1, s32 unused);
 
 /** @brief Get the next random value from the shuffle buffer. */
 s32 func_8009B15C(void);

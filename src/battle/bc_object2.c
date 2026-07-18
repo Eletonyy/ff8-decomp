@@ -47,13 +47,9 @@ u16 func_8009BAC4(s32 arg0, u16 arg1) {
  * @param a0 Entity index (offset by 0x40, stride 132).
  * @return Combined ability flags (u16).
  */
-s32 func_8009BB3C(s32 arg0) {
-    u16 result;
-    
-    result = func_800B0F9C(D_80078E00.rows132[arg0 - 64].unk7);
-    result |= func_800B0F7C(D_80078E00.rows132[arg0 - 64].unk7);
-    
-    return result;
+u16 func_8009BB3C(s32 arg0) {
+    return func_800B0F9C(D_80078E00.rows132[arg0 - 64].unk7) 
+         | func_800B0F7C(D_80078E00.rows132[arg0 - 64].unk7);
 }
 
 /**
