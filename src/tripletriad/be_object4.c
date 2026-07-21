@@ -1424,15 +1424,81 @@ u32 func_800A3C7C(u32 ot, SPRT *prim, s32 tileIdx, s32 palArg, u32 xy) {
  * the lwl/swl tag-splice (read at the top, writes at the end — same idiom as
  * @ref func_800A3C7C).
  *
- * @note Not yet cleanly matched. The plain-C form (logic 100% correct) reaches ~95%;
- *       the remaining bytes are pure register-allocation/scheduling artifacts — head
- *       materialised from an uninitialised register (`addu s5,t0`), a never-stored
- *       0x18(sp) spill slot, and $t1 shared between the otBase reloads and the new-head
- *       shift. Reproducing those by hand needs codegen-forcing asm (register pins,
- *       materialise/coalesce asm) which is prohibited, so this is left as INCLUDE_ASM
- *       pending a clean matching form (permuter). Clean seed: permuter/func_800A3D2C/base.c.
+ * @param otBase  OT slot the finished chain is spliced into.
+ * @param pkt     Primitive buffer cursor (SPRT-sized steps, one per glyph).
+ * @param x       Left edge of the string, in screen pixels.
+ * @param y       Top edge of the string, in screen pixels.
+ * @param cardImg Glyph string to render (encoded as described above).
+ * @param col     Palette/color selector, forwarded to @ref func_800A3C7C.
+ * @return The advanced primitive-buffer cursor.
  */
-INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object4", func_800A3D2C);
+void *func_800A3D2C(void *otBase, void *pkt, s32 x, s32 y, s32 cardImg, s32 col) {
+    u8 *str = (u8 *)cardImg;
+    s32 startX;
+    s32 lo;
+    s32 hi;
+    s32 ch;
+    u32 head;
+
+    if (str == 0) {
+        return pkt;
+    }
+
+    lo = D_801D4B18;
+    hi = D_801D4B1A;
+    getAddrNewFast(otBase, head);
+
+    startX = x;
+    if (y >= 0x101) {
+        return pkt;
+    }
+    if (y < -8) {
+        return pkt;
+    }
+
+    for (;;) {
+        ch = *str++;
+        if (ch == 2) { /* newline: carriage-return x, drop one 16px row */
+            x = startX;
+            y += 0x10;
+            continue;
+        }
+        if (ch < 0x19) { /* terminator */
+            break;
+        }
+        if (x >= 0x181) { /* past the right screen edge */
+            break;
+        }
+        if (hi < x) { /* past the right clip bound */
+            break;
+        }
+        if (ch >= 0x20) { /* one-byte glyph */
+            ch = ch - 0x20;
+        } else if (ch < 0x1C) { /* two-byte glyph, first page */
+            ch = ch * 224;
+            ch += *str++;
+            ch -= 0x1520;
+        } else { /* two-byte glyph, second page (bit 10 selects it) */
+            ch = ch * 224;
+            ch += *str++;
+            ch -= 0x18A0;
+            ch |= 0x400;
+        }
+        if (lo < x) { /* left clip: advance x but emit nothing before it */
+            u32 xy = (y << 16) | (x & 0xFFFF);
+            head = func_800A3C7C(head, (SPRT *)pkt, ch, col, xy);
+            pkt = (u8 *)pkt + 0x18; /* packet stride: SPRT (0x14) + one pad word */
+        }
+        x += getNibbleValue(ch);
+    }
+
+    ((u8 *)pkt)[3] = 1; /* trailing primitive: 1 word */
+    *(u32 *)((u8 *)pkt + 4) = 0xE100041F; /* DR_TPAGE restore, texpage 0x41F */
+    addOtFast(pkt, head);
+    pkt = (u8 *)pkt + 8;
+    setAddrFast(otBase, head);
+    return pkt;
+}
 
 /**
  * @brief Render a right-aligned decimal number (e.g. a Triple Triad score/count)
