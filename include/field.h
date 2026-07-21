@@ -541,8 +541,43 @@ extern s32 fieldRandom(void);
  * full structure is around 0x64 bytes; only the fields touched by the
  * opcode handlers are named so far.
  */
+/**
+ * @brief One animation frame: destination X/Y for the sprite rect.
+ */
 typedef struct {
-    u8 pad00[0x0C];
+    u16 x;
+    u16 y;
+} EntityAnimFrame; /* 4 bytes */
+
+/**
+ * @brief Animation descriptor referenced by @ref EntityDef.
+ *
+ * A short header (sprite rect size, frame-reload count, source X) followed
+ * by the per-frame destination-coordinate table. The animation loop period
+ * is stored in the first frame's @c y slot (@c frames[0].y).
+ */
+typedef struct {
+    u8 pad0[3];
+    u8 rectW;                 /**< 0x03 — sprite rect width. */
+    u8 rectH;                 /**< 0x04 — sprite rect height. */
+    u8 frameReload;           /**< 0x05 — value reloaded into @c slot->frameIdx. */
+    u16 srcX;                 /**< 0x06 — source X passed to the frame loader. */
+    EntityAnimFrame frames[1];/**< 0x08 — per-frame dest coords; @c frames[0].y doubles as the loop period. */
+} EntityAnimData;
+
+/**
+ * @brief Entity definition/template referenced by @ref EntityRenderSlot.
+ */
+typedef struct {
+    u8 pad00[0x14];
+    EntityAnimData *anim;     /**< 0x14 — animation descriptor. */
+    u8 pad18[0x47];
+    u8 unk5F;                 /**< 0x5F — bit 0 set = entity is animated. */
+} EntityDef;
+
+typedef struct {
+    EntityDef *def;  /**< 0x00 — entity definition/template. */
+    u8 pad04[0x08];
     u16 unk0C;
     u8 pad0E[0x02];
     u16 unk10;       /**< Cleared on init by @c func_800A8CDC. */
@@ -564,7 +599,14 @@ typedef struct {
     u8 unk60;
     u8 unk61;
     u16 unk62;
-    u8 pad64[0x34];
+    u8 pad64[0x02];
+    u8 frameTimer;   /**< 0x66 — per-frame countdown; on expiry the frame advances. */
+    u8 frameIdx;     /**< 0x67 — current frame index (counts down; reloaded from anim->frameReload). */
+    u8 pad68[0x0A];
+    u8 animFlags;    /**< 0x72 — bit0x80 = retrigger, bit0x10 = active, low nibble reused. */
+    u8 pad73;
+    u8 timerReload;  /**< 0x74 — reload value for frameTimer when the period is non-negative. */
+    u8 pad75[0x23];
     s32 subBuffer;   /**< @c 0x98 — caller of @c func_800A8CDC uses the returned @c &subBuffer pointer. */
 } EntityRenderSlot;
 

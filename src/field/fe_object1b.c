@@ -15,6 +15,7 @@
 
 #include "common.h"
 #include "field.h"
+#include "psxsdk/libc.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libgpu.h"
 #include "field/fe_object1.h"
@@ -183,8 +184,87 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800A97E4);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800AA46C);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800AA5F8);
+/**
+ * @brief Per-entity animation tick — advances the frame and stages the next
+ *        sprite rectangle for upload.
+ *
+ * For render slot @p idx this:
+ *  - returns 1 immediately if the entity's definition is not animated
+ *    (@c def->unk5F bit 0 clear);
+ *  - while the retrigger flag (@c animFlags @c 0x80) is set, marks the slot
+ *    active (@c 0x10) on the frames where @c rand() is an exact multiple of
+ *    the loop period;
+ *  - returns 0 while the per-frame countdown @c frameTimer has not expired;
+ *  - on expiry reloads @c frameTimer, steps @c frameIdx, and when that wraps
+ *    to 0 re-arms the retrigger flag and reloads the frame count;
+ *  - builds the destination sprite @ref RECT in @c D_800D5ED8 from the current
+ *    frame's coordinates and the animation rect size, then uploads it with
+ *    @c MoveImage.
+ *
+ * Originally emitted as two INCLUDE_ASM stubs (@c func_800AA5F8 plus a
+ * spurious @c func_800AA870 tail label) because splat cut the function at the
+ * load-delay @c nop preceding the final @c MoveImage call.
+ *
+ * @param idx Entity render-slot index into @ref D_800D9630.
+ * @return 1 if the entity is not animated, otherwise 0.
+ */
+s32 func_800AA5F8(s32 idx) {
+    s16 period;
+    u8 flags;
+    s16 per;
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800AA870);
+    period = D_800D9630[idx]->def->anim->frames[0].y;
+    if ((D_800D9630[idx]->def->unk5F & 1) == 0) {
+        return 1;
+    }
+
+    flags = D_800D9630[idx]->animFlags;
+    if (flags & 0x80) {
+        per = period;
+        if (per > 0) {
+            if (rand() % per == 0) {
+                D_800D9630[idx]->animFlags &= 0x0F;
+                D_800D9630[idx]->animFlags |= 0x10;
+            }
+        } else {
+            D_800D9630[idx]->animFlags = flags & 0x0F;
+            D_800D9630[idx]->animFlags |= 0x10;
+        }
+    }
+
+    if ((D_800D9630[idx]->animFlags & 0x10) == 0) {
+        return 0;
+    }
+
+    D_800D9630[idx]->frameTimer--;
+    if (D_800D9630[idx]->frameTimer != 0) {
+        return 0;
+    }
+
+    if (period < 0) {
+        D_800D9630[idx]->frameTimer = period;
+    } else {
+        D_800D9630[idx]->frameTimer = D_800D9630[idx]->timerReload;
+    }
+
+    D_800D9630[idx]->frameIdx--;
+    if (D_800D9630[idx]->frameIdx == 0) {
+        D_800D9630[idx]->animFlags &= 0x0F;
+        D_800D9630[idx]->animFlags |= 0x80;
+        D_800D9630[idx]->frameIdx = D_800D9630[idx]->def->anim->frameReload;
+    }
+
+    D_800D5ED8.w = D_800D9630[idx]->def->anim->rectW;
+    D_800D5ED8.h = D_800D9630[idx]->def->anim->rectH;
+    /* frameIdx[frames] is frames[frameIdx]; the swapped index keeps the array
+       index in the first addu operand, matching the original codegen. */
+    D_800D5ED8.x = D_800D9630[idx]->frameIdx[D_800D9630[idx]->def->anim->frames].x;
+    D_800D5ED8.y = D_800D9630[idx]->frameIdx[D_800D9630[idx]->def->anim->frames].y;
+
+    MoveImage(&D_800D5ED8,
+              D_800D9630[idx]->def->anim->srcX,
+              D_800D9630[idx]->def->anim->frames[0].x);
+    return 0;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800AA8A0);

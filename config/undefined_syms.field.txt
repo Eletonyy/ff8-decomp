@@ -1,5 +1,7 @@
 /* PsyQ library aliases used by decomped C. */
+rand          = 0x80047CF4;
 SquareRoot0   = 0x8003F4A4;
+MoveImage     = 0x80048FBC;
 SetDefDrawEnv = 0x800487E4;
 SetDefDispEnv = 0x80048898;
 PutDispEnv    = 0x80049480;
