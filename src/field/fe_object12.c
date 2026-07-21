@@ -31,7 +31,25 @@ void func_800C03F4(void) {
     g_gameState.mainData.partyLockFlag |= 0x02;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C0410);
+/**
+ * @brief Test whether the player's inventory holds a given item ID.
+ *
+ * Linear scan over all @ref ITEM_SLOT_COUNT slots of
+ * @c g_gameState.mainData.itemSlots, comparing each slot's @c id.
+ *
+ * @param itemId Item ID to search for.
+ * @return @c 1 if any slot holds @p itemId, otherwise @c 0.
+ */
+s32 func_800C0410(s32 itemId) {
+    s32 i;
+
+    for (i = 0; i < ITEM_SLOT_COUNT; i++) {
+        if (g_gameState.mainData.itemSlots[i].id == itemId) {
+            return 1;
+        }
+    }
+    return 0;
+}
 
 /**
  * Copies 0x40 bytes from D_80077BA8 - 0x98 to D_80077BA8 using memcopy,
