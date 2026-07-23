@@ -314,7 +314,7 @@ extern int  func_800A63AC();
 extern int  func_800A6A80();
 extern void func_800A7194(void);
 extern void func_800A7224(s32 idx, u16 *vals, s32 mode);
-extern int  func_800A736C();
+extern void func_800A736C(s32 idx, u16 *vals, s32 mode);
 extern void func_800A74B4(s32 idx, EntityRenderXform *vals, s32 mode);
 extern int  func_800A7564();
 extern int  func_800A8058();

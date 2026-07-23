@@ -622,7 +622,11 @@ typedef struct {
     u16 field84;     /**< 0x84 — snapshot of @c unk10 (dirty-check by @c func_800A7224). */
     u16 field86;     /**< 0x86 — snapshot of @c unk12. */
     s16 field88;     /**< 0x88 — snapshot of @c unk14. */
-    u8 pad8A[0x0E];
+    u8 pad8A[0x02];
+    u16 field8C;     /**< 0x8C — snapshot of @c unk18 (dirty-check by @c func_800A736C). */
+    u16 field8E;     /**< 0x8E — snapshot of @c unk1A. */
+    s16 field90;     /**< 0x90 — snapshot of @c unk1C. */
+    u8 pad92[0x06];
     s32 subBuffer;   /**< @c 0x98 — caller of @c func_800A8CDC uses the returned @c &subBuffer pointer. */
 } EntityRenderSlot;
 

@@ -167,7 +167,46 @@ void func_800A7224(s32 idx, u16 *vals, s32 mode) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800A736C);
+/**
+ * @brief Twin of @c func_800A7224 for the @c unk18 vector of an
+ *        @ref EntityRenderSlot (same switch + change-detect, offset +8).
+ *
+ * Dispatches on @p mode over @c D_800D9630[idx]:
+ *  - @c mode @c 0: overwrite the 8-byte @c unk18 block from @p vals.
+ *  - @c mode @c 1: add @p vals[0..2] into @c unk18 / @c unk1A / @c unk1C.
+ *  - any other @p mode: leave the vector unchanged.
+ *
+ * Then (all modes) compares the @c unk18 vector against its snapshot
+ * (@c field8C / @c field8E / @c field90); if it changed, clears bits @c 0x18
+ * of @c unk60 and refreshes the snapshot.
+ *
+ * @param idx  Render-slot index into @ref D_800D9630.
+ * @param vals Source vector (mode 0 uses 8 bytes; mode 1 uses the first three).
+ * @param mode Selects overwrite (0), accumulate (1), or compare-only.
+ */
+void func_800A736C(s32 idx, u16 *vals, s32 mode) {
+    EntityRenderSlot *slot;
+
+    switch (mode) {
+    case 0:
+        *(RenderSlotVec4 *)&D_800D9630[idx]->unk18 = *(RenderSlotVec4 *)vals;
+        break;
+    case 1:
+        D_800D9630[idx]->unk18 += vals[0];
+        D_800D9630[idx]->unk1A += vals[1];
+        D_800D9630[idx]->unk1C += vals[2];
+        break;
+    }
+
+    slot = D_800D9630[idx];
+    if ((*(u32 *)&slot->field8C != *(u32 *)&slot->unk18) |
+        (slot->field90 != (s16)slot->unk1C)) {
+        slot->unk60 &= 0xE7;
+        D_800D9630[idx]->field8C = D_800D9630[idx]->unk18;
+        D_800D9630[idx]->field8E = D_800D9630[idx]->unk1A;
+        D_800D9630[idx]->field90 = D_800D9630[idx]->unk1C;
+    }
+}
 
 /**
  * @brief Per-mode write/accumulate of three or four @c s32 values into
