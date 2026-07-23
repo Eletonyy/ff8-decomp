@@ -119,7 +119,53 @@ void func_800A7194(void) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800A7224);
+/** @brief 8-byte (2-aligned) block copied into an @ref EntityRenderSlot's
+ *         @c unk10 region by @c func_800A7224 mode 0. The 2-byte alignment is
+ *         what makes the copy emit as an unaligned @c lwl/lwr/swl/swr pair. */
+typedef struct {
+    u16 a, b, c, d;
+} RenderSlotVec4;
+
+/**
+ * @brief Per-mode update of an @ref EntityRenderSlot's @c unk10 vector, then a
+ *        change-detect that re-snapshots and clears flags when it moved.
+ *
+ * Dispatches on @p mode over @c D_800D9630[idx]:
+ *  - @c mode @c 0: overwrite the 8-byte @c unk10 block from @p vals.
+ *  - @c mode @c 1: add @p vals[0..2] into @c unk10 / @c unk12 / @c unk14.
+ *  - any other @p mode: leave the vector unchanged.
+ *
+ * Then (all modes) compares the @c unk10 vector against its snapshot
+ * (@c field84 / @c field86 / @c field88); if it changed, clears bits @c 0x18
+ * of @c unk60 and refreshes the snapshot.
+ *
+ * @param idx  Render-slot index into @ref D_800D9630.
+ * @param vals Source vector (mode 0 uses 8 bytes; mode 1 uses the first three).
+ * @param mode Selects overwrite (0), accumulate (1), or compare-only.
+ */
+void func_800A7224(s32 idx, u16 *vals, s32 mode) {
+    EntityRenderSlot *slot;
+
+    switch (mode) {
+    case 0:
+        *(RenderSlotVec4 *)&D_800D9630[idx]->unk10 = *(RenderSlotVec4 *)vals;
+        break;
+    case 1:
+        D_800D9630[idx]->unk10 += vals[0];
+        D_800D9630[idx]->unk12 += vals[1];
+        D_800D9630[idx]->unk14 += vals[2];
+        break;
+    }
+
+    slot = D_800D9630[idx];
+    if ((*(u32 *)&slot->field84 != *(u32 *)&slot->unk10) |
+        (slot->field88 != (s16)slot->unk14)) {
+        slot->unk60 &= 0xE7;
+        D_800D9630[idx]->field84 = D_800D9630[idx]->unk10;
+        D_800D9630[idx]->field86 = D_800D9630[idx]->unk12;
+        D_800D9630[idx]->field88 = D_800D9630[idx]->unk14;
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800A736C);
 

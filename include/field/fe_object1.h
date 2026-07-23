@@ -313,7 +313,7 @@ extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();
 extern int  func_800A6A80();
 extern void func_800A7194(void);
-extern int  func_800A7224();
+extern void func_800A7224(s32 idx, u16 *vals, s32 mode);
 extern int  func_800A736C();
 extern void func_800A74B4(s32 idx, EntityRenderXform *vals, s32 mode);
 extern int  func_800A7564();

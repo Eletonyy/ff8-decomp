@@ -618,7 +618,11 @@ typedef struct {
     u8 animFlags;    /**< 0x72 — bit0x80 = retrigger, bit0x10 = active, low nibble reused. */
     u8 pad73;
     u8 timerReload;  /**< 0x74 — reload value for frameTimer when the period is non-negative. */
-    u8 pad75[0x23];
+    u8 pad75[0x0F];
+    u16 field84;     /**< 0x84 — snapshot of @c unk10 (dirty-check by @c func_800A7224). */
+    u16 field86;     /**< 0x86 — snapshot of @c unk12. */
+    s16 field88;     /**< 0x88 — snapshot of @c unk14. */
+    u8 pad8A[0x0E];
     s32 subBuffer;   /**< @c 0x98 — caller of @c func_800A8CDC uses the returned @c &subBuffer pointer. */
 } EntityRenderSlot;
 
