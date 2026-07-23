@@ -1014,18 +1014,29 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A10F4);
  *        project it through @c func_800A0F34, then call @c func_800A0FB8
  *        with a flag selected by the active-slot index.
  *
- * Reads @c D_800704A8.slots[unk1A6].param to pick a @ref FieldEntity,
+ * Reads @c D_800704A8.slots[unk1A6].param to pick an @ref Eline entity,
  * fills @c svec.{vx,vy,vz} from its @c posX/posY/posZ shifted right by
- * @c 12, biased by @c D_8005F0F8->baseZ on @c vz. The projection result
- * is latched to @c D_800C71FC. The trailing @c func_800A0FB8 call gets
+ * @c 12, biasing @c vz by @c D_8005F0F8->baseZ. The projection result is
+ * latched to @c D_800C71FC. The trailing @c func_800A0FB8 clamp call gets
  * flag @c 0 when @c unk1A6 @c == @c 0 and flag @c 1 otherwise.
  *
- * @note Decomp at 95.45% match — semantics and structure match; remaining
- *       diff is gcc 2.7.2 reg-alloc choice (which temp holds the
- *       @c &D_80085224 pointer-base vs the @c &svec arg pointer).
- *       See @c permuter/func_800A11E0/base.c.
+ * @param arg0 Screen-space position, written by @c func_800A0F34 and then
+ *             clamped in place by @c func_800A0FB8.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A11E0);
+void func_800A11E0(Vec2s *arg0) {
+    SVECTOR svec;
+
+    svec.vx = D_80085224[D_800704A8.slots[D_800704A8.unk1A6].param].posX >> 12;
+    svec.vy = D_80085224[D_800704A8.slots[D_800704A8.unk1A6].param].posY >> 12;
+    svec.vz = (D_80085224[D_800704A8.slots[D_800704A8.unk1A6].param].posZ >> 12) +
+              D_8005F0F8->baseZ;
+    D_800C71FC = func_800A0F34(&svec, (s32 *)arg0);
+    if (D_800704A8.unk1A6 == 0) {
+        func_800A0FB8(arg0, 0, 0);
+    } else {
+        func_800A0FB8(arg0, 1, 0);
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A1318);
 
