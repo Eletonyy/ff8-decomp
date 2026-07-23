@@ -1,5 +1,6 @@
 #include "common.h"
 #include "gamestate.h"
+#include "game.h"
 #include "field/fe_object12.h"
 
 extern u8 D_80077BA8[];
@@ -57,9 +58,28 @@ s32 func_800C0410(s32 itemId) {
  */
 void func_800C0448(void) {
     memcopy(D_80077BA8, D_80077BA8 - 0x98, 0x40);
-    memzero16(D_80077BA8, 4);
+    memzero16((s32 *)D_80077BA8, 4);
 }
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C048C);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C0634);
+/**
+ * @brief Apply and clear character slot 7's stocked magic.
+ *
+ * Walks all 32 magic slots of @c g_gameState.chars[7]; each stocked spell
+ * (@c magicId @c != @c 0) is applied via @c func_800C048C, then the whole
+ * magic list is zeroed. @c D_80077C40 aliases @c &g_gameState.chars[7].magic
+ * (same address, 64 bytes); @c memzero16 clears it in 16-byte units.
+ */
+void func_800C0634(void) {
+    s32 i;
+
+    for (i = 0; i < MAGIC_SLOT_COUNT; i++) {
+        s32 magicId = g_gameState.chars[7].magic[i].magicId;
+        s32 quantity = g_gameState.chars[7].magic[i].quantity;
+        if (magicId != 0) {
+            func_800C048C(magicId, quantity);
+        }
+    }
+    memzero16((s32 *)D_80077C40, 4);
+}
