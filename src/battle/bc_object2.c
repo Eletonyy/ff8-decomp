@@ -541,7 +541,7 @@ void func_8009CA14(s32 arg0) {
  * @param srcIdx Source entity slot index.
  * @param dstIdx Target entity slot index.
  */
-void func_8009CAD8(s32 arg0, s32 arg1) { //entity [1]
+void func_8009CAD8(s32 arg0, s32 arg1) { //entity[1]
     u8 sp10[8];
     u8 sp18;
     u8 sp19;
@@ -1496,7 +1496,7 @@ s32 func_8009EF64(s32 arg0, s32 unused, s32 unused2, s32 arg3) {
     BattleEntityData* curr;
 
     curr = D_800ED148.entities[arg0].linkedPtr->data;
-    switch (D_800EE9E8.subEntries[arg0 - 3].unk43) {
+    switch (D_800EE9E8.subEntries[arg0 - 3].unk46) {
     case 0:
         arg3 = curr->unkFB;
         break;
@@ -1752,7 +1752,7 @@ s32 func_8009F65C(s32 arg0, s32 arg1) {
     BattleEntityData* data;
     
     data = D_800ED148.entities[arg0].linkedPtr->data;
-    offset = D_800EE9E8.subEntries[arg0 - 3].unk43 * 8;
+    offset = D_800EE9E8.subEntries[arg0 - 3].unk46 * 8;
 
     for (i = 0; i < 4; i++, offset += 2) {
         if (arg1 == data->unk104[offset]) {

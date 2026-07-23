@@ -162,7 +162,8 @@ typedef enum {
     CTRL_FLAG_30    = 0x30,
     CTRL_FLAG_40    = 0x40,
     CTRL_FLAG_80    = 0x80,
-    CTRL_FLAG_100   = 0x100
+    CTRL_FLAG_100   = 0x100,
+    CTRL_FLAG_400   = 0x400
 } ControlFlags;
 
 /**
@@ -402,15 +403,17 @@ typedef struct {
     /* 0x0D64 */ u8 padD64[0x84];
     /* 0x0DE8 */ BattleUnkDE8 arrayDE8[3][11][2]; /**< (792 bytes: 0x318) size tied to func_800A5948 */
     /* 0x1100 */ u8 pad1100[3];
-    /* 0x1103 */ TaskLink taskLinks[16];        /**< Task queue link table (16 × 4 bytes). */
+    /* 0x1103 */ TaskLink taskLinks[16];        /**< D_800EE24B: Task queue link table (16 × 4 bytes). */
     /* 0x1143 */ u8 pad1143[1];                 /**< Pad to taskData. */
-    /* 0x1144 */ TaskEntry taskData[16];        /**< Task queue data slots (16 × 16 bytes). */
+    /* 0x1144 */ TaskEntry taskData[16];        /**< D_800EE28C: Task queue data slots (16 × 16 bytes). */
     /* 0x1244 */ u8 pad1244[0x48];              /**< Pad to unk128C. */
     /* 0x128C */ s32 unk128C;                   /**< Cached userData for callback. */
     /* 0x1290 */ s16 unk1290;
     /* 0x1292 */ s16 unk1292;
     /* 0x1294 */ s16 unk1294;
-    /* 0x1296 */ u8 pad1296[0x36];
+    /* 0x1296 */ u8 pad1296[0x12B8 - 0x1296];
+    /* 0x12B8 */ u16 array12B8[7];
+    /* 0x12C6 */ u8 pad12C7[0x12CC - 0x12C6];
     /* 0x12CC */ Struct_12CC array12CC[1];        /* used in func_8009D594 */
     /* 0x12CF */ u8 pad12CF[0x9];
     /* 0x12D8 */ s32 unk12D8;                   /**< Cached length argument for callback. */
@@ -485,18 +488,23 @@ typedef struct {
     u8 unk2[3];     /* 0x02..0x04: unknown. */
 } BattleAnimSlot;
 
+
+/** this struct might be related to draw function. Unk0 accessed in func_800A3094 */
+typedef struct {
+    u8 unk0;
+    u8 pad[3];
+} drawSlot;
+
 /** @brief 0x47-byte sub-entry in @c BattleAnimTable.subEntries. */
 typedef struct {
-    u8 charId;          /* 0x00: char/scene byte, mirrored from g_gameState[+0xAF4..]. */
-    u8 pad01[0x42];     /* 0x01..0x42: padding. */
-    u8 unk43;
-    u8 pad02[0x3];     /* 0x44..0x46: padding. */
+    drawSlot array0[4]; /* size related to the index used in func_800A3094 */
+    u8 pad10[0x36];     /* 0x01..0x45: padding. */
+    u8 unk46;
 } BattleAnimSubEntry;   /* 0x47 */
 
 /** @brief Battle anim/scene lookup table at @c D_800EE9E8. */
 typedef struct {
     /* 0x000 */ BattleAnimSlot animSlots[32];      /**< 32 × 5 = 0xA0 bytes. */
-    /* 0x0A0 */ u8 padA0[3];                       /**< 0xA0..0xA2 unknown. */
     /* 0x0A3 */ BattleAnimSubEntry subEntries[3];  /**< 3 × 0x47 = 0xD5 bytes. */
 } BattleAnimTable;
 

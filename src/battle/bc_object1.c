@@ -83,7 +83,6 @@ void func_8009B208(TaskLink *, u8 *, s32);
 s32  func_8009B238(u8 *, s32);
 s32  func_8009B270(u8 *, s32);
 s32  func_8009B2A4(u8 *, u8 *, s32);
-s32  func_8009B390(u8 *, s32);
 void func_8009B428(void);
 void func_8009B478(void);
 void func_8009B520(void);
@@ -1125,13 +1124,13 @@ void func_8009B320(s32 a0, u8 *a1, u8 *a2) {
  * @param a1 Maximum number of entries to scan.
  * @return Index of the first inactive entry.
  */
-s32 func_8009B390(u8 *a0, s32 a1) {
+u8 func_8009B390(TaskLink* arg0, s32 arg1) {
     s32 i;
-    for (i = 0; i < a1; i++) {
-        if (a0[0] == 0 && a0[1] == 0) {
-            return (u8)i;
+
+    for (i = 0; i < arg1; i++) {
+        if (arg0[i].fwd == 0 && arg0[i].bwd == 0) {
+            return i;
         }
-        a0 += 4;
     }
 }
 

@@ -6,7 +6,6 @@ extern u8 D_800EE424[];
 extern u8 D_800EE43C[];
 extern u8 D_800EE462[];
 extern u8 D_80077E58[];
-s32 func_800A4798(s32, s32);
 void func_800A5948(s32, s32);
 void func_800A18E0(s32);
 void func_800A589C(s32);
@@ -361,7 +360,21 @@ void func_800A3054(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg5) {
     *(u16 *)(entry + 6) = arg5;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A3094);
+/**
+* enemyId is the id of the enemy you are using draw on (3-5) 
+*/
+
+s32 func_800A3094(s32 targetId, s32 arg1) {
+    s32 i;
+
+    for (i = 0; i < 4; i++) {
+        if (D_800EE9E8.subEntries[targetId - 3].array0[i].unk0 == arg1) {
+            return 1;
+        }
+    }
+    
+    return 0;
+}
 
 /**
  * @brief Clear two battle state bytes at D_800ED148 offsets 0x5C0 and 0x5C1.
@@ -446,7 +459,14 @@ void func_800A43C0(s32 arg0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4434);
+void func_800A4434(u32 arg0, s32 unused, TaskEntry* arg2, BattleCharData* arg3) {
+    func_800A4350(arg0, g_battleChars.chars[arg0].field01D);
+    D_800ED148.entities[arg0].flags &= 0x7FFFFFFF; // ~(1 << BATTLE_ENTITY_FLAG_BIT_31)
+    arg3->field01C &= 0xFE;
+    D_800ED148.entities[arg0].controlFlags &= ~CTRL_FLAG_400;
+    recalcAllGfStats();
+    arg2->done = 1;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A44FC);
 
@@ -471,7 +491,19 @@ u16 func_800A475C(u16 count) {
     return (u16)result;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4798);
+s32 func_800A4798(u32 arg0, s32 arg1) { // arg0 is always 0-6
+    s32 i;
+    s32 count = 0;
+    u16 mask = 1 << arg0;
+    
+    for (i = 0; i < arg1; i++) {
+        if (mask & D_800ED148.array12B8[i]) {
+            count++;
+        }
+    }
+    
+    return count;
+}
 
 /**
  * @brief Call func_800A4798 for each of 7 entities, storing result at offset 0xD9.
