@@ -290,7 +290,13 @@ extern int  func_800A4758();
 extern s32  func_800A48CC(void);
 extern int  func_800A4934();
 extern int  func_800A4C14();
-extern int  func_800A5224();
+
+/* func_800A5224 per-slot parameter arrays — element types inferred from the
+ * loop stride; func_800A4C14 (their consumer) is not yet decompiled. */
+typedef struct { u8 pad[0xB4]; } func_800A5224_arg2; /* 0xB4 = 180 bytes */
+typedef struct { u8 pad[0x20]; } func_800A5224_arg3; /* 0x20 = 32 bytes */
+extern void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
+                          func_800A5224_arg3 *arg3);
 extern int  func_800A5360();
 extern int  func_800A553C();
 extern void func_800A5698(void);

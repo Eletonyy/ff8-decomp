@@ -60,6 +60,21 @@ typedef struct {
     /* 0x06 */ u8  pad06[0x12];
 } DrawPoint;  /* 0x18 = 24 bytes */
 extern DrawPoint D_800706A0[];
+
+/**
+ * @brief One 136-byte object slot in the @c D_800C6DA0 table walked by
+ *        @c func_800A5224 (8 slots).
+ *
+ * Only the trailing tick pair is accessed by @c func_800A5224; the leading
+ * bytes are the object state consumed by @c func_800A4934 / @c func_800A4C14.
+ */
+typedef struct {
+    /* 0x00 */ u8  pad00[0x80];
+    /* 0x80 */ s16 field80;   /**< Tick threshold base; slot clears when tick > field80+4. */
+    /* 0x82 */ u16 field82;   /**< Per-frame tick counter (incremented while active). */
+    /* 0x84 */ u8  pad84[0x04];
+} ObjSlot;  /* 0x88 = 136 bytes */
+extern ObjSlot D_800C6DA0[];
 extern s16 D_8005F122;
 extern s16 D_8005F14A;
 extern s16 D_8005F100;
@@ -1786,21 +1801,46 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A4C14);
  * @brief 8-iteration script-dispatch loop with per-slot flag-driven
  *        callbacks and a tick counter that auto-clears.
  *
- * Calls @c func_8003FEE4 once at start and @c func_8003FF88 at end
- * (frame guards), then iterates @c i in @c [0,8) over four parallel
- * arrays (stride 0x88 / 0x18 / 0x20 / 0xB4). When the per-slot flag
- * @c D_8005F168[i] is non-zero, runs @c func_800A4934 on it, then
- * conditionally @c func_800A4C14 (when flag is @c 2, or @c 1 and
- * @c D_8005F122 @c == @c 1), then bumps the slot's tick counter and
- * clears the flag when the counter passes its threshold.
+ * Sets the GTE rotation/translation matrix from @p m (guarded by
+ * @c func_8003FEE4 / @c func_8003FF88), then iterates @c i in @c [0,8) over
+ * four parallel arrays: @c D_800C6DA0 (@ref ObjSlot, stride 0x88),
+ * @c D_800706A0 (@ref DrawPoint, stride 0x18), @p arg3 (stride 0x20), and
+ * @p arg2 (stride 0xB4). When the per-slot flag @c D_8005F168[i] is
+ * non-zero, runs @c func_800A4934 on the slot, then conditionally
+ * @c func_800A4C14 (when the flag is @c 2, or it is @c 1 and
+ * @c D_8005F122 @c == @c 1), then bumps @c ObjSlot.field82 and clears the
+ * flag once it exceeds @c field80 + 4.
  *
- * @note Decomp at 89.75% match — gcc 2.7.2 rebases the
- *       @c D_800C6DA0 walker to @c base+0x80 (for the 0x80/0x82
- *       cluster of slot-counter accesses), which costs an extra
- *       s-reg and shifts the prologue layout. See
- *       @c permuter/func_800A5224/base.c.
+ * @param m    GTE rotation/translation matrix.
+ * @param arg1 Opaque context forwarded to @c func_800A4C14.
+ * @param arg2 Per-slot parameter array (stride 0xB4), forwarded to @c func_800A4C14.
+ * @param arg3 Per-slot parameter array (stride 0x20), forwarded to @c func_800A4C14.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5224);
+void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
+                   func_800A5224_arg3 *arg3) {
+    s32 i;
+
+    func_8003FEE4();
+    SetRotMatrix(m);
+    SetTransMatrix(m);
+    for (i = 0; i < 8; i++) {
+        if (D_8005F168[i] != 0) {
+            u8 flag;
+            s16 tick;
+            func_800A4934(&D_800C6DA0[i], &D_800706A0[i]);
+            flag = D_8005F168[i];
+            if (flag == 2 || (flag == 1 && D_8005F122 == flag)) {
+                func_800A4C14(&D_800C6DA0[i], arg1, &arg2[i], &arg3[i]);
+            }
+            tick = D_800C6DA0[i].field82 + 1;
+            D_800C6DA0[i].field82 = tick;
+            if (tick > D_800C6DA0[i].field80 + 4) {
+                D_8005F168[i] = 0;
+            }
+        }
+    }
+    func_8003FF88();
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5360);
 
