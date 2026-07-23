@@ -790,6 +790,30 @@ typedef struct {
     /* 0x0FE */ u8 padFE[0x166];    /**< Rest of the 612-byte slot mirrors @c Eline. */
 } FieldActor; /* 0x264 = 612 bytes */
 
+/**
+ * @brief One 254-byte animation slot in the field "subscene" buffer walked by
+ *        @ref func_800A37A8.
+ *
+ * The leading @c subscene region is a packed @ref FieldActor — only its first
+ * @c 0xFE bytes are live, so slots pack at 254-byte stride — and is passed to
+ * @c func_800A355C as its @c FieldActor argument. @c h2 mirrors
+ * @c FieldActor.animOffset (offset @c 0xF4).
+ */
+typedef struct {
+    /* 0x00 */ u8 subscene[0xD0]; /**< Packed FieldActor head (rows/timers/...). */
+    /* 0xD0 */ u8 table[0x20];    /**< Animation source bytes, indexed by @c h2. */
+    /* 0xF0 */ s16 h0;            /**< State counter (advanced each active tick). */
+    /* 0xF2 */ s16 h1;            /**< State counter, compared against @c table[h2]. */
+    /* 0xF4 */ s16 h2;            /**< Table cursor (mirror of @c FieldActor.animOffset). */
+    /* 0xF6 */ u8 padF6[0x08];
+} FieldSubsceneSlot;             /* 0xFE = 254 bytes */
+
+/** @brief Buffer of 16 @ref FieldSubsceneSlot, walked per-frame by @ref func_800A37A8. */
+typedef struct {
+    u8 pad0000[0x1740];
+    /* 0x1740 */ FieldSubsceneSlot slots[16];
+} FieldSubsceneBuffer;
+
 
 /** @brief Update one packed-flag table slot from a step tick. */
 extern void func_800383B8(s32 key, s32 status);

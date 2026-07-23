@@ -1617,32 +1617,48 @@ void func_800A355C(FieldActor *actor, s32 slot, s32 a2) {
 }
 
 /**
- * @brief Per-frame anim-row tick for all 16 active slots in the
- *        @c D_800C7200 buffer.
+ * @brief Per-frame animation tick for all 16 slots of a field subscene buffer.
  *
- * Iterates 16 anim-row slots (stride @c 0xFE in @p buf). For each
- * slot where @c D_800704A8.slotActive[i] is set: walks a per-slot
- * anim table at @c slot+0x1810, advancing @c h2 (the table index)
- * whenever @c h1 (the per-frame counter) reaches @c table[h2].
- * Each tick calls @c func_800A355C to dispatch the visual update for
- * the current row.
+ * Walks the 16 @ref FieldSubsceneSlot entries of @p buf (stride @c 0xFE). For
+ * each slot marked active in @c D_800704A8.slotActive[i]:
+ *  - if the per-frame counter @c h1 has reached @c table[h2], reset @c h1,
+ *    advance the table cursor @c h2, and if the next table entry is @c 0 wrap
+ *    @c h2 and @c h0 back to 0;
+ *  - dispatch the visual update via @c func_800A355C (the slot's @c subscene is
+ *    the @ref FieldActor argument), then advance @c h0 and @c h1.
+ * Inactive slots have all three state halfwords (@c h0 / @c h1 / @c h2) cleared.
  *
- * Inactive slots have all three state halfwords (@c h0 / @c h1 / @c h2)
- * cleared.
+ * @param arg0 Unused.
+ * @param arg1 Unused.
+ * @param buf  Subscene buffer (from the @c D_800C7200 table).
  *
- * @note Decomp at 95.45% match — caching @c D_800704A8.slotActive into
- *       a local @c u8* (init separately from for-loop init) drops the
- *       per-iter @c lui+addiu of the @c slotActive pointer and saves
- *       one s-reg. The do-while loop form (with @c i=0 before the
- *       loop) gives gcc the same loop shape as target. Remaining diff
- *       is gcc 2.7.2 reg-alloc: target keeps the slot walker at base
- *       (5 s-regs); ours rebases to @c slot+0x1834 for h0/h1/h2 access
- *       and keeps a parallel walker (6 effective regs). The struct has
- *       @c subscene at offset @c 0x1740 within the slot, @c table at
- *       @c 0x1810, and @c h0/h1/h2 at @c 0x1830/0x1832/0x1834.
- *       See @c permuter/func_800A37A8/base.c.
+ * @note @c pos is declared but unused: the original reserves an 8-byte stack
+ *       slot here (gcc 2.7.2 keeps an unused struct local), matching the frame.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A37A8);
+void func_800A37A8(void *arg0, s32 arg1, FieldSubsceneBuffer *buf) {
+    s32 i;
+    SVECTOR pos;
+
+    for (i = 0; i < 16; i++) {
+        if (D_800704A8.slotActive[i] != 0) {
+            if (buf->slots[i].h1 >= buf->slots[i].table[buf->slots[i].h2]) {
+                buf->slots[i].h1 = 0;
+                buf->slots[i].h2++;
+                if (buf->slots[i].table[buf->slots[i].h2] == 0) {
+                    buf->slots[i].h2 = 0;
+                    buf->slots[i].h0 = 0;
+                }
+            }
+            func_800A355C((FieldActor *)&buf->slots[i], i, (s32)buf);
+            buf->slots[i].h0++;
+            buf->slots[i].h1++;
+        } else {
+            buf->slots[i].h0 = 0;
+            buf->slots[i].h1 = 0;
+            buf->slots[i].h2 = 0;
+        }
+    }
+}
 
 /**
  * @brief Advance a 3-axis position+angle lerp accumulator by one tick.
