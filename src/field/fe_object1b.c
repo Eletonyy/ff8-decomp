@@ -127,12 +127,32 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800A736C);
  * @brief Per-mode write/accumulate of three or four @c s32 values into
  *        an @ref EntityRenderSlot.
  *
+ * Dispatches on @p mode over the render slot @c D_800D9630[idx]:
+ *  - @c mode @c 0: overwrite the whole @c xform block — a single
+ *    @ref EntityRenderXform aggregate copy from @p vals (all four words).
+ *  - @c mode @c 1: add @p vals into @c xform.field20 / @c field24 / @c field28
+ *    (each read-modify-write reloads the slot pointer; @c field2C untouched).
+ *  - any other @p mode: no-op.
+ *
  * @param idx   Render-slot index into @ref D_800D9630.
- * @param vals  Pointer to four @c s32 values (only first three used in mode 1).
- * @param mode  @c 0 → overwrite @c field20..field2C; @c 1 → add to
- *              @c field20..field28 (skipping @c field2C); other → no-op.
+ * @param vals  Transform values to store (mode 0) or accumulate (mode 1).
+ * @param mode  Selects overwrite (0), accumulate (1), or no-op.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800A74B4);
+void func_800A74B4(s32 idx, EntityRenderXform *vals, s32 mode) {
+    EntityRenderSlot *slot;
+
+    switch (mode) {
+    case 0:
+        slot = D_800D9630[idx];
+        slot->xform = *vals;
+        break;
+    case 1:
+        D_800D9630[idx]->xform.field20 += vals->field20;
+        D_800D9630[idx]->xform.field24 += vals->field24;
+        D_800D9630[idx]->xform.field28 += vals->field28;
+        break;
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800A7564);
 
@@ -165,9 +185,9 @@ s32 *func_800A8CDC(s32 idx, s32 firstWord, EntityRenderSlot *slot) {
     D_800D9630[idx]->unk18 = 0;
     D_800D9630[idx]->unk1A = 0;
     D_800D9630[idx]->unk1C = 0;
-    D_800D9630[idx]->field20 = 0x1000;
-    D_800D9630[idx]->field24 = 0x1000;
-    D_800D9630[idx]->field28 = 0x1000;
+    D_800D9630[idx]->xform.field20 = 0x1000;
+    D_800D9630[idx]->xform.field24 = 0x1000;
+    D_800D9630[idx]->xform.field28 = 0x1000;
     D_800D9630[idx]->unk50 = 0;
     D_800D9630[idx]->unk52 = 0;
     D_800D9630[idx]->unk60 = 0;

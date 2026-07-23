@@ -575,6 +575,21 @@ typedef struct {
     u8 unk5F;                 /**< 0x5F — bit 0 set = entity is animated. */
 } EntityDef;
 
+/**
+ * @brief The four consecutive @c s32 transform words at offset @c 0x20 of an
+ *        @ref EntityRenderSlot, modelled as one 16-byte block.
+ *
+ * @c func_800A74B4 mode 0 overwrites all four at once via a single aggregate
+ * copy; the compiler emits that as a 4-word load-all/store-all block, which is
+ * why the region is a struct rather than four scalar fields.
+ */
+typedef struct {
+    s32 field20;     /**< Scale factor; init to @c 0x1000. */
+    s32 field24;     /**< Scale factor; init to @c 0x1000. */
+    s32 field28;     /**< Scale factor; init to @c 0x1000. */
+    s32 field2C;     /**< Mode-0 only (mode-1 leaves it untouched). */
+} EntityRenderXform;
+
 typedef struct {
     EntityDef *def;  /**< 0x00 — entity definition/template. */
     u8 pad04[0x08];
@@ -588,10 +603,7 @@ typedef struct {
     u16 unk1A;       /**< Cleared on init. */
     u16 unk1C;       /**< Cleared on init. */
     u8 pad1E[0x02];
-    s32 field20;     /**< Mode-0 stores arg2[0]; mode-1 adds arg2[0]. Init to @c 0x1000. */
-    s32 field24;     /**< Mode-0 stores arg2[1]; mode-1 adds arg2[1]. Init to @c 0x1000. */
-    s32 field28;     /**< Mode-0 stores arg2[2]; mode-1 adds arg2[2]. Init to @c 0x1000. */
-    s32 field2C;     /**< Mode-0 stores arg2[3] (mode-1 does not write). */
+    EntityRenderXform xform;  /**< 0x20 — transform block (field20..field2C); see @c func_800A74B4. */
     u8 pad30[0x20];
     u16 unk50;       /**< Cleared on init. */
     u16 unk52;       /**< Current motion halfword (mirror of Eline @c field_0x206). */
