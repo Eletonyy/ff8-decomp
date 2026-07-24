@@ -2,6 +2,7 @@
 #include "field.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libgpu.h"
+#include "psxsdk/libetc.h"
 #include "field/fe_object1.h"
 #include "field/fe_object10.h"
 
@@ -2388,7 +2389,71 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5D28);
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5FA4);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A6100);
+/**
+ * @brief Scan the 12-entry eline segment table and fire per-segment triggers
+ *        based on proximity, facing angle, and edge orientation to @p eline.
+ *
+ * Stages @p eline 's world position (@c posX/Y/Z >> 12) into the scratchpad
+ * at @c getScratchAddr(0), then for each non-empty segment (@c marker != 0xFF):
+ *  - Runs @c func_8009A2BC (which projects the segment and returns a squared
+ *    distance, also writing the projected point to @c getScratchAddr(8)).
+ *  - If the point is within @c eline->radius²: the segment fires
+ *    (@c func_800A5FA4 with the segment @c type) when either the projected
+ *    point coincides with @p eline, or the facing angle from @c func_8009A0E8
+ *    lies within a @c +/-64 window of @c eline->unk23F.
+ *  - Otherwise (out of range): segments with @c type >= 4 are gated by a
+ *    cross-product orientation test against the segment edge, then
+ *    @c type 2/4 fire with flag 1 and @c type 3/5 fire with flag 0.
+ *
+ * @param eline The querying eline entity.
+ * @param segs  The 12-entry, 16-byte-stride segment table.
+ *
+ * @note The empty @c do{}while(0) is a scheduling barrier: it keeps gcc 2.7.2
+ *       from reordering the @c posY store ahead of the @c posX store while
+ *       staging the scratchpad, matching the original prologue schedule.
+ */
+void func_800A6100(Eline *eline, ElineSeg *segs) {
+    s32 *p = getScratchAddr(0);
+    s32 *q;
+    ElineSeg *seg;
+    s32 i;
+    s32 dist;
+
+    seg = segs;
+    q = getScratchAddr(8);
+    p[0] = eline->posX >> 12;
+    do { } while (0);
+    p[1] = eline->posY >> 12;
+    p[2] = eline->posZ >> 12;
+
+    for (i = 0; i < 12; i++, seg++) {
+        if (seg->marker == 0xFF) {
+            continue;
+        }
+        dist = func_8009A2BC(seg, p, q);
+        if (dist != -1 && dist < eline->radius * eline->radius) {
+            if (p[0] == q[0] && p[1] == q[1]) {
+                func_800A5FA4(seg, seg->type);
+            } else if ((((func_8009A0E8(p, q, &dist) & 0xFF) - eline->unk23F + 0x40) & 0xFF) < 0x80) {
+                func_800A5FA4(seg, seg->type);
+            }
+        } else {
+            if (seg->type >= 4) {
+                s32 dx = seg->x1 - seg->x0;
+                s32 dy = seg->y1 - seg->y0;
+                if (dx * (p[1] - seg->y0) - dy * (p[0] - seg->x0) > 0) {
+                    continue;
+                }
+            }
+            if (seg->type == 2 || seg->type == 4) {
+                func_800A5FA4(seg, 1);
+            }
+            if (seg->type == 3 || seg->type == 5) {
+                func_800A5FA4(seg, 0);
+            }
+        }
+    }
+}
 
 /**
  * @brief Per-frame dispatch over 12 entries — call @c func_800A5FA4

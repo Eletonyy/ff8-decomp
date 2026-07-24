@@ -126,6 +126,26 @@ typedef struct ScriptList {
     ScriptEntry *entries;
 } ScriptList;
 
+/**
+ * @brief One entry of an eline trigger/segment table (12 per table,
+ *        16-byte stride), scanned by @c func_800A6100 / @c func_800A62EC.
+ *
+ * Encodes a 2D line segment from @c (x0,y0) to @c (x1,y1) plus a @c marker
+ * (@c 0xFF = empty slot) and a @c type selecting the dispatch behaviour.
+ */
+typedef struct {
+    /* 0x00 */ s16 x0;
+    /* 0x02 */ s16 y0;
+    /* 0x04 */ u8  unk04[2];
+    /* 0x06 */ s16 x1;
+    /* 0x08 */ s16 y1;
+    /* 0x0A */ u8  unk0A[2];
+    /* 0x0C */ u8  marker;
+    /* 0x0D */ u8  unk0D;
+    /* 0x0E */ u8  type;
+    /* 0x0F */ u8  unk0F;
+} ElineSeg;
+
 extern ScriptList *D_800D5E90;
 
 extern void func_80098934(void);
@@ -310,7 +330,7 @@ extern int  func_800A5A20();
 extern u8   func_800A5C9C(void);
 extern int  func_800A5D28();
 extern void func_800A5FA4();  /* arg 0 = entry pointer (16-byte stride); arg 1 = flag */
-extern int  func_800A6100();
+extern void func_800A6100(Eline *eline, ElineSeg *segs);
 extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();
 extern int  func_800A6A80();
