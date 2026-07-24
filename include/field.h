@@ -248,11 +248,19 @@ typedef struct {
     /* 0x134 */ u16 unk134;
     /* 0x136 */ u8 pad136[0x04];
     /* 0x13A */ u16 unk13A;
-    /* 0x13C */ u8 pad13C[0x14];
-    /* 0x150 */ s32 unk150;         /**< Bit-6/7 source for @c func_8009A7E8 's per-entity trigger7 write. */
-    /* 0x154 */ s32 unk154;         /**< Bit-6/7 mask gating @c func_8009A7E8 's write (inverse of @c unk150). */
-    /* 0x158 */ s32 ambientFlags;   /**< Ambient SFX/state flags; bits 6-7 gate the fade-out path in @c func_800BD9C4. */
-    /* 0x15C */ u8 pad15C[0x24];
+    /* 0x13C */ u8 pad13C[0x04];
+    /* 0x140 */ s32 padHeld;        /**< Held input for pad slot 0: @c getAnimFrameParam plus analog-stick direction bits (0x8000 = X-low, 0x2000 = X-high, 0x1000 = Y-low, 0x4000 = Y-high). Built each tick by @c func_80099180. */
+    /* 0x144 */ s32 padHeldPrev;    /**< Previous tick's @c padHeld, used by @c func_80099180 for direction edge-detection. */
+    /* 0x148 */ s32 padPressed;     /**< Newly-pressed input for pad slot 0 (direction bit set only when not held last tick). */
+    /* 0x14C */ u8 pad14C[0x04];
+    /* 0x150 */ s32 unk150;         /**< Bit-6/7 source for @c func_8009A7E8 's per-entity trigger7 write; set to @c func_80030F10(padHeld) each tick. */
+    /* 0x154 */ s32 unk154;         /**< Bit-6/7 mask gating @c func_8009A7E8 's write (inverse of @c unk150); previous tick's @c unk150. */
+    /* 0x158 */ s32 ambientFlags;   /**< Ambient SFX/state flags; bits 6-7 gate the fade-out path in @c func_800BD9C4; set to @c func_80030F10(padPressed). */
+    /* 0x15C */ u8 pad15C[0x04];
+    /* 0x160 */ s32 field_0x160;    /**< Held input for pad slot 1 (@c getAnimFrameParam(1, 0)). */
+    /* 0x164 */ u8 pad164[0x04];
+    /* 0x168 */ s32 field_0x168;    /**< Pressed input for pad slot 1 (@c func_80027A58(1, 0)). */
+    /* 0x16C */ u8 pad16C[0x14];
     /* 0x180 */ u8 unkActive180[16]; /**< 16-byte active-marker region, cleared on @c func_800BF718 mode 1 init. */
     /* 0x190 */ u8 slotActive[16];
     /* 0x1A0 */ u8 unk1A0;          /**< Mode-6 active marker, set with mode = 6 by fe_object6 opcode. */
@@ -541,8 +549,58 @@ extern s32 fieldRandom(void);
  * full structure is around 0x64 bytes; only the fields touched by the
  * opcode handlers are named so far.
  */
+/**
+ * @brief One animation frame: destination X/Y for the sprite rect.
+ */
 typedef struct {
-    u8 pad00[0x0C];
+    u16 x;
+    u16 y;
+} EntityAnimFrame; /* 4 bytes */
+
+/**
+ * @brief Animation descriptor referenced by @ref EntityDef.
+ *
+ * A short header (sprite rect size, frame-reload count, source X) followed
+ * by the per-frame destination-coordinate table. The animation loop period
+ * is stored in the first frame's @c y slot (@c frames[0].y).
+ */
+typedef struct {
+    u8 pad0[3];
+    u8 rectW;                 /**< 0x03 — sprite rect width. */
+    u8 rectH;                 /**< 0x04 — sprite rect height. */
+    u8 frameReload;           /**< 0x05 — value reloaded into @c slot->frameIdx. */
+    u16 srcX;                 /**< 0x06 — source X passed to the frame loader. */
+    EntityAnimFrame frames[1];/**< 0x08 — per-frame dest coords; @c frames[0].y doubles as the loop period. */
+} EntityAnimData;
+
+/**
+ * @brief Entity definition/template referenced by @ref EntityRenderSlot.
+ */
+typedef struct {
+    u8 pad00[0x14];
+    EntityAnimData *anim;     /**< 0x14 — animation descriptor. */
+    u8 pad18[0x47];
+    u8 unk5F;                 /**< 0x5F — bit 0 set = entity is animated. */
+} EntityDef;
+
+/**
+ * @brief The four consecutive @c s32 transform words at offset @c 0x20 of an
+ *        @ref EntityRenderSlot, modelled as one 16-byte block.
+ *
+ * @c func_800A74B4 mode 0 overwrites all four at once via a single aggregate
+ * copy; the compiler emits that as a 4-word load-all/store-all block, which is
+ * why the region is a struct rather than four scalar fields.
+ */
+typedef struct {
+    s32 field20;     /**< Scale factor; init to @c 0x1000. */
+    s32 field24;     /**< Scale factor; init to @c 0x1000. */
+    s32 field28;     /**< Scale factor; init to @c 0x1000. */
+    s32 field2C;     /**< Mode-0 only (mode-1 leaves it untouched). */
+} EntityRenderXform;
+
+typedef struct {
+    EntityDef *def;  /**< 0x00 — entity definition/template. */
+    u8 pad04[0x08];
     u16 unk0C;
     u8 pad0E[0x02];
     u16 unk10;       /**< Cleared on init by @c func_800A8CDC. */
@@ -553,10 +611,7 @@ typedef struct {
     u16 unk1A;       /**< Cleared on init. */
     u16 unk1C;       /**< Cleared on init. */
     u8 pad1E[0x02];
-    s32 field20;     /**< Mode-0 stores arg2[0]; mode-1 adds arg2[0]. Init to @c 0x1000. */
-    s32 field24;     /**< Mode-0 stores arg2[1]; mode-1 adds arg2[1]. Init to @c 0x1000. */
-    s32 field28;     /**< Mode-0 stores arg2[2]; mode-1 adds arg2[2]. Init to @c 0x1000. */
-    s32 field2C;     /**< Mode-0 stores arg2[3] (mode-1 does not write). */
+    EntityRenderXform xform;  /**< 0x20 — transform block (field20..field2C); see @c func_800A74B4. */
     u8 pad30[0x20];
     u16 unk50;       /**< Cleared on init. */
     u16 unk52;       /**< Current motion halfword (mirror of Eline @c field_0x206). */
@@ -564,7 +619,22 @@ typedef struct {
     u8 unk60;
     u8 unk61;
     u16 unk62;
-    u8 pad64[0x34];
+    u8 pad64[0x02];
+    u8 frameTimer;   /**< 0x66 — per-frame countdown; on expiry the frame advances. */
+    u8 frameIdx;     /**< 0x67 — current frame index (counts down; reloaded from anim->frameReload). */
+    u8 pad68[0x0A];
+    u8 animFlags;    /**< 0x72 — bit0x80 = retrigger, bit0x10 = active, low nibble reused. */
+    u8 pad73;
+    u8 timerReload;  /**< 0x74 — reload value for frameTimer when the period is non-negative. */
+    u8 pad75[0x0F];
+    u16 field84;     /**< 0x84 — snapshot of @c unk10 (dirty-check by @c func_800A7224). */
+    u16 field86;     /**< 0x86 — snapshot of @c unk12. */
+    s16 field88;     /**< 0x88 — snapshot of @c unk14. */
+    u8 pad8A[0x02];
+    u16 field8C;     /**< 0x8C — snapshot of @c unk18 (dirty-check by @c func_800A736C). */
+    u16 field8E;     /**< 0x8E — snapshot of @c unk1A. */
+    s16 field90;     /**< 0x90 — snapshot of @c unk1C. */
+    u8 pad92[0x06];
     s32 subBuffer;   /**< @c 0x98 — caller of @c func_800A8CDC uses the returned @c &subBuffer pointer. */
 } EntityRenderSlot;
 
@@ -735,6 +805,30 @@ typedef struct {
     /* 0x0FC */ s16 mode;           /**< Dispatch mode (1/2/3 = different sources). */
     /* 0x0FE */ u8 padFE[0x166];    /**< Rest of the 612-byte slot mirrors @c Eline. */
 } FieldActor; /* 0x264 = 612 bytes */
+
+/**
+ * @brief One 254-byte animation slot in the field "subscene" buffer walked by
+ *        @ref func_800A37A8.
+ *
+ * The leading @c subscene region is a packed @ref FieldActor — only its first
+ * @c 0xFE bytes are live, so slots pack at 254-byte stride — and is passed to
+ * @c func_800A355C as its @c FieldActor argument. @c h2 mirrors
+ * @c FieldActor.animOffset (offset @c 0xF4).
+ */
+typedef struct {
+    /* 0x00 */ u8 subscene[0xD0]; /**< Packed FieldActor head (rows/timers/...). */
+    /* 0xD0 */ u8 table[0x20];    /**< Animation source bytes, indexed by @c h2. */
+    /* 0xF0 */ s16 h0;            /**< State counter (advanced each active tick). */
+    /* 0xF2 */ s16 h1;            /**< State counter, compared against @c table[h2]. */
+    /* 0xF4 */ s16 h2;            /**< Table cursor (mirror of @c FieldActor.animOffset). */
+    /* 0xF6 */ u8 padF6[0x08];
+} FieldSubsceneSlot;             /* 0xFE = 254 bytes */
+
+/** @brief Buffer of 16 @ref FieldSubsceneSlot, walked per-frame by @ref func_800A37A8. */
+typedef struct {
+    u8 pad0000[0x1740];
+    /* 0x1740 */ FieldSubsceneSlot slots[16];
+} FieldSubsceneBuffer;
 
 
 /** @brief Update one packed-flag table slot from a step tick. */

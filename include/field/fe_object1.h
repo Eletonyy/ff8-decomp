@@ -158,7 +158,7 @@ extern u8   func_800A5CF8(void);
 extern void func_80098314(void);
 extern int  func_800983F0();
 extern int  func_8009895C();
-extern int  func_80099180();
+extern void func_80099180(void);
 extern int  func_80099348();
 extern int  func_8009A0E8();
 extern int  func_8009A2BC();
@@ -193,7 +193,7 @@ extern s32  func_800A0EB8(s32 start, s32 end, s32 total, s32 angle);
 extern s32  func_800A0F34(SVECTOR *v, s32 *sxy);
 extern void func_800A0FB8(Vec2s *out, s16 a, s16 b);
 extern int  func_800A10F4();
-extern void func_800A11E0(s32 *sxy);
+extern void func_800A11E0(Vec2s *arg0);
 extern int  func_800A1318();
 extern int  func_800A15C0();
 extern int  func_800A17B8();
@@ -237,7 +237,7 @@ extern s16  func_800A2FE0();  /* arg is a file-private buffer view in fe_object1
 extern void func_800A327C(Eline *actor, SVECTOR *out);
 extern void func_800A3488();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
 extern void func_800A3534();  /* arg is a file-private buffer view in fe_object1.c */
-extern int  func_800A37A8();
+extern void func_800A37A8(void *arg0, s32 arg1, FieldSubsceneBuffer *buf);
 /**
  * @brief Input "movement command" view that @c func_800A38B4 lerps from.
  *
@@ -286,13 +286,21 @@ extern int  func_800A3FE0();
 extern int  func_800A42EC();
 extern void func_800A4500(s32 x, s32 y, s32 z);
 extern int  func_800A455C();
-extern int  func_800A4758();
+extern void func_800A4758(void);
 extern s32  func_800A48CC(void);
 extern int  func_800A4934();
 extern int  func_800A4C14();
-extern int  func_800A5224();
+
+typedef struct { u8 pad[0xB4]; } func_800A5224_arg2; /* 0xB4 = 180 bytes */
+typedef struct { u8 pad[0x20]; } func_800A5224_arg3; /* 0x20 = 32 bytes */
+extern void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
+                          func_800A5224_arg3 *arg3);
 extern int  func_800A5360();
-extern int  func_800A553C();
+extern volatile u16 g_bufferIndex;       /**< Active double-buffer index. */
+extern u32 g_orderingTablePtrs[];        /**< Per-buffer ordering-table heads. */
+extern TILE g_clearTiles[];              /**< Per-buffer screen-clear TILEs. */
+
+extern void func_800A553C(u32 *ot, s16 r, s16 g, s16 b);
 extern void func_800A5698(void);
 extern void func_800A5700(void);
 extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
@@ -306,21 +314,74 @@ extern int  func_800A6100();
 extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();
 extern int  func_800A6A80();
+
+/**
+ * @brief Element of a @ref FieldObject part's sub-range (8-byte stride).
+ * @note Purpose uncertain — @c func_800A8058 clears @c field06 for every
+ *       element in each part's @c [subStart, @c subStart+subCount) range.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[6];
+    /* 0x06 */ s16 field06;
+} FieldObjectSub;  /* 0x08 */
+
+/**
+ * @brief One part of a @ref FieldObject (0x20-byte stride).
+ *
+ * Each part owns a contiguous @c [subStart, @c subStart+subCount) slice of the
+ * object's @ref FieldObjectSub array.
+ * @note Field naming reflects only observed usage.
+ */
+typedef struct {
+    /* 0x00 */ s16 subStart;   /**< first sub-element index owned by this part. */
+    /* 0x02 */ s16 subCount;   /**< number of sub-elements in the part. */
+    /* 0x04 */ u8 pad04[0x0A];
+    /* 0x0E */ s16 field0E;    /**< cleared per part by @c func_800A8058. */
+    /* 0x10 */ u8 pad10[0x10];
+} FieldObjectPart;  /* 0x20 */
+
+/**
+ * @brief A field-engine object instance (element of the @c D_800D6620 table).
+ *
+ * @note Purpose partially understood — holds a part list (@c parts /
+ *       @c partCount) indexing a shared sub-element array (@c subs), plus a
+ *       @c 0x12345678 signature word and a couple of init fields.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x1C];
+    /* 0x1C */ FieldObjectPart *parts;  /**< part array (@c partCount entries). */
+    /* 0x20 */ FieldObjectSub *subs;    /**< sub-element array indexed by parts. */
+    /* 0x24 */ s32 partCount;
+    /* 0x28 */ u8 pad28[0x24];
+    /* 0x4C */ u32 signature;           /**< set to @c 0x12345678 on init. */
+    /* 0x50 */ u16 field50;             /**< init'd from @c D_800D60E8. */
+    /* 0x52 */ u8 pad52[0x0D];
+    /* 0x5F */ u8 field5F;              /**< cleared on init. */
+} FieldObject;
+
+/** @brief 64-slot field-engine object table (indexed by object id). */
+extern FieldObject *D_800D6620[];
+/** @brief u16 seed value written into @c FieldObject::field50 at init. */
+extern u16 D_800D60E8;
+
 extern void func_800A7194(void);
-extern int  func_800A7224();
-extern int  func_800A736C();
-extern int  func_800A74B4();
+extern void func_800A7224(s32 idx, u16 *vals, s32 mode);
+extern void func_800A736C(s32 idx, u16 *vals, s32 mode);
+extern void func_800A74B4(s32 idx, EntityRenderXform *vals, s32 mode);
 extern int  func_800A7564();
-extern int  func_800A8058();
+extern s32  func_800A8058(s32 idx, s32 arg1, FieldObject *newObj, u8 count);
 extern int  func_800A81AC();
+/** @brief Scratch sprite rectangle built by @c func_800AA5F8 before a @c MoveImage upload. */
+extern RECT D_800D5ED8;
+
 extern s32 *func_800A8CDC(s32 idx, s32 firstWord, EntityRenderSlot *slot);
+/** @brief Per-entity animation tick: advances the frame and rebuilds the sprite rect. */
+extern s32  func_800AA5F8(s32 idx);
 extern u8  *func_800A8DAC(s32 spatialIdx, s32 cmd, u32 arg, void *out);
 extern int  func_800A91C8();
 extern int  func_800A9434();
 extern void func_800A97E4(s32 spatialIdx, s32 cmd, s32 arg2, s32 arg3);
 extern void func_800AA46C(u8 spatialIdx, s32 cmd, s32 arg, s32 arg4);
-extern int  func_800AA5F8();
-extern int  func_800AA870();
 extern int  func_800AA8A0();
 
 #endif
