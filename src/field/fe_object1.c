@@ -46,33 +46,58 @@ extern u16 D_800D3E88[];
 extern u8 D_800D5F50[];
 extern u8 D_800D61A8[];
 extern u8 D_8005F168[];
+extern volatile s32 D_8005F154;  /**< VSync frame counter (main.c); phase for the @c D_800C3520 perturbation table. */
 
 /**
- * @brief 24-byte draw-point slot holding a 16-bit (x, y, z) position.
+ * @brief 24-byte draw-point slot holding a 16-bit (x, y, z) position plus the
+ *        two derived quad corners built by @c func_800A4758.
  *
- * The fields-only @c x/y/z prefix is what @c func_800A4500 writes;
- * @c pad06 covers the rest of the slot until other helpers populate it.
+ * @c x/y/z is the base position written by @c func_800A4500. @c func_800A4758
+ * derives two corner offsets from it: @c field8 / @c fieldA / @c fieldC (base
+ * minus a table-perturbed 0x80 bias) and @c field10 / @c field12 / @c field14
+ * (base plus fixed 0x40/0x80 offsets).
  */
 typedef struct {
-    /* 0x00 */ s16 x;
-    /* 0x02 */ s16 y;
-    /* 0x04 */ s16 z;
-    /* 0x06 */ u8  pad06[0x12];
+    /* 0x00 */ u16 x;
+    /* 0x02 */ u16 y;
+    /* 0x04 */ u16 z;
+    /* 0x06 */ u16 pad06;
+    /* 0x08 */ u16 field8;
+    /* 0x0A */ u16 fieldA;
+    /* 0x0C */ u16 fieldC;
+    /* 0x0E */ u16 padE;
+    /* 0x10 */ u16 field10;
+    /* 0x12 */ u16 field12;
+    /* 0x14 */ u16 field14;
+    /* 0x16 */ u16 pad16;
 } DrawPoint;  /* 0x18 = 24 bytes */
 extern DrawPoint D_800706A0[];
+
+/** @brief 8-byte (x, y, z) vertex within an @ref ObjSlot corner array. */
+typedef struct {
+    /* 0x00 */ u16 x;
+    /* 0x02 */ u16 y;
+    /* 0x04 */ u16 z;
+    /* 0x06 */ u16 pad6;
+} ObjVertex;
 
 /**
  * @brief One 136-byte object slot in the @c D_800C6DA0 table walked by
  *        @c func_800A5224 (8 slots).
  *
- * Only the trailing tick pair is accessed by @c func_800A5224; the leading
- * bytes are the object state consumed by @c func_800A4934 / @c func_800A4C14.
+ * The two 8-entry vertex arrays @c va / @c vb are seeded by @c func_800A4758
+ * from the object's draw-point position (all 8 entries get the same value).
+ * @c field86 / @c field87 receive a table-perturbation byte; the trailing tick
+ * pair (@c field80 / @c field82) is what @c func_800A5224 later consumes.
  */
 typedef struct {
-    /* 0x00 */ u8  pad00[0x80];
+    /* 0x00 */ ObjVertex va[8];
+    /* 0x40 */ ObjVertex vb[8];
     /* 0x80 */ s16 field80;   /**< Tick threshold base; slot clears when tick > field80+4. */
     /* 0x82 */ u16 field82;   /**< Per-frame tick counter (incremented while active). */
-    /* 0x84 */ u8  pad84[0x04];
+    /* 0x84 */ u8  pad84[0x02];
+    /* 0x86 */ u8  field86;
+    /* 0x87 */ u8  field87;
 } ObjSlot;  /* 0x88 = 136 bytes */
 extern ObjSlot D_800C6DA0[];
 extern s16 D_8005F122;
@@ -1755,7 +1780,48 @@ void func_800A4550(s16 a0) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A455C);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A4758);
+/**
+ * @brief Seed the 8 active object slots' draw geometry from their base points.
+ *
+ * Walks the 8 @ref ObjSlot / @ref DrawPoint pairs. For each slot not yet marked
+ * ready (@c D_8005F168[i] == 0) it marks it, then:
+ *  - stamps a perturbation byte (@c D_800C3520 indexed by the VSync phase
+ *    @c D_8005F154 + slot) into @c field86 / @c field87;
+ *  - derives the draw-point's two corner offsets: @c field8/A/C = base minus a
+ *    table-perturbed 0x80 bias (X and Y perturbed by the table at phases +i and
+ *    +i+8; Z a flat +0x40), and @c field10/12/14 = base plus 0/0/0x80;
+ *  - replicates the base (x, y, z) into all 8 entries of both vertex arrays
+ *    @c va / @c vb;
+ *  - resets the slot's tick pair (@c field80 = 0x10 + 2*slot, @c field82 = 0).
+ *
+ * @note The unused @c frameSlot local reserves the 0x20 stack frame the
+ *       original build allocated (its scratch was register-allocated away).
+ */
+void func_800A4758(void) {
+    struct { s32 w[8]; } frameSlot;
+    s32 i, j;
+
+    for (i = 0; i < 8; i++) {
+        if (D_8005F168[i] == 0) {
+            D_8005F168[i] = 1;
+            D_800C6DA0[i].field86 = D_800C3520[(D_8005F154 + i) & 0xFF];
+            D_800C6DA0[i].field87 = D_800C3520[(D_8005F154 + i) & 0xFF];
+            D_800706A0[i].field8 = (D_800706A0[i].x + D_800C3520[(D_8005F154 + i) & 0xFF]) - 0x80;
+            D_800706A0[i].fieldA = (D_800706A0[i].y + D_800C3520[(D_8005F154 + i + 8) & 0xFF]) - 0x80;
+            D_800706A0[i].fieldC = D_800706A0[i].z + 0x40;
+            D_800706A0[i].field10 = D_800706A0[i].x;
+            D_800706A0[i].field12 = D_800706A0[i].y;
+            D_800706A0[i].field14 = D_800706A0[i].z + 0x80;
+            for (j = 0; j < 8; j++) {
+                D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
+                D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
+                D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+            }
+            D_800C6DA0[i].field80 = 0x10 + i * 2;
+            D_800C6DA0[i].field82 = 0;
+        }
+    }
+}
 
 /**
  * @brief Returns 1 if any of the 8 slot bytes in @c D_8005F168 equals 2.

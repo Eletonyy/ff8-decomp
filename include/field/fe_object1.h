@@ -286,7 +286,7 @@ extern int  func_800A3FE0();
 extern int  func_800A42EC();
 extern void func_800A4500(s32 x, s32 y, s32 z);
 extern int  func_800A455C();
-extern int  func_800A4758();
+extern void func_800A4758(void);
 extern s32  func_800A48CC(void);
 extern int  func_800A4934();
 extern int  func_800A4C14();
