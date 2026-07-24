@@ -21,7 +21,6 @@
 #include "field/fe_object1.h"
 
 extern u8 D_800DD6D0[];
-extern s32 D_800D6620[];
 extern void *func_80047CE4(void *dst, s32 val, s32 n);
 
 /**
@@ -241,7 +240,46 @@ void func_800A74B4(s32 idx, EntityRenderXform *vals, s32 mode) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800A7564);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800A8058);
+/**
+ * @brief Allocate and initialize the field-object slot @p idx from @p newObj.
+ *
+ * If the slot is already occupied, returns 0 without touching it. Otherwise it
+ * installs @p newObj into @c D_800D6620[idx], stamps the @c 0x12345678 signature
+ * and the @c D_800D60E8 seed, invokes @c func_800A7564 to build the object, and
+ * clears the per-part @c field0E and per-sub @c field06 accumulators across
+ * every part's sub-range.
+ *
+ * @param idx    Object slot index into @ref D_800D6620 (0..63).
+ * @param arg1   Opaque handle forwarded to @c func_800A7564 as its first arg.
+ * @param newObj Object instance to install into the slot.
+ * @param count  Build count for @c func_800A7564; defaults to 0x10 when zero.
+ * @return @c func_800A7564's result, or 0 if the slot was already occupied.
+ */
+s32 func_800A8058(s32 idx, s32 arg1, FieldObject *newObj, u8 count) {
+    s32 ret;
+    s32 i, j;
+
+    if (D_800D6620[idx] != NULL) {
+        return 0;
+    }
+    if (count == 0) {
+        count = 0x10;
+    }
+    D_800D6620[idx] = newObj;
+    newObj->field5F = 0;
+    D_800D6620[idx]->signature = 0x12345678;
+    D_800D6620[idx]->field50 = D_800D60E8;
+    ret = func_800A7564(arg1, 0x11, count, idx);
+    for (i = 0; i < D_800D6620[idx]->partCount; i++) {
+        D_800D6620[idx]->parts[i].field0E = 0;
+        for (j = D_800D6620[idx]->parts[i].subStart;
+             j < D_800D6620[idx]->parts[i].subStart + D_800D6620[idx]->parts[i].subCount;
+             j++) {
+            D_800D6620[idx]->subs[j].field06 = 0;
+        }
+    }
+    return ret;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1b", func_800A81AC);
 

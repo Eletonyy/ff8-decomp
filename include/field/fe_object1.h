@@ -312,12 +312,61 @@ extern int  func_800A6100();
 extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();
 extern int  func_800A6A80();
+/**
+ * @brief Element of a @ref FieldObject part's sub-range (8-byte stride).
+ * @note Purpose uncertain — @c func_800A8058 clears @c field06 for every
+ *       element in each part's @c [subStart, @c subStart+subCount) range.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[6];
+    /* 0x06 */ s16 field06;
+} FieldObjectSub;  /* 0x08 */
+
+/**
+ * @brief One part of a @ref FieldObject (0x20-byte stride).
+ *
+ * Each part owns a contiguous @c [subStart, @c subStart+subCount) slice of the
+ * object's @ref FieldObjectSub array.
+ * @note Field naming reflects only observed usage.
+ */
+typedef struct {
+    /* 0x00 */ s16 subStart;   /**< first sub-element index owned by this part. */
+    /* 0x02 */ s16 subCount;   /**< number of sub-elements in the part. */
+    /* 0x04 */ u8 pad04[0x0A];
+    /* 0x0E */ s16 field0E;    /**< cleared per part by @c func_800A8058. */
+    /* 0x10 */ u8 pad10[0x10];
+} FieldObjectPart;  /* 0x20 */
+
+/**
+ * @brief A field-engine object instance (element of the @c D_800D6620 table).
+ *
+ * @note Purpose partially understood — holds a part list (@c parts /
+ *       @c partCount) indexing a shared sub-element array (@c subs), plus a
+ *       @c 0x12345678 signature word and a couple of init fields.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x1C];
+    /* 0x1C */ FieldObjectPart *parts;  /**< part array (@c partCount entries). */
+    /* 0x20 */ FieldObjectSub *subs;    /**< sub-element array indexed by parts. */
+    /* 0x24 */ s32 partCount;
+    /* 0x28 */ u8 pad28[0x24];
+    /* 0x4C */ u32 signature;           /**< set to @c 0x12345678 on init. */
+    /* 0x50 */ u16 field50;             /**< init'd from @c D_800D60E8. */
+    /* 0x52 */ u8 pad52[0x0D];
+    /* 0x5F */ u8 field5F;              /**< cleared on init. */
+} FieldObject;
+
+/** @brief 64-slot field-engine object table (indexed by object id). */
+extern FieldObject *D_800D6620[];
+/** @brief u16 seed value written into @c FieldObject::field50 at init. */
+extern u16 D_800D60E8;
+
 extern void func_800A7194(void);
 extern void func_800A7224(s32 idx, u16 *vals, s32 mode);
 extern void func_800A736C(s32 idx, u16 *vals, s32 mode);
 extern void func_800A74B4(s32 idx, EntityRenderXform *vals, s32 mode);
 extern int  func_800A7564();
-extern int  func_800A8058();
+extern s32  func_800A8058(s32 idx, s32 arg1, FieldObject *newObj, u8 count);
 extern int  func_800A81AC();
 /** @brief Scratch sprite rectangle built by @c func_800AA5F8 before a @c MoveImage upload. */
 extern RECT D_800D5ED8;
