@@ -303,7 +303,7 @@ typedef struct {
 extern void func_800A38B4(func_800A38B4_out *out, func_800A38B4_in *in, func_800A38B4_in *target);
 extern int  func_800A39D8();
 extern int  func_800A3FE0();
-extern int  func_800A42EC();
+void func_800A42EC(POLY_G4 *polys, DR_TPAGE *tpages);
 extern void func_800A4500(s32 x, s32 y, s32 z);
 extern int  func_800A455C();
 extern void func_800A4758(void);

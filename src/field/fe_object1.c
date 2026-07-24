@@ -1841,7 +1841,73 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A39D8);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3FE0);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A42EC);
+/**
+ * @brief Initialise the field-object GPU primitive packets and seed the
+ *        8-object shimmer state.
+ *
+ * Runs three passes:
+ *  1. **40 gouraud quads** (@p polys): stamp each @ref POLY_G4 with a length
+ *     of @c 8 words and code @c 0x3A (gouraud four-point, semi-transparent).
+ *  2. **32 draw-mode packets** (@p tpages): stamp each @ref DR_TPAGE with a
+ *     length of @c 1 word and a GP0(E1h) draw-mode command whose low bits come
+ *     from @c func_8004D524() (texture page / semi-transparency selection).
+ *  3. **8 shimmer objects**: for each @ref ObjSlot / @ref DrawPoint pair, sample
+ *     a perturbation byte from @c D_800C3520 at the current VSync phase
+ *     (@c D_8005F154 @c + slot), offset the draw-point corners by it, mirror the
+ *     base @c (x,y,z) into all 8 vertices of both corner buffers, and reset the
+ *     per-object tick (@c field80 @c = @c 0x10 @c + slot*2) and @c field82.
+ *
+ * @param polys  Array of 40 @ref POLY_G4 quad primitives to initialise.
+ * @param tpages Array of 32 @ref DR_TPAGE draw-mode packets to initialise.
+ *
+ * @note The @c P_TAG length byte sits 4 bytes before the @c code byte; both
+ *       passes write the length through the same walking @c code cursor
+ *       (@c c[-4] / @c w[-1]) so gcc keeps the loop induction variable anchored
+ *       at the code field, matching the original's cursor.
+ */
+void func_800A42EC(POLY_G4 *polys, DR_TPAGE *tpages) {
+    s32 i, j;
+    POLY_G4 *p;
+    DR_TPAGE *q;
+
+    i = 0;
+    p = polys;
+    do {
+        u8 *c = &p->code;
+        c[-4] = 8;
+        *c = 0x3A;
+        p++;
+    } while (++i < 40);
+
+    i = 0;
+    q = tpages;
+    do {
+        u32 *w = &q->code[0];
+        ((u8 *)w)[-1] = 1;
+        *w = (func_8004D524(0, 1, 0, 0) & 0x9FF) | 0xE1000200;
+        q++;
+    } while (++i < 32);
+
+    for (i = 0; i < 8; i++) {
+        D_800C6DA0[i].field86 = D_800C3520[(D_8005F154 + i) & 0xFF];
+        D_800C6DA0[i].field87 = D_800C3520[(D_8005F154 + i) & 0xFF];
+        D_800706A0[i].field8 = (D_800706A0[i].x + D_800C3520[(D_8005F154 + i) & 0xFF]) - 0x80;
+        D_800706A0[i].fieldA = (D_800706A0[i].y + D_800C3520[(D_8005F154 + i + 8) & 0xFF]) - 0x80;
+        D_800706A0[i].fieldC = D_800706A0[i].z + 0x40;
+        D_800706A0[i].field10 = D_800706A0[i].x;
+        D_800706A0[i].field12 = D_800706A0[i].y;
+        D_800706A0[i].field14 = D_800706A0[i].z + 0x80;
+
+        for (j = 0; j < 8; j++) {
+            D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
+            D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
+            D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+        }
+
+        D_800C6DA0[i].field80 = 0x10 + i * 2;
+        D_800C6DA0[i].field82 = 0;
+    }
+}
 
 /**
  * Zero 8 bytes of D_8005F168 (backwards loop).
