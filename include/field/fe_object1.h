@@ -158,7 +158,7 @@ extern u8   func_800A5CF8(void);
 extern void func_80098314(void);
 extern int  func_800983F0();
 extern int  func_8009895C();
-extern int  func_80099180();
+extern void func_80099180(void);
 extern int  func_80099348();
 extern int  func_8009A0E8();
 extern int  func_8009A2BC();

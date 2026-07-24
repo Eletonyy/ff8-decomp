@@ -237,7 +237,61 @@ void func_8009912C(void) {
     renderAndUpdateDisplay(1);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_80099180);
+extern void func_800275D4(void);                  /* thread.c: refresh raw controller buffers */
+extern s32  getAnimFrameParam(s32 slot, s32 sub); /* per-pad input-frame param (s32 view) */
+extern s32  func_80027A58(s32 a, s32 b);          /* per-pad newly-pressed input */
+extern s32  func_80027DB4(s32 a, s32 b, s32 c);   /* read an analog axis (b: 2 = X, 3 = Y) */
+extern s32  func_80030F10(s32 arg);               /* map pad input word to a button mask */
+
+/**
+ * @brief Per-tick controller-input sampling for the field engine's two pad slots.
+ *
+ * Snapshots the previous held/button state (@c padHeld → @c padHeldPrev,
+ * @c unk150 → @c unk154), refreshes the raw pad buffers, then re-reads the held
+ * (@c getAnimFrameParam) and pressed (@c func_80027A58) input for slots 0 and 1.
+ *
+ * When slot 0 has no direction bits latched yet (@c padHeld & 0xF000 == 0) and a
+ * pad is present, it converts the two analog axes into direction bits: X read
+ * (@c func_80027DB4 axis 2) sets 0x8000 when @c <0x40 or 0x2000 when @c >=0xC1,
+ * Y read (axis 3) sets 0x1000 / 0x4000. Each bit is OR'd into @c padHeld always
+ * and into @c padPressed only when it was not held last tick (edge detect).
+ *
+ * Finally derives the held/pressed button masks (@c func_80030F10) into
+ * @c unk150 / @c ambientFlags.
+ */
+void func_80099180(void) {
+    s32 r;
+
+    D_800704A8.padHeldPrev = D_800704A8.padHeld;
+    D_800704A8.unk154 = D_800704A8.unk150;
+    func_800275D4();
+    D_800704A8.padHeld = getAnimFrameParam(0, 0);
+    D_800704A8.padPressed = func_80027A58(0, 0);
+    D_800704A8.field_0x160 = getAnimFrameParam(1, 0);
+    D_800704A8.field_0x168 = func_80027A58(1, 0);
+
+    if (!(D_800704A8.padHeld & 0xF000) && func_80027DB4(0, 2, 0) != -1) {
+        r = (s16)func_80027DB4(0, 2, 0);
+        if (r < 0x40) {
+            D_800704A8.padHeld |= 0x8000;
+            if (!(D_800704A8.padHeldPrev & 0x8000)) D_800704A8.padPressed |= 0x8000;
+        } else if (r >= 0xC1) {
+            D_800704A8.padHeld |= 0x2000;
+            if (!(D_800704A8.padHeldPrev & 0x2000)) D_800704A8.padPressed |= 0x2000;
+        }
+        r = (s16)func_80027DB4(0, 3, 0);
+        if (r < 0x40) {
+            D_800704A8.padHeld |= 0x1000;
+            if (!(D_800704A8.padHeldPrev & 0x1000)) D_800704A8.padPressed |= 0x1000;
+        } else if (r >= 0xC1) {
+            D_800704A8.padHeld |= 0x4000;
+            if (!(D_800704A8.padHeldPrev & 0x4000)) D_800704A8.padPressed |= 0x4000;
+        }
+    }
+
+    D_800704A8.unk150 = func_80030F10(D_800704A8.padHeld);
+    D_800704A8.ambientFlags = func_80030F10(D_800704A8.padPressed);
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_80099348);
 

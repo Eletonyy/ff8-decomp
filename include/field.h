@@ -248,11 +248,19 @@ typedef struct {
     /* 0x134 */ u16 unk134;
     /* 0x136 */ u8 pad136[0x04];
     /* 0x13A */ u16 unk13A;
-    /* 0x13C */ u8 pad13C[0x14];
-    /* 0x150 */ s32 unk150;         /**< Bit-6/7 source for @c func_8009A7E8 's per-entity trigger7 write. */
-    /* 0x154 */ s32 unk154;         /**< Bit-6/7 mask gating @c func_8009A7E8 's write (inverse of @c unk150). */
-    /* 0x158 */ s32 ambientFlags;   /**< Ambient SFX/state flags; bits 6-7 gate the fade-out path in @c func_800BD9C4. */
-    /* 0x15C */ u8 pad15C[0x24];
+    /* 0x13C */ u8 pad13C[0x04];
+    /* 0x140 */ s32 padHeld;        /**< Held input for pad slot 0: @c getAnimFrameParam plus analog-stick direction bits (0x8000 = X-low, 0x2000 = X-high, 0x1000 = Y-low, 0x4000 = Y-high). Built each tick by @c func_80099180. */
+    /* 0x144 */ s32 padHeldPrev;    /**< Previous tick's @c padHeld, used by @c func_80099180 for direction edge-detection. */
+    /* 0x148 */ s32 padPressed;     /**< Newly-pressed input for pad slot 0 (direction bit set only when not held last tick). */
+    /* 0x14C */ u8 pad14C[0x04];
+    /* 0x150 */ s32 unk150;         /**< Bit-6/7 source for @c func_8009A7E8 's per-entity trigger7 write; set to @c func_80030F10(padHeld) each tick. */
+    /* 0x154 */ s32 unk154;         /**< Bit-6/7 mask gating @c func_8009A7E8 's write (inverse of @c unk150); previous tick's @c unk150. */
+    /* 0x158 */ s32 ambientFlags;   /**< Ambient SFX/state flags; bits 6-7 gate the fade-out path in @c func_800BD9C4; set to @c func_80030F10(padPressed). */
+    /* 0x15C */ u8 pad15C[0x04];
+    /* 0x160 */ s32 field_0x160;    /**< Held input for pad slot 1 (@c getAnimFrameParam(1, 0)). */
+    /* 0x164 */ u8 pad164[0x04];
+    /* 0x168 */ s32 field_0x168;    /**< Pressed input for pad slot 1 (@c func_80027A58(1, 0)). */
+    /* 0x16C */ u8 pad16C[0x14];
     /* 0x180 */ u8 unkActive180[16]; /**< 16-byte active-marker region, cleared on @c func_800BF718 mode 1 init. */
     /* 0x190 */ u8 slotActive[16];
     /* 0x1A0 */ u8 unk1A0;          /**< Mode-6 active marker, set with mode = 6 by fe_object6 opcode. */
