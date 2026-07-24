@@ -2017,7 +2017,42 @@ void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
     func_8003FF88();
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5360);
+/**
+ * @brief Reset the ordering table and link the double-buffer's clear-tile
+ *        primitives, tinted (@p r, @p g, @p b) and faded by @c dialogTimer.
+ *
+ * The brightness-scaled twin of @ref func_800A553C: it clears the active
+ * buffer's ordering table via @c ClearOTagR, then writes each fill-color
+ * component scaled by the current dialog fade level
+ * (@c dialogTimer, 0..256) into that buffer's clear @ref TILE, and finally
+ * prepends both the tile and its preceding @ref DR_MODE primitive (12 bytes
+ * before the tile) to the caller-supplied ordering table @p ot.
+ *
+ * @param ot Ordering-table slot to link the two clear primitives into.
+ * @param r  Fill red   — scaled to @c r*dialogTimer/256, low byte to TILE @c r0.
+ * @param g  Fill green — scaled to @c g*dialogTimer/256, low byte to TILE @c g0.
+ * @param b  Fill blue  — scaled to @c b*dialogTimer/256, low byte to TILE @c b0.
+ *
+ * @note @c g_bufferIndex is @c volatile, so every subscript re-reads it; the
+ *       @c dialogTimer read is likewise forced through a @c volatile pointer to
+ *       reload each component (its fade value can change between frames).
+ *       The first store caches the tile index in @c idx so gcc emits the index
+ *       before the shared @c g_clearTiles base, matching the original schedule
+ *       in the multiply's delay window; @c g0 / @c b0 recompute it inline (each
+ *       is its own @c volatile @c g_bufferIndex read).
+ */
+void func_800A5360(u32 *ot, s16 r, s16 g, s16 b) {
+    ClearOTagR(&g_orderingTablePtrs[(s16)g_bufferIndex], 1);
+    {
+        volatile SystemState *sys = &D_800704A8;
+        s32 idx = (s16)g_bufferIndex * 2;
+        g_clearTiles[idx].r0 = (s16)sys->dialogTimer * r / 256;
+        g_clearTiles[(s16)g_bufferIndex * 2].g0 = (s16)sys->dialogTimer * g / 256;
+        g_clearTiles[(s16)g_bufferIndex * 2].b0 = (s16)sys->dialogTimer * b / 256;
+    }
+    addPrim(ot, &g_clearTiles[(s16)g_bufferIndex * 2]);
+    addPrim(ot, (DR_MODE *)&g_clearTiles[(s16)g_bufferIndex * 2] - 1);
+}
 
 /**
  * @brief Reset the current frame's ordering table and link the double-buffer's
