@@ -291,15 +291,11 @@ extern s32  func_800A48CC(void);
 extern int  func_800A4934();
 extern int  func_800A4C14();
 
-/* func_800A5224 per-slot parameter arrays — element types inferred from the
- * loop stride; func_800A4C14 (their consumer) is not yet decompiled. */
 typedef struct { u8 pad[0xB4]; } func_800A5224_arg2; /* 0xB4 = 180 bytes */
 typedef struct { u8 pad[0x20]; } func_800A5224_arg3; /* 0x20 = 32 bytes */
 extern void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
                           func_800A5224_arg3 *arg3);
 extern int  func_800A5360();
-/* Rendering globals owned by main.c (see main.h); declared here so the field
- * clear-tile helper below can reach them without pulling in all of main.h. */
 extern volatile u16 g_bufferIndex;       /**< Active double-buffer index. */
 extern u32 g_orderingTablePtrs[];        /**< Per-buffer ordering-table heads. */
 extern TILE g_clearTiles[];              /**< Per-buffer screen-clear TILEs. */
@@ -318,6 +314,7 @@ extern int  func_800A6100();
 extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();
 extern int  func_800A6A80();
+
 /**
  * @brief Element of a @ref FieldObject part's sub-range (8-byte stride).
  * @note Purpose uncertain — @c func_800A8058 clears @c field06 for every
