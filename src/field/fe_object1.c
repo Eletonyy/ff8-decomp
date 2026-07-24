@@ -1844,7 +1844,33 @@ void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5360);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A553C);
+/**
+ * @brief Reset the current frame's ordering table and link the double-buffer's
+ *        clear-tile primitives, tinted (@p r, @p g, @p b), into @p ot.
+ *
+ * A generalized sibling of @c BuildPrimList: it clears the active buffer's
+ * ordering table via @c ClearOTagR, writes the fill color into that buffer's
+ * clear @ref TILE, then prepends both the tile and its preceding @ref DR_MODE
+ * primitive (12 bytes before the tile) to the caller-supplied ordering table
+ * @p ot. @c g_bufferIndex is @c volatile, so each subscript re-reads it.
+ *
+ * @param ot Ordering-table slot to link the two clear primitives into.
+ * @param r  Fill red   — low byte stored to TILE @c r0.
+ * @param g  Fill green — low byte stored to TILE @c g0.
+ * @param b  Fill blue  — low byte stored to TILE @c b0.
+ *
+ * @note @p r / @p g / @p b are @c s16 because the sole caller (@c func_800A5788)
+ *       feeds them the signed fade-lerp results; only the low byte reaches each
+ *       TILE color component.
+ */
+void func_800A553C(u32 *ot, s16 r, s16 g, s16 b) {
+    ClearOTagR(&g_orderingTablePtrs[(s16)g_bufferIndex], 1);
+    g_clearTiles[(s16)g_bufferIndex * 2].r0 = r;
+    g_clearTiles[(s16)g_bufferIndex * 2].g0 = g;
+    g_clearTiles[(s16)g_bufferIndex * 2].b0 = b;
+    addPrim(ot, &g_clearTiles[(s16)g_bufferIndex * 2]);
+    addPrim(ot, (DR_MODE *)&g_clearTiles[(s16)g_bufferIndex * 2] - 1);
+}
 
 /**
  * @brief Dialog tick that counts the timer DOWN; finalize on expire or

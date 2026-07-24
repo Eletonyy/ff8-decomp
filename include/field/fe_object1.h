@@ -298,7 +298,13 @@ typedef struct { u8 pad[0x20]; } func_800A5224_arg3; /* 0x20 = 32 bytes */
 extern void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
                           func_800A5224_arg3 *arg3);
 extern int  func_800A5360();
-extern int  func_800A553C();
+/* Rendering globals owned by main.c (see main.h); declared here so the field
+ * clear-tile helper below can reach them without pulling in all of main.h. */
+extern volatile u16 g_bufferIndex;       /**< Active double-buffer index. */
+extern u32 g_orderingTablePtrs[];        /**< Per-buffer ordering-table heads. */
+extern TILE g_clearTiles[];              /**< Per-buffer screen-clear TILEs. */
+
+extern void func_800A553C(u32 *ot, s16 r, s16 g, s16 b);
 extern void func_800A5698(void);
 extern void func_800A5700(void);
 extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
