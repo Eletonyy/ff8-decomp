@@ -160,7 +160,7 @@ extern int  func_800983F0();
 extern int  func_8009895C();
 extern void func_80099180(void);
 extern int  func_80099348();
-extern int  func_8009A0E8();
+extern s32  func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist);
 extern int  func_8009A2BC();
 extern int  func_8009A4C0();
 extern void func_8009A7E8(Eline *e, FieldEntityB *pool);

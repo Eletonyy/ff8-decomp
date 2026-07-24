@@ -24,6 +24,7 @@ extern s16 D_8005F148;
 extern u16 D_8005F160;
 extern u16 D_8005F162;
 extern u8 D_80085388;
+extern u8 D_800C319C[];          /**< Arctangent lookup table (byte per 2*|component| step) for func_8009A0E8. */
 extern u8 D_800C32A0[];
 extern u8 D_800C3320[];
 extern u8 D_800C3520[];
@@ -38,6 +39,7 @@ extern void func_80048EFC(RECT *r, u8 *src);
 extern void func_80042634(s32 a);
 extern s32 func_8004D524(s32, s32, s32, s32);
 extern void func_8004D684(void *p);
+extern s32 func_8003F4A4(s32 a);                  /* isqrt: integer square root of a */
 
 extern u16 **D_800D5E9C;         /**< Pointer-to-pointer of u16 count for func_800A29C0's iteration */
 extern u16 *D_800C71E4;
@@ -295,7 +297,60 @@ void func_80099180(void) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_80099348);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A0E8);
+/**
+ * @brief Angle (8-bit BAM) and distance between two 2D points.
+ *
+ * Computes @c dx / @c dy from the two points, stores the squared distance to
+ * @c *outDist, replaces it with the true distance via @c func_8003F4A4 (isqrt),
+ * then normalizes the deltas to a fixed ~[-128,128] scale and resolves the
+ * octant with a magnitude compare (@c |dx| vs @c |dy|) plus the two sign tests.
+ * Each octant reads the arctangent table @c D_800C319C at @c 2*|minor| and adds
+ * the appropriate quadrant offset; the result is a full-circle angle where
+ * 256 == one revolution.
+ *
+ * @param p0       First point (@c p0[0]=x, @c p0[1]=y).
+ * @param p1       Second point (@c p1[0]=x, @c p1[1]=y).
+ * @param outDist  Receives the distance from @p p0 to @p p1.
+ * @return Angle from @p p0 to @p p1 in the range 0-255.
+ *
+ * @note The shared @c "return (r + 0x40) & 0xFF" is what lets gcc 2.7.2
+ *       cross-jump the eight octant tails into one, matching the target's
+ *       merged code. Return type is @c s32 (not @c u8) so the @c &0xFF mask
+ *       stays in this function and the caller keeps a plain @c v0 passthrough.
+ */
+s32 func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist) {
+    s32 dx = p1[0] - p0[0];
+    s32 dy = p1[1] - p0[1];
+    s32 d2 = dx * dx + dy * dy;
+    s32 dist;
+    s32 r;
+
+    *outDist = d2;
+    dist = func_8003F4A4(d2);
+    *outDist = dist;
+
+    dx = ((dx << 12) / dist) / 32;
+    dy = ((dy << 12) / dist) / 32;
+
+    if (dx * dx > dy * dy) {
+        if (dx > 0) {
+            if (dy > 0) r = D_800C319C[2 * dy];
+            else r = -D_800C319C[-2 * dy];
+        } else {
+            if (dy > 0) r = -0x80 - D_800C319C[2 * dy];
+            else r = D_800C319C[-2 * dy] - 0x80;
+        }
+    } else {
+        if (dy > 0) {
+            if (dx > 0) r = 0x40 - D_800C319C[2 * dx];
+            else r = D_800C319C[-2 * dx] + 0x40;
+        } else {
+            if (dx > 0) r = D_800C319C[2 * dx] - 0x40;
+            else r = -0x40 - D_800C319C[-2 * dx];
+        }
+    }
+    return (r + 0x40) & 0xFF;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A2BC);
 
