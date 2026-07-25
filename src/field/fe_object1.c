@@ -1204,7 +1204,79 @@ void func_800A17A4(u8 *a0) {
     *(u16 *)(a0 + 0xC) = 0;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A17B8);
+/**
+ * @brief Advance one interpolating oscillator / wobble driver.
+ *
+ * Ticks an @ref Oscillator one step, dispatching on @c mode / @c phase:
+ *  - @b mode==1 (continuous): on @c phase==0 it seeds the first target
+ *    (@c end = @c (s16)(D_800C3520[tableIdx] * amplitude) / 256) and returns;
+ *    otherwise, once @c angle passes @c total it starts a new cycle — the new
+ *    @c end takes the @b opposite sign of the previous one (so the value
+ *    oscillates) — then interpolates.
+ *  - @b otherwise: on @c phase==1 it snaps @c start to the previous @c end,
+ *    clears @c end, and drops to @c phase==0; on @c phase!=1 it runs until
+ *    @c angle reaches @c total, then latches @c output to @c 0.
+ *
+ * Each non-terminal path interpolates via @c func_800A0EB8(start, end, total,
+ * angle), stores the result in @c output, and advances @c angle. Every started
+ * cycle also advances @c tableIdx into the @c D_800C3520 waveform table.
+ *
+ * @param osc The oscillator to advance.
+ *
+ * @note The empty @c do/while(0) after the target update is a scheduling
+ *       barrier: it stops gcc from hoisting the @c tableIdx reload into the
+ *       divide, keeping the round-toward-zero @c /256 in @c $v0 to match.
+ *       @c delta is @c s32 so the @c (s16) truncation materialises before the
+ *       negate (rather than gcc folding @c -(s16)x into @c (s16)(-x)).
+ */
+void func_800A17B8(Oscillator *osc) {
+    if (osc->mode == 1) {
+        if (osc->phase == 0) {
+            s16 delta;
+            osc->angle = 0;
+            osc->start = 0;
+            delta = (s16)(D_800C3520[osc->tableIdx] * osc->amplitude);
+            osc->end = delta / 256;
+            osc->phase = 1;
+            osc->tableIdx++;
+            return;
+        }
+        if (osc->total < osc->angle) {
+            s32 delta;
+            s16 old = osc->end;
+            osc->angle = 0;
+            osc->start = old;
+            if (old < 0) {
+                delta = (s16)(D_800C3520[osc->tableIdx] * osc->amplitude);
+            } else {
+                delta = -(s16)(D_800C3520[osc->tableIdx] * osc->amplitude);
+            }
+            osc->end = delta / 256;
+            do {} while (0);
+            osc->tableIdx++;
+        }
+        osc->output = func_800A0EB8(osc->start, osc->end, osc->total, osc->angle);
+        osc->angle++;
+    } else {
+        if (osc->phase == 1) {
+            if (osc->total < osc->angle) {
+                s16 old = osc->end;
+                osc->angle = 0;
+                osc->end = 0;
+                osc->phase = 0;
+                osc->start = old;
+                osc->tableIdx++;
+            }
+            osc->output = func_800A0EB8(osc->start, osc->end, osc->total, osc->angle);
+            osc->angle++;
+        } else if (osc->total <= osc->angle) {
+            osc->output = 0;
+        } else {
+            osc->output = func_800A0EB8(osc->start, osc->end, osc->total, osc->angle);
+            osc->angle++;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A19B8);
 
