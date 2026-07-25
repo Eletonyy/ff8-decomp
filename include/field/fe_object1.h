@@ -305,7 +305,7 @@ extern int  func_800A39D8();
 extern int  func_800A3FE0();
 void func_800A42EC(POLY_G4 *polys, DR_TPAGE *tpages);
 extern void func_800A4500(s32 x, s32 y, s32 z);
-extern int  func_800A455C();
+void func_800A455C(s16 entityIdx);
 extern void func_800A4758(void);
 extern s32  func_800A48CC(void);
 extern int  func_800A4934();

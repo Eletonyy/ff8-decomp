@@ -1954,7 +1954,62 @@ void func_800A4550(s16 a0) {
     D_8005F122 = a0;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A455C);
+/**
+ * @brief Spawn the 8 shimmer objects aimed at an entity.
+ *
+ * Computes the facing angle from draw-point 0 (@c D_800706A0[0]) to entity
+ * @p entityIdx 's world position (@ref Eline @c posX / @c posY, right-shifted
+ * out of 12-bit fixed point) via @c func_8009A0E8, then arms all 8 object slots:
+ *  - marks each slot flag @c D_8005F168[i] @c = @c 2 ("spawned"; later detected
+ *    by the @c ==2 scan);
+ *  - stores the facing angle @c ±0x40 into @c field86 / @c field87;
+ *  - seeds the draw-point corners with a table perturbation scaled ×4 and
+ *    biased by @c -0x200 (@c field8 / @c fieldA), a rising Z offset
+ *    @c 1000 @c + slot*128 (@c fieldC), and the entity position for
+ *    @c field10 / @c field12 / @c field14 (Z @c + @c 0xB4);
+ *  - mirrors the base @c (x,y,z) into all 8 vertices of both corner buffers;
+ *  - resets the per-object tick (@c field80 @c = @c 0x18 @c + slot*2) and
+ *    @c field82.
+ *
+ * @param entityIdx Index into the @ref Eline entity array (@c D_80085224) that
+ *                  the shimmer objects are aimed at.
+ */
+void func_800A455C(s16 entityIdx) {
+    s32 i, j;
+    s32 angle;
+    s32 objPos[3];
+    s32 entityPos[3];
+    s32 dist[2];
+
+    objPos[0] = (s16)D_800706A0[0].x;
+    objPos[1] = (s16)D_800706A0[0].y;
+    objPos[2] = 0;
+    entityPos[0] = D_80085224[entityIdx].posX >> 12;
+    entityPos[1] = D_80085224[entityIdx].posY >> 12;
+    entityPos[2] = 0;
+    angle = func_8009A0E8(objPos, entityPos, dist);
+
+    for (i = 0; i < 8; i++) {
+        D_8005F168[i] = 2;
+        D_800C6DA0[i].field86 = angle + 0x40;
+        D_800C6DA0[i].field87 = angle - 0x40;
+        D_800706A0[i].field8 = (D_800706A0[i].x + D_800C3520[(D_8005F154 + i) & 0xFF] * 4) - 0x200;
+        D_800706A0[i].fieldA = (D_800706A0[i].y + D_800C3520[(D_8005F154 + i + 8) & 0xFF] * 4) - 0x200;
+        D_800706A0[i].fieldC = D_800706A0[i].z + (1000 + i * 128);
+        D_800706A0[i].field10 = D_80085224[entityIdx].posX >> 12;
+        D_800706A0[i].field12 = D_80085224[entityIdx].posY >> 12;
+        D_800706A0[i].field14 = (D_80085224[entityIdx].posZ >> 12) + 0xB4;
+
+        for (j = 0; j < 8; j++) {
+            D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
+            D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
+            D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+        }
+
+        D_800C6DA0[i].field80 = 0x18 + i * 2;
+        D_800C6DA0[i].field82 = 0;
+    }
+}
 
 /**
  * @brief Seed the 8 active object slots' draw geometry from their base points.
