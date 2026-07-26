@@ -194,7 +194,7 @@ extern int  func_8009AAC8();
 extern int  func_8009AC9C();
 extern int  func_8009AEC0();
 extern int  func_8009BEC8();
-extern int  func_8009CEE8();
+extern void func_8009CEE8(void);
 extern int  func_8009D274();
 extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
 extern int  func_8009D598();

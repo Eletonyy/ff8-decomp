@@ -643,7 +643,87 @@ void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009BEC8);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009CEE8);
+/**
+ * @brief Aim the self entity at whichever entity is most directly "in front" of
+ *        it, and stamp that target's delayed-SFX trigger 7 with the pad mode.
+ *
+ * The self entity is @c D_80085224[D_8005F148]; its position is taken in whole
+ * units (fixed-point @c >>12). A @c mode (0/1/2) is derived from the current and
+ * previous pad-held bits in @c D_800704A8 (@c unk150 / @c unk154, bits @c 0x80
+ * and @c 0x40). If the field is busy (@c D_800704BD != 0) or @c mode is 0, the
+ * scan is skipped entirely.
+ *
+ * Otherwise every entity @c i is scored into @c angleTable: candidates are
+ * skipped when they are the self entity, flagged busy (@c field_0x24B), inactive
+ * (@c unk218 == -1), share the self's X/Y cell, lie outside a ±0xFF Z band, or
+ * fall outside the combined talk/collision radius. For the rest, the score is how
+ * far the entity's bearing (via @ref func_8009A0E8) deviates from the self's
+ * facing angle (@c field_0x241), folded to 0..0x80. The entity with the smallest
+ * deviation below the 0x40 threshold wins and has its @c triggerSfx7 set to
+ * @c mode; a tie or no winner leaves everything untouched.
+ */
+void func_8009CEE8(void) {
+    s32 selfPos[3];
+    s32 entPos[3];
+    s16 angleTable[48];
+    s32 dist;
+    SystemState *sys;
+    s32 i;
+    s32 mode;
+    s32 diff;
+    s16 best;
+    s16 bestIdx;
+
+    selfPos[0] = D_80085224[D_8005F148].posX >> 12;
+    selfPos[1] = D_80085224[D_8005F148].posY >> 12;
+    selfPos[2] = D_80085224[D_8005F148].posZ >> 12;
+
+    sys = &D_800704A8;
+    mode = 0;
+    if (sys->unk150 & 0x80) {
+        mode = ((sys->unk154 & 0x80) == 0) << 1;
+    }
+    if ((sys->unk150 & 0x40) && !(sys->unk154 & 0x40)) {
+        mode = 1;
+    }
+
+    if (D_800704BD != 0) return;
+    if (mode == 0) return;
+
+    for (i = 0; i < D_80085388; i++) {
+        angleTable[i] = 0x100;
+        if (i == D_8005F148) continue;
+        if (D_80085224[i].field_0x24B != 0) continue;
+        if (D_80085224[i].unk218 == -1) continue;
+        entPos[0] = D_80085224[i].posX >> 12;
+        entPos[1] = D_80085224[i].posY >> 12;
+        entPos[2] = D_80085224[i].posZ >> 12;
+        if (selfPos[0] == entPos[0] && selfPos[1] == entPos[1]) continue;
+        if ((u32)((selfPos[2] - entPos[2]) + 0xFF) >= 0x1FF) continue;
+        diff = (D_80085224[D_8005F148].field_0x241 - (func_8009A0E8(selfPos, entPos, &dist) & 0xFF)) & 0xFF;
+        angleTable[i] = diff;
+        if (diff >= 0x81) {
+            angleTable[i] = 0x100 - diff;
+        }
+        if (dist >= D_80085224[i].talkRadius + D_80085224[D_8005F148].radius) {
+            angleTable[i] = 0x100;
+        }
+    }
+
+    best = 0x40;
+    bestIdx = D_8005F148;
+    for (i = 0; i < D_80085388; i++) {
+        if (D_80085224[i].unk218 == -1) continue;
+        if (angleTable[i] < (s16)best) {
+            best = (u16)angleTable[i];
+            bestIdx = i;
+        }
+    }
+
+    if (bestIdx != D_8005F148 && best != 0x40) {
+        D_80085224[bestIdx].triggerSfx7 = mode;
+    }
+}
 
 /**
  * Looks up a halfword from the D_800C32A0 table by index.
