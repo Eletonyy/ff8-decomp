@@ -282,7 +282,9 @@ typedef struct {
     u16 unk96;
     u8 pad98;
     u8 unk99;
-    u8 pad9A[0x6];
+    u8 pad9A[4];
+    u8 unk9E;
+    u8 pad9F;
     u8 unkA0[1];
     u8 padA1[0x16];
     u8 unkB7;
@@ -349,7 +351,7 @@ typedef struct {
  * Allocated/scheduled by @c func_8009B3D0, ticked by callbacks like
  * @c func_8009AAC4, finalized/freed by @c func_8009B520. */
 typedef struct {
-    s32 callback;   /* 0x00: function pointer (called by @c func_8009B478). */
+    void* callback;   /* 0x00: function pointer (called by @c func_8009B478). */
     u8 pad04[4];    /* 0x04 */
     u16 timer;      /* 0x08: countdown (ticked by callbacks). */
     u8 pad0A[5];    /* 0x0A */
@@ -592,7 +594,7 @@ typedef struct {
     /* 0x000 */ u8 pad000[0x14];
     /* 0x014 */ u16 field014;
     /* 0x016 */ u8 pad016[2];
-    /* 0x018 */ u16 currentHp;          /**< Current HP in battle. */
+    /* 0x018 */ s16 currentHp;          /**< Current HP in battle. */
     /* 0x01A */ u8 pad01A[2];
     /* 0x01C */ u8 field01C;
     /* 0x01D */ u8 field01D;

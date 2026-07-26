@@ -220,7 +220,16 @@ void func_800A2570(s32 a0) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A2598);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A2638);
+void func_800A2638(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
+    if (arg2 == 0) {
+        if (!(arg1 & 1) && (arg0 != 0)) {
+            D_800ED148.entities[arg3].unk9E = 0;
+            return;
+        }
+        
+        D_800ED148.entities[arg3].unk9E = 1;
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A26A0);
 
@@ -438,7 +447,20 @@ void func_800A432C(s32 a0) {
     *(s32 *)D_800EE424 = getMenuString(a0);
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4350);
+void func_800A4350(s32 arg0, s32 arg1) {
+    BattleCharData* var_v1;
+    s32 i;
+
+    var_v1 = &g_battleChars.chars[arg0];
+    if (var_v1->currentHp == 0) {
+        for(i = 0; i < 16; i++){
+            if (var_v1->itemSlots[i].field0 == arg1) {
+                var_v1->itemSlots[i].field4 |= 2;
+                return;
+            }
+        }
+    }
+}
 
 /**
  * @brief Check entity status bit and trigger effect if clear.
