@@ -13,4 +13,7 @@ u8 *getAbilityName(s32 abilityId);
 u8 *getAbilityDesc(s32 abilityId);
 s32 getAbilityEntryDesc(s32 entryId);
 
+/** @brief Zero @p count 16-byte units starting at @p ptr. */
+void memzero16(s32 *ptr, s32 count);
+
 #endif /* GAME_H */

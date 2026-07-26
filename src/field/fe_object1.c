@@ -46,20 +46,60 @@ extern u16 D_800D3E88[];
 extern u8 D_800D5F50[];
 extern u8 D_800D61A8[];
 extern u8 D_8005F168[];
+extern volatile s32 D_8005F154;  /**< VSync frame counter (main.c); phase for the @c D_800C3520 perturbation table. */
 
 /**
- * @brief 24-byte draw-point slot holding a 16-bit (x, y, z) position.
+ * @brief 24-byte draw-point slot holding a 16-bit (x, y, z) position plus the
+ *        two derived quad corners built by @c func_800A4758.
  *
- * The fields-only @c x/y/z prefix is what @c func_800A4500 writes;
- * @c pad06 covers the rest of the slot until other helpers populate it.
+ * @c x/y/z is the base position written by @c func_800A4500. @c func_800A4758
+ * derives two corner offsets from it: @c field8 / @c fieldA / @c fieldC (base
+ * minus a table-perturbed 0x80 bias) and @c field10 / @c field12 / @c field14
+ * (base plus fixed 0x40/0x80 offsets).
  */
 typedef struct {
-    /* 0x00 */ s16 x;
-    /* 0x02 */ s16 y;
-    /* 0x04 */ s16 z;
-    /* 0x06 */ u8  pad06[0x12];
+    /* 0x00 */ u16 x;
+    /* 0x02 */ u16 y;
+    /* 0x04 */ u16 z;
+    /* 0x06 */ u16 pad06;
+    /* 0x08 */ u16 field8;
+    /* 0x0A */ u16 fieldA;
+    /* 0x0C */ u16 fieldC;
+    /* 0x0E */ u16 padE;
+    /* 0x10 */ u16 field10;
+    /* 0x12 */ u16 field12;
+    /* 0x14 */ u16 field14;
+    /* 0x16 */ u16 pad16;
 } DrawPoint;  /* 0x18 = 24 bytes */
 extern DrawPoint D_800706A0[];
+
+/** @brief 8-byte (x, y, z) vertex within an @ref ObjSlot corner array. */
+typedef struct {
+    /* 0x00 */ u16 x;
+    /* 0x02 */ u16 y;
+    /* 0x04 */ u16 z;
+    /* 0x06 */ u16 pad6;
+} ObjVertex;
+
+/**
+ * @brief One 136-byte object slot in the @c D_800C6DA0 table walked by
+ *        @c func_800A5224 (8 slots).
+ *
+ * The two 8-entry vertex arrays @c va / @c vb are seeded by @c func_800A4758
+ * from the object's draw-point position (all 8 entries get the same value).
+ * @c field86 / @c field87 receive a table-perturbation byte; the trailing tick
+ * pair (@c field80 / @c field82) is what @c func_800A5224 later consumes.
+ */
+typedef struct {
+    /* 0x00 */ ObjVertex va[8];
+    /* 0x40 */ ObjVertex vb[8];
+    /* 0x80 */ s16 field80;   /**< Tick threshold base; slot clears when tick > field80+4. */
+    /* 0x82 */ u16 field82;   /**< Per-frame tick counter (incremented while active). */
+    /* 0x84 */ u8  pad84[0x02];
+    /* 0x86 */ u8  field86;
+    /* 0x87 */ u8  field87;
+} ObjSlot;  /* 0x88 = 136 bytes */
+extern ObjSlot D_800C6DA0[];
 extern s16 D_8005F122;
 extern s16 D_8005F14A;
 extern s16 D_8005F100;
@@ -197,7 +237,61 @@ void func_8009912C(void) {
     renderAndUpdateDisplay(1);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_80099180);
+extern void func_800275D4(void);                  /* thread.c: refresh raw controller buffers */
+extern s32  getAnimFrameParam(s32 slot, s32 sub); /* per-pad input-frame param (s32 view) */
+extern s32  func_80027A58(s32 a, s32 b);          /* per-pad newly-pressed input */
+extern s32  func_80027DB4(s32 a, s32 b, s32 c);   /* read an analog axis (b: 2 = X, 3 = Y) */
+extern s32  func_80030F10(s32 arg);               /* map pad input word to a button mask */
+
+/**
+ * @brief Per-tick controller-input sampling for the field engine's two pad slots.
+ *
+ * Snapshots the previous held/button state (@c padHeld → @c padHeldPrev,
+ * @c unk150 → @c unk154), refreshes the raw pad buffers, then re-reads the held
+ * (@c getAnimFrameParam) and pressed (@c func_80027A58) input for slots 0 and 1.
+ *
+ * When slot 0 has no direction bits latched yet (@c padHeld & 0xF000 == 0) and a
+ * pad is present, it converts the two analog axes into direction bits: X read
+ * (@c func_80027DB4 axis 2) sets 0x8000 when @c <0x40 or 0x2000 when @c >=0xC1,
+ * Y read (axis 3) sets 0x1000 / 0x4000. Each bit is OR'd into @c padHeld always
+ * and into @c padPressed only when it was not held last tick (edge detect).
+ *
+ * Finally derives the held/pressed button masks (@c func_80030F10) into
+ * @c unk150 / @c ambientFlags.
+ */
+void func_80099180(void) {
+    s32 r;
+
+    D_800704A8.padHeldPrev = D_800704A8.padHeld;
+    D_800704A8.unk154 = D_800704A8.unk150;
+    func_800275D4();
+    D_800704A8.padHeld = getAnimFrameParam(0, 0);
+    D_800704A8.padPressed = func_80027A58(0, 0);
+    D_800704A8.field_0x160 = getAnimFrameParam(1, 0);
+    D_800704A8.field_0x168 = func_80027A58(1, 0);
+
+    if (!(D_800704A8.padHeld & 0xF000) && func_80027DB4(0, 2, 0) != -1) {
+        r = (s16)func_80027DB4(0, 2, 0);
+        if (r < 0x40) {
+            D_800704A8.padHeld |= 0x8000;
+            if (!(D_800704A8.padHeldPrev & 0x8000)) D_800704A8.padPressed |= 0x8000;
+        } else if (r >= 0xC1) {
+            D_800704A8.padHeld |= 0x2000;
+            if (!(D_800704A8.padHeldPrev & 0x2000)) D_800704A8.padPressed |= 0x2000;
+        }
+        r = (s16)func_80027DB4(0, 3, 0);
+        if (r < 0x40) {
+            D_800704A8.padHeld |= 0x1000;
+            if (!(D_800704A8.padHeldPrev & 0x1000)) D_800704A8.padPressed |= 0x1000;
+        } else if (r >= 0xC1) {
+            D_800704A8.padHeld |= 0x4000;
+            if (!(D_800704A8.padHeldPrev & 0x4000)) D_800704A8.padPressed |= 0x4000;
+        }
+    }
+
+    D_800704A8.unk150 = func_80030F10(D_800704A8.padHeld);
+    D_800704A8.ambientFlags = func_80030F10(D_800704A8.padPressed);
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_80099348);
 
@@ -1014,18 +1108,29 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A10F4);
  *        project it through @c func_800A0F34, then call @c func_800A0FB8
  *        with a flag selected by the active-slot index.
  *
- * Reads @c D_800704A8.slots[unk1A6].param to pick a @ref FieldEntity,
+ * Reads @c D_800704A8.slots[unk1A6].param to pick an @ref Eline entity,
  * fills @c svec.{vx,vy,vz} from its @c posX/posY/posZ shifted right by
- * @c 12, biased by @c D_8005F0F8->baseZ on @c vz. The projection result
- * is latched to @c D_800C71FC. The trailing @c func_800A0FB8 call gets
+ * @c 12, biasing @c vz by @c D_8005F0F8->baseZ. The projection result is
+ * latched to @c D_800C71FC. The trailing @c func_800A0FB8 clamp call gets
  * flag @c 0 when @c unk1A6 @c == @c 0 and flag @c 1 otherwise.
  *
- * @note Decomp at 95.45% match — semantics and structure match; remaining
- *       diff is gcc 2.7.2 reg-alloc choice (which temp holds the
- *       @c &D_80085224 pointer-base vs the @c &svec arg pointer).
- *       See @c permuter/func_800A11E0/base.c.
+ * @param arg0 Screen-space position, written by @c func_800A0F34 and then
+ *             clamped in place by @c func_800A0FB8.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A11E0);
+void func_800A11E0(Vec2s *arg0) {
+    SVECTOR svec;
+
+    svec.vx = D_80085224[D_800704A8.slots[D_800704A8.unk1A6].param].posX >> 12;
+    svec.vy = D_80085224[D_800704A8.slots[D_800704A8.unk1A6].param].posY >> 12;
+    svec.vz = (D_80085224[D_800704A8.slots[D_800704A8.unk1A6].param].posZ >> 12) +
+              D_8005F0F8->baseZ;
+    D_800C71FC = func_800A0F34(&svec, (s32 *)arg0);
+    if (D_800704A8.unk1A6 == 0) {
+        func_800A0FB8(arg0, 0, 0);
+    } else {
+        func_800A0FB8(arg0, 1, 0);
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A1318);
 
@@ -1606,32 +1711,48 @@ void func_800A355C(FieldActor *actor, s32 slot, s32 a2) {
 }
 
 /**
- * @brief Per-frame anim-row tick for all 16 active slots in the
- *        @c D_800C7200 buffer.
+ * @brief Per-frame animation tick for all 16 slots of a field subscene buffer.
  *
- * Iterates 16 anim-row slots (stride @c 0xFE in @p buf). For each
- * slot where @c D_800704A8.slotActive[i] is set: walks a per-slot
- * anim table at @c slot+0x1810, advancing @c h2 (the table index)
- * whenever @c h1 (the per-frame counter) reaches @c table[h2].
- * Each tick calls @c func_800A355C to dispatch the visual update for
- * the current row.
+ * Walks the 16 @ref FieldSubsceneSlot entries of @p buf (stride @c 0xFE). For
+ * each slot marked active in @c D_800704A8.slotActive[i]:
+ *  - if the per-frame counter @c h1 has reached @c table[h2], reset @c h1,
+ *    advance the table cursor @c h2, and if the next table entry is @c 0 wrap
+ *    @c h2 and @c h0 back to 0;
+ *  - dispatch the visual update via @c func_800A355C (the slot's @c subscene is
+ *    the @ref FieldActor argument), then advance @c h0 and @c h1.
+ * Inactive slots have all three state halfwords (@c h0 / @c h1 / @c h2) cleared.
  *
- * Inactive slots have all three state halfwords (@c h0 / @c h1 / @c h2)
- * cleared.
+ * @param arg0 Unused.
+ * @param arg1 Unused.
+ * @param buf  Subscene buffer (from the @c D_800C7200 table).
  *
- * @note Decomp at 95.45% match — caching @c D_800704A8.slotActive into
- *       a local @c u8* (init separately from for-loop init) drops the
- *       per-iter @c lui+addiu of the @c slotActive pointer and saves
- *       one s-reg. The do-while loop form (with @c i=0 before the
- *       loop) gives gcc the same loop shape as target. Remaining diff
- *       is gcc 2.7.2 reg-alloc: target keeps the slot walker at base
- *       (5 s-regs); ours rebases to @c slot+0x1834 for h0/h1/h2 access
- *       and keeps a parallel walker (6 effective regs). The struct has
- *       @c subscene at offset @c 0x1740 within the slot, @c table at
- *       @c 0x1810, and @c h0/h1/h2 at @c 0x1830/0x1832/0x1834.
- *       See @c permuter/func_800A37A8/base.c.
+ * @note @c pos is declared but unused: the original reserves an 8-byte stack
+ *       slot here (gcc 2.7.2 keeps an unused struct local), matching the frame.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A37A8);
+void func_800A37A8(void *arg0, s32 arg1, FieldSubsceneBuffer *buf) {
+    s32 i;
+    SVECTOR pos;
+
+    for (i = 0; i < 16; i++) {
+        if (D_800704A8.slotActive[i] != 0) {
+            if (buf->slots[i].h1 >= buf->slots[i].table[buf->slots[i].h2]) {
+                buf->slots[i].h1 = 0;
+                buf->slots[i].h2++;
+                if (buf->slots[i].table[buf->slots[i].h2] == 0) {
+                    buf->slots[i].h2 = 0;
+                    buf->slots[i].h0 = 0;
+                }
+            }
+            func_800A355C((FieldActor *)&buf->slots[i], i, (s32)buf);
+            buf->slots[i].h0++;
+            buf->slots[i].h1++;
+        } else {
+            buf->slots[i].h0 = 0;
+            buf->slots[i].h1 = 0;
+            buf->slots[i].h2 = 0;
+        }
+    }
+}
 
 /**
  * @brief Advance a 3-axis position+angle lerp accumulator by one tick.
@@ -1713,7 +1834,48 @@ void func_800A4550(s16 a0) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A455C);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A4758);
+/**
+ * @brief Seed the 8 active object slots' draw geometry from their base points.
+ *
+ * Walks the 8 @ref ObjSlot / @ref DrawPoint pairs. For each slot not yet marked
+ * ready (@c D_8005F168[i] == 0) it marks it, then:
+ *  - stamps a perturbation byte (@c D_800C3520 indexed by the VSync phase
+ *    @c D_8005F154 + slot) into @c field86 / @c field87;
+ *  - derives the draw-point's two corner offsets: @c field8/A/C = base minus a
+ *    table-perturbed 0x80 bias (X and Y perturbed by the table at phases +i and
+ *    +i+8; Z a flat +0x40), and @c field10/12/14 = base plus 0/0/0x80;
+ *  - replicates the base (x, y, z) into all 8 entries of both vertex arrays
+ *    @c va / @c vb;
+ *  - resets the slot's tick pair (@c field80 = 0x10 + 2*slot, @c field82 = 0).
+ *
+ * @note The unused @c frameSlot local reserves the 0x20 stack frame the
+ *       original build allocated (its scratch was register-allocated away).
+ */
+void func_800A4758(void) {
+    struct { s32 w[8]; } frameSlot;
+    s32 i, j;
+
+    for (i = 0; i < 8; i++) {
+        if (D_8005F168[i] == 0) {
+            D_8005F168[i] = 1;
+            D_800C6DA0[i].field86 = D_800C3520[(D_8005F154 + i) & 0xFF];
+            D_800C6DA0[i].field87 = D_800C3520[(D_8005F154 + i) & 0xFF];
+            D_800706A0[i].field8 = (D_800706A0[i].x + D_800C3520[(D_8005F154 + i) & 0xFF]) - 0x80;
+            D_800706A0[i].fieldA = (D_800706A0[i].y + D_800C3520[(D_8005F154 + i + 8) & 0xFF]) - 0x80;
+            D_800706A0[i].fieldC = D_800706A0[i].z + 0x40;
+            D_800706A0[i].field10 = D_800706A0[i].x;
+            D_800706A0[i].field12 = D_800706A0[i].y;
+            D_800706A0[i].field14 = D_800706A0[i].z + 0x80;
+            for (j = 0; j < 8; j++) {
+                D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
+                D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
+                D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+            }
+            D_800C6DA0[i].field80 = 0x10 + i * 2;
+            D_800C6DA0[i].field82 = 0;
+        }
+    }
+}
 
 /**
  * @brief Returns 1 if any of the 8 slot bytes in @c D_8005F168 equals 2.
@@ -1759,25 +1921,76 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A4C14);
  * @brief 8-iteration script-dispatch loop with per-slot flag-driven
  *        callbacks and a tick counter that auto-clears.
  *
- * Calls @c func_8003FEE4 once at start and @c func_8003FF88 at end
- * (frame guards), then iterates @c i in @c [0,8) over four parallel
- * arrays (stride 0x88 / 0x18 / 0x20 / 0xB4). When the per-slot flag
- * @c D_8005F168[i] is non-zero, runs @c func_800A4934 on it, then
- * conditionally @c func_800A4C14 (when flag is @c 2, or @c 1 and
- * @c D_8005F122 @c == @c 1), then bumps the slot's tick counter and
- * clears the flag when the counter passes its threshold.
+ * Sets the GTE rotation/translation matrix from @p m (guarded by
+ * @c func_8003FEE4 / @c func_8003FF88), then iterates @c i in @c [0,8) over
+ * four parallel arrays: @c D_800C6DA0 (@ref ObjSlot, stride 0x88),
+ * @c D_800706A0 (@ref DrawPoint, stride 0x18), @p arg3 (stride 0x20), and
+ * @p arg2 (stride 0xB4). When the per-slot flag @c D_8005F168[i] is
+ * non-zero, runs @c func_800A4934 on the slot, then conditionally
+ * @c func_800A4C14 (when the flag is @c 2, or it is @c 1 and
+ * @c D_8005F122 @c == @c 1), then bumps @c ObjSlot.field82 and clears the
+ * flag once it exceeds @c field80 + 4.
  *
- * @note Decomp at 89.75% match — gcc 2.7.2 rebases the
- *       @c D_800C6DA0 walker to @c base+0x80 (for the 0x80/0x82
- *       cluster of slot-counter accesses), which costs an extra
- *       s-reg and shifts the prologue layout. See
- *       @c permuter/func_800A5224/base.c.
+ * @param m    GTE rotation/translation matrix.
+ * @param arg1 Opaque context forwarded to @c func_800A4C14.
+ * @param arg2 Per-slot parameter array (stride 0xB4), forwarded to @c func_800A4C14.
+ * @param arg3 Per-slot parameter array (stride 0x20), forwarded to @c func_800A4C14.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5224);
+void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
+                   func_800A5224_arg3 *arg3) {
+    s32 i;
+
+    func_8003FEE4();
+    SetRotMatrix(m);
+    SetTransMatrix(m);
+    for (i = 0; i < 8; i++) {
+        if (D_8005F168[i] != 0) {
+            u8 flag;
+            s16 tick;
+            func_800A4934(&D_800C6DA0[i], &D_800706A0[i]);
+            flag = D_8005F168[i];
+            if (flag == 2 || (flag == 1 && D_8005F122 == flag)) {
+                func_800A4C14(&D_800C6DA0[i], arg1, &arg2[i], &arg3[i]);
+            }
+            tick = D_800C6DA0[i].field82 + 1;
+            D_800C6DA0[i].field82 = tick;
+            if (tick > D_800C6DA0[i].field80 + 4) {
+                D_8005F168[i] = 0;
+            }
+        }
+    }
+    func_8003FF88();
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5360);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A553C);
+/**
+ * @brief Reset the current frame's ordering table and link the double-buffer's
+ *        clear-tile primitives, tinted (@p r, @p g, @p b), into @p ot.
+ *
+ * A generalized sibling of @c BuildPrimList: it clears the active buffer's
+ * ordering table via @c ClearOTagR, writes the fill color into that buffer's
+ * clear @ref TILE, then prepends both the tile and its preceding @ref DR_MODE
+ * primitive (12 bytes before the tile) to the caller-supplied ordering table
+ * @p ot. @c g_bufferIndex is @c volatile, so each subscript re-reads it.
+ *
+ * @param ot Ordering-table slot to link the two clear primitives into.
+ * @param r  Fill red   — low byte stored to TILE @c r0.
+ * @param g  Fill green — low byte stored to TILE @c g0.
+ * @param b  Fill blue  — low byte stored to TILE @c b0.
+ *
+ * @note @p r / @p g / @p b are @c s16 because the sole caller (@c func_800A5788)
+ *       feeds them the signed fade-lerp results; only the low byte reaches each
+ *       TILE color component.
+ */
+void func_800A553C(u32 *ot, s16 r, s16 g, s16 b) {
+    ClearOTagR(&g_orderingTablePtrs[(s16)g_bufferIndex], 1);
+    g_clearTiles[(s16)g_bufferIndex * 2].r0 = r;
+    g_clearTiles[(s16)g_bufferIndex * 2].g0 = g;
+    g_clearTiles[(s16)g_bufferIndex * 2].b0 = b;
+    addPrim(ot, &g_clearTiles[(s16)g_bufferIndex * 2]);
+    addPrim(ot, (DR_MODE *)&g_clearTiles[(s16)g_bufferIndex * 2] - 1);
+}
 
 /**
  * @brief Dialog tick that counts the timer DOWN; finalize on expire or
