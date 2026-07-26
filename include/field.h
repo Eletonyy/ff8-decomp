@@ -199,11 +199,14 @@ typedef struct {
  * @c func_8009A2BC reads all three axes, so @c z0 / @c z1 are real Z coordinates
  * (they were previously mislabelled as @c unk04 / @c unk0A).
  *
- * @note This table shares the 3D line-segment layout of the per-entity
- *       @ref FieldLineTrigger (set by the @c SETLINE opcode), but how the table
- *       is populated is not yet traced — the only confirmed accessors read it
- *       (@c func_800A6100 / @c func_800A62EC); no writer was found in the
- *       @c fe_object* code, so it is likely filled from field/map data at load.
+ * @note Separate storage from the per-entity @ref FieldLineTrigger (@c SETLINE
+ *       opcode), which it resembles only in layout. The @ref EventQueue is a
+ *       field-script section: its base comes from @c D_800C7208 (set up with
+ *       the other @c 0x800E1000 field-data section pointers by @c func_8009895C,
+ *       then latched into @c D_8005F0F8 by @c func_800983F0). No game code
+ *       stores into this region, so the 12 trigger lines are field-file data
+ *       loaded with the field; @c func_800A6100 / @c func_800A62EC only read
+ *       them against entity positions.
  */
 typedef struct {
     /* 0x00 */ s16 x0;
