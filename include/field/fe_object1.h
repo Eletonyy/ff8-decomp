@@ -147,7 +147,7 @@ typedef struct ScriptList {
     ScriptEntry *entries;
 } ScriptList;
 
-/* FieldTriggerLine (field line-trigger table entry) is defined in field.h. */
+/* FieldLineTrigger (field line-trigger table entry) is defined in field.h. */
 
 extern ScriptList *D_800D5E90;
 
@@ -333,7 +333,7 @@ extern int  func_800A5A20();
 extern u8   func_800A5C9C(void);
 extern int  func_800A5D28();
 extern void func_800A5FA4();  /* arg 0 = entry pointer (16-byte stride); arg 1 = flag */
-extern void func_800A6100(Eline *eline, FieldTriggerLine *segs);
+extern void func_800A6100(Eline *eline, FieldLineTrigger *segs);
 extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();
 extern int  func_800A6A80();

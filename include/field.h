@@ -123,7 +123,7 @@ typedef struct {
     u16 lineZ2;             /**< 0x192 */
     u8  lineActive;         /**< 0x194: 1 while LINEON, 0 while LINEOFF. */
     u8  lineCharMarker;     /**< 0x195: D_800DE4FC snapshot, set by SETLINE. */
-} FieldLineTrigger;
+} EntityLineTrigger;
 
 /**
  * @brief One slot of the @c SystemState mode-slot table at
@@ -199,7 +199,7 @@ typedef struct {
  * @c func_8009A2BC reads all three axes, so @c z0 / @c z1 are real Z coordinates
  * (they were previously mislabelled as @c unk04 / @c unk0A).
  *
- * @note Separate storage from the per-entity @ref FieldLineTrigger (@c SETLINE
+ * @note Separate storage from the per-entity @ref EntityLineTrigger (@c SETLINE
  *       opcode), which it resembles only in layout. The @ref EventQueue is a
  *       field-script section: its base comes from @c D_800C7208 (set up with
  *       the other @c 0x800E1000 field-data section pointers by @c func_8009895C,
@@ -219,7 +219,7 @@ typedef struct {
     /* 0x0D */ u8  unk0D;
     /* 0x0E */ u8  type;
     /* 0x0F */ u8  unk0F;
-} FieldTriggerLine;
+} FieldLineTrigger;
 
 /**
  * @brief Container struct at @c D_8005F0F8; 0x60-byte header, then the event
@@ -235,7 +235,7 @@ typedef struct {
     /* 0x05C */ u8 pad5C[0x04];
     /* 0x060 */ EventEntry entries[12]; /**< Sentinel-scanned event ring (field16 @c == @c 0x7FFF terminates). */
     /* 0x1E0 */ u8 pad1E0[0x04];        /**< Alignment gap: entries[12] ends at 0x1E0, segs begins at 0x1E4; no field code reads or writes it. */
-    /* 0x1E4 */ FieldTriggerLine segs[12];      /**< Line-trigger table scanned by @c func_800A6100. */
+    /* 0x1E4 */ FieldLineTrigger segs[12];      /**< Line-trigger table scanned by @c func_800A6100. */
 } EventQueue;
 
 extern EventQueue *D_8005F0F8;

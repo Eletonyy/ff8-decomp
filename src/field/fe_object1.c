@@ -2605,10 +2605,10 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5FA4);
  *       from reordering the @c posY store ahead of the @c posX store while
  *       staging the scratchpad, matching the original prologue schedule.
  */
-void func_800A6100(Eline *eline, FieldTriggerLine *segs) {
+void func_800A6100(Eline *eline, FieldLineTrigger *segs) {
     s32 *p = getScratchAddr(0);
     s32 *q;
-    FieldTriggerLine *seg;
+    FieldLineTrigger *seg;
     s32 i;
     s32 dist;
 
