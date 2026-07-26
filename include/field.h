@@ -194,12 +194,16 @@ typedef struct {
  *        stride) held at @c EventQueue.segs, scanned by @c func_800A6100 /
  *        @c func_800A62EC.
  *
- * A 3D line segment from @c (x0,y0,z0) to @c (x1,y1,z1) — the endpoints are
- * collected from active entities' @ref FieldLineTrigger data (set by the
- * @c SETLINE opcode). @c marker @c == @c 0xFF flags an empty slot; @c type
- * selects the @c func_800A5FA4 dispatch behaviour. @c func_8009A2BC reads all
- * three axes, so @c z0 / @c z1 are real Z coordinates (they were previously
- * mislabelled as @c unk04 / @c unk0A).
+ * A 3D line segment from @c (x0,y0,z0) to @c (x1,y1,z1). @c marker @c == @c 0xFF
+ * flags an empty slot; @c type selects the @c func_800A5FA4 dispatch behaviour.
+ * @c func_8009A2BC reads all three axes, so @c z0 / @c z1 are real Z coordinates
+ * (they were previously mislabelled as @c unk04 / @c unk0A).
+ *
+ * @note This table shares the 3D line-segment layout of the per-entity
+ *       @ref FieldLineTrigger (set by the @c SETLINE opcode), but how the table
+ *       is populated is not yet traced — the only confirmed accessors read it
+ *       (@c func_800A6100 / @c func_800A62EC); no writer was found in the
+ *       @c fe_object* code, so it is likely filled from field/map data at load.
  */
 typedef struct {
     /* 0x00 */ s16 x0;
@@ -227,7 +231,7 @@ typedef struct {
     /* 0x054 */ ClampRect rect_b[1]; /**< Padding margin used by @c func_800A0FB8 to shrink @c rect_a. */
     /* 0x05C */ u8 pad5C[0x04];
     /* 0x060 */ EventEntry entries[12]; /**< Sentinel-scanned event ring (field16 @c == @c 0x7FFF terminates). */
-    /* 0x1E0 */ u8 unk1E0[0x04];        /**< Unmapped; precedes the line-trigger table. */
+    /* 0x1E0 */ u8 pad1E0[0x04];        /**< Alignment gap: entries[12] ends at 0x1E0, segs begins at 0x1E4; no field code reads or writes it. */
     /* 0x1E4 */ ElineSeg segs[12];      /**< Line-trigger table scanned by @c func_800A6100. */
 } EventQueue;
 
