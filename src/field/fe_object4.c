@@ -1102,7 +1102,7 @@ s32 opHandler_SARALYDISPON(void) {
  * runSpeed field names.
  */
 s32 opHandler_SETLINE(Eline *e) {
-    FieldLineTrigger *line = (FieldLineTrigger *)e;
+    EntityLineTrigger *line = (EntityLineTrigger *)e;
     u16 lastPop;
     line->lineZ2 = POP(e);
     line->lineY2 = POP(e);
@@ -1124,7 +1124,7 @@ s32 opHandler_SETLINE(Eline *e) {
  * both bytes (low = 1, high = @c D_800DE4FC) at script init.
  */
 s32 opHandler_LINEON(Eline *e) {
-    ((FieldLineTrigger *)e)->lineActive = 1;
+    ((EntityLineTrigger *)e)->lineActive = 1;
     return 2;
 }
 
@@ -1132,7 +1132,7 @@ s32 opHandler_LINEON(Eline *e) {
  * @brief Clears the low byte of @c runSpeed, returns 2.
  */
 s32 opHandler_LINEOFF(Eline *e) {
-    ((FieldLineTrigger *)e)->lineActive = 0;
+    ((EntityLineTrigger *)e)->lineActive = 0;
     return 2;
 }
 

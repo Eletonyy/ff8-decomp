@@ -123,7 +123,7 @@ typedef struct {
     u16 lineZ2;             /**< 0x192 */
     u8  lineActive;         /**< 0x194: 1 while LINEON, 0 while LINEOFF. */
     u8  lineCharMarker;     /**< 0x195: D_800DE4FC snapshot, set by SETLINE. */
-} FieldLineTrigger;
+} EntityLineTrigger;
 
 /**
  * @brief One slot of the @c SystemState mode-slot table at
@@ -189,16 +189,53 @@ typedef struct {
     /* 0x06 */ s16 f6;
 } ClampRect;
 
-/** @brief Container struct at @c D_8005F0F8; first 0x60 bytes are header data, then 16 event entries. */
+/**
+ * @brief One entry of the field line-trigger table (12 per table, 16-byte
+ *        stride) held at @c EventQueue.segs, scanned by @c func_800A6100 /
+ *        @c func_800A62EC.
+ *
+ * A 3D line segment from @c (x0,y0,z0) to @c (x1,y1,z1). @c marker @c == @c 0xFF
+ * flags an empty slot; @c type selects the @c func_800A5FA4 dispatch behaviour.
+ * @c func_8009A2BC reads all three axes, so @c z0 / @c z1 are real Z coordinates
+ * (they were previously mislabelled as @c unk04 / @c unk0A).
+ *
+ * @note Separate storage from the per-entity @ref EntityLineTrigger (@c SETLINE
+ *       opcode), which it resembles only in layout. The @ref EventQueue is a
+ *       field-script section: its base comes from @c D_800C7208 (set up with
+ *       the other @c 0x800E1000 field-data section pointers by @c func_8009895C,
+ *       then latched into @c D_8005F0F8 by @c func_800983F0). No game code
+ *       stores into this region, so the 12 trigger lines are field-file data
+ *       loaded with the field; @c func_800A6100 / @c func_800A62EC only read
+ *       them against entity positions.
+ */
 typedef struct {
-    /* 0x00 */ u8 pad00[0x0E];
-    /* 0x0E */ u8 unk0E;            /**< When @c == 1, @c func_800A1BB8 issues a StoreImage to VRAM. */
-    /* 0x0F */ u8 pad0F[0x03];
-    /* 0x12 */ u16 baseZ;           /**< Base Z offset added to the per-entity Z when building SVECTOR (func_800A11E0). */
-    /* 0x14 */ ClampRect rect_a[8]; /**< Per-region clamp rectangles, consumed by @c func_800A0FB8. */
-    /* 0x54 */ ClampRect rect_b[1]; /**< Padding margin used by @c func_800A0FB8 to shrink @c rect_a. */
-    /* 0x5C */ u8 pad5C[0x04];
-    /* 0x60 */ EventEntry entries[16];
+    /* 0x00 */ s16 x0;
+    /* 0x02 */ s16 y0;
+    /* 0x04 */ s16 z0;
+    /* 0x06 */ s16 x1;
+    /* 0x08 */ s16 y1;
+    /* 0x0A */ s16 z1;
+    /* 0x0C */ u8  marker;
+    /* 0x0D */ u8  unk0D;
+    /* 0x0E */ u8  type;
+    /* 0x0F */ u8  unk0F;
+} FieldLineTrigger;
+
+/**
+ * @brief Container struct at @c D_8005F0F8; 0x60-byte header, then the event
+ *        entry ring and the field line-trigger table.
+ */
+typedef struct {
+    /* 0x000 */ u8 pad00[0x0E];
+    /* 0x00E */ u8 unk0E;            /**< When @c == 1, @c func_800A1BB8 issues a StoreImage to VRAM. */
+    /* 0x00F */ u8 pad0F[0x03];
+    /* 0x012 */ u16 baseZ;           /**< Base Z offset added to the per-entity Z when building SVECTOR (func_800A11E0). */
+    /* 0x014 */ ClampRect rect_a[8]; /**< Per-region clamp rectangles, consumed by @c func_800A0FB8. */
+    /* 0x054 */ ClampRect rect_b[1]; /**< Padding margin used by @c func_800A0FB8 to shrink @c rect_a. */
+    /* 0x05C */ u8 pad5C[0x04];
+    /* 0x060 */ EventEntry entries[12]; /**< Sentinel-scanned event ring (field16 @c == @c 0x7FFF terminates). */
+    /* 0x1E0 */ u8 pad1E0[0x04];        /**< Alignment gap: entries[12] ends at 0x1E0, segs begins at 0x1E4; no field code reads or writes it. */
+    /* 0x1E4 */ FieldLineTrigger segs[12];      /**< Line-trigger table scanned by @c func_800A6100. */
 } EventQueue;
 
 extern EventQueue *D_8005F0F8;
