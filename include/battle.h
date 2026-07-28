@@ -280,11 +280,14 @@ typedef struct {
     u16 statusBackup;
     u16 hpDisplay;     /* 0x94: HP value mirrored from BattleCharData.currentHp. */
     u16 unk96;
-    u8 pad98;
+    u8 unk98;
     u8 unk99;
-    u8 pad9A[4];
+    u8 pad9A;
+    u8 unk9B;
+    u8 unk9C;
+    u8 unk9D;
     u8 unk9E;
-    u8 pad9F;
+    u8 unk9F;
     u8 unkA0[1];
     u8 padA1[0x16];
     u8 unkB7;

@@ -191,7 +191,22 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A2360);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A240C);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A2480);
+void func_800A2480(s32 arg0, s32 arg1, u16* arg2) {
+    BattleEntity* currentEntity;
+
+
+    if (D_800ED148.unk1300 == 0 && 
+       (currentEntity = &D_800ED148.entities[arg0], (currentEntity + 1)->slot8.byteView.unk09 == 0) && 
+       ((arg1 == 0) || (*arg2 & 1))) {
+        if (!(currentEntity->controlFlags & 0x20)) {
+            *arg2 |= 1;
+        }
+    } 
+        
+    else {
+        func_800A240C();
+    }
+}
 
 /**
  * @brief Call func_8009B924 with constants 0x7A and 0x030E77FF.
@@ -220,7 +235,22 @@ void func_800A2570(s32 a0) {
     func_8009B924(a0, 0x37E, 0x038E7FFF);
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A2598);
+void func_800A2598(s32 arg0, s8 arg1) {
+    BattleSystem* bs;
+    BattleEntity* currentEntity;
+
+    bs = &D_800ED148;
+    currentEntity = &bs->entities[arg0];
+    
+    currentEntity->unk98 = D_800EE4C0.unk0;
+    currentEntity->unk9D = D_800ED148.entities[D_800EE4C0.unk0].linkedIdx;
+    currentEntity->unk9B = D_800ED148.unk1310;
+    currentEntity->unk9F = D_800EE4C0.statusCode;
+    currentEntity->unk9C = D_800EEBB9;
+    (currentEntity + 1)->state.bytes.trigType = arg1;
+    (currentEntity + 1)->slot8.byteView.trigKey = D_800ED148.unk12F8;
+    D_800ED148.unk12F8++;
+}
 
 void func_800A2638(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     if (arg2 == 0) {
