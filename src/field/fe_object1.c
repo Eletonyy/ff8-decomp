@@ -2,6 +2,7 @@
 #include "field.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libgpu.h"
+#include "psxsdk/libetc.h"
 #include "field/fe_object1.h"
 #include "field/fe_object10.h"
 
@@ -24,6 +25,7 @@ extern s16 D_8005F148;
 extern u16 D_8005F160;
 extern u16 D_8005F162;
 extern u8 D_80085388;
+extern u8 D_800C319C[];          /**< Arctangent lookup table (byte per 2*|component| step) for func_8009A0E8. */
 extern u8 D_800C32A0[];
 extern u8 D_800C3320[];
 extern u8 D_800C3520[];
@@ -38,6 +40,7 @@ extern void func_80048EFC(RECT *r, u8 *src);
 extern void func_80042634(s32 a);
 extern s32 func_8004D524(s32, s32, s32, s32);
 extern void func_8004D684(void *p);
+extern s32 func_8003F4A4(s32 a);                  /* isqrt: integer square root of a */
 
 extern u16 **D_800D5E9C;         /**< Pointer-to-pointer of u16 count for func_800A29C0's iteration */
 extern u16 *D_800C71E4;
@@ -295,7 +298,60 @@ void func_80099180(void) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_80099348);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A0E8);
+/**
+ * @brief Angle (8-bit BAM) and distance between two 2D points.
+ *
+ * Computes @c dx / @c dy from the two points, stores the squared distance to
+ * @c *outDist, replaces it with the true distance via @c func_8003F4A4 (isqrt),
+ * then normalizes the deltas to a fixed ~[-128,128] scale and resolves the
+ * octant with a magnitude compare (@c |dx| vs @c |dy|) plus the two sign tests.
+ * Each octant reads the arctangent table @c D_800C319C at @c 2*|minor| and adds
+ * the appropriate quadrant offset; the result is a full-circle angle where
+ * 256 == one revolution.
+ *
+ * @param p0       First point (@c p0[0]=x, @c p0[1]=y).
+ * @param p1       Second point (@c p1[0]=x, @c p1[1]=y).
+ * @param outDist  Receives the distance from @p p0 to @p p1.
+ * @return Angle from @p p0 to @p p1 in the range 0-255.
+ *
+ * @note The shared @c "return (r + 0x40) & 0xFF" is what lets gcc 2.7.2
+ *       cross-jump the eight octant tails into one, matching the target's
+ *       merged code. Return type is @c s32 (not @c u8) so the @c &0xFF mask
+ *       stays in this function and the caller keeps a plain @c v0 passthrough.
+ */
+s32 func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist) {
+    s32 dx = p1[0] - p0[0];
+    s32 dy = p1[1] - p0[1];
+    s32 d2 = dx * dx + dy * dy;
+    s32 dist;
+    s32 r;
+
+    *outDist = d2;
+    dist = func_8003F4A4(d2);
+    *outDist = dist;
+
+    dx = ((dx << 12) / dist) / 32;
+    dy = ((dy << 12) / dist) / 32;
+
+    if (dx * dx > dy * dy) {
+        if (dx > 0) {
+            if (dy > 0) r = D_800C319C[2 * dy];
+            else r = -D_800C319C[-2 * dy];
+        } else {
+            if (dy > 0) r = -0x80 - D_800C319C[2 * dy];
+            else r = D_800C319C[-2 * dy] - 0x80;
+        }
+    } else {
+        if (dy > 0) {
+            if (dx > 0) r = 0x40 - D_800C319C[2 * dx];
+            else r = D_800C319C[-2 * dx] + 0x40;
+        } else {
+            if (dx > 0) r = D_800C319C[2 * dx] - 0x40;
+            else r = -0x40 - D_800C319C[-2 * dx];
+        }
+    }
+    return (r + 0x40) & 0xFF;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A2BC);
 
@@ -587,7 +643,87 @@ void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009BEC8);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009CEE8);
+/**
+ * @brief Aim the self entity at whichever entity is most directly "in front" of
+ *        it, and stamp that target's delayed-SFX trigger 7 with the pad mode.
+ *
+ * The self entity is @c D_80085224[D_8005F148]; its position is taken in whole
+ * units (fixed-point @c >>12). A @c mode (0/1/2) is derived from the current and
+ * previous pad-held bits in @c D_800704A8 (@c unk150 / @c unk154, bits @c 0x80
+ * and @c 0x40). If the field is busy (@c D_800704BD != 0) or @c mode is 0, the
+ * scan is skipped entirely.
+ *
+ * Otherwise every entity @c i is scored into @c angleTable: candidates are
+ * skipped when they are the self entity, flagged busy (@c field_0x24B), inactive
+ * (@c unk218 == -1), share the self's X/Y cell, lie outside a ±0xFF Z band, or
+ * fall outside the combined talk/collision radius. For the rest, the score is how
+ * far the entity's bearing (via @ref func_8009A0E8) deviates from the self's
+ * facing angle (@c field_0x241), folded to 0..0x80. The entity with the smallest
+ * deviation below the 0x40 threshold wins and has its @c triggerSfx7 set to
+ * @c mode; a tie or no winner leaves everything untouched.
+ */
+void func_8009CEE8(void) {
+    s32 selfPos[3];
+    s32 entPos[3];
+    s16 angleTable[48];
+    s32 dist;
+    SystemState *sys;
+    s32 i;
+    s32 mode;
+    s32 diff;
+    s16 best;
+    s16 bestIdx;
+
+    selfPos[0] = D_80085224[D_8005F148].posX >> 12;
+    selfPos[1] = D_80085224[D_8005F148].posY >> 12;
+    selfPos[2] = D_80085224[D_8005F148].posZ >> 12;
+
+    sys = &D_800704A8;
+    mode = 0;
+    if (sys->unk150 & 0x80) {
+        mode = ((sys->unk154 & 0x80) == 0) << 1;
+    }
+    if ((sys->unk150 & 0x40) && !(sys->unk154 & 0x40)) {
+        mode = 1;
+    }
+
+    if (D_800704BD != 0) return;
+    if (mode == 0) return;
+
+    for (i = 0; i < D_80085388; i++) {
+        angleTable[i] = 0x100;
+        if (i == D_8005F148) continue;
+        if (D_80085224[i].field_0x24B != 0) continue;
+        if (D_80085224[i].unk218 == -1) continue;
+        entPos[0] = D_80085224[i].posX >> 12;
+        entPos[1] = D_80085224[i].posY >> 12;
+        entPos[2] = D_80085224[i].posZ >> 12;
+        if (selfPos[0] == entPos[0] && selfPos[1] == entPos[1]) continue;
+        if ((u32)((selfPos[2] - entPos[2]) + 0xFF) >= 0x1FF) continue;
+        diff = (D_80085224[D_8005F148].field_0x241 - (func_8009A0E8(selfPos, entPos, &dist) & 0xFF)) & 0xFF;
+        angleTable[i] = diff;
+        if (diff >= 0x81) {
+            angleTable[i] = 0x100 - diff;
+        }
+        if (dist >= D_80085224[i].talkRadius + D_80085224[D_8005F148].radius) {
+            angleTable[i] = 0x100;
+        }
+    }
+
+    best = 0x40;
+    bestIdx = D_8005F148;
+    for (i = 0; i < D_80085388; i++) {
+        if (D_80085224[i].unk218 == -1) continue;
+        if (angleTable[i] < (s16)best) {
+            best = (u16)angleTable[i];
+            bestIdx = i;
+        }
+    }
+
+    if (bestIdx != D_8005F148 && best != 0x40) {
+        D_80085224[bestIdx].triggerSfx7 = mode;
+    }
+}
 
 /**
  * Looks up a halfword from the D_800C32A0 table by index.
@@ -1148,7 +1284,79 @@ void func_800A17A4(u8 *a0) {
     *(u16 *)(a0 + 0xC) = 0;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A17B8);
+/**
+ * @brief Advance one interpolating oscillator / wobble driver.
+ *
+ * Ticks an @ref Oscillator one step, dispatching on @c mode / @c phase:
+ *  - @b mode==1 (continuous): on @c phase==0 it seeds the first target
+ *    (@c end = @c (s16)(D_800C3520[tableIdx] * amplitude) / 256) and returns;
+ *    otherwise, once @c angle passes @c total it starts a new cycle — the new
+ *    @c end takes the @b opposite sign of the previous one (so the value
+ *    oscillates) — then interpolates.
+ *  - @b otherwise: on @c phase==1 it snaps @c start to the previous @c end,
+ *    clears @c end, and drops to @c phase==0; on @c phase!=1 it runs until
+ *    @c angle reaches @c total, then latches @c output to @c 0.
+ *
+ * Each non-terminal path interpolates via @c func_800A0EB8(start, end, total,
+ * angle), stores the result in @c output, and advances @c angle. Every started
+ * cycle also advances @c tableIdx into the @c D_800C3520 waveform table.
+ *
+ * @param osc The oscillator to advance.
+ *
+ * @note The empty @c do/while(0) after the target update is a scheduling
+ *       barrier: it stops gcc from hoisting the @c tableIdx reload into the
+ *       divide, keeping the round-toward-zero @c /256 in @c $v0 to match.
+ *       @c delta is @c s32 so the @c (s16) truncation materialises before the
+ *       negate (rather than gcc folding @c -(s16)x into @c (s16)(-x)).
+ */
+void func_800A17B8(Oscillator *osc) {
+    if (osc->mode == 1) {
+        if (osc->phase == 0) {
+            s16 delta;
+            osc->angle = 0;
+            osc->start = 0;
+            delta = (s16)(D_800C3520[osc->tableIdx] * osc->amplitude);
+            osc->end = delta / 256;
+            osc->phase = 1;
+            osc->tableIdx++;
+            return;
+        }
+        if (osc->total < osc->angle) {
+            s32 delta;
+            s16 old = osc->end;
+            osc->angle = 0;
+            osc->start = old;
+            if (old < 0) {
+                delta = (s16)(D_800C3520[osc->tableIdx] * osc->amplitude);
+            } else {
+                delta = -(s16)(D_800C3520[osc->tableIdx] * osc->amplitude);
+            }
+            osc->end = delta / 256;
+            do {} while (0);
+            osc->tableIdx++;
+        }
+        osc->output = func_800A0EB8(osc->start, osc->end, osc->total, osc->angle);
+        osc->angle++;
+    } else {
+        if (osc->phase == 1) {
+            if (osc->total < osc->angle) {
+                s16 old = osc->end;
+                osc->angle = 0;
+                osc->end = 0;
+                osc->phase = 0;
+                osc->start = old;
+                osc->tableIdx++;
+            }
+            osc->output = func_800A0EB8(osc->start, osc->end, osc->total, osc->angle);
+            osc->angle++;
+        } else if (osc->total <= osc->angle) {
+            osc->output = 0;
+        } else {
+            osc->output = func_800A0EB8(osc->start, osc->end, osc->total, osc->angle);
+            osc->angle++;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A19B8);
 
@@ -1785,7 +1993,73 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A39D8);
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3FE0);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A42EC);
+/**
+ * @brief Initialise the field-object GPU primitive packets and seed the
+ *        8-object shimmer state.
+ *
+ * Runs three passes:
+ *  1. **40 gouraud quads** (@p polys): stamp each @ref POLY_G4 with a length
+ *     of @c 8 words and code @c 0x3A (gouraud four-point, semi-transparent).
+ *  2. **32 draw-mode packets** (@p tpages): stamp each @ref DR_TPAGE with a
+ *     length of @c 1 word and a GP0(E1h) draw-mode command whose low bits come
+ *     from @c func_8004D524() (texture page / semi-transparency selection).
+ *  3. **8 shimmer objects**: for each @ref ObjSlot / @ref DrawPoint pair, sample
+ *     a perturbation byte from @c D_800C3520 at the current VSync phase
+ *     (@c D_8005F154 @c + slot), offset the draw-point corners by it, mirror the
+ *     base @c (x,y,z) into all 8 vertices of both corner buffers, and reset the
+ *     per-object tick (@c field80 @c = @c 0x10 @c + slot*2) and @c field82.
+ *
+ * @param polys  Array of 40 @ref POLY_G4 quad primitives to initialise.
+ * @param tpages Array of 32 @ref DR_TPAGE draw-mode packets to initialise.
+ *
+ * @note The @c P_TAG length byte sits 4 bytes before the @c code byte; both
+ *       passes write the length through the same walking @c code cursor
+ *       (@c c[-4] / @c w[-1]) so gcc keeps the loop induction variable anchored
+ *       at the code field, matching the original's cursor.
+ */
+void func_800A42EC(POLY_G4 *polys, DR_TPAGE *tpages) {
+    s32 i, j;
+    POLY_G4 *p;
+    DR_TPAGE *q;
+
+    i = 0;
+    p = polys;
+    do {
+        u8 *c = &p->code;
+        c[-4] = 8;
+        *c = 0x3A;
+        p++;
+    } while (++i < 40);
+
+    i = 0;
+    q = tpages;
+    do {
+        u32 *w = &q->code[0];
+        ((u8 *)w)[-1] = 1;
+        *w = (func_8004D524(0, 1, 0, 0) & 0x9FF) | 0xE1000200;
+        q++;
+    } while (++i < 32);
+
+    for (i = 0; i < 8; i++) {
+        D_800C6DA0[i].field86 = D_800C3520[(D_8005F154 + i) & 0xFF];
+        D_800C6DA0[i].field87 = D_800C3520[(D_8005F154 + i) & 0xFF];
+        D_800706A0[i].field8 = (D_800706A0[i].x + D_800C3520[(D_8005F154 + i) & 0xFF]) - 0x80;
+        D_800706A0[i].fieldA = (D_800706A0[i].y + D_800C3520[(D_8005F154 + i + 8) & 0xFF]) - 0x80;
+        D_800706A0[i].fieldC = D_800706A0[i].z + 0x40;
+        D_800706A0[i].field10 = D_800706A0[i].x;
+        D_800706A0[i].field12 = D_800706A0[i].y;
+        D_800706A0[i].field14 = D_800706A0[i].z + 0x80;
+
+        for (j = 0; j < 8; j++) {
+            D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
+            D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
+            D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+        }
+
+        D_800C6DA0[i].field80 = 0x10 + i * 2;
+        D_800C6DA0[i].field82 = 0;
+    }
+}
 
 /**
  * Zero 8 bytes of D_8005F168 (backwards loop).
@@ -1832,7 +2106,62 @@ void func_800A4550(s16 a0) {
     D_8005F122 = a0;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A455C);
+/**
+ * @brief Spawn the 8 shimmer objects aimed at an entity.
+ *
+ * Computes the facing angle from draw-point 0 (@c D_800706A0[0]) to entity
+ * @p entityIdx 's world position (@ref Eline @c posX / @c posY, right-shifted
+ * out of 12-bit fixed point) via @c func_8009A0E8, then arms all 8 object slots:
+ *  - marks each slot flag @c D_8005F168[i] @c = @c 2 ("spawned"; later detected
+ *    by the @c ==2 scan);
+ *  - stores the facing angle @c ±0x40 into @c field86 / @c field87;
+ *  - seeds the draw-point corners with a table perturbation scaled ×4 and
+ *    biased by @c -0x200 (@c field8 / @c fieldA), a rising Z offset
+ *    @c 1000 @c + slot*128 (@c fieldC), and the entity position for
+ *    @c field10 / @c field12 / @c field14 (Z @c + @c 0xB4);
+ *  - mirrors the base @c (x,y,z) into all 8 vertices of both corner buffers;
+ *  - resets the per-object tick (@c field80 @c = @c 0x18 @c + slot*2) and
+ *    @c field82.
+ *
+ * @param entityIdx Index into the @ref Eline entity array (@c D_80085224) that
+ *                  the shimmer objects are aimed at.
+ */
+void func_800A455C(s16 entityIdx) {
+    s32 i, j;
+    s32 angle;
+    s32 objPos[3];
+    s32 entityPos[3];
+    s32 dist[2];
+
+    objPos[0] = (s16)D_800706A0[0].x;
+    objPos[1] = (s16)D_800706A0[0].y;
+    objPos[2] = 0;
+    entityPos[0] = D_80085224[entityIdx].posX >> 12;
+    entityPos[1] = D_80085224[entityIdx].posY >> 12;
+    entityPos[2] = 0;
+    angle = func_8009A0E8(objPos, entityPos, dist);
+
+    for (i = 0; i < 8; i++) {
+        D_8005F168[i] = 2;
+        D_800C6DA0[i].field86 = angle + 0x40;
+        D_800C6DA0[i].field87 = angle - 0x40;
+        D_800706A0[i].field8 = (D_800706A0[i].x + D_800C3520[(D_8005F154 + i) & 0xFF] * 4) - 0x200;
+        D_800706A0[i].fieldA = (D_800706A0[i].y + D_800C3520[(D_8005F154 + i + 8) & 0xFF] * 4) - 0x200;
+        D_800706A0[i].fieldC = D_800706A0[i].z + (1000 + i * 128);
+        D_800706A0[i].field10 = D_80085224[entityIdx].posX >> 12;
+        D_800706A0[i].field12 = D_80085224[entityIdx].posY >> 12;
+        D_800706A0[i].field14 = (D_80085224[entityIdx].posZ >> 12) + 0xB4;
+
+        for (j = 0; j < 8; j++) {
+            D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
+            D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
+            D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+        }
+
+        D_800C6DA0[i].field80 = 0x18 + i * 2;
+        D_800C6DA0[i].field82 = 0;
+    }
+}
 
 /**
  * @brief Seed the 8 active object slots' draw geometry from their base points.
@@ -1962,7 +2291,42 @@ void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
     func_8003FF88();
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5360);
+/**
+ * @brief Reset the ordering table and link the double-buffer's clear-tile
+ *        primitives, tinted (@p r, @p g, @p b) and faded by @c dialogTimer.
+ *
+ * The brightness-scaled twin of @ref func_800A553C: it clears the active
+ * buffer's ordering table via @c ClearOTagR, then writes each fill-color
+ * component scaled by the current dialog fade level
+ * (@c dialogTimer, 0..256) into that buffer's clear @ref TILE, and finally
+ * prepends both the tile and its preceding @ref DR_MODE primitive (12 bytes
+ * before the tile) to the caller-supplied ordering table @p ot.
+ *
+ * @param ot Ordering-table slot to link the two clear primitives into.
+ * @param r  Fill red   — scaled to @c r*dialogTimer/256, low byte to TILE @c r0.
+ * @param g  Fill green — scaled to @c g*dialogTimer/256, low byte to TILE @c g0.
+ * @param b  Fill blue  — scaled to @c b*dialogTimer/256, low byte to TILE @c b0.
+ *
+ * @note @c g_bufferIndex is @c volatile, so every subscript re-reads it; the
+ *       @c dialogTimer read is likewise forced through a @c volatile pointer to
+ *       reload each component (its fade value can change between frames).
+ *       The first store caches the tile index in @c idx so gcc emits the index
+ *       before the shared @c g_clearTiles base, matching the original schedule
+ *       in the multiply's delay window; @c g0 / @c b0 recompute it inline (each
+ *       is its own @c volatile @c g_bufferIndex read).
+ */
+void func_800A5360(u32 *ot, s16 r, s16 g, s16 b) {
+    ClearOTagR(&g_orderingTablePtrs[(s16)g_bufferIndex], 1);
+    {
+        volatile SystemState *sys = &D_800704A8;
+        s32 idx = (s16)g_bufferIndex * 2;
+        g_clearTiles[idx].r0 = (s16)sys->dialogTimer * r / 256;
+        g_clearTiles[(s16)g_bufferIndex * 2].g0 = (s16)sys->dialogTimer * g / 256;
+        g_clearTiles[(s16)g_bufferIndex * 2].b0 = (s16)sys->dialogTimer * b / 256;
+    }
+    addPrim(ot, &g_clearTiles[(s16)g_bufferIndex * 2]);
+    addPrim(ot, (DR_MODE *)&g_clearTiles[(s16)g_bufferIndex * 2] - 1);
+}
 
 /**
  * @brief Reset the current frame's ordering table and link the double-buffer's
@@ -2298,7 +2662,71 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5D28);
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5FA4);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A6100);
+/**
+ * @brief Scan the 12-entry eline segment table and fire per-segment triggers
+ *        based on proximity, facing angle, and edge orientation to @p eline.
+ *
+ * Stages @p eline 's world position (@c posX/Y/Z >> 12) into the scratchpad
+ * at @c getScratchAddr(0), then for each non-empty segment (@c marker != 0xFF):
+ *  - Runs @c func_8009A2BC (which projects the segment and returns a squared
+ *    distance, also writing the projected point to @c getScratchAddr(8)).
+ *  - If the point is within @c eline->radius²: the segment fires
+ *    (@c func_800A5FA4 with the segment @c type) when either the projected
+ *    point coincides with @p eline, or the facing angle from @c func_8009A0E8
+ *    lies within a @c +/-64 window of @c eline->unk23F.
+ *  - Otherwise (out of range): segments with @c type >= 4 are gated by a
+ *    cross-product orientation test against the segment edge, then
+ *    @c type 2/4 fire with flag 1 and @c type 3/5 fire with flag 0.
+ *
+ * @param eline The querying eline entity.
+ * @param segs  The 12-entry, 16-byte-stride segment table.
+ *
+ * @note The empty @c do{}while(0) is a scheduling barrier: it keeps gcc 2.7.2
+ *       from reordering the @c posY store ahead of the @c posX store while
+ *       staging the scratchpad, matching the original prologue schedule.
+ */
+void func_800A6100(Eline *eline, FieldLineTrigger *segs) {
+    s32 *p = getScratchAddr(0);
+    s32 *q;
+    FieldLineTrigger *seg;
+    s32 i;
+    s32 dist;
+
+    seg = segs;
+    q = getScratchAddr(8);
+    p[0] = eline->posX >> 12;
+    do { } while (0);
+    p[1] = eline->posY >> 12;
+    p[2] = eline->posZ >> 12;
+
+    for (i = 0; i < 12; i++, seg++) {
+        if (seg->marker == 0xFF) {
+            continue;
+        }
+        dist = func_8009A2BC(seg, p, q);
+        if (dist != -1 && dist < eline->radius * eline->radius) {
+            if (p[0] == q[0] && p[1] == q[1]) {
+                func_800A5FA4(seg, seg->type);
+            } else if ((((func_8009A0E8(p, q, &dist) & 0xFF) - eline->unk23F + 0x40) & 0xFF) < 0x80) {
+                func_800A5FA4(seg, seg->type);
+            }
+        } else {
+            if (seg->type >= 4) {
+                s32 dx = seg->x1 - seg->x0;
+                s32 dy = seg->y1 - seg->y0;
+                if (dx * (p[1] - seg->y0) - dy * (p[0] - seg->x0) > 0) {
+                    continue;
+                }
+            }
+            if (seg->type == 2 || seg->type == 4) {
+                func_800A5FA4(seg, 1);
+            }
+            if (seg->type == 3 || seg->type == 5) {
+                func_800A5FA4(seg, 0);
+            }
+        }
+    }
+}
 
 /**
  * @brief Per-frame dispatch over 12 entries — call @c func_800A5FA4

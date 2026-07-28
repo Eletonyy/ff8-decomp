@@ -40,6 +40,27 @@ typedef struct {
 } ParticleBlock;
 
 /**
+ * @brief Interpolating oscillator / wobble driver (14 bytes).
+ *
+ * Steps a value from @c start toward @c end over @c total ticks, sampling a
+ * waveform from @c D_800C3520 (scaled by @c amplitude) and interpolating each
+ * tick via @c func_800A0EB8. @c mode / @c phase select the behaviour
+ * (@c mode==1 continuously oscillates by flipping @c end 's sign each cycle;
+ * otherwise it runs once and stops). Advanced by @ref func_800A17B8.
+ */
+typedef struct {
+    /* 0x00 */ u8  mode;       /**< Dispatch mode (1 = continuous oscillation). */
+    /* 0x01 */ u8  phase;      /**< Sub-state within the current mode. */
+    /* 0x02 */ u8  tableIdx;   /**< Cursor into the @c D_800C3520 waveform table. */
+    /* 0x03 */ u8  output;     /**< Latest interpolated value from @c func_800A0EB8. */
+    /* 0x04 */ s16 amplitude;  /**< Scale applied to the sampled waveform byte. */
+    /* 0x06 */ s16 start;      /**< Interpolation start value. */
+    /* 0x08 */ s16 end;        /**< Interpolation end (target) value. */
+    /* 0x0A */ s16 total;      /**< Interpolation duration in ticks. */
+    /* 0x0C */ s16 angle;      /**< Current tick (0..total). */
+} Oscillator;  /* 0x0E = 14 bytes */
+
+/**
  * @brief Particle system buffer.
  *
  * Modeled as a flat array of 32-byte slots: the first ~313 slots hold the
@@ -126,6 +147,8 @@ typedef struct ScriptList {
     ScriptEntry *entries;
 } ScriptList;
 
+/* FieldLineTrigger (field line-trigger table entry) is defined in field.h. */
+
 extern ScriptList *D_800D5E90;
 
 extern void func_80098934(void);
@@ -160,7 +183,7 @@ extern int  func_800983F0();
 extern int  func_8009895C();
 extern void func_80099180(void);
 extern int  func_80099348();
-extern int  func_8009A0E8();
+extern s32  func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist);
 extern int  func_8009A2BC();
 extern int  func_8009A4C0();
 extern void func_8009A7E8(Eline *e, FieldEntityB *pool);
@@ -171,7 +194,7 @@ extern int  func_8009AAC8();
 extern int  func_8009AC9C();
 extern int  func_8009AEC0();
 extern int  func_8009BEC8();
-extern int  func_8009CEE8();
+extern void func_8009CEE8(void);
 extern int  func_8009D274();
 extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
 extern int  func_8009D598();
@@ -196,7 +219,7 @@ extern int  func_800A10F4();
 extern void func_800A11E0(Vec2s *arg0);
 extern int  func_800A1318();
 extern int  func_800A15C0();
-extern int  func_800A17B8();
+void func_800A17B8(Oscillator *osc);
 extern int  func_800A19B8();
 extern void func_800A1BB8(void);
 extern int  func_800A1CFC();
@@ -283,9 +306,9 @@ typedef struct {
 extern void func_800A38B4(func_800A38B4_out *out, func_800A38B4_in *in, func_800A38B4_in *target);
 extern int  func_800A39D8();
 extern int  func_800A3FE0();
-extern int  func_800A42EC();
+void func_800A42EC(POLY_G4 *polys, DR_TPAGE *tpages);
 extern void func_800A4500(s32 x, s32 y, s32 z);
-extern int  func_800A455C();
+void func_800A455C(s16 entityIdx);
 extern void func_800A4758(void);
 extern s32  func_800A48CC(void);
 extern int  func_800A4934();
@@ -295,7 +318,7 @@ typedef struct { u8 pad[0xB4]; } func_800A5224_arg2; /* 0xB4 = 180 bytes */
 typedef struct { u8 pad[0x20]; } func_800A5224_arg3; /* 0x20 = 32 bytes */
 extern void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
                           func_800A5224_arg3 *arg3);
-extern int  func_800A5360();
+extern void func_800A5360(u32 *ot, s16 r, s16 g, s16 b);
 extern volatile u16 g_bufferIndex;       /**< Active double-buffer index. */
 extern u32 g_orderingTablePtrs[];        /**< Per-buffer ordering-table heads. */
 extern TILE g_clearTiles[];              /**< Per-buffer screen-clear TILEs. */
@@ -310,7 +333,7 @@ extern int  func_800A5A20();
 extern u8   func_800A5C9C(void);
 extern int  func_800A5D28();
 extern void func_800A5FA4();  /* arg 0 = entry pointer (16-byte stride); arg 1 = flag */
-extern int  func_800A6100();
+extern void func_800A6100(Eline *eline, FieldLineTrigger *segs);
 extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();
 extern int  func_800A6A80();
