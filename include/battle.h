@@ -428,7 +428,7 @@ typedef struct {
     /* 0x12E8 */ u8 unk12E8;                    /**< Misc state byte. */
     /* 0x12E9 */ u8 volatile unk12E9;                    /**< Misc state byte (touched by 12EA-gated path). */
     /* 0x12EA */ u8 volatile unk12EA;                    /**< Misc state gate byte. */
-    /* 0x12EB */ u8 unk12EB;                    /**< Misc state. */
+    /* 0x12EB */ u8 volatile unk12EB;                    /**< Misc state. */
     /* 0x12EC */ u8 unk12EC;                    /**< Misc state byte (init to 0xFF). */
     /* 0x12ED */ u8 volatile unk12ED;                    /**< Misc state byte. */
     /* 0x12EE */ u8 volatile unk12EE;                    /**< Misc state byte. */

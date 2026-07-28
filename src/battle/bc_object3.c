@@ -756,7 +756,29 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A52E4);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A53C4);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A5454);
+void func_800A5454(void) {
+    s32 index;
+
+    if (D_800ED148.unk5C3 == 0) {
+        D_800ED148.unk12EB = 0;
+        if ((D_800ED148.unk5C2 != 0) && (func_800D0EF8() != 0) && (D_800ED148.entities[0].stateMachine.unk0 == 0)) {
+            D_800ED148.unk12EB = 1;
+            index = 0;
+            func_800A53C4();
+            while(index < 7) {
+                if ((D_800ED148.entities[index].controlFlags & CTRL_ACTIVE) && !(D_800ED148.entities[index].status & 1) && !(D_800ED148.entities[index].controlFlags & CTRL_FLAG_80)) {
+                    func_800A52E4(index);
+                }
+                
+                index++;
+            }
+        }
+        
+        if (D_800ED148.unk12EA != 0) {
+            func_800AEA0C();
+        }
+    }
+}
 
 /**
  * @brief Store a timer value into an entity entry at D_800ED158.
