@@ -167,12 +167,12 @@ typedef enum {
 } ControlFlags;
 
 /**
- * @brief Data block reached two indirections away through
- *        @c BattleEntity.linkedPtr->data.
- *
- * Size and most fields are unknown; only the byte at offset 0x14F
- * (read by @c func_800AF988) is mapped so far.
- */
+* @brief Data block reached two indirections away through
+*        @c BattleEntity.linkedPtr->data.
+*
+* Size and most fields are unknown; only the byte at offset 0x14F
+* (read by @c func_800AF988) is mapped so far.
+*/
 typedef struct {
     u8 unk00[0xF7];
     u8 immunityFlags;   /* 0xF7: bit 0 forces status bit 0x40 clear, bit 1 forces flags bit 0x2000 clear (read by @c func_8009AFF0). */
@@ -191,11 +191,11 @@ typedef struct {
 } BattleEntityData;
 
 /**
- * @brief Handle wrapping a pointer to @c BattleEntityData.
- *
- * @c BattleEntity.linkedPtr points at one of these. The first word is
- * the actual data pointer that callers ultimately dereference.
- */
+* @brief Handle wrapping a pointer to @c BattleEntityData.
+*
+* @c BattleEntity.linkedPtr points at one of these. The first word is
+* the actual data pointer that callers ultimately dereference.
+*/
 typedef struct {
     BattleEntityData *data;  /* 0x00: pointer to the entity's linked data block. */
 } BattleEntityLinked;
@@ -212,16 +212,16 @@ typedef struct {
             u8 unk3;
         } bytes;
     } stateMachine;            
-     /* 0x00: 4-byte field (semantics unknown). */
+    /* 0x00: 4-byte field (semantics unknown). */
     /* 0x04: state machine value. Byte 3 (offset 0x07) is also accessed
-       as a "trigger type" code (read by @c func_8009A990). */
+    as a "trigger type" code (read by @c func_8009A990). */
     union {
-        s32 word;
+        s32 volatile word;
         struct { u8 b0; u8 b1; u8 b2; u8 trigType; } bytes;
     } state;
     /* 0x08: byte view exposes @c trigKey (pending-trigger key matched
-       against arg). Word view (@c initFlags) is a 4-byte init-time
-       animation/render flag word written by @c func_800A7518. */
+    against arg). Word view (@c initFlags) is a 4-byte init-time
+    animation/render flag word written by @c func_800A7518. */
     union {
         struct {
             u8 trigKey;     /* 0x08 */
@@ -233,7 +233,7 @@ typedef struct {
     } slot8;
     union {
         struct {
-            u8 timer;
+            u8 volatile timer;
             u8 control;
         } SplitTimer;
         u16 bigTimer;
@@ -256,8 +256,8 @@ typedef struct {
     u16 unk58;
     u8 pad59[0xA];
     /* 0x64: byte-bit-slot view (14 halfwords, indexed by lowest set bit
-       of a flag mask). The trailing 4 bytes (@c 0x7C-0x7F) are also
-       read/written as a 4-byte slot flag word during init. */
+    of a flag mask). The trailing 4 bytes (@c 0x7C-0x7F) are also
+    read/written as a 4-byte slot flag word during init. */
     union {
         s16 perBit[14];                 /* 0x64-0x7F as 14 halfwords. */
         struct {
@@ -266,7 +266,7 @@ typedef struct {
         } slotInit;
     } field64;
     /* 0x80: written 16-bit (mirror of @c BattleCharData.displayStatus)
-       and later read 32-bit (with a bitmask test). */
+    and later read 32-bit (with a bitmask test). */
     union {
         u16 slotDisplay;     /* 0x80-0x81 (write path). */
         s32 word;            /* 0x80-0x83 (read path). */
@@ -300,16 +300,16 @@ typedef struct {
 } BattleEntity; /* 208 bytes */
 
 /**
- * @brief Battle system block at D_800ED148.
- *
- * Top-level view: 16 BattleEntity slots followed by a region of misc state
- * fields (only @c effectMult mapped here so far).
- *
- * @note @c BattleSystemFlat is an alternative view of the same memory
- *       used in @c bc_object7.c via cast. Files needing @c volatile
- *       semantics for specific accesses should use volatile casts at
- *       the access site rather than redeclaring @c D_800ED148.
- */
+* @brief Battle system block at D_800ED148.
+*
+* Top-level view: 16 BattleEntity slots followed by a region of misc state
+* fields (only @c effectMult mapped here so far).
+*
+* @note @c BattleSystemFlat is an alternative view of the same memory
+*       used in @c bc_object7.c via cast. Files needing @c volatile
+*       semantics for specific accesses should use volatile casts at
+*       the access site rather than redeclaring @c D_800ED148.
+*/
 /** @brief 6-byte unsigned (x,y,z) triple in @c BattleSystem.unkCE4. */
 typedef struct {
     u16 x;
@@ -336,9 +336,9 @@ typedef struct {
 } BattleEntry; /*  0x14 (20 byte) */
 
 /** @brief Linked-list node for the @c BattleSystem.taskLinks queue.
- *
- * @c fwd is the next slot index (or 0xFF for end), @c bwd is the previous
- * slot index (or 0xFF for head). Managed by @c func_8009B2A4 / @c func_8009B320. */
+*
+* @c fwd is the next slot index (or 0xFF for end), @c bwd is the previous
+* slot index (or 0xFF for head). Managed by @c func_8009B2A4 / @c func_8009B320. */
 typedef struct {
     u8 fwd;     /* 0x00: forward link (next slot, 0xFF = tail) */
     u8 bwd;     /* 0x01: backward link (prev slot, 0xFF = head) */
@@ -347,14 +347,17 @@ typedef struct {
 } TaskLink; /* 0x4 */
 
 /** @brief Task slot in @c BattleSystem.taskData (callback + timer + done flag).
- *
- * Allocated/scheduled by @c func_8009B3D0, ticked by callbacks like
- * @c func_8009AAC4, finalized/freed by @c func_8009B520. */
+*
+* Allocated/scheduled by @c func_8009B3D0, ticked by callbacks like
+* @c func_8009AAC4, finalized/freed by @c func_8009B520. */
 typedef struct {
-    void* callback;   /* 0x00: function pointer (called by @c func_8009B478). */
-    u8 pad04[4];    /* 0x04 */
+    s32 callback;   /* 0x00: function pointer (called by @c func_8009B478). */
+    u32 unk04;      /* 0x04 */
     u16 timer;      /* 0x08: countdown (ticked by callbacks). */
-    u8 pad0A[5];    /* 0x0A */
+    u16 unkA;
+    u8 unkC;
+    u8 unkD;
+    u8 unkE;
     u8 done;        /* 0x0F: completion flag (1 = ready to free). */
 } TaskEntry; /* 0x10 */
 
@@ -392,7 +395,7 @@ typedef struct {
     /* 0x05B0 */ u8 pad5B0[0x10];               /**< Pre-control padding. */
     /* 0x05C0 */ u8 unk5C0;                     /**< Action queue head index (used by func_800B06DC). */
     /* 0x05C1 */ u8 unk5C1;
-    /* 0x05C2 */ u8 unk5C2;                     /**< Misc state byte (init to 1 by func_8009A1E0/ACEC). */
+    /* 0x05C2 */ u8 volatile unk5C2;                     /**< Misc state byte (init to 1 by func_8009A1E0/ACEC). */
     /* 0x05C3 */ u8 unk5C3;                     /**< Misc state byte (init to 1 by func_80099FE8). */
     /* 0x05C4 */ BattleEntry entries[1];       /**< Action queue (stride 0x14)*/
     /* 0x05D8 */ u8 pad5D8[0x0844 - 0x05D8];
@@ -423,12 +426,12 @@ typedef struct {
     /* 0x12E0 */ s16 unk12E0;                   /**< Low 13 bits of a packed s16 field. */
     /* 0x12E2 */ u8 pad12E2[0x6];               /**< Misc state. */
     /* 0x12E8 */ u8 unk12E8;                    /**< Misc state byte. */
-    /* 0x12E9 */ u8 unk12E9;                    /**< Misc state byte (touched by 12EA-gated path). */
-    /* 0x12EA */ u8 unk12EA;                    /**< Misc state gate byte. */
+    /* 0x12E9 */ u8 volatile unk12E9;                    /**< Misc state byte (touched by 12EA-gated path). */
+    /* 0x12EA */ u8 volatile unk12EA;                    /**< Misc state gate byte. */
     /* 0x12EB */ u8 unk12EB;                    /**< Misc state. */
     /* 0x12EC */ u8 unk12EC;                    /**< Misc state byte (init to 0xFF). */
-    /* 0x12ED */ u8 unk12ED;                    /**< Misc state byte. */
-    /* 0x12EE */ u8 unk12EE;                    /**< Misc state byte. */
+    /* 0x12ED */ u8 volatile unk12ED;                    /**< Misc state byte. */
+    /* 0x12EE */ u8 volatile unk12EE;                    /**< Misc state byte. */
     /* 0x12EF */ u8 pad12EF;               /**< Misc state. */
     /* 0x12EF */ u8 unk12F0;
     /* 0x12EF */ u8 pad12F1;               /**< Misc state. */
@@ -593,9 +596,9 @@ typedef struct {
 typedef struct {
     /* 0x000 */ u8 pad000[0x14];
     /* 0x014 */ u16 field014;
-    /* 0x016 */ u8 pad016[2];
+    /* 0x016 */ u16 field016;
     /* 0x018 */ s16 currentHp;          /**< Current HP in battle. */
-    /* 0x01A */ u8 pad01A[2];
+    /* 0x01A */ u16 unk01A;
     /* 0x01C */ u8 field01C;
     /* 0x01D */ u8 field01D;
     /* 0x01E */ BattleCmdSlot cmdSlots[4];
@@ -1103,7 +1106,7 @@ extern u8              D_800EE28C[];
 extern s16             D_800EE3DC;
 extern s8              D_800EE43D;
 extern s8              D_800EE448;
-extern u8              D_800EE449[];
+extern u8              D_800EE449;
 extern u8              D_800EE456;
 extern u8              D_800EE45D;
 extern u8              D_800EE461;
@@ -1162,9 +1165,6 @@ s32 func_8009B15C(void);
 
 /** @brief Remove a task-link slot and relink neighbours. */
 void func_8009B320(s32 a0, u8 *a1, u8 *a2);
-
-/** @brief Allocate a task queue slot and store the callback pointer. */
-s32 func_8009B3D0(void *callback);
 
 /** @brief Issue a CD or memory read for a sound bank entry, arming the completion callback. */
 void func_8009B5C4(s32 idx, s32 dst, s32 dir, s32 userData);

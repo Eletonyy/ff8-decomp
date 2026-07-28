@@ -36,7 +36,7 @@
  * declaration, so this TU's accesses get the @c volatile codegen while
  * other TUs that only see @c battle.h's view remain non-volatile.
  */
-extern volatile BattleSystem D_800ED148;
+
 /* FIXME: D_800E19BC is conceptually an array of (s32 sector, s32 length)
    pairs (8-byte stride, two s32s per entry) used as CdRead arguments by
    the music/sound loader. The two callers below index it with `idx * 2`
@@ -47,7 +47,6 @@ extern volatile BattleSystem D_800ED148;
    with two offsets and broke the match. The magic 2 / +1 should go
    away if/when a struct-typed access form that produces the same
    codegen is found. */
-extern u8 D_80098030[];
 
 /* Forward declarations for file-private functions (defined later in
    this TU). Cross-TU "public" functions live in battle.h. */
@@ -82,7 +81,8 @@ void func_8009B198(s32);
 void func_8009B208(TaskLink *, u8 *, s32);
 s32  func_8009B238(u8 *, s32);
 s32  func_8009B270(u8 *, s32);
-s32  func_8009B2A4(u8 *, u8 *, s32);
+u32  func_8009B2A4(TaskLink*, u8*, s32);
+u8   func_8009B390(TaskLink*, s32);
 void func_8009B428(void);
 void func_8009B478(void);
 void func_8009B520(void);
@@ -92,7 +92,7 @@ void func_8009B6D0(s32, s32);
 s32  func_8009B7F4(s32, s32);
 void func_8009B878(s32, u16 *, s32 *, s32);
 s32  func_8009BA5C(s32, s32);
-
+//s32  func_8009B3D0(void*); this function prototype most likely has been forgotten originally too
 /* Overlay-conflict externs: same MIPS address holds different functions
    in other overlays, so these cannot be hoisted into a shared header. */
 void func_8009A638(void);     /* also in world */
@@ -740,7 +740,7 @@ void func_8009ACEC(void) {
  */
 void func_8009AD7C(void) {
     s32 frames;
-    switch (D_800EE449[0]) {
+    switch (D_800EE449) {
         case 0:
             frames = 60;
             break;
@@ -800,15 +800,16 @@ void func_8009AE08(s32 cmd) {
  * the current flag into the last-played slot.
  */
 void func_8009AE9C(void) {
-    if (D_800ED148.unk12E8 != 2) {
-        if (D_800ED148.unk12ED != D_800ED148.unk12EE) {
-            if (D_800ED148.unk12ED == 1) {
-                func_8009B134(0x6C, 0xF0, 0);
-            } else {
-                func_8009B134(0x6D, 0xF0, 0);
-            }
+    if (D_800ED148.unk12E8 != 2 && D_800ED148.unk12ED != D_800ED148.unk12EE) {
+        if (D_800ED148.unk12ED == 1) {
+            func_8009B134(108, 240, 0);
+        } 
+        
+        else {
+            func_8009B134(109, 240, 0);
         }
     }
+    
     D_800ED148.unk12EE = D_800ED148.unk12ED;
 }
 
@@ -1061,20 +1062,21 @@ s32 func_8009B270(u8 *a0, s32 a1) {
  * @param a2 Number of slots.
  * @return Allocated slot index (as u8).
  */
-s32 func_8009B2A4(u8 *table, u8 *head, s32 count) {
-    s32 slot = (u8)func_8009B390(table, count);
-    u8 *entry = (u8 *)(slot * 4 + (s32)table);
+u32 func_8009B2A4(TaskLink* arg0, u8* taskHead, s32 arg2) {
+    u32 index;
 
-    entry[0] = *head;
-    entry[1] = 0xFF;
-    entry[2] = 0;
+    index = func_8009B390(arg0, arg2);
+    arg0[index].fwd = *taskHead;
+    arg0[index].bwd = 255;
+    arg0[index].unk2 = 0;
+    
 
-    if (*head != 0xFF) {
-        table[*head * 4 + 1] = slot;
+    if (*taskHead != 255) {
+        arg0[*taskHead].bwd = index;
     }
-
-    *head = slot;
-    return slot;
+    
+    *taskHead = index;
+    return index;
 }
 
 /**
@@ -1144,14 +1146,15 @@ u8 func_8009B390(TaskLink* arg0, s32 arg1) {
  * @param arg0 Callback function pointer.
  * @return Allocated slot index (sign-extended to s16).
  */
-s32 func_8009B3D0(void *callback) {
-    s32 base;
-    unsigned long slot;
-    base = (s32)D_800EE24B;
-    slot = func_8009B2A4((u8 *)base, (u8 *)(base + 0x1F3), 0x10);
-    *((s32 *)((((s32)D_800EE24B) + ((2 * slot) * 8)) + 0x41)) = (s32)callback;
-    return (s16)slot;
+
+s16 func_8009B3D0(void* arg0) {
+    s32 index;
+    
+    index = func_8009B2A4(D_800ED148.taskLinks, &D_800ED148.taskHead, 16);
+    D_800ED148.taskData[index].callback = arg0;
+    return index;
 }
+
 
 /**
  * @brief Reset the task queue and associated data.

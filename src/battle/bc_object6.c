@@ -392,7 +392,7 @@ void func_800AEC04(void) {
     }
     func_800AEACC(-1);
     base[7] = 3;
-    *(u8 *)D_800EE449 = 3;
+    D_800EE449 = 3;
     func_8009AF14(func_8009AD7C);
 }
 
@@ -404,7 +404,7 @@ void func_800AEC04(void) {
  */
 void func_800AEC98(void) {
     D_80082C0F = 1;
-    *(u8 *)D_800EE449 = 3;
+    D_800EE449 = 3;
     func_8009AF14(func_8009AD7C);
 }
 

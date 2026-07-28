@@ -1,4 +1,5 @@
 #include "common.h"
+#include "gamestate.h"
 #include "battle.h"
 
 extern u8 D_800786D8[];
@@ -16,6 +17,7 @@ void func_800AF8A4(s32);
 s32 func_800AE568(s32);
 s32 func_800AE64C(s32);
 s32 func_800A4F28(s32, s32, s32);
+void func_800A6184(s32 a0, s32 a1, s32 a2, u16 a3); // bc obj4
 extern u8 D_800ED156[];
 
 /**
@@ -490,9 +492,58 @@ void func_800A4434(u32 arg0, s32 unused, TaskEntry* arg2, BattleCharData* arg3) 
     arg2->done = 1;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A44FC);
+void func_800A44FC(s32 arg0) {
+    TaskEntry* temp_s0;
+    BattleCharData* temp_s1;
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4618);
+    temp_s0 = &D_800ED148.taskData[arg0];
+    temp_s1 = &g_battleChars.chars[temp_s0->unkC];
+    g_gameState.gfs[temp_s1->field01D - 64].hp = temp_s1->currentHp;
+
+    if ((D_800ED148.entities[temp_s0->unkC].controlFlags & 0x400)) {
+        return;
+    }
+    
+    if (D_800ED148.entities[temp_s0->unkC].flags < 0) {
+        if (temp_s1->field014 != 0) {
+            return;
+        }
+        
+        func_800A6184(temp_s0->unkC, temp_s0->unkD, temp_s0->unkE, func_8009BB3C(temp_s0->unkE));
+    }
+    
+    else {
+        func_800A43C0(temp_s0->unkC);
+    }
+    
+    func_800A4434(temp_s0->unkC, temp_s1->field01D, temp_s0, temp_s1);
+}
+
+void func_800A4618(s16 arg0, s32 arg1, u32 arg2, s32 arg3, s32 arg4) {
+    BattleCharData* temp_s0;
+    TaskEntry* temp_v0;
+    BattleEntity* temp_v1;
+    s32 temp_v0_2;
+    
+    temp_s0 = &g_battleChars.chars[arg1];
+    temp_v0 = &D_800ED148.taskData[func_8009B3D0(func_800A44FC)];
+    temp_v1 = &D_800ED148.entities[arg1];
+    
+    temp_v0->unkC = arg1;
+    temp_v0->unkD = arg2;
+    temp_v0->unkE = arg3;
+    temp_v0->unkA = arg4;
+    temp_s0->field01D = arg3;
+    temp_s0->field016 = arg0 * 4;
+    temp_s0->field014 = arg0 * 4;
+    
+    temp_v0_2 = g_gameState.gfs[arg3 - 64].hp;
+    temp_s0->currentHp = temp_v0_2;
+    temp_v1->hpDisplay = temp_v0_2;
+    temp_s0->unk01A = g_battleChars.gfEntries[arg3 - 64].hp; 
+    temp_v1->flags |= 0x80000000;
+    temp_s0->field01C |= 1;
+}
 
 /**
  * @brief Call one of two processing functions based on entity count.
