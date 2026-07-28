@@ -355,6 +355,33 @@ s32 func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A2BC);
 
+/**
+ * @brief Per-frame update of the @ref FieldEntityB trigger pool against the
+ *        self entity's position.
+ *
+ * Stages @p self 's position and a secondary query point @p pt (its Z is taken
+ * from @p self) into the PSX scratchpad, then for each enabled record
+ * (@c activeMarker @c == @c 1) projects the query point onto the record's
+ * segment (@c x0..z1) via @ref func_8009A2BC. When the projection lies inside
+ * @c self->radius the record is latched in-range (@c trigger4) and its trigger
+ * state is refreshed: @c trigger2 on the first in-range frame, @c trigger5 when
+ * self and the query point straddle the segment edge (2D cross-product signs
+ * differ), @c trigger6 / @c unk19D when self coincides with the projected point
+ * or falls within a +/-64 facing window, @c unk19C the facing angle
+ * (@ref func_8009A0E8), and @c trigger7 (1/2) from the current pad-hold mode.
+ * When out of range, @c trigger3 is raised on the frame the record leaves.
+ *
+ * @param self    Querying entity.
+ * @param records @ref FieldEntityB pool (count @c D_800852F8).
+ * @param pt      Secondary query point; its Z is taken from @p self.
+ * @return Always 0.
+ *
+ * @note Currently @c INCLUDE_ASM. The clean two-cursor C form is logic-exact;
+ *       the sole divergence is that gcc places the @c records base copy into its
+ *       saved register (and the dependent scratchpad-address setup) at a
+ *       different schedule point than the target — an allocation/scheduling
+ *       tie-break, not a logic difference. Still being reduced.
+ */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A4C0);
 
 /**

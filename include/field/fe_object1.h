@@ -185,7 +185,7 @@ extern void func_80099180(void);
 extern int  func_80099348();
 extern s32  func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist);
 extern int  func_8009A2BC();
-extern int  func_8009A4C0();
+extern s32  func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt);
 extern void func_8009A7E8(Eline *e, FieldEntityB *pool);
 extern void func_8009A8E0(FieldEntityB *e);
 extern int  func_8009A920();

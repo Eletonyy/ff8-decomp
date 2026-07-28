@@ -497,7 +497,7 @@ typedef struct {
     /* 0x23B */ u8 field_0x23B;
     /* 0x23C */ u8 msgActive;       /**< Message active flag. */
     /* 0x23D */ u8 pad23D[0x02];
-    /* 0x23F */ u8 unk23F;          /**< Anim-sync byte; @c func_8009A7E8 's diff-window check uses @c entity->unk19C - @c eline->unk23F. */
+    /* 0x23F */ u8 unk23F;          /**< Facing/heading angle (8-bit BAM, sin/cos source per FF8 wiki entity-struct). @c func_8009A4C0 / @c func_8009A7E8 compare a trigger's bearing (@c FieldEntityB.unk19C) against it in a +/-facing window. */
     /* 0x240 */ u8 field_0x240;
     /* 0x241 */ u8 field_0x241;
     /* 0x242 */ u8 field_0x242;
@@ -708,18 +708,18 @@ typedef struct {
     /* 0x17C */ u8  pad17C[0x08];
     /* 0x184 */ s8  stackPtr;
     /* 0x185 */ u8  pad185[0x03];
-    /* 0x188 */ u8  field_0x188;        /**< Region/box data starting here; passed to @c func_8009A2BC as arg 0. */
-    /* 0x189 */ u8  pad189[0x0B];
-    /* 0x194 */ u8  activeMarker;       /**< Block-active gate; non-zero enables trigger processing. */
+    /* 0x188 */ s16 x0, y0, z0;         /**< Trigger line-segment start (passed to @c func_8009A2BC as arg 0). */
+    /* 0x18E */ s16 x1, y1, z1;         /**< Trigger line-segment end. */
+    /* 0x194 */ u8  activeMarker;       /**< Block-active gate; @c func_8009A4C0 / @c func_8009A7E8 process the record only when @c == 1. */
     /* 0x195 */ u8  pad195;
-    /* 0x196 */ u8  trigger4;       /**< Cleared together with @c unk19D by @c func_8009A8E0. */
-    /* 0x197 */ u8  trigger5;
-    /* 0x198 */ u8  trigger6;
-    /* 0x199 */ u8  trigger7;       /**< Set to 1/2 by @c func_8009A7E8 when the active-marker test + diff window pass. */
-    /* 0x19A */ u8  trigger2;
-    /* 0x19B */ u8  trigger3;
-    /* 0x19C */ u8  unk19C;         /**< Anim-sync byte compared (with diff bias) against @c eline->unk23F by @c func_8009A7E8. */
-    /* 0x19D */ u8  unk19D;         /**< Per-entity flag cleared by @c func_8009A8E0 alongside @c trigger4. */
+    /* 0x196 */ u8  trigger4;       /**< In-range latch: @c func_8009A4C0 sets it while the query point projects inside @c eline->radius, clears it when out; cleared with @c unk19D by @c func_8009A8E0. */
+    /* 0x197 */ u8  trigger5;       /**< Edge-straddle: @c func_8009A4C0 sets it when self and the query point fall on opposite sides of the segment edge (2D cross-product signs differ). */
+    /* 0x198 */ u8  trigger6;       /**< Facing hit: @c func_8009A4C0 sets it when self coincides with the projected point or lies within a +/-64 facing window. */
+    /* 0x199 */ u8  trigger7;       /**< Set to 1/2 by @c func_8009A4C0 / @c func_8009A7E8 from the current pad-hold mode (@c D_800704A8 unk150/unk154 bits 0x40/0x80) when the active-marker test + diff window pass. */
+    /* 0x19A */ u8  trigger2;       /**< Entered: @c func_8009A4C0 sets it on the frame the record first comes into range. */
+    /* 0x19B */ u8  trigger3;       /**< Exited: @c func_8009A4C0 sets it on the frame the record leaves range. */
+    /* 0x19C */ u8  unk19C;         /**< Facing angle to the projected point, written by @c func_8009A4C0 (@ref func_8009A0E8); compared (with diff bias) against @c eline->unk23F by @c func_8009A4C0 / @c func_8009A7E8. */
+    /* 0x19D */ u8  unk19D;         /**< Fired-this-frame flag: @c func_8009A4C0 raises it with @c trigger6; @c func_8009A7E8 gates the pad-mode write on it; cleared by @c func_8009A8E0 alongside @c trigger4. */
     /* 0x19E */ u8  pad19E[0x02];
 } FieldEntityB; /* 0x1A0 */
 
