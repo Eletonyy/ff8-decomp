@@ -165,11 +165,12 @@ typedef struct {
  * sentinel.
  */
 typedef struct {
-    /* 0x00 */ u8 pad00[0x04];
-    /* 0x04 */ u16 field04;
-    /* 0x06 */ u16 field06;
-    /* 0x08 */ u16 field08;
-    /* 0x0A */ u16 field0A;
+    /* 0x00 */ s16 x0;          /**< Trigger segment start X (func_8009AAC8 walk-crossing scan). */
+    /* 0x02 */ s16 y0;          /**< Trigger segment start Y. */
+    /* 0x04 */ s16 z0;          /**< Trigger segment start Z. */
+    /* 0x06 */ s16 x1;          /**< Trigger segment end X. */
+    /* 0x08 */ s16 y1;          /**< Trigger segment end Y. */
+    /* 0x0A */ s16 z1;          /**< Trigger segment end Z. */
     /* 0x0C */ u16 position_x;  /**< Snapshot field copied to @c D_800704A8.position_x by @c func_8009AA64. */
     /* 0x0E */ u16 position_y;  /**< Snapshot field copied to @c D_800704A8.position_y. */
     /* 0x10 */ u16 rotation;    /**< Snapshot field copied to @c D_800704A8.rotation. */

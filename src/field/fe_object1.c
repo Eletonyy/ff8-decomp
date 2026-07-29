@@ -610,7 +610,67 @@ void func_8009AA64(EventEntry *e) {
     D_800704A8.anim_state = e->anim_state;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009AAC8);
+/**
+ * @brief Scan the 12-entry event queue for trigger segments the query point
+ *        crosses, and fire the event restore for each hit.
+ *
+ * Stages the eline's position (@c >>12) into the scratchpad at
+ * @c getScratchAddr(0) and the query point (X/Y from @p pt, Z from the
+ * eline) at @c getScratchAddr(4), then for each armed @ref EventEntry
+ * (@c counter != 0x7FFF, @c rotation != 0xFFFF): projects the query point
+ * onto the entry's trigger segment via @ref func_8009A2BC, and when the
+ * squared distance is inside @c eline->radius² and the eline and the query
+ * point lie on opposite sides of the segment (2D cross-product signs
+ * differ), restores the entry's event snapshot via @ref func_8009AA64.
+ *
+ * @param eline Querying entity.
+ * @param segs  12-entry @ref EventEntry queue (32-byte stride).
+ * @param pt    Query point (world fixed-point; only X/Y read).
+ *
+ * @note @c B and @c C are derived from @c A with @c |0x10 / @c |0x20 so the
+ *       compiler shares one scratchpad base register (addu+ori), as in the
+ *       original.
+ */
+void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt) {
+    Vec3i *A = (Vec3i *)getScratchAddr(0);
+    Vec3i *B;
+    Vec3i *C;
+    s32 i;
+    s32 dist;
+    s32 crossSelf;
+    s32 crossPt;
+
+    A->x = eline->posX >> 12;
+    B = (Vec3i *)((u32)A | 0x10);
+    A->y = eline->posY >> 12;
+    C = (Vec3i *)((u32)A | 0x20);
+    A->z = eline->posZ >> 12;
+    B->x = pt->x >> 12;
+    B->y = pt->y >> 12;
+    B->z = eline->posZ >> 12;
+    for (i = 0; i < 12; i++, segs++) {
+        if (segs->counter == 0x7FFF) {
+            continue;
+        }
+        if (segs->rotation == 0xFFFF) {
+            continue;
+        }
+        dist = func_8009A2BC(&segs->x0, B, C);
+        if (dist == -1) {
+            continue;
+        }
+        if (dist < eline->radius * eline->radius) {
+            crossSelf = (segs->x1 - segs->x0) * (A->y - segs->y0)
+                      - (A->x - segs->x0) * (segs->y1 - segs->y0);
+            crossPt = (segs->x1 - segs->x0) * (B->y - segs->y0)
+                    - (B->x - segs->x0) * (segs->y1 - segs->y0);
+            if ((crossSelf >= 0 && crossPt < 0) || (crossPt >= 0 && crossSelf < 0)
+                || (crossSelf > 0 && crossPt <= 0) || (crossPt > 0 && crossSelf <= 0)) {
+                func_8009AA64(segs);
+            }
+        }
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009AC9C);
 

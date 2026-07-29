@@ -211,7 +211,7 @@ extern void func_8009A7E8(Eline *e, FieldEntityB *pool);
 extern void func_8009A8E0(FieldEntityB *e);
 extern void func_8009A920(Eline *eline, FieldEntityB *entities);
 extern void func_8009AA64(EventEntry *e);
-extern int  func_8009AAC8();
+extern void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt);
 extern int  func_8009AC9C();
 extern int  func_8009AEC0();
 extern int  func_8009BEC8();
