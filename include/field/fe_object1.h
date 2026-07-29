@@ -26,6 +26,27 @@ typedef struct {
     s16 z;
 } Vec3s;
 
+/** @brief 8-byte navmesh vertex; the packed (sx, sy) word doubles as a GTE SXY operand. */
+typedef struct {
+    s16 sx;
+    s16 sy;
+    s16 sz;
+    s16 pad;
+} SVert;
+
+/** @brief 24-byte navmesh triangle — three @ref SVert corners. */
+typedef struct {
+    SVert v[3];
+} Triangle;
+
+/** @brief 6-byte per-triangle adjacency record — neighbor triangle index per edge (0xFFFF = none). */
+typedef struct {
+    u16 neighbor[3];
+} AdjRec;
+
+extern Triangle *D_800C71F0;  /**< Field navmesh triangle array (loaded per field). */
+extern AdjRec   *D_800D5E98;  /**< Per-triangle edge adjacency table, parallel to @c D_800C71F0. */
+
 /** @brief Animation parameter entry. */
 typedef struct {
     /* 0x00 */ u8 pad00[0x09];
@@ -198,7 +219,7 @@ extern void func_8009CEE8(void);
 extern int  func_8009D274();
 extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
 extern int  func_8009D598();
-extern s32  func_8009DF18();  /* handwritten, return value used by func_8009D500 */
+extern s32  func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux);
 extern s32 func_8009E338(Vec3i *a0, Vec3i *a1, Vec3i *a2, Vec3s *a3);  /* plane-cross intersection */
 extern int  func_8009E660();
 extern int  func_8009ECA4();

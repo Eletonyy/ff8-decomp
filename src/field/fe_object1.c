@@ -909,7 +909,129 @@ void func_8009DED8(u8 *a0, u8 *a1, u8 *a2) {
     *(s32 *)(a0 + 8) = *(s16 *)(a1 + 4) - *(s16 *)(a2 + 4);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009DF18);
+/**
+ * @brief GTE outer-product (NCLIP) of the query point against one navmesh edge.
+ *
+ * Two separate asm statements on purpose: the compiler materializes the
+ * result address (@c addiu @c vN,sp,K) between the @c nclip and the @c swc2,
+ * and the @c "memory" clobber on the first forces the original's per-edge
+ * reloads of the query point and mesh pointer. @c nclip has no GAS mnemonic,
+ * hence the @c .word encoding (cop2 0x1400006).
+ */
+#define gte_nclip(out, sxy0, sxy1, sxy2) \
+    __asm__ volatile("mtc2 %0, $12\nmtc2 %2, $14\nmtc2 %1, $13\nnop\nnop\n.word 0x4B400006\n" \
+        : : "r"(sxy0), "r"(sxy1), "r"(sxy2) : "memory"); \
+    __asm__ volatile("swc2 $24, 0(%0)\n" : : "r"(&(out)))
+
+/**
+ * @brief Walk the field navmesh from the current triangle toward a stepped
+ *        position, following edge adjacency; classify any blocking edge.
+ *
+ * Rounds @p out 's fixed-point X/Y up toward zero (@c +0xFFF then @c >>12)
+ * into a word vector and a packed SXY vertex, then loops: builds the three
+ * edge vectors of the current triangle (@ref func_8009DED8), runs GTE NCLIP
+ * of the query point against each directed edge, and
+ *  - if the point is inside all three edges (all NCLIPs >= 0), stops and
+ *    writes @c out->z from the triangle-plane intersection
+ *    (@ref func_8009E338), returning 0 or the last edge classification;
+ *  - otherwise, for the first failing edge: moves to that edge's neighbor
+ *    triangle (@c *pTriIdx updated) when one exists and its
+ *    @c D_800704A8.statusBits lock bit is clear, else returns +/-8 by the
+ *    sign of the edge direction dotted with the movement delta @p dxy
+ *    (which side of the blocking edge the motion crosses).
+ *
+ * @param pTriIdx In/out current triangle index into @c D_800C71F0.
+ * @param out     Stepped position (fixed-point); @c z receives the plane height.
+ * @param dxy     Movement delta (dx at [0], dy at [1]).
+ * @param aux     Unused.
+ * @return 0 when the point settled in a triangle, else +/-8 blocking-edge code.
+ */
+s32 func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux) {
+    Vec3i e0;
+    Vec3i e1;
+    Vec3i e2;
+    Vec3i posW;
+    SVert posV;
+    s32 nc0;
+    s32 nc1;
+    s32 nc2;
+    s32 ret = 0;
+    s32 t;
+    s32 t2;
+    s32 t3;
+    s32 t4;
+    s16 nb;
+    s32 idx3;
+
+    t = out->x;
+    if (t < 0) {
+        t += 0xFFF;
+    }
+    t >>= 12;
+    posW.x = t;
+    t2 = out->y;
+    if (t2 < 0) {
+        t2 += 0xFFF;
+    }
+    t2 >>= 12;
+    posW.y = t2;
+    posW.z = 0;
+    t3 = out->x;
+    if (t3 < 0) {
+        t3 += 0xFFF;
+    }
+    t3 >>= 12;
+    posV.sx = t3;
+    t4 = out->y;
+    if (t4 < 0) {
+        t4 += 0xFFF;
+    }
+    posV.sy = t4 >> 12;
+    posV.sz = 0;
+
+    while (1) {
+        func_8009DED8((u8 *)&e0, (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 1], (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3]);
+        func_8009DED8((u8 *)&e1, (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 2], (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 1]);
+        func_8009DED8((u8 *)&e2, (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3], (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 2]);
+        idx3 = *pTriIdx * 3;
+        gte_nclip(nc0, *(u32 *)&posV, *(u32 *)&((SVert *)D_800C71F0)[idx3 + 1], *(u32 *)&((SVert *)D_800C71F0)[idx3]);
+        idx3 = *pTriIdx * 3;
+        gte_nclip(nc1, *(u32 *)&posV, *(u32 *)&((SVert *)D_800C71F0)[idx3 + 2], *(u32 *)&((SVert *)D_800C71F0)[idx3 + 1]);
+        idx3 = *pTriIdx * 3;
+        gte_nclip(nc2, *(u32 *)&posV, *(u32 *)&((SVert *)D_800C71F0)[idx3], *(u32 *)&((SVert *)D_800C71F0)[idx3 + 2]);
+        if (nc0 >= 0 && nc1 >= 0 && nc2 >= 0) {
+            break;
+        }
+        if (nc0 < 0) {
+            nb = D_800D5E98[*pTriIdx].neighbor[0];
+            if (nb >= 0 && !((D_800704A8.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
+                *pTriIdx = D_800D5E98[*pTriIdx].neighbor[0];
+                continue;
+            }
+            ret = (e0.x * dxy[0] + e0.y * dxy[1] >= 0) ? 8 : -8;
+            break;
+        } else if (nc1 < 0) {
+            nb = D_800D5E98[*pTriIdx].neighbor[1];
+            if (nb >= 0 && !((D_800704A8.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
+                *pTriIdx = D_800D5E98[*pTriIdx].neighbor[1];
+                continue;
+            }
+            ret = (e1.x * dxy[0] + e1.y * dxy[1] >= 0) ? 8 : -8;
+            break;
+        } else if (nc2 < 0) {
+            nb = D_800D5E98[*pTriIdx].neighbor[2];
+            if (nb >= 0 && !((D_800704A8.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
+                *pTriIdx = D_800D5E98[*pTriIdx].neighbor[2];
+                continue;
+            }
+            ret = (e2.x * dxy[0] + e2.y * dxy[1] >= 0) ? 8 : -8;
+            break;
+        }
+    }
+
+    out->z = func_8009E338(&e0, &e1, &posW, (Vec3s *)&D_800C71F0[*pTriIdx]);
+    return ret;
+}
 
 /**
  * @brief Plane-cross intersection — compute @c (cross_xyz @c · (a3 @c -
