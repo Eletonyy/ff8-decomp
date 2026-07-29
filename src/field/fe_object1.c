@@ -1689,20 +1689,23 @@ void func_800A17B8(Oscillator *osc) {
  * @c 0xFF000000 address masks (@c a0 / @c a2, including a @c 0xE1000000
  * draw-mode packet at @c a2).
  *
- * @note Mixed compiled/asm-macro origin: the trapping @c add / @c sub /
- *       @c addi instructions (funct 0x20/0x22 + opcode 8, byte-verified)
- *       cluster in exactly three idioms — the coordinate WRAP into the
- *       window (+/- the constants from @c 0x1F800110[idx]), the
- *       inside-window test (delay-slot-chained @c sub cascade), and the
- *       cursor advances — while the translate adds and all address
- *       computations between them are compiler-spelled @c addu. The likely
- *       original is a C function using Square-internal asm macros for
- *       those three idioms (PsyQ's own @c INLINE_C.H / @c INLINE_O.H
- *       carry trapping @c addi the same way). Both project compilers emit
- *       only @c addu / @c subu / @c addiu for C arithmetic (re-verified
- *       2026-07-29), and the macro set would have to cover the loop
- *       skeleton itself, so @c INCLUDE_ASM remains the right form — the
- *       assembly builds to a 100%% byte match.
+ * @note Hand-written assembly (own translation unit). Forensics from the
+ *       C+asm-macro reconstruction campaign (permuter/func_800A19B8/base.c,
+ *       82.93%% plateau, full structural parity): (1) its @c li constants
+ *       are ori-form (ASPSX expand_li) while all 166 li sites in the rest
+ *       of fe_object1.c are addiu-form (--aspsx-version=2.67) — assembled
+ *       with different settings than this CU; (2) trapping @c add / @c sub
+ *       / @c addi cluster in the wrap/window-test/advance idioms while
+ *       addresses use @c addu (the classic hand-asm signed-math/address
+ *       convention); (3) the tag-build @c or operand order is
+ *       anti-canonical for gcc combine; (4) two branch delay slots are
+ *       left as @c nop where dbr had eligible fillers; (5) the register
+ *       assignment (mask=t3 allocated before hotter x=t4) is unreachable
+ *       by gcc's allocno priority order. Both project compilers emit only
+ *       @c addu / @c subu / @c addiu for C arithmetic (re-verified
+ *       2026-07-29). @c INCLUDE_ASM builds to a 100%% byte match and is
+ *       the faithful source form; the base.c reconstruction documents the
+ *       semantics and the residual classes.
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A19B8);
 
