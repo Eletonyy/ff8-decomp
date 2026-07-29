@@ -29,7 +29,7 @@ extern u8 *getStatName(s32 statId);
 
 u16 func_8009BAC4(s32 arg0, u16 arg1);
 
-s32 func_8009BB3C(s32 arg0);
+u16 func_8009BB3C(s32 arg0);
 
 s32 func_8009BB98(void);
 

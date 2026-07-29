@@ -1,4 +1,5 @@
 #include "common.h"
+#include "gamestate.h"
 #include "battle.h"
 
 extern u8 D_800786D8[];
@@ -6,7 +7,6 @@ extern u8 D_800EE424[];
 extern u8 D_800EE43C[];
 extern u8 D_800EE462[];
 extern u8 D_80077E58[];
-s32 func_800A4798(s32, s32);
 void func_800A5948(s32, s32);
 void func_800A18E0(s32);
 void func_800A589C(s32);
@@ -17,6 +17,7 @@ void func_800AF8A4(s32);
 s32 func_800AE568(s32);
 s32 func_800AE64C(s32);
 s32 func_800A4F28(s32, s32, s32);
+void func_800A6184(s32 a0, s32 a1, s32 a2, u16 a3); // bc obj4
 extern u8 D_800ED156[];
 
 /**
@@ -190,7 +191,22 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A2360);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A240C);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A2480);
+void func_800A2480(s32 arg0, s32 arg1, u16* arg2) {
+    BattleEntity* currentEntity;
+
+
+    if (D_800ED148.unk1300 == 0 && 
+       (currentEntity = &D_800ED148.entities[arg0], (currentEntity + 1)->slot8.byteView.unk09 == 0) && 
+       ((arg1 == 0) || (*arg2 & 1))) {
+        if (!(currentEntity->controlFlags & 0x20)) {
+            *arg2 |= 1;
+        }
+    } 
+        
+    else {
+        func_800A240C();
+    }
+}
 
 /**
  * @brief Call func_8009B924 with constants 0x7A and 0x030E77FF.
@@ -219,9 +235,33 @@ void func_800A2570(s32 a0) {
     func_8009B924(a0, 0x37E, 0x038E7FFF);
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A2598);
+void func_800A2598(s32 arg0, s8 arg1) {
+    BattleSystem* bs;
+    BattleEntity* currentEntity;
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A2638);
+    bs = &D_800ED148;
+    currentEntity = &bs->entities[arg0];
+    
+    currentEntity->unk98 = D_800EE4C0.unk0;
+    currentEntity->unk9D = D_800ED148.entities[D_800EE4C0.unk0].linkedIdx;
+    currentEntity->unk9B = D_800ED148.unk1310;
+    currentEntity->unk9F = D_800EE4C0.statusCode;
+    currentEntity->unk9C = D_800EEBB9;
+    (currentEntity + 1)->state.bytes.trigType = arg1;
+    (currentEntity + 1)->slot8.byteView.trigKey = D_800ED148.unk12F8;
+    D_800ED148.unk12F8++;
+}
+
+void func_800A2638(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
+    if (arg2 == 0) {
+        if (!(arg1 & 1) && (arg0 != 0)) {
+            D_800ED148.entities[arg3].unk9E = 0;
+            return;
+        }
+        
+        D_800ED148.entities[arg3].unk9E = 1;
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A26A0);
 
@@ -361,7 +401,21 @@ void func_800A3054(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg5) {
     *(u16 *)(entry + 6) = arg5;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A3094);
+/**
+* enemyId is the id of the enemy you are using draw on (3-5) 
+*/
+
+s32 func_800A3094(s32 targetId, s32 arg1) {
+    s32 i;
+
+    for (i = 0; i < 4; i++) {
+        if (D_800EE9E8.subEntries[targetId - 3].array0[i].unk0 == arg1) {
+            return 1;
+        }
+    }
+    
+    return 0;
+}
 
 /**
  * @brief Clear two battle state bytes at D_800ED148 offsets 0x5C0 and 0x5C1.
@@ -425,7 +479,20 @@ void func_800A432C(s32 a0) {
     *(s32 *)D_800EE424 = getMenuString(a0);
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4350);
+void func_800A4350(s32 arg0, s32 arg1) {
+    BattleCharData* var_v1;
+    s32 i;
+
+    var_v1 = &g_battleChars.chars[arg0];
+    if (var_v1->currentHp == 0) {
+        for(i = 0; i < 16; i++){
+            if (var_v1->itemSlots[i].field0 == arg1) {
+                var_v1->itemSlots[i].field4 |= 2;
+                return;
+            }
+        }
+    }
+}
 
 /**
  * @brief Check entity status bit and trigger effect if clear.
@@ -437,24 +504,76 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4350);
  *
  * @param a0 Entity index (stride 0xD0).
  */
-void func_800A43C0(s32 a0) {
-    volatile u8 *base = (u8 *)&D_800ED148;
-    u8 *entity = (u8 *)base + a0 * 0xD0;
-    if (*(u16 *)(entity + 0x90) & 1) {
-        return;
-    }
-    func_800AF8A4(a0);
-    {
-        u8 *result = func_8009B134(0x72, 0xF0, 0);
-        *(s16 *)result = (s16)a0;
+
+
+void func_800A43C0(s32 arg0) {
+    if (!(D_800ED148.entities[arg0].status & 1)) {
+        func_800AF8A4(arg0);
+        func_8009B134(114, 240, 0)->unk0 = arg0;
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4434);
+void func_800A4434(u32 arg0, s32 unused, TaskEntry* arg2, BattleCharData* arg3) {
+    func_800A4350(arg0, g_battleChars.chars[arg0].field01D);
+    D_800ED148.entities[arg0].flags &= 0x7FFFFFFF; // ~(1 << BATTLE_ENTITY_FLAG_BIT_31)
+    arg3->field01C &= 0xFE;
+    D_800ED148.entities[arg0].controlFlags &= ~CTRL_FLAG_400;
+    recalcAllGfStats();
+    arg2->done = 1;
+}
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A44FC);
+void func_800A44FC(s32 arg0) {
+    TaskEntry* temp_s0;
+    BattleCharData* temp_s1;
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4618);
+    temp_s0 = &D_800ED148.taskData[arg0];
+    temp_s1 = &g_battleChars.chars[temp_s0->unkC];
+    g_gameState.gfs[temp_s1->field01D - 64].hp = temp_s1->currentHp;
+
+    if ((D_800ED148.entities[temp_s0->unkC].controlFlags & 0x400)) {
+        return;
+    }
+    
+    if (D_800ED148.entities[temp_s0->unkC].flags < 0) {
+        if (temp_s1->field014 != 0) {
+            return;
+        }
+        
+        func_800A6184(temp_s0->unkC, temp_s0->unkD, temp_s0->unkE, func_8009BB3C(temp_s0->unkE));
+    }
+    
+    else {
+        func_800A43C0(temp_s0->unkC);
+    }
+    
+    func_800A4434(temp_s0->unkC, temp_s1->field01D, temp_s0, temp_s1);
+}
+
+void func_800A4618(s16 arg0, s32 arg1, u32 arg2, s32 arg3, s32 arg4) {
+    BattleCharData* temp_s0;
+    TaskEntry* temp_v0;
+    BattleEntity* temp_v1;
+    s32 temp_v0_2;
+    
+    temp_s0 = &g_battleChars.chars[arg1];
+    temp_v0 = &D_800ED148.taskData[func_8009B3D0(func_800A44FC)];
+    temp_v1 = &D_800ED148.entities[arg1];
+    
+    temp_v0->unkC = arg1;
+    temp_v0->unkD = arg2;
+    temp_v0->unkE = arg3;
+    temp_v0->unkA = arg4;
+    temp_s0->field01D = arg3;
+    temp_s0->field016 = arg0 * 4;
+    temp_s0->field014 = arg0 * 4;
+    
+    temp_v0_2 = g_gameState.gfs[arg3 - 64].hp;
+    temp_s0->currentHp = temp_v0_2;
+    temp_v1->hpDisplay = temp_v0_2;
+    temp_s0->unk01A = g_battleChars.gfEntries[arg3 - 64].hp; 
+    temp_v1->flags |= 0x80000000;
+    temp_s0->field01C |= 1;
+}
 
 /**
  * @brief Call one of two processing functions based on entity count.
@@ -475,7 +594,19 @@ u16 func_800A475C(u16 count) {
     return (u16)result;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4798);
+s32 func_800A4798(u32 arg0, s32 arg1) { // arg0 is always 0-6
+    s32 i;
+    s32 count = 0;
+    u16 mask = 1 << arg0;
+    
+    for (i = 0; i < arg1; i++) {
+        if (mask & D_800ED148.array12B8[i]) {
+            count++;
+        }
+    }
+    
+    return count;
+}
 
 /**
  * @brief Call func_800A4798 for each of 7 entities, storing result at offset 0xD9.
@@ -495,9 +626,28 @@ void func_800A47E4(s32 a0) {
     } while (i < 7);
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4844);
+s32 func_800A4844(s32 arg0) {
+    s32 status = D_800ED148.entities[arg0].status;
+    s32 flags = D_800ED148.entities[arg0].flags;
+    
+    if((status & 0x25) || (flags & 0x02004009)) {
+        return 0;
+    }
+    
+    return 1;
+}
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A4898);
+s32 func_800A4898(s32 arg0) {
+    if (D_800ED148.entities[arg0].linkedIdx != 255) {
+        if ((g_battleChars.chars[arg0].statusFlags & 0x10) && (func_800A4844(arg0) != 0)) {
+            return arg0;
+        }
+
+        return 255;
+    }
+    
+    return 254;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A493C);
 
@@ -570,17 +720,95 @@ s32 func_800A4FC4(s32 mask, u8 *dst) {
     return count & 0xFF;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A5004);
+s32 func_800A5004(void) {
+    if ((D_800ED148.unk12F2 == 0) || (D_800ED148.unk12F0 == 0)) {
+        return 1;
+    }
+    
+    if(D_800ED148.unk130C != 0) {
+        return 1;
+    }
+    
+    if (D_800EE4C0.unk1 == 16) {
+        if (D_800ED148.entities[D_800EE4C0.unk0].status & 1) {
+            goto x;
+        }
+
+        return 1;
+    }
+
+    
+    if (D_800ED148.unk12F0 == 1) {
+        if (!(D_800ED148.entities[D_800EE4C0.unk0].flags & 0x20000) && !(D_800ED148.entities[D_800EE4C0.unk0].flags & 0x40000)) {
+            return 0;
+        }
+    }
+    
+    if ((D_800ED148.unk12F0 == 2) && !((D_800ED148.entities[D_800EE4C0.unk0].flags & 0x40000))) {
+      return 0;
+    }
+
+    if ((D_800ED148.entities[D_800EE4C0.unk0].status & 0x35)) {
+        return 0;    
+    }
+    
+    if ((D_800ED148.entities[D_800EE4C0.unk0].flags & 0x4009)) {
+        x:
+        return 0;
+    }
+    
+    return 1;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A517C);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A5210);
+void func_800A5210(s32 arg0) {
+    Struct_func_800A5210* temp_v1;
+
+    temp_v1 = &D_800ED148.Array844[D_800ED148.unk5C1++];
+    temp_v1->unk0 = arg0;
+    temp_v1->unk1 = D_800EE4C0.unk4;
+    temp_v1->unk2 = D_800EE4C0.flags5;
+    temp_v1->unk3 = D_800EE4C0.flags6;
+    temp_v1->unk4 = D_800EE4C0.unk1E;
+    temp_v1->unk6 = D_800EE4C0.unk0C;
+    temp_v1->unk8 = D_800EE4C0.unk10;
+    temp_v1->unkC = D_800EE4C0.unk7;
+    temp_v1->unkD = D_800EE4C0.unk08;
+    temp_v1->unkE = D_800EE4C0.unk09;
+    temp_v1->unkF = D_800EE4C0.unkA;
+    temp_v1->unk10 = D_800EE4C0.unk20;
+    temp_v1->unk12 = D_800EE4C0.unk14;
+    temp_v1->unk14 = D_800EE4C0.unk18;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A52E4);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A53C4);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A5454);
+void func_800A5454(void) {
+    s32 index;
+
+    if (D_800ED148.unk5C3 == 0) {
+        D_800ED148.unk12EB = 0;
+        if ((D_800ED148.unk5C2 != 0) && (func_800D0EF8() != 0) && (D_800ED148.entities[0].stateMachine.unk0 == 0)) {
+            D_800ED148.unk12EB = 1;
+            index = 0;
+            func_800A53C4();
+            while(index < 7) {
+                if ((D_800ED148.entities[index].controlFlags & CTRL_ACTIVE) && !(D_800ED148.entities[index].status & 1) && !(D_800ED148.entities[index].controlFlags & CTRL_FLAG_80)) {
+                    func_800A52E4(index);
+                }
+                
+                index++;
+            }
+        }
+        
+        if (D_800ED148.unk12EA != 0) {
+            func_800AEA0C();
+        }
+    }
+}
 
 /**
  * @brief Store a timer value into an entity entry at D_800ED158.
@@ -671,7 +899,18 @@ top:
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A589C);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A5948);
+void func_800A5948(s32 arg0, s32 arg1) {
+    s32 i;
+    s32 j;
+
+    for (i = 0; i < 2; i++) {
+        D_800ED148.arrayDE8[arg1][arg0][i].unk0 = 255;
+        
+        for (j = 2; j > -1; j--) {
+            D_800ED148.arrayDE8[arg1][arg0][i].unk6[j] = 0;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A59AC);
 

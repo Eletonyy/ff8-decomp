@@ -621,11 +621,12 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AB07C);
  * @param a0 Parameter passed to func_800B0398.
  * @param a1 Halfword value stored at entry offset 8.
  */
-void func_800AB0C0(s32 a0, s32 a1) {
-    s32 idx = func_8009B3D0(func_800AB054);
-    u8 *entry = (u8 *)((s32)D_800EE28C + idx * 16);
-    *(s32 *)(entry + 4) = func_800B0398(a0);
-    *(u16 *)(entry + 8) = a1;
+void func_800AB0C0(s32 arg0, u16 arg1) {
+    TaskEntry* currentEntry;
+
+    currentEntry = &D_800ED148.taskData[func_8009B3D0(func_800AB054)];
+    currentEntry->unk04 = func_800B0398(arg0);
+    currentEntry->timer = arg1;
 }
 
 /**
@@ -658,10 +659,10 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AB1AC);
  *
  * @param a0 Value to store as halfword.
  */
-void func_800AB208(s32 a0) {
-    s32 idx = func_8009B3D0(func_800AB1AC);
-    u8 *entry = (u8 *)((s32)D_800EE28C + idx * 16);
-    *(s16 *)(entry + 8) = a0;
+void func_800AB208(u16 arg0) {
+    TaskEntry* currentEntry = &D_800ED148.taskData[func_8009B3D0(func_800AB1AC)];
+    
+    currentEntry->timer = arg0;
 }
 
 /**

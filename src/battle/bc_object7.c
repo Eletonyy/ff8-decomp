@@ -372,16 +372,12 @@ s32 func_800B0668(s32 a0, s32 a1) {
  *
  * @param arg0 Entity bitmask (16-bit).
  */
-void func_800B06DC(s32 arg0) {
-    BattleSystem *sys;
-    s32 idx;
-    func_800A4C84(arg0 & 0xFFFF);
-    sys = &D_800ED148;
-    if (sys->entities[0].pad0E == 0) {
+void func_800B06DC(u16 arg0) {
+    func_800A4C84(arg0);
+    if (D_800ED148.entities[0].pad0E == 0) {
         func_8009AE08(5);
-        func_800AE524(sys->unk5C0 - 1);
-        idx = sys->unk5C0 - 1;
-        sys->entries[idx].unk10 = 0;
+        func_800AE524(D_800ED148.unk5C0 - 1);
+        D_800ED148.entries[D_800ED148.unk5C0 - 1].unk10 = 0;
         func_8009AE08(6);
     }
 }
