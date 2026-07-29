@@ -1032,7 +1032,7 @@ s32 opHandler_CLOCKWISETURN(Eline *eline) {
  * call lands with a real value in @c a1.
  */
 s32 opHandler_FACEDIRSYNC(Eline *eline, s32 arg1) {
-    if (eline->field_0x234 == eline->field_0x236) {
+    if (eline->turnLen == eline->turnTick) {
         return 2;
     }
     return 1;
@@ -1041,18 +1041,18 @@ s32 opHandler_FACEDIRSYNC(Eline *eline, s32 arg1) {
 /**
  * @brief Op 0x108 handler — like @c opHandler_RFACEDIRI then dispatch via @c opHandler_FACEDIRSYNC.
  *
- * Pops 4 halfwords into @c field_0x22A/0x22E/0x232/0x234 (clearing
- * @c field_0x236 and @c field_0x23B), then tail-calls
+ * Pops 4 halfwords into @c turnPitchDst/0x22E/0x232/0x234 (clearing
+ * @c turnTick and @c turnMode), then tail-calls
  * @c opHandler_FACEDIRSYNC to apply the queued state.
  */
 s32 opHandler_FACEDIRI(Eline *eline, s32 arg1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
-        eline->field_0x234 = POP(eline);
-        eline->field_0x232 = POP(eline);
-        eline->field_0x22E = POP(eline);
-        eline->field_0x22A = POP(eline);
-        eline->field_0x236 = 0;
-        eline->field_0x23B = 0;
+        eline->turnLen = POP(eline);
+        eline->turnYawDst = POP(eline);
+        eline->turnRollDst = POP(eline);
+        eline->turnPitchDst = POP(eline);
+        eline->turnTick = 0;
+        eline->turnMode = 0;
     }
     return opHandler_FACEDIRSYNC(eline, arg1);
 }
@@ -1065,12 +1065,12 @@ s32 opHandler_FACEDIRI(Eline *eline, s32 arg1) {
  */
 s32 opHandler_FACEDIR(Eline *eline, s32 arg1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
-        eline->field_0x234 = POP(eline);
-        eline->field_0x226 = POP(eline);
-        eline->field_0x224 = POP(eline);
-        eline->field_0x222 = POP(eline);
-        eline->field_0x236 = 0;
-        eline->field_0x23B = 1;
+        eline->turnLen = POP(eline);
+        eline->turnTgtZ = POP(eline);
+        eline->turnTgtY = POP(eline);
+        eline->turnTgtX = POP(eline);
+        eline->turnTick = 0;
+        eline->turnMode = 1;
     }
     return opHandler_FACEDIRSYNC(eline, arg1);
 }
@@ -1080,12 +1080,12 @@ s32 opHandler_FACEDIR(Eline *eline, s32 arg1) {
  *        queued turn-state fields, then dispatch @c opHandler_FACEDIRSYNC.
  *
  * If the entity's group bit is set, pops a bearing halfword (saved to
- * @c field_0x234) and a field-entity index, queries the navigation
+ * @c turnLen) and a field-entity index, queries the navigation
  * helper @c func_800A8DAC at the target's spatial index, divides the
  * target's @c posX / @c posY / @c posZ by 4096 (signed, round toward
- * zero) into @c field_0x222 / @c field_0x224, and combines posZ with
- * the queried halfword (@c buf[2]) into @c field_0x226. Clears
- * @c field_0x236 and sets @c field_0x23B to @c 1 to mark the data ready.
+ * zero) into @c turnTgtX / @c turnTgtY, and combines posZ with
+ * the queried halfword (@c buf[2]) into @c turnTgtZ. Clears
+ * @c turnTick and sets @c turnMode to @c 1 to mark the data ready.
  *
  * Always dispatches @c opHandler_FACEDIRSYNC at the end (which compares the
  * queued bearing against the current one) and returns its result.
@@ -1098,14 +1098,14 @@ s32 opHandler_FACEDIRA(Eline *eline, s32 arg1) {
     s16 buf[4];
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
-        eline->field_0x234 = POP(eline);
+        eline->turnLen = POP(eline);
         idx = POP(eline);
         func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, D_800C71F8, buf);
-        eline->field_0x222 = D_80085230[idx]->posX / 4096;
-        eline->field_0x224 = D_80085230[idx]->posY / 4096;
-        eline->field_0x226 = buf[2] + D_80085230[idx]->posZ / 4096;
-        eline->field_0x23B = 1;
-        eline->field_0x236 = 0;
+        eline->turnTgtX = D_80085230[idx]->posX / 4096;
+        eline->turnTgtY = D_80085230[idx]->posY / 4096;
+        eline->turnTgtZ = buf[2] + D_80085230[idx]->posZ / 4096;
+        eline->turnMode = 1;
+        eline->turnTick = 0;
     }
     return opHandler_FACEDIRSYNC(eline, arg1);
 }
@@ -1127,14 +1127,14 @@ s32 opHandler_FACEDIRP(Eline *eline, s32 arg1) {
     s16 buf[4];
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
-        eline->field_0x234 = POP(eline);
+        eline->turnLen = POP(eline);
         slot = g_fieldVars->memberSlot[POP(eline)];
         func_800A8DAC(slot, 0x1E, D_800C71F8, buf);
-        eline->field_0x222 = D_80085224[slot].posX / 4096;
-        eline->field_0x224 = D_80085224[slot].posY / 4096;
-        eline->field_0x226 = buf[2] + D_80085224[slot].posZ / 4096;
-        eline->field_0x23B = 1;
-        eline->field_0x236 = 0;
+        eline->turnTgtX = D_80085224[slot].posX / 4096;
+        eline->turnTgtY = D_80085224[slot].posY / 4096;
+        eline->turnTgtZ = buf[2] + D_80085224[slot].posZ / 4096;
+        eline->turnMode = 1;
+        eline->turnTick = 0;
     }
     return opHandler_FACEDIRSYNC(eline, arg1);
 }
@@ -1143,12 +1143,12 @@ s32 opHandler_FACEDIRP(Eline *eline, s32 arg1) {
  * @brief Queue a relative offset turn target.
  *
  * If the entity's group bit is set, pops one halfword as the target
- * bearing (saved to @c field_0x234), then queries
+ * bearing (saved to @c turnLen), then queries
  * @c func_800A8DAC(field_0x256, @c 0x20, @c buf, @c 0) to fill three
  * halfwords describing the relative offset. Each entry is divided by
- * @c 16 (signed, round toward zero) and stored to @c field_0x22A /
- * @c field_0x22E / @c field_0x232. Clears @c field_0x236 and
- * @c field_0x23B to keep this as a step-relative (not snapshot) turn.
+ * @c 16 (signed, round toward zero) and stored to @c turnPitchDst /
+ * @c turnRollDst / @c turnYawDst. Clears @c turnTick and
+ * @c turnMode to keep this as a step-relative (not snapshot) turn.
  *
  * Always dispatches @c opHandler_FACEDIRSYNC at the end.
  *
@@ -1159,13 +1159,13 @@ s32 opHandler_FACEDIROFF(Eline *eline, s32 arg1) {
     s16 buf[4];
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
-        eline->field_0x234 = POP(eline);
+        eline->turnLen = POP(eline);
         ((void (*)(u8, s32, void *, void *))func_800A8DAC)(eline->field_0x256, 0x20, buf, 0);
-        eline->field_0x22A = buf[0] / 16;
-        eline->field_0x22E = buf[1] / 16;
-        eline->field_0x232 = buf[2] / 16;
-        eline->field_0x236 = 0;
-        eline->field_0x23B = 0;
+        eline->turnPitchDst = buf[0] / 16;
+        eline->turnRollDst = buf[1] / 16;
+        eline->turnYawDst = buf[2] / 16;
+        eline->turnTick = 0;
+        eline->turnMode = 0;
     }
     return opHandler_FACEDIRSYNC(eline, arg1);
 }
@@ -1174,18 +1174,18 @@ s32 opHandler_FACEDIROFF(Eline *eline, s32 arg1) {
  * @brief Helper that pops 4 halfwords and stores them as a facing-state block.
  *
  * While the entity's @c activeMask bit is set: pops four halfwords from
- * the script stack (top → @c field_0x234, then @c field_0x232, then
- * @c field_0x22E, then @c field_0x22A); clears @c field_0x236 and
- * @c field_0x23B. Returns 2.
+ * the script stack (top → @c turnLen, then @c turnYawDst, then
+ * @c turnRollDst, then @c turnPitchDst); clears @c turnTick and
+ * @c turnMode. Returns 2.
  */
 s32 opHandler_RFACEDIRI(Eline *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
-        eline->field_0x234 = POP(eline);
-        eline->field_0x232 = POP(eline);
-        eline->field_0x22E = POP(eline);
-        eline->field_0x22A = POP(eline);
-        eline->field_0x236 = 0;
-        eline->field_0x23B = 0;
+        eline->turnLen = POP(eline);
+        eline->turnYawDst = POP(eline);
+        eline->turnRollDst = POP(eline);
+        eline->turnPitchDst = POP(eline);
+        eline->turnTick = 0;
+        eline->turnMode = 0;
     }
     return 2;
 }
@@ -1193,17 +1193,17 @@ s32 opHandler_RFACEDIRI(Eline *eline) {
 /**
  * @brief Helper that pops 4 halfwords into another facing-state slot.
  *
- * Like @c opHandler_RFACEDIRI but stores into @c field_0x222/0x224/0x226/0x234
- * and sets @c field_0x23B to 1 (instead of 0). Returns 2.
+ * Like @c opHandler_RFACEDIRI but stores into @c turnTgtX/0x224/0x226/0x234
+ * and sets @c turnMode to 1 (instead of 0). Returns 2.
  */
 s32 opHandler_RFACEDIR(Eline *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
-        eline->field_0x234 = POP(eline);
-        eline->field_0x226 = POP(eline);
-        eline->field_0x224 = POP(eline);
-        eline->field_0x222 = POP(eline);
-        eline->field_0x236 = 0;
-        eline->field_0x23B = 1;
+        eline->turnLen = POP(eline);
+        eline->turnTgtZ = POP(eline);
+        eline->turnTgtY = POP(eline);
+        eline->turnTgtX = POP(eline);
+        eline->turnTick = 0;
+        eline->turnMode = 1;
     }
     return 2;
 }

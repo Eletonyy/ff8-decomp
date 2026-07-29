@@ -1906,17 +1906,17 @@ s32 opHandler_LADDERDOWN2(Eline *eline, s32 a1) {
 s32 opHandler_DOFFSET(Eline *eline, s32 a1) {
     u16 a, b, c;
     a = POP(eline);
-    eline->field_0x1EC = a;
+    eline->posOfsZ = a;
     eline->field_0x1EE = a;
     b = POP(eline);
-    eline->field_0x1E6 = b;
+    eline->posOfsY = b;
     eline->field_0x1E8 = b;
     c = POP(eline);
     eline->field_0x1FC = a1;
     eline->unk245 = 0;
     eline->msgState = 0;
     eline->field_0x1F4 = 0;
-    eline->field_0x1E0 = c;
+    eline->posOfsX = c;
     eline->field_0x1E2 = c;
     return 2;
 }

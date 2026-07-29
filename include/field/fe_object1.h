@@ -26,6 +26,27 @@ typedef struct {
     s16 z;
 } Vec3s;
 
+/** @brief 8-byte navmesh vertex; the packed (sx, sy) word doubles as a GTE SXY operand. */
+typedef struct {
+    s16 sx;
+    s16 sy;
+    s16 sz;
+    s16 pad;
+} SVert;
+
+/** @brief 24-byte navmesh triangle — three @ref SVert corners. */
+typedef struct {
+    SVert v[3];
+} Triangle;
+
+/** @brief 6-byte per-triangle adjacency record — neighbor triangle index per edge (0xFFFF = none). */
+typedef struct {
+    u16 neighbor[3];
+} AdjRec;
+
+extern Triangle *D_800C71F0;  /**< Field navmesh triangle array (loaded per field). */
+extern AdjRec   *D_800D5E98;  /**< Per-triangle edge adjacency table, parallel to @c D_800C71F0. */
+
 /** @brief Animation parameter entry. */
 typedef struct {
     /* 0x00 */ u8 pad00[0x09];
@@ -185,10 +206,10 @@ extern void func_80099180(void);
 extern int  func_80099348();
 extern s32  func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist);
 extern int  func_8009A2BC();
-extern int  func_8009A4C0();
+extern s32  func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt);
 extern void func_8009A7E8(Eline *e, FieldEntityB *pool);
 extern void func_8009A8E0(FieldEntityB *e);
-extern int  func_8009A920();
+extern void func_8009A920(Eline *eline, FieldEntityB *entities);
 extern void func_8009AA64(EventEntry *e);
 extern int  func_8009AAC8();
 extern int  func_8009AC9C();
@@ -198,7 +219,7 @@ extern void func_8009CEE8(void);
 extern int  func_8009D274();
 extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
 extern int  func_8009D598();
-extern s32  func_8009DF18();  /* handwritten, return value used by func_8009D500 */
+extern s32  func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux);
 extern s32 func_8009E338(Vec3i *a0, Vec3i *a1, Vec3i *a2, Vec3s *a3);  /* plane-cross intersection */
 extern int  func_8009E660();
 extern int  func_8009ECA4();
@@ -222,7 +243,7 @@ extern int  func_800A15C0();
 void func_800A17B8(Oscillator *osc);
 extern int  func_800A19B8();
 extern void func_800A1BB8(void);
-extern int  func_800A1CFC();
+extern void func_800A1CFC(Eline *ents, u8 *arg1);
 extern void func_800A2128();  /* arg is a file-private buffer view in fe_object1.c */
 extern int  func_800A222C();
 /**
@@ -252,7 +273,7 @@ typedef struct {
 
 extern func_800A2A30_item *func_800A2A30(func_800A2A30_item *p);
 extern int  func_800A2AF8();
-extern int  func_800A2D2C();
+extern void func_800A2D2C(s16 *buf, s32 slot);
 extern s16  func_800A2EA4(s16 range);
 extern void func_800A2F48();  /* arg is a file-private buffer view in fe_object1.c */
 extern void func_800A2F70();  /* arg is a file-private buffer view in fe_object1.c */

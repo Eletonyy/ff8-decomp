@@ -355,7 +355,110 @@ s32 func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A2BC);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A4C0);
+/**
+ * @brief Per-frame update of the @ref FieldEntityB trigger pool against the
+ *        self entity's position.
+ *
+ * Stages @p self 's position and a secondary query point @p pt (its Z is taken
+ * from @p self) into the PSX scratchpad, then for each enabled record
+ * (@c activeMarker @c == @c 1) projects the query point onto the record's
+ * segment (@c x0..z1) via @ref func_8009A2BC. When the projection lies inside
+ * @c self->radius the record is latched in-range (@c trigger4) and its trigger
+ * state is refreshed: @c trigger2 on the first in-range frame, @c trigger5 when
+ * self and the query point straddle the segment edge (2D cross-product signs
+ * differ), @c trigger6 / @c unk19D when self coincides with the projected point
+ * or falls within a +/-64 facing window, @c unk19C the facing angle
+ * (@ref func_8009A0E8), and @c trigger7 (1/2) from the current pad-hold mode.
+ * When out of range, @c trigger3 is raised on the frame the record leaves.
+ *
+ * @param self    Querying entity.
+ * @param records @ref FieldEntityB pool (count @c D_800852F8).
+ * @param pt      Secondary query point; its Z is taken from @p self.
+ * @return Always 0.
+ *
+ * @note The scratchpad points are staged as three consecutive VECTORs at
+ *       @c getScratchAddr(0) / +0x10 / +0x20; @c queryPt and @c proj are
+ *       derived from @c selfPos (not built as fresh constants) so the compiler
+ *       shares one scratchpad base register across all three (addu+ori), as in
+ *       the original. The cursor inits before the staging (fc first, and fc
+ *       re-assigned after it), the empty do/while barrier, and the
+ *       @c fc++,rec++ increment order pin the original's register allocation
+ *       and the loop-end branch-delay schedule.
+ */
+s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
+    VECTOR *selfPos = (VECTOR *)getScratchAddr(0);
+    VECTOR *queryPt;
+    VECTOR *proj;
+    FieldEntityB *fc;
+    FieldEntityB *rec;
+    s32 i;
+    s32 dist;
+
+    fc = records;
+    rec = records;
+    selfPos->vx = self->posX >> 12;
+    selfPos->vy = self->posY >> 12;
+    selfPos->vz = self->posZ >> 12;
+    queryPt = (VECTOR *)((u32)selfPos | 0x10);
+    proj = (VECTOR *)((u32)selfPos | 0x20);
+    queryPt->vx = pt->vx >> 12;
+    queryPt->vy = pt->vy >> 12;
+    queryPt->vz = self->posZ >> 12;
+    fc = records;
+    do { } while (0);
+
+    for (i = 0; i < D_800852F8; i++, fc++, rec++) {
+        if (fc->activeMarker != 1) {
+            continue;
+        }
+        fc->unk19D = 0;
+        dist = func_8009A2BC(&rec->x0, queryPt, proj);
+        if (dist != -1 && dist < self->radius * self->radius) {
+            s32 dx;
+            s32 dy;
+            s32 crossSelf;
+            s32 crossPt;
+
+            if (fc->trigger4 == 0) {
+                fc->trigger2 = 1;
+            }
+            fc->trigger4 = 1;
+            dx = fc->x1 - fc->x0;
+            dy = fc->y1 - fc->y0;
+            crossSelf = dx * (selfPos->vy - fc->y0) - (selfPos->vx - fc->x0) * dy;
+            crossPt = dx * (queryPt->vy - fc->y0) - (queryPt->vx - fc->x0) * dy;
+            if ((crossSelf >= 0 && crossPt < 0) || (crossPt >= 0 && crossSelf < 0)
+                || (crossSelf > 0 && crossPt <= 0) || (crossPt > 0 && crossSelf <= 0)) {
+                fc->trigger5 = 1;
+            }
+            if (selfPos->vx == proj->vx && selfPos->vy == proj->vy) {
+                fc->trigger6 = 1;
+                fc->unk19D = 1;
+            } else {
+                fc->unk19C = func_8009A0E8((s32 *)selfPos, (s32 *)proj, &dist);
+                if (((fc->unk19C - self->unk23F + 0x40) & 0xFF) < 0x80) {
+                    fc->trigger6 = 1;
+                    fc->unk19D = 1;
+                }
+            }
+            if (fc->unk19D == 1 && ((fc->unk19C - self->unk23F + 0x20) & 0xFF) < 0x40) {
+                if ((D_800704A8.unk150 & 0x40) && !(D_800704A8.unk154 & 0x40)) {
+                    fc->trigger7 = 1;
+                }
+                if ((D_800704A8.unk150 & 0x80) && !(D_800704A8.unk154 & 0x80)) {
+                    fc->trigger7 = 2;
+                }
+            }
+        } else {
+            if (fc->trigger4 == 1) {
+                fc->trigger3 = 1;
+            }
+            fc->trigger4 = 0;
+        }
+    }
+
+    return 0;
+}
 
 /**
  * @brief Sync per-entity @c trigger7 across the FieldEntityB pool from
@@ -442,12 +545,46 @@ void func_8009A8E0(FieldEntityB *e) {
  *    @c D_8005F14C @c == @c 3
  *  - miss (out of range or @c -1): @c trigger3=1, @c trigger4=0
  *
- * @note Decomp at 90.14% match — semantics and structure match;
- *       remaining diff is gcc 2.7.2 prologue scheduling around the
- *       scratchpad-base and posY pre-load. See
- *       @c permuter/func_8009A920/base.c.
+ * @param eline    Querying entity (position, radius, message state).
+ * @param entities @c FieldEntityB pool; walked directly as the loop cursor.
+ *
+ * @note @c fc is a vestigial second cursor: initialized and stepped in
+ *       lockstep but never read. Removing it (or reading through it)
+ *       changes the register allocation away from the original — the
+ *       original source evidently carried it, so it stays.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A920);
+void func_8009A920(Eline *eline, FieldEntityB *entities) {
+    Vec3i *scratch = (Vec3i *)getScratchAddr(0);
+    Vec3i *out = (Vec3i *)getScratchAddr(4);
+    FieldEntityB *fc;
+    s32 i;
+    s32 dist;
+
+    scratch->x = eline->posX >> 12;
+    i = 0;
+    scratch->y = eline->posY >> 12;
+    scratch->z = eline->posZ >> 12;
+    if (i < D_800852F8) {
+        fc = entities;
+        do {
+            if (entities->activeMarker == 1 && eline->msgActive == 0) {
+                dist = func_8009A2BC(&entities->x0, scratch, out);
+                if (dist != -1 && dist < eline->radius * eline->radius) {
+                    if (D_8005F14C == 3) {
+                        entities->trigger2 = 1;
+                    }
+                    entities->trigger4 = 1;
+                } else {
+                    entities->trigger3 = 1;
+                    entities->trigger4 = 0;
+                }
+            }
+            i++;
+            fc++;
+            entities++;
+        } while (i < D_800852F8);
+    }
+}
 
 /**
  * @brief Restore an event-entry snapshot into the live @c D_800704A8.
@@ -806,7 +943,129 @@ void func_8009DED8(u8 *a0, u8 *a1, u8 *a2) {
     *(s32 *)(a0 + 8) = *(s16 *)(a1 + 4) - *(s16 *)(a2 + 4);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009DF18);
+/**
+ * @brief GTE outer-product (NCLIP) of the query point against one navmesh edge.
+ *
+ * Two separate asm statements on purpose: the compiler materializes the
+ * result address (@c addiu @c vN,sp,K) between the @c nclip and the @c swc2,
+ * and the @c "memory" clobber on the first forces the original's per-edge
+ * reloads of the query point and mesh pointer. @c nclip has no GAS mnemonic,
+ * hence the @c .word encoding (cop2 0x1400006).
+ */
+#define gte_nclip(out, sxy0, sxy1, sxy2) \
+    __asm__ volatile("mtc2 %0, $12\nmtc2 %2, $14\nmtc2 %1, $13\nnop\nnop\n.word 0x4B400006\n" \
+        : : "r"(sxy0), "r"(sxy1), "r"(sxy2) : "memory"); \
+    __asm__ volatile("swc2 $24, 0(%0)\n" : : "r"(&(out)))
+
+/**
+ * @brief Walk the field navmesh from the current triangle toward a stepped
+ *        position, following edge adjacency; classify any blocking edge.
+ *
+ * Rounds @p out 's fixed-point X/Y up toward zero (@c +0xFFF then @c >>12)
+ * into a word vector and a packed SXY vertex, then loops: builds the three
+ * edge vectors of the current triangle (@ref func_8009DED8), runs GTE NCLIP
+ * of the query point against each directed edge, and
+ *  - if the point is inside all three edges (all NCLIPs >= 0), stops and
+ *    writes @c out->z from the triangle-plane intersection
+ *    (@ref func_8009E338), returning 0 or the last edge classification;
+ *  - otherwise, for the first failing edge: moves to that edge's neighbor
+ *    triangle (@c *pTriIdx updated) when one exists and its
+ *    @c D_800704A8.statusBits lock bit is clear, else returns +/-8 by the
+ *    sign of the edge direction dotted with the movement delta @p dxy
+ *    (which side of the blocking edge the motion crosses).
+ *
+ * @param pTriIdx In/out current triangle index into @c D_800C71F0.
+ * @param out     Stepped position (fixed-point); @c z receives the plane height.
+ * @param dxy     Movement delta (dx at [0], dy at [1]).
+ * @param aux     Unused.
+ * @return 0 when the point settled in a triangle, else +/-8 blocking-edge code.
+ */
+s32 func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux) {
+    Vec3i e0;
+    Vec3i e1;
+    Vec3i e2;
+    Vec3i posW;
+    SVert posV;
+    s32 nc0;
+    s32 nc1;
+    s32 nc2;
+    s32 ret = 0;
+    s32 t;
+    s32 t2;
+    s32 t3;
+    s32 t4;
+    s16 nb;
+    s32 idx3;
+
+    t = out->x;
+    if (t < 0) {
+        t += 0xFFF;
+    }
+    t >>= 12;
+    posW.x = t;
+    t2 = out->y;
+    if (t2 < 0) {
+        t2 += 0xFFF;
+    }
+    t2 >>= 12;
+    posW.y = t2;
+    posW.z = 0;
+    t3 = out->x;
+    if (t3 < 0) {
+        t3 += 0xFFF;
+    }
+    t3 >>= 12;
+    posV.sx = t3;
+    t4 = out->y;
+    if (t4 < 0) {
+        t4 += 0xFFF;
+    }
+    posV.sy = t4 >> 12;
+    posV.sz = 0;
+
+    while (1) {
+        func_8009DED8((u8 *)&e0, (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 1], (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3]);
+        func_8009DED8((u8 *)&e1, (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 2], (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 1]);
+        func_8009DED8((u8 *)&e2, (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3], (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 2]);
+        idx3 = *pTriIdx * 3;
+        gte_nclip(nc0, *(u32 *)&posV, *(u32 *)&((SVert *)D_800C71F0)[idx3 + 1], *(u32 *)&((SVert *)D_800C71F0)[idx3]);
+        idx3 = *pTriIdx * 3;
+        gte_nclip(nc1, *(u32 *)&posV, *(u32 *)&((SVert *)D_800C71F0)[idx3 + 2], *(u32 *)&((SVert *)D_800C71F0)[idx3 + 1]);
+        idx3 = *pTriIdx * 3;
+        gte_nclip(nc2, *(u32 *)&posV, *(u32 *)&((SVert *)D_800C71F0)[idx3], *(u32 *)&((SVert *)D_800C71F0)[idx3 + 2]);
+        if (nc0 >= 0 && nc1 >= 0 && nc2 >= 0) {
+            break;
+        }
+        if (nc0 < 0) {
+            nb = D_800D5E98[*pTriIdx].neighbor[0];
+            if (nb >= 0 && !((D_800704A8.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
+                *pTriIdx = D_800D5E98[*pTriIdx].neighbor[0];
+                continue;
+            }
+            ret = (e0.x * dxy[0] + e0.y * dxy[1] >= 0) ? 8 : -8;
+            break;
+        } else if (nc1 < 0) {
+            nb = D_800D5E98[*pTriIdx].neighbor[1];
+            if (nb >= 0 && !((D_800704A8.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
+                *pTriIdx = D_800D5E98[*pTriIdx].neighbor[1];
+                continue;
+            }
+            ret = (e1.x * dxy[0] + e1.y * dxy[1] >= 0) ? 8 : -8;
+            break;
+        } else if (nc2 < 0) {
+            nb = D_800D5E98[*pTriIdx].neighbor[2];
+            if (nb >= 0 && !((D_800704A8.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
+                *pTriIdx = D_800D5E98[*pTriIdx].neighbor[2];
+                continue;
+            }
+            ret = (e2.x * dxy[0] + e2.y * dxy[1] >= 0) ? 8 : -8;
+            break;
+        }
+    }
+
+    out->z = func_8009E338(&e0, &e1, &posW, (Vec3s *)&D_800C71F0[*pTriIdx]);
+    return ret;
+}
 
 /**
  * @brief Plane-cross intersection — compute @c (cross_xyz @c · (a3 @c -
@@ -1427,7 +1686,147 @@ void func_800A1CC0(void) {
     } while (i < 3);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A1CFC);
+/**
+ * @brief Per-frame turn/aim update for every @ref Eline entity, then flush.
+ *
+ * For each of the @c D_80085388 entities: publishes the render-slot angle
+ * vector (0, 0, @c field_0x241<<4 + 0x400) via @ref func_800A736C and the
+ * world position (@c pos>>12 plus @c posOfs) via @ref func_800A7224. When
+ * @c turnMode is 1 and a turn is not in progress (@c turnTick == 0), it
+ * queries the target height (@ref func_800A8DAC op 0x1E), computes the XY
+ * bearing from the entity (with offsets and height) to @c turnTgt via
+ * @ref func_8009A0E8 and stores it rate-clamped (+/- @c turnYawRate around
+ * the current @c field_0x241 heading) into @c turnYawDst, then likewise the
+ * elevation bearing into @c turnPitchDst (clamped by @c turnPitchRate).
+ * While @c turnTick < @c turnLen it unwraps both destinations into the
+ * +/-0x80 window around their committed angles, advances @c turnTick,
+ * interpolates yaw/pitch via @ref func_800A0EB8, emits render op 0x13 with
+ * the angle vector, commits Dst->Cur when the turn completes, and emits op
+ * 0x25; otherwise, idle entities (@c turnMode == 0) emit ops 0x15 and 0x16.
+ * Entities also emit op 0x25 whenever @ref func_800BE274 reports active.
+ * Finally @ref func_800A63AC flushes with @p arg1.
+ *
+ * @param ents Eline entity array (@c D_80085224).
+ * @param arg1 Pass-through context for the @ref func_800A63AC flush.
+ */
+void func_800A1CFC(Eline *ents, u8 *arg1) {
+    Vec3i pB;       /* sp+0x10: bearing arg B */
+    Vec3i pA;       /* sp+0x20: bearing arg A */
+    Vec3s v30;      /* sp+0x30: world-position vector */
+    Vec3s v38;      /* sp+0x38: angle vector */
+    s16 buf[4];     /* sp+0x40: func_800A8DAC output (buf[2] = target height) */
+    s32 dist;       /* sp+0x48: horizontal distance from the first bearing */
+    s32 i;
+    Eline *ent;
+    /* Separate clamp variables per axis: sharing one diff/cmp pair across
+       both clamps changes the allocno densities and rotates a0/v1. */
+    s32 diff;
+    s32 diffB;
+    s32 cmp;
+    s32 cmpB;
+    s32 d2;
+    s32 d2B;
+    s32 v;
+
+    for (i = 0, ent = ents; i < D_80085388; ent++, i++) {
+        v38.z = (ent->field_0x241 << 4) + 0x400;
+        v38.x = 0;
+        v38.y = 0;
+        func_800A736C(i, (u16 *)&v38, 0);
+        v30.x = (u16)ent->posOfsX + (ent->posX >> 12);
+        v30.y = (u16)ent->posOfsY + (ent->posY >> 12);
+        v30.z = (u16)ent->posOfsZ + (ent->posZ >> 12);
+        func_800A7224(i, (u16 *)&v30, 0);
+        if (ent->turnMode == 1 && ent->turnTick == 0) {
+            func_800A8DAC(i, 0x1E, D_800C71F8, buf);
+            pB.x = ent->turnTgtX;
+            pB.y = ent->turnTgtY;
+            pB.z = ent->turnTgtZ;
+            pA.x = (ent->posX >> 12) + ent->posOfsX;
+            pA.y = (ent->posY >> 12) + ent->posOfsY;
+            pA.z = buf[2] + (ent->posZ >> 12) + ent->posOfsZ;
+            v = func_8009A0E8((s32 *)&pA, (s32 *)&pB, &dist);
+            v &= 0xFF;
+            v -= ent->field_0x241;
+            diff = (u8)v;
+            cmp = ent->turnYawDst = diff;
+            if (cmp < 0x80) {
+                if (ent->turnYawRate < cmp) {
+                    ent->turnYawDst = ent->turnYawRate;
+                }
+            } else {
+                d2 = diff - 0x100;
+                ent->turnYawDst = d2;
+                if (d2 < -ent->turnYawRate) {
+                    ent->turnYawDst = -ent->turnYawRate;
+                }
+            }
+            pB.y = 0;
+            pB.x = ent->turnTgtZ;
+            pB.z = 0;
+            pA.y = dist;
+            pA.x = buf[2] + (ent->posZ >> 12) + ent->posOfsZ;
+            pA.z = 0;
+            v = func_8009A0E8((s32 *)&pA, (s32 *)&pB, &dist);
+            diffB = v & 0xFF;
+            cmpB = ent->turnPitchDst = diffB;
+            if (cmpB < 0x80) {
+                if (ent->turnPitchRate < cmpB) {
+                    ent->turnPitchDst = ent->turnPitchRate;
+                }
+            } else {
+                d2B = diffB - 0x100;
+                ent->turnPitchDst = d2B;
+                if (d2B < -ent->turnPitchRate) {
+                    ent->turnPitchDst = -ent->turnPitchRate;
+                }
+            }
+        }
+        if (ent->turnTick < ent->turnLen) {
+            if (ent->turnPitchDst > ent->turnPitchCur) {
+                if (ent->turnPitchDst - ent->turnPitchCur > 0x80) {
+                    ent->turnPitchDst = (u16)ent->turnPitchDst - 0x100;
+                }
+            } else {
+                if (ent->turnPitchCur - ent->turnPitchDst > 0x80) {
+                    ent->turnPitchDst = (u16)ent->turnPitchDst + 0x100;
+                }
+            }
+            if (ent->turnYawDst > ent->turnYawCur) {
+                if (ent->turnYawDst - ent->turnYawCur > 0x80) {
+                    ent->turnYawDst = (u16)ent->turnYawDst - 0x100;
+                }
+            } else {
+                if (ent->turnYawCur - ent->turnYawDst > 0x80) {
+                    ent->turnYawDst = (u16)ent->turnYawDst + 0x100;
+                }
+            }
+            ent->turnTick++;
+            v = func_800A0EB8(ent->turnYawCur, ent->turnYawDst, ent->turnLen, ent->turnTick);
+            v38.z = -((v & 0xFF) << 4);
+            v = func_800A0EB8(ent->turnPitchCur, ent->turnPitchDst, ent->turnLen, ent->turnTick);
+            v &= 0xFF;
+            v38.y = v << 4;
+            v38.x = 0;
+            func_800A97E4(i, 0x13, (s32)&v38, 0);
+            if (ent->turnTick == ent->turnLen) {
+                ent->turnPitchCur = ent->turnPitchDst;
+                ent->turnRollCur = ent->turnRollDst;
+                ent->turnYawCur = ent->turnYawDst;
+            }
+            func_800A97E4(i, 0x25, 0, 0);
+        } else {
+            if (ent->turnMode == 0) {
+                func_800A97E4(i, 0x15, 0, 0);
+                func_800A97E4(i, 0x16, 0, 0);
+            }
+        }
+        if (func_800BE274() != 0) {
+            func_800A97E4(i, 0x25, 0, 0);
+        }
+    }
+    func_800A63AC(arg1, D_800C71F8, 0);
+}
 
 /**
  * @brief Shape @c func_800A2128 sees: a buffer with a 128-entry
@@ -1548,7 +1947,66 @@ func_800A2A30_item *func_800A2A30(func_800A2A30_item *p) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A2AF8);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A2D2C);
+/** @brief Signed/unsigned halfword view of the split-image header word. */
+typedef union {
+    s16 s;
+    u16 u;
+} func_800A2D2C_half;
+
+/**
+ * @brief Upload a split field-graphic to VRAM in three blits.
+ *
+ * @p buf begins with a halfword header: the split row (0x2020 — ASCII
+ * spaces — means "empty buffer, skip"). The upload sequence, each part
+ * preceded by a busy-wait on @ref func_80048C50 and a @ref func_80042634
+ * reset:
+ *  1. a 256x1 strip at (0, 0xE8) from @c buf+2 (the palette row),
+ *  2. a 64-wide column at (slot*64, header+0x100) of height
+ *     (0x100-header)/2 from @c buf+0x102,
+ *  3. the remaining half directly below it, from the matching offset
+ *     within @p buf.
+ *
+ * @param buf  Halfword staging buffer (header, palette row, then pixel rows).
+ * @param slot VRAM column slot; x = @p slot * 64.
+ *
+ * @note The volatile-cast re-read of the header in part 3 keeps gcc from
+ *       folding the unsigned reload into the earlier signed load — the
+ *       original emits both.
+ */
+void func_800A2D2C(s16 *buf, s32 slot) {
+    RECT rect;
+    func_800A2D2C_half *hp;
+    s32 y0;
+    s32 h2;
+
+    hp = (func_800A2D2C_half *)buf;
+    if (buf[0] != 0x2020) {
+        while (func_80048C50(1) != 0) {}
+        func_80042634(0);
+        rect.x = 0;
+        rect.y = 0xE8;
+        rect.w = 0x100;
+        rect.h = 1;
+        func_80048EFC(&rect, (u8 *)(buf + 2));
+        while (func_80048C50(1) != 0) {}
+        func_80042634(0);
+        rect.x = slot << 6;
+        rect.y = hp->u + 0x100;
+        rect.w = 0x40;
+        rect.h = (0x100 - hp->s) / 2;
+        func_80048EFC(&rect, (u8 *)(buf + 0x102));
+        while (func_80048C50(1) != 0) {}
+        func_80042634(0);
+        rect.x = slot << 6;
+        y0 = ((volatile func_800A2D2C_half *)hp)->u;
+        h2 = (0x100 - hp->s) / 2;
+        y0 += 0x100;
+        rect.y = h2 + y0;
+        rect.w = 0x40;
+        rect.h = (0x100 - hp->s) / 2;
+        func_80048EFC(&rect, (u8 *)(buf + ((((0x100 - hp->s) / 2) << 6) + 0x102)));
+    }
+}
 
 /**
  * @brief Cheap pseudo-random helper: returns @c (table[counter] * range) >> 8.
