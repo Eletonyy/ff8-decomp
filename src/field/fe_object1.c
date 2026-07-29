@@ -1689,12 +1689,16 @@ void func_800A17B8(Oscillator *osc) {
  * @c 0xFF000000 address masks (@c a0 / @c a2, including a @c 0xE1000000
  * draw-mode packet at @c a2).
  *
- * @note Genuinely hand-written assembly in the original — it uses TRAPPING
- *       @c add / @c sub (funct 0x20/0x22, byte-verified) in ~15 places.
- *       Both project compilers (gcc 2.7.2-cdk and 2.8.0-psx) emit only
+ * @note Assembly-origin code: it uses TRAPPING @c add / @c sub (funct
+ *       0x20/0x22, byte-verified) in ~15 places — either hand-written or
+ *       expanded from an asm macro in the vein of the PsyQ inline headers
+ *       (cf. trapping @c addi in @c INLINE_C.H / @c INLINE_O.H). Both
+ *       project compilers (gcc 2.7.2-cdk and 2.8.0-psx) emit only
  *       @c addu / @c subu / @c addiu for C arithmetic (re-verified
- *       2026-07-29), so no C source can produce these bytes. Permanently
+ *       2026-07-29), so compiled C cannot produce these bytes. Permanently
  *       @c INCLUDE_ASM; the assembly itself builds to a 100%% byte match.
+ *       The min/max blocks are a coordinate WRAP (+/- the wrap constants
+ *       from @c 0x1F800110[idx]) rather than a clamp.
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A19B8);
 
