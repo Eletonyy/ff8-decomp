@@ -273,7 +273,7 @@ typedef struct {
 
 extern func_800A2A30_item *func_800A2A30(func_800A2A30_item *p);
 extern int  func_800A2AF8();
-extern int  func_800A2D2C();
+extern void func_800A2D2C(s16 *buf, s32 slot);
 extern s16  func_800A2EA4(s16 range);
 extern void func_800A2F48();  /* arg is a file-private buffer view in fe_object1.c */
 extern void func_800A2F70();  /* arg is a file-private buffer view in fe_object1.c */

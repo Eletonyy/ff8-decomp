@@ -1947,7 +1947,66 @@ func_800A2A30_item *func_800A2A30(func_800A2A30_item *p) {
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A2AF8);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A2D2C);
+/** @brief Signed/unsigned halfword view of the split-image header word. */
+typedef union {
+    s16 s;
+    u16 u;
+} func_800A2D2C_half;
+
+/**
+ * @brief Upload a split field-graphic to VRAM in three blits.
+ *
+ * @p buf begins with a halfword header: the split row (0x2020 — ASCII
+ * spaces — means "empty buffer, skip"). The upload sequence, each part
+ * preceded by a busy-wait on @ref func_80048C50 and a @ref func_80042634
+ * reset:
+ *  1. a 256x1 strip at (0, 0xE8) from @c buf+2 (the palette row),
+ *  2. a 64-wide column at (slot*64, header+0x100) of height
+ *     (0x100-header)/2 from @c buf+0x102,
+ *  3. the remaining half directly below it, from the matching offset
+ *     within @p buf.
+ *
+ * @param buf  Halfword staging buffer (header, palette row, then pixel rows).
+ * @param slot VRAM column slot; x = @p slot * 64.
+ *
+ * @note The volatile-cast re-read of the header in part 3 keeps gcc from
+ *       folding the unsigned reload into the earlier signed load — the
+ *       original emits both.
+ */
+void func_800A2D2C(s16 *buf, s32 slot) {
+    RECT rect;
+    func_800A2D2C_half *hp;
+    s32 y0;
+    s32 h2;
+
+    hp = (func_800A2D2C_half *)buf;
+    if (buf[0] != 0x2020) {
+        while (func_80048C50(1) != 0) {}
+        func_80042634(0);
+        rect.x = 0;
+        rect.y = 0xE8;
+        rect.w = 0x100;
+        rect.h = 1;
+        func_80048EFC(&rect, (u8 *)(buf + 2));
+        while (func_80048C50(1) != 0) {}
+        func_80042634(0);
+        rect.x = slot << 6;
+        rect.y = hp->u + 0x100;
+        rect.w = 0x40;
+        rect.h = (0x100 - hp->s) / 2;
+        func_80048EFC(&rect, (u8 *)(buf + 0x102));
+        while (func_80048C50(1) != 0) {}
+        func_80042634(0);
+        rect.x = slot << 6;
+        y0 = ((volatile func_800A2D2C_half *)hp)->u;
+        h2 = (0x100 - hp->s) / 2;
+        y0 += 0x100;
+        rect.y = h2 + y0;
+        rect.w = 0x40;
+        rect.h = (0x100 - hp->s) / 2;
+        func_80048EFC(&rect, (u8 *)(buf + ((((0x100 - hp->s) / 2) << 6) + 0x102)));
+    }
+}
 
 /**
  * @brief Cheap pseudo-random helper: returns @c (table[counter] * range) >> 8.
