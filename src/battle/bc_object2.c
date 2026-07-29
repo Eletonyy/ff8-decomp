@@ -47,13 +47,9 @@ u16 func_8009BAC4(s32 arg0, u16 arg1) {
  * @param a0 Entity index (offset by 0x40, stride 132).
  * @return Combined ability flags (u16).
  */
-s32 func_8009BB3C(s32 arg0) {
-    u16 result;
-    
-    result = func_800B0F9C(D_80078E00.rows132[arg0 - 64].unk7);
-    result |= func_800B0F7C(D_80078E00.rows132[arg0 - 64].unk7);
-    
-    return result;
+u16 func_8009BB3C(s32 arg0) {
+    return func_800B0F9C(D_80078E00.rows132[arg0 - 64].unk7) 
+         | func_800B0F7C(D_80078E00.rows132[arg0 - 64].unk7);
 }
 
 /**
@@ -545,7 +541,7 @@ void func_8009CA14(s32 arg0) {
  * @param srcIdx Source entity slot index.
  * @param dstIdx Target entity slot index.
  */
-void func_8009CAD8(s32 arg0, s32 arg1) { //entity [1]
+void func_8009CAD8(s32 arg0, s32 arg1) { //entity[1]
     u8 sp10[8];
     u8 sp18;
     u8 sp19;
@@ -555,7 +551,7 @@ void func_8009CAD8(s32 arg0, s32 arg1) { //entity [1]
 
     D_800ED148.actionType = 0;
     if (D_800ED148.entities[arg1].controlFlags & BATTLE_ENTITY_FLAG_BIT_11) {
-        func_800A432C(0x12);
+        func_800A432C(18);
         return;
     }
 
@@ -1500,7 +1496,7 @@ s32 func_8009EF64(s32 arg0, s32 unused, s32 unused2, s32 arg3) {
     BattleEntityData* curr;
 
     curr = D_800ED148.entities[arg0].linkedPtr->data;
-    switch (D_800EE9E8.subEntries[arg0 - 3].unk43) {
+    switch (D_800EE9E8.subEntries[arg0 - 3].unk46) {
     case 0:
         arg3 = curr->unkFB;
         break;
@@ -1639,15 +1635,15 @@ s32 func_8009F350(s32 arg0) {
  * @param entityIdx Entity index.
  * @return Pending damage value divided by 4.
  */
-s32 func_8009F3F8(s32 entityIdx) { // entity[1]
-    u8 *base = (u8 *)&D_800ED148;
-    u8 *entity;
-    s32 val;
-    asm("");
-    entity = base + entityIdx * 0xD0;
-    val = *(u16 *)(entity + 0xDC);
-    *(u16 *)(entity + 0xDC) = 0;
-    return val >> 2;
+s32 func_8009F3F8(s32 arg0) { // entity[1]
+    BattleSystem* bs;
+    BattleEntity* temp_v1;
+    u16 temp_v0;
+    bs = &D_800ED148;
+    temp_v1 = &bs->entities[arg0];
+    temp_v0 = temp_v1[1].timers.bigTimer / 4; //timer is u16 instead of u8
+    temp_v1[1].timers.bigTimer = 0;
+    return temp_v0;
 }
 
 /*
@@ -1756,7 +1752,7 @@ s32 func_8009F65C(s32 arg0, s32 arg1) {
     BattleEntityData* data;
     
     data = D_800ED148.entities[arg0].linkedPtr->data;
-    offset = D_800EE9E8.subEntries[arg0 - 3].unk43 * 8;
+    offset = D_800EE9E8.subEntries[arg0 - 3].unk46 * 8;
 
     for (i = 0; i < 4; i++, offset += 2) {
         if (arg1 == data->unk104[offset]) {
