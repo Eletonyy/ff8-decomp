@@ -209,7 +209,7 @@ extern int  func_8009A2BC();
 extern s32  func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt);
 extern void func_8009A7E8(Eline *e, FieldEntityB *pool);
 extern void func_8009A8E0(FieldEntityB *e);
-extern int  func_8009A920();
+extern void func_8009A920(Eline *eline, FieldEntityB *entities);
 extern void func_8009AA64(EventEntry *e);
 extern int  func_8009AAC8();
 extern int  func_8009AC9C();

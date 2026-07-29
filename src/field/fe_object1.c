@@ -545,12 +545,46 @@ void func_8009A8E0(FieldEntityB *e) {
  *    @c D_8005F14C @c == @c 3
  *  - miss (out of range or @c -1): @c trigger3=1, @c trigger4=0
  *
- * @note Decomp at 90.14% match — semantics and structure match;
- *       remaining diff is gcc 2.7.2 prologue scheduling around the
- *       scratchpad-base and posY pre-load. See
- *       @c permuter/func_8009A920/base.c.
+ * @param eline    Querying entity (position, radius, message state).
+ * @param entities @c FieldEntityB pool; walked directly as the loop cursor.
+ *
+ * @note @c fc is a vestigial second cursor: initialized and stepped in
+ *       lockstep but never read. Removing it (or reading through it)
+ *       changes the register allocation away from the original — the
+ *       original source evidently carried it, so it stays.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A920);
+void func_8009A920(Eline *eline, FieldEntityB *entities) {
+    Vec3i *scratch = (Vec3i *)getScratchAddr(0);
+    Vec3i *out = (Vec3i *)getScratchAddr(4);
+    FieldEntityB *fc;
+    s32 i;
+    s32 dist;
+
+    scratch->x = eline->posX >> 12;
+    i = 0;
+    scratch->y = eline->posY >> 12;
+    scratch->z = eline->posZ >> 12;
+    if (i < D_800852F8) {
+        fc = entities;
+        do {
+            if (entities->activeMarker == 1 && eline->msgActive == 0) {
+                dist = func_8009A2BC(&entities->x0, scratch, out);
+                if (dist != -1 && dist < eline->radius * eline->radius) {
+                    if (D_8005F14C == 3) {
+                        entities->trigger2 = 1;
+                    }
+                    entities->trigger4 = 1;
+                } else {
+                    entities->trigger3 = 1;
+                    entities->trigger4 = 0;
+                }
+            }
+            i++;
+            fc++;
+            entities++;
+        } while (i < D_800852F8);
+    }
+}
 
 /**
  * @brief Restore an event-entry snapshot into the live @c D_800704A8.
