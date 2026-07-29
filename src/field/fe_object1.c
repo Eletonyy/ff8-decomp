@@ -376,13 +376,89 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A2BC);
  * @param pt      Secondary query point; its Z is taken from @p self.
  * @return Always 0.
  *
- * @note Currently @c INCLUDE_ASM. The clean two-cursor C form is logic-exact;
- *       the sole divergence is that gcc places the @c records base copy into its
- *       saved register (and the dependent scratchpad-address setup) at a
- *       different schedule point than the target — an allocation/scheduling
- *       tie-break, not a logic difference. Still being reduced.
+ * @note The scratchpad points are staged as three consecutive VECTORs at
+ *       @c getScratchAddr(0) / +0x10 / +0x20; @c queryPt and @c proj are
+ *       derived from @c selfPos (not built as fresh constants) so the compiler
+ *       shares one scratchpad base register across all three (addu+ori), as in
+ *       the original. The cursor inits before the staging (fc first, and fc
+ *       re-assigned after it), the empty do/while barrier, and the
+ *       @c fc++,rec++ increment order pin the original's register allocation
+ *       and the loop-end branch-delay schedule.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A4C0);
+s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
+    VECTOR *selfPos = (VECTOR *)getScratchAddr(0);
+    VECTOR *queryPt;
+    VECTOR *proj;
+    FieldEntityB *fc;
+    FieldEntityB *rec;
+    s32 i;
+    s32 dist;
+
+    fc = records;
+    rec = records;
+    selfPos->vx = self->posX >> 12;
+    selfPos->vy = self->posY >> 12;
+    selfPos->vz = self->posZ >> 12;
+    queryPt = (VECTOR *)((u32)selfPos | 0x10);
+    proj = (VECTOR *)((u32)selfPos | 0x20);
+    queryPt->vx = pt->vx >> 12;
+    queryPt->vy = pt->vy >> 12;
+    queryPt->vz = self->posZ >> 12;
+    fc = records;
+    do { } while (0);
+
+    for (i = 0; i < D_800852F8; i++, fc++, rec++) {
+        if (fc->activeMarker != 1) {
+            continue;
+        }
+        fc->unk19D = 0;
+        dist = func_8009A2BC(&rec->x0, queryPt, proj);
+        if (dist != -1 && dist < self->radius * self->radius) {
+            s32 dx;
+            s32 dy;
+            s32 crossSelf;
+            s32 crossPt;
+
+            if (fc->trigger4 == 0) {
+                fc->trigger2 = 1;
+            }
+            fc->trigger4 = 1;
+            dx = fc->x1 - fc->x0;
+            dy = fc->y1 - fc->y0;
+            crossSelf = dx * (selfPos->vy - fc->y0) - (selfPos->vx - fc->x0) * dy;
+            crossPt = dx * (queryPt->vy - fc->y0) - (queryPt->vx - fc->x0) * dy;
+            if ((crossSelf >= 0 && crossPt < 0) || (crossPt >= 0 && crossSelf < 0)
+                || (crossSelf > 0 && crossPt <= 0) || (crossPt > 0 && crossSelf <= 0)) {
+                fc->trigger5 = 1;
+            }
+            if (selfPos->vx == proj->vx && selfPos->vy == proj->vy) {
+                fc->trigger6 = 1;
+                fc->unk19D = 1;
+            } else {
+                fc->unk19C = func_8009A0E8((s32 *)selfPos, (s32 *)proj, &dist);
+                if (((fc->unk19C - self->unk23F + 0x40) & 0xFF) < 0x80) {
+                    fc->trigger6 = 1;
+                    fc->unk19D = 1;
+                }
+            }
+            if (fc->unk19D == 1 && ((fc->unk19C - self->unk23F + 0x20) & 0xFF) < 0x40) {
+                if ((D_800704A8.unk150 & 0x40) && !(D_800704A8.unk154 & 0x40)) {
+                    fc->trigger7 = 1;
+                }
+                if ((D_800704A8.unk150 & 0x80) && !(D_800704A8.unk154 & 0x80)) {
+                    fc->trigger7 = 2;
+                }
+            }
+        } else {
+            if (fc->trigger4 == 1) {
+                fc->trigger3 = 1;
+            }
+            fc->trigger4 = 0;
+        }
+    }
+
+    return 0;
+}
 
 /**
  * @brief Sync per-entity @c trigger7 across the FieldEntityB pool from
