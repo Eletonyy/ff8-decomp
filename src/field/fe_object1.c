@@ -1677,6 +1677,25 @@ void func_800A17B8(Oscillator *osc) {
     }
 }
 
+/**
+ * @brief Per-frame field-object vertex transform + clip (hand-written asm).
+ *
+ * Reads clip bounds from the scratchpad (@c 0x1F800100 / @c 0x1F800104 =
+ * min/max X,Y as s16 pairs), walks a stride-0x10 vertex array (@c a3)
+ * until @c x == @c 0x7FFF, applies a per-object translate
+ * (@c 0x1F800080[idx], idx = byte at @c a3+0xC) with wraparound by the
+ * modulus at @c 0x1F800110, writes the clipped X/Y to @c a1+8 / @c a1+0xA,
+ * and links GPU primitives via the @c 0xFFFFFF / @c 0x03000000 /
+ * @c 0xFF000000 address masks (@c a0 / @c a2, including a @c 0xE1000000
+ * draw-mode packet at @c a2).
+ *
+ * @note Genuinely hand-written assembly in the original — it uses TRAPPING
+ *       @c add / @c sub (funct 0x20/0x22, byte-verified) in ~15 places.
+ *       Both project compilers (gcc 2.7.2-cdk and 2.8.0-psx) emit only
+ *       @c addu / @c subu / @c addiu for C arithmetic (re-verified
+ *       2026-07-29), so no C source can produce these bytes. Permanently
+ *       @c INCLUDE_ASM; the assembly itself builds to a 100%% byte match.
+ */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A19B8);
 
 /**
