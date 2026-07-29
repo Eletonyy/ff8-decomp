@@ -243,7 +243,7 @@ extern int  func_800A15C0();
 void func_800A17B8(Oscillator *osc);
 extern int  func_800A19B8();
 extern void func_800A1BB8(void);
-extern int  func_800A1CFC();
+extern void func_800A1CFC(Eline *ents, u8 *arg1);
 extern void func_800A2128();  /* arg is a file-private buffer view in fe_object1.c */
 extern int  func_800A222C();
 /**

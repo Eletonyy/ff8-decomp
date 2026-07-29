@@ -1652,7 +1652,147 @@ void func_800A1CC0(void) {
     } while (i < 3);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A1CFC);
+/**
+ * @brief Per-frame turn/aim update for every @ref Eline entity, then flush.
+ *
+ * For each of the @c D_80085388 entities: publishes the render-slot angle
+ * vector (0, 0, @c field_0x241<<4 + 0x400) via @ref func_800A736C and the
+ * world position (@c pos>>12 plus @c posOfs) via @ref func_800A7224. When
+ * @c turnMode is 1 and a turn is not in progress (@c turnTick == 0), it
+ * queries the target height (@ref func_800A8DAC op 0x1E), computes the XY
+ * bearing from the entity (with offsets and height) to @c turnTgt via
+ * @ref func_8009A0E8 and stores it rate-clamped (+/- @c turnYawRate around
+ * the current @c field_0x241 heading) into @c turnYawDst, then likewise the
+ * elevation bearing into @c turnPitchDst (clamped by @c turnPitchRate).
+ * While @c turnTick < @c turnLen it unwraps both destinations into the
+ * +/-0x80 window around their committed angles, advances @c turnTick,
+ * interpolates yaw/pitch via @ref func_800A0EB8, emits render op 0x13 with
+ * the angle vector, commits Dst->Cur when the turn completes, and emits op
+ * 0x25; otherwise, idle entities (@c turnMode == 0) emit ops 0x15 and 0x16.
+ * Entities also emit op 0x25 whenever @ref func_800BE274 reports active.
+ * Finally @ref func_800A63AC flushes with @p arg1.
+ *
+ * @param ents Eline entity array (@c D_80085224).
+ * @param arg1 Pass-through context for the @ref func_800A63AC flush.
+ */
+void func_800A1CFC(Eline *ents, u8 *arg1) {
+    Vec3i pB;       /* sp+0x10: bearing arg B */
+    Vec3i pA;       /* sp+0x20: bearing arg A */
+    Vec3s v30;      /* sp+0x30: world-position vector */
+    Vec3s v38;      /* sp+0x38: angle vector */
+    s16 buf[4];     /* sp+0x40: func_800A8DAC output (buf[2] = target height) */
+    s32 dist;       /* sp+0x48: horizontal distance from the first bearing */
+    s32 i;
+    Eline *ent;
+    /* Separate clamp variables per axis: sharing one diff/cmp pair across
+       both clamps changes the allocno densities and rotates a0/v1. */
+    s32 diff;
+    s32 diffB;
+    s32 cmp;
+    s32 cmpB;
+    s32 d2;
+    s32 d2B;
+    s32 v;
+
+    for (i = 0, ent = ents; i < D_80085388; ent++, i++) {
+        v38.z = (ent->field_0x241 << 4) + 0x400;
+        v38.x = 0;
+        v38.y = 0;
+        func_800A736C(i, (u16 *)&v38, 0);
+        v30.x = (u16)ent->posOfsX + (ent->posX >> 12);
+        v30.y = (u16)ent->posOfsY + (ent->posY >> 12);
+        v30.z = (u16)ent->posOfsZ + (ent->posZ >> 12);
+        func_800A7224(i, (u16 *)&v30, 0);
+        if (ent->turnMode == 1 && ent->turnTick == 0) {
+            func_800A8DAC(i, 0x1E, D_800C71F8, buf);
+            pB.x = ent->turnTgtX;
+            pB.y = ent->turnTgtY;
+            pB.z = ent->turnTgtZ;
+            pA.x = (ent->posX >> 12) + ent->posOfsX;
+            pA.y = (ent->posY >> 12) + ent->posOfsY;
+            pA.z = buf[2] + (ent->posZ >> 12) + ent->posOfsZ;
+            v = func_8009A0E8((s32 *)&pA, (s32 *)&pB, &dist);
+            v &= 0xFF;
+            v -= ent->field_0x241;
+            diff = (u8)v;
+            cmp = ent->turnYawDst = diff;
+            if (cmp < 0x80) {
+                if (ent->turnYawRate < cmp) {
+                    ent->turnYawDst = ent->turnYawRate;
+                }
+            } else {
+                d2 = diff - 0x100;
+                ent->turnYawDst = d2;
+                if (d2 < -ent->turnYawRate) {
+                    ent->turnYawDst = -ent->turnYawRate;
+                }
+            }
+            pB.y = 0;
+            pB.x = ent->turnTgtZ;
+            pB.z = 0;
+            pA.y = dist;
+            pA.x = buf[2] + (ent->posZ >> 12) + ent->posOfsZ;
+            pA.z = 0;
+            v = func_8009A0E8((s32 *)&pA, (s32 *)&pB, &dist);
+            diffB = v & 0xFF;
+            cmpB = ent->turnPitchDst = diffB;
+            if (cmpB < 0x80) {
+                if (ent->turnPitchRate < cmpB) {
+                    ent->turnPitchDst = ent->turnPitchRate;
+                }
+            } else {
+                d2B = diffB - 0x100;
+                ent->turnPitchDst = d2B;
+                if (d2B < -ent->turnPitchRate) {
+                    ent->turnPitchDst = -ent->turnPitchRate;
+                }
+            }
+        }
+        if (ent->turnTick < ent->turnLen) {
+            if (ent->turnPitchDst > ent->turnPitchCur) {
+                if (ent->turnPitchDst - ent->turnPitchCur > 0x80) {
+                    ent->turnPitchDst = (u16)ent->turnPitchDst - 0x100;
+                }
+            } else {
+                if (ent->turnPitchCur - ent->turnPitchDst > 0x80) {
+                    ent->turnPitchDst = (u16)ent->turnPitchDst + 0x100;
+                }
+            }
+            if (ent->turnYawDst > ent->turnYawCur) {
+                if (ent->turnYawDst - ent->turnYawCur > 0x80) {
+                    ent->turnYawDst = (u16)ent->turnYawDst - 0x100;
+                }
+            } else {
+                if (ent->turnYawCur - ent->turnYawDst > 0x80) {
+                    ent->turnYawDst = (u16)ent->turnYawDst + 0x100;
+                }
+            }
+            ent->turnTick++;
+            v = func_800A0EB8(ent->turnYawCur, ent->turnYawDst, ent->turnLen, ent->turnTick);
+            v38.z = -((v & 0xFF) << 4);
+            v = func_800A0EB8(ent->turnPitchCur, ent->turnPitchDst, ent->turnLen, ent->turnTick);
+            v &= 0xFF;
+            v38.y = v << 4;
+            v38.x = 0;
+            func_800A97E4(i, 0x13, (s32)&v38, 0);
+            if (ent->turnTick == ent->turnLen) {
+                ent->turnPitchCur = ent->turnPitchDst;
+                ent->turnRollCur = ent->turnRollDst;
+                ent->turnYawCur = ent->turnYawDst;
+            }
+            func_800A97E4(i, 0x25, 0, 0);
+        } else {
+            if (ent->turnMode == 0) {
+                func_800A97E4(i, 0x15, 0, 0);
+                func_800A97E4(i, 0x16, 0, 0);
+            }
+        }
+        if (func_800BE274() != 0) {
+            func_800A97E4(i, 0x25, 0, 0);
+        }
+    }
+    func_800A63AC(arg1, D_800C71F8, 0);
+}
 
 /**
  * @brief Shape @c func_800A2128 sees: a buffer with a 128-entry

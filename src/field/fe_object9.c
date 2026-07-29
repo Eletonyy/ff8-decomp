@@ -27,14 +27,14 @@ s32 opHandler_RFACEDIRA(Eline *eline) {
     s32 idx;
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
-        eline->field_0x234 = POP(eline);
+        eline->turnLen = POP(eline);
         idx = POP(eline);
         func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, D_800C71F8, buf);
-        eline->field_0x222 = D_80085230[idx]->posX / 4096;
-        eline->field_0x224 = D_80085230[idx]->posY / 4096;
-        eline->field_0x226 = buf[2] + D_80085230[idx]->posZ / 4096;
-        eline->field_0x23B = 1;
-        eline->field_0x236 = 0;
+        eline->turnTgtX = D_80085230[idx]->posX / 4096;
+        eline->turnTgtY = D_80085230[idx]->posY / 4096;
+        eline->turnTgtZ = buf[2] + D_80085230[idx]->posZ / 4096;
+        eline->turnMode = 1;
+        eline->turnTick = 0;
     }
     return 2;
 }
@@ -53,14 +53,14 @@ s32 opHandler_RFACEDIRP(Eline *eline) {
     u8 slot;
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
-        eline->field_0x234 = POP(eline);
+        eline->turnLen = POP(eline);
         slot = g_fieldVars->memberSlot[POP(eline)];
         func_800A8DAC(slot, 0x1E, D_800C71F8, buf);
-        eline->field_0x222 = D_80085224[slot].posX / 4096;
-        eline->field_0x224 = D_80085224[slot].posY / 4096;
-        eline->field_0x226 = buf[2] + D_80085224[slot].posZ / 4096;
-        eline->field_0x23B = 1;
-        eline->field_0x236 = 0;
+        eline->turnTgtX = D_80085224[slot].posX / 4096;
+        eline->turnTgtY = D_80085224[slot].posY / 4096;
+        eline->turnTgtZ = buf[2] + D_80085224[slot].posZ / 4096;
+        eline->turnMode = 1;
+        eline->turnTick = 0;
     }
     return 2;
 }
@@ -71,32 +71,32 @@ s32 opHandler_RFACEDIRP(Eline *eline) {
  * Same body as @c opHandler_FACEDIROFF in fe_object8 but doesn't tail-call
  * @c opHandler_FACEDIRSYNC — always returns 2. Queries @c func_800A8DAC with
  * kind @c 0x20 (relative offsets, written to @c buf), divides each
- * entry by 16, and stores into @c field_0x22A / @c field_0x22E /
- * @c field_0x232. Clears @c field_0x236 and @c field_0x23B.
+ * entry by 16, and stores into @c turnPitchDst / @c turnRollDst /
+ * @c turnYawDst. Clears @c turnTick and @c turnMode.
  */
 s32 opHandler_RFACEDIROFF(Eline *eline) {
     s16 buf[4];
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
-        eline->field_0x234 = POP(eline);
+        eline->turnLen = POP(eline);
         ((void (*)(u8, s32, void *, void *))func_800A8DAC)(eline->field_0x256, 0x20, buf, 0);
-        eline->field_0x22A = buf[0] / 16;
-        eline->field_0x22E = buf[1] / 16;
-        eline->field_0x232 = buf[2] / 16;
-        eline->field_0x236 = 0;
-        eline->field_0x23B = 0;
+        eline->turnPitchDst = buf[0] / 16;
+        eline->turnRollDst = buf[1] / 16;
+        eline->turnYawDst = buf[2] / 16;
+        eline->turnTick = 0;
+        eline->turnMode = 0;
     }
     return 2;
 }
 
 /**
- * @brief Pop three bytes into @c field_0x238 / @c field_0x239 /
- *        @c field_0x23A (top-of-stack first).
+ * @brief Pop three bytes into @c turnPitchRate / @c field_0x239 /
+ *        @c turnYawRate (top-of-stack first).
  */
 s32 opHandler_FACEDIRLIMIT(Eline *eline) {
-    eline->field_0x23A = POP_BYTE(eline);
+    eline->turnYawRate = POP_BYTE(eline);
     eline->field_0x239 = POP_BYTE(eline);
-    eline->field_0x238 = POP_BYTE(eline);
+    eline->turnPitchRate = POP_BYTE(eline);
     return 2;
 }
 
@@ -105,16 +105,16 @@ s32 opHandler_FACEDIRLIMIT(Eline *eline) {
  *
  * Calls @c func_800A8DAC with mode @c 0x20 to fetch three relative-offset
  * halfwords for the active spatial entity. Stores @c buf[1]/16 into
- * @c field_0x22C, @c buf[2]/16 into @c field_0x230, and clears
- * @c field_0x228. (@c buf[0] is queried but discarded.)
+ * @c turnRollCur, @c buf[2]/16 into @c turnYawCur, and clears
+ * @c turnPitchCur. (@c buf[0] is queried but discarded.)
  */
 s32 opHandler_FACEDIRINIT(Eline *eline) {
     s16 buf[4];
 
     func_800A8DAC(eline->field_0x256, 0x20, (u8 *)buf, 0);
-    eline->field_0x228 = 0;
-    eline->field_0x22C = buf[1] / 16;
-    eline->field_0x230 = buf[2] / 16;
+    eline->turnPitchCur = 0;
+    eline->turnRollCur = buf[1] / 16;
+    eline->turnYawCur = buf[2] / 16;
     return 2;
 }
 

@@ -447,13 +447,13 @@ typedef struct {
     /* 0x1DA */ u16 field_0x1DA;
     /* 0x1DC */ s16 field_0x1DC;
     /* 0x1DE */ s16 field_0x1DE;
-    /* 0x1E0 */ u16 field_0x1E0;
+    /* 0x1E0 */ s16 posOfsX;        /**< Display/world position offset X, added to @c posX>>12 (func_800A1CFC render + bearing origin). */
     /* 0x1E2 */ u16 field_0x1E2;
     /* 0x1E4 */ u16 field_0x1E4;
-    /* 0x1E6 */ u16 field_0x1E6;
+    /* 0x1E6 */ s16 posOfsY;        /**< Display/world position offset Y. */
     /* 0x1E8 */ u16 field_0x1E8;
     /* 0x1EA */ u16 field_0x1EA;
-    /* 0x1EC */ u16 field_0x1EC;
+    /* 0x1EC */ s16 posOfsZ;        /**< Display/world position offset Z. */
     /* 0x1EE */ u16 field_0x1EE;
     /* 0x1F0 */ u16 field_0x1F0;
     /* 0x1F2 */ u16 field_0x1F2;
@@ -480,21 +480,21 @@ typedef struct {
     /* 0x21C */ u16 field_0x21C;    /**< Saved window ID for async restore. */
     /* 0x21E */ s16 msgState;       /**< Message state (0=init, 2=complete). */
     /* 0x220 */ u16 field_0x220;
-    /* 0x222 */ u16 field_0x222;
-    /* 0x224 */ u16 field_0x224;
-    /* 0x226 */ u16 field_0x226;
-    /* 0x228 */ u16 field_0x228;
-    /* 0x22A */ u16 field_0x22A;
-    /* 0x22C */ u16 field_0x22C;
-    /* 0x22E */ u16 field_0x22E;
-    /* 0x230 */ u16 field_0x230;
-    /* 0x232 */ u16 field_0x232;
-    /* 0x234 */ u16 field_0x234;
-    /* 0x236 */ u16 field_0x236;
-    /* 0x238 */ u8 field_0x238;
+    /* 0x222 */ s16 turnTgtX;       /**< Turn/look target point X (world units). */
+    /* 0x224 */ s16 turnTgtY;       /**< Turn/look target point Y. */
+    /* 0x226 */ s16 turnTgtZ;       /**< Turn/look target point Z. */
+    /* 0x228 */ s16 turnPitchCur;   /**< Committed pitch angle (8-bit BAM scaled); interpolation start. */
+    /* 0x22A */ s16 turnPitchDst;   /**< Pitch destination, from elevation bearing (func_800A1CFC), rate-clamped. */
+    /* 0x22C */ s16 turnRollCur;    /**< Committed roll angle. */
+    /* 0x22E */ s16 turnRollDst;    /**< Roll destination. */
+    /* 0x230 */ s16 turnYawCur;     /**< Committed yaw angle; interpolation start. */
+    /* 0x232 */ s16 turnYawDst;     /**< Yaw destination, from XY bearing to @c turnTgt, rate-clamped. */
+    /* 0x234 */ u16 turnLen;        /**< Turn duration in ticks (opcode-set). */
+    /* 0x236 */ u16 turnTick;       /**< Turn progress tick, incremented by @c func_800A1CFC; == @c turnLen commits Dst->Cur. */
+    /* 0x238 */ u8 turnPitchRate;   /**< Max per-update pitch step (BAM). */
     /* 0x239 */ u8 field_0x239;
-    /* 0x23A */ u8 field_0x23A;
-    /* 0x23B */ u8 field_0x23B;
+    /* 0x23A */ u8 turnYawRate;     /**< Max per-update yaw step (BAM). */
+    /* 0x23B */ u8 turnMode;        /**< 0 = idle (emits ops 0x15/0x16 when done), 1 = tracking a target. */
     /* 0x23C */ u8 msgActive;       /**< Message active flag. */
     /* 0x23D */ u8 pad23D[0x02];
     /* 0x23F */ u8 unk23F;          /**< Facing/heading angle (8-bit BAM, sin/cos source per FF8 wiki entity-struct). @c func_8009A4C0 / @c func_8009A7E8 compare a trigger's bearing (@c FieldEntityB.unk19C) against it in a +/-facing window. */
