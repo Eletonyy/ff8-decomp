@@ -289,7 +289,7 @@ extern s16  func_800A2EA4(s16 range);
 extern void func_800A2F48();  /* arg is a file-private buffer view in fe_object1.c */
 extern void func_800A2F70();  /* arg is a file-private buffer view in fe_object1.c */
 extern s16  func_800A2FE0();  /* arg is a file-private buffer view in fe_object1.c */
-extern void func_800A327C(Eline *actor, SVECTOR *out);
+extern void func_800A327C();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
 extern void func_800A3488();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
 extern void func_800A3534();  /* arg is a file-private buffer view in fe_object1.c */
 extern void func_800A37A8(void *arg0, s32 arg1, FieldSubsceneBuffer *buf);

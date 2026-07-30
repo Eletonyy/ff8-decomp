@@ -2383,7 +2383,60 @@ void func_800A303C(s16 emIdx, ParticleSystem *sys, s16 *pos, s16 count) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A327C);
+/**
+ * @brief View of the Eline stack region used by @c func_800A327C — three
+ * @c s16 control points (@c a, @c b, @c c) and a @c num/denom progress ratio.
+ *
+ * @note Named after the function/arg, mirroring @ref func_800A3488_arg0
+ *       (the two-point linear variant): same memory, one more control point.
+ */
+typedef struct {
+    /* 0x00 */ s16 ax, ay, az;          /**< Control point A (at progress @c 0). */
+    /* 0x06 */ u8  pad06[0x02];
+    /* 0x08 */ s16 bx, by, bz;          /**< Control point B (curve pull). */
+    /* 0x0E */ u8  pad0E[0x02];
+    /* 0x10 */ s16 cx, cy, cz;          /**< Control point C (at progress @c denom). */
+    /* 0x16 */ u8  pad16[0xE0 - 0x16];
+    /* 0xE0 */ u8  denom;               /**< Step count denominator. */
+    /* 0xE1 */ u8  padE1[0x0F];
+    /* 0xF0 */ s16 num;                 /**< Current step. */
+} func_800A327C_arg0;
+
+/** @brief Intermediate lerp point of @c func_800A327C (u16 components). */
+typedef struct {
+    u16 x, y, z, pad;
+} func_800A327C_mid;
+
+/**
+ * @brief Quadratic-Bezier interpolate a 3D position across three @c s16
+ *        control points (de Casteljau evaluation).
+ *
+ * Computes the two edge midpoints @c m1 = A + (B-A)*num/denom and
+ * @c m2 = B + (C-B)*num/denom, then writes @c out->vx/vy/vz with the
+ * second-stage lerp @c m1 + (m2-m1)*num/denom.
+ *
+ * Used by @c func_800A355C dispatch (mode 3) to compute the per-step spawn
+ * position for particle bursts along a curved path.
+ *
+ * @note The midpoint components are @c u16 with @c (s16) casts at the
+ *       second stage — this mixed-width view reproduces the original's
+ *       lhu/lh load pairing and shift re-extensions.
+ */
+void func_800A327C(func_800A327C_arg0 *a, SVECTOR *out) {
+    func_800A327C_mid m1;
+    func_800A327C_mid m2;
+
+    m1.x = ((a->bx - a->ax) * a->num) / a->denom + (u16)a->ax;
+    m1.y = ((a->by - a->ay) * a->num) / a->denom + (u16)a->ay;
+    m1.z = ((a->bz - a->az) * a->num) / a->denom + (u16)a->az;
+    m2.x = ((a->cx - a->bx) * a->num) / a->denom + (u16)a->bx;
+    m2.y = ((a->cy - a->by) * a->num) / a->denom + (u16)a->by;
+    m2.z = ((a->cz - a->bz) * a->num) / a->denom + (u16)a->bz;
+
+    out->vx = m1.x + ((s16)m2.x - (s16)m1.x) * a->num / a->denom;
+    out->vy = m1.y + ((s16)m2.y - (s16)m1.y) * a->num / a->denom;
+    out->vz = m1.z + ((s16)m2.z - (s16)m1.z) * a->num / a->denom;
+}
 
 /**
  * @brief View of the Eline stack region used by @c func_800A3488 — two
