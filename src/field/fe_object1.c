@@ -22,6 +22,14 @@ extern u16 D_8005F118;
 extern u16 D_8005F11A;
 extern u16 D_8005F144;
 extern s16 D_8005F148;
+extern u8 D_8005F116;            /**< Encounter-disable flag (1 = no random battles). */
+extern u16 D_8005F0FE;           /**< Accumulated battle chance; compared against the encounter RNG roll. */
+extern s16 D_8005F120;           /**< Previous battle formation id (avoid immediate repeats). */
+extern u8 D_8005F130;            /**< Encounter-pending marker set when a battle triggers. */
+extern u16 D_8005F164;           /**< Step accumulator; a battle check runs each time it passes 0x100. */
+extern u8 D_80078DF8;            /**< Field movement flags: bit 3 halts encounter steps, bit 2 halves the step rate. */
+extern u8 **D_800C71F4;          /**< Field-data section pointer: per-field encounter step-rate byte. */
+extern u16 **D_800C720C;         /**< Field-data section pointer: 4-entry battle formation table. */
 extern u16 D_8005F160;
 extern u16 D_8005F162;
 extern u8 D_80085388;
@@ -3318,12 +3326,12 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5A20);
  * @c func_800A5CF8 use; this is one of several sibling helpers that
  * produce byte-scale pseudo-randomness for the field engine.
  */
-u8 func_800A5C9C(void) {
+s32 func_800A5C9C(void) {
     D_8005F151++;
     if (D_8005F151 == 0) {
         D_8005F150 += 13;
     }
-    return D_800C3520[D_8005F151] + D_8005F150;
+    return (u8)(D_800C3520[D_8005F151] + D_8005F150);
 }
 
 /**
@@ -3332,13 +3340,100 @@ u8 func_800A5C9C(void) {
  *
  * @return The byte from the D_800C3520 lookup table.
  */
-u8 func_800A5CF8(void) {
+s32 func_800A5CF8(void) {
 
     D_8005F103++;
     return D_800C3520[D_8005F103];
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5D28);
+/**
+ * @brief Per-step random-encounter accumulator and battle trigger.
+ *
+ * Runs the classic FF8 field encounter formula. Bails when: the engine mode
+ * is 1 or 7, @c func_800BE274() reports activity, @c g_fieldVars->fieldCF is
+ * set, the dialog state is 2/3/4, encounters are disabled (@c D_8005F116),
+ * or movement flag bit 3 is set. Otherwise adds the field's step-rate byte
+ * (halved when movement flag bit 2 is set) to the step accumulator
+ * @c D_8005F164; when it passes 0x100 the accumulator wraps (@c &= 0xFF) and
+ * the player entity's danger halfword (offset 0x1FE, read as unsigned)
+ * divided by 1348 is added to the battle chance @c D_8005F0FE. A random
+ * byte below the battle chance triggers an encounter: engine mode 3,
+ * chance reset, @c D_8005F130 set, and a formation picked from the field's
+ * 4-entry table with thresholds 0x80/0xC0/0xF0 — preferring the first
+ * bucket whose formation differs from the previous one (@c D_8005F120),
+ * falling back to entry 3 unconditionally.
+ *
+ * @note The three dialog-state reads go through a volatile cast — the
+ *       original re-reads the halfword for each compare.
+ * @note The first formation store writes @c D_800704A8.counter through the
+ *       struct; the others use the alias symbol @c D_800704AA (same word,
+ *       0x800704AA) — both spellings exist in the original.
+ * @note @c savedChannel (0x1FE) is read here as the per-entity danger value
+ *       via a @c (u16) view; the message code uses the same slot as its
+ *       saved-channel word.
+ */
+void func_800A5D28(void) {
+    u8 *rate;
+    s32 r;
+    u16 *fm;
+
+    if (D_800704A8.mode == 1) {
+        return;
+    }
+    if (D_800704A8.mode == 7) {
+        return;
+    }
+    r = func_800BE274();
+    if (r != 0) {
+        return;
+    }
+    if (g_fieldVars->fieldCF != 0) {
+        return;
+    }
+    if ((s16)*(volatile u16 *)&D_800704A8.dialogState == 4) {
+        return;
+    }
+    if ((s16)*(volatile u16 *)&D_800704A8.dialogState == 3) {
+        return;
+    }
+    if ((s16)*(volatile u16 *)&D_800704A8.dialogState == 2) {
+        return;
+    }
+    if (D_8005F116 == 1) {
+        return;
+    }
+    if (D_80078DF8 & 8) {
+        return;
+    }
+    rate = *D_800C71F4;
+    if (D_80078DF8 & 4) {
+        D_8005F164 += *rate >> 1;
+    } else {
+        D_8005F164 += *rate;
+    }
+    if (D_8005F164 < 0x101) {
+        return;
+    }
+    D_8005F164 &= 0xFF;
+    D_8005F0FE += (s16)(u16)D_80085224[D_8005F148].savedChannel / 1348;
+    if ((u8)func_800A5C9C() < D_8005F0FE) {
+        D_800704A8.mode = 3;
+        D_8005F0FE = 0;
+        D_8005F130 = 1;
+        r = func_800A5CF8();
+        fm = *D_800C720C;
+        if ((u8)r < 0x80 && D_8005F120 != (s16)fm[0]) {
+            D_800704A8.counter = fm[0];
+        } else if ((u8)r < 0xC0 && D_8005F120 != (s16)fm[1]) {
+            D_800704AA = fm[1];
+        } else if ((u8)r < 0xF0 && D_8005F120 != (s16)fm[2]) {
+            D_800704AA = fm[2];
+        } else {
+            D_800704AA = fm[3];
+        }
+        D_8005F120 = D_800704AA;
+    }
+}
 
 /**
  * @brief Per-selector dispatcher — sets or clears a @ref FieldEntityC

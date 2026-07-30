@@ -373,7 +373,7 @@ typedef struct {
     /* 0xCC */ u8 expectedDiscId;       /**< Currently inserted disc (1..4). The intro/disc-swap screen waits for @c getDiscId() to match. */
     /* 0xCD */ u8 cameraShakeX;         /**< Camera shake X intensity, popped from stack. */
     /* 0xCE */ u8 cameraShakeY;         /**< Camera shake Y intensity, popped from stack. */
-    /* 0xCF */ u8 fieldCF;              /**< Used by fe_object7 dispatch (purpose TBD). */
+    /* 0xCF */ u8 fieldCF;              /**< Blocks random encounters while set (func_800A5D28 guard); also read by fe_object7 dispatch. */
     /* 0xD0 */ u8 padD0;
     /* 0xD1 */ u8 fieldD1;              /**< Bit 0 toggled by fe_object6 helper. */
     /* 0xD2 */ u8 sfxActiveMask;        /**< Per-slot SFX active bitmask (set on play, cleared on completion). */
@@ -401,6 +401,9 @@ typedef struct {
     /* 0xF4 */ s32 angeloLearnStepAcc;  /**< Step accumulator: fires the Angelo trick learn tick at @c 0x250. */
     /* 0xF8 */ u8 padF8[0x08];
 } FieldVars; /* 0x100 = 256 bytes */
+
+/** @brief Field-engine variable block (canonical extern also in gamestate.h). */
+extern FieldVars *g_fieldVars;
 
 /**
  * @brief Eline (event line) — opcode handler / script-VM view.

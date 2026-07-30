@@ -212,7 +212,7 @@ extern void func_800A4550(s16 a0);
 extern s32  func_800A4910(s32 a0, s32 a1, s32 a2, s32 a3);
 extern void func_800A59D0();  /* K&R: a0 declared but ignored in body; callers vary 0/1-arg */
 extern void func_800A5A14(s16 a0);
-extern u8   func_800A5CF8(void);
+extern s32  func_800A5CF8(void);
 
 /* INCLUDE_ASM stubs — bodies still in assembly, signatures unknown.
  * Declared K&R-style; refine when these get decomped to C. */
@@ -368,8 +368,8 @@ extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
 extern void func_800A5788(s32 a0);
 extern int  func_800A5898();
 extern int  func_800A5A20();
-extern u8   func_800A5C9C(void);
-extern int  func_800A5D28();
+extern s32  func_800A5C9C(void);
+extern void func_800A5D28(void);
 extern void func_800A5FA4();  /* arg 0 = entry pointer (16-byte stride); arg 1 = flag */
 extern void func_800A6100(Eline *eline, FieldLineTrigger *segs);
 extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
