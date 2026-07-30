@@ -2845,7 +2845,7 @@ void func_800A37A8(void *arg0, s32 arg1, FieldSubsceneBuffer *buf) {
  * @c s32 local makes gcc pick @c lh over @c lhu for it. Together
  * these match the target's exact instruction selection.
  */
-void func_800A38B4(func_800A38B4_out *out, func_800A38B4_in *in, func_800A38B4_in *target) {
+void func_800A38B4(MoveAccum *out, MoveStep *in, MoveStep *target) {
     s32 a;
     s32 s;
     if (in->stepTotal != 0) {
@@ -2860,7 +2860,86 @@ void func_800A38B4(func_800A38B4_out *out, func_800A38B4_in *in, func_800A38B4_i
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A39D8);
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A3FE0);
+/**
+ * @brief Fast-forward an entire field animation buffer to completion.
+ *
+ * Runs the per-tick work of @c func_800A37A8 and @c func_800A38B4 in a loop
+ * until every subscene slot has played out: the tick count is the largest
+ * @c frameCount across the 16 slots, and a slot is dropped (its
+ * @c D_800704A8.slotActive entry cleared) once the tick passes its own count.
+ *
+ * Each tick advances two things. Every still-active slot steps its animation
+ * table — resetting the cursor to the start when the table byte runs out —
+ * and is dispatched through @c func_800A355C. Every running accumulator is
+ * lerped one step by @c func_800A38B4 toward the next waypoint of its command;
+ * a waypoint with a zero tick count ends the command (clearing @c active and
+ * releasing one user of the record), and reaching a waypoint's tick count
+ * advances to the next one.
+ *
+ * The @c slotActive flags are saved on entry and restored on exit, so the
+ * caller's live slot set survives the fast-forward.
+ *
+ * @param buf Animation buffer to run to completion.
+ */
+void func_800A3FE0(FieldSubsceneBuffer *buf) {
+    u8 saved[16];
+    s32 i;
+    s32 j;
+    s32 maxFrames;
+
+    for (i = 0; i < 16; i++) {
+        saved[i] = D_800704A8.slotActive[i];
+    }
+
+    maxFrames = 0;
+    for (i = 0; i < 16; i++) {
+        if (maxFrames < buf->slots[i].frameCount) {
+            maxFrames = buf->slots[i].frameCount;
+        }
+    }
+
+    for (i = 0; i < maxFrames; i++) {
+        for (j = 0; j < 16; j++) {
+            if (buf->slots[j].frameCount < i) {
+                D_800704A8.slotActive[j] = 0;
+            }
+            if (D_800704A8.slotActive[j] != 0) {
+                if (buf->slots[j].h1 >= buf->slots[j].table[buf->slots[j].h2]) {
+                    buf->slots[j].h1 = 0;
+                    buf->slots[j].h2++;
+                    if (buf->slots[j].table[buf->slots[j].h2] == 0) {
+                        buf->slots[j].h2 = 0;
+                        buf->slots[j].h0 = 0;
+                    }
+                }
+                func_800A355C(&buf->slots[j], j, buf);
+                buf->slots[j].h0++;
+                buf->slots[j].h1++;
+            }
+        }
+        for (j = 0; j < 128; j++) {
+            if (buf->entries[j].active == 1) {
+                func_800A38B4(&buf->entries[j],
+                              &buf->records[buf->entries[j].cmdIndex].steps[buf->entries[j].stepIndex],
+                              &buf->records[buf->entries[j].cmdIndex].steps[buf->entries[j].stepIndex + 1]);
+                if (buf->records[buf->entries[j].cmdIndex].steps[buf->entries[j].stepIndex].stepTotal == 0) {
+                    buf->entries[j].active = 0;
+                    buf->records[buf->entries[j].cmdIndex].activeCount--;
+                }
+                buf->entries[j].stepProgress++;
+                if (buf->entries[j].stepProgress >=
+                    buf->records[buf->entries[j].cmdIndex].steps[buf->entries[j].stepIndex].stepTotal) {
+                    buf->entries[j].stepProgress = 0;
+                    buf->entries[j].stepIndex++;
+                }
+            }
+        }
+    }
+
+    for (i = 0; i < 16; i++) {
+        D_800704A8.slotActive[i] = saved[i];
+    }
+}
 
 /**
  * @brief Initialise the field-object GPU primitive packets and seed the

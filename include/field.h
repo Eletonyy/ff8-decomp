@@ -850,6 +850,50 @@ typedef struct {
 } FieldActor; /* 0x264 = 612 bytes */
 
 /**
+ * @brief One 20-byte movement-command step: an endpoint plus the tick count to
+ *        reach it. @c func_800A38B4 lerps between consecutive steps.
+ */
+typedef struct {
+    /* 0x00 */ s16 x;
+    /* 0x02 */ s16 y;
+    /* 0x04 */ s16 z;
+    /* 0x06 */ s16 angle;
+    /* 0x08 */ u8  pad08[0x06];
+    /* 0x0E */ u8  stepTotal;     /**< Ticks this step lasts; 0 ends the command. */
+    /* 0x0F */ u8  pad0F[0x05];
+} MoveStep;                       /* 0x14 = 20 bytes */
+
+/** @brief One 372-byte movement command: up to 17 @ref MoveStep waypoints plus
+ *         a count of the accumulators still running it. */
+typedef struct {
+    /* 0x000 */ MoveStep steps[17];
+    /* 0x154 */ u8  pad154[0x08];
+    /* 0x15C */ u16 activeCount;
+    /* 0x15E */ u8  pad15E[0x16];
+} MoveRecord;                     /* 0x174 = 372 bytes */
+
+/**
+ * @brief One 32-byte movement accumulator — the @c func_800A38B4 output view
+ *        plus the bookkeeping @ref func_800A3FE0 uses to walk its command.
+ */
+typedef struct {
+    /* 0x00 */ s32 posX;
+    /* 0x04 */ s32 posY;
+    /* 0x08 */ s32 posZ;
+    /* 0x0C */ s16 xStart;
+    /* 0x0E */ s16 yStart;
+    /* 0x10 */ s16 zStart;
+    /* 0x12 */ u16 angle;
+    /* 0x14 */ u8  pad14[0x02];
+    /* 0x16 */ s16 angleStart;
+    /* 0x18 */ u8  cmdIndex;      /**< Index into @c FieldSubsceneBuffer.records. */
+    /* 0x19 */ u8  stepIndex;     /**< Current waypoint within that command. */
+    /* 0x1A */ u8  stepProgress;  /**< Ticks spent on the current waypoint. */
+    /* 0x1B */ u8  active;        /**< 1 while this accumulator is running a command. */
+    /* 0x1C */ u8  pad1C[0x04];
+} MoveAccum;                      /* 0x20 = 32 bytes */
+
+/**
  * @brief One 254-byte animation slot in the field "subscene" buffer walked by
  *        @ref func_800A37A8.
  *
@@ -864,13 +908,25 @@ typedef struct {
     /* 0xF0 */ s16 h0;            /**< State counter (advanced each active tick). */
     /* 0xF2 */ s16 h1;            /**< State counter, compared against @c table[h2]. */
     /* 0xF4 */ s16 h2;            /**< Table cursor (mirror of @c FieldActor.animOffset). */
-    /* 0xF6 */ u8 padF6[0x08];
+    /* 0xF6 */ u16 padF6;
+    /* 0xF8 */ s16 frameCount;    /**< Frames this slot plays for; @c func_800A3FE0 runs the
+                                       whole buffer for @c max(frameCount) ticks and drops the
+                                       slot once the tick passes it. */
+    /* 0xFA */ u8 padFA[0x04];
 } FieldSubsceneSlot;             /* 0xFE = 254 bytes */
 
-/** @brief Buffer of 16 @ref FieldSubsceneSlot, walked per-frame by @ref func_800A37A8. */
+/**
+ * @brief The field animation buffer: 16 movement-command records, 16 subscene
+ *        slots and 128 movement accumulators, walked by @ref func_800A37A8 and
+ *        fast-forwarded whole by @ref func_800A3FE0.
+ *
+ * The three regions pack exactly: @c 16*0x174 == @c 0x1740 and
+ * @c 16*0xFE == @c 0xFE0, putting @c entries at @c 0x2720.
+ */
 typedef struct {
-    u8 pad0000[0x1740];
+    /* 0x0000 */ MoveRecord records[16];
     /* 0x1740 */ FieldSubsceneSlot slots[16];
+    /* 0x2720 */ MoveAccum entries[128];
 } FieldSubsceneBuffer;
 
 
