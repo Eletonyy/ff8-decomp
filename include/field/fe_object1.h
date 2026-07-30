@@ -367,7 +367,7 @@ extern void func_800A5700(void);
 extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
 extern void func_800A5788(s32 a0);
 extern int  func_800A5898();
-extern int  func_800A5A20();
+extern void func_800A5A20(Eline *self, EventEntry *entries);
 extern s32  func_800A5C9C(void);
 extern void func_800A5D28(void);
 extern void func_800A5FA4();  /* arg 0 = entry pointer (16-byte stride); arg 1 = flag */

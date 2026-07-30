@@ -1,5 +1,6 @@
 #include "common.h"
 #include "field.h"
+#include "main.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
@@ -115,6 +116,10 @@ extern s16 D_8005F122;
 extern s16 D_8005F14A;
 extern s16 D_8005F100;
 extern s16 D_8005F142;
+extern s16 D_800C2568[];         /**< Field id -> streaming-table entry index. */
+extern u32 D_800C0904[];         /**< Streaming table: 24-byte (6-word) entries; this symbol
+                                      addresses entry 0's size word, with its sector word
+                                      in the preceding word. */
 extern u8 D_8005F103;
 extern PathEntry D_80070A60[64];
 extern PathEntry D_80070760[64];
@@ -3287,9 +3292,10 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5898);
 /**
  * If D_8005F14A equals 1, calls resetCdDrive. Then clears D_8005F100 and D_8005F14A.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @note K&R declarator: the body ignores its argument and callers vary between
+ *       passing none (@c func_800A5A20, fe_object5) and one.
  */
-void func_800A59D0(u8 *a0) {
+void func_800A59D0() {
 
     if (D_8005F14A == 1) {
         resetCdDrive();
@@ -3307,7 +3313,92 @@ void func_800A5A14(s16 a0) {
     D_8005F142 = a0;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5A20);
+/** @brief Words per streaming-table entry (24-byte stride). */
+#define FIELD_STREAM_STRIDE 6
+
+/**
+ * @brief Per-frame background preload of the field nearest the player.
+ *
+ * Snapshots the player position into the scratchpad (whole units), then — while
+ * the map is not suppressed by @c D_800704BD — scans the 12 event-queue entries
+ * for the armed one (@c counter != @c 0x7FFF) whose trigger-segment start is
+ * nearest in XY, recording its @c counter (the destination field id) in
+ * @c D_8005F142.
+ *
+ * The streaming half then runs unless the movie subsystem is busy or the engine
+ * is in mode 3 (both abort through @c func_800A59D0), and unless a load is
+ * already pending. The destination pointer @c D_8005F104 is floored to
+ * @c 0x801A0000, and when the nearest field differs from the one already loaded
+ * (@c D_8005F100) and its data still fits below @c 0x801FE000, the previous load
+ * is cancelled and a new @c cdRead is issued: field ids from @c 0x49 up are
+ * looked up through @c D_800C2568 into the streaming table, lower ids use the
+ * fixed descriptor @c D_800974D0. @c D_8005F14A is left at 1 to mark the read
+ * in flight.
+ *
+ * @param self    Player entity, read for its 20.12 world position.
+ * @param entries Event-queue entry array (12 slots).
+ */
+void func_800A5A20(Eline *self, EventEntry *entries) {
+    Vec3i *scratch = (Vec3i *)getScratchAddr(0);
+    s32 best;
+    s32 i;
+    s32 dx;
+    s32 dy;
+    s32 d;
+    s32 idx;
+    u16 id;
+
+    if (D_8005F14A == 1) {
+        if (func_800393C8() == 0) {
+            D_8005F14A = 2;
+        }
+    }
+    best = 0x7FFFFFFF;
+    scratch->x = self->posX >> 12;
+    scratch->y = self->posY >> 12;
+    scratch->z = self->posZ >> 12;
+
+    if (D_800704BD == 0) {
+        for (i = 0; i < 12; i++, entries++) {
+            id = entries->counter;
+            if (id != 0x7FFF) {
+                dx = entries->x0 - scratch->x;
+                dy = entries->y0 - scratch->y;
+                d = dx * dx + dy * dy;
+                if (d < best) {
+                    best = d;
+                    D_8005F142 = id;
+                }
+            }
+        }
+    }
+
+    if (func_800BE264() != 0 || D_800704A8.mode == 3) {
+        func_800A59D0();
+        return;
+    }
+    if (func_800393C8() != 0 && D_8005F14A == 0) {
+        return;
+    }
+    if ((u32)D_8005F104 <= 0x8019FFFF) {
+        D_8005F104 = 0x801A0000;
+    }
+    if (D_8005F100 == D_8005F142) {
+        return;
+    }
+    if (D_800C0904[D_800C2568[D_8005F142] * FIELD_STREAM_STRIDE] < 0x801FE000 - D_8005F104) {
+        func_800A59D0();
+        D_8005F100 = D_8005F142;
+        if (D_8005F142 >= 0x49) {
+            idx = D_800C2568[D_8005F142];
+            cdRead(D_800C0904[idx * FIELD_STREAM_STRIDE - 1],
+                   D_800C0904[idx * FIELD_STREAM_STRIDE], (u8 *)D_8005F104, NULL);
+        } else {
+            cdRead(D_800974D0[0].sector, D_800974D0[0].size, (u8 *)D_8005F104, NULL);
+        }
+        D_8005F14A = 1;
+    }
+}
 
 /**
  * @brief Cheap PRNG-style byte generator that mixes a lookup-table read

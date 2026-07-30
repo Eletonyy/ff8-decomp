@@ -553,7 +553,7 @@ void func_800BD9C4(s32 stepDelta) {
  *
  * @return The value of D_800DE4FD.
  */
-u8 func_800BE264(void) {
+s32 func_800BE264(void) {
     return D_800DE4FD[0];
 }
 
