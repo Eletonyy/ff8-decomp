@@ -85,7 +85,9 @@ typedef struct {
 } DrawPoint;  /* 0x18 = 24 bytes */
 extern DrawPoint D_800706A0[];
 
-/** @brief 8-byte (x, y, z) vertex within an @ref ObjSlot corner array. */
+/** @brief 8-byte (x, y, z) vertex within an @ref ObjSlot corner array; also the
+ *         shape @c func_800A4934 stages its two interpolated points in at
+ *         @c getScratchAddr(0) and @c getScratchAddr(2). */
 typedef struct {
     /* 0x00 */ u16 x;
     /* 0x02 */ u16 y;
@@ -3109,7 +3111,60 @@ s32 func_800A4910(s32 a0, s32 a1, s32 a2, s32 a3) {
     return a0 + a1 * a3 / a2;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A4934);
+/**
+ * @brief Rebuild one shimmer object's two corner vertices for this tick.
+ *
+ * Re-seeds the slot pool (@c func_800A4758), then stages the object's current
+ * mid-point in the scratchpad: once the tick counter @c field82 has passed
+ * @c field80 the draw-point's settled position (@c field10 / @c field12 /
+ * @c field14) is used directly, otherwise the point is interpolated twice with
+ * @c func_800A4910 — base to first corner and first corner to second, both at
+ * @c field82 / @c field80 — and the two results interpolated again.
+ *
+ * The staged mid-point is then spread into the slot's two corner arrays at
+ * index @c field82 & 7: a cosine/sine pair sampled at @c field86 (scaled by
+ * @c >> 8) is scaled by the cosine of the tick angle @c (field82 * 8) & 0xF8
+ * and applied as @c >> 12, added on one corner and subtracted on the other, so
+ * the pair straddles the mid-point along the tick direction. Z is copied
+ * unchanged to both.
+ *
+ * @param slot Object slot to update.
+ * @param dp   Draw point holding the object's base and corner positions.
+ */
+void func_800A4934(ObjSlot *slot, DrawPoint *dp) {
+    ObjVertex *mid = (ObjVertex *)getScratchAddr(0);
+    ObjVertex *end = (ObjVertex *)getScratchAddr(2);
+    s32 idx;
+
+    func_800A4758();
+    idx = slot->field82 & 7;
+    if (slot->field80 < (s16)slot->field82) {
+        mid->x = dp->field10;
+        mid->y = dp->field12;
+        mid->z = dp->field14;
+    } else {
+        mid->x = func_800A4910((s16)dp->x, (s16)dp->field8, slot->field80, (s16)slot->field82);
+        mid->y = func_800A4910((s16)dp->y, (s16)dp->fieldA, slot->field80, (s16)slot->field82);
+        mid->z = func_800A4910((s16)dp->z, (s16)dp->fieldC, slot->field80, (s16)slot->field82);
+        end->x = func_800A4910((s16)dp->field8, (s16)dp->field10, slot->field80, (s16)slot->field82);
+        end->y = func_800A4910((s16)dp->fieldA, (s16)dp->field12, slot->field80, (s16)slot->field82);
+        end->z = func_800A4910((s16)dp->fieldC, (s16)dp->field14, slot->field80, (s16)slot->field82);
+        mid->x = func_800A4910((s16)mid->x, (s16)end->x, slot->field80, (s16)slot->field82);
+        mid->y = func_800A4910((s16)mid->y, (s16)end->y, slot->field80, (s16)slot->field82);
+        mid->z = func_800A4910((s16)mid->z, (s16)end->z, slot->field80, (s16)slot->field82);
+    }
+
+    slot->vb[idx].x = mid->x - ((func_8009D234(slot->field86) >> 8) *
+                                func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
+    slot->vb[idx].y = mid->y + ((func_8009D254(slot->field86) >> 8) *
+                                func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
+    slot->vb[idx].z = mid->z;
+    slot->va[idx].x = mid->x + ((func_8009D234(slot->field86) >> 8) *
+                                func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
+    slot->va[idx].y = mid->y - ((func_8009D254(slot->field86) >> 8) *
+                                func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
+    slot->va[idx].z = mid->z;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A4C14);
 

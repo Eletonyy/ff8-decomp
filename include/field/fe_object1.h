@@ -349,7 +349,7 @@ extern void func_800A4500(s32 x, s32 y, s32 z);
 void func_800A455C(s16 entityIdx);
 extern void func_800A4758(void);
 extern s32  func_800A48CC(void);
-extern int  func_800A4934();
+extern void func_800A4934();  /* args are file-private ObjSlot/DrawPoint in fe_object1.c */
 extern int  func_800A4C14();
 
 typedef struct { u8 pad[0xB4]; } func_800A5224_arg2; /* 0xB4 = 180 bytes */
