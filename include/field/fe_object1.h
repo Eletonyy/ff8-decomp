@@ -64,13 +64,6 @@ typedef struct {
 extern Triangle *D_800C71F0;  /**< Field navmesh triangle array (loaded per field). */
 extern AdjRec   *D_800D5E98;  /**< Per-triangle edge adjacency table, parallel to @c D_800C71F0. */
 
-/** @brief Animation parameter entry. */
-typedef struct {
-    /* 0x00 */ u8 pad00[0x09];
-    /* 0x09 */ s8 field_09;
-    /* 0x0A */ u8 field_0A;
-    /* 0x0B */ u8 field_0B;
-} AnimParam;
 
 /** @brief 32-byte slot stride for indexing into a particle system buffer. */
 typedef struct {
@@ -192,7 +185,19 @@ extern ScriptList *D_800D5E90;
 extern void func_80098934(void);
 extern void func_80099124(void);
 extern void func_8009912C(void);
-extern void func_8009B74C(s16 slotIdx, u16 paramIdx, AnimParam *params, s16 multiplier);
+/** @brief 12-byte path waypoint (64 entries per table, indexed by angle/64). */
+typedef struct {
+    /* 0x00 */ s16 x;       /**< Position X (fixed-point, << 12 when written). */
+    /* 0x02 */ s16 y;       /**< Position Y. */
+    /* 0x04 */ s16 z;       /**< Position Z. */
+    /* 0x06 */ u16 unk6;    /**< Stored to entity offset 0x1FA. */
+    /* 0x08 */ u8  unk8;    /**< Stored to entity offset 0x258. */
+    /* 0x09 */ s8  field_09; /**< Signed step magnitude; scaled by the caller's multiplier. */
+    /* 0x0A */ u8  field_0A; /**< Movement mode selector (4 = the walk step written here). */
+    /* 0x0B */ u8  field_0B; /**< Heading byte copied into the entity's @c field_0x241. */
+} PathEntry;
+
+extern void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier);
 extern void func_8009BB18(void);
 extern void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8);
 extern s16  func_8009D234(s32 a0);
@@ -244,7 +249,7 @@ extern s32  func_8009F74C(Eline *a, Eline *b);
 extern void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode);
 extern void func_8009B4A8(s16 a, u8 b, s32 c, s32 d);
 extern void func_8009F8D0(s16 idx);
-extern int  func_8009F990();
+extern void func_8009F990(s16 idx, s32 flags);
 extern int  func_8009FE18();
 extern TILE *func_800A0640(TILE *prim);
 extern int  func_800A06F0();

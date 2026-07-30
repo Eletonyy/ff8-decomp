@@ -447,7 +447,7 @@ typedef struct {
     /* 0x1C4 */ s32 field_0x1C4;    /**< Saved message X position. */
     /* 0x1C8 */ s32 field_0x1C8;    /**< Saved message Y position. */
     /* 0x1CC */ u8 pad1CC[0x0C];
-    /* 0x1D8 */ u16 field_0x1D8;
+    /* 0x1D8 */ s16 field_0x1D8;   /**< Total step count paired with @c field_0x1DA (read signed). */
     /* 0x1DA */ s16 field_0x1DA;   /**< Signed turn accumulator; @c func_8009D274 only steps the heading while it is within +/-0x100. */
     /* 0x1DC */ s16 field_0x1DC;
     /* 0x1DE */ s16 field_0x1DE;
@@ -480,7 +480,7 @@ typedef struct {
     /* 0x214 */ u16 field_0x214;
     /* 0x216 */ u16 field_0x216;
     /* 0x218 */ s16 unk218;         /**< -1 = inactive (skipped by collision tests in @c func_8009E468). */
-    /* 0x21A */ u16 windowId;       /**< Message window ID. */
+    /* 0x21A */ s16 windowId;       /**< Message window ID (read signed; @c 1 selects the inverted input mapping in @c func_8009F990). */
     /* 0x21C */ u16 field_0x21C;    /**< Saved window ID for async restore. */
     /* 0x21E */ s16 msgState;       /**< Message state (0=init, 2=complete). */
     /* 0x220 */ u16 field_0x220;

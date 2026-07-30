@@ -7,16 +7,6 @@
 #include "field/fe_object1.h"
 #include "field/fe_object10.h"
 
-/** @brief 12-byte path waypoint (64 entries per table, indexed by angle/64). */
-typedef struct {
-    /* 0x00 */ s16 x;       /**< Position X (fixed-point, << 12 when written). */
-    /* 0x02 */ s16 y;       /**< Position Y. */
-    /* 0x04 */ s16 z;       /**< Position Z. */
-    /* 0x06 */ u16 unk6;    /**< Stored to entity offset 0x1FA. */
-    /* 0x08 */ u8  unk8;    /**< Stored to entity offset 0x258. */
-    /* 0x09 */ u8  unk9;    /**< Set by func_8009BD50 (recorder) when writing path. */
-    /* 0x0A */ u8  padA[2];
-} PathEntry;
 
 
 extern u16 D_8005F118;
@@ -846,7 +836,7 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009B4A8);
  * @param params Animation parameter array.
  * @param multiplier Speed/direction multiplier for the animation.
  */
-void func_8009B74C(s16 slotIdx, u16 paramIdx, AnimParam *params, s16 multiplier) {
+void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier) {
     u8 entityIdx;
 
     entityIdx = D_800704A8.entityIndex[slotIdx];
@@ -970,8 +960,8 @@ void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8) {
     u = e->field_0x1FA;
     p0->unk6 = u;
     p1->unk6 = u;
-    p0->unk9 = b9;
-    p1->unk9 = b9;
+    p0->field_09 = b9;
+    p1->field_09 = b9;
     {
         PathEntry *q0 = base0 + D_8005F144;
         PathEntry *q1 = base1 + D_8005F144;
@@ -1605,7 +1595,119 @@ void func_8009F8D0(s16 idx) {
                                          (s16)D_80085224[idx].field_0x1DA);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009F990);
+/**
+ * @brief Apply one frame of directional input to the player entity.
+ *
+ * Only the player (@c D_8005F148) moves, and only while @c D_800704BD is
+ * clear; any other entity index — or a set @c D_800704BD — falls through to
+ * the passive path at the end.
+ *
+ * The two direction bit-pairs are handled as a pair of opposite steps whose
+ * meaning flips with the entity's message state: with @c windowId @c == @c 1
+ * the @c 0xC000 bits step one way and @c 0x3000 the other, and without it the
+ * assignment is reversed. Either way the step seeds both path tables at the
+ * current write cursor @c D_8005F144 (@c field_0A @c = @c 4 marks the entry a
+ * walk step, @c field_0B carries the entity's heading), runs the step through
+ * @c func_8009F7F4 / @c func_8009F8D0, and replays both tables into the anim
+ * system at their phase offsets (@c func_8009B74C). The two directions then
+ * differ only in how they age @c field_0x1DA: one counts it down and reports
+ * message state 5 at zero, the other counts it up and reports state 4 on
+ * reaching @c field_0x1D8. With no direction bits the step is issued neutral.
+ *
+ * The passive path just ages @c field_0x1DA toward @c field_0x1D8 (reporting
+ * state 2 once there) while advancing the entity's render-slot motion counter
+ * @c unk52 by @c field_0x208, wrapping it at @c unk0C.
+ *
+ * @param idx   Entity index.
+ * @param flags Input bits; @c 0x3000 and @c 0xC000 select the two directions.
+ *
+ * @note The two @c field_0A / @c field_0B stores are chained assignments: the
+ *       plain two-statement form lets gcc merge the four otherwise identical
+ *       table-seeding blocks, which collapses the shared step tails.
+ */
+void func_8009F990(s16 idx, s32 flags) {
+    s32 p;
+    u8 b;
+
+    if (idx == D_8005F148 && D_800704BD == 0) {
+        if (D_80085224[idx].windowId == 1) {
+            if (flags & 0xC000) {
+                p = D_8005F144;
+                D_80070760[p].field_0A = D_80070A60[p].field_0A = 4;
+                p = D_8005F144;
+                D_80070760[p].field_0B = D_80070A60[p].field_0B = D_80085224[idx].field_0x241;
+                func_8009F7F4(idx, -1, D_80085224[idx].field_0x253, 1);
+                func_8009F8D0(idx);
+                func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
+                func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+                D_80085224[idx].field_0x1DA--;
+                if (D_80085224[idx].field_0x1DA < 0) {
+                    D_80085224[idx].field_0x1DA = 0;
+                    D_80085224[idx].msgState = 5;
+                }
+            } else if (flags & 0x3000) {
+                p = D_8005F144;
+                D_80070760[p].field_0A = D_80070A60[p].field_0A = 4;
+                p = D_8005F144;
+                D_80070760[p].field_0B = D_80070A60[p].field_0B = D_80085224[idx].field_0x241;
+                func_8009F7F4(idx, 1, D_80085224[idx].field_0x253, 1);
+                func_8009F8D0(idx);
+                func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
+                func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+                D_80085224[idx].field_0x1DA++;
+                if (D_80085224[idx].field_0x1DA == D_80085224[idx].field_0x1D8) {
+                    D_80085224[idx].field_0x1DA = 0;
+                    D_80085224[idx].msgState = 4;
+                }
+            } else {
+                func_8009F7F4(idx, 0, D_80085224[idx].field_0x253, 0);
+            }
+        } else {
+            if (flags & 0x3000) {
+                p = D_8005F144;
+                D_80070760[p].field_0A = D_80070A60[p].field_0A = 4;
+                p = D_8005F144;
+                D_80070760[p].field_0B = D_80070A60[p].field_0B = D_80085224[idx].field_0x241;
+                func_8009F7F4(idx, 1, D_80085224[idx].field_0x253, 1);
+                func_8009F8D0(idx);
+                func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
+                func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+                D_80085224[idx].field_0x1DA--;
+                if (D_80085224[idx].field_0x1DA < 0) {
+                    D_80085224[idx].field_0x1DA = 0;
+                    D_80085224[idx].msgState = 5;
+                }
+            } else if (flags & 0xC000) {
+                p = D_8005F144;
+                D_80070760[p].field_0A = D_80070A60[p].field_0A = 4;
+                p = D_8005F144;
+                D_80070760[p].field_0B = D_80070A60[p].field_0B = D_80085224[idx].field_0x241;
+                func_8009F7F4(idx, -1, D_80085224[idx].field_0x253, 1);
+                func_8009F8D0(idx);
+                func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
+                func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+                D_80085224[idx].field_0x1DA++;
+                if (D_80085224[idx].field_0x1DA == D_80085224[idx].field_0x1D8) {
+                    D_80085224[idx].field_0x1DA = 0;
+                    D_80085224[idx].msgState = 4;
+                }
+            } else {
+                func_8009F7F4(idx, 0, D_80085224[idx].field_0x253, 0);
+            }
+        }
+    } else {
+        if (D_80085224[idx].field_0x1DA == D_80085224[idx].field_0x1D8) {
+            D_80085224[idx].msgState = 2;
+        } else {
+            D_80085224[idx].field_0x1DA++;
+            D_800D9630[idx]->unk52 += D_80085224[idx].field_0x208;
+            if (D_800D9630[idx]->unk0C - 1 < D_800D9630[idx]->unk52) {
+                D_800D9630[idx]->unk52 = 0;
+            }
+            func_8009F8D0(idx);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009FE18);
 
