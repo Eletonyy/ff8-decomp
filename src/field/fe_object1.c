@@ -733,7 +733,87 @@ void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009AC9C);
+/** @brief 16-byte padded s32 vector — stack twin of the PsyQ VECTOR layout,
+ *  private to @c func_8009AC9C (the pad keeps the frame at 0x10 strides). */
+typedef struct {
+    s32 x, y, z, pad;
+} func_8009AC9C_vec;
+
+/**
+ * @brief Brute-force walkmesh triangle lookup: find the triangle whose 2D
+ *        extent contains (px, py) and whose plane Z is nearest pz.
+ *
+ * For each triangle in @p list, builds the three edge vectors with
+ * @c func_8009DED8 and tests the query point against all three 2D edge
+ * cross-products (inside when all are >= 0, computed up front and then
+ * &&-chained). For containing triangles the plane Z at the query point is
+ * interpolated via @c func_8009E338 and the triangle with the smallest
+ * |Z - pz| wins.
+ *
+ * @param px    Query X (walkmesh units).
+ * @param py    Query Y.
+ * @param pz    Query Z (used only to rank containing triangles).
+ * @param list  Counted triangle list.
+ * @return Index of the best containing triangle, as @c s16.
+ *
+ * @note If no triangle contains the point (or the list is empty) the return
+ *       value is an uninitialized stack halfword — the original never
+ *       seeds @c bestIdx. Callers are expected to only use the result when
+ *       the point is known to be on the mesh.
+ * @note Twin loop cursors (@c s16 @c i for the record offset and result,
+ *       @c s32 @c n for the count compare), the byte-offset vertex pointers,
+ *       and the @c i++, @c n++ increment order are all register-allocation /
+ *       scheduling keys.
+ */
+s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
+    func_8009AC9C_vec e0;
+    func_8009AC9C_vec e1;
+    func_8009AC9C_vec e2;
+    func_8009AC9C_vec qp;
+    u16 bestIdx;
+    s32 best;
+    s16 i;
+    s32 n;
+    s32 c0, c1, c2, z;
+    SVert *vA;
+    SVert *vB;
+    SVert *vC;
+    u8 *tris;
+    s32 ofs;
+
+    i = 0;
+    best = 0x7FFFFFFF;
+    qp.x = px;
+    qp.y = py;
+    qp.z = pz;
+    tris = (u8 *)list->tris;
+    for (n = 0; n < list->count; i++, n++) {
+        ofs = (s16)i * 24;
+        vB = (SVert *)(tris + (ofs + 8));
+        vA = (SVert *)(tris + ofs);
+        func_8009DED8((u8 *)&e0, (u8 *)vB, (u8 *)vA);
+        ofs += 16;
+        vC = (SVert *)(tris + ofs);
+        func_8009DED8((u8 *)&e1, (u8 *)vC, (u8 *)vB);
+        func_8009DED8((u8 *)&e2, (u8 *)vA, (u8 *)vC);
+        c0 = e0.y * (px - vA->sx) - e0.x * (py - vA->sy);
+        c1 = e1.y * (px - vA[1].sx) - e1.x * (py - vA[1].sy);
+        c2 = e2.y * (px - vA[2].sx) - e2.x * (py - vA[2].sy);
+        if (c0 >= 0 && c1 >= 0 && c2 >= 0) {
+            z = func_8009E338((Vec3i *)&e0, (Vec3i *)&e1, (Vec3i *)&qp, (Vec3s *)vA);
+            if (qp.z < z) {
+                z = z - qp.z;
+            } else {
+                z = qp.z - z;
+            }
+            if (z < best) {
+                best = z;
+                bestIdx = i;
+            }
+        }
+    }
+    return (s16)bestIdx;
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009AEC0);
 
