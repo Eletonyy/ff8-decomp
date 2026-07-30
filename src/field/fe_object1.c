@@ -1098,7 +1098,119 @@ s16 func_8009D254(s32 a0) {
     return *(s16 *)(D_800C3320 + a0 * 2);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009D274);
+/**
+ * @brief Walk-toward-destination step: arrival test plus one turn increment.
+ *
+ * Snapshots the entity position and its destination (@c msgTextPtr /
+ * @c msgPosX, which double as the walk target) in whole units and takes the
+ * squared XY distance between them.
+ *
+ * When @p pad is non-zero the entity is treated as still travelling unless the
+ * remaining squared distance exceeds @c (radius + pad)^2 + 0x1000, in which
+ * case 0 is returned. Arrival — squared distance below @c savedChannel^2 >> 16
+ * or below 4 — snaps the position onto the destination and returns 0.
+ *
+ * Otherwise the bearing to the destination is taken (@c func_8009A0E8, which
+ * also rewrites @c dist with the true distance) and reduced by
+ * @c headingBase to give the target heading. The turn rate is
+ * @c field_0x262, or 0 when the entity is already inside its radius or
+ * @c field_0x1DA has left the +/-0x100 band. With no rate the heading snaps;
+ * otherwise the heading restarts from @c field_0x241 and is stepped by at most
+ * @c rate along the shorter way around the 256-unit circle (the four cases
+ * offset the compared angles by 0x100 to keep the window continuous across
+ * the wrap), snapping when the target already lies inside the step window.
+ *
+ * @param self Entity to advance.
+ * @param pad  Extra arrival slack added to the radius; 0 disables the test.
+ * @return 1 while still travelling, 0 once arrived (or stopped short).
+ */
+s32 func_8009D274(Eline *self, s16 pad) {
+    VECTOR cur;
+    VECTOR dst;
+    s32 dist;
+    s32 dx;
+    s32 dy;
+    s32 r;
+    s32 rr;
+    s32 lim;
+    s32 delta;
+    u16 rate;
+    u16 c;
+
+    cur.vx = self->posX >> 12;
+    cur.vy = self->posY >> 12;
+    dst.vx = self->msgTextPtr >> 12;
+    dx = dst.vx - cur.vx;
+    dst.vy = self->msgPosX >> 12;
+    dy = dst.vy - cur.vy;
+    r = self->radius + pad;
+    rr = r * r;
+    dist = dx * dx + dy * dy;
+    lim = rr + 0x1000;
+    if (pad != 0) {
+        if (lim >= dist) {
+            return 0;
+        }
+    }
+    if (dist < (self->savedChannel * self->savedChannel) >> 16 || dist < 4) {
+        self->posX = self->msgTextPtr;
+        self->posY = self->msgPosX;
+        return 0;
+    }
+
+    delta = (func_8009A0E8(&cur.vx, &dst.vx, &dist) & 0xFF) - self->headingBase;
+    if (dist < self->radius || self->field_0x1DA > 0x100 || self->field_0x1DA < -0x100) {
+        rate = 0;
+    } else {
+        rate = self->field_0x262;
+    }
+    if (rate == 0) {
+        self->unk23F = delta;
+    } else {
+        self->unk23F = self->field_0x241;
+        c = self->unk23F;
+        if (c == (u8)delta) {
+            self->unk23F = delta;
+        } else if ((u16)delta < c) {
+            if (c - (u16)delta >= 0x81) {
+                delta += 0x100;
+                if ((u16)delta < c + rate && c - rate < (u16)delta) {
+                    self->unk23F = delta;
+                } else {
+                    self->unk23F += rate;
+                    self->field_0x1DA += rate;
+                }
+            } else {
+                c += 0x100;
+                delta += 0x100;
+                if ((u16)delta < c + rate && c - rate < (u16)delta) {
+                    self->unk23F = delta;
+                } else {
+                    self->unk23F -= rate;
+                    self->field_0x1DA -= rate;
+                }
+            }
+        } else if ((u16)delta - c >= 0x81) {
+            c += 0x100;
+            if ((u16)delta < c + rate && c - rate < (u16)delta) {
+                self->unk23F = delta;
+            } else {
+                self->unk23F -= rate;
+                self->field_0x1DA -= rate;
+            }
+        } else {
+            c += 0x100;
+            delta += 0x100;
+            if ((u16)delta < c + rate && c - rate < (u16)delta) {
+                self->unk23F = delta;
+            } else {
+                self->unk23F += rate;
+                self->field_0x1DA += rate;
+            }
+        }
+    }
+    return 1;
+}
 
 /**
  * @brief Scratchpad work context — arg2 of @c func_8009D500.

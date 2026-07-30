@@ -233,7 +233,7 @@ extern s16  func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list);
 extern int  func_8009AEC0();
 extern int  func_8009BEC8();
 extern void func_8009CEE8(void);
-extern int  func_8009D274();
+extern s32  func_8009D274(Eline *self, s16 pad);
 extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
 extern int  func_8009D598();
 extern s32  func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux);

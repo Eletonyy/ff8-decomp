@@ -448,7 +448,7 @@ typedef struct {
     /* 0x1C8 */ s32 field_0x1C8;    /**< Saved message Y position. */
     /* 0x1CC */ u8 pad1CC[0x0C];
     /* 0x1D8 */ u16 field_0x1D8;
-    /* 0x1DA */ u16 field_0x1DA;
+    /* 0x1DA */ s16 field_0x1DA;   /**< Signed turn accumulator; @c func_8009D274 only steps the heading while it is within +/-0x100. */
     /* 0x1DC */ s16 field_0x1DC;
     /* 0x1DE */ s16 field_0x1DE;
     /* 0x1E0 */ s16 posOfsX;        /**< Display/world position offset X, added to @c posX>>12 (func_800A1CFC render + bearing origin). */
@@ -500,7 +500,9 @@ typedef struct {
     /* 0x23A */ u8 turnYawRate;     /**< Max per-update yaw step (BAM). */
     /* 0x23B */ u8 turnMode;        /**< 0 = idle (emits ops 0x15/0x16 when done), 1 = tracking a target. */
     /* 0x23C */ u8 msgActive;       /**< Message active flag. */
-    /* 0x23D */ u8 pad23D[0x02];
+    /* 0x23D */ u8 pad23D;
+    /* 0x23E */ u8 headingBase;     /**< Heading reference subtracted from the bearing to the
+                                         destination (@c func_8009D274 walk-toward step). */
     /* 0x23F */ u8 unk23F;          /**< Facing/heading angle (8-bit BAM, sin/cos source per FF8 wiki entity-struct). @c func_8009A4C0 / @c func_8009A7E8 compare a trigger's bearing (@c FieldEntityB.unk19C) against it in a +/-facing window. */
     /* 0x240 */ u8 field_0x240;
     /* 0x241 */ u8 field_0x241;

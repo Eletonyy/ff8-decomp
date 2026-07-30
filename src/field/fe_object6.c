@@ -1394,9 +1394,9 @@ s32 opHandler_PREMAPJUMP(Eline *eline) {
             t++;
         } while (D_8005F0F8->entries[t].field16 != 0x7FFF);
     }
-    D_8005F0F8->entries[t].field08 = (u16)POP(eline);
-    D_8005F0F8->entries[t].field06 = (u16)POP(eline);
-    D_8005F0F8->entries[t].field04 = (u16)POP(eline);
+    D_8005F0F8->entries[t].y1 = (u16)POP(eline);
+    D_8005F0F8->entries[t].x1 = (u16)POP(eline);
+    D_8005F0F8->entries[t].z0 = (u16)POP(eline);
     D_8005F0F8->entries[t].field16 = (u16)POP(eline);
     D_8005F0F8->entries[t].field14 = 0xFFFF;
     D_8005F0F8->entries[t + 1].field16 = 0x7FFF;
