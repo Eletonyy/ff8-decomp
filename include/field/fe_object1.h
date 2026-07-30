@@ -13,6 +13,17 @@ typedef struct {
     s32 z;
 } Vec3i;
 
+/**
+ * 3D line-segment coordinate view: six consecutive s16 coordinates
+ * (start XYZ, end XYZ). This is the layout shared by the head of
+ * @ref FieldLineTrigger and the per-entity trigger segment embedded in
+ * @ref Eline at 0x188 — @c func_8009A2BC accepts either through this view.
+ */
+typedef struct {
+    /* 0x00 */ s16 x0, y0, z0;
+    /* 0x06 */ s16 x1, y1, z1;
+} LineSeg;
+
 /** @brief 4-byte signed 16-bit 2D position (x, y). */
 typedef struct {
     s16 x;
@@ -205,7 +216,7 @@ extern int  func_8009895C();
 extern void func_80099180(void);
 extern int  func_80099348();
 extern s32  func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist);
-extern int  func_8009A2BC();
+extern s32  func_8009A2BC(LineSeg *seg, Vec3i *p, Vec3i *out);
 extern s32  func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt);
 extern void func_8009A7E8(Eline *e, FieldEntityB *pool);
 extern void func_8009A8E0(FieldEntityB *e);

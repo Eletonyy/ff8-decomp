@@ -353,7 +353,68 @@ s32 func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist) {
     return (r + 0x40) & 0xFF;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009A2BC);
+/**
+ * @brief Project a point onto a 3D line segment and return the squared
+ *        distance to the closest point, bounds-checked in X and Y.
+ *
+ * Computes the fixed-point projection parameter
+ * @c t = -256 * dot(P0 - P, dir) / |dir|^2 and writes the closest point
+ * @c P0 + t*dir/256 to @p out. The projection is then validated against the
+ * segment's X and Y coordinate ranges (either winding accepted; Z is
+ * unconstrained): if the closest point falls outside, -1 is returned and the
+ * caller treats the segment as missed.
+ *
+ * @param seg  Line segment (start/end XYZ as consecutive s16 coords).
+ * @param p    Query point.
+ * @param out  Receives the closest point on the segment's carrier line.
+ * @return Squared 3D distance from @p p to the closest point, or -1 when the
+ *         projection lies outside the segment's X/Y extent.
+ *
+ * @note One variable @c d carries the division quotient, the -1 miss value,
+ *       and the final squared distance through a single return — and the
+ *       bounds checks use bail-out gotos with second-chance labels
+ *       (@c xc2 / @c yc2) entered both by branch and fall-through. Both are
+ *       original-source structure: restructured single-purpose-variable or
+ *       pure if/else forms compile to measurably different code (the
+ *       fall-through recheck gets folded away by cse/jump threading).
+ */
+s32 func_8009A2BC(LineSeg *seg, Vec3i *p, Vec3i *out) {
+    s32 dx, dy, dz;
+    s32 tx = (seg->x0 - p->x) * (dx = seg->x1 - seg->x0);
+    s32 ty = (seg->y0 - p->y) * (dy = seg->y1 - seg->y0);
+    s32 tz = (seg->z0 - p->z) * (dz = seg->z1 - seg->z0);
+    s32 d = (-((tx + ty + tz) << 8)) / (dx * dx + dy * dy + dz * dz);
+    s32 ex, ey, ez;
+    s32 ax, ay, ox, oy;
+
+    out->x = ((d * dx) >> 8) + seg->x0;
+    out->y = ((d * (seg->y1 - seg->y0)) >> 8) + seg->y0;
+    out->z = ((d * (seg->z1 - seg->z0)) >> 8) + seg->z0;
+
+    ax = seg->x0 - (ox = out->x);
+    if (ax < 0) goto xc2;
+    if (seg->x1 - ox <= 0) goto yaxis;
+    if (ax > 0) goto fail;
+xc2:
+    if (seg->x1 - ox < 0) goto fail;
+yaxis:
+    ay = seg->y0 - (oy = out->y);
+    if (ay < 0) goto yc2;
+    if (seg->y1 - oy <= 0) goto sum;
+    if (ay > 0) goto fail;
+yc2:
+    if (seg->y1 - oy < 0) goto fail;
+sum:
+    ex = out->x - p->x;
+    ey = out->y - p->y;
+    ez = out->z - p->z;
+    d = ex * ex + ey * ey + ez * ez;
+    goto done;
+fail:
+    d = -1;
+done:
+    return d;
+}
 
 /**
  * @brief Per-frame update of the @ref FieldEntityB trigger pool against the
@@ -412,7 +473,7 @@ s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
             continue;
         }
         fc->unk19D = 0;
-        dist = func_8009A2BC(&rec->x0, queryPt, proj);
+        dist = func_8009A2BC((LineSeg *)&rec->x0, queryPt, proj);
         if (dist != -1 && dist < self->radius * self->radius) {
             s32 dx;
             s32 dy;
@@ -568,7 +629,7 @@ void func_8009A920(Eline *eline, FieldEntityB *entities) {
         fc = entities;
         do {
             if (entities->activeMarker == 1 && eline->msgActive == 0) {
-                dist = func_8009A2BC(&entities->x0, scratch, out);
+                dist = func_8009A2BC((LineSeg *)&entities->x0, scratch, out);
                 if (dist != -1 && dist < eline->radius * eline->radius) {
                     if (D_8005F14C == 3) {
                         entities->trigger2 = 1;
@@ -655,7 +716,7 @@ void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt) {
         if (segs->rotation == 0xFFFF) {
             continue;
         }
-        dist = func_8009A2BC(&segs->x0, B, C);
+        dist = func_8009A2BC((LineSeg *)&segs->x0, B, C);
         if (dist == -1) {
             continue;
         }
