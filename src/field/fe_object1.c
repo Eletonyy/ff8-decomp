@@ -262,7 +262,7 @@ s32 *func_800983F0(void) {
         D_800C7200 = NULL;
     }
 
-    D_800704B2 = 0x14;
+    D_800704B2 = 20;
 
     if (D_8005F14C == 3) {
         buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (FieldEntityB *)0x80090800, (u16 *)*D_800D5ED4, 0);

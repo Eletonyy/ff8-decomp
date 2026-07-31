@@ -1138,7 +1138,11 @@ extern u32 D_80082C14;
 /** @brief Pool sizer for entity/script tables; called from @c fe_object10. */
 extern s32 func_80037AEC(u8 *header, u16 *table, s32 **outBase);
 
-/** @brief Field-side rotation/orientation halfword consumed by encounter setup. */
+/** @brief Reset to 20 on field entry by @c func_8009AEC0 and scaled by
+ *         134.8046875 (@c *69020>>9) in @c func_800B6738 to form the threshold
+ *         the entity's @c savedChannel is compared against — the same scale
+ *         @c func_8009AEC0 applies to @c SystemState::unk00A when seeding it.
+ *  @note Both quantities are unnamed; the pair only ever holds 20. */
 extern s16 D_800704B2;
 
 /** @brief Dialog companion halfword (mirrors @c D_800DE4DC s32 view). */
