@@ -2715,7 +2715,138 @@ void func_800A2128(func_800A2128_arg0 *t) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A222C);
+/**
+ * @brief Draws every field entity's blob shadow as a flat-shaded 8-triangle fan.
+ *
+ * Builds a unit octagon once per call — @c func_8009D234 / @c func_8009D254 sampled
+ * at the eight 32-step headings give the cos/sin pair for each ring point — then
+ * walks the @ref Eline pool. An entity casts a shadow only when it is not flagged
+ * out (@c flags bit 3), is active (@c unk218 @c != @c -1) and is in the state
+ * @c unk258 @c == @c 1.
+ *
+ * The fan centre is the entity's position dropped to integer world units, and ring
+ * point @c k sits at that centre offset along octagon direction @c k, scaled by the
+ * entity's own @c shadowRadius[k]. Because the eight radii are independent the
+ * shadow need not be circular — @c SHADEFORM sets them individually, @c SHADESET
+ * makes them uniform. The nine points are projected with one @c func_80040DE4 (whose
+ * return gives the OTZ) plus three @c RTPT batches, and when the centre is in depth
+ * range the fan is emitted as eight @ref POLY_G3 triangles, every one flat-shaded in
+ * @c shadowLevel, followed by the slot's tpage command.
+ *
+ * @param ot   Ordering table to link the shadows into.
+ * @param m    Camera matrix loaded into the GTE before projecting.
+ * @param prim Triangle arena; advanced eight prims per shadow drawn.
+ * @param tp   Tpage commands; advanced one per shadow drawn.
+ * @param ents The @ref Eline pool (@c D_80085388 entries).
+ *
+ * @note The scratchpad holds the octagon tables and the nine working points:
+ *       cos at @c getScratchAddr(2), sin at @c getScratchAddr(6), points at
+ *       @c getScratchAddr(10).
+ * @note @c sxy is two words wide because that is the slot the original reserves for
+ *       @c func_80040DE4's screen-XY output; only the first word is meaningful.
+ * @note @c rad is advanced at the end of the ring loop rather than indexed: that is
+ *       what makes gcc give it an induction variable of its own alongside the two
+ *       octagon tables, which is how the original walks all three.
+ */
+void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Eline *ents) {
+    s16 *cosTbl = (s16 *)getScratchAddr(2);
+    s16 *sinTbl = (s16 *)getScratchAddr(6);
+    SVECTOR *pt = (SVECTOR *)getScratchAddr(10);
+    s32 sxy[2];
+    s32 p;
+    s32 flag;
+    s32 otz;
+    s32 i;
+    s32 k;
+    u8 *rad;
+    u8 c;
+
+    for (i = 0; i < 8; i++) {
+        cosTbl[i] = func_8009D234(i * 32);
+        sinTbl[i] = func_8009D254(i * 32);
+    }
+
+    func_8003FEE4();
+    SetRotMatrix(m);
+    SetTransMatrix(m);
+
+    for (i = 0; i < D_80085388; ents++, i++) {
+        if (ents->flags & 8) {
+            continue;
+        }
+        if (ents->unk218 == -1) {
+            continue;
+        }
+        if (ents->unk258 != 1) {
+            continue;
+        }
+
+        pt[0].vx = ents->posX / 4096;
+        pt[0].vy = ents->posY / 4096;
+        pt[0].vz = ents->posZ / 4096;
+
+        rad = &ents->shadowRadius[0];
+        for (k = 0; k < 8; k++) {
+            pt[k + 1].vx = pt[0].vx + cosTbl[k] * rad[0] / 512;
+            pt[k + 1].vy = pt[0].vy + sinTbl[k] * rad[0] / 512;
+            pt[k + 1].vz = pt[0].vz;
+            rad++;
+        }
+
+        otz = func_80040DE4(&pt[0], sxy, &p, &flag);
+        gte_ldv3(&pt[0], &pt[1], &pt[2]);
+        gte_RTPT();
+        gte_stsxy3(&pt[0], &pt[1], &pt[2]);
+        gte_ldv3(&pt[3], &pt[4], &pt[5]);
+        gte_RTPT();
+        gte_stsxy3(&pt[3], &pt[4], &pt[5]);
+        gte_ldv3(&pt[6], &pt[7], &pt[8]);
+        gte_RTPT();
+        gte_stsxy3(&pt[6], &pt[7], &pt[8]);
+
+        if (otz < 0xFFF) {
+            c = ents->shadowLevel;
+
+            setRGB0(prim, c, c, c);
+            setXY3(prim, pt[0].vx, pt[0].vy, pt[1].vx, pt[1].vy, pt[2].vx, pt[2].vy);
+            addPrim(&ot[otz], prim);
+            prim++;
+            setRGB0(prim, c, c, c);
+            setXY3(prim, pt[0].vx, pt[0].vy, pt[2].vx, pt[2].vy, pt[3].vx, pt[3].vy);
+            addPrim(&ot[otz], prim);
+            prim++;
+            setRGB0(prim, c, c, c);
+            setXY3(prim, pt[0].vx, pt[0].vy, pt[3].vx, pt[3].vy, pt[4].vx, pt[4].vy);
+            addPrim(&ot[otz], prim);
+            prim++;
+            setRGB0(prim, c, c, c);
+            setXY3(prim, pt[0].vx, pt[0].vy, pt[4].vx, pt[4].vy, pt[5].vx, pt[5].vy);
+            addPrim(&ot[otz], prim);
+            prim++;
+            setRGB0(prim, c, c, c);
+            setXY3(prim, pt[0].vx, pt[0].vy, pt[5].vx, pt[5].vy, pt[6].vx, pt[6].vy);
+            addPrim(&ot[otz], prim);
+            prim++;
+            setRGB0(prim, c, c, c);
+            setXY3(prim, pt[0].vx, pt[0].vy, pt[6].vx, pt[6].vy, pt[7].vx, pt[7].vy);
+            addPrim(&ot[otz], prim);
+            prim++;
+            setRGB0(prim, c, c, c);
+            setXY3(prim, pt[0].vx, pt[0].vy, pt[7].vx, pt[7].vy, pt[8].vx, pt[8].vy);
+            addPrim(&ot[otz], prim);
+            prim++;
+            setRGB0(prim, c, c, c);
+            setXY3(prim, pt[0].vx, pt[0].vy, pt[8].vx, pt[8].vy, pt[1].vx, pt[1].vy);
+            addPrim(&ot[otz], prim);
+            prim++;
+
+            addPrim(&ot[otz], tp);
+            tp++;
+        }
+    }
+
+    func_8003FF88();
+}
 
 /**
  * @brief Initialize a run of items at @p p; return the pointer past the

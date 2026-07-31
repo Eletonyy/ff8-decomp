@@ -483,21 +483,21 @@ s32 opHandler_SETROOTTRANS(Eline *eline) {
  */
 s32 opHandler_SHADESET(Eline *eline) {
     s32 val = POP(eline) / 4;
-    eline->field_0x25C = val;
-    eline->field_0x25B = val;
-    eline->field_0x25A = val;
-    eline->field_0x259 = val;
-    eline->field_0x260 = val;
-    eline->field_0x25F = val;
-    eline->field_0x25E = val;
-    eline->field_0x25D = val;
+    eline->shadowRadius[3] = val;
+    eline->shadowRadius[2] = val;
+    eline->shadowRadius[1] = val;
+    eline->shadowRadius[0] = val;
+    eline->shadowRadius[7] = val;
+    eline->shadowRadius[6] = val;
+    eline->shadowRadius[5] = val;
+    eline->shadowRadius[4] = val;
     return 2;
 }
 
 /**
  * Pop 8 values from the script stack, divide each by 4 (signed,
  * round-toward-zero), and store them as bytes into the entity's
- * direction-table fields @c field_0x259..field_0x260.
+ * direction-table fields @c shadowRadius[0]..shadowRadius[7].
  *
  * Store order: @c 0x25C, @c 0x25B, @c 0x25A, @c 0x259, @c 0x260,
  * @c 0x25F, @c 0x25E, @c 0x25D — the 8-entry vertical strip is
@@ -507,22 +507,22 @@ s32 opHandler_SHADESET(Eline *eline) {
  * @return 2 (advance PC).
  */
 s32 opHandler_SHADEFORM(Eline *eline) {
-    eline->field_0x25C = POP(eline) / 4;
-    eline->field_0x25B = POP(eline) / 4;
-    eline->field_0x25A = POP(eline) / 4;
-    eline->field_0x259 = POP(eline) / 4;
-    eline->field_0x260 = POP(eline) / 4;
-    eline->field_0x25F = POP(eline) / 4;
-    eline->field_0x25E = POP(eline) / 4;
-    eline->field_0x25D = POP(eline) / 4;
+    eline->shadowRadius[3] = POP(eline) / 4;
+    eline->shadowRadius[2] = POP(eline) / 4;
+    eline->shadowRadius[1] = POP(eline) / 4;
+    eline->shadowRadius[0] = POP(eline) / 4;
+    eline->shadowRadius[7] = POP(eline) / 4;
+    eline->shadowRadius[6] = POP(eline) / 4;
+    eline->shadowRadius[5] = POP(eline) / 4;
+    eline->shadowRadius[4] = POP(eline) / 4;
     return 2;
 }
 
 /**
- * @brief Pop a byte from the script stack into @c field_0x261.
+ * @brief Pop a byte from the script stack into @c shadowLevel.
  */
 s32 opHandler_SHADELEVEL(Eline *eline) {
-    eline->field_0x261 = POP_BYTE(eline);
+    eline->shadowLevel = POP_BYTE(eline);
     return 2;
 }
 

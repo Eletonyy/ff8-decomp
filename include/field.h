@@ -551,15 +551,11 @@ typedef struct {
     /* 0x256 */ u8 field_0x256;
     /* 0x257 */ u8 field_0x257;
     /* 0x258 */ u8 unk258;          /**< Set from path-table entry's @c unk8 by @c func_8009BB18. */
-    /* 0x259 */ u8 field_0x259;
-    /* 0x25A */ u8 field_0x25A;
-    /* 0x25B */ u8 field_0x25B;
-    /* 0x25C */ u8 field_0x25C;
-    /* 0x25D */ u8 field_0x25D;
-    /* 0x25E */ u8 field_0x25E;
-    /* 0x25F */ u8 field_0x25F;
-    /* 0x260 */ u8 field_0x260;
-    /* 0x261 */ u8 field_0x261;
+    /** 0x259: Blob-shadow radius per octagon direction — entry @c k is the heading
+     *  @c k*32 sampled by @c func_800A222C. Set by @c SHADESET (all eight alike) or
+     *  @c SHADEFORM (one per direction); both scale the script value by @c 1/4. */
+    /* 0x259 */ u8 shadowRadius[8];
+    /* 0x261 */ u8 shadowLevel;     /**< Blob-shadow grey level, set by @c SHADELEVEL. */
     /* 0x262 */ u8 field_0x262;
     /* 0x263 */ u8 field_0x263;
 } Eline;

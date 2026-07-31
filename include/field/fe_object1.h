@@ -340,7 +340,8 @@ extern int  func_800A19B8();
 extern void func_800A1BB8(void);
 extern void func_800A1CFC(Eline *ents, u8 *arg1);
 extern void func_800A2128();  /* arg is a file-private buffer view in fe_object1.c */
-extern int  func_800A222C();
+/** @brief Draws each active entity's blob shadow as a flat-shaded 8-triangle fan. */
+extern void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Eline *ents);
 /**
  * @brief Shape @c func_800A29C0 sees: array of 20-byte items with five
  *        leading bytes that get initialized per item.
