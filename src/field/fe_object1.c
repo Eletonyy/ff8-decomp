@@ -1025,13 +1025,13 @@ void func_8009AEC0(void) {
             if (D_800704A8.rotation != FIELD_POS_UNSET) {
                 D_80085224[i].triIdx = D_800704A8.rotation;
                 if (D_800704A8.position_x == FIELD_POS_UNSET) {
-                    D_80085224[i].posX = ((D_800C71F0[D_80085224[i].triIdx * 3 + 0].sx +
+                    D_80085224[i].posX = ((D_800C71F0[D_80085224[i].triIdx * 3].sx +
                                            D_800C71F0[D_80085224[i].triIdx * 3 + 1].sx +
                                            D_800C71F0[D_80085224[i].triIdx * 3 + 2].sx) / 3) << 12;
-                    D_80085224[i].posY = ((D_800C71F0[D_80085224[i].triIdx * 3 + 0].sy +
+                    D_80085224[i].posY = ((D_800C71F0[D_80085224[i].triIdx * 3].sy +
                                            D_800C71F0[D_80085224[i].triIdx * 3 + 1].sy +
                                            D_800C71F0[D_80085224[i].triIdx * 3 + 2].sy) / 3) << 12;
-                    D_80085224[i].posZ = ((D_800C71F0[D_80085224[i].triIdx * 3 + 0].sz +
+                    D_80085224[i].posZ = ((D_800C71F0[D_80085224[i].triIdx * 3].sz +
                                            D_800C71F0[D_80085224[i].triIdx * 3 + 1].sz +
                                            D_800C71F0[D_80085224[i].triIdx * 3 + 2].sz) / 3) << 12;
                 } else {
@@ -1055,15 +1055,15 @@ void func_8009AEC0(void) {
                 D_80085224[D_8005F148].radius = 0x30;
                 D_80085224[D_8005F148].triIdx = 0;
                 D_80085224[D_8005F148].posX =
-                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 0].sx +
+                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3].sx +
                       D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 1].sx +
                       D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 2].sx) / 3) << 12;
                 D_80085224[D_8005F148].posY =
-                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 0].sy +
+                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3].sy +
                       D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 1].sy +
                       D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 2].sy) / 3) << 12;
                 D_80085224[D_8005F148].posZ =
-                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 0].sz +
+                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3].sz +
                       D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 1].sz +
                       D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 2].sz) / 3) << 12;
             }
