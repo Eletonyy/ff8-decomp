@@ -227,7 +227,10 @@ typedef struct {
  *        entry ring and the field line-trigger table.
  */
 typedef struct {
-    /* 0x000 */ u8 pad00[0x0E];
+    /* 0x000 */ u8 pad00[0x0D];
+    /* 0x00D */ u8 unk0D;            /**< Field-bundle variant flag: selects the @c D_800C315C command table over
+                                          @c D_800C311C in @c func_800983F0, and forces the eline-pool install
+                                          (@c func_800A1CC0) even for load modes 1 and 6. */
     /* 0x00E */ u8 unk0E;            /**< When @c == 1, @c func_800A1BB8 issues a StoreImage to VRAM. */
     /* 0x00F */ u8 pad0F[0x03];
     /* 0x012 */ u16 baseZ;           /**< Base Z offset added to the per-entity Z when building SVECTOR (func_800A11E0). */
@@ -255,7 +258,8 @@ typedef struct {
     /* 0x010 */ u8 pad010[0x02];
     /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_fieldVars->memberSlot[]). */
     /* 0x015 */ u8 unk015;          /**< Cleared by @c opHandler_UCON along with the trigger flag. */
-    /* 0x016 */ u8 pad016[0x06];
+    /* 0x016 */ u8 pad016[0x02];
+    /* 0x018 */ s32 unk018;         /**< Word snapshotted from the field bundle's @c D_800D5EAC section pointer on load. */
     /* 0x01C */ s32 fieldStepDelta; /**< Step delta passed to @c func_800BD804 each field tick. */
     /* 0x020 */ SystemSubMode slots[8]; /**< 8 mode/param slots, stride 28; slot 0 corresponds to the legacy @c unk020..unk032 fields. */
     /* 0x100 */ u8 pad100[0x02];

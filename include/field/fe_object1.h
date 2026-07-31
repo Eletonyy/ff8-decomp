@@ -2,9 +2,50 @@
 #define FE_OBJECT1_H
 
 #include "common.h"
+#include "cd.h"
 #include "field.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
+
+/*
+ * Field asset-bundle streaming table and section pointers, all consumed by
+ * func_800983F0 when a map is (re)loaded.
+ *
+ * The streaming table is one 24-byte (six word) entry per map, indexed through
+ * D_800C2568. The three symbols below are three views into that same table:
+ * D_800C0900 is the primary {sector,size} pair, D_800C0908 the secondary pair,
+ * and D_800C0910 the third pair, which is handed to func_800AA8A0 by address.
+ */
+extern u32 D_800C0900[];         /**< Streaming table, primary {sector,size} pair. */
+extern u32 D_800C0908[];         /**< Streaming table, secondary {sector,size} pair. */
+extern CdFileDesc D_800C0910[];  /**< Streaming table, third descriptor (passed by address). */
+
+/** @brief Field id currently being streamed in (compared against @c D_8005F100). */
+extern s16 D_8005F14E;
+/** @brief Field render/present state halfword; the loader spins while it reads 4. */
+extern volatile s16 D_8005F146;
+
+/** @brief Section-pointer table bases published by the loaded field bundle. */
+extern u8 **D_800C7208;          /**< Event-queue block; assigned to @c D_8005F0F8. */
+extern u8 **D_800C71EC;          /**< Walkmesh/section block; assigned to @c D_800D5EA4. */
+extern s32 *D_800D5EAC;          /**< Word copied into @c D_800704A8.unk018. */
+extern u8 **D_800D5E8C;          /**< End of the script region (used to size the copy). */
+extern u8 **D_800D5ED4;          /**< Start of the script region; advanced past the header. */
+extern u8 **D_800D5E94;          /**< Field-file header pointer. */
+/** @brief Field-file header; @c NULL when the header carries the empty @c 0x2020 tag. */
+extern u8 *D_800C7200;
+
+/** @brief Double-buffered prim-chain heads laid out after the field bundle. */
+extern u8 *D_800C6D98[2];
+extern u8 *D_800D5EC8[2];
+extern u8 *D_800D5EB8[2];
+
+/** @brief Field-VM command tables selected by @c EventQueue::unk0D. */
+extern u8 D_800C30DC[];
+extern u8 D_800C311C[];
+extern u8 D_800C315C[];
+/** @brief Shared scratch block handed to @c func_800AA8A0. */
+extern u8 D_800C06A0[];
 
 /** @brief 12-byte signed integer 3D position (x, y, z). */
 typedef struct {
@@ -222,7 +263,8 @@ extern s32  func_800A5CF8(void);
 /* INCLUDE_ASM stubs — bodies still in assembly, signatures unknown.
  * Declared K&R-style; refine when these get decomped to C. */
 extern void func_80098314(void);
-extern int  func_800983F0();
+/** @brief Load/refresh the active field map's asset bundle from CD. */
+extern s32 *func_800983F0(void);
 extern int  func_8009895C();
 extern void func_80099180(void);
 extern int  func_80099348();

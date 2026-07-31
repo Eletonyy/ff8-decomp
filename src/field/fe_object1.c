@@ -13,7 +13,7 @@ extern u16 D_8005F118;
 extern u16 D_8005F11A;
 extern u16 D_8005F144;
 extern s16 D_8005F148;
-extern u8 D_8005F116;            /**< Encounter-disable flag (1 = no random battles). */
+extern volatile u8 D_8005F116;   /**< Encounter-disable flag (1 = no random battles); also spun on by the field loader. */
 extern u16 D_8005F0FE;           /**< Accumulated battle chance; compared against the encounter RNG roll. */
 extern s16 D_8005F120;           /**< Previous battle formation id (avoid immediate repeats). */
 extern u8 D_8005F130;            /**< Encounter-pending marker set when a battle triggers. */
@@ -146,6 +146,11 @@ void func_80098314(void) {
     PutDrawEnv(&D_80067388[0]);
 }
 
+/** @brief Tag written into a field-file header that carries no script section. */
+#define FIELD_HEADER_EMPTY 0x2020
+/** @brief Size of the fixed field-file header the script region starts after. */
+#define FIELD_HEADER_SIZE 0x5F24
+
 /**
  * @brief Load/refresh the active field map's asset bundle from CD.
  *
@@ -156,24 +161,134 @@ void func_80098314(void) {
  * etc.), copies script data to the @c 0x801B0000 staging region, and
  * dispatches the field-VM pool setup via @c func_800BFBBC and friends.
  *
- * @return Pointer past the last initialized eline pool entry.
+ * @return Pointer past the last block laid out after the bundle.
  *
- * @note Decomp at 98.93% (337/337 instructions; see
- *       @c permuter/func_800983F0/base.c). The file table at @c D_800C0900 is
- *       three @c {sector,size} pairs per 24-byte entry, and the two words of a
- *       pair must be read as separate flat-array elements
- *       (@c D_800C0900[i*6] / @c [i*6+1]) — a struct field pair makes gcc share
- *       one address register where the original computes it twice, which was
- *       most of the old 51-instruction gap. The @c func_800A1CC0 guard is
- *       @c ((state != 1 && state != 6) || fieldD == 1) — the call fires for
- *       every state outside {1,6}, not only inside them (the earlier decomp
- *       had it inverted). Remaining 12 slots are two gcc register choices:
- *       the @c %hi temporaries for @c D_800E1004 / @c D_800E1008 (target ties
- *       them to the destination @c a0 / @c a1, ours uses @c v0), and whether
- *       the @c D_800D5E94 header pointer is loaded into @c a0 and copied to
- *       @c s1 or the reverse.
+ * @note The streaming table at @c D_800C0900 is three @c {sector,size} pairs
+ *       per 24-byte entry, and the two words of a pair must be read as separate
+ *       flat-array elements (@c D_800C0900[i*6] / @c [i*6+1]) — a struct field
+ *       pair makes gcc share one address register where the original computes
+ *       it twice. The @c func_800A1CC0 guard is
+ *       @c ((state != 1 && state != 6) || unk0D == 1) — the call fires for
+ *       every state outside {1,6}, not only inside them.
+ * @note @c ptr is deliberately re-read into itself (@c ptr++/@c ptr--) after
+ *       @c buf is copied from it, and is reused for the return value at the
+ *       end. Both are load-bearing for the register allocation gcc 2.7.2
+ *       produces here: the bump splits the two pointers into separate registers
+ *       (without it they share one, and the header pointer is loaded straight
+ *       into the callee-saved register instead of @c a0), and the trailing
+ *       reuse of @c ptr keeps @c buf from being picked as the shared name for
+ *       the pair, which is what puts the @c D_800C7200 address in @c s0.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800983F0);
+s32 *func_800983F0(void) {
+    s32 stageBase;
+    u8 *ptr;
+    u8 *buf;
+    u32 tag;
+    s32 size;
+    u8 *heapEnd;
+
+    if (D_8005F14A == 0 || D_8005F14E != D_8005F100) {
+        func_80038868(D_800C0900[D_800C2568[D_8005F14E] * 6],
+                      D_800C0900[D_800C2568[D_8005F14E] * 6 + 1], (u8 *)0x800E1000, NULL);
+        while (func_800393C8() != 0) {}
+    } else {
+        while (func_800393C8() != 0) {}
+        func_80038490(D_8005F104, 0x800E1000);
+    }
+
+    func_800A0D6C((u8 *)0x800E100C);
+    while (func_80048C50(1) != 0) {}
+
+    func_800A2D2C(*(s16 **)0x800E1004, *(s32 *)0x800E1008);
+
+    D_8005F100 = 0;
+    D_8005F142 = 0;
+    func_80038868(D_800C0908[D_800C2568[D_8005F14E] * 6],
+                  D_800C0908[D_800C2568[D_8005F14E] * 6 + 1], (u8 *)0x800E1000, NULL);
+    while (func_800393C8() != 0) {}
+
+    D_8005F0F8 = (EventQueue *)*D_800C7208;
+    D_800D5EA4 = *D_800C71EC;
+    stageBase = 0x801B0000;
+    D_800704A8.unk018 = *D_800D5EAC;
+    size = *D_800D5E8C - *D_800D5ED4;
+    func_80039678(0x801B0000, (s32)*D_800D5ED4, size);
+    D_8005F13C = stageBase + size;
+
+    ptr = *D_800D5E94;
+    buf = ptr;
+    ptr++;
+    ptr--;
+    tag = *(s16 *)buf;
+    D_800C7200 = ptr;
+    if (tag != FIELD_HEADER_EMPTY) {
+        func_800A2EE0(ptr);
+        buf += FIELD_HEADER_SIZE;
+        *D_800D5ED4 = buf;
+        if (D_8005F14C != 3 && D_8005F14C != 6 && D_8005F14C != 0xA) {
+            func_800A2F28((s32)D_800C7200, (u8 *)&D_800704A8);
+        }
+    } else {
+        D_800C7200 = NULL;
+    }
+
+    D_800704B2 = 0x14;
+
+    if (D_8005F14C == 3) {
+        buf = (u8 *)func_800BFBBC((u8 *)0x801B0000, (FieldEntityB *)0x80090800, (u16 *)*D_800D5ED4, 0);
+    } else {
+        buf = (u8 *)func_800BFBBC((u8 *)0x801B0000, (FieldEntityB *)0x80090800, (u16 *)*D_800D5ED4, 1);
+    }
+
+    D_800C6D98[0] = buf;
+    buf = (u8 *)func_800A0640((TILE *)buf);
+    D_800C6D98[1] = buf;
+    buf = (u8 *)func_800A0640((TILE *)buf);
+
+    if (D_8005F0F8->unk0E == 1) {
+        D_800D5EC8[0] = buf;
+        buf = (u8 *)func_800A29C0((func_800A29C0_arg0 *)buf);
+        D_800D5EC8[1] = buf;
+        buf = (u8 *)func_800A29C0((func_800A29C0_arg0 *)buf);
+        D_800D5EB8[0] = buf;
+        buf = (u8 *)func_800A2A30((func_800A2A30_item *)buf);
+        D_800D5EB8[1] = buf;
+        buf = (u8 *)func_800A2A30((func_800A2A30_item *)buf);
+    }
+
+    if ((D_8005F14C != 1 && D_8005F14C != 6) || D_8005F0F8->unk0D == 1) {
+        func_800A1CC0();
+    }
+
+    if (D_8005F14C == 3) {
+        heapEnd = (u8 *)0x801F4000;
+    } else {
+        heapEnd = (u8 *)0x801FE800;
+    }
+
+    if (D_8005F0F8->unk0D == 0) {
+        buf = (u8 *)func_800AA8A0(buf, buf + 0x20000, D_800C30DC, D_800C311C,
+                                  (u8 *)&D_800C0910[D_800C2568[D_8005F14E] * 3], 0, D_800C06A0,
+                                  heapEnd);
+    } else {
+        buf = (u8 *)func_800AA8A0(buf, buf + 0x20000, D_800C30DC, D_800C315C,
+                                  (u8 *)&D_800C0910[D_800C2568[D_8005F14E] * 3], 0, D_800C06A0,
+                                  heapEnd);
+    }
+
+    if (D_8007064D == 0) {
+        while (D_8005F116 != 0) {}
+    }
+    while (D_8005F146 == 4) {}
+    while (func_80048C50(1) != 0) {}
+
+    if (D_8005F14C == 3 || D_8005F14C == 0) {
+        func_80048BB8(0);
+    }
+
+    ptr = buf;
+    return (s32 *)ptr;
+}
 
 /**
  * Zero 0x40 bytes at D_800704A8+0x1B8 (backwards loop).
