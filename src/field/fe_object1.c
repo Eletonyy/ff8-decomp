@@ -158,12 +158,20 @@ void func_80098314(void) {
  *
  * @return Pointer past the last initialized eline pool entry.
  *
- * @note Decomp at 97.03% match — last 51 instructions of diff are gcc 2.7.2
- *       reg-alloc and instruction-scheduling choices that natural C cannot
- *       force (e.g. target emits a redundant @c addu to recompute the asset
- *       base address into @c a1, while our compile keeps a single base in
- *       @c v0). See @c permuter/func_800983F0/base.c for the source and
- *       https://decomp.me/scratch/SXH2a for the in-browser scratch.
+ * @note Decomp at 98.93% (337/337 instructions; see
+ *       @c permuter/func_800983F0/base.c). The file table at @c D_800C0900 is
+ *       three @c {sector,size} pairs per 24-byte entry, and the two words of a
+ *       pair must be read as separate flat-array elements
+ *       (@c D_800C0900[i*6] / @c [i*6+1]) — a struct field pair makes gcc share
+ *       one address register where the original computes it twice, which was
+ *       most of the old 51-instruction gap. The @c func_800A1CC0 guard is
+ *       @c ((state != 1 && state != 6) || fieldD == 1) — the call fires for
+ *       every state outside {1,6}, not only inside them (the earlier decomp
+ *       had it inverted). Remaining 12 slots are two gcc register choices:
+ *       the @c %hi temporaries for @c D_800E1004 / @c D_800E1008 (target ties
+ *       them to the destination @c a0 / @c a1, ours uses @c v0), and whether
+ *       the @c D_800D5E94 header pointer is loaded into @c a0 and copied to
+ *       @c s1 or the reverse.
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800983F0);
 
