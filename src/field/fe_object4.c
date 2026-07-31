@@ -816,7 +816,7 @@ s32 opHandler_HALT(Eline *e) {
 }
 
 /**
- * @brief Pop posY, posX (both << 12 fixed-point), set field_0x1FA = arg,
+ * @brief Pop posY, posX (both << 12 fixed-point), set triIdx = arg,
  *        then call func_8009A8E0 with the dereferenced @c D_8008538C.
  *
  * @return 2 (VM continue).
@@ -824,13 +824,13 @@ s32 opHandler_HALT(Eline *e) {
 s32 opHandler_SET(Eline *e, s32 a1) {
     e->posY = POP(e) << 12;
     e->posX = POP(e) << 12;
-    e->field_0x1FA = a1;
+    e->triIdx = a1;
     func_8009A8E0(D_8008538C);
     return 2;
 }
 
 /**
- * @brief Pop posZ, posY, posX (all << 12), set field_0x1FA, and call
+ * @brief Pop posZ, posY, posX (all << 12), set triIdx, and call
  *        func_8009A8E0. 3-axis variant of @c opHandler_SET.
  *
  * @return 2 (VM continue).
@@ -839,7 +839,7 @@ s32 opHandler_SET3(Eline *e, s32 a1) {
     e->posZ = POP(e) << 12;
     e->posY = POP(e) << 12;
     e->posX = POP(e) << 12;
-    e->field_0x1FA = a1;
+    e->triIdx = a1;
     func_8009A8E0(D_8008538C);
     return 2;
 }

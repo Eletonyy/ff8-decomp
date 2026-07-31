@@ -287,9 +287,9 @@ s32 *func_800BFBBC(u8 *entity, FieldEntityB *a1, u16 *a2, s32 mode) {
                     e->posX = (s32)((s16)D_800704A8.position_x) << 12;
                     e->posY = (s32)((s16)D_800704A8.position_y) << 12;
                     e->field_0x241 = (u8)D_800704A8.anim_state;
-                    rot = D_800704A8.rotation;
+                    rot = D_800704A8.spawnTriIdx;
                     e->flags |= 4;
-                    e->field_0x1FA = rot;
+                    e->triIdx = rot;
                     g_fieldVars->memberSlot[i] = e->field_0x256;
                     D_800704A8.entityIndex[i] = e->field_0x256;
                     break;

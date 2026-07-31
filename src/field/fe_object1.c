@@ -825,7 +825,7 @@ void func_8009AA64(EventEntry *e) {
     D_800704A8.counter = e->counter;
     D_800704A8.position_x = e->position_x;
     D_800704A8.position_y = e->position_y;
-    D_800704A8.rotation = e->rotation;
+    D_800704A8.spawnTriIdx = e->spawnTriIdx;
     D_800704A8.anim_state = e->anim_state;
 }
 
@@ -871,7 +871,7 @@ void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt) {
         if (segs->counter == 0x7FFF) {
             continue;
         }
-        if (segs->rotation == 0xFFFF) {
+        if (segs->spawnTriIdx == 0xFFFF) {
             continue;
         }
         dist = func_8009A2BC((LineSeg *)&segs->x0, B, C);
@@ -976,16 +976,16 @@ s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
 /** @brief Scale applied to @c D_800704A8.unk00A when seeding @c Eline::savedChannel. */
 #define FIELD_CHANNEL_SCALE 0x4367
 
-/** @brief Sentinel in @c D_800704A8.rotation / @c position_x meaning "no override". */
-#define FIELD_POS_UNSET 0x7FFF
+/** @brief Sentinel in @c D_800704A8.spawnTriIdx / @c position_x meaning "no override". */
+#define SPAWN_UNSET 0x7FFF
 
 /**
  * @brief Place every field entity on the navmesh when a field is entered.
  *
  * For each of the @c D_80085388 entities:
  *  - The player entity (@c D_8005F148, taken from @c D_800704A8.entityIndex[0])
- *    is handled specially. When @c D_800704A8.rotation carries a triangle index
- *    (i.e. is not @c FIELD_POS_UNSET) the entity is moved onto that triangle:
+ *    is handled specially. When @c D_800704A8.spawnTriIdx carries a triangle index
+ *    (i.e. is not @c SPAWN_UNSET) the entity is moved onto that triangle:
  *    with no X override it is dropped at the triangle centroid, otherwise its
  *    existing X/Y are kept and only Z is re-derived from the triangle plane.
  *    When no triangle is supplied the entity is reset onto triangle 0 with a
@@ -1022,9 +1022,9 @@ void func_8009AEC0(void) {
 
     for (i = 0; i < D_80085388; i++) {
         if (i == D_8005F148) {
-            if (D_800704A8.rotation != FIELD_POS_UNSET) {
-                D_80085224[i].triIdx = D_800704A8.rotation;
-                if (D_800704A8.position_x == FIELD_POS_UNSET) {
+            if (D_800704A8.spawnTriIdx != SPAWN_UNSET) {
+                D_80085224[i].triIdx = D_800704A8.spawnTriIdx;
+                if (D_800704A8.position_x == SPAWN_UNSET) {
                     D_80085224[i].posX = ((D_800C71F0[D_80085224[i].triIdx * 3].sx +
                                            D_800C71F0[D_80085224[i].triIdx * 3 + 1].sx +
                                            D_800C71F0[D_80085224[i].triIdx * 3 + 2].sx) / 3) << 12;
@@ -1051,7 +1051,9 @@ void func_8009AEC0(void) {
                 D_80085224[i].field_0x24F = 0;
                 D_80085224[D_8005F148].field_0x250 = 1;
                 D_80085224[D_8005F148].field_0x251 = 2;
-                D_80085224[D_8005F148].savedChannel = ((u32)(D_800704A8.unk00A * FIELD_CHANNEL_SCALE)) >> 7;
+                /* Same scale func_800B6738 applies to D_800704B2 (there as *69020>>9), so
+                   the entity starts exactly at the threshold that picks field_0x251. */
+                D_80085224[D_8005F148].savedChannel = ((u32)(D_800704A8.unk00A * 17255)) >> 7;
                 D_80085224[D_8005F148].radius = 0x30;
                 D_80085224[D_8005F148].triIdx = 0;
                 D_80085224[D_8005F148].posX =

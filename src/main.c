@@ -128,7 +128,7 @@ void func_80011870(void) {
     for (i = 0; i < 3; i++) {
         g_gameState.cameraSnapshot.positionsX[i] = D_80085224[g_fieldEntity.entityIndex[i]].posX >> 12;
         g_gameState.cameraSnapshot.positionsY[i] = D_80085224[g_fieldEntity.entityIndex[i]].posY >> 12;
-        g_gameState.cameraSnapshot.rotations[i]   = D_80085224[g_fieldEntity.entityIndex[i]].field_0x1FA;
+        g_gameState.cameraSnapshot.triIdxs[i]   = D_80085224[g_fieldEntity.entityIndex[i]].triIdx;
         g_gameState.cameraSnapshot.animStates[i] = D_80085224[g_fieldEntity.entityIndex[i]].field_0x241;
     }
 
@@ -156,7 +156,7 @@ void RestoreSnapshot(void) {
     entity->field_0x120 = g_gameState.cameraSnapshot.field120;
     entity->position_x = g_gameState.cameraSnapshot.positionsX[0];
     entity->position_y = g_gameState.cameraSnapshot.positionsY[0];
-    entity->rotation = g_gameState.cameraSnapshot.rotations[0];
+    entity->spawnTriIdx = g_gameState.cameraSnapshot.triIdxs[0];
     entity->anim_state = g_gameState.cameraSnapshot.animStates[0];
 
     D_8005F151 = g_gameState.cameraSnapshot.fade1;
@@ -293,13 +293,13 @@ void loadFileTable(void) {
 }
 
 /**
- * @brief Battle-map transition entry: destination position, rotation, music,
- *        and animation for a scripted map jump.
+ * @brief Battle-map transition entry: where the party lands coming out of a
+ *        battle — spawn position, navmesh triangle, music and animation.
  */
 typedef struct {
     /* 0x00 */ u16 position_x;
     /* 0x02 */ u16 position_y;
-    /* 0x04 */ u16 rotation;
+    /* 0x04 */ u16 spawnTriIdx;  /**< Navmesh triangle, copied to @c SystemState::spawnTriIdx. */
     /* 0x06 */ s16 musicTrack;
     /* 0x08 */ u8  anim_state;
     /* 0x09 */ u8  pad09[0xF];
@@ -404,7 +404,7 @@ void ff8main(void) {
                 if (func_800987D8() == 1) {
                     g_fieldEntity.counter = 0;
                     g_fieldEntity.mode = 4;
-                    g_fieldEntity.rotation = 0x7FFF;
+                    g_fieldEntity.spawnTriIdx = 0x7FFF;
                     sndStopAll();
                     break;
                 }
@@ -415,7 +415,7 @@ void ff8main(void) {
                     musicTrack = entry->musicTrack;
                     g_fieldEntity.position_x = entry->position_x;
                     g_fieldEntity.position_y = entry->position_y;
-                    g_fieldEntity.rotation = entry->rotation;
+                    g_fieldEntity.spawnTriIdx = entry->spawnTriIdx;
                     g_currentMusicTrack = musicTrack;
                     g_fieldEntity.anim_state = entry->anim_state;
                     g_vsyncRate = 1;
@@ -451,7 +451,7 @@ void ff8main(void) {
                 if (g_battleConfig.result == 5) {
                     g_fieldEntity.counter = 0;
                     g_fieldEntity.mode = 4;
-                    g_fieldEntity.rotation = 0x7FFF;
+                    g_fieldEntity.spawnTriIdx = 0x7FFF;
                     break;
                 }
                 if ((g_battleConfig.result == 1) && (!(g_fieldVars->fieldB6 & 0x200))) {
@@ -529,7 +529,7 @@ void ff8main(void) {
                     do { } while (0);
                     g_fieldEntity.counter = 0;
                     g_fieldEntity.mode = 4;
-                    g_fieldEntity.rotation = 0x7FFF;
+                    g_fieldEntity.spawnTriIdx = 0x7FFF;
                     break;
                 }
                 if ((g_battleConfig.result == 1) && (!(g_fieldVars->fieldB6 & 0x200))) {

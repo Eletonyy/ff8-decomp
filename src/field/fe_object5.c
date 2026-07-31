@@ -254,7 +254,7 @@ s32 opHandler_GETINFO(Eline *e) {
     e->resultSlots[1] = e->posY / 4096;
     e->resultSlots[2] = e->posZ / 4096;
     e->resultSlots[4] = e->field_0x241;
-    e->resultSlots[5] = e->field_0x1FA;
+    e->resultSlots[5] = e->triIdx;
     e->resultSlots[6] = e->savedChannel;
     return 2;
 }
@@ -285,7 +285,7 @@ s32 opHandler_PGETINFO(Eline *e) {
     e->resultSlots[1] = D_80085224[entIdx].posY / 4096;
     e->resultSlots[2] = D_80085224[entIdx].posZ / 4096;
     e->resultSlots[4] = D_80085224[entIdx].field_0x241;
-    e->resultSlots[5] = D_80085224[entIdx].field_0x1FA;
+    e->resultSlots[5] = D_80085224[entIdx].triIdx;
     e->resultSlots[6] = D_80085224[entIdx].savedChannel;
     return 2;
 }
@@ -364,7 +364,7 @@ s32 opHandler_JUNCTION(Eline *e) {
 /**
  * @brief Pop an entity id, look up the corresponding @c Eline in the
  *        @c D_80085230 table, and copy six locator fields (pos x/y/z,
- *        @c field_0x241, @c field_0x1FA, @c savedChannel) from that
+ *        @c field_0x241, @c triIdx, @c savedChannel) from that
  *        entity into the current one. Finally call @c func_8009A8E0
  *        on the global @c D_8008538C anchor to recompute derived
  *        coordinates.
@@ -382,7 +382,7 @@ s32 opHandler_COPYINFO(Eline *e) {
     e->posY = D_80085230[entityId]->posY;
     e->posZ = D_80085230[entityId]->posZ;
     e->field_0x241 = D_80085230[entityId]->field_0x241;
-    e->field_0x1FA = D_80085230[entityId]->field_0x1FA;
+    e->triIdx = D_80085230[entityId]->triIdx;
     e->savedChannel = D_80085230[entityId]->savedChannel;
     func_8009A8E0(D_8008538C);
     return 2;
@@ -393,7 +393,7 @@ s32 opHandler_COPYINFO(Eline *e) {
  *        through the active-party @c memberSlot[] table — pop a
  *        party-slot id, look up @c g_fieldVars->memberSlot[party] for
  *        the field-entity index, and copy six locator fields
- *        (pos x/y/z, @c field_0x241, @c field_0x1FA, @c savedChannel)
+ *        (pos x/y/z, @c field_0x241, @c triIdx, @c savedChannel)
  *        into the current entity. Calls @c func_8009A8E0(D_8008538C)
  *        afterwards to recompute derived state.
  *
@@ -413,7 +413,7 @@ s32 opHandler_PCOPYINFO(Eline *e) {
     e->posY = D_80085224[entIdx].posY;
     e->posZ = D_80085224[entIdx].posZ;
     e->field_0x241 = D_80085224[entIdx].field_0x241;
-    e->field_0x1FA = D_80085224[entIdx].field_0x1FA;
+    e->triIdx = D_80085224[entIdx].triIdx;
     e->savedChannel = D_80085224[entIdx].savedChannel;
     func_8009A8E0(D_8008538C);
     return 2;

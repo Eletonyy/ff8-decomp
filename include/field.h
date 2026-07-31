@@ -171,9 +171,9 @@ typedef struct {
     /* 0x06 */ s16 x1;          /**< Trigger segment end X. */
     /* 0x08 */ s16 y1;          /**< Trigger segment end Y. */
     /* 0x0A */ s16 z1;          /**< Trigger segment end Z. */
-    /* 0x0C */ u16 position_x;  /**< Snapshot field copied to @c D_800704A8.position_x by @c func_8009AA64. */
-    /* 0x0E */ u16 position_y;  /**< Snapshot field copied to @c D_800704A8.position_y. */
-    /* 0x10 */ u16 rotation;    /**< Snapshot field copied to @c D_800704A8.rotation. */
+    /* 0x0C */ u16 position_x;  /**< Spawn X, copied to @c D_800704A8.position_x by @c func_8009AA64. */
+    /* 0x0E */ u16 position_y;  /**< Spawn Y, copied to @c D_800704A8.position_y. */
+    /* 0x10 */ u16 spawnTriIdx; /**< Spawn triangle, copied to @c D_800704A8.spawnTriIdx. */
     /* 0x12 */ u16 counter;     /**< Snapshot field copied to @c D_800704A8.counter; @c < 72 selects mode 1, else 7. */
     /* 0x14 */ u16 field14;     /**< Set to @c 0xFFFF when the slot is armed. */
     /* 0x16 */ u16 field16;     /**< Slot key / sentinel marker (@c 0x7FFF == free). */
@@ -248,15 +248,27 @@ extern EventQueue *D_8005F0F8;
 typedef struct {
     /* 0x000 */ u8 mode;            /**< Top-level engine mode; @c 4 means exit. */
     /* 0x001 */ u8 pad001;
-    /* 0x002 */ s16 counter;
-    /* 0x004 */ s16 position_x;     /**< Snapshotted X coordinate for the active party slot; @c 0x7FFF means "not set". */
-    /* 0x006 */ u16 position_y;     /**< Snapshotted Y coordinate for the active party slot. */
-    /* 0x008 */ u16 unk008;
-    /* 0x00A */ s16 unk00A;         /**< Reset to 20 by @c func_8009AEC0, which then scales it by
-                                         @c FIELD_CHANNEL_SCALE into the self entity's @c savedChannel.
-                                         @note Purpose uncertain — only ever written as the constant 20. */
-    /* 0x00C */ s16 rotation;       /**< Snapshotted heading for the active party slot; @c 0x7FFF means "not set". */
-    /* 0x00E */ u16 anim_state;     /**< Snapshotted animation byte for the active party slot. */
+    /* 0x002 */ s16 counter;        /**< Mode countdown, popped by the map-jump opcodes. */
+
+    /*
+     * 0x004..0x00E hold where the party lands after a map jump. The
+     * opHandler_MAPJUMP family pops them from the script; func_8009AEC0 and
+     * func_800BE264 consume them when the destination field comes up.
+     * SPAWN_UNSET in position_x or spawnTriIdx means "no override".
+     */
+    /* 0x004 */ s16 position_x;     /**< Spawn X, or @c SPAWN_UNSET to use the triangle centroid. */
+    /* 0x006 */ u16 position_y;     /**< Spawn Y. */
+    /* 0x008 */ u16 unk008;         /**< Extra halfword popped only by @c opHandler_MAPJUMP3. */
+    /* 0x00A */ s16 unk00A;         /**< Reset to 20 by @c func_8009AEC0 and scaled into the self
+                                         entity's @c savedChannel with the same factor
+                                         @c func_800B6738 uses on @c D_800704B2 (134.8046875,
+                                         written there as @c *69020>>9 and here as @c *17255>>7), so
+                                         the entity starts exactly at that threshold.
+                                         @note Both quantities are unnamed; only ever written as 20. */
+    /* 0x00C */ s16 spawnTriIdx;    /**< Spawn navmesh triangle — assigned straight to @c Eline::triIdx
+                                         by both @c func_8009AEC0 and @c func_800BE264.
+                                         @c SPAWN_UNSET means "keep the entity where it is". */
+    /* 0x00E */ u16 anim_state;     /**< Spawn animation id, copied to @c Eline::field_0x241. */
     /* 0x010 */ u8 pad010[0x02];
     /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_fieldVars->memberSlot[]). */
     /* 0x015 */ u8 unk015;          /**< Cleared by @c opHandler_UCON along with the trigger flag. */
@@ -472,7 +484,7 @@ typedef struct {
     /* 0x1F8 */ u16 talkRadius;     /**< Set by @c opHandler_TALKRADIUS; read alongside @c radius by @c func_8009F74C 's asymmetric overlap test. */
     /* 0x1FA */ u16 triIdx;         /**< Navmesh triangle the entity stands on; indexes @c D_800C71F0.
                                          Set from a path-table entry's @c unk6 by @c func_8009BB18 and
-                                         from @c D_800704A8.rotation on field entry by @c func_8009AEC0. */
+                                         from @c D_800704A8.spawnTriIdx on field entry by @c func_8009AEC0. */
     /* 0x1FC */ u16 field_0x1FC;
     /* 0x1FE */ s16 savedChannel;   /**< Previous message channel. */
     /* 0x200 */ u16 msgChannel;     /**< Current message channel. */
@@ -1094,8 +1106,8 @@ extern s16 D_8005F14A;
  *         path is taken only while @c D_8005F100 < 0x4A). */
 extern s16 D_8005F100;
 
-/** @brief Field-entry flag cleared by @c func_8009AEC0 when the entities are
- *         placed on the navmesh. */
+/** @brief Cleared by @c func_8009AEC0 when the entities are placed on the
+ *         navmesh; no other decompiled code reads or writes it yet. */
 extern u8 D_8005F102;
 
 /** @brief Field-load CD descriptor index passed to @c func_80038490. */

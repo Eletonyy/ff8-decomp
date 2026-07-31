@@ -1675,7 +1675,7 @@ s32 opHandler_JUMP3(Eline *eline, s32 a1) {
  * @c field_0x1D8) and a slot index, looks up the entity through
  * @c g_fieldVars->memberSlot[], and copies the entity's @c posX /
  * @c posY / @c posZ to @c msgTextPtr / @c msgPosX / @c msgPosY plus
- * @c field_0x1FA to @c field_0x1FC.
+ * @c triIdx to @c field_0x1FC.
  *
  * @param eline Script context.
  * @return 1 while running, 3 once the message has been read.
@@ -1697,7 +1697,7 @@ s32 opHandler_PJUMPA(Eline *eline) {
         eline->msgTextPtr = D_80085224[m].posX;
         eline->msgPosX = D_80085224[m].posY;
         eline->msgPosY = D_80085224[m].posZ;
-        eline->field_0x1FC = D_80085224[m].field_0x1FA;
+        eline->field_0x1FC = D_80085224[m].triIdx;
     } while (0);
     return 1;
 }
