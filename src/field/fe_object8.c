@@ -1100,7 +1100,7 @@ s32 opHandler_FACEDIRA(Eline *eline, s32 arg1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->turnLen = POP(eline);
         idx = POP(eline);
-        func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, D_800C71F8, buf);
+        func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, (u32)D_800C71F8, buf);
         eline->turnTgtX = D_80085230[idx]->posX / 4096;
         eline->turnTgtY = D_80085230[idx]->posY / 4096;
         eline->turnTgtZ = buf[2] + D_80085230[idx]->posZ / 4096;
@@ -1129,7 +1129,7 @@ s32 opHandler_FACEDIRP(Eline *eline, s32 arg1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->turnLen = POP(eline);
         slot = g_fieldVars->memberSlot[POP(eline)];
-        func_800A8DAC(slot, 0x1E, D_800C71F8, buf);
+        func_800A8DAC(slot, 0x1E, (u32)D_800C71F8, buf);
         eline->turnTgtX = D_80085224[slot].posX / 4096;
         eline->turnTgtY = D_80085224[slot].posY / 4096;
         eline->turnTgtZ = buf[2] + D_80085224[slot].posZ / 4096;

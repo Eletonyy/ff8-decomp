@@ -2,6 +2,7 @@
 #define FIELD_H
 
 #include "common.h"
+#include "psxsdk/libgpu.h"
 
 /*
  * ============================================================================
@@ -232,7 +233,9 @@ typedef struct {
                                           @c D_800C311C in @c func_800983F0, and forces the eline-pool install
                                           (@c func_800A1CC0) even for load modes 1 and 6. */
     /* 0x00E */ u8 unk0E;            /**< When @c == 1, @c func_800A1BB8 issues a StoreImage to VRAM. */
-    /* 0x00F */ u8 pad0F[0x03];
+    /* 0x00F */ u8 pad0F;
+    /* 0x010 */ u8 tpageX;           /**< Texture-page X written into every field sprite's tpage word. */
+    /* 0x011 */ u8 pad11;
     /* 0x012 */ u16 baseZ;           /**< Base Z offset added to the per-entity Z when building SVECTOR (func_800A11E0). */
     /* 0x014 */ ClampRect rect_a[8]; /**< Per-region clamp rectangles, consumed by @c func_800A0FB8. */
     /* 0x054 */ ClampRect rect_b[1]; /**< Padding margin used by @c func_800A0FB8 to shrink @c rect_a. */
@@ -878,18 +881,31 @@ typedef struct {
     /* 0x02 */ s16 y;
     /* 0x04 */ s16 z;
     /* 0x06 */ s16 angle;
-    /* 0x08 */ u8  pad08[0x06];
+    /* 0x08 */ u8  spriteX;       /**< Sprite half-width at this waypoint (lerped by func_800A39D8). */
+    /* 0x09 */ u8  spriteY;       /**< Sprite half-height at this waypoint. */
+    /* 0x0A */ u8  u;             /**< Texture U of the sprite's top-left corner. */
+    /* 0x0B */ u8  v;             /**< Texture V of the sprite's top-left corner. */
+    /* 0x0C */ u8  w;             /**< Texture width; the far corner is @c u+w-1. */
+    /* 0x0D */ u8  h;             /**< Texture height; the far corner is @c v+h-1. */
     /* 0x0E */ u8  stepTotal;     /**< Ticks this step lasts; 0 ends the command. */
-    /* 0x0F */ u8  pad0F[0x05];
+    /* 0x0F */ u8  mode;          /**< 4 = opaque; otherwise the low 2 bits are the GPU
+                                       semi-transparency mode written into the tpage word. */
+    /* 0x10 */ u8  r;             /**< Vertex colour at this waypoint (lerped to the next). */
+    /* 0x11 */ u8  g;
+    /* 0x12 */ u8  b;
+    /* 0x13 */ u8  pad13;
 } MoveStep;                       /* 0x14 = 20 bytes */
 
 /** @brief One 372-byte movement command: up to 17 @ref MoveStep waypoints plus
  *         a count of the accumulators still running it. */
 typedef struct {
     /* 0x000 */ MoveStep steps[17];
-    /* 0x154 */ u8  pad154[0x08];
+    /* 0x154 */ s16 zBias;        /**< Added to the projected OTZ before the range check. */
+    /* 0x156 */ u8  pad156[0x06];
     /* 0x15C */ u16 activeCount;
-    /* 0x15E */ u8  pad15E[0x16];
+    /* 0x15E */ u8  pad15E[0x0C];
+    /* 0x16A */ s16 flags;        /**< Non-zero above bit 6 halves the sprite scale shift. */
+    /* 0x16C */ u8  pad16C[0x08];
 } MoveRecord;                     /* 0x174 = 372 bytes */
 
 /**
@@ -947,7 +963,9 @@ typedef struct {
     /* 0x0000 */ MoveRecord records[16];
     /* 0x1740 */ FieldSubsceneSlot slots[16];
     /* 0x2720 */ MoveAccum entries[128];
-} FieldSubsceneBuffer;
+    /* 0x3720 */ u8 pad3720[0x5F20 - 0x3720];
+    /* 0x5F20 */ POLY_FT4 *primCursor; /**< Next free prim in the field bundle's prim arena. */
+} FieldSubsceneBuffer;                 /* 0x5F24 — the whole field-file header */
 
 
 /** @brief Update one packed-flag table slot from a step tick. */
@@ -1015,7 +1033,6 @@ typedef struct {
 extern u8 *D_800704C0;
 
 /** @brief Spatial-entity dispatch context word (passed to @c func_800A8DAC). */
-extern u32 D_800C71F8;
 
 /** @brief Field-side dialog companion scalar. */
 extern s32 D_800DE4DC;

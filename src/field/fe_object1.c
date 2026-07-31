@@ -3228,7 +3228,146 @@ void func_800A38B4(MoveAccum *out, MoveStep *in, MoveStep *target) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A39D8);
+/**
+ * @brief Emit one field sprite for a movement accumulator and link it into the OT.
+ *
+ * Advances @p acc one tick along its current waypoint pair (@c func_800A38B4),
+ * projects the accumulated position through the GTE, and — when the projected
+ * depth lands inside the ordering table — builds a @ref POLY_FT4 for the sprite
+ * and chains it in.
+ *
+ * The quad is a screen-space billboard: RTPS gives the centre, the sprite's
+ * half-extents are lerped between the current and next waypoint, scaled by
+ * @c FieldView::spriteScale / OTZ so it shrinks with distance, then rotated by
+ * @c acc->angle through two @c mvmva passes to give the two corner offsets.
+ * Texture coordinates, colour and the semi-transparency bits of the tpage word
+ * all come from the current waypoint; colour is lerped like the extents.
+ *
+ * Finally the tick counter advances, rolling over to the next waypoint once it
+ * reaches @c MoveStep::stepTotal.
+ *
+ * @param acc Accumulator to advance and draw.
+ * @param rec Movement command @p acc is playing.
+ * @param buf Field bundle header; its @c primCursor is the prim arena cursor.
+ * @param ot  Ordering table to link the quad into.
+ *
+ * @note The scratchpad slots are separate @c getScratchAddr locals rather than
+ *       one struct: the original materialises each address independently and
+ *       spills two of them, which a single base pointer does not reproduce.
+ * @note @c func_80041C74 is the main binary's @c RotMatrix_gte and
+ *       @c func_80040534 its @c TransMatrix; the field overlay links both by
+ *       address, so they keep their @c func_ names here.
+ */
+void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldSubsceneBuffer *buf, u32 *ot) {
+    SVECTOR *pos = (SVECTOR *)getScratchAddr(5);
+    SVECTOR *rot = (SVECTOR *)getScratchAddr(7);
+    SVECTOR *corner = (SVECTOR *)getScratchAddr(9);
+    MacVec *mac = (MacVec *)getScratchAddr(11);
+    VECTOR *trans = (VECTOR *)getScratchAddr(15);
+    MATRIX *m = (MATRIX *)getScratchAddr(19);
+    MoveStep *step;
+    MoveStep *next;
+    s32 otz;
+    s16 spriteX, spriteY;
+    s32 dx, dy;
+    s32 scale;
+    u32 tp;
+    u32 halfW, halfH;
+
+    step = &rec->steps[acc->stepIndex];
+    next = &rec->steps[acc->stepIndex + 1];
+    func_800A38B4(acc, step, next);
+
+    pos->vx = acc->posX / 16;
+    pos->vy = acc->posY / 16;
+    pos->vz = acc->posZ / 16;
+
+    if (step->mode == 4) {
+        buf->primCursor->code &= ~2;
+        buf->primCursor->tpage = (D_8005F0F8->tpageX & 0xF) | 0x10;
+    } else {
+        buf->primCursor->code |= 2;
+        tp = (((step->mode & 3) << 5) | 0x10);
+        tp |= D_8005F0F8->tpageX & 0xF;
+        buf->primCursor->tpage = tp;
+    }
+
+    gte_ldv0(pos);
+    gte_RTPS();
+    gte_stsxy(&buf->primCursor->x0);
+    gte_stszotz(&otz);
+
+    otz += rec->zBias;
+    if (otz > 0 && otz < 0x1000) {
+        dx = (next->spriteX - step->spriteX) * acc->stepProgress / step->stepTotal;
+        dy = (next->spriteY - step->spriteY) * acc->stepProgress / step->stepTotal;
+        scale = (D_800C71F8->spriteScale << 14) / otz;
+        spriteX = step->spriteX + dx;
+        spriteY = step->spriteY + dy;
+
+        if ((rec->flags & 0xFF80) == 0) {
+            halfW = (u32)(spriteX * scale) >> 14;
+            halfH = (u32)(spriteY * scale) >> 14;
+        } else {
+            halfW = (u32)(spriteX * scale) >> 13;
+            halfH = (u32)(spriteY * scale) >> 13;
+        }
+
+        rot->vy = 0;
+        rot->vx = 0;
+        rot->vz = acc->angle;
+        func_80041C74(rot, m);
+
+        trans->vz = 0;
+        trans->vy = 0;
+        trans->vx = 0;
+        func_80040534(m, trans);
+
+        gte_SetRotMatrix(m);
+        gte_SetTransMatrix(m);
+
+        corner->vx = halfW;
+        corner->vy = -halfH;
+        corner->vz = 0;
+        gte_ldv0(corner);
+        gte_mvmva(1, 0, 0, 0, 0);
+
+        buf->primCursor->u0 = buf->primCursor->u2 = step->u;
+        buf->primCursor->v0 = buf->primCursor->v1 = step->v;
+        gte_stlvnl(mac);
+
+        buf->primCursor->x1 = buf->primCursor->x0 + mac->x;
+        buf->primCursor->y1 = buf->primCursor->y0 + mac->y;
+        buf->primCursor->x2 = buf->primCursor->x0 - mac->x;
+        buf->primCursor->y2 = buf->primCursor->y0 - mac->y;
+
+        corner->vy = halfH;
+        gte_ldv0(corner);
+        gte_mvmva(1, 0, 0, 0, 0);
+
+        buf->primCursor->u1 = buf->primCursor->u3 = step->u + step->w - 1;
+        buf->primCursor->v2 = buf->primCursor->v3 = step->v + step->h - 1;
+        gte_stlvnl(mac);
+
+        buf->primCursor->x3 = buf->primCursor->x0 + mac->x;
+        buf->primCursor->y3 = buf->primCursor->y0 + mac->y;
+        buf->primCursor->x0 = buf->primCursor->x0 - mac->x;
+        buf->primCursor->y0 = buf->primCursor->y0 - mac->y;
+
+        buf->primCursor->r0 = step->r + (next->r - step->r) * acc->stepProgress / step->stepTotal;
+        buf->primCursor->g0 = step->g + (next->g - step->g) * acc->stepProgress / step->stepTotal;
+        buf->primCursor->b0 = step->b + (next->b - step->b) * acc->stepProgress / step->stepTotal;
+
+        addPrim(&ot[otz], buf->primCursor);
+        buf->primCursor = (POLY_FT4 *)((u8 *)buf->primCursor + 0x28);
+    }
+
+    acc->stepProgress++;
+    if (acc->stepProgress >= step->stepTotal) {
+        acc->stepProgress = 0;
+        acc->stepIndex++;
+    }
+}
 
 /**
  * @brief Fast-forward an entire field animation buffer to completion.

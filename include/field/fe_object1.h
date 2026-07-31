@@ -91,6 +91,29 @@ typedef struct {
     SVert v[3];
 } Triangle;
 
+/**
+ * @brief Landing slot for @c gte_stlvnl — MAC1..3 land as words but only the
+ *        low halfword of each is read back (the rotated corner offsets are
+ *        screen deltas and fit in 16 bits).
+ */
+typedef struct {
+    /* 0x00 */ u16 x, xHi;
+    /* 0x04 */ u16 y, yHi;
+    /* 0x08 */ u16 z, zHi;
+} MacVec;
+
+/**
+ * @brief Field view block (at @c D_800C71F8): the camera matrix @c SetRotMatrix /
+ *        @c SetTransMatrix are loaded from, followed by projection parameters.
+ */
+typedef struct {
+    /* 0x00 */ MATRIX m;
+    /* 0x20 */ u8 pad20[0x04];
+    /* 0x24 */ s16 spriteScale;  /**< Numerator of the per-OTZ sprite scale in @c func_800A39D8. */
+} FieldView;
+
+extern FieldView *D_800C71F8;
+
 /** @brief Counted inline triangle list scanned by @ref func_8009AC9C. */
 typedef struct {
     /* 0x0 */ s32 count;
@@ -353,7 +376,8 @@ extern void func_800A3534();  /* arg is a file-private buffer view in fe_object1
 extern void func_800A37A8(void *arg0, s32 arg1, FieldSubsceneBuffer *buf);
 
 extern void func_800A38B4(MoveAccum *out, MoveStep *in, MoveStep *target);
-extern int  func_800A39D8();
+/** @brief Emit one field sprite for a movement accumulator and link it into the OT. */
+extern void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldSubsceneBuffer *buf, u32 *ot);
 extern void func_800A3FE0(FieldSubsceneBuffer *buf);
 void func_800A42EC(POLY_G4 *polys, DR_TPAGE *tpages);
 extern void func_800A4500(s32 x, s32 y, s32 z);

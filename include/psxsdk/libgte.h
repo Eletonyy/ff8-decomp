@@ -222,6 +222,16 @@ s32 rcos(s32 a);
     : "memory" )
 
 /* Store OTZ (depth) from $7. */
+/* Store OTZ: SZ2 (GTE $19) scaled down by 4, the usual ordering-table index. */
+#define gte_stszotz( r0 ) __asm__ volatile (             \
+    "mfc2   $12, $19;"                                   \
+    "nop;"                                               \
+    "sra    $12, $12, 2;"                                \
+    "sw     $12, 0( %0 )"                                \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "memory" )
+
 #define gte_stotz( r0 ) __asm__ volatile (               \
     "swc2   $7, 0( %0 )"                                 \
     :                                                    \
