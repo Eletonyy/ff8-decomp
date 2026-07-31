@@ -384,13 +384,54 @@ extern void func_800A4500(s32 x, s32 y, s32 z);
 void func_800A455C(s16 entityIdx);
 extern void func_800A4758(void);
 extern s32  func_800A48CC(void);
-extern void func_800A4934();  /* args are file-private ObjSlot/DrawPoint in fe_object1.c */
-extern int  func_800A4C14();
+/**
+ * @brief 8-byte (x, y, z) vertex within a shimmer object's corner array; also
+ *        the shape @c func_800A4934 stages its two interpolated points in at
+ *        @c getScratchAddr(0) and @c getScratchAddr(2).
+ */
+typedef struct {
+    /* 0x00 */ u16 x;
+    /* 0x02 */ u16 y;
+    /* 0x04 */ u16 z;
+    /* 0x06 */ u16 pad6;
+} ObjVertex;
 
-typedef struct { u8 pad[0xB4]; } func_800A5224_arg2; /* 0xB4 = 180 bytes */
-typedef struct { u8 pad[0x20]; } func_800A5224_arg3; /* 0x20 = 32 bytes */
-extern void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
-                          func_800A5224_arg3 *arg3);
+extern void func_800A4934();  /* args are file-private ObjSlot/DrawPoint in fe_object1.c */
+extern void func_800A4C14();  /* first arg is the file-private ObjSlot in fe_object1.c */
+
+/**
+ * @brief Per-slot ribbon prim buffer: the five @c LINE_G4 strips that make up
+ *        one shimmer object's four-segment trail.
+ */
+typedef struct {
+    /* 0x00 */ LINE_G4 lines[5];
+} FieldRibbonPrims;  /* 0xB4 = 180 bytes */
+
+/** @brief Per-slot tpage commands, one for each of the four ribbon segments. */
+typedef struct {
+    /* 0x00 */ DR_TPAGE tpages[4];
+} FieldRibbonTPages;  /* 0x20 = 32 bytes */
+
+extern void func_800A5224(MATRIX *m, u32 *ot, FieldRibbonPrims *prims,
+                          FieldRibbonTPages *tpages);
+
+/**
+ * @brief Main binary's @c RotTransPers3: perspective-transforms three vertices
+ *        at once, writing the three screen XY pairs and returning the OTZ.
+ *
+ * @note The field overlay links it by address, so it keeps its @c func_ name.
+ */
+extern s32 func_80040E14(ObjVertex *v0, ObjVertex *v1, ObjVertex *v2, s32 *sxy0,
+                         s32 *sxy1, s32 *sxy2, s32 *p, s32 *flag);
+
+/** @brief Palette selector for the ribbon colour ramp (scaled by 16 to index it). */
+extern u8 D_80070657;
+/** @brief Ribbon colour ramp, 16 bytes per palette: five RGB triples, one per line strip. */
+extern u8 D_800C3720[];
+/** @brief @c D_800C3720 + 6 — the third strip's RGB triple. */
+extern u8 D_800C3726[];
+/** @brief @c D_800C3720 + 9 — the fourth and fifth strips' RGB triples. */
+extern u8 D_800C3729[];
 extern void func_800A5360(u32 *ot, s16 r, s16 g, s16 b);
 extern volatile u16 g_bufferIndex;       /**< Active double-buffer index. */
 extern u32 g_orderingTablePtrs[];        /**< Per-buffer ordering-table heads. */

@@ -75,16 +75,6 @@ typedef struct {
 } DrawPoint;  /* 0x18 = 24 bytes */
 extern DrawPoint D_800706A0[];
 
-/** @brief 8-byte (x, y, z) vertex within an @ref ObjSlot corner array; also the
- *         shape @c func_800A4934 stages its two interpolated points in at
- *         @c getScratchAddr(0) and @c getScratchAddr(2). */
-typedef struct {
-    /* 0x00 */ u16 x;
-    /* 0x02 */ u16 y;
-    /* 0x04 */ u16 z;
-    /* 0x06 */ u16 pad6;
-} ObjVertex;
-
 /**
  * @brief One 136-byte object slot in the @c D_800C6DA0 table walked by
  *        @c func_800A5224 (8 slots).
@@ -3754,7 +3744,135 @@ void func_800A4934(ObjSlot *slot, DrawPoint *dp) {
     slot->va[idx].z = mid->z;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A4C14);
+/**
+ * @brief Draws one shimmer object's four-segment trailing ribbon.
+ *
+ * The slot keeps two 8-entry ring buffers of corner vertices, @c va and @c vb
+ * (the left and right edge of the ribbon), with @c field82 as the write cursor.
+ * Starting at the newest entry this walks six entries back through the ring and
+ * projects the twelve corners in four @c func_80040E14 calls, three points per
+ * call, producing a zigzag @c va[i], @c vb[i], @c va[i-1], @c vb[i-1], ... that
+ * reads as a ribbon when stroked.
+ *
+ * Those twelve points are stroked as five overlapping four-point @c LINE_G4
+ * strips, each sharing its first two points with the previous one. Points a
+ * call does not write are copied over from the neighbouring strip, so only the
+ * projections cost GTE time.
+ *
+ * Each call's OTZ links that block's strips into the ordering table at their
+ * own depth, with a tpage command of their own, so the ribbon sorts correctly
+ * against the rest of the scene even when it spans a large depth range. A
+ * strip whose OTZ is beyond @c 0x1000 is simply not linked.
+ *
+ * The head strip is white; the rest fade along the trail through the five RGB
+ * triples of @c D_800C3720, selected by @c D_80070657.
+ *
+ * @param slot  Shimmer object slot holding the two corner ring buffers.
+ * @param ot    Ordering table to link the strips into.
+ * @param line0 The slot's five @c LINE_G4 strips.
+ * @param tp    The slot's four tpage commands, one per block.
+ *
+ * @note @c line3 and @c line4 are linked as @c &line2[1] / @c &line3[1] rather
+ *       than by name: cse rewrites a bare strip pointer used as an address into
+ *       whichever equivalent base it has already hashed, and only these
+ *       spellings keep the previous strip as that base.
+ * @note The @c line0 bump pair is load-bearing. gcc 2.7.2 double-counts
+ *       @c reg_live_length for a parameter that is live-in and never
+ *       reassigned, which halves its priority in @c allocno_compare and costs
+ *       @c line0 the first callee-saved register. A second assignment restores
+ *       the true count; the pair folds away before the prologue is emitted.
+ */
+void func_800A4C14(ObjSlot *slot, u32 *ot, LINE_G4 *line0, DR_TPAGE *tp) {
+    LINE_G4 *line1;
+    LINE_G4 *line2;
+    LINE_G4 *line3;
+    LINE_G4 *line4;
+    s32 pal;
+    s32 otz;
+    s32 i;
+    s32 p;
+    s32 flag;
+
+    line0++;
+    line0--;
+    i = slot->field82 & 7;
+    pal = D_80070657 * 16;
+
+    otz = func_80040E14(&slot->va[i], &slot->vb[i], &slot->va[(i - 1) & 7],
+                        (s32 *)&line0->x0, (s32 *)&line0->x1, (s32 *)&line0->x2, &p, &flag);
+
+    line1 = &line0[1];
+    line2 = &line0[2];
+    line3 = &line0[3];
+    line4 = &line0[4];
+    if (otz < 0x1000) {
+        line0->r1 = line0->g1 = line0->b1 = 0x80;
+        line0->r0 = line0->g0 = line0->b0 = 0x80;
+        addPrim(&ot[otz], line0);
+        addPrim(&ot[otz], tp);
+        tp++;
+    }
+
+    line1->x0 = line0->x2;
+    line1->y0 = line0->y2;
+
+    otz = func_80040E14(&slot->vb[(i - 1) & 7], &slot->va[(i - 2) & 7], &slot->vb[(i - 2) & 7],
+                        (s32 *)&line1->x1, (s32 *)&line1->x2, (s32 *)&line1->x3, &p, &flag);
+    if (otz < 0x1000) {
+        line0->r2 = line0->r3 = line1->r0 = line1->r1 = D_800C3720[pal];
+        line0->g2 = line0->g3 = line1->g0 = line1->g1 = D_800C3720[pal + 1];
+        line0->b2 = line0->b3 = line1->b0 = line1->b1 = D_800C3720[pal + 2];
+        line1->r2 = line1->r3 = line2->r0 = line2->r1 = D_800C3720[pal + 3];
+        line1->g2 = line1->g3 = line2->g0 = line2->g1 = D_800C3720[pal + 4];
+        line1->b2 = line1->b3 = line2->b0 = line2->b1 = D_800C3720[pal + 5];
+        addPrim(&ot[otz], line1);
+        addPrim(&ot[otz], line2);
+        addPrim(&ot[otz], tp);
+        tp++;
+    }
+
+    line0->x3 = line1->x1;
+    line0->y3 = line1->y1;
+    line2->x0 = line1->x2;
+    line2->y0 = line1->y2;
+    line2->x1 = line1->x3;
+    line2->y1 = line1->y3;
+
+    otz = func_80040E14(&slot->va[(i - 3) & 7], &slot->vb[(i - 3) & 7], &slot->va[(i - 4) & 7],
+                        (s32 *)&line3->x0, (s32 *)&line3->x1, (s32 *)&line3->x2, &p, &flag);
+    if (otz < 0x1000) {
+        line2->r2 = line2->r3 = line3->r0 = line3->r1 = D_800C3726[pal];
+        line2->g2 = line2->g3 = line3->g0 = line3->g1 = D_800C3726[pal + 1];
+        line2->b2 = line2->b3 = line3->b0 = line3->b1 = D_800C3726[pal + 2];
+        addPrim(&ot[otz], &line2[1]);
+        addPrim(&ot[otz], tp);
+        tp++;
+    }
+
+    line2->x2 = line3->x0;
+    line2->y2 = line3->y0;
+    line2->x3 = line3->x1;
+    line2->y3 = line3->y1;
+    line4->x0 = line3->x2;
+    line4->y0 = line3->y2;
+
+    otz = func_80040E14(&slot->vb[(i - 4) & 7], &slot->va[(i - 5) & 7], &slot->vb[(i - 5) & 7],
+                        (s32 *)&line4->x1, (s32 *)&line4->x2, (s32 *)&line4->x3, &p, &flag);
+    if (otz < 0x1000) {
+        line3->r2 = line3->r3 = line4->r0 = line4->r1 = D_800C3729[pal];
+        line3->g2 = line3->g3 = line4->g0 = line4->g1 = D_800C3729[pal + 1];
+        line3->b2 = line3->b3 = line4->b0 = line4->b1 = D_800C3729[pal + 2];
+        line4->r2 = line4->r3 = D_800C3729[pal + 3];
+        line4->g2 = line4->g3 = D_800C3729[pal + 4];
+        line4->b2 = line4->b3 = D_800C3729[pal + 5];
+        addPrim(&ot[otz], &line3[1]);
+        addPrim(&ot[otz], tp);
+        tp++;
+    }
+
+    line3->x3 = line4->x1;
+    line3->y3 = line4->y1;
+}
 
 /**
  * @brief 8-iteration script-dispatch loop with per-slot flag-driven
@@ -3763,20 +3881,20 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A4C14);
  * Sets the GTE rotation/translation matrix from @p m (guarded by
  * @c func_8003FEE4 / @c func_8003FF88), then iterates @c i in @c [0,8) over
  * four parallel arrays: @c D_800C6DA0 (@ref ObjSlot, stride 0x88),
- * @c D_800706A0 (@ref DrawPoint, stride 0x18), @p arg3 (stride 0x20), and
- * @p arg2 (stride 0xB4). When the per-slot flag @c D_8005F168[i] is
+ * @c D_800706A0 (@ref DrawPoint, stride 0x18), @p tpages (stride 0x20), and
+ * @p prims (stride 0xB4). When the per-slot flag @c D_8005F168[i] is
  * non-zero, runs @c func_800A4934 on the slot, then conditionally
  * @c func_800A4C14 (when the flag is @c 2, or it is @c 1 and
  * @c D_8005F122 @c == @c 1), then bumps @c ObjSlot.field82 and clears the
  * flag once it exceeds @c field80 + 4.
  *
- * @param m    GTE rotation/translation matrix.
- * @param arg1 Opaque context forwarded to @c func_800A4C14.
- * @param arg2 Per-slot parameter array (stride 0xB4), forwarded to @c func_800A4C14.
- * @param arg3 Per-slot parameter array (stride 0x20), forwarded to @c func_800A4C14.
+ * @param m      GTE rotation/translation matrix.
+ * @param ot     Ordering table the ribbons are linked into.
+ * @param prims  Per-slot ribbon strips.
+ * @param tpages Per-slot ribbon tpage commands.
  */
-void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
-                   func_800A5224_arg3 *arg3) {
+void func_800A5224(MATRIX *m, u32 *ot, FieldRibbonPrims *prims,
+                   FieldRibbonTPages *tpages) {
     s32 i;
 
     func_8003FEE4();
@@ -3789,7 +3907,7 @@ void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
             func_800A4934(&D_800C6DA0[i], &D_800706A0[i]);
             flag = D_8005F168[i];
             if (flag == 2 || (flag == 1 && D_8005F122 == flag)) {
-                func_800A4C14(&D_800C6DA0[i], arg1, &arg2[i], &arg3[i]);
+                func_800A4C14(&D_800C6DA0[i], ot, prims[i].lines, tpages[i].tpages);
             }
             tick = D_800C6DA0[i].field82 + 1;
             D_800C6DA0[i].field82 = tick;
