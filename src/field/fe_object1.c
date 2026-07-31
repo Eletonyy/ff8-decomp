@@ -357,18 +357,31 @@ void func_80098934(void) {
  *   - Dispatch @c func_800BF718 with a mode argument that maps
  *     @c D_8005F14C ∈ {6→2, 0xA→3, 3→0, default→1}.
  *
- * @note Decomp at 98.78% match; @c permuter/func_8009895C/base.c holds the
+ * @note Decomp at 98.79% match; @c permuter/func_8009895C/base.c holds the
  *       source (mirrored to the NAS backup, since @c permuter/ is ignored).
- *       Eight instructions of real diff remain, in two clusters: the prologue
- *       materialises @c &D_800704A8 one @c addu short of the original (which
- *       goes @c lui @c -> @c fp @c -> @c v0 @c -> @c s2, keeping the @c %hi in
- *       its own pseudo), and the @c func_800BF718 argument chain emits its
- *       @c ==3 test before the @c ==6 / @c ==0xA pair instead of after.
- *       The @c ==3 test has to lead in the source: with the original's
- *       @c if @c (x @c == @c 6 @c || @c x @c == @c 0xA) nesting, gcc folds the
- *       inner @c 0 / @c 1 arms into @c xori + @c sltu, which the original does
- *       not have. Everything else — all four loops, the section-pointer
- *       snapshot, and the whole state dispatch — is instruction-exact.
+ *       Two clusters of real diff remain, both resistant to ~25 targeted
+ *       source rewrites:
+ *
+ *       1. The prologue materialises @c &D_800704A8 one instruction short.
+ *          The original goes @c lui @c -> @c fp, @c addiu @c -> @c v0,
+ *          @c move @c -> @c s2 — three pseudos, so the copy into @c s2
+ *          survives because @c sys is a global allocno that @c local_alloc
+ *          cannot tie to the dying intermediate. Every spelling tried
+ *          (initialiser, @c register, cast chain, temp pointer, duplicate
+ *          init, reordering against the @c memcpy and @c InitClearTiles)
+ *          collapses it to two pseudos and @c addiu @c s2, @c s8, @c %lo.
+ *
+ *       2. The @c func_800BF718 argument chain emits its @c ==3 test before
+ *          the @c ==6 / @c ==0xA pair instead of after. The @c ==3 test has
+ *          to lead in the source, because with the original's
+ *          @c if @c (x @c == @c 6 @c || @c x @c == @c 0xA) nesting gcc folds
+ *          the inner @c 0 / @c 1 arms into @c xori + @c sltu, which the
+ *          original does not have. Leading with @c ==3 separates the two
+ *          arms and defeats the fold, at the cost of the test order. No form
+ *          found yet gives both.
+ *
+ *       Everything else — all four loops, the twelve-pointer section
+ *       snapshot, and the whole exit-state dispatch — is instruction-exact.
  *       https://decomp.me/scratch/rFzLA is the in-browser scratch.
  *
  *       Several semantic bugs were caught during decomp and fixed in the
@@ -383,6 +396,12 @@ void func_80098934(void) {
  *       @c sndCmd21 call rather than before — the original loads
  *       @c sys->counter first and lets dbr sink the store into the jal
  *       delay slot, so writing it after the call reads a post-call value.
+ *       A third: the baseline ended the loop body with an unconditional
+ *       @c break, so every engine state other than the ones handled above
+ *       fell out of the field loop. The original's
+ *       @c bne @c s0, @c s4, @c .Lloop_top branches back — only states
+ *       4, 3, 8, 5, 6 and 7 exit; state 1 runs its body and loops, and
+ *       every other state loops immediately.
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009895C);
 
