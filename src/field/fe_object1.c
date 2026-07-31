@@ -1000,10 +1000,13 @@ s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
  * A second pass clears every entity's @c headingBase before the movement
  * (@c func_8009E660) and path (@c func_8009BB18) tables are rebuilt.
  *
- * @note The triangle corners are passed to @c func_8009DED8 as byte-offset
- *       @c u8* pointers rather than @c &tri->v[n], matching @c func_8009AC9C
- *       in this file: the helper takes @c u8* and the original shares the
- *       scaled index, adding the table base to each corner separately.
+ * @note The triangle corners are addressed as byte offsets rather than as
+ *       @c &tri->v[n]. That is the shape the original emits and what
+ *       @c func_8009DED8 's @c u8* signature wants: the scaled triangle index
+ *       is the shared subexpression and the table base is added to each corner
+ *       separately. Writing @c &tri->v[n] makes gcc share the derived pointer
+ *       and compute the second corner as @c ptr+8 instead (99.01%).
+ *       @c func_8009AC9C in this file addresses the same helper the same way.
  * @note @c pos.z is left uninitialised on the player path — only the
  *       non-player path zeroes it. @c func_8009E338 reads just X and Y, so this
  *       is harmless, and the original has the same asymmetry.
@@ -1034,11 +1037,14 @@ void func_8009AEC0(void) {
                                            D_800C71F0[D_80085224[i].triIdx].v[2].sz) / 3) << 12;
                 } else {
                     func_8009DED8((u8 *)&edge0,
-                                  (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) + 8),
+                                  (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) +
+                                                      offsetof(Triangle, v[1])),
                                   (u8 *)D_800C71F0 + D_80085224[i].triIdx * sizeof(Triangle));
                     func_8009DED8((u8 *)&edge1,
-                                  (u8 *)D_800C71F0 + (D_80085224[D_8005F148].triIdx * sizeof(Triangle) + 16),
-                                  (u8 *)D_800C71F0 + (D_80085224[D_8005F148].triIdx * sizeof(Triangle) + 8));
+                                  (u8 *)D_800C71F0 + (D_80085224[D_8005F148].triIdx * sizeof(Triangle) +
+                                                      offsetof(Triangle, v[2])),
+                                  (u8 *)D_800C71F0 + (D_80085224[D_8005F148].triIdx * sizeof(Triangle) +
+                                                      offsetof(Triangle, v[1])));
                     pos.x = D_80085224[D_8005F148].posX / 4096;
                     pos.y = D_80085224[D_8005F148].posY / 4096;
                     D_80085224[D_8005F148].posZ =
@@ -1072,11 +1078,14 @@ void func_8009AEC0(void) {
             pos.y = D_80085224[i].posY / 4096;
             pos.z = 0;
             func_8009DED8((u8 *)&edge0,
-                          (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) + 8),
+                          (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) +
+                                              offsetof(Triangle, v[1])),
                           (u8 *)D_800C71F0 + D_80085224[i].triIdx * sizeof(Triangle));
             func_8009DED8((u8 *)&edge1,
-                          (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) + 16),
-                          (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) + 8));
+                          (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) +
+                                              offsetof(Triangle, v[2])),
+                          (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) +
+                                              offsetof(Triangle, v[1])));
             D_80085224[i].posZ = func_8009E338(&edge0, &edge1, &pos,
                                                (SVert *)((u8 *)D_800C71F0 +
                                                          D_80085224[i].triIdx * sizeof(Triangle))) << 12;
