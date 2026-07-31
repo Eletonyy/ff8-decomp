@@ -152,13 +152,42 @@ void func_80098314(void) {
 #define FIELD_HEADER_SIZE 0x5F24
 
 /**
+ * @brief CD landing area for the field bundle: a small parameter header
+ *        followed by the payload.
+ *
+ * Each slot is addressed as its own absolute constant rather than through a
+ * struct or a @c D_800E1004 -style extern. That is not cosmetic: cc1 emits
+ * @c lui/lw with the destination as its own @c %hi temp for a constant
+ * address, but allocates a separate @c %hi temp for a symbol, and folds a
+ * struct down to one base register plus displacements. Only the form below
+ * reproduces the original's two independent address materialisations.
+ */
+#define FIELD_BUNDLE_BUF     0x800E1000
+#define FIELD_BUNDLE_TIM     (FIELD_BUNDLE_BUF + 0x4) /**< Halfword staging buffer for @c func_800A2D2C. */
+#define FIELD_BUNDLE_SLOT    (FIELD_BUNDLE_BUF + 0x8) /**< VRAM column slot for @c func_800A2D2C. */
+#define FIELD_BUNDLE_STRIPS  (FIELD_BUNDLE_BUF + 0xC) /**< VRAM restore strips for @c func_800A0D6C. */
+
+/** @brief High-RAM staging area the script region is copied into. */
+#define FIELD_SCRIPT_STAGE 0x801B0000
+
+/**
+ * @brief Upper bound of the field command area handed to @c func_800AA8A0.
+ *
+ * Load mode 3 stops short of the @c 0x801F0000 mesh-render region; every other
+ * mode may run up to the menu image base.
+ * @note Purpose inferred from the call site — only the mode-3 split is certain.
+ */
+#define FIELD_CMD_AREA_END_MODE3 0x801F4000
+#define FIELD_CMD_AREA_END       0x801FE800
+
+/**
  * @brief Load/refresh the active field map's asset bundle from CD.
  *
  * Either issues a fresh CD read (when @c D_8005F14A is 0 or the current area
  * @c D_8005F14E differs from the cached @c D_8005F100) or restores from the
  * cached pointer @c D_8005F104. Then loads the secondary asset, snapshots
  * pointer-table headers into globals (@c D_800C7208, @c D_800D5EA4 family,
- * etc.), copies script data to the @c 0x801B0000 staging region, and
+ * etc.), copies script data to the @c FIELD_SCRIPT_STAGE staging region, and
  * dispatches the field-VM pool setup via @c func_800BFBBC and friends.
  *
  * @return Pointer past the last block laid out after the bundle.
@@ -189,30 +218,31 @@ s32 *func_800983F0(void) {
 
     if (D_8005F14A == 0 || D_8005F14E != D_8005F100) {
         func_80038868(D_800C0900[D_800C2568[D_8005F14E] * 6],
-                      D_800C0900[D_800C2568[D_8005F14E] * 6 + 1], (u8 *)0x800E1000, NULL);
+                      D_800C0900[D_800C2568[D_8005F14E] * 6 + 1], (u8 *)FIELD_BUNDLE_BUF,
+                      NULL);
         while (func_800393C8() != 0) {}
     } else {
         while (func_800393C8() != 0) {}
-        func_80038490(D_8005F104, 0x800E1000);
+        func_80038490(D_8005F104, FIELD_BUNDLE_BUF);
     }
 
-    func_800A0D6C((u8 *)0x800E100C);
+    func_800A0D6C((u8 *)FIELD_BUNDLE_STRIPS);
     while (func_80048C50(1) != 0) {}
 
-    func_800A2D2C(*(s16 **)0x800E1004, *(s32 *)0x800E1008);
+    func_800A2D2C(*(s16 **)FIELD_BUNDLE_TIM, *(s32 *)FIELD_BUNDLE_SLOT);
 
     D_8005F100 = 0;
     D_8005F142 = 0;
     func_80038868(D_800C0908[D_800C2568[D_8005F14E] * 6],
-                  D_800C0908[D_800C2568[D_8005F14E] * 6 + 1], (u8 *)0x800E1000, NULL);
+                  D_800C0908[D_800C2568[D_8005F14E] * 6 + 1], (u8 *)FIELD_BUNDLE_BUF, NULL);
     while (func_800393C8() != 0) {}
 
     D_8005F0F8 = (EventQueue *)*D_800C7208;
     D_800D5EA4 = *D_800C71EC;
-    stageBase = 0x801B0000;
+    stageBase = FIELD_SCRIPT_STAGE;
     D_800704A8.unk018 = *D_800D5EAC;
     size = *D_800D5E8C - *D_800D5ED4;
-    func_80039678(0x801B0000, (s32)*D_800D5ED4, size);
+    func_80039678(FIELD_SCRIPT_STAGE, (s32)*D_800D5ED4, size);
     D_8005F13C = stageBase + size;
 
     ptr = *D_800D5E94;
@@ -235,9 +265,9 @@ s32 *func_800983F0(void) {
     D_800704B2 = 0x14;
 
     if (D_8005F14C == 3) {
-        buf = (u8 *)func_800BFBBC((u8 *)0x801B0000, (FieldEntityB *)0x80090800, (u16 *)*D_800D5ED4, 0);
+        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (FieldEntityB *)0x80090800, (u16 *)*D_800D5ED4, 0);
     } else {
-        buf = (u8 *)func_800BFBBC((u8 *)0x801B0000, (FieldEntityB *)0x80090800, (u16 *)*D_800D5ED4, 1);
+        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (FieldEntityB *)0x80090800, (u16 *)*D_800D5ED4, 1);
     }
 
     D_800C6D98[0] = buf;
@@ -261,9 +291,9 @@ s32 *func_800983F0(void) {
     }
 
     if (D_8005F14C == 3) {
-        heapEnd = (u8 *)0x801F4000;
+        heapEnd = (u8 *)FIELD_CMD_AREA_END_MODE3;
     } else {
-        heapEnd = (u8 *)0x801FE800;
+        heapEnd = (u8 *)FIELD_CMD_AREA_END;
     }
 
     if (D_8005F0F8->unk0D == 0) {
