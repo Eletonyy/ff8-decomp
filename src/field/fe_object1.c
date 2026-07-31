@@ -363,7 +363,7 @@ void func_80098934(void) {
  *   - Compute centered screen rectangles into @c D_800C7210 / @c D_800C7214
  *     from @c D_8005F0F8 's bounding-box fields, then derive
  *     @c D_800C71F0 (entry-table start = @c *D_800C7204 + 4) and
- *     @c D_800D5E98 (entry-table end = @c D_800C71F0 + count * 24).
+ *     @c D_800D5E98 (entry-table end = @c D_800C71F0 + count * 3 vertices).
  *   - Dispatch @c func_800BF718 with a mode argument that maps
  *     @c D_8005F14C ∈ {6→2, 0xA→3, 3→0, default→1}.
  *
@@ -949,11 +949,11 @@ s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
         ofs = (s16)i * 24;
         vB = (SVert *)(tris + (ofs + 8));
         vA = (SVert *)(tris + ofs);
-        func_8009DED8((u8 *)&e0, (u8 *)vB, (u8 *)vA);
+        func_8009DED8((Vec3i *)&e0, vB, vA);
         ofs += 16;
         vC = (SVert *)(tris + ofs);
-        func_8009DED8((u8 *)&e1, (u8 *)vC, (u8 *)vB);
-        func_8009DED8((u8 *)&e2, (u8 *)vA, (u8 *)vC);
+        func_8009DED8((Vec3i *)&e1, vC, vB);
+        func_8009DED8((Vec3i *)&e2, vA, vC);
         c0 = e0.y * (px - vA->sx) - e0.x * (py - vA->sy);
         c1 = e1.y * (px - vA[1].sx) - e1.x * (py - vA[1].sy);
         c2 = e2.y * (px - vA[2].sx) - e2.x * (py - vA[2].sy);
@@ -1000,13 +1000,12 @@ s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
  * A second pass clears every entity's @c headingBase before the movement
  * (@c func_8009E660) and path (@c func_8009BB18) tables are rebuilt.
  *
- * @note The triangle corners are addressed as byte offsets rather than as
- *       @c &tri->v[n]. That is the shape the original emits and what
- *       @c func_8009DED8 's @c u8* signature wants: the scaled triangle index
- *       is the shared subexpression and the table base is added to each corner
- *       separately. Writing @c &tri->v[n] makes gcc share the derived pointer
- *       and compute the second corner as @c ptr+8 instead (99.01%).
- *       @c func_8009AC9C in this file addresses the same helper the same way.
+ * @note The navmesh is indexed as a flat vertex array — triangle @c t owns
+ *       @c D_800C71F0[t*3 .. t*3+2] — which is also how @c func_8009DF18 reads
+ *       it. A @c Triangle[] view does not reproduce the original's addressing:
+ *       gcc then shares the derived triangle pointer between the two corner
+ *       arguments and computes the second as @c ptr+8, where the original
+ *       scales @c t*3 once and adds the vertex base to each corner.
  * @note @c pos.z is left uninitialised on the player path — only the
  *       non-player path zeroes it. @c func_8009E338 reads just X and Y, so this
  *       is harmless, and the original has the same asymmetry.
@@ -1026,31 +1025,26 @@ void func_8009AEC0(void) {
             if (D_800704A8.rotation != FIELD_POS_UNSET) {
                 D_80085224[i].triIdx = D_800704A8.rotation;
                 if (D_800704A8.position_x == FIELD_POS_UNSET) {
-                    D_80085224[i].posX = ((D_800C71F0[D_80085224[i].triIdx].v[0].sx +
-                                           D_800C71F0[D_80085224[i].triIdx].v[1].sx +
-                                           D_800C71F0[D_80085224[i].triIdx].v[2].sx) / 3) << 12;
-                    D_80085224[i].posY = ((D_800C71F0[D_80085224[i].triIdx].v[0].sy +
-                                           D_800C71F0[D_80085224[i].triIdx].v[1].sy +
-                                           D_800C71F0[D_80085224[i].triIdx].v[2].sy) / 3) << 12;
-                    D_80085224[i].posZ = ((D_800C71F0[D_80085224[i].triIdx].v[0].sz +
-                                           D_800C71F0[D_80085224[i].triIdx].v[1].sz +
-                                           D_800C71F0[D_80085224[i].triIdx].v[2].sz) / 3) << 12;
+                    D_80085224[i].posX = ((D_800C71F0[D_80085224[i].triIdx * 3 + 0].sx +
+                                           D_800C71F0[D_80085224[i].triIdx * 3 + 1].sx +
+                                           D_800C71F0[D_80085224[i].triIdx * 3 + 2].sx) / 3) << 12;
+                    D_80085224[i].posY = ((D_800C71F0[D_80085224[i].triIdx * 3 + 0].sy +
+                                           D_800C71F0[D_80085224[i].triIdx * 3 + 1].sy +
+                                           D_800C71F0[D_80085224[i].triIdx * 3 + 2].sy) / 3) << 12;
+                    D_80085224[i].posZ = ((D_800C71F0[D_80085224[i].triIdx * 3 + 0].sz +
+                                           D_800C71F0[D_80085224[i].triIdx * 3 + 1].sz +
+                                           D_800C71F0[D_80085224[i].triIdx * 3 + 2].sz) / 3) << 12;
                 } else {
-                    func_8009DED8((u8 *)&edge0,
-                                  (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) +
-                                                      offsetof(Triangle, v[1])),
-                                  (u8 *)D_800C71F0 + D_80085224[i].triIdx * sizeof(Triangle));
-                    func_8009DED8((u8 *)&edge1,
-                                  (u8 *)D_800C71F0 + (D_80085224[D_8005F148].triIdx * sizeof(Triangle) +
-                                                      offsetof(Triangle, v[2])),
-                                  (u8 *)D_800C71F0 + (D_80085224[D_8005F148].triIdx * sizeof(Triangle) +
-                                                      offsetof(Triangle, v[1])));
+                    func_8009DED8(&edge0, &D_800C71F0[D_80085224[i].triIdx * 3 + 1],
+                                  &D_800C71F0[D_80085224[i].triIdx * 3]);
+                    func_8009DED8(&edge1,
+                                  &D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 2],
+                                  &D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 1]);
                     pos.x = D_80085224[D_8005F148].posX / 4096;
                     pos.y = D_80085224[D_8005F148].posY / 4096;
                     D_80085224[D_8005F148].posZ =
                         func_8009E338(&edge0, &edge1, &pos,
-                                      (SVert *)((u8 *)D_800C71F0 +
-                                                D_80085224[D_8005F148].triIdx * sizeof(Triangle))) << 12;
+                                      &D_800C71F0[D_80085224[D_8005F148].triIdx * 3]) << 12;
                 }
             } else {
                 D_80085224[i].field_0x208 = 0x10;
@@ -1061,34 +1055,28 @@ void func_8009AEC0(void) {
                 D_80085224[D_8005F148].radius = 0x30;
                 D_80085224[D_8005F148].triIdx = 0;
                 D_80085224[D_8005F148].posX =
-                    ((D_800C71F0[D_80085224[D_8005F148].triIdx].v[0].sx +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx].v[1].sx +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx].v[2].sx) / 3) << 12;
+                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 0].sx +
+                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 1].sx +
+                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 2].sx) / 3) << 12;
                 D_80085224[D_8005F148].posY =
-                    ((D_800C71F0[D_80085224[D_8005F148].triIdx].v[0].sy +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx].v[1].sy +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx].v[2].sy) / 3) << 12;
+                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 0].sy +
+                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 1].sy +
+                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 2].sy) / 3) << 12;
                 D_80085224[D_8005F148].posZ =
-                    ((D_800C71F0[D_80085224[D_8005F148].triIdx].v[0].sz +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx].v[1].sz +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx].v[2].sz) / 3) << 12;
+                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 0].sz +
+                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 1].sz +
+                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 2].sz) / 3) << 12;
             }
         } else {
             pos.x = D_80085224[i].posX / 4096;
             pos.y = D_80085224[i].posY / 4096;
             pos.z = 0;
-            func_8009DED8((u8 *)&edge0,
-                          (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) +
-                                              offsetof(Triangle, v[1])),
-                          (u8 *)D_800C71F0 + D_80085224[i].triIdx * sizeof(Triangle));
-            func_8009DED8((u8 *)&edge1,
-                          (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) +
-                                              offsetof(Triangle, v[2])),
-                          (u8 *)D_800C71F0 + (D_80085224[i].triIdx * sizeof(Triangle) +
-                                              offsetof(Triangle, v[1])));
+            func_8009DED8(&edge0, &D_800C71F0[D_80085224[i].triIdx * 3 + 1],
+                          &D_800C71F0[D_80085224[i].triIdx * 3]);
+            func_8009DED8(&edge1, &D_800C71F0[D_80085224[i].triIdx * 3 + 2],
+                          &D_800C71F0[D_80085224[i].triIdx * 3 + 1]);
             D_80085224[i].posZ = func_8009E338(&edge0, &edge1, &pos,
-                                               (SVert *)((u8 *)D_800C71F0 +
-                                                         D_80085224[i].triIdx * sizeof(Triangle))) << 12;
+                                               &D_800C71F0[D_80085224[i].triIdx * 3]) << 12;
         }
     }
 
@@ -1529,14 +1517,14 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009D598);
 /**
  * Subtracts two 3-component short vectors, storing result as words.
  *
- * @param a0 Destination word array.
- * @param a1 Source vector A (s16 array).
- * @param a2 Source vector B (s16 array).
+ * @param out Destination edge vector (widened to words).
+ * @param a   Source vertex A.
+ * @param b   Source vertex B.
  */
-void func_8009DED8(u8 *a0, u8 *a1, u8 *a2) {
-    *(s32 *)(a0 + 0) = *(s16 *)(a1 + 0) - *(s16 *)(a2 + 0);
-    *(s32 *)(a0 + 4) = *(s16 *)(a1 + 2) - *(s16 *)(a2 + 2);
-    *(s32 *)(a0 + 8) = *(s16 *)(a1 + 4) - *(s16 *)(a2 + 4);
+void func_8009DED8(Vec3i *out, SVert *a, SVert *b) {
+    out->x = a->sx - b->sx;
+    out->y = a->sy - b->sy;
+    out->z = a->sz - b->sz;
 }
 
 /**
@@ -1620,15 +1608,15 @@ s32 func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux) {
     posV.sz = 0;
 
     while (1) {
-        func_8009DED8((u8 *)&e0, (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 1], (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3]);
-        func_8009DED8((u8 *)&e1, (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 2], (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 1]);
-        func_8009DED8((u8 *)&e2, (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3], (u8 *)&((SVert *)D_800C71F0)[*pTriIdx * 3 + 2]);
+        func_8009DED8(&e0, &D_800C71F0[*pTriIdx * 3 + 1], &D_800C71F0[*pTriIdx * 3]);
+        func_8009DED8(&e1, &D_800C71F0[*pTriIdx * 3 + 2], &D_800C71F0[*pTriIdx * 3 + 1]);
+        func_8009DED8(&e2, &D_800C71F0[*pTriIdx * 3], &D_800C71F0[*pTriIdx * 3 + 2]);
         idx3 = *pTriIdx * 3;
-        gte_nclip(nc0, *(u32 *)&posV, *(u32 *)&((SVert *)D_800C71F0)[idx3 + 1], *(u32 *)&((SVert *)D_800C71F0)[idx3]);
+        gte_nclip(nc0, *(u32 *)&posV, *(u32 *)&D_800C71F0[idx3 + 1], *(u32 *)&D_800C71F0[idx3]);
         idx3 = *pTriIdx * 3;
-        gte_nclip(nc1, *(u32 *)&posV, *(u32 *)&((SVert *)D_800C71F0)[idx3 + 2], *(u32 *)&((SVert *)D_800C71F0)[idx3 + 1]);
+        gte_nclip(nc1, *(u32 *)&posV, *(u32 *)&D_800C71F0[idx3 + 2], *(u32 *)&D_800C71F0[idx3 + 1]);
         idx3 = *pTriIdx * 3;
-        gte_nclip(nc2, *(u32 *)&posV, *(u32 *)&((SVert *)D_800C71F0)[idx3], *(u32 *)&((SVert *)D_800C71F0)[idx3 + 2]);
+        gte_nclip(nc2, *(u32 *)&posV, *(u32 *)&D_800C71F0[idx3], *(u32 *)&D_800C71F0[idx3 + 2]);
         if (nc0 >= 0 && nc1 >= 0 && nc2 >= 0) {
             break;
         }
@@ -1659,7 +1647,7 @@ s32 func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux) {
         }
     }
 
-    out->z = func_8009E338(&e0, &e1, &posW, (Vec3s *)&D_800C71F0[*pTriIdx]);
+    out->z = func_8009E338(&e0, &e1, &posW, (Vec3s *)&D_800C71F0[*pTriIdx * 3]);
     return ret;
 }
 

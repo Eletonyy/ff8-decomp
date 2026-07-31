@@ -14,11 +14,6 @@ typedef int s32;
 #define NULL ((void *)0)
 #endif
 
-#ifndef offsetof
-/** @brief Byte offset of member @p m within type @p t (the SDK headers do not provide one). */
-#define offsetof(t, m) ((s32)&(((t *)0)->m))
-#endif
-
 /**
  * @brief 16-bit slot accessed as either a halfword or its two constituent bytes.
  *

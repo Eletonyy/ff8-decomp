@@ -102,8 +102,12 @@ typedef struct {
     u16 neighbor[3];
 } AdjRec;
 
-extern Triangle *D_800C71F0;  /**< Field navmesh triangle array (loaded per field). */
-extern AdjRec   *D_800D5E98;  /**< Per-triangle edge adjacency table, parallel to @c D_800C71F0. */
+/**
+ * @brief Field navmesh vertices (loaded per field), three consecutive @ref SVert
+ *        per triangle — triangle @c t owns @c D_800C71F0[t*3 .. t*3+2].
+ */
+extern SVert *D_800C71F0;
+extern AdjRec *D_800D5E98;    /**< Per-triangle edge adjacency table, one entry per triangle. */
 
 
 /** @brief 32-byte slot stride for indexing into a particle system buffer. */
@@ -243,7 +247,7 @@ extern void func_8009BB18(void);
 extern void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8);
 extern s16  func_8009D234(s32 a0);
 extern s16  func_8009D254(s32 a0);
-extern void func_8009DED8(u8 *a0, u8 *a1, u8 *a2);
+extern void func_8009DED8(Vec3i *out, SVert *a, SVert *b);
 extern s32  func_8009E468(s16 selfIdx, Vec3i *pos);
 extern s32  func_8009E604(Eline *a, Eline *b);
 extern void func_800A17A4(u8 *a0);
