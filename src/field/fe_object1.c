@@ -1,5 +1,6 @@
 #include "common.h"
 #include "field.h"
+#include "gamestate.h"
 #include "main.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libgpu.h"
@@ -357,53 +358,241 @@ void func_80098934(void) {
  *   - Dispatch @c func_800BF718 with a mode argument that maps
  *     @c D_8005F14C ∈ {6→2, 0xA→3, 3→0, default→1}.
  *
- * @note Decomp at 98.79% match; @c permuter/func_8009895C/base.c holds the
- *       source (mirrored to the NAS backup, since @c permuter/ is ignored).
- *       Two clusters of real diff remain, both resistant to ~25 targeted
- *       source rewrites:
+ * @note Two source shapes carry this to a byte match, and both are the
+ *       opposite of what reads naturally:
  *
- *       1. The prologue materialises @c &D_800704A8 one instruction short.
- *          The original goes @c lui @c -> @c fp, @c addiu @c -> @c v0,
- *          @c move @c -> @c s2 — three pseudos, so the copy into @c s2
- *          survives because @c sys is a global allocno that @c local_alloc
- *          cannot tie to the dying intermediate. Every spelling tried
- *          (initialiser, @c register, cast chain, temp pointer, duplicate
- *          init, reordering against the @c memcpy and @c InitClearTiles)
- *          collapses it to two pseudos and @c addiu @c s2, @c s8, @c %lo.
+ *       1. Every @c SystemState access goes through @c D_800704A8 directly
+ *          rather than a cached @c SystemState @c *sys. With a pointer local,
+ *          gcc builds the address in two pseudos (@c lui @c -> @c fp,
+ *          @c addiu @c -> @c s2) and the original has three — cse only
+ *          manufactures the extra base-pointer pseudo, and the copy into
+ *          @c s2 that comes with it, when the accesses are written against
+ *          the symbol. A pointer local is one instruction short however it
+ *          is spelled (initialiser, @c register, cast chain, temp pointer,
+ *          duplicate init, reordering against the @c memcpy).
  *
- *       2. The @c func_800BF718 argument chain emits its @c ==3 test before
- *          the @c ==6 / @c ==0xA pair instead of after. The @c ==3 test has
- *          to lead in the source, because with the original's
- *          @c if @c (x @c == @c 6 @c || @c x @c == @c 0xA) nesting gcc folds
- *          the inner @c 0 / @c 1 arms into @c xori + @c sltu, which the
- *          original does not have. Leading with @c ==3 separates the two
- *          arms and defeats the fold, at the cost of the test order. No form
- *          found yet gives both.
+ *       2. @c func_800BF718 is called four times, once per arm, not once
+ *          with a computed argument. Cross-jumping merges the four @c jal
+ *          into the single call the original has, and because there is no
+ *          variable to fold, the @c ==3 arm keeps its branch. Assigning a
+ *          @c mode variable instead makes gcc collapse the @c 0 / @c 1 arms
+ *          into @c xori + @c sltu — unavoidable in every if/else, ternary,
+ *          set-override and switch spelling tried.
  *
- *       Everything else — all four loops, the twelve-pointer section
- *       snapshot, and the whole exit-state dispatch — is instruction-exact.
- *       https://decomp.me/scratch/rFzLA is the in-browser scratch.
- *
- *       Several semantic bugs were caught during decomp and fixed in the
- *       baseline: the @c D_800704A8.mode = 0 dispatch had inverted
- *       condition; @c func_800BF718 's mode arg mapping had 0xA→2 (wrong,
- *       should be 3) and 3→3 (wrong, should be 0); state==7 was missing
- *       the @c sys->unk120 = @c D_8005F14E save; @c D_800D5E98 was missing
- *       the @c +4 offset for the entry-table-end pointer. Two more were
- *       found since: the baseline dropped both @c isrgb24 clears on the
- *       @c DISPENV pair (@c D_80067440[0x11] and @c [0x25]) before
- *       @c PutDispEnv, and in state==1 it stored @c D_8005F14E after the
- *       @c sndCmd21 call rather than before — the original loads
- *       @c sys->counter first and lets dbr sink the store into the jal
- *       delay slot, so writing it after the call reads a post-call value.
- *       A third: the baseline ended the loop body with an unconditional
- *       @c break, so every engine state other than the ones handled above
- *       fell out of the field loop. The original's
- *       @c bne @c s0, @c s4, @c .Lloop_top branches back — only states
- *       4, 3, 8, 5, 6 and 7 exit; state 1 runs its body and loops, and
- *       every other state loops immediately.
+ *       Several semantic bugs were caught during decomp: the
+ *       @c D_800704A8.mode = 0 dispatch had an inverted condition;
+ *       @c func_800BF718 's argument mapping had 0xA->2 (should be 3) and
+ *       3->3 (should be 0); state==7 was missing the @c field_0x120 save;
+ *       @c D_800D5E98 was missing the @c +4 offset. Three more surfaced
+ *       while closing the last 2%: both @c isrgb24 clears on the
+ *       @c DISPENV pair were absent before @c PutDispEnv; state==1 stored
+ *       @c D_8005F14E after @c sndCmd21 instead of before (the original
+ *       loads @c counter first and lets dbr sink the store into the jal
+ *       delay slot, so doing it after reads a post-call value); and the
+ *       loop body ended in an unconditional @c break, dropping out of the
+ *       field loop for every state except the six that really exit.
  */
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009895C);
+void func_8009895C(void) {
+    u8 *p;
+    EventQueue *q;
+    u8 state;
+    u8  header[16];
+
+    /* Copy 8-byte header from D_80098000 (lwl/lwr unaligned copy in asm) — dead store, kept for codegen match */
+    memcpy(header, D_80098000, 8);
+    func_80012870();
+
+    D_800704A8.dialogState = 0;
+    D_800704A8.unk1A1 = 0;
+
+    while (1) {
+        if ((s16)D_8005F14C != 6) {
+            func_800A7194();
+        }
+
+        if (D_8005F14C == 0 || (s16)D_8005F14C == 1 || (s16)D_8005F14C == 2) {
+            D_800704A8.unk1A6 = 0;
+            D_800704A8.unk1A9 = 0;
+            D_800704A8.unk1A7 = 1;
+            D_800704A8.unk1A2 = 0;
+            D_800704A8.unk1AA = 0;
+            D_800704A8.unk015 = 0;
+            D_800704A8.fieldStepDelta = 0;
+            D_800704A8.unk1AE = 0x1C;
+            D_800704A8.unk1B0 = 0;
+            D_800704A8.unk1B1 = 0;
+            D_800704A8.unk104 = 0;
+            D_800704A8.unk106 = 0;
+            func_800A17A4(&D_800704A8.unk122);
+            func_800A17A4(&D_800704A8.unk130);
+            func_800A44D8();
+            func_80098934();
+        }
+
+        if (D_8005F14C == 0) {
+            func_80098314();
+            func_80048DD4(&D_80067388[0].clip, 0, 0, 0);
+            func_80048DD4(&D_80067388[1].clip, 0, 0, 0);
+        }
+
+        if (((s16)D_8005F14C == 1 && D_800704A8.unk1A5 == 0) || (s16)D_8005F14C == 2) {
+            func_80042634(0);
+            func_80098314();
+            if ((s16)D_8005F14C == 2) {
+                g_bufferIndex = 1;
+            }
+            copyFramebuffer();
+            D_8005F116 = 1;
+            D_8005F0FC = 0;
+            D_8005F11E = 0;
+            D_8005F146 = 1;
+        }
+
+        if ((s16)D_8005F14C != 6) {
+            D_800C7208 = (u8 **)0x800E1000;
+            D_800C71E8 = (u8 **)0x800E1004;
+            D_800C7204 = (TriangleList **)0x800E1008;
+            D_800D5E90 = (ScriptList *)0x800E100C;
+            D_800D5E9C = (u16 **)0x800E1010;
+            D_800C71F4 = (u8 **)0x800E1014;
+            D_800C720C = (u16 **)0x800E1018;
+            D_800C71EC = (u8 **)0x800E101C;
+            D_800D5EAC = (s32 *)0x800E1020;
+            D_800D5E94 = (u8 **)0x800E1024;
+            D_800D5ED4 = (u8 **)0x800E1028;
+            D_800D5E8C = (u8 **)0x800E102C;
+            p = func_800983F0();
+            D_8005F104 = (s32)p;
+            D_8005F13C = (s32)p;
+        }
+
+        func_800A1BB8();
+        func_80098314();
+        func_80049B78(D_800CC118, &D_80067388[0]);
+        func_80049B78(&D_800CC118[0x6638], &D_80067388[1]);
+        func_80049B78(&D_800CC118[0x40], &D_80067388[0]);
+        func_80049B78(&D_800CC118[0x6678], &D_80067388[1]);
+
+        if (D_8005F14C == 0
+            || (s16)D_8005F14C == 3
+            || (s16)D_8005F14C == 6
+            || (s16)D_8005F14C == 0xA) {
+            *(u8 *)&D_800704A8 = 0;
+        }
+
+        if (D_800C7200 != 0) {
+            func_800A3FE0((FieldSubsceneBuffer *)D_800C7200);
+        }
+
+        if (D_8005F14C == 0 || (s16)D_8005F14C == 1 || (s16)D_8005F14C == 2) {
+            func_800A62EC((u8 *)D_8005F0F8 + 0x1E4);
+            q = D_8005F0F8;
+            D_800704A8.unk1A4 = 0;
+            D_800704A8.unk1A8 = q->unk09;
+            D_800704A8.unk100 = q->unk09;
+        } else {
+            D_800704A8.unk010 = 2;
+        }
+
+        func_800A42EC(D_800CD1B0, &D_800CD1B0[0x5A0]);
+        func_800A42EC(&D_800CD1B0[0x6638], &D_800CD1B0[0x6BD8]);
+        func_800A2128(D_800CD1B0 - 0x5F98);
+        func_800A2128(&D_800CD1B0[0x6A0]);
+
+        func_80048B58(D_800982F0);
+        D_8005F14A = 0;
+        D_800C7210 = ((D_8005F0F8->rect_b[0].f4 - D_8005F0F8->rect_b[0].f6) / 2) + D_8005F0F8->rect_b[0].f6;
+        D_800C7214 = ((D_8005F0F8->rect_b[0].f2 - D_8005F0F8->rect_b[0].f0) / 2) + D_8005F0F8->rect_b[0].f0;
+        /* *D_800C7204 points to a header: { u16 count; pad[2]; entries[count][24]; }.
+         * D_800C71F0 skips past the count to the entry array.
+         * D_800D5E98 ends up one-past-the-last entry. */
+        D_800C71F0 = (SVert *)((u8 *)*D_800C7204 + 4);
+        D_800D5E98 = (AdjRec *)((u8 *)D_800C71F0 + (*(u16 *)*D_800C7204) * 24);
+
+        if ((s16)D_8005F14C != 6 && (s16)D_8005F14C != 3) {
+            func_8009AEC0();
+        }
+
+        if ((s16)D_8005F14C != 6 && (s16)D_8005F14C != 0xA) {
+            if ((s16)D_8005F14C == 3) {
+                func_800BF718(0);
+            } else {
+                func_800BF718(1);
+            }
+        } else {
+            if ((s16)D_8005F14C == 6) {
+                func_800BF718(2);
+            } else {
+                func_800BF718(3);
+            }
+        }
+
+        func_80099348();
+        func_80048B58(0);
+        while (func_80048C50(1) != 0) {}
+        func_80042634(0);
+        func_80098314();
+
+        D_80067440[0].isrgb24 = 0;
+        D_80067440[1].isrgb24 = 0;
+        func_80049480(&D_80067440[(s16)g_bufferIndex]);
+        func_800492B4(&D_80067388[(s16)g_bufferIndex]);
+
+        state = *(u8 *)&D_800704A8;
+        D_8005F14C = 1;
+
+        if (state == 4) {
+            func_80042634(0);
+            func_80048BB8(0);
+            D_8005F14A = 0;
+            break;
+        }
+        if (state == 3 || state == 8) {
+            D_8005F14A = 0;
+            break;
+        }
+        if (state == 5 || state == 6) {
+            copyFramebuffer();
+            D_8005F116 = 9;
+            D_8005F0FC = 0;
+            D_8005F11E = 0;
+            D_8005F146 = 1;
+            D_8005F14A = 0;
+            break;
+        }
+        if (state == 7) {
+            *(u8 *)&D_800704A8 = 0;
+            D_8005F158 = 2;
+            D_800704A8.field_0x120 = D_8005F14E;
+            D_80082C8C.unk02 = *(u8 *)&D_800704A8.counter;
+            D_80082C8C.cmd = *(u8 *)&D_800704A8.spawnTriIdx;
+            D_80082C8C.unk03 = *(u8 *)&D_800704A8.anim_state;
+            sndCmd21(-1, 0);
+            break;
+        }
+        if (state == 1) {
+            *(u8 *)&D_800704A8 = 0;
+            D_800704A8.field_0x120 = D_8005F14E;
+            D_8005F14E = D_800704A8.counter;
+            sndCmd21(-2, D_800704A8.field1B4);
+            if (D_800704A8.unk1B0 != 1) {
+                func_800ACB10();
+            } else if (D_8005F0F8->unk0D == 0) {
+                func_800A1CC0();
+            } else {
+                func_800ACB10();
+            }
+            D_8005F14A = 0;
+            func_800308B0(-1);
+            func_80027448();
+        }
+    }
+
+    func_800308B0(-1);
+    func_80027448();
+    func_80042634(0);
+}
+
 
 void func_80099124(void) {
 }

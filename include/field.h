@@ -228,7 +228,9 @@ typedef struct {
  *        entry ring and the field line-trigger table.
  */
 typedef struct {
-    /* 0x000 */ u8 pad00[0x0D];
+    /* 0x000 */ u8 pad00[0x09];
+    /* 0x009 */ u8 unk09;            /**< Copied into @c SystemState::unk1A8 and @c unk100 on field entry. */
+    /* 0x00A */ u8 pad0A[0x03];
     /* 0x00D */ u8 unk0D;            /**< Field-bundle variant flag: selects the @c D_800C315C command table over
                                           @c D_800C311C in @c func_800983F0, and forces the eline-pool install
                                           (@c func_800A1CC0) even for load modes 1 and 6. */
@@ -272,14 +274,14 @@ typedef struct {
                                          by both @c func_8009AEC0 and @c func_800BE264.
                                          @c SPAWN_UNSET means "keep the entity where it is". */
     /* 0x00E */ u16 anim_state;     /**< Spawn animation id, copied to @c Eline::field_0x241. */
-    /* 0x010 */ u8 pad010[0x02];
+    /* 0x010 */ u16 unk010;         /**< Set to 2 by @c func_8009895C on load modes other than 0/1/2. */
     /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_fieldVars->memberSlot[]). */
     /* 0x015 */ u8 unk015;          /**< Cleared by @c opHandler_UCON along with the trigger flag. */
     /* 0x016 */ u8 pad016[0x02];
     /* 0x018 */ s32 unk018;         /**< Word snapshotted from the field bundle's @c D_800D5EAC section pointer on load. */
     /* 0x01C */ s32 fieldStepDelta; /**< Step delta passed to @c func_800BD804 each field tick. */
     /* 0x020 */ SystemSubMode slots[8]; /**< 8 mode/param slots, stride 28; slot 0 corresponds to the legacy @c unk020..unk032 fields. */
-    /* 0x100 */ u8 pad100[0x02];
+    /* 0x100 */ u16 unk100;         /**< Seeded from @c EventQueue::unk09 on field entry. */
     /* 0x102 */ u16 unk102;
     /* 0x104 */ u16 unk104;
     /* 0x106 */ u16 unk106;
@@ -326,14 +328,20 @@ typedef struct {
     /* 0x1A1 */ u8 unk1A1;          /**< Cleared unconditionally by @c func_800A5700 each dialog tick. */
     /* 0x1A2 */ u8 unk1A2;          /**< Mode-7 reentry guard byte. */
     /* 0x1A3 */ u8 unk1A3;          /**< Set to 1 by @c opHandler_UCOFF on every call (re-arm guard). */
-    /* 0x1A4 */ u8 pad1A4[0x02];
+    /* 0x1A4 */ u8 unk1A4;
+    /* 0x1A5 */ u8 unk1A5;          /**< Non-zero suppresses the load-mode-1 framebuffer copy. */
     /* 0x1A6 */ u8 unk1A6;          /**< Cleared by @c func_800BFBBC on full reset. */
-    /* 0x1A7 */ u8 pad1A7[0x04];
+    /* 0x1A7 */ u8 unk1A7;
+    /* 0x1A8 */ u8 unk1A8;
+    /* 0x1A9 */ u8 unk1A9;
+    /* 0x1AA */ u8 unk1AA;
     /* 0x1AB */ u8 unk1AB;          /**< Sub-mode byte; written together with @c mode by fe_object6 opcodes. */
     /* 0x1AC */ u8 pad1AC[0x02];
     /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c opHandler_COUNTERCLOCKWISETURN2, read by @c func_8009FE18). */
     /* 0x1AF */ u8 packedFlagSlot;  /**< Last @c getPackedField2Bit result for the active dispatcher slot; written each tick by @c func_800BD9C4. */
-    /* 0x1B0 */ u8 pad1B0[0x04];
+    /* 0x1B0 */ u8 unk1B0;          /**< 1 selects the eline-pool install path on engine state 1. */
+    /* 0x1B1 */ u8 unk1B1;
+    /* 0x1B2 */ u8 pad1B2[0x02];
     /* 0x1B4 */ s32 field1B4;       /**< Initialised to @c 0xFFFFFF by @c func_800BFBBC on full reset. */
     /* 0x1B8 */ u8 statusBits[0x40]; /**< Packed bit-array (512 bits); set by @c opHandler_IDLOCK, cleared by @c opHandler_IDUNLOCK, zeroed during init. */
 } SystemState;

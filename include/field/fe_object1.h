@@ -130,6 +130,27 @@ typedef struct {
  *        per triangle — triangle @c t owns @c D_800C71F0[t*3 .. t*3+2].
  */
 extern SVert *D_800C71F0;
+/** @brief Overlay header bytes at the field overlay's load address; 8 are copied to the stack on entry. */
+extern u8 D_80098000[];
+/** @brief The field overlay's own DrawSync callback, installed by @c func_8009895C. */
+extern u8 D_800982F0[];
+/** @brief Draw-environment packet arena; @c SetDrawEnv builds into it for both buffers. */
+extern u8 D_800CC118[];
+/** @brief Per-frame prim arena the field renderers build into. */
+extern u8 D_800CD1B0[];
+/** @brief Field-data section pointer set from @c 0x800E1004 on load. */
+extern u8 **D_800C71E8;
+/** @brief Horizontal centre of the field clamp rect, derived on every load. */
+extern s32 D_800C7210;
+/** @brief Vertical centre of the field clamp rect, derived on every load. */
+extern s32 D_800C7214;
+/** @brief Cleared alongside the framebuffer copy that @c func_8009895C kicks off. */
+extern u8 D_8005F0FC;
+/** @brief Set to 2 when the engine leaves the field on state 7. */
+extern s16 D_8005F158;
+/** @brief Field render/present request byte; 1 = normal, 9 = post-copy. */
+extern volatile u8 D_8005F116;
+
 /** @brief Field-data section pointer to the navmesh triangle list (@c *D_800C7204 + 4 is @c D_800C71F0). */
 extern TriangleList **D_800C7204;
 extern AdjRec *D_800D5E98;    /**< Per-triangle edge adjacency table, one entry per triangle. */
@@ -294,7 +315,8 @@ extern s32  func_800A5CF8(void);
 extern void func_80098314(void);
 /** @brief Load/refresh the active field map's asset bundle from CD. */
 extern s32 *func_800983F0(void);
-extern int  func_8009895C();
+/** @brief Field engine main loop: loads a field, runs it, and dispatches on the exit state. */
+extern void func_8009895C(void);
 extern void func_80099180(void);
 extern int  func_80099348();
 extern s32  func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist);
