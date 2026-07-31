@@ -130,6 +130,8 @@ typedef struct {
  *        per triangle — triangle @c t owns @c D_800C71F0[t*3 .. t*3+2].
  */
 extern SVert *D_800C71F0;
+/** @brief Field-data section pointer to the navmesh triangle list (@c *D_800C7204 + 4 is @c D_800C71F0). */
+extern TriangleList **D_800C7204;
 extern AdjRec *D_800D5E98;    /**< Per-triangle edge adjacency table, one entry per triangle. */
 
 
@@ -313,7 +315,8 @@ extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_ob
 extern int  func_8009D598();
 extern s32  func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux);
 extern s32 func_8009E338(Vec3i *a0, Vec3i *a1, Vec3i *a2, Vec3s *a3);  /* plane-cross intersection */
-extern int  func_8009E660();
+/** @brief Refill both follower path rings from the player's position on field entry. */
+extern void func_8009E660(void);
 extern int  func_8009ECA4();
 extern s32  func_8009F74C(Eline *a, Eline *b);
 extern void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode);

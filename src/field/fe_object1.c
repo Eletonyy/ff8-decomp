@@ -1752,7 +1752,108 @@ s32 func_8009E604(Eline *a, Eline *b) {
     return func_8009A0E8(pos1, pos2, result);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009E660);
+/**
+ * @brief Reset both follower path tables to the player's position on field entry.
+ *
+ * @c D_80070A60 and @c D_80070760 are the 64-entry breadcrumb rings the two
+ * party followers walk along: @c D_8009B74C writes the player's current
+ * waypoint at cursor @c D_8005F144 each step, and each follower samples the
+ * ring at @c (cursor @c - @c lag) @c & @c 0x3F. Entering a field leaves the ring
+ * with no history, so it is refilled here. Every waypoint is marked walkable
+ * (@c field_09 / @c unk8 @c = @c 1) and the two follower lag distances are reset
+ * to their defaults, current (@c D_8005F118 / @c D_8005F11A) and target
+ * (@c D_8005F160 / @c D_8005F162) alike.
+ *
+ * On a fresh load (@c D_8005F14C @c == @c 0) there is no heading to trail along,
+ * so every waypoint just gets the player's position, triangle and facing — the
+ * followers stand on top of the player until real movement fills the ring.
+ *
+ * Otherwise the trail is synthesised backwards from the player. Slot 0 holds the
+ * exact position and slots 63..1 each step one trail spacing further back along
+ * the player's facing, the step being @c sin / @c cos (@ref func_8009D234 /
+ * @ref func_8009D254) scaled by @c SystemState::unk00A. Each stepped point is
+ * snapped onto the navmesh by @ref func_8009AC9C and its Z read off that
+ * triangle's plane (@ref func_8009DED8 twice, then @ref func_8009E338); if the
+ * plane Z lands further than @c 0x136 from the stepped Z the point is off the
+ * walkable surface and the slot falls back to the player's own X/Y.
+ *
+ * @note Slot 0 only receives X and Y here — its Z, triangle and facing keep
+ *       whatever the ring already held.
+ */
+void func_8009E660(void) {
+    Vec3i edge0;
+    Vec3i edge1;
+    Vec3i pos;
+    s32 x;
+    s32 y;
+    s32 z;
+    s16 px;
+    s16 py;
+    s32 pz;
+    s32 planeZ;
+    s16 i;
+
+    D_8005F144 = 0;
+    D_8005F118 = 15;
+    D_8005F11A = 30;
+    D_8005F160 = 15;
+    D_8005F162 = 30;
+
+    for (i = 0; i < 64; i++) {
+        D_80070760[i].field_09 = D_80070A60[i].field_09 = 1;
+        D_80070760[i].unk8 = D_80070A60[i].unk8 = 1;
+    }
+
+    if (D_8005F14C == 0) {
+        for (i = 0; i < 64; i++) {
+            D_80070760[i].x = D_80070A60[i].x = D_80085224[D_8005F148].posX / 4096;
+            D_80070760[i].y = D_80070A60[i].y = D_80085224[D_8005F148].posY / 4096;
+            D_80070760[i].z = D_80070A60[i].z = D_80085224[D_8005F148].posZ / 4096;
+            D_80070760[i].unk6 = D_80070A60[i].unk6 = D_80085224[D_8005F148].triIdx;
+            D_80070760[i].field_0A = D_80070A60[i].field_0A = 0;
+            D_80070760[i].field_0B = D_80070A60[i].field_0B = D_80085224[D_8005F148].field_0x241;
+        }
+    } else {
+        x = D_80085224[D_8005F148].posX;
+        y = D_80085224[D_8005F148].posY;
+        z = D_80085224[D_8005F148].posZ;
+        D_80070760[0].x = D_80070A60[0].x = D_80085224[D_8005F148].posX / 4096;
+        D_80070760[0].y = D_80070A60[0].y = D_80085224[D_8005F148].posY / 4096;
+
+        for (i = 0; i < 63; i++) {
+            pos.x = px = D_80070760[63 - i].x = D_80070A60[63 - i].x = x / 4096;
+            pos.y = py = D_80070760[63 - i].y = D_80070A60[63 - i].y = y / 4096;
+            pz = z / 4096;
+            D_80070760[63 - i].unk6 = D_80070A60[63 - i].unk6 =
+                func_8009AC9C(px, py, pz, *D_800C7204);
+            func_8009DED8(&edge0, &D_800C71F0[D_80070760[63 - i].unk6 * 3 + 1],
+                          &D_800C71F0[D_80070760[63 - i].unk6 * 3]);
+            func_8009DED8(&edge1, &D_800C71F0[D_80070760[63 - i].unk6 * 3 + 2],
+                          &D_800C71F0[D_80070760[63 - i].unk6 * 3 + 1]);
+            planeZ = func_8009E338(&edge0, &edge1, &pos,
+                                   (Vec3s *)&D_800C71F0[D_80070760[63 - i].unk6 * 3]);
+            if (planeZ < pz + 0x136 && pz - 0x136 < planeZ) {
+                D_80070760[63 - i].z = D_80070A60[63 - i].z = planeZ;
+            } else {
+                D_80070760[63 - i].x = D_80070A60[63 - i].x =
+                    D_80085224[D_8005F148].posX / 4096;
+                D_80070760[63 - i].y = D_80070A60[63 - i].y =
+                    D_80085224[D_8005F148].posY / 4096;
+                D_80070760[63 - i].z = D_80070A60[63 - i].z = z / 4096;
+            }
+            D_80070760[63 - i].field_0A = D_80070A60[63 - i].field_0A = 0;
+            D_80070760[63 - i].field_0B = D_80070A60[63 - i].field_0B =
+                D_80085224[D_8005F148].field_0x241;
+            /* FIELD_CHANNEL_SCALE * 4 >> 9 is the same trail spacing func_800B6738
+               applies to D_800704B2; written *4 >> 9 because that is the shift pair
+               the original emits. */
+            x -= func_8009D234(D_80085224[D_8005F148].field_0x241) *
+                 ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9) / 256;
+            y -= -(func_8009D254(D_80085224[D_8005F148].field_0x241) *
+                   ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9)) / 256;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009ECA4);
 
