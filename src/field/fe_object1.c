@@ -1184,7 +1184,7 @@ s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
     return (s16)bestIdx;
 }
 
-/** @brief Scale applied to @c D_800704A8.unk00A when seeding @c Eline::savedChannel. */
+/** @brief Scale applied to @c D_800704A8.unk00A when seeding @c Eline::moveSpeed. */
 #define FIELD_CHANNEL_SCALE 0x4367
 
 /** @brief Sentinel in @c D_800704A8.spawnTriIdx / @c position_x meaning "no override". */
@@ -1264,7 +1264,7 @@ void func_8009AEC0(void) {
                 D_80085224[D_8005F148].field_0x251 = 2;
                 /* Same scale func_800B6738 applies to D_800704B2 (there as *69020>>9), so
                    the entity starts exactly at the threshold that picks field_0x251. */
-                D_80085224[D_8005F148].savedChannel = ((u32)(D_800704A8.unk00A * 17255)) >> 7;
+                D_80085224[D_8005F148].moveSpeed = ((u32)(D_800704A8.unk00A * 17255)) >> 7;
                 D_80085224[D_8005F148].radius = 0x30;
                 D_80085224[D_8005F148].triIdx = 0;
                 D_80085224[D_8005F148].posX =
@@ -1578,7 +1578,7 @@ s16 func_8009D254(s32 a0) {
  *
  * When @p pad is non-zero the entity is treated as still travelling unless the
  * remaining squared distance exceeds @c (radius + pad)^2 + 0x1000, in which
- * case 0 is returned. Arrival — squared distance below @c savedChannel^2 >> 16
+ * case 0 is returned. Arrival — squared distance below @c moveSpeed^2 >> 16
  * or below 4 — snaps the position onto the destination and returns 0.
  *
  * Otherwise the bearing to the destination is taken (@c func_8009A0E8, which
@@ -1623,7 +1623,7 @@ s32 func_8009D274(Eline *self, s16 pad) {
             return 0;
         }
     }
-    if (dist < (self->savedChannel * self->savedChannel) >> 16 || dist < 4) {
+    if (dist < (self->moveSpeed * self->moveSpeed) >> 16 || dist < 4) {
         self->posX = self->msgTextPtr;
         self->posY = self->msgPosX;
         return 0;
@@ -1684,27 +1684,32 @@ s32 func_8009D274(Eline *self, s16 pad) {
 }
 
 /**
- * @brief Scratchpad work context — arg2 of @c func_8009D500.
+ * @brief Movement work area in PSX scratchpad memory at @c getScratchAddr(16)
+ *        (@c 0x1F800040), shared by @c func_8009D598 and @c func_8009D500.
  *
- * Caller passes @c &scratchpad[0x40] (a temporary buffer in PSX
- * scratchpad memory); the struct describes the slice of that area
- * @c func_8009D500 touches.
+ * Six 16-byte @c VECTOR slots: the two navmesh-triangle edge vectors that
+ * @c func_8009D598 feeds to the GTE @c OP (cross product) instruction, the
+ * ground-plane normal that comes back out of it, the source and stepped
+ * positions, and the step delta.
  */
 typedef struct {
-    /* 0x00 */ u8  pad00[0x10];
-    /* 0x10 */ s32 unk10;       /**< Passed to @c func_8009DF18 as the @c aux pointer. */
-    /* 0x14 */ u8  pad14[0x1C];
+    /* 0x00 */ s32 e0x, e0y, e0z; /**< Triangle edge v1-v0; loaded as the GTE @c OP D-vector. */
+    /* 0x0C */ s32 pad0C;
+    /* 0x10 */ s32 e1x, e1y, e1z; /**< Triangle edge v2-v1; loaded as the GTE @c OP IR-vector. */
+    /* 0x1C */ s32 pad1C;
+    /* 0x20 */ s32 nx, ny, nz;    /**< Ground-plane normal (@c OP result), normalised and clamped. */
+    /* 0x2C */ s32 pad2C;
     /* 0x30 */ s32 srcX;
     /* 0x34 */ s32 srcY;
     /* 0x38 */ s32 srcZ;        /**< Copied to @c outZ without delta. */
-    /* 0x3C */ u8  pad3C[0x04];
+    /* 0x3C */ s32 pad3C;
     /* 0x40 */ s32 outX;        /**< @c outX = @c srcX + @c dx. */
     /* 0x44 */ s32 outY;        /**< @c outY = @c srcY + @c dy. */
     /* 0x48 */ s32 outZ;
-    /* 0x4C */ u8  pad4C[0x04];
+    /* 0x4C */ s32 pad4C;
     /* 0x50 */ s32 dx;
     /* 0x54 */ s32 dy;
-} func_8009D500_arg2;
+} FieldStepScratch;
 
 /**
  * @brief Step a position by (@c dx, @c dy, @c 0) and check collision.
@@ -1717,15 +1722,221 @@ typedef struct {
  *
  * @return @c 4 if @c func_8009E468 reported a hit, @c 0 otherwise.
  */
-s32 func_8009D500(s32 selfIdx, s32 arg1, func_8009D500_arg2 *ctx, s32 *out) {
+s32 func_8009D500(s32 selfIdx, s32 arg1, FieldStepScratch *ctx, s32 *out) {
     ctx->outX = ctx->srcX + ctx->dx;
     ctx->outY = ctx->srcY + ctx->dy;
     ctx->outZ = ctx->srcZ;
-    *out = func_8009DF18(arg1, (Vec3i *)&ctx->outX, &ctx->dx, &ctx->unk10);
+    *out = func_8009DF18(arg1, (Vec3i *)&ctx->outX, &ctx->dx, &ctx->e1x);
     return func_8009E468((s16)selfIdx, (Vec3i *)&ctx->outX) ? 4 : 0;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009D598);
+/**
+ * @brief Advance one field entity by a step along its facing, sliding around
+ *        obstacles by re-aiming until a clear direction is found.
+ *
+ * Runs once per tick for every walking entity. First it recovers the slope of
+ * the navmesh triangle the entity is standing on: the two edge vectors of
+ * triangle @c triIdx go through the GTE @c OP (cross product) instruction to
+ * give the face normal, which is scaled down, normalised by @ref VectorNormal,
+ * re-normalised against Z through @ref SquareRoot12 and clamped to +/-1.0
+ * (@c 4096). The magnitudes of its X and Y components become the per-axis
+ * scale of the step, so an entity walking across a steep face covers less
+ * ground on that axis.
+ *
+ * It then loops, probing three directions per attempt with @ref func_8009D500 —
+ * the facing rotated by @c +0x20, by @c -0x20, and straight ahead — each probed
+ * at the entity's collision @c radius. The probes report both a blocking-edge
+ * code (via the out parameters) and a push-back result (the return value). If
+ * every probe is clear the loop stops and the step is committed. Otherwise the
+ * facing is nudged and the probes are repeated: a blocked left flank turns the
+ * entity right (@c -8), a blocked right flank turns it left (@c +8), and a
+ * head-on block backs the facing off by the reported edge code. Both flanks
+ * blocked means a dead end and the walk is abandoned. The player entity gets
+ * @c 3 attempts while @c D_8005F102 is armed and @c 0x11 otherwise; every other
+ * entity always gets @c 0x11.
+ *
+ * Whatever the outcome, @ref func_8009DF18 re-walks the navmesh from the
+ * entity's triangle to the target point so @c triIdx follows the entity, and
+ * for the player (when field control is enabled) the trigger scans run against
+ * the new point: @ref func_8009A4C0 for the per-entity line triggers,
+ * @ref func_8009AAC8 for the event queue, and @ref func_800A6100 for the field
+ * line-trigger table.
+ *
+ * @param index Entity index into @ref D_80085224.
+ * @return @c 1 if the entity moved (position written back), @c 0 if it was
+ *         blocked or the navmesh walk failed.
+ *
+ * @note The event queue is handed to @ref func_8009AAC8 starting four bytes
+ *       into entry 0, and that skew is real — @c func_8009AAC8's sentinel test
+ *       (@c counter @c == @c 0x7FFF) then lands on @ref EventEntry::field16 and
+ *       its armed test (@c spawnTriIdx @c == @c 0xFFFF) on @c field14, which is
+ *       exactly what @c opHandler_PREMAPJUMP writes. The likely reading is that
+ *       @ref EventEntry 's own field names are off by four and the trigger
+ *       segment really starts at @c +0x04; @c opHandler_PREMAPJUMP pins the
+ *       array base at @c 0x60, so the offsets are left as they are until a
+ *       function that settles the entry layout is decompiled.
+ */
+s32 func_8009D598(s16 index) {
+    FieldStepScratch *sc = (FieldStepScratch *)getScratchAddr(16);
+    SVert *a;
+    SVert *b;
+    SVert *c;
+    u16 tri;
+    s16 self;
+    s32 hitLeft;
+    s32 hitRight;
+    s32 hitFwd;
+    s32 stepX;
+    u32 attempt;
+    s32 pushFwd;
+    s32 pushRight;
+    s32 pushLeft;
+    s32 stepY;
+    s32 blocked;
+    /* Held as an integer so the vertex address is an int+int sum with the
+       offset first, matching the original's addu operand order. */
+    s32 vertBase;
+
+    vertBase = (s32)D_800C71F0;
+    tri = D_80085224[index].triIdx;
+    a = (SVert *)(tri * 24 + vertBase);
+    b = &a[1];
+    c = &a[2];
+    sc->e0x = b->sx - a->sx;
+    sc->e0y = b->sy - a->sy;
+    sc->e0z = b->sz - a->sz;
+    sc->e1x = c->sx - b->sx;
+    sc->e1y = c->sy - b->sy;
+    sc->e1z = c->sz - b->sz;
+    self = index;
+
+    gte_ldopv1(sc);
+    gte_ldopv2(getScratchAddr(20));
+    gte_OP0();
+    gte_stlvnl(getScratchAddr(24));
+
+    sc->nx /= 256;
+    sc->ny /= 256;
+    sc->nz /= 256;
+    VectorNormal((VECTOR *)getScratchAddr(24), (VECTOR *)getScratchAddr(24));
+
+    sc->nx = (sc->nz * 4096)
+             / SquareRoot12(sc->nx * sc->nx / 4096 + sc->nz * sc->nz / 4096);
+    sc->ny = (sc->nz * 4096)
+             / SquareRoot12(sc->ny * sc->ny / 4096 + sc->nz * sc->nz / 4096);
+
+    if (sc->nx > 4096) {
+        sc->nx = 4096;
+    } else if (sc->nx < -4096) {
+        sc->nx = -4096;
+    }
+    if (sc->ny > 4096) {
+        sc->ny = 4096;
+    } else if (sc->ny < -4096) {
+        sc->ny = -4096;
+    }
+    if (sc->nz > 4096) {
+        sc->nz = 4096;
+    } else if (sc->nz < -4096) {
+        sc->nz = -4096;
+    }
+
+    stepX = sc->nx;
+    if (stepX < 0) {
+        stepX = -stepX;
+    }
+    stepY = sc->ny;
+    if (stepY < 0) {
+        stepY = -stepY;
+    }
+
+    attempt = 0;
+    while (1) {
+        attempt++;
+        if (self == D_8005F148 && D_8005F102 == 1) {
+            if (attempt >= 3) {
+                D_8005F102 = 0;
+                break;
+            }
+        } else if (attempt >= 17) {
+            break;
+        }
+
+        sc->srcX = func_8009D234(D_80085224[self].unk23F) * stepX / 4096;
+        sc->srcY = -(func_8009D254(D_80085224[self].unk23F) * stepY) / 4096;
+        sc->srcX = sc->srcX * D_80085224[self].moveSpeed / 256;
+        sc->srcY = sc->srcY * D_80085224[self].moveSpeed / 256;
+        sc->srcX = D_80085224[self].posX + sc->srcX;
+        sc->srcY = D_80085224[self].posY + sc->srcY;
+        sc->srcZ = D_80085224[self].posZ;
+
+        sc->dx = func_8009D234((u8)(D_80085224[self].unk23F + 0x20))
+                 * D_80085224[self].radius;
+        sc->dy = -func_8009D254((u8)(D_80085224[self].unk23F + 0x20))
+                 * D_80085224[self].radius;
+        pushLeft = func_8009D500(self, (s32)&tri, sc, &hitLeft);
+
+        tri = D_80085224[self].triIdx;
+        sc->dx = func_8009D234((u8)(D_80085224[self].unk23F - 0x20))
+                 * D_80085224[self].radius;
+        sc->dy = -func_8009D254((u8)(D_80085224[self].unk23F - 0x20))
+                 * D_80085224[self].radius;
+        pushRight = func_8009D500(self, (s32)&tri, sc, &hitRight);
+
+        tri = D_80085224[self].triIdx;
+        sc->dx = func_8009D234(D_80085224[self].unk23F) * D_80085224[self].radius;
+        sc->dy = -func_8009D254(D_80085224[self].unk23F) * D_80085224[self].radius;
+        pushFwd = func_8009D500(self, (s32)&tri, sc, &hitFwd);
+
+        if (hitFwd == 0 && hitLeft == 0 && hitRight == 0 && pushFwd == 0
+            && pushLeft == 0 && pushRight == 0) {
+            break;
+        }
+
+        if (self == D_8005F148 && D_800704BD == 0) {
+            if (pushFwd != 0 || pushLeft != 0 || pushRight != 0) {
+                break;
+            }
+        } else if (hitFwd != 0 && hitLeft == 0 && hitRight == 0) {
+            D_80085224[self].unk23F -= hitFwd;
+        } else if (pushFwd != 0 && pushLeft == 0 && pushRight == 0) {
+            D_80085224[self].unk23F -= pushFwd;
+        }
+
+        if (hitLeft != 0) {
+            if (hitRight != 0) {
+                break;
+            }
+            D_80085224[self].unk23F -= 8;
+        } else if (pushLeft != 0) {
+            D_80085224[self].unk23F -= 8;
+        } else if (hitRight != 0 || pushRight != 0) {
+            D_80085224[self].unk23F += 8;
+        }
+    }
+
+    blocked = func_8009DF18(&D_80085224[self].triIdx, (Vec3i *)&sc->srcX, &sc->dx,
+                            (s32 *)sc);
+    if (self == D_8005F148 && D_800704A8.unk015 == 0) {
+        func_8009A4C0(&D_80085224[self], D_8008538C, (VECTOR *)&sc->srcX);
+        D_8005F102 = 0;
+        if (D_800704A8.unk1A2 == 0) {
+            func_8009AAC8(&D_80085224[self],
+                          (EventEntry *)&D_8005F0F8->entries[0].z0,
+                          (Vec3i *)&sc->srcX);
+        }
+        func_800A6100(&D_80085224[self], D_8005F0F8->segs, (Vec3i *)&sc->srcX);
+    }
+
+    if (hitFwd == 0 && hitLeft == 0 && hitRight == 0 && pushFwd == 0
+        && pushLeft == 0 && pushRight == 0 && blocked == 0) {
+        D_80085224[self].posX = sc->srcX;
+        D_80085224[self].posY = sc->srcY;
+        D_80085224[self].posZ = sc->srcZ << 12;
+        return 1;
+    }
+    return 0;
+}
 
 /**
  * Subtracts two 3-component short vectors, storing result as words.
@@ -4785,9 +4996,9 @@ s32 func_800A5CF8(void) {
  * @note The first formation store writes @c D_800704A8.counter through the
  *       struct; the others use the alias symbol @c D_800704AA (same word,
  *       0x800704AA) — both spellings exist in the original.
- * @note @c savedChannel (0x1FE) is read here as the per-entity danger value
- *       via a @c (u16) view; the message code uses the same slot as its
- *       saved-channel word.
+ * @note The step accumulator advances by the player's @c moveSpeed (0x1FE)
+ *       read through a @c (u16) view, so faster movement builds the encounter
+ *       counter proportionally faster.
  */
 void func_800A5D28(void) {
     u8 *rate;
@@ -4832,7 +5043,7 @@ void func_800A5D28(void) {
         return;
     }
     D_8005F164 &= 0xFF;
-    D_8005F0FE += (s16)(u16)D_80085224[D_8005F148].savedChannel / 1348;
+    D_8005F0FE += (s16)(u16)D_80085224[D_8005F148].moveSpeed / 1348;
     if ((u8)func_800A5C9C() < D_8005F0FE) {
         D_800704A8.mode = 3;
         D_8005F0FE = 0;
@@ -4934,12 +5145,14 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5FA4);
  *
  * @param eline The querying eline entity.
  * @param segs  The 12-entry, 16-byte-stride segment table.
+ * @param pt    Query point supplied by @c func_8009D598; unused here — the
+ *              scan runs against the eline's own position.
  *
  * @note The empty @c do{}while(0) is a scheduling barrier: it keeps gcc 2.7.2
  *       from reordering the @c posY store ahead of the @c posX store while
  *       staging the scratchpad, matching the original prologue schedule.
  */
-void func_800A6100(Eline *eline, FieldLineTrigger *segs) {
+void func_800A6100(Eline *eline, FieldLineTrigger *segs, Vec3i *pt) {
     s32 *p = getScratchAddr(0);
     s32 *q;
     FieldLineTrigger *seg;

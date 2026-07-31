@@ -265,7 +265,7 @@ typedef struct {
     /* 0x006 */ u16 position_y;     /**< Spawn Y. */
     /* 0x008 */ u16 unk008;         /**< Extra halfword popped only by @c opHandler_MAPJUMP3. */
     /* 0x00A */ s16 unk00A;         /**< Reset to 20 by @c func_8009AEC0 and scaled into the self
-                                         entity's @c savedChannel with the same factor
+                                         entity's @c moveSpeed with the same factor
                                          @c func_800B6738 uses on @c D_800704B2 (134.8046875,
                                          written there as @c *69020>>9 and here as @c *17255>>7), so
                                          the entity starts exactly at that threshold.
@@ -497,7 +497,12 @@ typedef struct {
                                          Set from a path-table entry's @c unk6 by @c func_8009BB18 and
                                          from @c D_800704A8.spawnTriIdx on field entry by @c func_8009AEC0. */
     /* 0x1FC */ u16 field_0x1FC;
-    /* 0x1FE */ s16 savedChannel;   /**< Previous message channel. */
+    /* 0x1FE */ s16 moveSpeed;      /**< Per-tick movement speed, 8.8 fixed point (@c 256 @c = 1.0):
+                                         @c func_8009D598 scales the sin/cos step vector by it before
+                                         adding it to the position. Doubled on movie entry and halved
+                                         on exit (@c opHandler_MOVIE / @c func_800B14C8) along with
+                                         @c msgChannel and @c field_0x208, and saved/restored with the
+                                         position, @c triIdx and @c field_0x241 by fe_object5. */
     /* 0x200 */ u16 msgChannel;     /**< Current message channel. */
     /* 0x202 */ u16 field_0x202;    /**< Saved channel for async restore. */
     /* 0x204 */ s16 field_0x204;
@@ -1161,7 +1166,7 @@ extern s32 func_80037AEC(u8 *header, u16 *table, s32 **outBase);
 
 /** @brief Reset to 20 on field entry by @c func_8009AEC0 and scaled by
  *         134.8046875 (@c *69020>>9) in @c func_800B6738 to form the threshold
- *         the entity's @c savedChannel is compared against — the same scale
+ *         the entity's @c moveSpeed is compared against — the same scale
  *         @c func_8009AEC0 applies to @c SystemState::unk00A when seeding it.
  *  @note Both quantities are unnamed; the pair only ever holds 20. */
 extern s16 D_800704B2;

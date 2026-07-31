@@ -334,7 +334,7 @@ extern int  func_8009BEC8();
 extern void func_8009CEE8(void);
 extern s32  func_8009D274(Eline *self, s16 pad);
 extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
-extern int  func_8009D598();
+extern s32  func_8009D598(s16 index);
 extern s32  func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux);
 extern s32 func_8009E338(Vec3i *a0, Vec3i *a1, Vec3i *a2, Vec3s *a3);  /* plane-cross intersection */
 /** @brief Refill both follower path rings from the player's position on field entry. */
@@ -473,7 +473,7 @@ extern void func_800A5A20(Eline *self, EventEntry *entries);
 extern s32  func_800A5C9C(void);
 extern void func_800A5D28(void);
 extern void func_800A5FA4();  /* arg 0 = entry pointer (16-byte stride); arg 1 = flag */
-extern void func_800A6100(Eline *eline, FieldLineTrigger *segs);
+extern void func_800A6100(Eline *eline, FieldLineTrigger *segs, Vec3i *pt);
 extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();
 extern int  func_800A6A80();

@@ -540,12 +540,12 @@ s32 opHandler_DIR(Eline *eline) {
  * If bit @c scriptGroup of @c activeMask is set, peek the top three
  * stack slots, shift each left by 12, and write them as the message's
  * @c textPtr / @c posX / @c posY (fixed-point). Also clears
- * @c msgState, @c windowId, @c savedChannel and sets @c msgActive=1.
+ * @c msgState, @c windowId, @c moveSpeed and sets @c msgActive=1.
  * Returns 1 (wait for message) without popping.
  *
  * If the bit is clear, the message is skipped: @c msgState=2,
  * @c msgActive=0, the current @c msgChannel is preserved into
- * @c savedChannel, and three stack entries are discarded.
+ * @c moveSpeed, and three stack entries are discarded.
  * Returns 2 (advance PC).
  *
  * @param eline Pointer to the Eline event-script context.
@@ -555,7 +555,7 @@ s32 opHandler_DIRP(Eline *eline) {
         eline->msgActive    = 1;
         eline->msgState     = 0;
         eline->windowId     = 0;
-        eline->savedChannel = 0;
+        eline->moveSpeed = 0;
         eline->msgTextPtr = eline->stack[(s8)eline->stackPtr - 2] << 12;
         eline->msgPosX    = eline->stack[(s8)eline->stackPtr - 1] << 12;
         eline->msgPosY    = eline->stack[(s8)eline->stackPtr]     << 12;
@@ -564,7 +564,7 @@ s32 opHandler_DIRP(Eline *eline) {
     eline->msgState     = 2;
     eline->msgActive    = 0;
     eline->stackPtr    -= 3;
-    eline->savedChannel = eline->msgChannel;
+    eline->moveSpeed = eline->msgChannel;
     return 2;
 }
 

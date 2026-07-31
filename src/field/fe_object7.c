@@ -679,7 +679,7 @@ void func_800B663C(Eline *eline) {
     eline->field_0x1C4 = eline->msgPosX;
     eline->field_0x1C8 = eline->msgPosY;
     eline->field_0x21C = eline->windowId;
-    eline->field_0x202 = eline->savedChannel;
+    eline->field_0x202 = eline->moveSpeed;
     eline->msgActive = 0;
     eline->flags |= 0x10000;
 }
@@ -707,7 +707,7 @@ void func_800B66A8(Eline *eline) {
     eline->msgPosX = eline->field_0x1C4;
     eline->msgPosY = eline->field_0x1C8;
     eline->windowId = eline->field_0x21C;
-    eline->savedChannel = eline->field_0x202;
+    eline->moveSpeed = eline->field_0x202;
     eline->msgActive = 1;
     eline->msgState = 0;
 
@@ -719,7 +719,7 @@ void func_800B66A8(Eline *eline) {
 /**
  * @brief Initialize message display.
  *
- * Compares savedChannel against a threshold derived from D_800704B2
+ * Compares moveSpeed against a threshold derived from D_800704B2
  * to select between two message source indices (field_0x250 vs
  * field_0x251). If the selected source differs from field_0x24E,
  * calls func_800B912C to set it up and marks the 0x2000 flag.
@@ -730,7 +730,7 @@ void func_800B66A8(Eline *eline) {
 void func_800B6738(Eline *eline) {
     s32 threshold = (D_800704B2 * 69020) >> 9;
 
-    if (eline->savedChannel >= threshold) {
+    if (eline->moveSpeed >= threshold) {
         if (eline->field_0x24E != eline->field_0x251) {
             func_800B912C(eline, eline->field_0x251);
             eline->flags |= 0x2000;
@@ -783,7 +783,7 @@ void func_800B6854(Eline *eline) {
  * @brief Table index 0x04F handler — set message channel.
  *
  * Pops a channel value from the bytecode stack and stores it to both
- * savedChannel and msgChannel fields of the eline.
+ * moveSpeed and msgChannel fields of the eline.
  *
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
@@ -791,7 +791,7 @@ void func_800B6854(Eline *eline) {
 s32 opHandler_MSPEED(Eline *eline) {
     u16 channel = POP(eline);
 
-    eline->savedChannel = channel;
+    eline->moveSpeed = channel;
     eline->msgChannel = channel;
     return 2;
 }
@@ -828,7 +828,7 @@ s32 opHandler_MOVE(Eline *eline) {
         eline->msgPosY = POP(eline) << 12;
         eline->msgPosX = POP(eline) << 12;
         new_var = POP(eline);
-        eline->savedChannel = saved;
+        eline->moveSpeed = saved;
         eline->msgTextPtr = new_var << 12;
 
         func_800B6738(eline);
@@ -858,7 +858,7 @@ s32 opHandler_MOVEA(Eline *eline) {
         eline->msgActive = 1;
         eline->msgState = 0;
         eline->windowId = POP(eline);
-        eline->savedChannel = eline->msgChannel;
+        eline->moveSpeed = eline->msgChannel;
         func_800B6738(eline);
     }
 
@@ -891,7 +891,7 @@ s32 opHandler_PMOVEA(Eline *eline) {
         eline->msgActive = 1;
         eline->msgState = 0;
         eline->windowId = POP(eline);
-        eline->savedChannel = eline->msgChannel;
+        eline->moveSpeed = eline->msgChannel;
         func_800B6738(eline);
     }
 
@@ -923,7 +923,7 @@ s32 opHandler_CMOVE(Eline *eline) {
         eline->msgActive = 1;
         eline->msgState = 0;
         eline->windowId = POP(eline);
-        eline->savedChannel = eline->msgChannel;
+        eline->moveSpeed = eline->msgChannel;
         eline->msgPosY = POP(eline) << 12;
         eline->msgPosX = POP(eline) << 12;
         eline->msgTextPtr = POP(eline) << 12;
@@ -956,7 +956,7 @@ s32 opHandler_FMOVE(Eline *eline) {
         eline->msgActive = 1;
         eline->msgState = 0;
         eline->windowId = POP(eline);
-        eline->savedChannel = eline->msgChannel;
+        eline->moveSpeed = eline->msgChannel;
         eline->msgPosY = POP(eline) << 12;
         eline->msgPosX = POP(eline) << 12;
         eline->msgTextPtr = POP(eline) << 12;
@@ -986,7 +986,7 @@ s32 opHandler_FMOVEA(Eline *eline) {
         eline->msgActive = 1;
         eline->msgState = 0;
         eline->windowId = POP(eline);
-        eline->savedChannel = eline->msgChannel;
+        eline->moveSpeed = eline->msgChannel;
         eline->field_0x1DA = 0;
     }
 
@@ -1019,7 +1019,7 @@ s32 opHandler_FMOVEP(Eline *eline) {
         eline->msgActive = 1;
         eline->msgState = 0;
         eline->windowId = POP(eline);
-        eline->savedChannel = eline->msgChannel;
+        eline->moveSpeed = eline->msgChannel;
         eline->field_0x1DA = 0;
     }
 
@@ -1059,7 +1059,7 @@ s32 opHandler_RMOVE(Eline *eline) {
     eline->msgPosY = POP(eline) << 12;
     eline->msgPosX = POP(eline) << 12;
     new_var = POP(eline);
-    eline->savedChannel = saved;
+    eline->moveSpeed = saved;
     eline->msgTextPtr = new_var << 12;
 
     func_800B6738(eline);
@@ -1081,7 +1081,7 @@ s32 opHandler_RMOVEA(Eline *eline) {
     eline->flags |= 0x20000;
     eline->msgState = 0;
     eline->windowId = POP(eline);
-    eline->savedChannel = eline->msgChannel;
+    eline->moveSpeed = eline->msgChannel;
     func_800B6738(eline);
 
     eline->msgTextPtr = D_80085230[PEEK(eline)]->posX;
@@ -1107,7 +1107,7 @@ s32 opHandler_RPMOVEA(Eline *eline) {
     eline->flags |= 0x20000;
     eline->msgState = 0;
     eline->windowId = POP(eline);
-    eline->savedChannel = eline->msgChannel;
+    eline->moveSpeed = eline->msgChannel;
     func_800B6738(eline);
 
     idx = g_fieldVars->memberSlot[POP(eline)];
@@ -1133,7 +1133,7 @@ s32 opHandler_RCMOVE(Eline *eline) {
     eline->flags |= 0x20000;
     eline->msgState = 0;
     eline->windowId = POP(eline);
-    eline->savedChannel = eline->msgChannel;
+    eline->moveSpeed = eline->msgChannel;
     eline->msgPosY = POP(eline) << 12;
     eline->msgPosX = POP(eline) << 12;
     eline->msgTextPtr = POP(eline) << 12;
@@ -1157,7 +1157,7 @@ s32 opHandler_RFMOVE(Eline *eline) {
     eline->flags |= 0x20000;
     eline->msgState = 0;
     eline->windowId = POP(eline);
-    eline->savedChannel = eline->msgChannel;
+    eline->moveSpeed = eline->msgChannel;
     eline->msgPosY = POP(eline) << 12;
     eline->msgPosX = POP(eline) << 12;
     eline->msgTextPtr = POP(eline) << 12;
@@ -1287,7 +1287,7 @@ s32 opHandler_MACCEL(Eline *self) {
     if ((self->activeMask >> self->scriptGroup) & 1) {
         self->msgActive = 1;
         self->msgState = 0;
-        self->savedChannel = self->msgChannel;
+        self->moveSpeed = self->msgChannel;
         self->field_0x204 = POP(self);
         self->windowId = POP(self);
         self->msgPosY = POP(self) << 12;
@@ -1298,14 +1298,14 @@ s32 opHandler_MACCEL(Eline *self) {
     }
 
     if (self->msgState == 2) {
-        self->field_0x202 = self->savedChannel;
+        self->field_0x202 = self->moveSpeed;
         func_800B67F4(self);
         return 2;
     }
 
-    delta = (s32)(self->field_0x204 - self->savedChannel) * D_800704B2;
+    delta = (s32)(self->field_0x204 - self->moveSpeed) * D_800704B2;
     delta = delta / func_800B76A4(self);
-    self->savedChannel += delta;
+    self->moveSpeed += delta;
     func_800B6738(self);
     return 1;
 }
@@ -1334,10 +1334,10 @@ void func_800B788C(Eline *self, Eline *target) {
     distSq = dx;
 
     if (distSq > 0x3F47F) {
-        self->savedChannel = (u32)(D_800704B2 * 25375) >> 6;
+        self->moveSpeed = (u32)(D_800704B2 * 25375) >> 6;
         func_800B912C(self, self->field_0x251);
     } else {
-        self->savedChannel = (u32)(D_800704B2 * 17255) >> 7;
+        self->moveSpeed = (u32)(D_800704B2 * 17255) >> 7;
         func_800B912C(self, self->field_0x250);
     }
     self->msgActive = 1;
@@ -1482,10 +1482,10 @@ void func_800B7D44(Eline *eline, s32 x, s32 y, s32 z) {
     distSq = dx;
 
     if (distSq > 0x3F47F) {
-        eline->savedChannel = (u32)(D_800704B2 * 25375) >> 6;
+        eline->moveSpeed = (u32)(D_800704B2 * 25375) >> 6;
         func_800B912C(eline, eline->field_0x251);
     } else {
-        eline->savedChannel = (u32)(D_800704B2 * 17255) >> 7;
+        eline->moveSpeed = (u32)(D_800704B2 * 17255) >> 7;
         func_800B912C(eline, eline->field_0x250);
     }
 
