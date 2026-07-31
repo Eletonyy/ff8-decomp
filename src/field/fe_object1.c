@@ -973,7 +973,137 @@ s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
     return (s16)bestIdx;
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009AEC0);
+/**
+ * @brief The field entity record at byte offset @p ofs in the @c D_80085224 table.
+ *
+ * This function walks the entity table by byte offset rather than by subscript.
+ * That is not a decomp workaround — it is what the original does, and the
+ * compiled output shows it plainly: @c i*sizeof(Eline) is computed once into
+ * @c s0, kept live across all three helper calls, and the table base is re-added
+ * at each of the four uses (@c addu @c v1,s0,v1). Indexing @c D_80085224[i]
+ * would instead keep the derived *pointer* in that register, and gcc's
+ * @c pointer_int_sum would emit the address add base-first, where every one of
+ * this function's eight entity addresses is offset-first.
+ */
+#define ELINE_AT(ofs) ((Eline *)((ofs) + (s32)D_80085224))
+
+/** @brief Scale applied to @c D_800704A8.unk00A when seeding @c Eline::savedChannel. */
+#define FIELD_CHANNEL_SCALE 0x4367
+
+/** @brief Sentinel in @c D_800704A8.rotation / @c position_x meaning "no override". */
+#define FIELD_POS_UNSET 0x7FFF
+
+/**
+ * @brief Place every field entity on the navmesh when a field is entered.
+ *
+ * For each of the @c D_80085388 entities:
+ *  - The player entity (@c D_8005F148, taken from @c D_800704A8.entityIndex[0])
+ *    is handled specially. When @c D_800704A8.rotation carries a triangle index
+ *    (i.e. is not @c FIELD_POS_UNSET) the entity is moved onto that triangle:
+ *    with no X override it is dropped at the triangle centroid, otherwise its
+ *    existing X/Y are kept and only Z is re-derived from the triangle plane.
+ *    When no triangle is supplied the entity is reset onto triangle 0 with a
+ *    default radius and animation set.
+ *  - Every other entity keeps its X/Y and has its Z re-derived from the
+ *    triangle it stands on.
+ *
+ * Z comes from @c func_8009E338, which intersects the entity's X/Y against the
+ * plane spanned by two triangle edges built by @c func_8009DED8; the result is
+ * shifted back into the 12-bit fixed-point the position fields use.
+ *
+ * A second pass clears every entity's @c headingBase before the movement
+ * (@c func_8009E660) and path (@c func_8009BB18) tables are rebuilt.
+ *
+ * @note @c pos.z is left uninitialised on the player path — only the
+ *       non-player path zeroes it. @c func_8009E338 reads just X and Y, so this
+ *       is harmless, and the original has the same asymmetry.
+ * @note The two centroid blocks are near-identical but must stay in separate
+ *       variables (@c ent vs @c self); sharing one makes gcc cross-jump their
+ *       tails into a single copy, which the original does not do.
+ */
+void func_8009AEC0(void) {
+    Vec3i edge0;
+    Vec3i edge1;
+    Vec3i pos;
+    s16 i;
+    Eline *ent;
+    Eline *self;
+    Eline *cur;
+    Eline *other;
+    s32 ofs;
+
+    D_8005F102 = 0;
+    D_800704A8.unk00A = 20;
+    D_8005F148 = D_800704A8.entityIndex[0];
+
+    for (i = 0; i < D_80085388; i++) {
+        if (i == D_8005F148) {
+            if (D_800704A8.rotation != FIELD_POS_UNSET) {
+                ent = ELINE_AT(i * sizeof(Eline));
+                ent->triIdx = D_800704A8.rotation;
+                if (D_800704A8.position_x == FIELD_POS_UNSET) {
+                    ent->posX = ((D_800C71F0[ent->triIdx].v[0].sx + D_800C71F0[ent->triIdx].v[1].sx +
+                                  D_800C71F0[ent->triIdx].v[2].sx) / 3) << 12;
+                    ent->posY = ((D_800C71F0[ent->triIdx].v[0].sy + D_800C71F0[ent->triIdx].v[1].sy +
+                                  D_800C71F0[ent->triIdx].v[2].sy) / 3) << 12;
+                    ent->posZ = ((D_800C71F0[ent->triIdx].v[0].sz + D_800C71F0[ent->triIdx].v[1].sz +
+                                  D_800C71F0[ent->triIdx].v[2].sz) / 3) << 12;
+                } else {
+                    func_8009DED8((u8 *)&edge0, (u8 *)D_800C71F0 + (ent->triIdx * sizeof(Triangle) + 8),
+                                  (u8 *)D_800C71F0 + ent->triIdx * sizeof(Triangle));
+                    func_8009DED8((u8 *)&edge1,
+                                  (u8 *)D_800C71F0 + (ELINE_AT(D_8005F148 * sizeof(Eline))->triIdx * sizeof(Triangle) + 16),
+                                  (u8 *)D_800C71F0 + (ELINE_AT(D_8005F148 * sizeof(Eline))->triIdx * sizeof(Triangle) + 8));
+                    other = ELINE_AT(D_8005F148 * sizeof(Eline));
+                    pos.x = other->posX / 4096;
+                    pos.y = other->posY / 4096;
+                    ELINE_AT(D_8005F148 * sizeof(Eline))->posZ =
+                        func_8009E338(&edge0, &edge1, &pos,
+                                      (SVert *)((u8 *)D_800C71F0 +
+                                                other->triIdx * sizeof(Triangle))) << 12;
+                }
+            } else {
+                cur = ELINE_AT(i * sizeof(Eline));
+                cur->field_0x24F = 0;
+                cur->field_0x208 = 0x10;
+                ELINE_AT(D_8005F148 * sizeof(Eline))->field_0x250 = 1;
+                ELINE_AT(D_8005F148 * sizeof(Eline))->field_0x251 = 2;
+                self = ELINE_AT(D_8005F148 * sizeof(Eline));
+                self->savedChannel = ((u32)(D_800704A8.unk00A * FIELD_CHANNEL_SCALE)) >> 7;
+                self->radius = 0x30;
+                self->triIdx = 0;
+                self->posX = ((D_800C71F0[self->triIdx].v[0].sx + D_800C71F0[self->triIdx].v[1].sx +
+                               D_800C71F0[self->triIdx].v[2].sx) / 3) << 12;
+                self->posY = ((D_800C71F0[self->triIdx].v[0].sy + D_800C71F0[self->triIdx].v[1].sy +
+                               D_800C71F0[self->triIdx].v[2].sy) / 3) << 12;
+                self->posZ = ((D_800C71F0[self->triIdx].v[0].sz + D_800C71F0[self->triIdx].v[1].sz +
+                               D_800C71F0[self->triIdx].v[2].sz) / 3) << 12;
+            }
+        } else {
+            ofs = i * sizeof(Eline);
+            other = ELINE_AT(ofs);
+            pos.x = other->posX / 4096;
+            pos.y = other->posY / 4096;
+            pos.z = 0;
+            func_8009DED8((u8 *)&edge0, (u8 *)D_800C71F0 + (other->triIdx * sizeof(Triangle) + 8),
+                          (u8 *)D_800C71F0 + other->triIdx * sizeof(Triangle));
+            func_8009DED8((u8 *)&edge1,
+                          (u8 *)D_800C71F0 + (ELINE_AT(ofs)->triIdx * sizeof(Triangle) + 16),
+                          (u8 *)D_800C71F0 + (ELINE_AT(ofs)->triIdx * sizeof(Triangle) + 8));
+            ELINE_AT(ofs)->posZ =
+                func_8009E338(&edge0, &edge1, &pos,
+                              (SVert *)((u8 *)D_800C71F0 +
+                                        ELINE_AT(ofs)->triIdx * sizeof(Triangle))) << 12;
+        }
+    }
+
+    for (i = 0; i < D_80085388; i++) {
+        ELINE_AT(i * sizeof(Eline))->headingBase = 0;
+    }
+
+    func_8009E660();
+    func_8009BB18();
+}
 
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009B4A8);
 
@@ -1058,7 +1188,7 @@ void func_8009BB18(void) {
         D_80085224[D_800704A8.entityIndex[2]].posX   = D_80070A60[angle].x << 12;
         D_80085224[D_800704A8.entityIndex[2]].posY   = D_80070A60[angle].y << 12;
         D_80085224[D_800704A8.entityIndex[2]].posZ   = D_80070A60[angle].z << 12;
-        D_80085224[D_800704A8.entityIndex[2]].field_0x1FA = D_80070A60[angle].unk6;
+        D_80085224[D_800704A8.entityIndex[2]].triIdx = D_80070A60[angle].unk6;
         D_80085224[D_800704A8.entityIndex[2]].unk258 = D_80070A60[angle].unk8;
     }
     if (D_800704A8.entityIndex[1] != 0xFF) {
@@ -1066,7 +1196,7 @@ void func_8009BB18(void) {
         D_80085224[D_800704A8.entityIndex[1]].posX   = D_80070760[angle].x << 12;
         D_80085224[D_800704A8.entityIndex[1]].posY   = D_80070760[angle].y << 12;
         D_80085224[D_800704A8.entityIndex[1]].posZ   = D_80070760[angle].z << 12;
-        D_80085224[D_800704A8.entityIndex[1]].field_0x1FA = D_80070760[angle].unk6;
+        D_80085224[D_800704A8.entityIndex[1]].triIdx = D_80070760[angle].unk6;
         D_80085224[D_800704A8.entityIndex[1]].unk258 = D_80070760[angle].unk8;
     }
 }
@@ -1110,7 +1240,7 @@ void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8) {
     v = e->posZ / 4096;
     p0->z = v;
     p1->z = v;
-    u = e->field_0x1FA;
+    u = e->triIdx;
     p0->unk6 = u;
     p1->unk6 = u;
     p0->field_09 = b9;

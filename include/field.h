@@ -249,11 +249,13 @@ typedef struct {
     /* 0x000 */ u8 mode;            /**< Top-level engine mode; @c 4 means exit. */
     /* 0x001 */ u8 pad001;
     /* 0x002 */ s16 counter;
-    /* 0x004 */ u16 position_x;     /**< Snapshotted X coordinate for the active party slot. */
+    /* 0x004 */ s16 position_x;     /**< Snapshotted X coordinate for the active party slot; @c 0x7FFF means "not set". */
     /* 0x006 */ u16 position_y;     /**< Snapshotted Y coordinate for the active party slot. */
     /* 0x008 */ u16 unk008;
-    /* 0x00A */ u8 pad00A[0x02];
-    /* 0x00C */ u16 rotation;       /**< Snapshotted heading for the active party slot. */
+    /* 0x00A */ s16 unk00A;         /**< Reset to 20 by @c func_8009AEC0, which then scales it by
+                                         @c FIELD_CHANNEL_SCALE into the self entity's @c savedChannel.
+                                         @note Purpose uncertain — only ever written as the constant 20. */
+    /* 0x00C */ s16 rotation;       /**< Snapshotted heading for the active party slot; @c 0x7FFF means "not set". */
     /* 0x00E */ u16 anim_state;     /**< Snapshotted animation byte for the active party slot. */
     /* 0x010 */ u8 pad010[0x02];
     /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_fieldVars->memberSlot[]). */
@@ -468,7 +470,9 @@ typedef struct {
     /* 0x1F4 */ u16 field_0x1F4;
     /* 0x1F6 */ u16 radius;         /**< Collision radius (used by @c func_8009E468 overlap test). */
     /* 0x1F8 */ u16 talkRadius;     /**< Set by @c opHandler_TALKRADIUS; read alongside @c radius by @c func_8009F74C 's asymmetric overlap test. */
-    /* 0x1FA */ u16 field_0x1FA;    /**< Set from path-table entry's @c unk6 by @c func_8009BB18. */
+    /* 0x1FA */ u16 triIdx;         /**< Navmesh triangle the entity stands on; indexes @c D_800C71F0.
+                                         Set from a path-table entry's @c unk6 by @c func_8009BB18 and
+                                         from @c D_800704A8.rotation on field entry by @c func_8009AEC0. */
     /* 0x1FC */ u16 field_0x1FC;
     /* 0x1FE */ s16 savedChannel;   /**< Previous message channel. */
     /* 0x200 */ u16 msgChannel;     /**< Current message channel. */
@@ -1089,6 +1093,10 @@ extern s16 D_8005F14A;
 /** @brief Field-load music/threshold halfword (initialised to 0x49; the reload
  *         path is taken only while @c D_8005F100 < 0x4A). */
 extern s16 D_8005F100;
+
+/** @brief Field-entry flag cleared by @c func_8009AEC0 when the entities are
+ *         placed on the navmesh. */
+extern u8 D_8005F102;
 
 /** @brief Field-load CD descriptor index passed to @c func_80038490. */
 extern s32 D_8005F104;

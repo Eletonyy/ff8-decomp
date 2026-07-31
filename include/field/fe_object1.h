@@ -277,7 +277,8 @@ extern void func_8009A920(Eline *eline, FieldEntityB *entities);
 extern void func_8009AA64(EventEntry *e);
 extern void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt);
 extern s16  func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list);
-extern int  func_8009AEC0();
+/** @brief Place every field entity on the navmesh when a field is entered. */
+extern void func_8009AEC0(void);
 extern int  func_8009BEC8();
 extern void func_8009CEE8(void);
 extern s32  func_8009D274(Eline *self, s16 pad);
