@@ -74,6 +74,8 @@ void SetGeomScreen(s32 h);   /**< Set GTE projection-plane distance H (screen de
 /* --- GTE math --- */
 
 s32 SquareRoot0(s32 a);
+s32 SquareRoot12(s32 a);   /**< Square root of a 20.12 fixed-point value. */
+s32 VectorNormal(VECTOR *v0, VECTOR *v1);   /**< Normalise @p v0 into @p v1; returns the squared length. */
 s32 rsin(s32 a);
 s32 rcos(s32 a);
 
@@ -160,6 +162,29 @@ s32 rcos(s32 a);
     "ctc2   %2, $7"                                      \
     :                                                    \
     : "r"( x ), "r"( y ), "r"( z ) )
+
+/* Load the first OP (outer/cross product) operand — the three words of the
+ * VECTOR @p r0 go into the rotation-matrix diagonal R11/R22/R33, which OP
+ * reads as its D1/D2/D3 vector. */
+#define gte_ldopv1( r0 ) __asm__ volatile (              \
+    "lw     $12, 0( %0 );"                               \
+    "lw     $13, 4( %0 );"                               \
+    "ctc2   $12, $0;"                                    \
+    "lw     $14, 8( %0 );"                               \
+    "ctc2   $13, $2;"                                    \
+    "ctc2   $14, $4"                                     \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "$12", "$13", "$14" )
+
+/* Load the second OP operand — the three words of the VECTOR @p r0 go
+ * straight into IR1/IR2/IR3. */
+#define gte_ldopv2( r0 ) __asm__ volatile (              \
+    "lwc2   $11, 8( %0 );"                               \
+    "lwc2   $9, 0( %0 );"                                \
+    "lwc2   $10, 4( %0 )"                                \
+    :                                                    \
+    : "r"( r0 ) )
 
 #define gte_stlvnl( r0 ) __asm__ volatile (              \
     "swc2   $25, 0( %0 );"                               \
@@ -278,6 +303,15 @@ s32 rcos(s32 a);
     "nop;"                                               \
     "nop;"                                               \
     ".word  0x4B68002E"                                  \
+    : : )
+
+/* OP (sf = 0) — cross product of the vector loaded by @ref gte_ldopv1 with
+ * the one loaded by @ref gte_ldopv2, full precision (no >>12), leaving the
+ * result in MAC1..MAC3 for @ref gte_stlvnl. */
+#define gte_OP0() __asm__ volatile (                     \
+    "nop;"                                               \
+    "nop;"                                               \
+    ".word  0x4B70000C"                                  \
     : : )
 
 #endif /* LIBGTE_H */
