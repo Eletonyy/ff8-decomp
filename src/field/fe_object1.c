@@ -357,19 +357,32 @@ void func_80098934(void) {
  *   - Dispatch @c func_800BF718 with a mode argument that maps
  *     @c D_8005F14C ∈ {6→2, 0xA→3, 3→0, default→1}.
  *
- * @note Decomp at 97.28% match — last 79 instructions of diff are gcc 2.7.2
- *       reg-alloc and instruction-scheduling cascades (one missing
- *       redundant @c addu in the prologue, state==7 @c lbu/sb reorder,
- *       state==1 jal-delay-slot fill choice). See
- *       @c permuter/func_8009895C/base.c for the source and
- *       https://decomp.me/scratch/rFzLA for the in-browser scratch.
+ * @note Decomp at 98.78% match; @c permuter/func_8009895C/base.c holds the
+ *       source (mirrored to the NAS backup, since @c permuter/ is ignored).
+ *       Eight instructions of real diff remain, in two clusters: the prologue
+ *       materialises @c &D_800704A8 one @c addu short of the original (which
+ *       goes @c lui @c -> @c fp @c -> @c v0 @c -> @c s2, keeping the @c %hi in
+ *       its own pseudo), and the @c func_800BF718 argument chain emits its
+ *       @c ==3 test before the @c ==6 / @c ==0xA pair instead of after.
+ *       The @c ==3 test has to lead in the source: with the original's
+ *       @c if @c (x @c == @c 6 @c || @c x @c == @c 0xA) nesting, gcc folds the
+ *       inner @c 0 / @c 1 arms into @c xori + @c sltu, which the original does
+ *       not have. Everything else — all four loops, the section-pointer
+ *       snapshot, and the whole state dispatch — is instruction-exact.
+ *       https://decomp.me/scratch/rFzLA is the in-browser scratch.
  *
  *       Several semantic bugs were caught during decomp and fixed in the
  *       baseline: the @c D_800704A8.mode = 0 dispatch had inverted
  *       condition; @c func_800BF718 's mode arg mapping had 0xA→2 (wrong,
  *       should be 3) and 3→3 (wrong, should be 0); state==7 was missing
  *       the @c sys->unk120 = @c D_8005F14E save; @c D_800D5E98 was missing
- *       the @c +4 offset for the entry-table-end pointer.
+ *       the @c +4 offset for the entry-table-end pointer. Two more were
+ *       found since: the baseline dropped both @c isrgb24 clears on the
+ *       @c DISPENV pair (@c D_80067440[0x11] and @c [0x25]) before
+ *       @c PutDispEnv, and in state==1 it stored @c D_8005F14E after the
+ *       @c sndCmd21 call rather than before — the original loads
+ *       @c sys->counter first and lets dbr sink the store into the jal
+ *       delay slot, so writing it after the call reads a post-call value.
  */
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009895C);
 
