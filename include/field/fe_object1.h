@@ -274,16 +274,43 @@ extern ScriptList *D_800D5E90;
 extern void func_80098934(void);
 extern void func_80099124(void);
 extern void func_8009912C(void);
-/** @brief 12-byte path waypoint (64 entries per table, indexed by angle/64). */
+/**
+ * @brief One breadcrumb in the party-follower trail: 12 bytes, 64 per ring.
+ *
+ * This is how the party follows the leader in a field. The followers do no
+ * pathfinding at all — every tick @ref func_8009BD50 records the leader's state
+ * into slot @c D_8005F144 of both rings and advances the cursor, and the two
+ * followers replay slot @c (D_8005F144 @c - @c lag) @c & @c 0x3F a fixed number
+ * of frames later. That is why they track so tightly and take exactly the same
+ * line around a corner: they are literally walking the leader's own footsteps.
+ * Party slot 1 reads @ref D_80070760 at lag @c D_8005F118, slot 2 reads
+ * @ref D_80070A60 at lag @c D_8005F11A; the defaults are 15 and 30 slots.
+ *
+ * Two independent passes consume each waypoint, which is worth knowing because
+ * they fail separately: @ref func_8009BB18 replays the position fields, and
+ * @ref func_8009B74C replays the heading and animation fields. Stubbing the
+ * first alone leaves the followers rooted to the spot while still turning and
+ * cycling their walk animation (verified on hardware).
+ */
 typedef struct {
-    /* 0x00 */ s16 x;       /**< Position X (fixed-point, << 12 when written). */
-    /* 0x02 */ s16 y;       /**< Position Y. */
-    /* 0x04 */ s16 z;       /**< Position Z. */
-    /* 0x06 */ u16 unk6;    /**< Stored to entity offset 0x1FA. */
-    /* 0x08 */ u8  unk8;    /**< Stored to entity offset 0x258. */
-    /* 0x09 */ s8  field_09; /**< Signed step magnitude; scaled by the caller's multiplier. */
-    /* 0x0A */ u8  field_0A; /**< Movement mode selector (4 = the walk step written here). */
-    /* 0x0B */ u8  field_0B; /**< Heading byte copied into the entity's @c field_0x241. */
+    /* 0x00 */ s16 x;       /**< Leader's X when this slot was recorded, in tile units
+                                 (recorded @c /4096, replayed @c <<12). */
+    /* 0x02 */ s16 y;       /**< Leader's Y. */
+    /* 0x04 */ s16 z;       /**< Leader's Z. */
+    /* 0x06 */ u16 unk6;    /**< Navmesh triangle the leader stood on; replayed into the
+                                 follower's @c triIdx so it inherits the same ground. */
+    /* 0x08 */ u8  unk8;    /**< Replayed into the follower's @c unk258. Purpose unknown;
+                                 @ref func_8009ECA4 seeds it to 1. */
+    /* 0x09 */ s8  field_09; /**< Animation rate: multiplied by the caller's multiplier and
+                                 passed to @c func_8009B4A8 as the playback argument. */
+    /* 0x0A */ u8  field_0A; /**< Selects which of the entity's animation ids (@c field_0x24F
+                                 .. @c field_0x254) to play. @ref func_8009B74C overwrites it
+                                 with 2 while the follower is still closing its lag gap —
+                                 apparently the catch-up gait, though that is inferred from
+                                 the lag comparison rather than observed. */
+    /* 0x0B */ u8  field_0B; /**< Leader's heading when recorded; replayed into the follower's
+                                 @c field_0x241. This is what makes a stalled follower still
+                                 rotate as though it were walking the trail. */
 } PathEntry;
 
 extern void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier);

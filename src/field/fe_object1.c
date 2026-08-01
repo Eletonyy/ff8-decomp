@@ -1608,16 +1608,29 @@ void func_8009AEC0(void) {
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009B4A8);
 
 /**
- * @brief Dispatch entity animation based on slot index and animation parameters.
+ * @brief Turn and animate a follower from the leader's trail — the heading and
+ *        animation half of the party-follow system.
  *
- * Looks up the entity by slot index, sets animation state, checks
- * screen position thresholds, then dispatches to func_8009B4A8 with
- * the appropriate animation field based on the parameter's field_0A value.
+ * The companion to @ref func_8009BB18, reading the same breadcrumb. It copies
+ * the waypoint's @c field_0B into the follower's @c field_0x241 (its facing),
+ * marks the entity animated (@c field_0x24C @c = @c 1), then dispatches on
+ * @c field_0A to pick which of the entity's animation ids — @c field_0x24F
+ * through @c field_0x254 — to play, at a rate of @c field_09 scaled by
+ * @p multiplier.
  *
- * @param slotIdx Slot index (0 or 1).
- * @param paramIdx Index into the animation parameter array.
- * @param params Animation parameter array.
- * @param multiplier Speed/direction multiplier for the animation.
+ * Note it also writes back into the trail: while the follower's lag is still
+ * short of its target (@c D_8005F160 @c > @c D_8005F118 for slot 1,
+ * @c D_8005F162 @c > @c D_8005F11A for slot 2) it forces @c field_0A to 2 —
+ * apparently the catch-up gait used while the party is stringing back out to
+ * formation after a map jump. The ring is therefore not purely leader-written.
+ *
+ * Because this pass is independent of the position pass, a follower whose
+ * position updates are disabled still visibly turns and walks on the spot.
+ *
+ * @param slotIdx    Party slot (1 or 2 — slot 0 is the leader).
+ * @param paramIdx   Ring slot to replay, already offset by the follower's lag.
+ * @param params     The trail ring for this slot.
+ * @param multiplier Scale applied to the waypoint's animation rate.
  */
 void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier) {
     u8 entityIdx;
@@ -1670,15 +1683,22 @@ void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier)
 }
 
 /**
- * @brief Update path-driven entity positions for slots 1 and 2.
+ * @brief Place the two followers on the leader's trail — the position half of
+ *        the party-follow system.
  *
- * For each active slot (entityIndex != 0xFF), looks up a path waypoint by
- * angle (computed as (D_8005F144 - phase) & 0x3F → 0..63 entry) and writes
- * its x/y/z (shifted left 12 for fixed-point), unk6 halfword, and unk8 byte
- * to the entity at offsets 0x190, 0x194, 0x198, 0x1FA, 0x258 respectively.
+ * Runs once per field tick. For each active party slot it reads the breadcrumb
+ * the leader dropped @c lag frames ago — slot @c (D_8005F144 @c - @c lag) @c &
+ * @c 0x3F of that slot's ring — and copies its position straight onto the
+ * follower: @c x/y/z back up into fixed point (@c <<12), plus @c unk6 into
+ * @c triIdx so the follower stands on the same navmesh triangle the leader did
+ * and gets the same ground height. Slot 1 reads @ref D_80070760 at lag
+ * @c D_8005F118, slot 2 reads @ref D_80070A60 at lag @c D_8005F11A.
  *
- * Slot 2 reads from D_80070A60 with phase D_8005F11A; slot 1 reads from
- * D_80070760 with phase D_8005F118.
+ * Nothing here steers or animates. Heading and animation are replayed from the
+ * same waypoint by @ref func_8009B74C, so stubbing this function alone pins the
+ * followers to the spot while they carry on turning and walking on the spot —
+ * confirmed by patching an early return in at runtime. @ref func_8009BD50 is
+ * the recorder that fills the rings.
  */
 void func_8009BB18(void) {
     u16 angle;
@@ -1702,9 +1722,18 @@ void func_8009BB18(void) {
 }
 
 /**
- * @brief Record entity position into both path tables and advance the path phase.
+ * @brief Drop a breadcrumb: record the leader's state into both trail rings and
+ *        advance the cursor.
  *
- * Inverse of @c func_8009BB18: writes the entity's posX/posY/posZ (each
+ * The producer for the whole party-follow system — everything the followers do
+ * is a delayed replay of what this function writes. Called once per field tick
+ * with the leader as @p e, so each ring holds the last 64 ticks of the leader's
+ * path and the followers read it back @c D_8005F118 / @c D_8005F11A slots
+ * behind (@ref func_8009BB18 for position, @ref func_8009B74C for heading and
+ * animation). Both rings get identical contents; they are separate only so the
+ * two followers can be retargeted to different lags independently.
+ *
+ * Writes the entity's posX/posY/posZ (each
  * divided by 4096 for round-toward-zero fixed-point conversion), unk1FA
  * halfword, and two extra bytes (b9 at offset 9, b8 at offset 8) into the
  * current waypoint slot @c D_8005F144 of BOTH path tables (D_80070A60 and
