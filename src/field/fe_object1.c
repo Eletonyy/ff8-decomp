@@ -240,7 +240,7 @@ s32 *func_800983F0(void) {
     ptr++;
     ptr--;
     tag = *(s16 *)buf;
-    D_800C7200 = ptr;
+    D_800C7200 = (FieldSubsceneBuffer *)ptr;
     if (tag != FIELD_HEADER_EMPTY) {
         func_800A2EE0(ptr);
         buf += FIELD_HEADER_SIZE;
@@ -449,7 +449,7 @@ void func_8009895C(void) {
 
         if ((s16)D_8005F14C != 6) {
             D_800C7208 = (u8 **)0x800E1000;
-            D_800C71E8 = (u8 **)0x800E1004;
+            D_800C71E8 = (FieldView **)0x800E1004;
             D_800C7204 = (TriangleList **)0x800E1008;
             D_800D5E90 = (ScriptList *)0x800E100C;
             D_800D5E9C = (u16 **)0x800E1010;
@@ -480,7 +480,7 @@ void func_8009895C(void) {
         }
 
         if (D_800C7200 != 0) {
-            func_800A3FE0((FieldSubsceneBuffer *)D_800C7200);
+            func_800A3FE0(D_800C7200);
         }
 
         if (D_8005F14C == 0 || (s16)D_8005F14C == 1 || (s16)D_8005F14C == 2) {
