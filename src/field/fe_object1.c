@@ -37,7 +37,7 @@ extern s32 func_8004D564(s32 a, s32 b);
 extern s32 func_80048C50(s32 a);
 extern void func_80048F5C(RECT *r, u16 *src);
 extern void func_80048EFC(RECT *r, u8 *src);
-extern void func_80042634(s32 a);
+extern s32 func_80042634(s32 a);
 extern s32 func_8004D524(s32, s32, s32, s32);
 extern void func_8004D684(void *p);
 extern s32 func_8003F4A4(s32 a);                  /* isqrt: integer square root of a */
@@ -665,7 +665,307 @@ void func_80099180(void) {
     D_800704A8.ambientFlags = func_80030F10(D_800704A8.padPressed);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_80099348);
+/* Park the real stack pointer at 0x1F8003FC and run the next call with its
+   stack in the PSX scratchpad, then restore it. There is no way to express a
+   stack switch in C, so these are the original's inline asm. */
+#define SCRATCH_STACK_ENTER()                                                  \
+    __asm__ volatile("lui  $at, 0x1F80;"                                       \
+                     "ori  $at, $at, 0x03FC;"                                  \
+                     "sw   $sp, 0( $at );"                                     \
+                     "lui  $at, 0x1F80;"                                       \
+                     "ori  $at, $at, 0x03EC;"                                  \
+                     "addu $sp, $at, $zero")
+
+#define SCRATCH_STACK_LEAVE()                                                  \
+    __asm__ volatile("lui  $at, 0x1F80;"                                       \
+                     "ori  $at, $at, 0x03FC;"                                  \
+                     "lw   $sp, 0( $at )")
+
+/**
+ * @brief The field engine's per-frame loop: run one frame of the field scene
+ *        until something asks the engine to leave.
+ *
+ * Clears both draw environments (unless @c SystemState::unk1A5 suppressed it),
+ * then loops. Each iteration flips @ref g_bufferIndex, points @ref D_800C71E0
+ * at that buffer's GPU work area, snapshots the previous display environment
+ * into @ref D_8005F110, clears the ordering table and runs the field VM tick
+ * (@c func_800BD9C4) on the scratchpad stack.
+ *
+ * It then checks the two ways the player can leave — the soft-reset pad combo
+ * (@c 0x90F held on both this tick and the last) and the menu button — picks
+ * the camera view (the battle overlay's when it owns the screen, otherwise the
+ * field's, offset by @c 0x28 in sub-scene mode), and runs the render chain:
+ * entity update, targeting, oscillators, projection, character shadows, the
+ * shimmer ribbons, the walkmesh debug overlay, and the sub-scene sprite pool.
+ * Finally it programs the draw environment from the field's clip rectangle,
+ * links the two extra prims into the OT, presents, and dispatches on
+ * @c SystemState::mode — modes 3, 4, 6, 8 and the menu leave the loop with a
+ * code in @ref D_8005F158, mode 1/7 waits for the DMA to drain and leaves, and
+ * anything else draws the OT and goes round again.
+ *
+ * @note @c SystemState::dialogState and @ref D_8005F158 are @c volatile: the
+ *       original re-reads @c dialogState for each of the seven comparisons
+ *       instead of caching one load, and keeps the @c D_8005F158 stores out of
+ *       branch delay slots.
+ * @note The four loop-head assignments are ordered buffer / previous-dispenv /
+ *       draw-env / dispenv. That order matters: it keeps the lifetime of
+ *       @c D_8005F138 's @c %hi short enough that gcc does not hoist it out of
+ *       the loop, which would exhaust the loop-invariant budget before
+ *       @c D_800C71F8 (see the memory note on @c threshold @c -= @c 3).
+ */
+void func_80099348(void) {
+    s32 mode;
+    s16 i;
+    s16 frames;
+    s32 off;
+    s32 rec;
+    u8 *eq;
+
+    if (D_800704A8.unk1A5 == 0) {
+        func_80048DD4(&D_80067388[0].clip, 0, 0, 0);
+        func_80048DD4(&D_80067388[1].clip, 0, 0, 0);
+    } else {
+        D_800704A8.unk1A5 = 0;
+    }
+    frames = 2;
+    activateBattleAnim(0);
+    func_8009A920(&D_80085224[D_800704A8.entityIndex[0]], D_8008538C);
+
+    while (1) {
+        func_80099180();
+        g_bufferIndex++;
+        g_bufferIndex &= 1;
+        D_800C71E0 = &D_800C7218[(s16)g_bufferIndex * 26168];
+        D_8005F110 = D_8005F138;
+        g_activeDrawEnv = &D_80067388[(s16)g_bufferIndex];
+        D_8005F138 = (s32)&D_80067440[(s16)g_bufferIndex];
+        ClearOTagR((u32 *)D_800C71E0, 0x1000);
+
+        SCRATCH_STACK_ENTER();
+        func_800BD9C4(D_800C71E0);
+        SCRATCH_STACK_LEAVE();
+
+        if ((D_800704A8.padHeld & 0x90F) == 0x90F
+            && (D_800704A8.padHeldPrev & 0x90F) == 0x90F) {
+            D_800704A8.counter = 0;
+            D_800704A8.mode = 4;
+            D_800704A8.spawnTriIdx = 0x7FFF;
+            sndStopAll();
+            func_800A59D0();
+            func_80042634(0);
+            func_80048BB8(0);
+            break;
+        }
+
+        if ((D_800704A8.unk150 & 0x20) && func_800BE274() == 0
+            && D_80085224[D_800704A8.entityIndex[0]].msgActive != 3
+            && D_80085224[D_800704A8.entityIndex[0]].msgActive != 4
+            && (s16)D_800704A8.dialogState != 4
+            && (s16)D_800704A8.dialogState != 1
+            && (s16)D_800704A8.dialogState != 3
+            && (s16)D_800704A8.dialogState != 2
+            && D_800704A8.unk1A3 == 0 && D_800704A8.mode == 0) {
+            func_8009912C();
+            D_800704A8.mode = 5;
+            D_800704A8.counter = 0;
+            D_8005F158 = 6;
+            D_800704A8.position_x = D_80085224[D_8005F148].posX / 4096;
+            D_800704A8.position_y = D_80085224[D_8005F148].posY / 4096;
+            D_800704A8.spawnTriIdx = D_80085224[D_8005F148].triIdx;
+            D_800704A8.anim_state = D_80085224[D_8005F148].field_0x241;
+            func_800A59D0();
+            break;
+        }
+
+        if (D_800704A8.mode == 5) {
+            func_8009912C();
+            D_8005F158 = 10;
+            func_800A59D0();
+            break;
+        }
+
+        if (func_800BE274() == 0) {
+            if (D_800704A8.unk1A6 == 0) {
+                D_800C71F8 = *D_800C71E8;
+            } else {
+                D_800C71F8 = (FieldView *)((u8 *)*D_800C71E8 + 0x28);
+            }
+        } else {
+            D_800C71F8 = D_8005F108;
+            D_800704A8.unk1B0 = 1;
+            if (D_800704A8.unk1B1 == 0) {
+                D_800704A8.unk1B1 = 1;
+            }
+        }
+
+        SetGeomScreen(D_800C71F8->spriteScale);
+        if (D_800704A8.unk1A6 != D_800704A8.unk1A9) {
+            D_800704A8.unk1A9 = D_800704A8.unk1A6;
+            eq = (u8 *)D_8005F0F8;
+            D_800704A8.unk1A8 = D_800704A8.unk100 =
+                ((EventQueue *)(eq + D_800704A8.unk1A6))->unk09;
+        }
+        func_8009BEC8(D_80085224, D_800704A8.unk150);
+        func_8009A7E8(&D_80085224[D_800704A8.entityIndex[0]], D_8008538C);
+        func_8009CEE8();
+        func_800A17B8((Oscillator *)&D_800704A8.unk122);
+        func_800A17B8((Oscillator *)&D_800704A8.unk130);
+        func_800A10F4();
+        func_800A1318();
+        if (D_800704A8.unk1A6 == 1) {
+            func_800A15C0(D_800C71E0, D_80067388, 1);
+        } else {
+            func_800A15C0(D_800C71E0, D_80067388, 0);
+        }
+
+        if (D_80067440[((s16)g_bufferIndex + 1) & 1].isrgb24 == 0
+            && D_800704A8.unk1AD == 0) {
+            SCRATCH_STACK_ENTER();
+            func_800A1CFC(D_80085224, D_800C71E0);
+            SCRATCH_STACK_LEAVE();
+            func_800A222C(D_800C71E0, D_800C71F8, D_800C71E0 + 0x4000,
+                          D_800C71E0 + 0x4E00, D_80085224);
+            func_800A5224(D_800C71F8, D_800C71E0, D_800C71E0 + 0x5F98,
+                          D_800C71E0 + 0x6538);
+        }
+
+        if (func_800BE274() == 0) {
+            func_800A06F0(0, D_800C71E0, D_800C6D98[(s16)g_bufferIndex],
+                          D_800C71E0 + 0x4F80);
+        } else if (D_8005F0F8->unk0E == 1
+                   && D_800704A8.unk1A7 == 0) {
+            func_800A2AF8(D_800C71E0, D_800D5EC8[(s16)g_bufferIndex],
+                          D_800D5EB8[(s16)g_bufferIndex], D_800C71F8);
+        }
+
+        if (func_800BE274() == 0 && D_800C7200 != 0) {
+            func_800A37A8(D_800C71F8, D_800C71E0, D_800C7200);
+            if ((s16)g_bufferIndex == 0) {
+                *(u32 *)(D_800C7200 + 0x5F20) = (u32)(D_800C7200 + 0x3720);
+            } else {
+                *(u32 *)(D_800C7200 + 0x5F20) = (u32)(D_800C7200 + 0x4B20);
+            }
+            for (i = 0; i < 128; i++) {
+                off = i * 32;
+                if ((D_800C7200 + off)[0x273B] == 1) {
+                    SetRotMatrix(&D_800C71F8->m);
+                    SetTransMatrix(&D_800C71F8->m);
+                    func_800A39D8(&D_800C7200[off + 0x2720],
+                                  &D_800C7200[(D_800C7200 + off)[0x2738] * 372],
+                                  D_800C7200, D_800C71E0);
+                    if ((D_800C7200 + ((D_800C7200 + off)[0x2738] * 372
+                                       + (D_800C7200 + off)[0x2739] * 20))[0xE]
+                        == 0) {
+                        (D_800C7200 + off)[0x273B] = 0;
+                        rec = (D_800C7200 + off)[0x2738] * 372;
+                        *(u16 *)(D_800C7200 + rec + 0x15C) -= 1;
+                    }
+                }
+            }
+        }
+
+        if ((s16)g_bufferIndex == 0) {
+            D_80067388[(s16)g_bufferIndex].clip.x = D_8005F0F8->rect_b[0].f6;
+        } else {
+            D_80067388[(s16)g_bufferIndex].clip.x = D_8005F0F8->rect_b[0].f6 + 512;
+        }
+        D_80067388[(s16)g_bufferIndex].clip.y = D_8005F0F8->rect_b[0].f0;
+        D_80067388[(s16)g_bufferIndex].clip.w =
+            D_8005F0F8->rect_b[0].f4 - D_8005F0F8->rect_b[0].f6;
+        D_80067388[(s16)g_bufferIndex].clip.h =
+            D_8005F0F8->rect_b[0].f2 - D_8005F0F8->rect_b[0].f0;
+        func_80049B78(D_800C71E0 + 0x4E80, &D_80067388[(s16)g_bufferIndex]);
+
+        addPrim(D_800C71E0 + 0x3FFC, D_800C71E0 + 0x4E80);
+        addPrim(D_800C71E0 + 4, D_800C71E0 + 0x4F00);
+
+        if (func_800BE274()) {
+            renderAndUpdateDisplay(D_800704A8.unk1AC);
+        } else {
+            renderAndUpdateDisplay(2);
+        }
+        renderBattleDisplayList(D_800C71E0);
+
+        if (D_800704A8.mode == 6) {
+            D_8005F158 = 9;
+            func_800A59D0();
+            break;
+        }
+        if (D_800704A8.mode == 4) {
+            func_800A59D0();
+            break;
+        }
+        if (D_800704A8.mode == 3 || D_800704A8.mode == 8) {
+            D_800704A8.position_x = D_80085224[D_8005F148].posX / 4096;
+            D_800704A8.position_y = D_80085224[D_8005F148].posY / 4096;
+            D_800704A8.spawnTriIdx = D_80085224[D_8005F148].triIdx;
+            func_8009912C();
+            mode = D_800704A8.mode;
+            if (mode == 3) {
+                D_8005F158 = mode;
+            } else {
+                D_8005F158 = 8;
+            }
+            func_800A59D0();
+            break;
+        }
+
+        if ((g_fieldVars->stateFlags & 0x40) && g_gameState.mainData.countdownTimer == 0
+            && (g_fieldVars->fieldB6 & 0x100) == 0) {
+            D_800704A8.counter = 0x4B;
+            D_800704A8.mode = 1;
+            D_800704A8.spawnTriIdx = 0x7FFF;
+            func_800A59D0();
+        }
+        if (D_800704A8.mode == 1 || D_800704A8.mode == 7) {
+            func_8009912C();
+            while (func_80048C50(1) != 0) {
+            }
+            break;
+        }
+
+        func_800A5A20(&D_80085224[D_8005F148], (u8 *)D_8005F0F8 + 0x64);
+        func_800A5898(D_800C71E0);
+        func_800BE274();
+        func_8002A150(0, 0x18, 0xBE);
+        D_800D5EA0 = func_80042634(1);
+        while (func_80048C50(1) != 0) {
+        }
+        if (func_800BE274()) {
+            func_80042634(D_800704A8.unk1AC);
+        } else {
+            func_80042634(2);
+        }
+        if (frames == 0) {
+            func_80048BB8(1);
+        } else {
+            frames--;
+        }
+        func_80049480(&D_80067440[(s16)g_bufferIndex]);
+
+        if ((D_800704A8.padHeld & 0x800) && !(D_800704A8.padHeldPrev & 0x800)
+            && func_800BE274() == 0 && (s16)D_800704A8.dialogState != 4
+            && (s16)D_800704A8.dialogState != 3
+            && (s16)D_800704A8.dialogState != 2 && D_800704A8.unk1A3 == 0) {
+            func_800AD7AC(0);
+        }
+
+        if (D_800704A8.unk1AA == 1) {
+            func_80048DD4(&D_80067388[(s16)g_bufferIndex].clip, 0, 0, 0);
+        }
+        if (D_800704A8.unk1B1 == 1) {
+            D_800704A8.unk1B1 = 2;
+            func_800A1C64();
+        }
+        func_800393C8();
+        func_800BE2DC();
+        if (D_800704A8.unk1A1 == 0) {
+            func_80049244((u32 *)(D_800C71E0 + 0x3FFC));
+        }
+    }
+    func_800BE2AC();
+}
+
 
 /**
  * @brief Angle (8-bit BAM) and distance between two 2D points.

@@ -285,7 +285,9 @@ typedef struct {
     /* 0x102 */ u16 unk102;
     /* 0x104 */ u16 unk104;
     /* 0x106 */ u16 unk106;
-    /* 0x108 */ u16 dialogState;    /**< Dialog state word (0=init, 2=run, 4=force-complete). */
+    /* 0x108 */ volatile u16 dialogState; /**< Dialog state word (0=init, 2=run, 4=force-complete).
+                                          @c volatile: the field loop polls it and re-reads it for
+                                          every comparison rather than caching one load. */
     /* 0x10A */ u16 dialogTimer;    /**< Dialog timer target. */
     /* 0x10C */ u16 dialogCount;    /**< Dialog countdown — compared against @c dialogTimer to advance state. */
     /* 0x10E */ u16 field_0x10E;
@@ -336,7 +338,9 @@ typedef struct {
     /* 0x1A9 */ u8 unk1A9;
     /* 0x1AA */ u8 unk1AA;
     /* 0x1AB */ u8 unk1AB;          /**< Sub-mode byte; written together with @c mode by fe_object6 opcodes. */
-    /* 0x1AC */ u8 pad1AC[0x02];
+    /* 0x1AC */ u8 unk1AC;          /**< Display mode passed to @c renderAndUpdateDisplay and
+                                         @c func_80042634 while the battle overlay owns the screen. */
+    /* 0x1AD */ u8 unk1AD;          /**< Non-zero suppresses the entity/shadow render pass. */
     /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c opHandler_COUNTERCLOCKWISETURN2, read by @c func_8009FE18). */
     /* 0x1AF */ u8 packedFlagSlot;  /**< Last @c getPackedField2Bit result for the active dispatcher slot; written each tick by @c func_800BD9C4. */
     /* 0x1B0 */ u8 unk1B0;          /**< 1 selects the eline-pool install path on engine state 1. */

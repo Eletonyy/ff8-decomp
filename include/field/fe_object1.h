@@ -147,7 +147,25 @@ extern s32 D_800C7214;
 /** @brief Cleared alongside the framebuffer copy that @c func_8009895C kicks off. */
 extern u8 D_8005F0FC;
 /** @brief Set to 2 when the engine leaves the field on state 7. */
-extern s16 D_8005F158;
+extern volatile s16 D_8005F158; /**< Field-exit state code returned to the engine dispatcher.
+                                     @c volatile so the stores are not sunk into branch delay
+                                     slots, matching @c func_80099348. */
+/** @brief Camera/view block used while the battle overlay owns the screen (assigned to @c D_800C71F8). */
+extern FieldView *D_8005F108;
+/** @brief Active display-environment window (holds a @c DISPENV*). */
+extern s32 D_8005F138;
+/** @brief Draw environment of the buffer currently being built. */
+extern DRAWENV *g_activeDrawEnv;
+/** @brief Previous frame's display environment, snapshotted from @c D_8005F138 each frame. */
+extern s32 D_8005F110;
+/** @brief Per-frame GPU work buffer for the current back buffer: OT at +0, sprite prims at +0x4000,
+ *         tpages at +0x4E00, the draw-env prim at +0x4E80 and the ribbon prims at +0x5F98.
+ *         Points into @ref D_800C7218 . */
+extern u8 *D_800C71E0;
+/** @brief The two 0x6638-byte per-frame GPU work buffers @ref D_800C71E0 alternates between. */
+extern u8 D_800C7218[];
+/** @brief Handle returned by @c func_80042634 each frame. */
+extern s32 D_800D5EA0;
 /** @brief Field render/present request byte; 1 = normal, 9 = post-copy. */
 extern volatile u8 D_8005F116;
 
@@ -318,7 +336,7 @@ extern s32 *func_800983F0(void);
 /** @brief Field engine main loop: loads a field, runs it, and dispatches on the exit state. */
 extern void func_8009895C(void);
 extern void func_80099180(void);
-extern int  func_80099348();
+extern void func_80099348(void);
 extern s32  func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist);
 extern s32  func_8009A2BC(LineSeg *seg, Vec3i *p, Vec3i *out);
 extern s32  func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt);
@@ -330,7 +348,7 @@ extern void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt);
 extern s16  func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list);
 /** @brief Place every field entity on the navmesh when a field is entered. */
 extern void func_8009AEC0(void);
-extern int  func_8009BEC8();
+extern void func_8009BEC8(Eline *ents, s32 flags);
 extern void func_8009CEE8(void);
 extern s32  func_8009D274(Eline *self, s16 pad);
 extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
@@ -347,16 +365,16 @@ extern void func_8009F8D0(s16 idx);
 extern void func_8009F990(s16 idx, s32 flags);
 extern int  func_8009FE18();
 extern TILE *func_800A0640(TILE *prim);
-extern int  func_800A06F0();
+extern void func_800A06F0(s32 a, u8 *buf, u8 *b, u8 *c);
 extern void func_800A0D6C(u8 *buf);
 extern s32  func_800A0E54(s32 start, s32 end, s32 total, s32 progress);
 extern s32  func_800A0EB8(s32 start, s32 end, s32 total, s32 angle);
 extern s32  func_800A0F34(SVECTOR *v, s32 *sxy);
 extern void func_800A0FB8(Vec2s *out, s16 a, s16 b);
-extern int  func_800A10F4();
+extern void func_800A10F4(void);
 extern void func_800A11E0(Vec2s *arg0);
-extern int  func_800A1318();
-extern int  func_800A15C0();
+extern void func_800A1318(void);
+extern void func_800A15C0(u8 *buf, DRAWENV *env, s32 mode);
 void func_800A17B8(Oscillator *osc);
 extern int  func_800A19B8();
 extern void func_800A1BB8(void);
@@ -390,7 +408,7 @@ typedef struct {
 } func_800A2A30_item;  /* 8 bytes */
 
 extern func_800A2A30_item *func_800A2A30(func_800A2A30_item *p);
-extern int  func_800A2AF8();
+extern void func_800A2AF8(u8 *buf, u8 *a, u8 *b, FieldView *view);
 extern void func_800A2D2C(s16 *buf, s32 slot);
 extern s16  func_800A2EA4(s16 range);
 extern void func_800A2F48();  /* arg is a file-private buffer view in fe_object1.c */
@@ -468,7 +486,7 @@ extern void func_800A5698(void);
 extern void func_800A5700(void);
 extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
 extern void func_800A5788(s32 a0);
-extern int  func_800A5898();
+extern void func_800A5898(u8 *buf);
 extern void func_800A5A20(Eline *self, EventEntry *entries);
 extern s32  func_800A5C9C(void);
 extern void func_800A5D28(void);
