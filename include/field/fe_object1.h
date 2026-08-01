@@ -159,33 +159,6 @@ extern volatile s16 D_8005F158;
 extern FieldView *D_8005F108;
 /** @brief Previous frame's display environment, snapshotted from @c D_8005F138 each frame. */
 extern s32 D_8005F110;
-/**
- * @brief Per-slot ribbon prim buffer: the five @c LINE_G4 strips that make up
- *        one shimmer object's four-segment trail.
- */
-typedef struct {
-    /* 0x00 */ LINE_G4 lines[5];
-} FieldRibbonPrims;  /* 0xB4 = 180 bytes */
-
-/** @brief Per-slot tpage commands, one for each of the four ribbon segments. */
-typedef struct {
-    /* 0x00 */ DR_TPAGE tpages[4];
-} FieldRibbonTPages;  /* 0x20 = 32 bytes */
-
-/**
- * @brief One frame's GPU work area: the ordering table plus every prim the field
- *        render chain builds into it.
- */
-typedef struct {
-    /* 0x0000 */ u32 ot[0x1000];               /**< Ordering table, cleared each frame by @c ClearOTagR. */
-    /* 0x4000 */ POLY_G3 shadowPrims[128];     /**< Character blob-shadow triangles (@ref func_800A222C). */
-    /* 0x4E00 */ DR_TPAGE shadowTPages[16];    /**< Their tpage commands. */
-    /* 0x4E80 */ u8 drawEnvPrim[0x80];         /**< @c DR_ENV built by @c SetDrawEnv; linked into @c ot[0xFFF]. */
-    /* 0x4F00 */ u8 unk4F00[0x80];             /**< Second env-style prim; linked into @c ot[1]. */
-    /* 0x4F80 */ u8 unk4F80[0x1018];           /**< Output block @ref func_800A06F0 fills. */
-    /* 0x5F98 */ FieldRibbonPrims ribbonPrims[8];   /**< Shimmer-ribbon line strips (@ref func_800A5224). */
-    /* 0x6538 */ FieldRibbonTPages ribbonTPages[8]; /**< Their tpage commands. */
-} FieldFrameBuf; /* 0x6638 = 26168 bytes */
 
 /** @brief The frame buffer currently being built; one of the two in @ref D_800C7218 . */
 extern FieldFrameBuf *D_800C71E0;

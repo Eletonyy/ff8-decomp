@@ -739,7 +739,7 @@ void func_80099348(void) {
         ClearOTagR(D_800C71E0->ot, 0x1000);
 
         SCRATCH_STACK_ENTER();
-        func_800BD9C4((s32)D_800C71E0);
+        func_800BD9C4(D_800C71E0);
         SCRATCH_STACK_LEAVE();
 
         if ((D_800704A8.padHeld & 0x90F) == 0x90F
@@ -870,17 +870,17 @@ void func_80099348(void) {
             D_8005F0F8->rect_b[0].f4 - D_8005F0F8->rect_b[0].f6;
         D_80067388[(s16)g_bufferIndex].clip.h =
             D_8005F0F8->rect_b[0].f2 - D_8005F0F8->rect_b[0].f0;
-        func_80049B78(D_800C71E0->drawEnvPrim, &D_80067388[(s16)g_bufferIndex]);
+        func_80049B78(&D_800C71E0->drawEnvPrim, &D_80067388[(s16)g_bufferIndex]);
 
-        addPrim(&D_800C71E0->ot[0xFFF], D_800C71E0->drawEnvPrim);
-        addPrim(&D_800C71E0->ot[1], D_800C71E0->unk4F00);
+        addPrim(&D_800C71E0->ot[0xFFF], &D_800C71E0->drawEnvPrim);
+        addPrim(&D_800C71E0->ot[1], &D_800C71E0->unk4F00);
 
         if (func_800BE274()) {
             renderAndUpdateDisplay(D_800704A8.unk1AC);
         } else {
             renderAndUpdateDisplay(2);
         }
-        renderBattleDisplayList((s32 *)D_800C71E0);
+        renderBattleDisplayList((s32 *)D_800C71E0->ot);
 
         if (D_800704A8.mode == 6) {
             D_8005F158 = 9;
