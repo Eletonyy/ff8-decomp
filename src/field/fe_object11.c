@@ -238,8 +238,8 @@ s32 *func_800BFBBC(u8 *entity, FieldEntityB *a1, u16 *a2, s32 mode) {
         D_80085390 = 0;
         D_800704A8.field1B4 = 0xFFFFFF;
         D_800704A8.unk1A6 = 0;
-        D_800704A8.unk122 = 0;
-        D_800704A8.unk130 = 0;
+        D_800704A8.oscillators[0].mode = 0;
+        D_800704A8.oscillators[1].mode = 0;
         D_800704A8.unk1A3 = 0;
         g_fieldVars->stateFlags &= ~0x400;
         g_fieldVars->fieldCF = 0;

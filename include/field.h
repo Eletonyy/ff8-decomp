@@ -249,6 +249,24 @@ typedef struct {
 
 extern EventQueue *D_8005F0F8;
 
+/**
+ * @brief Field oscillator: a small waveform generator the field VM drives.
+ *
+ * @c mode 1 oscillates continuously; otherwise it runs once and stops.
+ * Advanced by @ref func_800A17B8.
+ */
+typedef struct {
+    /* 0x00 */ u8  mode;       /**< Dispatch mode (1 = continuous oscillation). */
+    /* 0x01 */ u8  phase;      /**< Sub-state within the current mode. */
+    /* 0x02 */ u8  tableIdx;   /**< Cursor into the @c D_800C3520 waveform table. */
+    /* 0x03 */ u8  output;     /**< Latest interpolated value from @c func_800A0EB8. */
+    /* 0x04 */ s16 amplitude;  /**< Scale applied to the sampled waveform byte. */
+    /* 0x06 */ s16 start;      /**< Interpolation start value. */
+    /* 0x08 */ s16 end;        /**< Interpolation end (target) value. */
+    /* 0x0A */ s16 total;      /**< Interpolation duration in ticks. */
+    /* 0x0C */ s16 angle;      /**< Current tick (0..total). */
+} Oscillator;  /* 0x0E = 14 bytes */
+
 /** @brief System state block (at @c D_800704A8); also aliased as @c g_fieldEntity. */
 typedef struct {
     /* 0x000 */ u8 mode;            /**< Top-level engine mode; @c 4 means exit. */
@@ -300,18 +318,10 @@ typedef struct {
     /* 0x11C */ u16 field_0x11C;
     /* 0x11E */ u16 field_0x11E;
     /* 0x120 */ u16 field_0x120;    /**< Snapshotted misc halfword; preserved across SaveSnapshot/RestoreSnapshot. */
-    /* 0x122 */ u8 unk122;          /**< Cleared together with @c unk130 by an fe_object6 opcode. */
-    /* 0x123 */ u8 pad123[0x03];
-    /* 0x126 */ u16 unk126;
-    /* 0x128 */ u8 pad128[0x04];
-    /* 0x12C */ u16 unk12C;
-    /* 0x12E */ u8 pad12E[0x02];
-    /* 0x130 */ u8 unk130;
-    /* 0x131 */ u8 pad131[0x03];
-    /* 0x134 */ u16 unk134;
-    /* 0x136 */ u8 pad136[0x04];
-    /* 0x13A */ u16 unk13A;
-    /* 0x13C */ u8 pad13C[0x04];
+    /* 0x122 */ Oscillator oscillators[2]; /**< The two field oscillators @c func_800A17B8 advances
+                                               each tick; their 14-byte layouts pack back to back
+                                               (0x122 and 0x130) and mirror field for field. */
+    /* 0x13E */ u8 pad13E[0x02];
     /* 0x140 */ s32 padHeld;        /**< Held input for pad slot 0: @c getAnimFrameParam plus analog-stick direction bits (0x8000 = X-low, 0x2000 = X-high, 0x1000 = Y-low, 0x4000 = Y-high). Built each tick by @c func_80099180. */
     /* 0x144 */ s32 padHeldPrev;    /**< Previous tick's @c padHeld, used by @c func_80099180 for direction edge-detection. */
     /* 0x148 */ s32 padPressed;     /**< Newly-pressed input for pad slot 0 (direction bit set only when not held last tick). */

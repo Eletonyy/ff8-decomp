@@ -422,8 +422,8 @@ void func_8009895C(void) {
             D_800704A8.unk1B1 = 0;
             D_800704A8.unk104 = 0;
             D_800704A8.unk106 = 0;
-            func_800A17A4(&D_800704A8.unk122);
-            func_800A17A4(&D_800704A8.unk130);
+            func_800A17A4(&D_800704A8.oscillators[0]);
+            func_800A17A4(&D_800704A8.oscillators[1]);
             func_800A44D8();
             func_80098934();
         }
@@ -742,6 +742,9 @@ void func_80099348(void) {
         func_800BD9C4(D_800C71E0);
         SCRATCH_STACK_LEAVE();
 
+        /* The whole 0x90F button set held on this tick and the last: tear the
+           field down (mode 4) and hand control back to the engine. The bit
+           layout of padHeld is not decoded, so the buttons are left unnamed. */
         if ((D_800704A8.padHeld & 0x90F) == 0x90F
             && (D_800704A8.padHeldPrev & 0x90F) == 0x90F) {
             D_800704A8.counter = 0;
@@ -785,7 +788,7 @@ void func_80099348(void) {
             if (D_800704A8.unk1A6 == 0) {
                 D_800C71F8 = *D_800C71E8;
             } else {
-                D_800C71F8 = (FieldView *)((u8 *)*D_800C71E8 + 0x28);
+                D_800C71F8 = *D_800C71E8 + 1;
             }
         } else {
             D_800C71F8 = D_8005F108;
@@ -805,8 +808,8 @@ void func_80099348(void) {
         func_8009BEC8(D_80085224, D_800704A8.unk150);
         func_8009A7E8(&D_80085224[D_800704A8.entityIndex[0]], D_8008538C);
         func_8009CEE8();
-        func_800A17B8((Oscillator *)&D_800704A8.unk122);
-        func_800A17B8((Oscillator *)&D_800704A8.unk130);
+        func_800A17B8(&D_800704A8.oscillators[0]);
+        func_800A17B8(&D_800704A8.oscillators[1]);
         func_800A10F4();
         func_800A1318();
         if (D_800704A8.unk1A6 == 1) {
@@ -920,7 +923,10 @@ void func_80099348(void) {
             break;
         }
 
-        func_800A5A20(&D_80085224[D_8005F148], (u8 *)D_8005F0F8 + 0x64);
+        /* Same four-byte skew into entry 0 that func_8009D598 hands func_8009AAC8;
+           see the note there on EventEntry's field names being off by four. */
+        func_800A5A20(&D_80085224[D_8005F148],
+                      (EventEntry *)&D_8005F0F8->entries[0].z0);
         func_800A5898(D_800C71E0);
         /* Called for its side effect only — func_800BE274 dispatches into the
            overlay when D_800DE4FD bit 1 is set; the original discards the result. */

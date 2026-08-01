@@ -139,7 +139,7 @@ extern u8 D_800CC118[];
 /** @brief Per-frame prim arena the field renderers build into. */
 extern u8 D_800CD1B0[];
 /** @brief Field-data section pointer set from @c 0x800E1004 on load. */
-extern u8 **D_800C71E8;
+extern FieldView **D_800C71E8;
 /** @brief Horizontal centre of the field clamp rect, derived on every load. */
 extern s32 D_800C7210;
 /** @brief Vertical centre of the field clamp rect, derived on every load. */
@@ -179,26 +179,6 @@ typedef struct {
     u8 b[32];
 } ParticleBlock;
 
-/**
- * @brief Interpolating oscillator / wobble driver (14 bytes).
- *
- * Steps a value from @c start toward @c end over @c total ticks, sampling a
- * waveform from @c D_800C3520 (scaled by @c amplitude) and interpolating each
- * tick via @c func_800A0EB8. @c mode / @c phase select the behaviour
- * (@c mode==1 continuously oscillates by flipping @c end 's sign each cycle;
- * otherwise it runs once and stops). Advanced by @ref func_800A17B8.
- */
-typedef struct {
-    /* 0x00 */ u8  mode;       /**< Dispatch mode (1 = continuous oscillation). */
-    /* 0x01 */ u8  phase;      /**< Sub-state within the current mode. */
-    /* 0x02 */ u8  tableIdx;   /**< Cursor into the @c D_800C3520 waveform table. */
-    /* 0x03 */ u8  output;     /**< Latest interpolated value from @c func_800A0EB8. */
-    /* 0x04 */ s16 amplitude;  /**< Scale applied to the sampled waveform byte. */
-    /* 0x06 */ s16 start;      /**< Interpolation start value. */
-    /* 0x08 */ s16 end;        /**< Interpolation end (target) value. */
-    /* 0x0A */ s16 total;      /**< Interpolation duration in ticks. */
-    /* 0x0C */ s16 angle;      /**< Current tick (0..total). */
-} Oscillator;  /* 0x0E = 14 bytes */
 
 /**
  * @brief Particle system buffer.
