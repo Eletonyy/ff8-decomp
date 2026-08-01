@@ -30,14 +30,13 @@ extern u8 D_800C32A0[];
 extern u8 D_800C3320[];
 extern u8 D_800C3520[];
 extern u8 D_800C6D90;            /**< PRNG counter advanced 13/step by func_800A2EA4 */
-extern u8 D_8005F150;            /**< Outer PRNG counter — D_800C3520 lookup offset, advanced 13/step per 256 calls of func_800A5C9C */
-extern u8 D_8005F151;            /**< Inner PRNG counter — D_800C3520 lookup index, advanced 1/call by func_800A5C9C */
+extern u8 D_8005F150;            /**< Outer PRNG counter, D_800C3520 lookup offset, advanced 13/step per 256 calls of func_800A5C9C */
+extern u8 D_8005F151;            /**< Inner PRNG counter, D_800C3520 lookup index, advanced 1/call by func_800A5C9C */
 
 extern s32 func_8004D564(s32 a, s32 b);
 extern s32 func_80048C50(s32 a);
 extern void func_80048F5C(RECT *r, u16 *src);
 extern void func_80048EFC(RECT *r, u8 *src);
-extern void func_80042634(s32 a);
 extern s32 func_8004D524(s32, s32, s32, s32);
 extern void func_8004D684(void *p);
 extern s32 func_8003F4A4(s32 a);                  /* isqrt: integer square root of a */
@@ -166,7 +165,7 @@ void func_80098314(void) {
  *
  * Load mode 3 stops short of the @c 0x801F0000 mesh-render region; every other
  * mode may run up to the menu image base.
- * @note Purpose inferred from the call site — only the mode-3 split is certain.
+ * @note Purpose inferred from the call site, only the mode-3 split is certain.
  */
 #define FIELD_CMD_AREA_END_MODE3 0x801F4000
 #define FIELD_CMD_AREA_END       0x801FE800
@@ -185,10 +184,10 @@ void func_80098314(void) {
  *
  * @note The streaming table at @c D_800C0900 is three @c {sector,size} pairs
  *       per 24-byte entry, and the two words of a pair must be read as separate
- *       flat-array elements (@c D_800C0900[i*6] / @c [i*6+1]) — a struct field
+ *       flat-array elements (@c D_800C0900[i*6] / @c [i*6+1]), a struct field
  *       pair makes gcc share one address register where the original computes
  *       it twice. The @c func_800A1CC0 guard is
- *       @c ((state != 1 && state != 6) || unk0D == 1) — the call fires for
+ *       @c ((state != 1 && state != 6) || unk0D == 1), the call fires for
  *       every state outside {1,6}, not only inside them.
  * @note @c ptr is deliberately re-read into itself (@c ptr++/@c ptr--) after
  *       @c buf is copied from it, and is reused for the return value at the
@@ -241,7 +240,7 @@ s32 *func_800983F0(void) {
     ptr++;
     ptr--;
     tag = *(s16 *)buf;
-    D_800C7200 = ptr;
+    D_800C7200 = (FieldSubsceneBuffer *)ptr;
     if (tag != FIELD_HEADER_EMPTY) {
         func_800A2EE0(ptr);
         buf += FIELD_HEADER_SIZE;
@@ -329,7 +328,7 @@ void func_80098934(void) {
  * @brief Field engine reset / map-transition orchestrator (the big state machine).
  *
  * Runs the per-frame outer init/reset loop for the field engine. The whole
- * function dispatches on @c D_8005F14C (the field load mode — 0=fresh,
+ * function dispatches on @c D_8005F14C (the field load mode, 0=fresh,
  * 1=normal, 2=new-area, 3=movie, 6=transition, 0xA=skip-transition) and on
  * @c D_800704A8.mode (the engine-level state byte that picks one of several
  * exit paths at the end of each iteration: 4=quit, 5/6=copyFramebuffer +
@@ -364,7 +363,7 @@ void func_80098934(void) {
  *       1. Every @c SystemState access goes through @c D_800704A8 directly
  *          rather than a cached @c SystemState @c *sys. With a pointer local,
  *          gcc builds the address in two pseudos (@c lui @c -> @c fp,
- *          @c addiu @c -> @c s2) and the original has three — cse only
+ *          @c addiu @c -> @c s2) and the original has three, cse only
  *          manufactures the extra base-pointer pseudo, and the copy into
  *          @c s2 that comes with it, when the accesses are written against
  *          the symbol. A pointer local is one instruction short however it
@@ -376,7 +375,7 @@ void func_80098934(void) {
  *          into the single call the original has, and because there is no
  *          variable to fold, the @c ==3 arm keeps its branch. Assigning a
  *          @c mode variable instead makes gcc collapse the @c 0 / @c 1 arms
- *          into @c xori + @c sltu — unavoidable in every if/else, ternary,
+ *          into @c xori + @c sltu, unavoidable in every if/else, ternary,
  *          set-override and switch spelling tried.
  *
  *       Several semantic bugs were caught during decomp: the
@@ -398,7 +397,7 @@ void func_8009895C(void) {
     u8 state;
     u8  header[16];
 
-    /* Copy 8-byte header from D_80098000 (lwl/lwr unaligned copy in asm) — dead store, kept for codegen match */
+    /* Copy 8-byte header from D_80098000 (lwl/lwr unaligned copy in asm), dead store, kept for codegen match */
     memcpy(header, D_80098000, 8);
     func_80012870();
 
@@ -423,8 +422,8 @@ void func_8009895C(void) {
             D_800704A8.unk1B1 = 0;
             D_800704A8.unk104 = 0;
             D_800704A8.unk106 = 0;
-            func_800A17A4(&D_800704A8.unk122);
-            func_800A17A4(&D_800704A8.unk130);
+            func_800A17A4(&D_800704A8.oscillators[0]);
+            func_800A17A4(&D_800704A8.oscillators[1]);
             func_800A44D8();
             func_80098934();
         }
@@ -450,7 +449,7 @@ void func_8009895C(void) {
 
         if ((s16)D_8005F14C != 6) {
             D_800C7208 = (u8 **)0x800E1000;
-            D_800C71E8 = (u8 **)0x800E1004;
+            D_800C71E8 = (FieldView **)0x800E1004;
             D_800C7204 = (TriangleList **)0x800E1008;
             D_800D5E90 = (ScriptList *)0x800E100C;
             D_800D5E9C = (u16 **)0x800E1010;
@@ -481,7 +480,7 @@ void func_8009895C(void) {
         }
 
         if (D_800C7200 != 0) {
-            func_800A3FE0((FieldSubsceneBuffer *)D_800C7200);
+            func_800A3FE0(D_800C7200);
         }
 
         if (D_8005F14C == 0 || (s16)D_8005F14C == 1 || (s16)D_8005F14C == 2) {
@@ -665,7 +664,312 @@ void func_80099180(void) {
     D_800704A8.ambientFlags = func_80030F10(D_800704A8.padPressed);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_80099348);
+/* Park the real stack pointer at 0x1F8003FC and run the next call with its
+   stack in the PSX scratchpad, then restore it. There is no way to express a
+   stack switch in C, so these are the original's inline asm. */
+#define SCRATCH_STACK_ENTER()                                                  \
+    __asm__ volatile("lui  $at, 0x1F80;"                                       \
+                     "ori  $at, $at, 0x03FC;"                                  \
+                     "sw   $sp, 0( $at );"                                     \
+                     "lui  $at, 0x1F80;"                                       \
+                     "ori  $at, $at, 0x03EC;"                                  \
+                     "addu $sp, $at, $zero")
+
+#define SCRATCH_STACK_LEAVE()                                                  \
+    __asm__ volatile("lui  $at, 0x1F80;"                                       \
+                     "ori  $at, $at, 0x03FC;"                                  \
+                     "lw   $sp, 0( $at )")
+
+/**
+ * @brief The field engine's per-frame loop: run one frame of the field scene
+ *        until something asks the engine to leave.
+ *
+ * Clears both draw environments (unless @c SystemState::unk1A5 suppressed it),
+ * then loops. Each iteration flips @ref g_bufferIndex, points @ref D_800C71E0
+ * at that buffer's GPU work area, snapshots the previous display environment
+ * into @ref D_8005F110, clears the ordering table and runs the field VM tick
+ * (@c func_800BD9C4) on the scratchpad stack.
+ *
+ * It then checks the two ways the player can leave, the soft-reset pad combo
+ * (@c 0x90F held on both this tick and the last) and the menu button, picks
+ * the camera view (the battle overlay's when it owns the screen, otherwise the
+ * field's, offset by @c 0x28 in sub-scene mode), and runs the render chain:
+ * entity update, targeting, oscillators, projection, character shadows, the
+ * shimmer ribbons, the walkmesh debug overlay, and the sub-scene sprite pool.
+ * Finally it programs the draw environment from the field's clip rectangle,
+ * links the two extra prims into the OT, presents, and dispatches on
+ * @c SystemState::mode, modes 3, 4, 6, 8 and the menu leave the loop with a
+ * code in @ref D_8005F158, mode 1/7 waits for the DMA to drain and leaves, and
+ * anything else draws the OT and goes round again.
+ *
+ * @note @c SystemState::dialogState and @ref D_8005F158 are @c volatile: the
+ *       original re-reads @c dialogState for each of the seven comparisons
+ *       instead of caching one load, and keeps the @c D_8005F158 stores out of
+ *       branch delay slots.
+ * @note The four loop-head assignments are ordered buffer / previous-dispenv /
+ *       draw-env / dispenv. That order matters: it keeps the lifetime of
+ *       @c D_8005F138 's @c %hi short enough that gcc does not hoist it out of
+ *       the loop, which would exhaust the loop-invariant budget before
+ *       @c D_800C71F8 (see the memory note on @c threshold @c -= @c 3).
+ */
+void func_80099348(void) {
+    s32 mode;
+    s16 i;
+    s16 frames;
+    u8 *eq;
+
+    if (D_800704A8.unk1A5 == 0) {
+        func_80048DD4(&D_80067388[0].clip, 0, 0, 0);
+        func_80048DD4(&D_80067388[1].clip, 0, 0, 0);
+    } else {
+        D_800704A8.unk1A5 = 0;
+    }
+    frames = 2;
+    activateBattleAnim(0);
+    func_8009A920(&D_80085224[D_800704A8.entityIndex[0]], D_8008538C);
+
+    while (1) {
+        func_80099180();
+        g_bufferIndex++;
+        g_bufferIndex &= 1;
+        D_800C71E0 = &D_800C7218[(s16)g_bufferIndex];
+        D_8005F110 = D_8005F138;
+        g_activeDrawEnv = &D_80067388[(s16)g_bufferIndex];
+        D_8005F138 = (s32)&D_80067440[(s16)g_bufferIndex];
+        ClearOTagR(D_800C71E0->ot, 0x1000);
+
+        SCRATCH_STACK_ENTER();
+        func_800BD9C4(D_800C71E0);
+        SCRATCH_STACK_LEAVE();
+
+        /* The whole 0x90F button set held on this tick and the last: tear the
+           field down (mode 4) and hand control back to the engine. The bit
+           layout of padHeld is not decoded, so the buttons are left unnamed. */
+        if ((D_800704A8.padHeld & 0x90F) == 0x90F
+            && (D_800704A8.padHeldPrev & 0x90F) == 0x90F) {
+            D_800704A8.counter = 0;
+            D_800704A8.mode = 4;
+            D_800704A8.spawnTriIdx = 0x7FFF;
+            sndStopAll();
+            func_800A59D0();
+            func_80042634(0);
+            func_80048BB8(0);
+            break;
+        }
+
+        if ((D_800704A8.unk150 & 0x20) && func_800BE274() == 0
+            && D_80085224[D_800704A8.entityIndex[0]].msgActive != 3
+            && D_80085224[D_800704A8.entityIndex[0]].msgActive != 4
+            && (s16)D_800704A8.dialogState != 4
+            && (s16)D_800704A8.dialogState != 1
+            && (s16)D_800704A8.dialogState != 3
+            && (s16)D_800704A8.dialogState != 2
+            && D_800704A8.unk1A3 == 0 && D_800704A8.mode == 0) {
+            func_8009912C();
+            D_800704A8.mode = 5;
+            D_800704A8.counter = 0;
+            D_8005F158 = 6;
+            D_800704A8.position_x = D_80085224[D_8005F148].posX / 4096;
+            D_800704A8.position_y = D_80085224[D_8005F148].posY / 4096;
+            D_800704A8.spawnTriIdx = D_80085224[D_8005F148].triIdx;
+            D_800704A8.anim_state = D_80085224[D_8005F148].field_0x241;
+            func_800A59D0();
+            break;
+        }
+
+        if (D_800704A8.mode == 5) {
+            func_8009912C();
+            D_8005F158 = 10;
+            func_800A59D0();
+            break;
+        }
+
+        if (func_800BE274() == 0) {
+            if (D_800704A8.unk1A6 == 0) {
+                D_800C71F8 = *D_800C71E8;
+            } else {
+                D_800C71F8 = *D_800C71E8 + 1;
+            }
+        } else {
+            D_800C71F8 = D_8005F108;
+            D_800704A8.unk1B0 = 1;
+            if (D_800704A8.unk1B1 == 0) {
+                D_800704A8.unk1B1 = 1;
+            }
+        }
+
+        SetGeomScreen(D_800C71F8->spriteScale);
+        if (D_800704A8.unk1A6 != D_800704A8.unk1A9) {
+            D_800704A8.unk1A9 = D_800704A8.unk1A6;
+            eq = (u8 *)D_8005F0F8;
+            D_800704A8.unk1A8 = D_800704A8.unk100 =
+                ((EventQueue *)(eq + D_800704A8.unk1A6))->unk09;
+        }
+        func_8009BEC8(D_80085224, D_800704A8.unk150);
+        func_8009A7E8(&D_80085224[D_800704A8.entityIndex[0]], D_8008538C);
+        func_8009CEE8();
+        func_800A17B8(&D_800704A8.oscillators[0]);
+        func_800A17B8(&D_800704A8.oscillators[1]);
+        func_800A10F4();
+        func_800A1318();
+        if (D_800704A8.unk1A6 == 1) {
+            func_800A15C0(D_800C71E0, D_80067388, 1);
+        } else {
+            func_800A15C0(D_800C71E0, D_80067388, 0);
+        }
+
+        if (D_80067440[((s16)g_bufferIndex + 1) & 1].isrgb24 == 0
+            && D_800704A8.unk1AD == 0) {
+            SCRATCH_STACK_ENTER();
+            func_800A1CFC(D_80085224, D_800C71E0);
+            SCRATCH_STACK_LEAVE();
+            func_800A222C(D_800C71E0->ot, &D_800C71F8->m, D_800C71E0->shadowPrims,
+                          D_800C71E0->shadowTPages, D_80085224);
+            func_800A5224(&D_800C71F8->m, D_800C71E0->ot, D_800C71E0->ribbonPrims,
+                          D_800C71E0->ribbonTPages);
+        }
+
+        if (func_800BE274() == 0) {
+            func_800A06F0(0, D_800C71E0, D_800C6D98[(s16)g_bufferIndex],
+                          D_800C71E0->unk4F80);
+        } else if (D_8005F0F8->unk0E == 1
+                   && D_800704A8.unk1A7 == 0) {
+            func_800A2AF8(D_800C71E0, D_800D5EC8[(s16)g_bufferIndex],
+                          D_800D5EB8[(s16)g_bufferIndex], D_800C71F8);
+        }
+
+        if (func_800BE274() == 0 && D_800C7200 != 0) {
+            func_800A37A8(&D_800C71F8->m, D_800C71E0, D_800C7200);
+            if ((s16)g_bufferIndex == 0) {
+                D_800C7200->primCursor = D_800C7200->primArena[0];
+            } else {
+                D_800C7200->primCursor = D_800C7200->primArena[1];
+            }
+            for (i = 0; i < 128; i++) {
+                if (D_800C7200->entries[i].active == 1) {
+                    SetRotMatrix(&D_800C71F8->m);
+                    SetTransMatrix(&D_800C71F8->m);
+                    func_800A39D8(&D_800C7200->entries[i],
+                                  &D_800C7200->records[D_800C7200->entries[i].cmdIndex],
+                                  D_800C7200, D_800C71E0->ot);
+                    /* stepTotal == 0 means this accumulator ran off the end of its
+                       command's waypoints: retire it and drop the command's use count. */
+                    if (D_800C7200->records[D_800C7200->entries[i].cmdIndex]
+                            .steps[D_800C7200->entries[i].stepIndex].stepTotal == 0) {
+                        D_800C7200->entries[i].active = 0;
+                        D_800C7200->records[D_800C7200->entries[i].cmdIndex].activeCount--;
+                    }
+                }
+            }
+        }
+
+        if ((s16)g_bufferIndex == 0) {
+            D_80067388[(s16)g_bufferIndex].clip.x = D_8005F0F8->rect_b[0].f6;
+        } else {
+            D_80067388[(s16)g_bufferIndex].clip.x = D_8005F0F8->rect_b[0].f6 + 512;
+        }
+        D_80067388[(s16)g_bufferIndex].clip.y = D_8005F0F8->rect_b[0].f0;
+        D_80067388[(s16)g_bufferIndex].clip.w =
+            D_8005F0F8->rect_b[0].f4 - D_8005F0F8->rect_b[0].f6;
+        D_80067388[(s16)g_bufferIndex].clip.h =
+            D_8005F0F8->rect_b[0].f2 - D_8005F0F8->rect_b[0].f0;
+        func_80049B78(&D_800C71E0->drawEnvPrim, &D_80067388[(s16)g_bufferIndex]);
+
+        addPrim(&D_800C71E0->ot[0xFFF], &D_800C71E0->drawEnvPrim);
+        addPrim(&D_800C71E0->ot[1], &D_800C71E0->unk4F00);
+
+        if (func_800BE274()) {
+            renderAndUpdateDisplay(D_800704A8.unk1AC);
+        } else {
+            renderAndUpdateDisplay(2);
+        }
+        renderBattleDisplayList((s32 *)D_800C71E0->ot);
+
+        if (D_800704A8.mode == 6) {
+            D_8005F158 = 9;
+            func_800A59D0();
+            break;
+        }
+        if (D_800704A8.mode == 4) {
+            func_800A59D0();
+            break;
+        }
+        if (D_800704A8.mode == 3 || D_800704A8.mode == 8) {
+            D_800704A8.position_x = D_80085224[D_8005F148].posX / 4096;
+            D_800704A8.position_y = D_80085224[D_8005F148].posY / 4096;
+            D_800704A8.spawnTriIdx = D_80085224[D_8005F148].triIdx;
+            func_8009912C();
+            mode = D_800704A8.mode;
+            if (mode == 3) {
+                D_8005F158 = mode;
+            } else {
+                D_8005F158 = 8;
+            }
+            func_800A59D0();
+            break;
+        }
+
+        if ((g_fieldVars->stateFlags & 0x40) && g_gameState.mainData.countdownTimer == 0
+            && (g_fieldVars->fieldB6 & 0x100) == 0) {
+            D_800704A8.counter = 0x4B;
+            D_800704A8.mode = 1;
+            D_800704A8.spawnTriIdx = 0x7FFF;
+            func_800A59D0();
+        }
+        if (D_800704A8.mode == 1 || D_800704A8.mode == 7) {
+            func_8009912C();
+            while (func_80048C50(1) != 0) {
+            }
+            break;
+        }
+
+        /* Same four-byte skew into entry 0 that func_8009D598 hands func_8009AAC8;
+           see the note there on EventEntry's field names being off by four. */
+        func_800A5A20(&D_80085224[D_8005F148],
+                      (EventEntry *)&D_8005F0F8->entries[0].z0);
+        func_800A5898(D_800C71E0);
+        /* Called for its side effect only, func_800BE274 dispatches into the
+           overlay when D_800DE4FD bit 1 is set; the original discards the result. */
+        func_800BE274();
+        func_8002A150(0, 0x18, 0xBE);
+        D_800D5EA0 = func_80042634(1);
+        while (func_80048C50(1) != 0) {
+        }
+        if (func_800BE274()) {
+            func_80042634(D_800704A8.unk1AC);
+        } else {
+            func_80042634(2);
+        }
+        if (frames == 0) {
+            func_80048BB8(1);
+        } else {
+            frames--;
+        }
+        func_80049480(&D_80067440[(s16)g_bufferIndex]);
+
+        if ((D_800704A8.padHeld & 0x800) && !(D_800704A8.padHeldPrev & 0x800)
+            && func_800BE274() == 0 && (s16)D_800704A8.dialogState != 4
+            && (s16)D_800704A8.dialogState != 3
+            && (s16)D_800704A8.dialogState != 2 && D_800704A8.unk1A3 == 0) {
+            func_800AD7AC(0);
+        }
+
+        if (D_800704A8.unk1AA == 1) {
+            func_80048DD4(&D_80067388[(s16)g_bufferIndex].clip, 0, 0, 0);
+        }
+        if (D_800704A8.unk1B1 == 1) {
+            D_800704A8.unk1B1 = 2;
+            func_800A1C64();
+        }
+        func_800393C8();
+        func_800BE2DC();
+        if (D_800704A8.unk1A1 == 0) {
+            func_80049244(&D_800C71E0->ot[0xFFF]);
+        }
+    }
+    func_800BE2AC();
+}
+
 
 /**
  * @brief Angle (8-bit BAM) and distance between two 2D points.
@@ -740,7 +1044,7 @@ s32 func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist) {
  *         projection lies outside the segment's X/Y extent.
  *
  * @note One variable @c d carries the division quotient, the -1 miss value,
- *       and the final squared distance through a single return — and the
+ *       and the final squared distance through a single return, and the
  *       bounds checks use bail-out gotos with second-chance labels
  *       (@c xc2 / @c yc2) entered both by branch and fall-through. Both are
  *       original-source structure: restructured single-purpose-variable or
@@ -907,7 +1211,7 @@ s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
  *
  * The for-loop's @c i++, pool++ in the increment clause (comma
  * operator) keeps gcc 2.7.2 from reordering the increments into the
- * count-reload @c lbu 's load-delay slot — target leaves that slot
+ * count-reload @c lbu 's load-delay slot, target leaves that slot
  * as a @c nop.
  */
 void func_8009A7E8(Eline *e, FieldEntityB *pool) {
@@ -940,7 +1244,7 @@ void func_8009A7E8(Eline *e, FieldEntityB *pool) {
  * Walks the entire @c D_8008538C pool (size @c D_800852F8) and zeros each
  * entity's @c trigger4 (offset 0x196) and @c unk19D (offset 0x19D). Called
  * from the @c PCOPYINFO / @c SET script opcodes via @c func_8009A8E0(D_8008538C)
- * after copying entity state — likely a reset of trigger-edge / pending-flag
+ * after copying entity state, likely a reset of trigger-edge / pending-flag
  * bookkeeping so the new state takes effect without leftover triggers.
  *
  * The loop is written do-while with a top-of-iter @c i++ so the count check
@@ -961,7 +1265,7 @@ void func_8009A8E0(FieldEntityB *e) {
 }
 
 /**
- * @brief Per-frame proximity check — for each @c FieldEntityB in
+ * @brief Per-frame proximity check, for each @c FieldEntityB in
  *        @c D_800852F8 entries, run @c func_8009A2BC against the eline's
  *        position and set per-entity trigger bytes based on the hit
  *        distance vs the eline's collision radius.
@@ -980,7 +1284,7 @@ void func_8009A8E0(FieldEntityB *e) {
  *
  * @note @c fc is a vestigial second cursor: initialized and stepped in
  *       lockstep but never read. Removing it (or reading through it)
- *       changes the register allocation away from the original — the
+ *       changes the register allocation away from the original, the
  *       original source evidently carried it, so it stays.
  */
 void func_8009A920(Eline *eline, FieldEntityB *entities) {
@@ -1102,7 +1406,7 @@ void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt) {
     }
 }
 
-/** @brief 16-byte padded s32 vector — stack twin of the PsyQ VECTOR layout,
+/** @brief 16-byte padded s32 vector, stack twin of the PsyQ VECTOR layout,
  *  private to @c func_8009AC9C (the pad keeps the frame at 0x10 strides). */
 typedef struct {
     s32 x, y, z, pad;
@@ -1126,7 +1430,7 @@ typedef struct {
  * @return Index of the best containing triangle, as @c s16.
  *
  * @note If no triangle contains the point (or the list is empty) the return
- *       value is an uninitialized stack halfword — the original never
+ *       value is an uninitialized stack halfword, the original never
  *       seeds @c bestIdx. Callers are expected to only use the result when
  *       the point is known to be on the mesh.
  * @note Twin loop cursors (@c s16 @c i for the record offset and result,
@@ -1211,13 +1515,13 @@ s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
  * A second pass clears every entity's @c headingBase before the movement
  * (@c func_8009E660) and path (@c func_8009BB18) tables are rebuilt.
  *
- * @note The navmesh is indexed as a flat vertex array — triangle @c t owns
- *       @c D_800C71F0[t*3 .. t*3+2] — which is also how @c func_8009DF18 reads
+ * @note The navmesh is indexed as a flat vertex array, triangle @c t owns
+ *       @c D_800C71F0[t*3 .. t*3+2], which is also how @c func_8009DF18 reads
  *       it. A @c Triangle[] view does not reproduce the original's addressing:
  *       gcc then shares the derived triangle pointer between the two corner
  *       arguments and computes the second as @c ptr+8, where the original
  *       scales @c t*3 once and adds the vertex base to each corner.
- * @note @c pos.z is left uninitialised on the player path — only the
+ * @note @c pos.z is left uninitialised on the player path, only the
  *       non-player path zeroes it. @c func_8009E338 reads just X and Y, so this
  *       is harmless, and the original has the same asymmetry.
  */
@@ -1412,7 +1716,7 @@ void func_8009BB18(void) {
  *   - nudges @c D_8005F11A by one toward @c D_8005F162.
  *
  * Each xyz coordinate uses signed `/ 4096` (target compiles this as
- * `bgez; addiu +0xFFF; sra 12` — the round-toward-zero idiom).
+ * `bgez; addiu +0xFFF; sra 12`, the round-toward-zero idiom).
  *
  * @param e   Source entity providing posX/posY/posZ/unk1FA.
  * @param mode If 1, advance D_8005F144 and the phase counters.
@@ -1578,8 +1882,8 @@ s16 func_8009D254(s32 a0) {
  *
  * When @p pad is non-zero the entity is treated as still travelling unless the
  * remaining squared distance exceeds @c (radius + pad)^2 + 0x1000, in which
- * case 0 is returned. Arrival — squared distance below @c moveSpeed^2 >> 16
- * or below 4 — snaps the position onto the destination and returns 0.
+ * case 0 is returned. Arrival, squared distance below @c moveSpeed^2 >> 16
+ * or below 4, snaps the position onto the destination and returns 0.
  *
  * Otherwise the bearing to the destination is taken (@c func_8009A0E8, which
  * also rewrites @c dist with the true distance) and reduced by
@@ -1716,7 +2020,7 @@ typedef struct {
  *
  * Writes the stepped position into @c ctx->outX/outY/outZ, calls
  * @c func_8009DF18 to do the per-axis path/extent computation (its
- * return value is captured into @c *out — clever scheduling puts that
+ * return value is captured into @c *out, clever scheduling puts that
  * store in the @c jal @c func_8009E468 delay slot), then runs the
  * collision query @c func_8009E468 against the computed @c outX/Y/Z.
  *
@@ -1744,7 +2048,7 @@ s32 func_8009D500(s32 selfIdx, s32 arg1, FieldStepScratch *ctx, s32 *out) {
  * ground on that axis.
  *
  * It then loops, probing three directions per attempt with @ref func_8009D500 —
- * the facing rotated by @c +0x20, by @c -0x20, and straight ahead — each probed
+ * the facing rotated by @c +0x20, by @c -0x20, and straight ahead, each probed
  * at the entity's collision @c radius. The probes report both a blocking-edge
  * code (via the out parameters) and a push-back result (the return value). If
  * every probe is clear the loop stops and the step is committed. Otherwise the
@@ -1767,7 +2071,7 @@ s32 func_8009D500(s32 selfIdx, s32 arg1, FieldStepScratch *ctx, s32 *out) {
  *         blocked or the navmesh walk failed.
  *
  * @note The event queue is handed to @ref func_8009AAC8 starting four bytes
- *       into entry 0, and that skew is real — @c func_8009AAC8's sentinel test
+ *       into entry 0, and that skew is real, @c func_8009AAC8's sentinel test
  *       (@c counter @c == @c 0x7FFF) then lands on @ref EventEntry::field16 and
  *       its armed test (@c spawnTriIdx @c == @c 0xFFFF) on @c field14, which is
  *       exactly what @c opHandler_PREMAPJUMP writes. The likely reading is that
@@ -2076,7 +2380,7 @@ s32 func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux) {
 }
 
 /**
- * @brief Plane-cross intersection — compute @c (cross_xyz @c · (a3 @c -
+ * @brief Plane-cross intersection, compute @c (cross_xyz @c · (a3 @c -
  *        @c a2_partial)) @c / @c cross_z, where @c cross @c = @c a1 @c
  *        × @c a0.
  *
@@ -2086,14 +2390,14 @@ s32 func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux) {
  * along the cross-product axis divided by @c cross_z. Note: @c a2's
  * @c z component is intentionally not subtracted.
  *
- * @param a0 Direction vector A (s32 x,y,z) — overwritten with @c a3.
+ * @param a0 Direction vector A (s32 x,y,z), overwritten with @c a3.
  * @param a1 Direction vector B (s32 x,y,z).
- * @param a2 Reference point (s32 x,y,z) — only @c .x and @c .y used.
+ * @param a2 Reference point (s32 x,y,z), only @c .x and @c .y used.
  * @param a3 Target point (s16 x,y,z).
  * @return The intersection parameter @c (s32).
  *
  * The trailing block caches @c sp[0..2] into local @c s32 vars (t0,
- * t1, t2) so gcc 2.7.2 loads each only once — without the cache, gcc
+ * t1, t2) so gcc 2.7.2 loads each only once, without the cache, gcc
  * reloads them from the stack for each of the 5 uses.
  */
 s32 func_8009E338(Vec3i *a0, Vec3i *a1, Vec3i *a2, Vec3s *a3) {
@@ -2197,7 +2501,7 @@ s32 func_8009E604(Eline *a, Eline *b) {
  * (@c D_8005F160 / @c D_8005F162) alike.
  *
  * On a fresh load (@c D_8005F14C @c == @c 0) there is no heading to trail along,
- * so every waypoint just gets the player's position, triangle and facing — the
+ * so every waypoint just gets the player's position, triangle and facing, the
  * followers stand on top of the player until real movement fills the ring.
  *
  * Otherwise the trail is synthesised backwards from the player. Slot 0 holds the
@@ -2209,7 +2513,7 @@ s32 func_8009E604(Eline *a, Eline *b) {
  * plane Z lands further than @c 0x136 from the stepped Z the point is off the
  * walkable surface and the slot falls back to the player's own X/Y.
  *
- * @note Slot 0 only receives X and Y here — its Z, triangle and facing keep
+ * @note Slot 0 only receives X and Y here, its Z, triangle and facing keep
  *       whatever the ring already held.
  */
 void func_8009E660(void) {
@@ -2291,7 +2595,7 @@ void func_8009E660(void) {
  * @brief Seed both follower breadcrumb trails with a synthetic path running
  *        from the party leader back to where each follower currently stands.
  *
- * Called when the party is (re)placed — after a map jump or a cutscene — so the
+ * Called when the party is (re)placed, after a map jump or a cutscene, so the
  * two followers have a trail to walk instead of snapping to the leader. Both
  * 64-slot tables are cleared, the ring cursor @c D_8005F144 is reset to 0 and
  * the two followers are re-pegged to their default lag of 15 and 30 slots
@@ -2307,7 +2611,7 @@ void func_8009E660(void) {
  * and the follower's. Any slots left over (down to slot 32) are filled with the
  * follower's own resting position and tagged @c field_0A @c = @c 2.
  *
- * A follower further than 32 slots from the leader is skipped entirely — its
+ * A follower further than 32 slots from the leader is skipped entirely, its
  * table keeps the cleared state.
  *
  * @note @c D_80070760 holds slot 1's trail and @c D_80070A60 slot 2's; the
@@ -2449,7 +2753,7 @@ void func_8009ECA4(void) {
  *       @c dz pre-shift, then reassigned inside the loop; the chained
  *       @c r = (dy = r * r) inside the comparison) is what coaxes
  *       gcc 2.7.2 into the exact register allocation the original
- *       used. Not "natural" C — it's a deliberate trick that survived
+ *       used. Not "natural" C, it's a deliberate trick that survived
  *       to match.
  */
 s32 func_8009F74C(Eline *a, Eline *b) {
@@ -2531,7 +2835,7 @@ void func_8009F8D0(s16 idx) {
  * @brief Apply one frame of directional input to the player entity.
  *
  * Only the player (@c D_8005F148) moves, and only while @c D_800704BD is
- * clear; any other entity index — or a set @c D_800704BD — falls through to
+ * clear; any other entity index, or a set @c D_800704BD, falls through to
  * the passive path at the end.
  *
  * The two direction bit-pairs are handled as a pair of opposite steps whose
@@ -2691,7 +2995,7 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A06F0);
  *     at @c (0, 232) (the dialog header / pause overlay strip).
  *   - Then, advances @p buf by @c 0x3000 and StoreImages 16 strips of
  *     @c 832x16 (stride @c 0x6800 in the buffer), each placed at
- *     @c (0, 256 + i*16) — a stack of 16 strips of decoration / VRAM
+ *     @c (0, 256 + i*16), a stack of 16 strips of decoration / VRAM
  *     content.
  *
  * Each transfer is sandwiched by @c func_80048C50(1) polls (GPU-busy
@@ -2729,14 +3033,14 @@ void func_800A0D6C(u8 *buf) {
  * Computes @c start + ((end - start) * progress) / total without
  * intermediate overflow. The difference @c end - start is checked
  * against signed 20-bit range (@c [-0x7FFFF, 0x7FFFF]):
- *   - When the difference fits, multiplies first then divides — the
+ *   - When the difference fits, multiplies first then divides, the
  *     precise path that keeps fractional information through the
  *     multiplication.
  *   - When the difference is too large to safely multiply by @p progress
- *     in 32-bit, divides first then multiplies — loses some precision
+ *     in 32-bit, divides first then multiplies, loses some precision
  *     but avoids overflow.
  *
- * The fit check uses @c (u32)(diff + 0x7FFFF) <= 0xFFFFE — adding the
+ * The fit check uses @c (u32)(diff + 0x7FFFF) <= 0xFFFFE, adding the
  * positive bias maps the signed range @c [-0x7FFFF, 0x7FFFF] to the
  * unsigned range @c [0, 0xFFFFE] so a single unsigned compare suffices.
  */
@@ -2787,7 +3091,7 @@ s32 func_800A0EB8(s32 start, s32 end, s32 total, s32 angle) {
  * resulting on-screen XY into @c *sxy and discarding the @c p and flag
  * outputs into stack locals. Pops the matrix stack via
  * @c func_8003FF88 (return discarded) and returns @c func_80040DE4 's
- * result — the saved value survives @c func_8003FF88 by being copied
+ * result, the saved value survives @c func_8003FF88 by being copied
  * out of @c v0 in the @c jal delay slot.
  */
 s32 func_800A0F34(SVECTOR *v, s32 *sxy) {
@@ -2803,7 +3107,7 @@ s32 func_800A0F34(SVECTOR *v, s32 *sxy) {
 }
 
 /**
- * @brief 2D position clamp — clamp @c out->(x,y) to a rect defined by
+ * @brief 2D position clamp, clamp @c out->(x,y) to a rect defined by
  *        @c D_8005F0F8->rect_a[a], shrunk by half the extents of
  *        @c D_8005F0F8->rect_b[b].
  *
@@ -2818,7 +3122,7 @@ s32 func_800A0F34(SVECTOR *v, s32 *sxy) {
  *
  * @note The first and last `half` expressions are inlined (not assigned
  *       to the @c half local) to match the target's register allocation
- *       cascade — when inlined, gcc reuses the @c a*8 register slot
+ *       cascade, when inlined, gcc reuses the @c a*8 register slot
  *       (a1) for the final half value; when assigned to @c half, gcc
  *       picks a3, leaving a1 holding stale @c a*8 and the function
  *       grows by 4 register-field bit changes.
@@ -2853,7 +3157,7 @@ void func_800A0FB8(Vec2s *out, s16 a, s16 b) {
  *   - @c mode 0,1,2,4,5 → @c submode = 1
  *   - @c mode 3        → @c submode = 2 plus copy @c p1 / @c p2 over @c q1 / @c q2
  *
- * @note Decomp at 91.27% match — semantics and structure match; remaining
+ * @note Decomp at 91.27% match, semantics and structure match; remaining
  *       diff is gcc 2.7.2 hoisting the constant @c 1 (submode init) to a
  *       prologue temp and operand-order on the @c addu of base+stride.
  *       See @c permuter/func_800A10F4/base.c.
@@ -2911,9 +3215,9 @@ void func_800A17A4(u8 *a0) {
  * Ticks an @ref Oscillator one step, dispatching on @c mode / @c phase:
  *  - @b mode==1 (continuous): on @c phase==0 it seeds the first target
  *    (@c end = @c (s16)(D_800C3520[tableIdx] * amplitude) / 256) and returns;
- *    otherwise, once @c angle passes @c total it starts a new cycle — the new
+ *    otherwise, once @c angle passes @c total it starts a new cycle, the new
  *    @c end takes the @b opposite sign of the previous one (so the value
- *    oscillates) — then interpolates.
+ *    oscillates), then interpolates.
  *  - @b otherwise: on @c phase==1 it snaps @c start to the previous @c end,
  *    clears @c end, and drops to @c phase==0; on @c phase!=1 it runs until
  *    @c angle reaches @c total, then latches @c output to @c 0.
@@ -2995,7 +3299,7 @@ void func_800A17B8(Oscillator *osc) {
  *       C+asm-macro reconstruction campaign (permuter/func_800A19B8/base.c,
  *       82.93%% plateau, full structural parity): (1) its @c li constants
  *       are ori-form (ASPSX expand_li) while all 166 li sites in the rest
- *       of fe_object1.c are addiu-form (--aspsx-version=2.67) — assembled
+ *       of fe_object1.c are addiu-form (--aspsx-version=2.67), assembled
  *       with different settings than this CU; (2) trapping @c add / @c sub
  *       / @c addi cluster in the wrap/window-test/advance idioms while
  *       addresses use @c addu (the classic hand-asm signed-math/address
@@ -3101,7 +3405,7 @@ void func_800A1CC0(void) {
  * @param ents Eline entity array (@c D_80085224).
  * @param arg1 Pass-through context for the @ref func_800A63AC flush.
  */
-void func_800A1CFC(Eline *ents, u8 *arg1) {
+void func_800A1CFC(Eline *ents, FieldFrameBuf *frame) {
     Vec3i pB;       /* sp+0x10: bearing arg B */
     Vec3i pA;       /* sp+0x20: bearing arg A */
     Vec3s v30;      /* sp+0x30: world-position vector */
@@ -3217,7 +3521,7 @@ void func_800A1CFC(Eline *ents, u8 *arg1) {
             func_800A97E4(i, 0x25, 0, 0);
         }
     }
-    func_800A63AC(arg1, D_800C71F8, 0);
+    func_800A63AC(frame, D_800C71F8, 0);
 }
 
 /**
@@ -3265,7 +3569,7 @@ typedef struct {
  *
  * @note The two @c i[t->items1] / @c i[t->items2] uses (instead of
  *       @c t->items1[i] / @c t->items2[i]) are the trick that swaps
- *       the @c addu operand order to match the target — see
+ *       the @c addu operand order to match the target, see
  *       @c pattern_i_arr_to_swap_addu in project memory.
  */
 void func_800A2128(func_800A2128_arg0 *t) {
@@ -3291,8 +3595,8 @@ void func_800A2128(func_800A2128_arg0 *t) {
 /**
  * @brief Draws every field entity's blob shadow as a flat-shaded 8-triangle fan.
  *
- * Builds a unit octagon once per call — @c func_8009D234 / @c func_8009D254 sampled
- * at the eight 32-step headings give the cos/sin pair for each ring point — then
+ * Builds a unit octagon once per call, @c func_8009D234 / @c func_8009D254 sampled
+ * at the eight 32-step headings give the cos/sin pair for each ring point, then
  * walks the @ref Eline pool. An entity casts a shadow only when it is not flagged
  * out (@c flags bit 3), is active (@c unk218 @c != @c -1) and is in the state
  * @c unk258 @c == @c 1.
@@ -3300,7 +3604,7 @@ void func_800A2128(func_800A2128_arg0 *t) {
  * The fan centre is the entity's position dropped to integer world units, and ring
  * point @c k sits at that centre offset along octagon direction @c k, scaled by the
  * entity's own @c shadowRadius[k]. Because the eight radii are independent the
- * shadow need not be circular — @c SHADEFORM sets them individually, @c SHADESET
+ * shadow need not be circular, @c SHADEFORM sets them individually, @c SHADESET
  * makes them uniform. The nine points are projected with one @c func_80040DE4 (whose
  * return gives the OTZ) plus three @c RTPT batches, and when the centre is in depth
  * range the fan is emitted as eight @ref POLY_G3 triangles, every one flat-shaded in
@@ -3479,8 +3783,8 @@ typedef union {
 /**
  * @brief Upload a split field-graphic to VRAM in three blits.
  *
- * @p buf begins with a halfword header: the split row (0x2020 — ASCII
- * spaces — means "empty buffer, skip"). The upload sequence, each part
+ * @p buf begins with a halfword header: the split row (0x2020, ASCII
+ * spaces, means "empty buffer, skip"). The upload sequence, each part
  * preceded by a busy-wait on @ref func_80048C50 and a @ref func_80042634
  * reset:
  *  1. a 256x1 strip at (0, 0xE8) from @c buf+2 (the palette row),
@@ -3493,7 +3797,7 @@ typedef union {
  * @param slot VRAM column slot; x = @p slot * 64.
  *
  * @note The volatile-cast re-read of the header in part 3 keeps gcc from
- *       folding the unsigned reload into the earlier signed load — the
+ *       folding the unsigned reload into the earlier signed load, the
  *       original emits both.
  */
 void func_800A2D2C(s16 *buf, s32 slot) {
@@ -3542,7 +3846,7 @@ void func_800A2D2C(s16 *buf, s32 slot) {
  * Used by @c func_800A303C to seed each new particle's position,
  * velocity, and unk fields with a value in roughly @c [-range/2, range/2].
  *
- * @param range Half-range scaler — the table entry (0..255) is multiplied
+ * @param range Half-range scaler, the table entry (0..255) is multiplied
  *              by @p range and shifted right 8.
  * @return A signed pseudo-random value derived from the lookup table.
  */
@@ -3586,7 +3890,7 @@ void func_800A2F28(s32 a0, u8 *a1) {
  * being what gets zeroed.
  *
  * @note Named after the function/arg it describes rather than after a
- *       semantic role — we don't know what the original developer
+ *       semantic role, we don't know what the original developer
  *       called this view. The same memory is also reached by
  *       @c func_800A303C through the @c Particle overlay (where these
  *       3 bytes are the per-particle @c unk19, @c unk1A, and @c active
@@ -3620,7 +3924,7 @@ void func_800A2F48(func_800A2F48_arg0 *t) {
 
 /**
  * @brief Shape @c func_800A2F70 sees: array of 128 40-byte items, three
- *        fields per item — @c b3 / @c b7 (constant tags) and @c hE (a
+ *        fields per item, @c b3 / @c b7 (constant tags) and @c hE (a
  *        @c func_8004D564 -seeded halfword).
  *
  * @note Named after the function/arg. Called from @c func_800A2EE0 twice
@@ -3756,7 +4060,7 @@ void func_800A303C(s16 emIdx, ParticleSystem *sys, s16 *pos, s16 count) {
 }
 
 /**
- * @brief View of the Eline stack region used by @c func_800A327C — three
+ * @brief View of the Eline stack region used by @c func_800A327C, three
  * @c s16 control points (@c a, @c b, @c c) and a @c num/denom progress ratio.
  *
  * @note Named after the function/arg, mirroring @ref func_800A3488_arg0
@@ -3791,7 +4095,7 @@ typedef struct {
  * position for particle bursts along a curved path.
  *
  * @note The midpoint components are @c u16 with @c (s16) casts at the
- *       second stage — this mixed-width view reproduces the original's
+ *       second stage, this mixed-width view reproduces the original's
  *       lhu/lh load pairing and shift re-extensions.
  */
 void func_800A327C(func_800A327C_arg0 *a, SVECTOR *out) {
@@ -3811,7 +4115,7 @@ void func_800A327C(func_800A327C_arg0 *a, SVECTOR *out) {
 }
 
 /**
- * @brief View of the Eline stack region used by @c func_800A3488 — two
+ * @brief View of the Eline stack region used by @c func_800A3488, two
  * @c s16 endpoints (@c a, @c b) and a @c num/denom progress ratio.
  *
  * @note Named after the function/arg. The same memory is normally the
@@ -3883,7 +4187,7 @@ void func_800A3534(func_800A3534_arg0 *t) {
 
 
 /**
- * @brief Animation slot tick & dispatch — runs the per-frame update for the
+ * @brief Animation slot tick & dispatch, runs the per-frame update for the
  * actor's four animation slots.
  *
  * For each of the 4 slots:
@@ -3895,7 +4199,7 @@ void func_800A3534(func_800A3534_arg0 *t) {
  *   - Increment the tick counter.
  *   - Dispatch to func_800A303C with one of three position sources, chosen
  *     by `D_800704A8.slotActive[slot]`:
- *       - kind == 1: select by actor->mode — pass the actor itself
+ *       - kind == 1: select by actor->mode, pass the actor itself
  *         (mode 1), or fill `pos` via func_800A3488 (mode 2) or
  *         func_800A327C (mode 3).
  *       - kind != 1: read entity (kind & 0x7F) from D_80085224, divide
@@ -3971,7 +4275,7 @@ void func_800A355C(FieldActor *actor, s32 slot, s32 a2) {
  * @note @c pos is declared but unused: the original reserves an 8-byte stack
  *       slot here (gcc 2.7.2 keeps an unused struct local), matching the frame.
  */
-void func_800A37A8(void *arg0, s32 arg1, FieldSubsceneBuffer *buf) {
+void func_800A37A8(MATRIX *m, FieldFrameBuf *frame, FieldSubsceneBuffer *buf) {
     s32 i;
     SVECTOR pos;
 
@@ -4027,8 +4331,8 @@ void func_800A38B4(MoveAccum *out, MoveStep *in, MoveStep *target) {
  * @brief Emit one field sprite for a movement accumulator and link it into the OT.
  *
  * Advances @p acc one tick along its current waypoint pair (@c func_800A38B4),
- * projects the accumulated position through the GTE, and — when the projected
- * depth lands inside the ordering table — builds a @ref POLY_FT4 for the sprite
+ * projects the accumulated position through the GTE, and, when the projected
+ * depth lands inside the ordering table, builds a @ref POLY_FT4 for the sprite
  * and chains it in.
  *
  * The quad is a screen-space billboard: RTPS gives the centre, the sprite's
@@ -4173,7 +4477,7 @@ void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldSubsceneBuffer *buf, u3
  * @c D_800704A8.slotActive entry cleared) once the tick passes its own count.
  *
  * Each tick advances two things. Every still-active slot steps its animation
- * table — resetting the cursor to the start when the table byte runs out —
+ * table, resetting the cursor to the start when the table byte runs out —
  * and is dispatched through @c func_800A355C. Every running accumulator is
  * lerped one step by @c func_800A38B4 toward the next waypoint of its command;
  * a waypoint with a zero tick count ends the command (clearing @c active and
@@ -4462,7 +4766,7 @@ void func_800A4758(void) {
  * @brief Returns 1 if any of the 8 slot bytes in @c D_8005F168 equals 2.
  *
  * Linear scan over @c D_8005F168[0..7] looking for the value @c 2. Sets
- * a result flag (never early-exits — scans all 8 slots regardless of
+ * a result flag (never early-exits, scans all 8 slots regardless of
  * when the match is found). Used by @c fe_object7 's @c DRAWPOINT
  * dispatcher (case 5) as a predicate.
  *
@@ -4501,8 +4805,8 @@ s32 func_800A4910(s32 a0, s32 a1, s32 a2, s32 a3) {
  * mid-point in the scratchpad: once the tick counter @c field82 has passed
  * @c field80 the draw-point's settled position (@c field10 / @c field12 /
  * @c field14) is used directly, otherwise the point is interpolated twice with
- * @c func_800A4910 — base to first corner and first corner to second, both at
- * @c field82 / @c field80 — and the two results interpolated again.
+ * @c func_800A4910, base to first corner and first corner to second, both at
+ * @c field82 / @c field80, and the two results interpolated again.
  *
  * The staged mid-point is then spread into the slot's two corner arrays at
  * index @c field82 & 7: a cosine/sine pair sampled at @c field86 (scaled by
@@ -4736,9 +5040,9 @@ void func_800A5224(MATRIX *m, u32 *ot, FieldRibbonPrims *prims,
  * before the tile) to the caller-supplied ordering table @p ot.
  *
  * @param ot Ordering-table slot to link the two clear primitives into.
- * @param r  Fill red   — scaled to @c r*dialogTimer/256, low byte to TILE @c r0.
- * @param g  Fill green — scaled to @c g*dialogTimer/256, low byte to TILE @c g0.
- * @param b  Fill blue  — scaled to @c b*dialogTimer/256, low byte to TILE @c b0.
+ * @param r  Fill red  , scaled to @c r*dialogTimer/256, low byte to TILE @c r0.
+ * @param g  Fill green, scaled to @c g*dialogTimer/256, low byte to TILE @c g0.
+ * @param b  Fill blue , scaled to @c b*dialogTimer/256, low byte to TILE @c b0.
  *
  * @note @c g_bufferIndex is @c volatile, so every subscript re-reads it; the
  *       @c dialogTimer read is likewise forced through a @c volatile pointer to
@@ -4772,9 +5076,9 @@ void func_800A5360(u32 *ot, s16 r, s16 g, s16 b) {
  * @p ot. @c g_bufferIndex is @c volatile, so each subscript re-reads it.
  *
  * @param ot Ordering-table slot to link the two clear primitives into.
- * @param r  Fill red   — low byte stored to TILE @c r0.
- * @param g  Fill green — low byte stored to TILE @c g0.
- * @param b  Fill blue  — low byte stored to TILE @c b0.
+ * @param r  Fill red  , low byte stored to TILE @c r0.
+ * @param g  Fill green, low byte stored to TILE @c g0.
+ * @param b  Fill blue , low byte stored to TILE @c b0.
  *
  * @note @p r / @p g / @p b are @c s16 because the sole caller (@c func_800A5788)
  *       feeds them the signed fade-lerp results; only the low byte reaches each
@@ -4796,7 +5100,7 @@ void func_800A553C(u32 *ot, s16 r, s16 g, s16 b) {
  * Decrements @c dialogTimer by @c dialogCount (one count-down step),
  * unconditionally clears the @c unk1A1 flag, then:
  *   - If the new timer is still positive (more frames to wait), polls
- *     @c func_800BE274 — if it returns 0 (gate not yet open), we keep
+ *     @c func_800BE274, if it returns 0 (gate not yet open), we keep
  *     the dialog state intact and return.
  *   - Otherwise (timer expired @em or gate now open) clears both
  *     @c dialogState and @c dialogTimer so the dialog state machine
@@ -4826,7 +5130,7 @@ void func_800A5698(void) {
  *
  * The @c (s16)*(volatile u16 *)&...->dialogTimer cast forces a reload
  * of the just-stored value (without making the canonical struct member
- * volatile) — matches the target's lhu-then-sign-extend pattern instead
+ * volatile), matches the target's lhu-then-sign-extend pattern instead
  * of letting gcc reuse the post-increment value still in a register.
  */
 void func_800A5700(void) {
@@ -4841,7 +5145,7 @@ void func_800A5700(void) {
 /**
  * @brief Linear interpolation between two s16 endpoints.
  *
- * Returns @c start + ((end - start) * progress) / total — the standard
+ * Returns @c start + ((end - start) * progress) / total, the standard
  * `start * (1 - progress/total) + end * (progress/total)` lerp evaluated
  * in integer arithmetic, with the difference narrowed to s16 before the
  * multiplication so the product fits in s32 even for large @p progress.
@@ -4857,7 +5161,7 @@ s16 func_800A5748(s16 start, s16 end, s16 progress, s16 total) {
 }
 
 /**
- * @brief Companion of @c func_800A5700 — advances the dialog-pos animation
+ * @brief Companion of @c func_800A5700, advances the dialog-pos animation
  *        and dispatches the per-frame visual update.
  *
  * Increments @c dialogTimer; once it catches up to @c dialogCount, snapshots
@@ -4895,7 +5199,7 @@ void func_800A5788(s32 a0) {
 }
 
 /**
- * @brief Dialog-state dispatcher — runs the per-state handler for the
+ * @brief Dialog-state dispatcher, runs the per-state handler for the
  *        current @c D_800704A8.dialogState (@c 0..8).
  *
  * Behavior per state:
@@ -4910,7 +5214,7 @@ void func_800A5788(s32 a0) {
  *
  * @note Stays INCLUDE_ASM because gcc-2.7.2-cdk always emits `.align 3`
  *       (8-byte) before switch jtbls, but jtbl_8009806C is at the
- *       4-byte aligned offset 0x6C in the original binary — a `switch`
+ *       4-byte aligned offset 0x6C in the original binary, a `switch`
  *       decomp would introduce a 4-byte padding gap that cascades
  *       through the rest of field.bin. A computed-goto rewrite matches
  *       byte-perfect but reads as transliterated assembly; keeping the
@@ -4997,8 +5301,8 @@ void func_800A5A14(s16 a0) {
 /**
  * @brief Per-frame background preload of the field nearest the player.
  *
- * Snapshots the player position into the scratchpad (whole units), then — while
- * the map is not suppressed by @c D_800704BD — scans the 12 event-queue entries
+ * Snapshots the player position into the scratchpad (whole units), then, while
+ * the map is not suppressed by @c D_800704BD, scans the 12 event-queue entries
  * for the armed one (@c counter != @c 0x7FFF) whose trigger-segment start is
  * nearest in XY, recording its @c counter (the destination field id) in
  * @c D_8005F142.
@@ -5089,7 +5393,7 @@ void func_800A5A20(Eline *self, EventEntry *entries) {
  *     inner counter wraps to 0 (so it advances roughly once per 256 calls).
  *
  * The return is @c D_800C3520[D_8005F151] + @c D_8005F150 truncated to
- * a byte — the lookup-table byte mixed with the slow drift counter.
+ * a byte, the lookup-table byte mixed with the slow drift counter.
  *
  * Same @c D_800C3520 lookup table that @c func_800A2EA4 and
  * @c func_800A5CF8 use; this is one of several sibling helpers that
@@ -5128,15 +5432,15 @@ s32 func_800A5CF8(void) {
  * divided by 1348 is added to the battle chance @c D_8005F0FE. A random
  * byte below the battle chance triggers an encounter: engine mode 3,
  * chance reset, @c D_8005F130 set, and a formation picked from the field's
- * 4-entry table with thresholds 0x80/0xC0/0xF0 — preferring the first
+ * 4-entry table with thresholds 0x80/0xC0/0xF0, preferring the first
  * bucket whose formation differs from the previous one (@c D_8005F120),
  * falling back to entry 3 unconditionally.
  *
- * @note The three dialog-state reads go through a volatile cast — the
+ * @note The three dialog-state reads go through a volatile cast, the
  *       original re-reads the halfword for each compare.
  * @note The first formation store writes @c D_800704A8.counter through the
  *       struct; the others use the alias symbol @c D_800704AA (same word,
- *       0x800704AA) — both spellings exist in the original.
+ *       0x800704AA), both spellings exist in the original.
  * @note The step accumulator advances by the player's @c moveSpeed (0x1FE)
  *       read through a @c (u16) view, so faster movement builds the encounter
  *       counter proportionally faster.
@@ -5205,7 +5509,7 @@ void func_800A5D28(void) {
 }
 
 /**
- * @brief Per-selector dispatcher — sets or clears a @ref FieldEntityC
+ * @brief Per-selector dispatcher, sets or clears a @ref FieldEntityC
  *        trigger byte indexed by @c entry->status, gated by a per-selector
  *        flag in @c D_80070628[0..5].
  *
@@ -5286,7 +5590,7 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A5FA4);
  *
  * @param eline The querying eline entity.
  * @param segs  The 12-entry, 16-byte-stride segment table.
- * @param pt    Query point supplied by @c func_8009D598; unused here — the
+ * @param pt    Query point supplied by @c func_8009D598; unused here, the
  *              scan runs against the eline's own position.
  *
  * @note The empty @c do{}while(0) is a scheduling barrier: it keeps gcc 2.7.2
@@ -5337,7 +5641,7 @@ void func_800A6100(Eline *eline, FieldLineTrigger *segs, Vec3i *pt) {
 }
 
 /**
- * @brief Per-frame dispatch over 12 entries — call @c func_800A5FA4
+ * @brief Per-frame dispatch over 12 entries, call @c func_800A5FA4
  *        with an even/odd flag based on the entry's @c mode.
  *
  * Iterates 12 16-byte entries. For each entry where @c active != @c 0xFF,

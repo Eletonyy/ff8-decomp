@@ -33,7 +33,7 @@ extern u8 **D_800D5E8C;          /**< End of the script region (used to size the
 extern u8 **D_800D5ED4;          /**< Start of the script region; advanced past the header. */
 extern u8 **D_800D5E94;          /**< Field-file header pointer. */
 /** @brief Field-file header; @c NULL when the header carries the empty @c 0x2020 tag. */
-extern u8 *D_800C7200;
+extern FieldSubsceneBuffer *D_800C7200;
 
 /** @brief Double-buffered prim-chain heads laid out after the field bundle. */
 extern u8 *D_800C6D98[2];
@@ -139,15 +139,33 @@ extern u8 D_800CC118[];
 /** @brief Per-frame prim arena the field renderers build into. */
 extern u8 D_800CD1B0[];
 /** @brief Field-data section pointer set from @c 0x800E1004 on load. */
-extern u8 **D_800C71E8;
+extern FieldView **D_800C71E8;
 /** @brief Horizontal centre of the field clamp rect, derived on every load. */
 extern s32 D_800C7210;
 /** @brief Vertical centre of the field clamp rect, derived on every load. */
 extern s32 D_800C7214;
 /** @brief Cleared alongside the framebuffer copy that @c func_8009895C kicks off. */
 extern u8 D_8005F0FC;
-/** @brief Set to 2 when the engine leaves the field on state 7. */
-extern s16 D_8005F158;
+/**
+ * @brief Field-exit state code handed back to the engine dispatcher: 2 when the engine
+ *        leaves on state 7, and 6 / 8 / 9 / 10 or the engine mode from @c func_80099348 .
+ *
+ * @c volatile so the stores are not sunk into branch delay slots, which is what
+ * @c func_80099348 's original does.
+ */
+extern volatile s16 D_8005F158;
+/** @brief Camera/view block used instead of the field's own while @c func_800BE274 reports
+ *         the overlay subsystem active; assigned to @c D_800C71F8 . */
+extern FieldView *D_8005F108;
+/** @brief Previous frame's display environment, snapshotted from @c D_8005F138 each frame. */
+extern s32 D_8005F110;
+
+/** @brief The frame buffer currently being built; one of the two in @ref D_800C7218 . */
+extern FieldFrameBuf *D_800C71E0;
+/** @brief The two per-frame GPU work areas @ref D_800C71E0 alternates between. */
+extern FieldFrameBuf D_800C7218[2];
+/** @brief Handle returned by @c func_80042634 each frame. */
+extern s32 D_800D5EA0;
 /** @brief Field render/present request byte; 1 = normal, 9 = post-copy. */
 extern volatile u8 D_8005F116;
 
@@ -161,26 +179,6 @@ typedef struct {
     u8 b[32];
 } ParticleBlock;
 
-/**
- * @brief Interpolating oscillator / wobble driver (14 bytes).
- *
- * Steps a value from @c start toward @c end over @c total ticks, sampling a
- * waveform from @c D_800C3520 (scaled by @c amplitude) and interpolating each
- * tick via @c func_800A0EB8. @c mode / @c phase select the behaviour
- * (@c mode==1 continuously oscillates by flipping @c end 's sign each cycle;
- * otherwise it runs once and stops). Advanced by @ref func_800A17B8.
- */
-typedef struct {
-    /* 0x00 */ u8  mode;       /**< Dispatch mode (1 = continuous oscillation). */
-    /* 0x01 */ u8  phase;      /**< Sub-state within the current mode. */
-    /* 0x02 */ u8  tableIdx;   /**< Cursor into the @c D_800C3520 waveform table. */
-    /* 0x03 */ u8  output;     /**< Latest interpolated value from @c func_800A0EB8. */
-    /* 0x04 */ s16 amplitude;  /**< Scale applied to the sampled waveform byte. */
-    /* 0x06 */ s16 start;      /**< Interpolation start value. */
-    /* 0x08 */ s16 end;        /**< Interpolation end (target) value. */
-    /* 0x0A */ s16 total;      /**< Interpolation duration in ticks. */
-    /* 0x0C */ s16 angle;      /**< Current tick (0..total). */
-} Oscillator;  /* 0x0E = 14 bytes */
 
 /**
  * @brief Particle system buffer.
@@ -276,16 +274,43 @@ extern ScriptList *D_800D5E90;
 extern void func_80098934(void);
 extern void func_80099124(void);
 extern void func_8009912C(void);
-/** @brief 12-byte path waypoint (64 entries per table, indexed by angle/64). */
+/**
+ * @brief One breadcrumb in the party-follower trail: 12 bytes, 64 per ring.
+ *
+ * This is how the party follows the leader in a field. The followers do no
+ * pathfinding at all — every tick @ref func_8009BD50 records the leader's state
+ * into slot @c D_8005F144 of both rings and advances the cursor, and the two
+ * followers replay slot @c (D_8005F144 @c - @c lag) @c & @c 0x3F a fixed number
+ * of frames later. That is why they track so tightly and take exactly the same
+ * line around a corner: they are literally walking the leader's own footsteps.
+ * Party slot 1 reads @ref D_80070760 at lag @c D_8005F118, slot 2 reads
+ * @ref D_80070A60 at lag @c D_8005F11A; the defaults are 15 and 30 slots.
+ *
+ * Two independent passes consume each waypoint, which is worth knowing because
+ * they fail separately: @ref func_8009BB18 replays the position fields, and
+ * @ref func_8009B74C replays the heading and animation fields. Stubbing the
+ * first alone leaves the followers rooted to the spot while still turning and
+ * cycling their walk animation (verified on hardware).
+ */
 typedef struct {
-    /* 0x00 */ s16 x;       /**< Position X (fixed-point, << 12 when written). */
-    /* 0x02 */ s16 y;       /**< Position Y. */
-    /* 0x04 */ s16 z;       /**< Position Z. */
-    /* 0x06 */ u16 unk6;    /**< Stored to entity offset 0x1FA. */
-    /* 0x08 */ u8  unk8;    /**< Stored to entity offset 0x258. */
-    /* 0x09 */ s8  field_09; /**< Signed step magnitude; scaled by the caller's multiplier. */
-    /* 0x0A */ u8  field_0A; /**< Movement mode selector (4 = the walk step written here). */
-    /* 0x0B */ u8  field_0B; /**< Heading byte copied into the entity's @c field_0x241. */
+    /* 0x00 */ s16 x;       /**< Leader's X when this slot was recorded, in tile units
+                                 (recorded @c /4096, replayed @c <<12). */
+    /* 0x02 */ s16 y;       /**< Leader's Y. */
+    /* 0x04 */ s16 z;       /**< Leader's Z. */
+    /* 0x06 */ u16 unk6;    /**< Navmesh triangle the leader stood on; replayed into the
+                                 follower's @c triIdx so it inherits the same ground. */
+    /* 0x08 */ u8  unk8;    /**< Replayed into the follower's @c unk258. Purpose unknown;
+                                 @ref func_8009ECA4 seeds it to 1. */
+    /* 0x09 */ s8  field_09; /**< Animation rate: multiplied by the caller's multiplier and
+                                 passed to @c func_8009B4A8 as the playback argument. */
+    /* 0x0A */ u8  field_0A; /**< Selects which of the entity's animation ids (@c field_0x24F
+                                 .. @c field_0x254) to play. @ref func_8009B74C overwrites it
+                                 with 2 while the follower is still closing its lag gap —
+                                 apparently the catch-up gait, though that is inferred from
+                                 the lag comparison rather than observed. */
+    /* 0x0B */ u8  field_0B; /**< Leader's heading when recorded; replayed into the follower's
+                                 @c field_0x241. This is what makes a stalled follower still
+                                 rotate as though it were walking the trail. */
 } PathEntry;
 
 extern void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier);
@@ -318,7 +343,7 @@ extern s32 *func_800983F0(void);
 /** @brief Field engine main loop: loads a field, runs it, and dispatches on the exit state. */
 extern void func_8009895C(void);
 extern void func_80099180(void);
-extern int  func_80099348();
+extern void func_80099348(void);
 extern s32  func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist);
 extern s32  func_8009A2BC(LineSeg *seg, Vec3i *p, Vec3i *out);
 extern s32  func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt);
@@ -330,7 +355,7 @@ extern void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt);
 extern s16  func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list);
 /** @brief Place every field entity on the navmesh when a field is entered. */
 extern void func_8009AEC0(void);
-extern int  func_8009BEC8();
+extern void func_8009BEC8(Eline *ents, s32 flags);
 extern void func_8009CEE8(void);
 extern s32  func_8009D274(Eline *self, s16 pad);
 extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
@@ -347,20 +372,20 @@ extern void func_8009F8D0(s16 idx);
 extern void func_8009F990(s16 idx, s32 flags);
 extern int  func_8009FE18();
 extern TILE *func_800A0640(TILE *prim);
-extern int  func_800A06F0();
+extern void func_800A06F0(s32 a, FieldFrameBuf *buf, u8 *b, u8 *c);
 extern void func_800A0D6C(u8 *buf);
 extern s32  func_800A0E54(s32 start, s32 end, s32 total, s32 progress);
 extern s32  func_800A0EB8(s32 start, s32 end, s32 total, s32 angle);
 extern s32  func_800A0F34(SVECTOR *v, s32 *sxy);
 extern void func_800A0FB8(Vec2s *out, s16 a, s16 b);
-extern int  func_800A10F4();
+extern void func_800A10F4(void);
 extern void func_800A11E0(Vec2s *arg0);
-extern int  func_800A1318();
-extern int  func_800A15C0();
+extern void func_800A1318(void);
+extern void func_800A15C0(FieldFrameBuf *buf, DRAWENV *env, s32 mode);
 void func_800A17B8(Oscillator *osc);
 extern int  func_800A19B8();
 extern void func_800A1BB8(void);
-extern void func_800A1CFC(Eline *ents, u8 *arg1);
+extern void func_800A1CFC(Eline *ents, FieldFrameBuf *frame);
 extern void func_800A2128();  /* arg is a file-private buffer view in fe_object1.c */
 /** @brief Draws each active entity's blob shadow as a flat-shaded 8-triangle fan. */
 extern void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Eline *ents);
@@ -390,7 +415,7 @@ typedef struct {
 } func_800A2A30_item;  /* 8 bytes */
 
 extern func_800A2A30_item *func_800A2A30(func_800A2A30_item *p);
-extern int  func_800A2AF8();
+extern void func_800A2AF8(FieldFrameBuf *buf, u8 *a, u8 *b, FieldView *view);
 extern void func_800A2D2C(s16 *buf, s32 slot);
 extern s16  func_800A2EA4(s16 range);
 extern void func_800A2F48();  /* arg is a file-private buffer view in fe_object1.c */
@@ -399,7 +424,7 @@ extern s16  func_800A2FE0();  /* arg is a file-private buffer view in fe_object1
 extern void func_800A327C();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
 extern void func_800A3488();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
 extern void func_800A3534();  /* arg is a file-private buffer view in fe_object1.c */
-extern void func_800A37A8(void *arg0, s32 arg1, FieldSubsceneBuffer *buf);
+extern void func_800A37A8(MATRIX *m, FieldFrameBuf *frame, FieldSubsceneBuffer *buf);
 
 extern void func_800A38B4(MoveAccum *out, MoveStep *in, MoveStep *target);
 /** @brief Emit one field sprite for a movement accumulator and link it into the OT. */
@@ -425,18 +450,6 @@ typedef struct {
 extern void func_800A4934();  /* args are file-private ObjSlot/DrawPoint in fe_object1.c */
 extern void func_800A4C14();  /* first arg is the file-private ObjSlot in fe_object1.c */
 
-/**
- * @brief Per-slot ribbon prim buffer: the five @c LINE_G4 strips that make up
- *        one shimmer object's four-segment trail.
- */
-typedef struct {
-    /* 0x00 */ LINE_G4 lines[5];
-} FieldRibbonPrims;  /* 0xB4 = 180 bytes */
-
-/** @brief Per-slot tpage commands, one for each of the four ribbon segments. */
-typedef struct {
-    /* 0x00 */ DR_TPAGE tpages[4];
-} FieldRibbonTPages;  /* 0x20 = 32 bytes */
 
 extern void func_800A5224(MATRIX *m, u32 *ot, FieldRibbonPrims *prims,
                           FieldRibbonTPages *tpages);
@@ -459,7 +472,6 @@ extern u8 D_800C3726[];
 /** @brief @c D_800C3720 + 9 — the fourth and fifth strips' RGB triples. */
 extern u8 D_800C3729[];
 extern void func_800A5360(u32 *ot, s16 r, s16 g, s16 b);
-extern volatile u16 g_bufferIndex;       /**< Active double-buffer index. */
 extern u32 g_orderingTablePtrs[];        /**< Per-buffer ordering-table heads. */
 extern TILE g_clearTiles[];              /**< Per-buffer screen-clear TILEs. */
 
@@ -468,7 +480,7 @@ extern void func_800A5698(void);
 extern void func_800A5700(void);
 extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
 extern void func_800A5788(s32 a0);
-extern int  func_800A5898();
+extern void func_800A5898(FieldFrameBuf *buf);
 extern void func_800A5A20(Eline *self, EventEntry *entries);
 extern s32  func_800A5C9C(void);
 extern void func_800A5D28(void);

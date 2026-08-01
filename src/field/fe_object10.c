@@ -317,17 +317,19 @@ void func_800BD804(s32 stepDelta) {
  *   - bit 1 (0x2) — advance @c pc, set @c activeMask bit
  *   - bit 2 (0x4) — keep @c activeMask bit (else clear it)
  *
- * @param stepDelta Step delta added by @c func_800BD804 to per-step
- *                  accumulators (passed through @c D_800DE8C8.stepDelta).
+ * @param frame The frame's GPU work buffer, stashed in @c D_800DE8C8[0] for the
+ *              rest of the tick. It is @em not a step delta despite the slot's
+ *              old name — the step delta @c func_800BD804 consumes comes from
+ *              @c D_800704A8.fieldStepDelta, read below.
  */
-void func_800BD9C4(s32 stepDelta) {
+void func_800BD9C4(FieldFrameBuf *frame) {
     s32 unused[16];
     s32 sp50;
     s32 sp54;
     s32 s1;
     u8 *fs;
 
-    D_800DE8C8[0] = stepDelta;
+    D_800DE8C8[0] = (s32)frame;
     fs = (u8 *)D_800DE8C8;
     fs[0xB] = !fs[0xB];
     if (D_800DE4FD[0] & 2) {
