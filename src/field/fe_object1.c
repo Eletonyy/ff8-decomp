@@ -37,7 +37,6 @@ extern s32 func_8004D564(s32 a, s32 b);
 extern s32 func_80048C50(s32 a);
 extern void func_80048F5C(RECT *r, u16 *src);
 extern void func_80048EFC(RECT *r, u8 *src);
-extern s32 func_80042634(s32 a);
 extern s32 func_8004D524(s32, s32, s32, s32);
 extern void func_8004D684(void *p);
 extern s32 func_8003F4A4(s32 a);                  /* isqrt: integer square root of a */
@@ -717,8 +716,6 @@ void func_80099348(void) {
     s32 mode;
     s16 i;
     s16 frames;
-    s32 off;
-    s32 rec;
     u8 *eq;
 
     if (D_800704A8.unk1A5 == 0) {
@@ -735,14 +732,14 @@ void func_80099348(void) {
         func_80099180();
         g_bufferIndex++;
         g_bufferIndex &= 1;
-        D_800C71E0 = &D_800C7218[(s16)g_bufferIndex * 26168];
+        D_800C71E0 = &D_800C7218[(s16)g_bufferIndex];
         D_8005F110 = D_8005F138;
         g_activeDrawEnv = &D_80067388[(s16)g_bufferIndex];
         D_8005F138 = (s32)&D_80067440[(s16)g_bufferIndex];
-        ClearOTagR((u32 *)D_800C71E0, 0x1000);
+        ClearOTagR(D_800C71E0->ot, 0x1000);
 
         SCRATCH_STACK_ENTER();
-        func_800BD9C4(D_800C71E0);
+        func_800BD9C4((s32)D_800C71E0);
         SCRATCH_STACK_LEAVE();
 
         if ((D_800704A8.padHeld & 0x90F) == 0x90F
@@ -823,15 +820,15 @@ void func_80099348(void) {
             SCRATCH_STACK_ENTER();
             func_800A1CFC(D_80085224, D_800C71E0);
             SCRATCH_STACK_LEAVE();
-            func_800A222C(D_800C71E0, D_800C71F8, D_800C71E0 + 0x4000,
-                          D_800C71E0 + 0x4E00, D_80085224);
-            func_800A5224(D_800C71F8, D_800C71E0, D_800C71E0 + 0x5F98,
-                          D_800C71E0 + 0x6538);
+            func_800A222C(D_800C71E0->ot, &D_800C71F8->m, D_800C71E0->shadowPrims,
+                          D_800C71E0->shadowTPages, D_80085224);
+            func_800A5224(&D_800C71F8->m, D_800C71E0->ot, D_800C71E0->ribbonPrims,
+                          D_800C71E0->ribbonTPages);
         }
 
         if (func_800BE274() == 0) {
             func_800A06F0(0, D_800C71E0, D_800C6D98[(s16)g_bufferIndex],
-                          D_800C71E0 + 0x4F80);
+                          D_800C71E0->unk4F80);
         } else if (D_8005F0F8->unk0E == 1
                    && D_800704A8.unk1A7 == 0) {
             func_800A2AF8(D_800C71E0, D_800D5EC8[(s16)g_bufferIndex],
@@ -839,26 +836,25 @@ void func_80099348(void) {
         }
 
         if (func_800BE274() == 0 && D_800C7200 != 0) {
-            func_800A37A8(D_800C71F8, D_800C71E0, D_800C7200);
+            func_800A37A8(&D_800C71F8->m, D_800C71E0, D_800C7200);
             if ((s16)g_bufferIndex == 0) {
-                *(u32 *)(D_800C7200 + 0x5F20) = (u32)(D_800C7200 + 0x3720);
+                D_800C7200->primCursor = D_800C7200->primArena[0];
             } else {
-                *(u32 *)(D_800C7200 + 0x5F20) = (u32)(D_800C7200 + 0x4B20);
+                D_800C7200->primCursor = D_800C7200->primArena[1];
             }
             for (i = 0; i < 128; i++) {
-                off = i * 32;
-                if ((D_800C7200 + off)[0x273B] == 1) {
+                if (D_800C7200->entries[i].active == 1) {
                     SetRotMatrix(&D_800C71F8->m);
                     SetTransMatrix(&D_800C71F8->m);
-                    func_800A39D8(&D_800C7200[off + 0x2720],
-                                  &D_800C7200[(D_800C7200 + off)[0x2738] * 372],
-                                  D_800C7200, D_800C71E0);
-                    if ((D_800C7200 + ((D_800C7200 + off)[0x2738] * 372
-                                       + (D_800C7200 + off)[0x2739] * 20))[0xE]
-                        == 0) {
-                        (D_800C7200 + off)[0x273B] = 0;
-                        rec = (D_800C7200 + off)[0x2738] * 372;
-                        *(u16 *)(D_800C7200 + rec + 0x15C) -= 1;
+                    func_800A39D8(&D_800C7200->entries[i],
+                                  &D_800C7200->records[D_800C7200->entries[i].cmdIndex],
+                                  D_800C7200, D_800C71E0->ot);
+                    /* stepTotal == 0 means this accumulator ran off the end of its
+                       command's waypoints: retire it and drop the command's use count. */
+                    if (D_800C7200->records[D_800C7200->entries[i].cmdIndex]
+                            .steps[D_800C7200->entries[i].stepIndex].stepTotal == 0) {
+                        D_800C7200->entries[i].active = 0;
+                        D_800C7200->records[D_800C7200->entries[i].cmdIndex].activeCount--;
                     }
                 }
             }
@@ -874,17 +870,17 @@ void func_80099348(void) {
             D_8005F0F8->rect_b[0].f4 - D_8005F0F8->rect_b[0].f6;
         D_80067388[(s16)g_bufferIndex].clip.h =
             D_8005F0F8->rect_b[0].f2 - D_8005F0F8->rect_b[0].f0;
-        func_80049B78(D_800C71E0 + 0x4E80, &D_80067388[(s16)g_bufferIndex]);
+        func_80049B78(D_800C71E0->drawEnvPrim, &D_80067388[(s16)g_bufferIndex]);
 
-        addPrim(D_800C71E0 + 0x3FFC, D_800C71E0 + 0x4E80);
-        addPrim(D_800C71E0 + 4, D_800C71E0 + 0x4F00);
+        addPrim(&D_800C71E0->ot[0xFFF], D_800C71E0->drawEnvPrim);
+        addPrim(&D_800C71E0->ot[1], D_800C71E0->unk4F00);
 
         if (func_800BE274()) {
             renderAndUpdateDisplay(D_800704A8.unk1AC);
         } else {
             renderAndUpdateDisplay(2);
         }
-        renderBattleDisplayList(D_800C71E0);
+        renderBattleDisplayList((s32 *)D_800C71E0);
 
         if (D_800704A8.mode == 6) {
             D_8005F158 = 9;
@@ -926,6 +922,8 @@ void func_80099348(void) {
 
         func_800A5A20(&D_80085224[D_8005F148], (u8 *)D_8005F0F8 + 0x64);
         func_800A5898(D_800C71E0);
+        /* Called for its side effect only — func_800BE274 dispatches into the
+           overlay when D_800DE4FD bit 1 is set; the original discards the result. */
         func_800BE274();
         func_8002A150(0, 0x18, 0xBE);
         D_800D5EA0 = func_80042634(1);
@@ -960,7 +958,7 @@ void func_80099348(void) {
         func_800393C8();
         func_800BE2DC();
         if (D_800704A8.unk1A1 == 0) {
-            func_80049244((u32 *)(D_800C71E0 + 0x3FFC));
+            func_80049244(&D_800C71E0->ot[0xFFF]);
         }
     }
     func_800BE2AC();
@@ -3401,7 +3399,7 @@ void func_800A1CC0(void) {
  * @param ents Eline entity array (@c D_80085224).
  * @param arg1 Pass-through context for the @ref func_800A63AC flush.
  */
-void func_800A1CFC(Eline *ents, u8 *arg1) {
+void func_800A1CFC(Eline *ents, FieldFrameBuf *frame) {
     Vec3i pB;       /* sp+0x10: bearing arg B */
     Vec3i pA;       /* sp+0x20: bearing arg A */
     Vec3s v30;      /* sp+0x30: world-position vector */
@@ -3517,7 +3515,7 @@ void func_800A1CFC(Eline *ents, u8 *arg1) {
             func_800A97E4(i, 0x25, 0, 0);
         }
     }
-    func_800A63AC(arg1, D_800C71F8, 0);
+    func_800A63AC(frame, D_800C71F8, 0);
 }
 
 /**
@@ -4271,7 +4269,7 @@ void func_800A355C(FieldActor *actor, s32 slot, s32 a2) {
  * @note @c pos is declared but unused: the original reserves an 8-byte stack
  *       slot here (gcc 2.7.2 keeps an unused struct local), matching the frame.
  */
-void func_800A37A8(void *arg0, s32 arg1, FieldSubsceneBuffer *buf) {
+void func_800A37A8(MATRIX *m, FieldFrameBuf *frame, FieldSubsceneBuffer *buf) {
     s32 i;
     SVECTOR pos;
 

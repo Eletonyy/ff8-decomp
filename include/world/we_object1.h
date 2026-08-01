@@ -100,7 +100,7 @@ extern POLY_FT4  D_800C8648[2]; /* double-buffered worldmap quad primitive */
 extern void func_80048DD4(RECT *r, s32 a, s32 b, s32 c);
 extern void func_8009C528(s32 rc);
 extern void func_8009FEDC(u8 *work, u8 type);
-extern void func_80042634(s32 a);
+extern s32  func_80042634(s32 a);
 extern void func_80048FBC(RECT *r, s32 srcX, s32 srcY);
 extern void func_80048C50(s32 a);
 extern void func_800A5F78(s32 screen);

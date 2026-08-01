@@ -33,7 +33,7 @@ extern u8 **D_800D5E8C;          /**< End of the script region (used to size the
 extern u8 **D_800D5ED4;          /**< Start of the script region; advanced past the header. */
 extern u8 **D_800D5E94;          /**< Field-file header pointer. */
 /** @brief Field-file header; @c NULL when the header carries the empty @c 0x2020 tag. */
-extern u8 *D_800C7200;
+extern FieldSubsceneBuffer *D_800C7200;
 
 /** @brief Double-buffered prim-chain heads laid out after the field bundle. */
 extern u8 *D_800C6D98[2];
@@ -146,24 +146,51 @@ extern s32 D_800C7210;
 extern s32 D_800C7214;
 /** @brief Cleared alongside the framebuffer copy that @c func_8009895C kicks off. */
 extern u8 D_8005F0FC;
-/** @brief Set to 2 when the engine leaves the field on state 7. */
-extern volatile s16 D_8005F158; /**< Field-exit state code returned to the engine dispatcher.
-                                     @c volatile so the stores are not sunk into branch delay
-                                     slots, matching @c func_80099348. */
-/** @brief Camera/view block used while the battle overlay owns the screen (assigned to @c D_800C71F8). */
+/**
+ * @brief Field-exit state code handed back to the engine dispatcher: 2 when the engine
+ *        leaves on state 7, and 6 / 8 / 9 / 10 or the engine mode from @c func_80099348 .
+ *
+ * @c volatile so the stores are not sunk into branch delay slots, which is what
+ * @c func_80099348 's original does.
+ */
+extern volatile s16 D_8005F158;
+/** @brief Camera/view block used instead of the field's own while @c func_800BE274 reports
+ *         the overlay subsystem active; assigned to @c D_800C71F8 . */
 extern FieldView *D_8005F108;
-/** @brief Active display-environment window (holds a @c DISPENV*). */
-extern s32 D_8005F138;
-/** @brief Draw environment of the buffer currently being built. */
-extern DRAWENV *g_activeDrawEnv;
 /** @brief Previous frame's display environment, snapshotted from @c D_8005F138 each frame. */
 extern s32 D_8005F110;
-/** @brief Per-frame GPU work buffer for the current back buffer: OT at +0, sprite prims at +0x4000,
- *         tpages at +0x4E00, the draw-env prim at +0x4E80 and the ribbon prims at +0x5F98.
- *         Points into @ref D_800C7218 . */
-extern u8 *D_800C71E0;
-/** @brief The two 0x6638-byte per-frame GPU work buffers @ref D_800C71E0 alternates between. */
-extern u8 D_800C7218[];
+/**
+ * @brief Per-slot ribbon prim buffer: the five @c LINE_G4 strips that make up
+ *        one shimmer object's four-segment trail.
+ */
+typedef struct {
+    /* 0x00 */ LINE_G4 lines[5];
+} FieldRibbonPrims;  /* 0xB4 = 180 bytes */
+
+/** @brief Per-slot tpage commands, one for each of the four ribbon segments. */
+typedef struct {
+    /* 0x00 */ DR_TPAGE tpages[4];
+} FieldRibbonTPages;  /* 0x20 = 32 bytes */
+
+/**
+ * @brief One frame's GPU work area: the ordering table plus every prim the field
+ *        render chain builds into it.
+ */
+typedef struct {
+    /* 0x0000 */ u32 ot[0x1000];               /**< Ordering table, cleared each frame by @c ClearOTagR. */
+    /* 0x4000 */ POLY_G3 shadowPrims[128];     /**< Character blob-shadow triangles (@ref func_800A222C). */
+    /* 0x4E00 */ DR_TPAGE shadowTPages[16];    /**< Their tpage commands. */
+    /* 0x4E80 */ u8 drawEnvPrim[0x80];         /**< @c DR_ENV built by @c SetDrawEnv; linked into @c ot[0xFFF]. */
+    /* 0x4F00 */ u8 unk4F00[0x80];             /**< Second env-style prim; linked into @c ot[1]. */
+    /* 0x4F80 */ u8 unk4F80[0x1018];           /**< Output block @ref func_800A06F0 fills. */
+    /* 0x5F98 */ FieldRibbonPrims ribbonPrims[8];   /**< Shimmer-ribbon line strips (@ref func_800A5224). */
+    /* 0x6538 */ FieldRibbonTPages ribbonTPages[8]; /**< Their tpage commands. */
+} FieldFrameBuf; /* 0x6638 = 26168 bytes */
+
+/** @brief The frame buffer currently being built; one of the two in @ref D_800C7218 . */
+extern FieldFrameBuf *D_800C71E0;
+/** @brief The two per-frame GPU work areas @ref D_800C71E0 alternates between. */
+extern FieldFrameBuf D_800C7218[2];
 /** @brief Handle returned by @c func_80042634 each frame. */
 extern s32 D_800D5EA0;
 /** @brief Field render/present request byte; 1 = normal, 9 = post-copy. */
@@ -365,7 +392,7 @@ extern void func_8009F8D0(s16 idx);
 extern void func_8009F990(s16 idx, s32 flags);
 extern int  func_8009FE18();
 extern TILE *func_800A0640(TILE *prim);
-extern void func_800A06F0(s32 a, u8 *buf, u8 *b, u8 *c);
+extern void func_800A06F0(s32 a, FieldFrameBuf *buf, u8 *b, u8 *c);
 extern void func_800A0D6C(u8 *buf);
 extern s32  func_800A0E54(s32 start, s32 end, s32 total, s32 progress);
 extern s32  func_800A0EB8(s32 start, s32 end, s32 total, s32 angle);
@@ -374,11 +401,11 @@ extern void func_800A0FB8(Vec2s *out, s16 a, s16 b);
 extern void func_800A10F4(void);
 extern void func_800A11E0(Vec2s *arg0);
 extern void func_800A1318(void);
-extern void func_800A15C0(u8 *buf, DRAWENV *env, s32 mode);
+extern void func_800A15C0(FieldFrameBuf *buf, DRAWENV *env, s32 mode);
 void func_800A17B8(Oscillator *osc);
 extern int  func_800A19B8();
 extern void func_800A1BB8(void);
-extern void func_800A1CFC(Eline *ents, u8 *arg1);
+extern void func_800A1CFC(Eline *ents, FieldFrameBuf *frame);
 extern void func_800A2128();  /* arg is a file-private buffer view in fe_object1.c */
 /** @brief Draws each active entity's blob shadow as a flat-shaded 8-triangle fan. */
 extern void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Eline *ents);
@@ -408,7 +435,7 @@ typedef struct {
 } func_800A2A30_item;  /* 8 bytes */
 
 extern func_800A2A30_item *func_800A2A30(func_800A2A30_item *p);
-extern void func_800A2AF8(u8 *buf, u8 *a, u8 *b, FieldView *view);
+extern void func_800A2AF8(FieldFrameBuf *buf, u8 *a, u8 *b, FieldView *view);
 extern void func_800A2D2C(s16 *buf, s32 slot);
 extern s16  func_800A2EA4(s16 range);
 extern void func_800A2F48();  /* arg is a file-private buffer view in fe_object1.c */
@@ -417,7 +444,7 @@ extern s16  func_800A2FE0();  /* arg is a file-private buffer view in fe_object1
 extern void func_800A327C();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
 extern void func_800A3488();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
 extern void func_800A3534();  /* arg is a file-private buffer view in fe_object1.c */
-extern void func_800A37A8(void *arg0, s32 arg1, FieldSubsceneBuffer *buf);
+extern void func_800A37A8(MATRIX *m, FieldFrameBuf *frame, FieldSubsceneBuffer *buf);
 
 extern void func_800A38B4(MoveAccum *out, MoveStep *in, MoveStep *target);
 /** @brief Emit one field sprite for a movement accumulator and link it into the OT. */
@@ -443,18 +470,6 @@ typedef struct {
 extern void func_800A4934();  /* args are file-private ObjSlot/DrawPoint in fe_object1.c */
 extern void func_800A4C14();  /* first arg is the file-private ObjSlot in fe_object1.c */
 
-/**
- * @brief Per-slot ribbon prim buffer: the five @c LINE_G4 strips that make up
- *        one shimmer object's four-segment trail.
- */
-typedef struct {
-    /* 0x00 */ LINE_G4 lines[5];
-} FieldRibbonPrims;  /* 0xB4 = 180 bytes */
-
-/** @brief Per-slot tpage commands, one for each of the four ribbon segments. */
-typedef struct {
-    /* 0x00 */ DR_TPAGE tpages[4];
-} FieldRibbonTPages;  /* 0x20 = 32 bytes */
 
 extern void func_800A5224(MATRIX *m, u32 *ot, FieldRibbonPrims *prims,
                           FieldRibbonTPages *tpages);
@@ -477,7 +492,6 @@ extern u8 D_800C3726[];
 /** @brief @c D_800C3720 + 9 — the fourth and fifth strips' RGB triples. */
 extern u8 D_800C3729[];
 extern void func_800A5360(u32 *ot, s16 r, s16 g, s16 b);
-extern volatile u16 g_bufferIndex;       /**< Active double-buffer index. */
 extern u32 g_orderingTablePtrs[];        /**< Per-buffer ordering-table heads. */
 extern TILE g_clearTiles[];              /**< Per-buffer screen-clear TILEs. */
 
@@ -486,7 +500,7 @@ extern void func_800A5698(void);
 extern void func_800A5700(void);
 extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
 extern void func_800A5788(s32 a0);
-extern void func_800A5898(u8 *buf);
+extern void func_800A5898(FieldFrameBuf *buf);
 extern void func_800A5A20(Eline *self, EventEntry *entries);
 extern s32  func_800A5C9C(void);
 extern void func_800A5D28(void);

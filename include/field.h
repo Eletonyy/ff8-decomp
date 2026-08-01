@@ -338,9 +338,13 @@ typedef struct {
     /* 0x1A9 */ u8 unk1A9;
     /* 0x1AA */ u8 unk1AA;
     /* 0x1AB */ u8 unk1AB;          /**< Sub-mode byte; written together with @c mode by fe_object6 opcodes. */
-    /* 0x1AC */ u8 unk1AC;          /**< Display mode passed to @c renderAndUpdateDisplay and
-                                         @c func_80042634 while the battle overlay owns the screen. */
-    /* 0x1AD */ u8 unk1AD;          /**< Non-zero suppresses the entity/shadow render pass. */
+    /* 0x1AC */ u8 unk1AC;          /**< Passed as the mode argument to @c renderAndUpdateDisplay
+                                         and @c func_80042634 on the branch @c func_800BE274 gates.
+                                         @note Nothing in the decompiled tree writes it yet, so the
+                                         purpose is inferred from those two argument positions only. */
+    /* 0x1AD */ u8 unk1AD;          /**< Non-zero makes @c func_80099348 skip the entity-aim, blob-shadow
+                                         and shimmer-ribbon passes.
+                                         @note Read only there; no writer decompiled yet. */
     /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c opHandler_COUNTERCLOCKWISETURN2, read by @c func_8009FE18). */
     /* 0x1AF */ u8 packedFlagSlot;  /**< Last @c getPackedField2Bit result for the active dispatcher slot; written each tick by @c func_800BD9C4. */
     /* 0x1B0 */ u8 unk1B0;          /**< 1 selects the eline-pool install path on engine state 1. */
@@ -976,7 +980,8 @@ typedef struct {
     /* 0x0000 */ MoveRecord records[16];
     /* 0x1740 */ FieldSubsceneSlot slots[16];
     /* 0x2720 */ MoveAccum entries[128];
-    /* 0x3720 */ u8 pad3720[0x5F20 - 0x3720];
+    /* 0x3720 */ POLY_FT4 primArena[2][128]; /**< Double-buffered sprite arena; @c primCursor is
+                                                  reset to the current buffer's half each frame. */
     /* 0x5F20 */ POLY_FT4 *primCursor; /**< Next free prim in the field bundle's prim arena. */
 } FieldSubsceneBuffer;                 /* 0x5F24 — the whole field-file header */
 
