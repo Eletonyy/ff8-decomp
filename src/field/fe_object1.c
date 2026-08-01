@@ -2287,7 +2287,148 @@ void func_8009E660(void) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009ECA4);
+/**
+ * @brief Seed both follower breadcrumb trails with a synthetic path running
+ *        from the party leader back to where each follower currently stands.
+ *
+ * Called when the party is (re)placed — after a map jump or a cutscene — so the
+ * two followers have a trail to walk instead of snapping to the leader. Both
+ * 64-slot tables are cleared, the ring cursor @c D_8005F144 is reset to 0 and
+ * the two followers are re-pegged to their default lag of 15 and 30 slots
+ * (@c D_8005F118 / @c D_8005F11A, mirrored into @c D_8005F160 / @c D_8005F162).
+ *
+ * For each follower it takes the bearing and distance from the follower to the
+ * leader with @ref func_8009A0E8, converts the distance into a slot count
+ * (@c dist scaled by the same @c FIELD_CHANNEL_SCALE step the walk code uses),
+ * then walks backwards from the leader laying one waypoint per slot: slot 63 is
+ * the leader, and each step moves one stride along the bearing towards the
+ * follower. Every waypoint gets its navmesh triangle resolved by
+ * @ref func_8009AC9C and its height linearly interpolated between the leader's
+ * and the follower's. Any slots left over (down to slot 32) are filled with the
+ * follower's own resting position and tagged @c field_0A @c = @c 2.
+ *
+ * A follower further than 32 slots from the leader is skipped entirely — its
+ * table keeps the cleared state.
+ *
+ * @note @c D_80070760 holds slot 1's trail and @c D_80070A60 slot 2's; the
+ *       defaults of 15 and 30 both land inside the 32..63 range this seeds.
+ */
+void func_8009ECA4(void) {
+    s32 i;
+    VECTOR lead;
+    VECTOR trail1;
+    VECTOR trail2;
+    s32 slots1;
+    s32 slots2;
+    s32 dir1;
+    s32 dir2;
+    s32 stride;
+
+    for (i = 0; i < 64; i++) {
+        D_80070760[i].field_09 = D_80070A60[i].field_09 = 1;
+        D_80070760[i].unk8 = D_80070A60[i].unk8 = 1;
+    }
+    D_8005F144 = 0;
+    D_8005F118 = 15;
+    D_8005F11A = 30;
+    D_8005F160 = 15;
+    D_8005F162 = 30;
+
+    lead.vx = D_80085224[g_fieldVars->memberSlot[0]].posX / 4096;
+    trail1.vx = D_80085224[g_fieldVars->memberSlot[1]].posX / 4096;
+    trail2.vx = D_80085224[g_fieldVars->memberSlot[2]].posX / 4096;
+    lead.vy = D_80085224[g_fieldVars->memberSlot[0]].posY / 4096;
+    trail1.vy = D_80085224[g_fieldVars->memberSlot[1]].posY / 4096;
+    trail2.vy = D_80085224[g_fieldVars->memberSlot[2]].posY / 4096;
+
+    stride = (D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9;
+    dir1 = func_8009A0E8(&trail1.vx, &lead.vx, &slots1);
+    slots1 = (slots1 << 8) / stride;
+    dir2 = func_8009A0E8(&trail2.vx, &lead.vx, &slots2);
+    slots2 = (slots2 << 8) / stride;
+
+    trail1.vx = trail2.vx = D_80085224[g_fieldVars->memberSlot[0]].posX;
+    trail1.vy = trail2.vy = D_80085224[g_fieldVars->memberSlot[0]].posY;
+    trail1.vz = trail2.vz = D_80085224[g_fieldVars->memberSlot[0]].posZ;
+
+    if (slots1 < 32) {
+        for (i = 0; i < slots1; i++) {
+            D_80070760[63 - i].x = trail1.vx / 4096;
+            D_80070760[63 - i].y = trail1.vy / 4096;
+            D_80070760[63 - i].unk6 =
+                func_8009AC9C((s16)(trail1.vx / 4096), (s16)(trail1.vy / 4096),
+                              (s16)(trail1.vz / 4096), *D_800C7204);
+            trail1.vx -= func_8009D234((u8)dir1)
+                         * ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9)
+                         / 256;
+            trail1.vy -= -(func_8009D254((u8)dir1)
+                           * ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4))
+                              >> 9))
+                         / 256;
+            D_80070760[63 - i].z =
+                D_80085224[g_fieldVars->memberSlot[0]].posZ / 4096
+                - (D_80085224[g_fieldVars->memberSlot[0]].posZ
+                   - D_80085224[g_fieldVars->memberSlot[1]].posZ)
+                          / 4096 * i / slots1;
+            D_80070760[63 - i].field_0A = 0;
+            D_80070760[63 - i].field_0B = dir1;
+        }
+        for (i = slots1; i < 32; i++) {
+            D_80070760[63 - i].x =
+                D_80085224[g_fieldVars->memberSlot[1]].posX / 4096;
+            D_80070760[63 - i].y =
+                D_80085224[g_fieldVars->memberSlot[1]].posY / 4096;
+            D_80070760[63 - i].unk6 = func_8009AC9C(
+                (s16)(D_80085224[g_fieldVars->memberSlot[1]].posX / 4096),
+                (s16)(D_80085224[g_fieldVars->memberSlot[1]].posY / 4096),
+                (s16)(D_80085224[g_fieldVars->memberSlot[1]].posZ / 4096),
+                *D_800C7204);
+            D_80070760[63 - i].z =
+                D_80085224[g_fieldVars->memberSlot[1]].posZ / 4096;
+            D_80070760[63 - i].field_0A = 2;
+            D_80070760[63 - i].field_0B = dir1;
+        }
+    }
+
+    if (slots2 < 32) {
+        for (i = 0; i < slots2; i++) {
+            D_80070A60[63 - i].x = trail2.vx / 4096;
+            D_80070A60[63 - i].y = trail2.vy / 4096;
+            D_80070A60[63 - i].unk6 =
+                func_8009AC9C((s16)(trail2.vx / 4096), (s16)(trail2.vy / 4096),
+                              (s16)(trail2.vz / 4096), *D_800C7204);
+            trail2.vx -= func_8009D234((u8)dir2)
+                         * ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9)
+                         / 256;
+            trail2.vy -= -(func_8009D254((u8)dir2)
+                           * ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4))
+                              >> 9))
+                         / 256;
+            D_80070A60[63 - i].z =
+                D_80085224[g_fieldVars->memberSlot[0]].posZ / 4096
+                - (D_80085224[g_fieldVars->memberSlot[0]].posZ
+                   - D_80085224[g_fieldVars->memberSlot[2]].posZ)
+                          / 4096 * i / slots2;
+            D_80070A60[63 - i].field_0A = 0;
+            D_80070A60[63 - i].field_0B = dir2;
+        }
+        for (i = slots2; i < 32; i++) {
+            D_80070A60[63 - i].x =
+                D_80085224[g_fieldVars->memberSlot[2]].posX / 4096;
+            D_80070A60[63 - i].y =
+                D_80085224[g_fieldVars->memberSlot[2]].posY / 4096;
+            D_80070A60[63 - i].unk6 = func_8009AC9C(
+                (s16)(D_80085224[g_fieldVars->memberSlot[2]].posX / 4096),
+                (s16)(D_80085224[g_fieldVars->memberSlot[2]].posY / 4096),
+                (s16)(D_80085224[g_fieldVars->memberSlot[2]].posZ / 4096),
+                *D_800C7204);
+            D_80070A60[63 - i].z =
+                D_80085224[g_fieldVars->memberSlot[2]].posZ / 4096;
+            D_80070A60[63 - i].field_0A = 2;
+            D_80070A60[63 - i].field_0B = dir2;
+        }
+    }
+}
 
 /**
  * @brief Asymmetric overlap test between two Eline entities.

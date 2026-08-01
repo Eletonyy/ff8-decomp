@@ -339,7 +339,7 @@ extern s32  func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux);
 extern s32 func_8009E338(Vec3i *a0, Vec3i *a1, Vec3i *a2, Vec3s *a3);  /* plane-cross intersection */
 /** @brief Refill both follower path rings from the player's position on field entry. */
 extern void func_8009E660(void);
-extern int  func_8009ECA4();
+extern void func_8009ECA4(void);
 extern s32  func_8009F74C(Eline *a, Eline *b);
 extern void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode);
 extern void func_8009B4A8(s16 a, u8 b, s32 c, s32 d);
