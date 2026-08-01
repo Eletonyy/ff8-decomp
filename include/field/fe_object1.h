@@ -2,9 +2,50 @@
 #define FE_OBJECT1_H
 
 #include "common.h"
+#include "cd.h"
 #include "field.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
+
+/*
+ * Field asset-bundle streaming table and section pointers, all consumed by
+ * func_800983F0 when a map is (re)loaded.
+ *
+ * The streaming table is one 24-byte (six word) entry per map, indexed through
+ * D_800C2568. The three symbols below are three views into that same table:
+ * D_800C0900 is the primary {sector,size} pair, D_800C0908 the secondary pair,
+ * and D_800C0910 the third pair, which is handed to func_800AA8A0 by address.
+ */
+extern u32 D_800C0900[];         /**< Streaming table, primary {sector,size} pair. */
+extern u32 D_800C0908[];         /**< Streaming table, secondary {sector,size} pair. */
+extern CdFileDesc D_800C0910[];  /**< Streaming table, third descriptor (passed by address). */
+
+/** @brief Field id currently being streamed in (compared against @c D_8005F100). */
+extern s16 D_8005F14E;
+/** @brief Field render/present state halfword; the loader spins while it reads 4. */
+extern volatile s16 D_8005F146;
+
+/** @brief Section-pointer table bases published by the loaded field bundle. */
+extern u8 **D_800C7208;          /**< Event-queue block; assigned to @c D_8005F0F8. */
+extern u8 **D_800C71EC;          /**< Walkmesh/section block; assigned to @c D_800D5EA4. */
+extern s32 *D_800D5EAC;          /**< Word copied into @c D_800704A8.unk018. */
+extern u8 **D_800D5E8C;          /**< End of the script region (used to size the copy). */
+extern u8 **D_800D5ED4;          /**< Start of the script region; advanced past the header. */
+extern u8 **D_800D5E94;          /**< Field-file header pointer. */
+/** @brief Field-file header; @c NULL when the header carries the empty @c 0x2020 tag. */
+extern u8 *D_800C7200;
+
+/** @brief Double-buffered prim-chain heads laid out after the field bundle. */
+extern u8 *D_800C6D98[2];
+extern u8 *D_800D5EC8[2];
+extern u8 *D_800D5EB8[2];
+
+/** @brief Field-VM command tables selected by @c EventQueue::unk0D. */
+extern u8 D_800C30DC[];
+extern u8 D_800C311C[];
+extern u8 D_800C315C[];
+/** @brief Shared scratch block handed to @c func_800AA8A0. */
+extern u8 D_800C06A0[];
 
 /** @brief 12-byte signed integer 3D position (x, y, z). */
 typedef struct {
@@ -12,6 +53,17 @@ typedef struct {
     s32 y;
     s32 z;
 } Vec3i;
+
+/**
+ * 3D line-segment coordinate view: six consecutive s16 coordinates
+ * (start XYZ, end XYZ). This is the layout shared by the head of
+ * @ref FieldLineTrigger and the per-entity trigger segment embedded in
+ * @ref Eline at 0x188 — @c func_8009A2BC accepts either through this view.
+ */
+typedef struct {
+    /* 0x00 */ s16 x0, y0, z0;
+    /* 0x06 */ s16 x1, y1, z1;
+} LineSeg;
 
 /** @brief 4-byte signed 16-bit 2D position (x, y). */
 typedef struct {
@@ -39,21 +91,70 @@ typedef struct {
     SVert v[3];
 } Triangle;
 
+/**
+ * @brief Landing slot for @c gte_stlvnl — MAC1..3 land as words but only the
+ *        low halfword of each is read back (the rotated corner offsets are
+ *        screen deltas and fit in 16 bits).
+ */
+typedef struct {
+    /* 0x00 */ u16 x, xHi;
+    /* 0x04 */ u16 y, yHi;
+    /* 0x08 */ u16 z, zHi;
+} MacVec;
+
+/**
+ * @brief Field view block (at @c D_800C71F8): the camera matrix @c SetRotMatrix /
+ *        @c SetTransMatrix are loaded from, followed by projection parameters.
+ */
+typedef struct {
+    /* 0x00 */ MATRIX m;
+    /* 0x20 */ u8 pad20[0x04];
+    /* 0x24 */ s16 spriteScale;  /**< Numerator of the per-OTZ sprite scale in @c func_800A39D8. */
+} FieldView;
+
+extern FieldView *D_800C71F8;
+
+/** @brief Counted inline triangle list scanned by @ref func_8009AC9C. */
+typedef struct {
+    /* 0x0 */ s32 count;
+    /* 0x4 */ Triangle tris[1];        /* variable length */
+} TriangleList;
+
 /** @brief 6-byte per-triangle adjacency record — neighbor triangle index per edge (0xFFFF = none). */
 typedef struct {
     u16 neighbor[3];
 } AdjRec;
 
-extern Triangle *D_800C71F0;  /**< Field navmesh triangle array (loaded per field). */
-extern AdjRec   *D_800D5E98;  /**< Per-triangle edge adjacency table, parallel to @c D_800C71F0. */
+/**
+ * @brief Field navmesh vertices (loaded per field), three consecutive @ref SVert
+ *        per triangle — triangle @c t owns @c D_800C71F0[t*3 .. t*3+2].
+ */
+extern SVert *D_800C71F0;
+/** @brief Overlay header bytes at the field overlay's load address; 8 are copied to the stack on entry. */
+extern u8 D_80098000[];
+/** @brief The field overlay's own DrawSync callback, installed by @c func_8009895C. */
+extern u8 D_800982F0[];
+/** @brief Draw-environment packet arena; @c SetDrawEnv builds into it for both buffers. */
+extern u8 D_800CC118[];
+/** @brief Per-frame prim arena the field renderers build into. */
+extern u8 D_800CD1B0[];
+/** @brief Field-data section pointer set from @c 0x800E1004 on load. */
+extern u8 **D_800C71E8;
+/** @brief Horizontal centre of the field clamp rect, derived on every load. */
+extern s32 D_800C7210;
+/** @brief Vertical centre of the field clamp rect, derived on every load. */
+extern s32 D_800C7214;
+/** @brief Cleared alongside the framebuffer copy that @c func_8009895C kicks off. */
+extern u8 D_8005F0FC;
+/** @brief Set to 2 when the engine leaves the field on state 7. */
+extern s16 D_8005F158;
+/** @brief Field render/present request byte; 1 = normal, 9 = post-copy. */
+extern volatile u8 D_8005F116;
 
-/** @brief Animation parameter entry. */
-typedef struct {
-    /* 0x00 */ u8 pad00[0x09];
-    /* 0x09 */ s8 field_09;
-    /* 0x0A */ u8 field_0A;
-    /* 0x0B */ u8 field_0B;
-} AnimParam;
+/** @brief Field-data section pointer to the navmesh triangle list (@c *D_800C7204 + 4 is @c D_800C71F0). */
+extern TriangleList **D_800C7204;
+extern AdjRec *D_800D5E98;    /**< Per-triangle edge adjacency table, one entry per triangle. */
+
 
 /** @brief 32-byte slot stride for indexing into a particle system buffer. */
 typedef struct {
@@ -175,12 +276,24 @@ extern ScriptList *D_800D5E90;
 extern void func_80098934(void);
 extern void func_80099124(void);
 extern void func_8009912C(void);
-extern void func_8009B74C(s16 slotIdx, u16 paramIdx, AnimParam *params, s16 multiplier);
+/** @brief 12-byte path waypoint (64 entries per table, indexed by angle/64). */
+typedef struct {
+    /* 0x00 */ s16 x;       /**< Position X (fixed-point, << 12 when written). */
+    /* 0x02 */ s16 y;       /**< Position Y. */
+    /* 0x04 */ s16 z;       /**< Position Z. */
+    /* 0x06 */ u16 unk6;    /**< Stored to entity offset 0x1FA. */
+    /* 0x08 */ u8  unk8;    /**< Stored to entity offset 0x258. */
+    /* 0x09 */ s8  field_09; /**< Signed step magnitude; scaled by the caller's multiplier. */
+    /* 0x0A */ u8  field_0A; /**< Movement mode selector (4 = the walk step written here). */
+    /* 0x0B */ u8  field_0B; /**< Heading byte copied into the entity's @c field_0x241. */
+} PathEntry;
+
+extern void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier);
 extern void func_8009BB18(void);
 extern void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8);
 extern s16  func_8009D234(s32 a0);
 extern s16  func_8009D254(s32 a0);
-extern void func_8009DED8(u8 *a0, u8 *a1, u8 *a2);
+extern void func_8009DED8(Vec3i *out, SVert *a, SVert *b);
 extern s32  func_8009E468(s16 selfIdx, Vec3i *pos);
 extern s32  func_8009E604(Eline *a, Eline *b);
 extern void func_800A17A4(u8 *a0);
@@ -195,39 +308,43 @@ extern void func_800A4550(s16 a0);
 extern s32  func_800A4910(s32 a0, s32 a1, s32 a2, s32 a3);
 extern void func_800A59D0();  /* K&R: a0 declared but ignored in body; callers vary 0/1-arg */
 extern void func_800A5A14(s16 a0);
-extern u8   func_800A5CF8(void);
+extern s32  func_800A5CF8(void);
 
 /* INCLUDE_ASM stubs — bodies still in assembly, signatures unknown.
  * Declared K&R-style; refine when these get decomped to C. */
 extern void func_80098314(void);
-extern int  func_800983F0();
-extern int  func_8009895C();
+/** @brief Load/refresh the active field map's asset bundle from CD. */
+extern s32 *func_800983F0(void);
+/** @brief Field engine main loop: loads a field, runs it, and dispatches on the exit state. */
+extern void func_8009895C(void);
 extern void func_80099180(void);
 extern int  func_80099348();
 extern s32  func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist);
-extern int  func_8009A2BC();
+extern s32  func_8009A2BC(LineSeg *seg, Vec3i *p, Vec3i *out);
 extern s32  func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt);
 extern void func_8009A7E8(Eline *e, FieldEntityB *pool);
 extern void func_8009A8E0(FieldEntityB *e);
 extern void func_8009A920(Eline *eline, FieldEntityB *entities);
 extern void func_8009AA64(EventEntry *e);
-extern int  func_8009AAC8();
-extern int  func_8009AC9C();
-extern int  func_8009AEC0();
+extern void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt);
+extern s16  func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list);
+/** @brief Place every field entity on the navmesh when a field is entered. */
+extern void func_8009AEC0(void);
 extern int  func_8009BEC8();
 extern void func_8009CEE8(void);
-extern int  func_8009D274();
+extern s32  func_8009D274(Eline *self, s16 pad);
 extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
-extern int  func_8009D598();
+extern s32  func_8009D598(s16 index);
 extern s32  func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux);
 extern s32 func_8009E338(Vec3i *a0, Vec3i *a1, Vec3i *a2, Vec3s *a3);  /* plane-cross intersection */
-extern int  func_8009E660();
-extern int  func_8009ECA4();
+/** @brief Refill both follower path rings from the player's position on field entry. */
+extern void func_8009E660(void);
+extern void func_8009ECA4(void);
 extern s32  func_8009F74C(Eline *a, Eline *b);
 extern void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode);
 extern void func_8009B4A8(s16 a, u8 b, s32 c, s32 d);
 extern void func_8009F8D0(s16 idx);
-extern int  func_8009F990();
+extern void func_8009F990(s16 idx, s32 flags);
 extern int  func_8009FE18();
 extern TILE *func_800A0640(TILE *prim);
 extern int  func_800A06F0();
@@ -245,7 +362,8 @@ extern int  func_800A19B8();
 extern void func_800A1BB8(void);
 extern void func_800A1CFC(Eline *ents, u8 *arg1);
 extern void func_800A2128();  /* arg is a file-private buffer view in fe_object1.c */
-extern int  func_800A222C();
+/** @brief Draws each active entity's blob shadow as a flat-shaded 8-triangle fan. */
+extern void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Eline *ents);
 /**
  * @brief Shape @c func_800A29C0 sees: array of 20-byte items with five
  *        leading bytes that get initialized per item.
@@ -278,67 +396,68 @@ extern s16  func_800A2EA4(s16 range);
 extern void func_800A2F48();  /* arg is a file-private buffer view in fe_object1.c */
 extern void func_800A2F70();  /* arg is a file-private buffer view in fe_object1.c */
 extern s16  func_800A2FE0();  /* arg is a file-private buffer view in fe_object1.c */
-extern void func_800A327C(Eline *actor, SVECTOR *out);
+extern void func_800A327C();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
 extern void func_800A3488();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
 extern void func_800A3534();  /* arg is a file-private buffer view in fe_object1.c */
 extern void func_800A37A8(void *arg0, s32 arg1, FieldSubsceneBuffer *buf);
-/**
- * @brief Input "movement command" view that @c func_800A38B4 lerps from.
- *
- * @c x/y/z/angle (s16) are the start endpoints; @c stepTotal (u8) is the
- * lerp denominator. Used for both @c func_800A38B4's @c in (start) and
- * @c target (end) — the same shape is reused via @c stepTotal field
- * being irrelevant in the target view.
- */
-typedef struct {
-    /* 0x00 */ s16 x;
-    /* 0x02 */ s16 y;
-    /* 0x04 */ s16 z;
-    /* 0x06 */ s16 angle;
-    /* 0x08 */ u8  pad08[0x06];
-    /* 0x0E */ u8  stepTotal;
-    /* 0x0F */ u8  pad0F;
-} func_800A38B4_in;  /* 0x10 = 16 bytes */
 
-/**
- * @brief Output "movement accumulator" view that @c func_800A38B4 writes.
- *
- * Holds three @c s32 position accumulators at @c 0x00/04/08, three @c s16
- * position-start snapshots at @c 0x0C/0E/10, a @c u16 angle accumulator
- * at @c 0x12, a @c s16 angle-start snapshot at @c 0x16, and the @c u8
- * progress counter at @c 0x1A. Each tick of @c func_800A38B4 advances
- * the accumulators toward the lerp target.
- */
-typedef struct {
-    /* 0x00 */ s32 posX;
-    /* 0x04 */ s32 posY;
-    /* 0x08 */ s32 posZ;
-    /* 0x0C */ s16 xStart;
-    /* 0x0E */ s16 yStart;
-    /* 0x10 */ s16 zStart;
-    /* 0x12 */ u16 angle;
-    /* 0x14 */ u8  pad14[0x02];
-    /* 0x16 */ s16 angleStart;
-    /* 0x18 */ u8  pad18[0x02];
-    /* 0x1A */ u8  stepProgress;
-    /* 0x1B */ u8  pad1B;
-} func_800A38B4_out;  /* 0x1C = 28 bytes */
-
-extern void func_800A38B4(func_800A38B4_out *out, func_800A38B4_in *in, func_800A38B4_in *target);
-extern int  func_800A39D8();
-extern int  func_800A3FE0();
+extern void func_800A38B4(MoveAccum *out, MoveStep *in, MoveStep *target);
+/** @brief Emit one field sprite for a movement accumulator and link it into the OT. */
+extern void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldSubsceneBuffer *buf, u32 *ot);
+extern void func_800A3FE0(FieldSubsceneBuffer *buf);
 void func_800A42EC(POLY_G4 *polys, DR_TPAGE *tpages);
 extern void func_800A4500(s32 x, s32 y, s32 z);
 void func_800A455C(s16 entityIdx);
 extern void func_800A4758(void);
 extern s32  func_800A48CC(void);
-extern int  func_800A4934();
-extern int  func_800A4C14();
+/**
+ * @brief 8-byte (x, y, z) vertex within a shimmer object's corner array; also
+ *        the shape @c func_800A4934 stages its two interpolated points in at
+ *        @c getScratchAddr(0) and @c getScratchAddr(2).
+ */
+typedef struct {
+    /* 0x00 */ u16 x;
+    /* 0x02 */ u16 y;
+    /* 0x04 */ u16 z;
+    /* 0x06 */ u16 pad6;
+} ObjVertex;
 
-typedef struct { u8 pad[0xB4]; } func_800A5224_arg2; /* 0xB4 = 180 bytes */
-typedef struct { u8 pad[0x20]; } func_800A5224_arg3; /* 0x20 = 32 bytes */
-extern void func_800A5224(MATRIX *m, void *arg1, func_800A5224_arg2 *arg2,
-                          func_800A5224_arg3 *arg3);
+extern void func_800A4934();  /* args are file-private ObjSlot/DrawPoint in fe_object1.c */
+extern void func_800A4C14();  /* first arg is the file-private ObjSlot in fe_object1.c */
+
+/**
+ * @brief Per-slot ribbon prim buffer: the five @c LINE_G4 strips that make up
+ *        one shimmer object's four-segment trail.
+ */
+typedef struct {
+    /* 0x00 */ LINE_G4 lines[5];
+} FieldRibbonPrims;  /* 0xB4 = 180 bytes */
+
+/** @brief Per-slot tpage commands, one for each of the four ribbon segments. */
+typedef struct {
+    /* 0x00 */ DR_TPAGE tpages[4];
+} FieldRibbonTPages;  /* 0x20 = 32 bytes */
+
+extern void func_800A5224(MATRIX *m, u32 *ot, FieldRibbonPrims *prims,
+                          FieldRibbonTPages *tpages);
+
+/**
+ * @brief Main binary's @c RotTransPers3: perspective-transforms three vertices
+ *        at once, writing the three screen XY pairs and returning the OTZ.
+ *
+ * @note The field overlay links it by address, so it keeps its @c func_ name.
+ */
+extern s32 func_80040E14(ObjVertex *v0, ObjVertex *v1, ObjVertex *v2, s32 *sxy0,
+                         s32 *sxy1, s32 *sxy2, s32 *p, s32 *flag);
+
+/** @brief Palette selector for the ribbon colour ramp (scaled by 16 to index it). */
+extern u8 D_80070657;
+/** @brief Ribbon colour ramp, 16 bytes per palette: five RGB triples, one per line strip. */
+extern u8 D_800C3720[];
+/** @brief @c D_800C3720 + 6 — the third strip's RGB triple. */
+extern u8 D_800C3726[];
+/** @brief @c D_800C3720 + 9 — the fourth and fifth strips' RGB triples. */
+extern u8 D_800C3729[];
 extern void func_800A5360(u32 *ot, s16 r, s16 g, s16 b);
 extern volatile u16 g_bufferIndex;       /**< Active double-buffer index. */
 extern u32 g_orderingTablePtrs[];        /**< Per-buffer ordering-table heads. */
@@ -350,11 +469,11 @@ extern void func_800A5700(void);
 extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
 extern void func_800A5788(s32 a0);
 extern int  func_800A5898();
-extern int  func_800A5A20();
-extern u8   func_800A5C9C(void);
-extern int  func_800A5D28();
+extern void func_800A5A20(Eline *self, EventEntry *entries);
+extern s32  func_800A5C9C(void);
+extern void func_800A5D28(void);
 extern void func_800A5FA4();  /* arg 0 = entry pointer (16-byte stride); arg 1 = flag */
-extern void func_800A6100(Eline *eline, FieldLineTrigger *segs);
+extern void func_800A6100(Eline *eline, FieldLineTrigger *segs, Vec3i *pt);
 extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
 extern int  func_800A63AC();
 extern int  func_800A6A80();

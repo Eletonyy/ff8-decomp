@@ -361,9 +361,9 @@ void func_800ABEF0(SVECTOR *src, SVECTOR *rot, SVECTOR *trans,
     gte_SetRotMatrix(&D_800C9838);
     gte_SetTransMatrix(&D_800C9838);
 
-    gte_ldv3(&transformed[0]);
+    gte_ldv3c(&transformed[0]);
     gte_RTPT();
-    gte_stsxy3(outSXY);
+    gte_stsxy3c(outSXY);
 
     gte_ldv0(&transformed[3]);
     gte_RTPS();

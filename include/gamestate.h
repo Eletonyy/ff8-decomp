@@ -354,7 +354,9 @@ typedef struct {
     /* 0x04 */ u16 field120;         /**< Saved copy of g_fieldEntity.field_0x120. */
     /* 0x06 */ u16 positionsX[3];    /**< Party member X positions (>>12 integer). */
     /* 0x0C */ u16 positionsY[3];    /**< Party member Y positions (>>12 integer). */
-    /* 0x12 */ u16 rotations[3];     /**< Party member rotations. */
+    /* 0x12 */ u16 triIdxs[3];       /**< Navmesh triangle each party member stands on
+                                         (saved from @c Eline::triIdx, restored into
+                                         @c SystemState::spawnTriIdx). */
     /* 0x18 */ u8  animStates[3];    /**< Party member animation states. */
     /* 0x1B */ u8  fade1;
     /* 0x1C */ u8  fade0;

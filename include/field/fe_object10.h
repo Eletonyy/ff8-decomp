@@ -13,7 +13,7 @@ extern void func_800BD5E0(void);
 extern void func_800BD64C(void);
 extern void func_800BD6EC(void);
 extern void func_800BD794(void);
-extern u8   func_800BE264(void);
+extern s32  func_800BE264(void);
 extern s32  func_800BE274(void);
 extern void func_800BE2AC(void);
 extern void func_800BE2DC(void);

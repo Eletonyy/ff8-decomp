@@ -1346,7 +1346,7 @@ s32 opHandler_WORLDMAPJUMP(Eline *eline) {
         } else {
             D_800704A8.mode = 7;
             D_800704A8.anim_state = (u16)POP(eline);
-            D_800704A8.rotation = (u16)POP(eline);
+            D_800704A8.spawnTriIdx = (u16)POP(eline);
             D_800704A8.counter = (u16)POP(eline);
             func_800B4F40();
         }
@@ -1394,9 +1394,9 @@ s32 opHandler_PREMAPJUMP(Eline *eline) {
             t++;
         } while (D_8005F0F8->entries[t].field16 != 0x7FFF);
     }
-    D_8005F0F8->entries[t].field08 = (u16)POP(eline);
-    D_8005F0F8->entries[t].field06 = (u16)POP(eline);
-    D_8005F0F8->entries[t].field04 = (u16)POP(eline);
+    D_8005F0F8->entries[t].y1 = (u16)POP(eline);
+    D_8005F0F8->entries[t].x1 = (u16)POP(eline);
+    D_8005F0F8->entries[t].z0 = (u16)POP(eline);
     D_8005F0F8->entries[t].field16 = (u16)POP(eline);
     D_8005F0F8->entries[t].field14 = 0xFFFF;
     D_8005F0F8->entries[t + 1].field16 = 0x7FFF;
@@ -1426,7 +1426,7 @@ s32 func_800B45CC(Eline *eline) {
 s32 opHandler_MAPJUMP(Eline *eline, s32 a1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 1;
-        D_800704A8.rotation = a1;
+        D_800704A8.spawnTriIdx = a1;
         D_800704A8.anim_state = (u16)POP(eline);
         D_800704A8.position_y = (u16)POP(eline);
         D_800704A8.position_x = (u16)POP(eline);
@@ -1446,7 +1446,7 @@ s32 opHandler_MAPJUMP(Eline *eline, s32 a1) {
 s32 opHandler_MAPJUMP3(Eline *eline, s32 a1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 1;
-        D_800704A8.rotation = a1;
+        D_800704A8.spawnTriIdx = a1;
         D_800704A8.anim_state = (u16)POP(eline);
         D_800704A8.unk008 = (u16)POP(eline);
         D_800704A8.position_y = (u16)POP(eline);
@@ -1468,7 +1468,7 @@ s32 opHandler_DISCJUMP(Eline *eline, s32 a1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 6;
         D_800704A8.unk1A0 = 1;
-        D_800704A8.rotation = a1;
+        D_800704A8.spawnTriIdx = a1;
         D_800704A8.anim_state = (u16)POP(eline);
         D_800704A8.unk008 = (u16)POP(eline);
         D_800704A8.position_y = (u16)POP(eline);
@@ -1489,7 +1489,7 @@ s32 opHandler_MAPJUMPO(Eline *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 1;
         D_800704A8.anim_state = 0;
-        D_800704A8.rotation = (u16)POP(eline);
+        D_800704A8.spawnTriIdx = (u16)POP(eline);
         D_800704A8.position_x = 0x7FFF;
         D_800704A8.position_y = 0x7FFF;
         D_800704A8.counter = (u16)POP(eline);

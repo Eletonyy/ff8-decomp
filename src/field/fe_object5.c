@@ -254,8 +254,8 @@ s32 opHandler_GETINFO(Eline *e) {
     e->resultSlots[1] = e->posY / 4096;
     e->resultSlots[2] = e->posZ / 4096;
     e->resultSlots[4] = e->field_0x241;
-    e->resultSlots[5] = e->field_0x1FA;
-    e->resultSlots[6] = e->savedChannel;
+    e->resultSlots[5] = e->triIdx;
+    e->resultSlots[6] = e->moveSpeed;
     return 2;
 }
 
@@ -285,8 +285,8 @@ s32 opHandler_PGETINFO(Eline *e) {
     e->resultSlots[1] = D_80085224[entIdx].posY / 4096;
     e->resultSlots[2] = D_80085224[entIdx].posZ / 4096;
     e->resultSlots[4] = D_80085224[entIdx].field_0x241;
-    e->resultSlots[5] = D_80085224[entIdx].field_0x1FA;
-    e->resultSlots[6] = D_80085224[entIdx].savedChannel;
+    e->resultSlots[5] = D_80085224[entIdx].triIdx;
+    e->resultSlots[6] = D_80085224[entIdx].moveSpeed;
     return 2;
 }
 
@@ -364,7 +364,7 @@ s32 opHandler_JUNCTION(Eline *e) {
 /**
  * @brief Pop an entity id, look up the corresponding @c Eline in the
  *        @c D_80085230 table, and copy six locator fields (pos x/y/z,
- *        @c field_0x241, @c field_0x1FA, @c savedChannel) from that
+ *        @c field_0x241, @c triIdx, @c moveSpeed) from that
  *        entity into the current one. Finally call @c func_8009A8E0
  *        on the global @c D_8008538C anchor to recompute derived
  *        coordinates.
@@ -382,8 +382,8 @@ s32 opHandler_COPYINFO(Eline *e) {
     e->posY = D_80085230[entityId]->posY;
     e->posZ = D_80085230[entityId]->posZ;
     e->field_0x241 = D_80085230[entityId]->field_0x241;
-    e->field_0x1FA = D_80085230[entityId]->field_0x1FA;
-    e->savedChannel = D_80085230[entityId]->savedChannel;
+    e->triIdx = D_80085230[entityId]->triIdx;
+    e->moveSpeed = D_80085230[entityId]->moveSpeed;
     func_8009A8E0(D_8008538C);
     return 2;
 }
@@ -393,7 +393,7 @@ s32 opHandler_COPYINFO(Eline *e) {
  *        through the active-party @c memberSlot[] table — pop a
  *        party-slot id, look up @c g_fieldVars->memberSlot[party] for
  *        the field-entity index, and copy six locator fields
- *        (pos x/y/z, @c field_0x241, @c field_0x1FA, @c savedChannel)
+ *        (pos x/y/z, @c field_0x241, @c triIdx, @c moveSpeed)
  *        into the current entity. Calls @c func_8009A8E0(D_8008538C)
  *        afterwards to recompute derived state.
  *
@@ -413,8 +413,8 @@ s32 opHandler_PCOPYINFO(Eline *e) {
     e->posY = D_80085224[entIdx].posY;
     e->posZ = D_80085224[entIdx].posZ;
     e->field_0x241 = D_80085224[entIdx].field_0x241;
-    e->field_0x1FA = D_80085224[entIdx].field_0x1FA;
-    e->savedChannel = D_80085224[entIdx].savedChannel;
+    e->triIdx = D_80085224[entIdx].triIdx;
+    e->moveSpeed = D_80085224[entIdx].moveSpeed;
     func_8009A8E0(D_8008538C);
     return 2;
 }
@@ -525,8 +525,8 @@ s32 opHandler_MOVIEREADY(Eline *e) {
  * movie subsystem (@c func_801E82CC) whether it is ready to play. If
  * it returns @c 0 (busy), the opcode blocks by returning @c 1.
  *
- * Once ready, doubles the three dialog-channel halfwords
- * (@c savedChannel / @c msgChannel / @c field_0x208) of every active
+ * Once ready, doubles the three rate halfwords
+ * (@c moveSpeed / @c msgChannel / @c field_0x208) of every active
  * entity — counterpart of @c func_800B14C8's halve step. If the
  * stateFlags @c 0x10 bit is clear, also kicks off
  * @c initBattleTransition (so the next scene starts clean) and
@@ -545,10 +545,10 @@ s32 opHandler_MOVIE(Eline *e) {
     if (func_801E82CC()) {
         p = D_80085224;
         for (i = 0; i < D_80085388; i++) {
-            sc = (s16)p->savedChannel;
+            sc = (s16)p->moveSpeed;
             mc = (s16)p->msgChannel;
             fc = (s16)p->field_0x208;
-            p->savedChannel = sc << 1;
+            p->moveSpeed = sc << 1;
             p->msgChannel = mc << 1;
             p->field_0x208 = fc << 1;
             p++;
@@ -564,8 +564,8 @@ s32 opHandler_MOVIE(Eline *e) {
 }
 
 /**
- * @brief Halve the dialog-channel triple (@c savedChannel /
- *        @c msgChannel / @c field_0x208 ) of every active entity,
+ * @brief Halve the rate triple (@c moveSpeed / @c msgChannel /
+ *        @c field_0x208 ) of every active entity,
  *        clear the @c 0x1000 bit of the state flags, and reset two
  *        re-arm flags ( @c D_800704A8.unk1A3 — only if @c unk015 is
  *        clear — and @c D_800DE4FD[0] ). Counterpart of @c
@@ -583,7 +583,7 @@ void func_800B14C8(void) {
     g_fieldVars->stateFlags &= ~0x1000;
     p = D_80085224;
     for (i = 0; i < D_80085388; i++) {
-        p->savedChannel = (s16)p->savedChannel / 2;
+        p->moveSpeed = (s16)p->moveSpeed / 2;
         p->msgChannel = (s16)p->msgChannel / 2;
         p->field_0x208 = (s16)p->field_0x208 / 2;
         p++;

@@ -1239,7 +1239,7 @@ void activateBattleAnim(s32 idx);
 /* --- Spatial / matrix helpers (defined in field overlay) --- */
 void func_800406A4(u8 *p);
 void func_80040734(u8 *p);
-s32  func_80040DE4(SVECTOR *v, s32 *sxy, s32 *p, s32 *flag);
+/* func_80040DE4 (the main binary's RotTransPers) is declared in psxsdk/libgte.h. */
 
 /** @brief Reset battle-transition state (clears @c btl_color flags). */
 void initBattleTransition(void);
