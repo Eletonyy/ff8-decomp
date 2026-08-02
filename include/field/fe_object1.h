@@ -108,7 +108,10 @@ typedef struct {
  */
 typedef struct {
     /* 0x00 */ MATRIX m;
-    /* 0x20 */ u8 pad20[0x04];
+    /* 0x20 */ u16 viewOfsX;     /**< View's screen-space X offset: added to the draw offset by
+                                      @c func_800A15C0 and subtracted from projected positions
+                                      elsewhere. @note Purpose inferred from those two uses. */
+    /* 0x22 */ u16 viewOfsY;     /**< View's screen-space Y offset; twin of @c viewOfsX. */
     /* 0x24 */ s16 spriteScale;  /**< Numerator of the per-OTZ sprite scale in @c func_800A39D8. */
 } FieldView;
 
@@ -367,7 +370,7 @@ extern void func_8009E660(void);
 extern void func_8009ECA4(void);
 extern s32  func_8009F74C(Eline *a, Eline *b);
 extern void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode);
-extern void func_8009B4A8(s16 a, u8 b, s32 c, s32 d);
+extern void func_8009B4A8(s16 idx, u8 anim, s16 mode, s8 delta);
 extern void func_8009F8D0(s16 idx);
 extern void func_8009F990(s16 idx, s32 flags);
 extern int  func_8009FE18();
@@ -379,9 +382,9 @@ extern s32  func_800A0EB8(s32 start, s32 end, s32 total, s32 angle);
 extern s32  func_800A0F34(SVECTOR *v, s32 *sxy);
 extern void func_800A0FB8(Vec2s *out, s16 a, s16 b);
 extern void func_800A10F4(void);
-extern void func_800A11E0(Vec2s *arg0);
+extern void func_800A11E0(Vec2s *out, s16 slotIdx);
 extern void func_800A1318(void);
-extern void func_800A15C0(FieldFrameBuf *buf, DRAWENV *env, s32 mode);
+extern void func_800A15C0(FieldFrameBuf *buf, DRAWENV *env, s16 slotIdx);
 void func_800A17B8(Oscillator *osc);
 extern int  func_800A19B8();
 extern void func_800A1BB8(void);
@@ -479,14 +482,17 @@ extern void func_800A553C(u32 *ot, s16 r, s16 g, s16 b);
 extern void func_800A5698(void);
 extern void func_800A5700(void);
 extern s16  func_800A5748(s16 start, s16 end, s16 progress, s16 total);
-extern void func_800A5788(s32 a0);
+/** @brief Raised by @c func_800A5898 when the dialog state reaches @c 4. */
+extern u8 D_80070649;
+
+extern void func_800A5788(FieldFrameBuf *buf);
 extern void func_800A5898(FieldFrameBuf *buf);
 extern void func_800A5A20(Eline *self, EventEntry *entries);
 extern s32  func_800A5C9C(void);
 extern void func_800A5D28(void);
-extern void func_800A5FA4();  /* arg 0 = entry pointer (16-byte stride); arg 1 = flag */
+extern s32  func_800A5FA4(FieldLineTrigger *seg, s32 sel);
 extern void func_800A6100(Eline *eline, FieldLineTrigger *segs, Vec3i *pt);
-extern void func_800A62EC();  /* arg 0 = array of 12 16-byte entries */
+extern void func_800A62EC(FieldLineTrigger *segs);
 extern int  func_800A63AC();
 extern int  func_800A6A80();
 
@@ -556,7 +562,107 @@ extern u8  *func_800A8DAC(s32 spatialIdx, s32 cmd, u32 arg, void *out);
 extern int  func_800A91C8();
 extern int  func_800A9434();
 extern void func_800A97E4(s32 spatialIdx, s32 cmd, s32 arg2, s32 arg3);
-extern void func_800AA46C(u8 spatialIdx, s32 cmd, s32 arg, s32 arg4);
+extern void func_800AA46C(s32 spatialIdx, s32 cmd, s32 arg, s32 arg4);
 extern int  func_800AA8A0();
+
+
+/* Shared by fe_object1.c, fe_object1_2.c and fe_object1_3.c. */
+extern u16 D_8005F118;
+extern u16 D_8005F11A;
+extern u16 D_8005F144;
+extern s16 D_8005F148;
+extern volatile u8 D_8005F116;   /**< Encounter-disable flag (1 = no random battles); also spun on by the field loader. */
+extern u16 D_8005F0FE;           /**< Accumulated battle chance; compared against the encounter RNG roll. */
+extern s16 D_8005F120;           /**< Previous battle formation id (avoid immediate repeats). */
+extern u8 D_8005F130;            /**< Encounter-pending marker set when a battle triggers. */
+extern u16 D_8005F164;           /**< Step accumulator; a battle check runs each time it passes 0x100. */
+extern u8 D_80078DF8;            /**< Field movement flags: bit 3 halts encounter steps, bit 2 halves the step rate. */
+extern u8 **D_800C71F4;          /**< Field-data section pointer: per-field encounter step-rate byte. */
+extern u16 **D_800C720C;         /**< Field-data section pointer: 4-entry battle formation table. */
+extern u16 D_8005F160;
+extern u16 D_8005F162;
+extern u8 D_80085388;
+extern u8 D_800C319C[];          /**< Arctangent lookup table (byte per 2*|component| step) for func_8009A0E8. */
+extern u8 D_800C32A0[];
+extern u8 D_800C3320[];
+extern u8 D_800C3520[];
+extern u8 D_800C6D90;            /**< PRNG counter advanced 13/step by func_800A2EA4 */
+extern u8 D_8005F150;            /**< Outer PRNG counter, D_800C3520 lookup offset, advanced 13/step per 256 calls of func_800A5C9C */
+extern u8 D_8005F151;            /**< Inner PRNG counter, D_800C3520 lookup index, advanced 1/call by func_800A5C9C */
+
+extern s32 func_8004D564(s32 a, s32 b);
+extern s32 func_80048C50(s32 a);
+extern void func_80048F5C(RECT *r, u16 *src);
+extern void func_80048EFC(RECT *r, u8 *src);
+extern s32 func_8004D524(s32, s32, s32, s32);
+extern void func_8004D684(void *p);
+extern s32 func_8003F4A4(s32 a);                  /* isqrt: integer square root of a */
+
+extern u16 **D_800D5E9C;         /**< Pointer-to-pointer of u16 count for func_800A29C0's iteration */
+extern u16 *D_800C71E4;
+extern s32 D_800C71FC;           /**< Latched result of @c func_800A0F34 from @c func_800A11E0. */
+extern u16 D_800D3E88[];
+extern u8 D_800D5F50[];
+extern u8 D_800D61A8[];
+extern u8 D_8005F168[];
+extern volatile s32 D_8005F154;  /**< VSync frame counter (main.c); phase for the @c D_800C3520 perturbation table. */
+
+/**
+ * @brief 24-byte draw-point slot holding a 16-bit (x, y, z) position plus the
+ *        two derived quad corners built by @c func_800A4758.
+ *
+ * @c x/y/z is the base position written by @c func_800A4500. @c func_800A4758
+ * derives two corner offsets from it: @c field8 / @c fieldA / @c fieldC (base
+ * minus a table-perturbed 0x80 bias) and @c field10 / @c field12 / @c field14
+ * (base plus fixed 0x40/0x80 offsets).
+ */
+typedef struct {
+    /* 0x00 */ u16 x;
+    /* 0x02 */ u16 y;
+    /* 0x04 */ u16 z;
+    /* 0x06 */ u16 pad06;
+    /* 0x08 */ u16 field8;
+    /* 0x0A */ u16 fieldA;
+    /* 0x0C */ u16 fieldC;
+    /* 0x0E */ u16 padE;
+    /* 0x10 */ u16 field10;
+    /* 0x12 */ u16 field12;
+    /* 0x14 */ u16 field14;
+    /* 0x16 */ u16 pad16;
+} DrawPoint;  /* 0x18 = 24 bytes */
+extern DrawPoint D_800706A0[];
+
+/**
+ * @brief One 136-byte object slot in the @c D_800C6DA0 table walked by
+ *        @c func_800A5224 (8 slots).
+ *
+ * The two 8-entry vertex arrays @c va / @c vb are seeded by @c func_800A4758
+ * from the object's draw-point position (all 8 entries get the same value).
+ * @c field86 / @c field87 receive a table-perturbation byte; the trailing tick
+ * pair (@c field80 / @c field82) is what @c func_800A5224 later consumes.
+ */
+typedef struct {
+    /* 0x00 */ ObjVertex va[8];
+    /* 0x40 */ ObjVertex vb[8];
+    /* 0x80 */ s16 field80;   /**< Tick threshold base; slot clears when tick > field80+4. */
+    /* 0x82 */ u16 field82;   /**< Per-frame tick counter (incremented while active). */
+    /* 0x84 */ u8  pad84[0x02];
+    /* 0x86 */ u8  field86;
+    /* 0x87 */ u8  field87;
+} ObjSlot;  /* 0x88 = 136 bytes */
+extern ObjSlot D_800C6DA0[];
+extern s16 D_8005F122;
+extern s16 D_8005F14A;
+extern s16 D_8005F100;
+extern s16 D_8005F142;
+extern s16 D_800C2568[];         /**< Field id -> streaming-table entry index. */
+extern u32 D_800C0904[];         /**< Streaming table: 24-byte (6-word) entries; this symbol
+                                      addresses entry 0's size word, with its sector word
+                                      in the preceding word. */
+extern u8 D_8005F103;
+extern PathEntry D_80070A60[64];
+extern PathEntry D_80070760[64];
+extern DRAWENV D_80067388[2];   /**< Double-buffered draw environments. */
+extern DISPENV D_80067440[2];   /**< Double-buffered display environments. */
 
 #endif
