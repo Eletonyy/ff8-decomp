@@ -1736,7 +1736,374 @@ void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009BEC8);
+/**
+ * @brief Per-frame movement and animation tick for every field entity.
+ *
+ * Runs nine sequential passes over the @c D_80085388 entities of @p ents:
+ *  1. Re-arm each entity's @c unk258 tick flag.
+ *  2. Advance the global heading lerp (@c unk100 -> @c unk102 over @c unk104
+ *     frames) into @c D_800704A8.unk1A8.
+ *  3. Advance each entity's heading lerp (@c field_0x244: 1 = linear,
+ *     2 = sine, 3 = finished).
+ *  4. Advance each entity's position-offset lerp (@c unk245, same encoding).
+ *  5. Drive the player entity: read the analog stick, derive a heading from it
+ *     (or from the d-pad bits when the stick is centred), pick a walk or run
+ *     speed, step the entity with @c func_8009D598 on the scratchpad stack,
+ *     dispatch the walk/run animation and record the step in the two
+ *     breadcrumb rings the party followers replay from.
+ *  6. @c msgActive 1: walk toward a scripted target (@c func_8009D274).
+ *  7. @c msgActive 2: ballistic hop across a navmesh triangle.
+ *  8. @c msgActive 4: hand the entity to @c func_8009FE18.
+ *  9. @c msgActive 3: linear path move, player-steerable for the self entity.
+ *
+ * @param ents  Entity array (@c D_80085224).
+ * @param flags Pad state for this frame; same bit layout as
+ *              @c SystemState::padHeld (0x1000 = down, 0x2000 = right,
+ *              0x4000 = up, 0x8000 = left, 0x10 = run). Bit 0x10 is updated
+ *              in place from the analog stick's deflection.
+ */
+void func_8009BEC8(Eline *ents, s32 flags) {
+    VECTOR a;
+    VECTOR b;
+    VECTOR pt;
+    s32 dist[2];
+    u8 dir;
+    s32 i;
+    s32 step;
+    u8 heading;
+    s32 trail;
+
+    for (i = 0; i < D_80085388; i++) {
+        ents[i].unk258 = 1;
+    }
+
+    if (D_800704A8.unk106 < D_800704A8.unk104) {
+        D_800704A8.unk106++;
+        D_800704A8.unk1A8 = func_800A0E54((s16)D_800704A8.unk100, (s16)D_800704A8.unk102,
+                                          D_800704A8.unk104, D_800704A8.unk106);
+        if (D_800704A8.unk104 == D_800704A8.unk106) {
+            D_800704A8.unk100 = D_800704A8.unk1A8;
+        }
+    }
+
+    for (i = 0; i < D_80085388; i++) {
+        switch (ents[i].field_0x244) {
+        case 0:
+        case 3:
+            break;
+        case 1:
+            ents[i].field_0x241 = func_800A0E54(ents[i].field_0x1DC, ents[i].field_0x1DE, ents[i].field_0x242, ents[i].field_0x243);
+            if (ents[i].field_0x243 == ents[i].field_0x242) {
+                ents[i].field_0x244 = 3;
+            } else {
+                ents[i].field_0x243++;
+            }
+            break;
+        case 2:
+            ents[i].field_0x241 = func_800A0EB8(ents[i].field_0x1DC, ents[i].field_0x1DE, ents[i].field_0x242, ents[i].field_0x243);
+            if (ents[i].field_0x243 == ents[i].field_0x242) {
+                ents[i].field_0x244 = 3;
+            } else {
+                ents[i].field_0x243++;
+            }
+            break;
+        }
+    }
+
+    for (i = 0; i < D_80085388; i++) {
+        switch (ents[i].unk245) {
+        case 0:
+        case 3:
+            break;
+        case 1:
+            ents[i].posOfsX = func_800A0E54((s16)ents[i].field_0x1E2, (s16)ents[i].field_0x1E4, ents[i].field_0x1F2, ents[i].field_0x1F4);
+            ents[i].posOfsY = func_800A0E54((s16)ents[i].field_0x1E8, (s16)ents[i].field_0x1EA, ents[i].field_0x1F2, ents[i].field_0x1F4);
+            ents[i].posOfsZ = func_800A0E54((s16)ents[i].field_0x1EE, (s16)ents[i].field_0x1F0, ents[i].field_0x1F2, ents[i].field_0x1F4);
+            if (ents[i].field_0x1F4 == ents[i].field_0x1F2) {
+                ents[i].unk245 = 3;
+            } else {
+                ents[i].field_0x1F4++;
+            }
+            if (i == D_8005F148) {
+                func_8009A8E0(D_8008538C);
+            }
+            break;
+        case 2:
+            ents[i].posOfsX = func_800A0EB8((s16)ents[i].field_0x1E2, (s16)ents[i].field_0x1E4, ents[i].field_0x1F2, ents[i].field_0x1F4);
+            ents[i].posOfsY = func_800A0EB8((s16)ents[i].field_0x1E8, (s16)ents[i].field_0x1EA, ents[i].field_0x1F2, ents[i].field_0x1F4);
+            ents[i].posOfsZ = func_800A0EB8((s16)ents[i].field_0x1EE, (s16)ents[i].field_0x1F0, ents[i].field_0x1F2, ents[i].field_0x1F4);
+            if (ents[i].field_0x1F4 == ents[i].field_0x1F2) {
+                ents[i].unk245 = 3;
+            } else {
+                ents[i].field_0x1F4++;
+            }
+            if (i == D_8005F148) {
+                func_8009A8E0(D_8008538C);
+            }
+            break;
+        }
+    }
+
+
+    for (i = 0; i < D_80085388; i++) {
+        if (ents[i].msgActive != 0 || i != D_8005F148) {
+            continue;
+        }
+        step = 0;
+        D_800704A8.fieldStepDelta = 0;
+        if (D_800704A8.unk015 == 1 || (s16)D_800704A8.dialogState == 4) {
+            continue;
+        }
+        if (func_80027DB4(0, 2, 0) != -1) {
+            b.vx = 0x80 - func_80027DB4(0, 2, 0);
+            b.vy = func_80027DB4(0, 3, 0) - 0x80;
+            a.vx = 0;
+            a.vy = 0;
+            dir = func_8009A0E8((s32 *)&a, (s32 *)&b, dist);
+        } else {
+            dist[0] = 0xFFFF;
+        }
+        if ((u32)(dist[0] - 0x31) < 0xCF || (flags & 0xF000)) {
+            if ((u32)(dist[0] - 0x31) >= 0xCF) {
+                if (flags & 0x1000) {
+                    ents[i].unk23F = 0;
+                    if (flags & 0x8000) {
+                        ents[i].unk23F = 0x20;
+                    }
+                    if (flags & 0x2000) {
+                        ents[i].unk23F = 0xE0;
+                    }
+                } else if (flags & 0x4000) {
+                    ents[i].unk23F = 0x80;
+                    if (flags & 0x8000) {
+                        ents[i].unk23F = 0x60;
+                    }
+                    if (flags & 0x2000) {
+                        ents[i].unk23F = 0xA0;
+                    }
+                } else {
+                    if (flags & 0x2000) {
+                        ents[i].unk23F = 0xC0;
+                    }
+                    if (flags & 0x8000) {
+                        ents[i].unk23F = 0x40;
+                    }
+                }
+                ents[i].unk23F += D_800704A8.unk1A8 + ents[i].headingBase;
+            } else {
+                if (!(flags & 0x10)) {
+                    if (dist[0] >= 0x79) {
+                        flags &= ~0x10;
+                    } else {
+                        flags |= 0x10;
+                    }
+                }
+                ents[i].unk23F = dir + (D_800704A8.unk1A8 + D_8005F0F8->slotHeadingBias[D_800704A8.unk1A6]);
+            }
+            if ((flags & 0x10) || D_800704A8.unk1A4 == 1) {
+                if (func_800BE274() == 0) {
+                    ents[D_8005F148].moveSpeed = (u32)(D_800704A8.unk00A * 0x4367) >> 7;
+                } else {
+                    ents[D_8005F148].moveSpeed = (u32)(D_800704A8.unk00A * 0x4367) >> 6;
+                }
+            } else {
+                if (func_800BE274() == 0) {
+                    ents[D_8005F148].moveSpeed = (u32)(D_800704A8.unk00A * 0x631F) >> 6;
+                } else {
+                    ents[D_8005F148].moveSpeed = (u32)(D_800704A8.unk00A * 0x631F) >> 5;
+                }
+            }
+            SCRATCH_STACK_ENTER();
+            step = func_8009D598((s16)i);
+            SCRATCH_STACK_LEAVE();
+            if (step == 1) {
+                if ((flags & 0x10) || D_800704A8.unk1A4 == step) {
+                    func_8009B4A8((s16)i, ents[i].field_0x250, 1, 1);
+                    trail = D_8005F144;
+                    D_80070A60[trail].field_0A = 0;
+                    D_80070760[trail].field_0A = 0;
+                    D_800704A8.fieldStepDelta = 3;
+                } else {
+                    func_8009B4A8((s16)i, ents[i].field_0x251, 1, 1);
+                    trail = D_8005F144;
+                    D_80070A60[trail].field_0A = step;
+                    D_80070760[trail].field_0A = step;
+                    D_800704A8.fieldStepDelta = 5;
+                }
+                func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
+                func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+                heading = ents[i].unk23F;
+                trail = D_8005F144;
+                D_80070A60[trail].field_0B = heading;
+                D_80070760[trail].field_0B = heading;
+        } else {
+            func_8009B4A8((s16)i, ents[i].field_0x24F, 0, 1);
+            if (D_800704A8.entityIndex[2] != 0xFF) {
+                func_8009B4A8(D_800704A8.entityIndex[2], ents[D_800704A8.entityIndex[2]].field_0x24F, 0, 1);
+            }
+            if (D_800704A8.entityIndex[1] != 0xFF) {
+                func_8009B4A8(D_800704A8.entityIndex[1], ents[D_800704A8.entityIndex[1]].field_0x24F, 0, 1);
+            }
+        }
+        if (ents[i].field_0x240 == 0) {
+            ents[i].field_0x241 = ents[i].unk23F;
+        }
+        if (D_800704A8.mode != 1 && D_800704A8.mode != 7 && step == 1) {
+            func_800A5D28();
+        }
+            func_8009BD50(&ents[i], step, 1, 1);
+            func_8009BB18();
+        } else {
+            func_8009B4A8((s16)i, ents[i].field_0x24F, 0, 1);
+            if (D_800704A8.entityIndex[2] != 0xFF) {
+                func_8009B4A8(D_800704A8.entityIndex[2], ents[D_800704A8.entityIndex[2]].field_0x24F, 0, 1);
+            }
+            if (D_800704A8.entityIndex[1] != 0xFF) {
+                func_8009B4A8(D_800704A8.entityIndex[1], ents[D_800704A8.entityIndex[1]].field_0x24F, 0, 1);
+            }
+            func_8009BD50(&ents[i], step, 1, 1);
+            func_8009BB18();
+        }
+    }
+
+
+    for (i = 0; i < D_80085388; i++) {
+        if (ents[i].msgActive == 1 && D_800704A8.pad001 != 1) {
+            ents[i].headingBase = 0;
+            if (func_8009D274(&ents[i], ents[i].windowId) == 0) {
+                ents[i].msgState = 2;
+                ents[i].msgActive = 0;
+            } else {
+                ents[i].msgState = 1;
+                SCRATCH_STACK_ENTER();
+                func_8009D598((s16)i);
+                SCRATCH_STACK_LEAVE();
+                if (ents[i].field_0x240 == 0) {
+                    ents[i].field_0x241 = ents[i].unk23F;
+                }
+            }
+            if (i == D_8005F148) {
+                func_8009A8E0(D_8008538C);
+            }
+        }
+    }
+
+    for (i = 0; i < D_80085388; i++) {
+        if (ents[i].msgActive != 2) {
+            continue;
+        }
+        if (ents[i].msgState == 0) {
+            ents[i].headingBase = 0;
+            ents[i].moveStartX = ents[i].posX;
+            ents[i].moveStartY = ents[i].posY;
+            ents[i].moveStartZ = ents[i].posZ;
+            func_8009DED8((Vec3i *)&a, &D_800C71F0[ents[i].field_0x1FC * 3 + 1], &D_800C71F0[ents[i].field_0x1FC * 3]);
+            func_8009DED8((Vec3i *)&b, &D_800C71F0[ents[i].field_0x1FC * 3 + 2], &D_800C71F0[ents[i].field_0x1FC * 3 + 1]);
+            pt.vx = ents[i].msgTextPtr / 0x1000;
+            pt.vy = ents[i].msgPosX / 0x1000;
+            ents[i].msgPosY = func_8009E338((Vec3i *)&a, (Vec3i *)&b, (Vec3i *)&pt, &D_800C71F0[ents[i].field_0x1FC * 3]) << 12;
+            ents[i].arcVelZ = (ents[i].msgPosY - ents[i].moveStartZ) / ents[i].field_0x1D8 - -(ents[i].field_0x1D8 * 0x3E80) / 2;
+            ents[i].field_0x1DA = 0;
+            ents[i].msgState = 1;
+        } else {
+            if (ents[i].field_0x1D8 == ents[i].field_0x1DA) {
+                ents[i].msgState = 2;
+                ents[i].triIdx = ents[i].field_0x1FC;
+            } else {
+                ents[i].field_0x1DA++;
+                ents[i].posX = func_800A0E54(ents[i].moveStartX, ents[i].msgTextPtr, ents[i].field_0x1D8, ents[i].field_0x1DA);
+                ents[i].posY = func_800A0E54(ents[i].moveStartY, ents[i].msgPosX, ents[i].field_0x1D8, ents[i].field_0x1DA);
+                ents[i].posZ = ents[i].arcVelZ * ents[i].field_0x1DA + (ents[i].field_0x1DA * -(ents[i].field_0x1DA * 0x3E80)) / 2 + ents[i].moveStartZ;
+            }
+        }
+        if (i == D_8005F148) {
+            func_8009A8E0(D_8008538C);
+        }
+    }
+
+    for (i = 0; i < D_80085388; i++) {
+        if (ents[i].msgActive == 4) {
+            if (i == D_8005F148) {
+                func_8009A8E0(D_8008538C);
+            }
+            func_8009FE18(i, &ents[i], flags);
+        }
+    }
+
+    for (i = 0; i < D_80085388; i++) {
+        if (ents[i].msgActive != 3) {
+            continue;
+        }
+        if (ents[i].msgState == 0) {
+            ents[i].headingBase = 0;
+            ents[i].moveStartX = ents[i].posX;
+            ents[i].moveStartY = ents[i].posY;
+            ents[i].moveStartZ = ents[i].posZ;
+            a.vx = (ents[i].msgTextPtr - ents[i].moveStartX) / 1024;
+            a.vy = (ents[i].msgPosX - ents[i].moveStartY) / 1024;
+            a.vz = (ents[i].msgPosY - ents[i].moveStartZ) / 1024;
+            dist[0] = func_8003F4A4(a.vx * a.vx + a.vy * a.vy + a.vz * a.vz);
+            ents[i].field_0x1D8 = dist[0] / D_800704A8.unk1AE;
+            ents[i].field_0x1DA = 0;
+            ents[i].msgState = 1;
+            if (i == D_8005F148) {
+                func_8009A8E0(D_8008538C);
+            }
+            continue;
+        }
+        if (i == D_8005F148 && D_800704A8.unk015 == 0) {
+            if (ents[i].windowId == 0) {
+                if (flags & 0x3000) {
+                    if (ents[i].field_0x1DA == 0) {
+                        ents[i].msgState = 2;
+                    } else {
+                        ents[i].field_0x1DA--;
+                        func_8009B4A8((s16)i, D_800D9630[i]->unk7E, 1, -1);
+                    }
+                }
+                if (flags & 0x4000) {
+                    if (ents[i].field_0x1DA == ents[i].field_0x1D8) {
+                        ents[i].msgState = 2;
+                        ents[i].triIdx = ents[i].field_0x1FC;
+                    } else {
+                        ents[i].field_0x1DA++;
+                        func_8009B4A8((s16)i, D_800D9630[i]->unk7E, 1, 1);
+                    }
+                }
+            } else {
+                if (flags & 0xC000) {
+                    if (ents[i].field_0x1DA == 0) {
+                        ents[i].msgState = 2;
+                    } else {
+                        ents[i].field_0x1DA--;
+                        func_8009B4A8((s16)i, D_800D9630[i]->unk7E, 1, -1);
+                    }
+                }
+                if (flags & 0x1000) {
+                    if (ents[i].field_0x1DA == ents[i].field_0x1D8) {
+                        ents[i].msgState = 2;
+                        ents[i].triIdx = ents[i].field_0x1FC;
+                    } else {
+                        ents[i].field_0x1DA++;
+                        func_8009B4A8((s16)i, D_800D9630[i]->unk7E, 1, 1);
+                    }
+                }
+            }
+        } else if (ents[i].field_0x1DA == ents[i].field_0x1D8) {
+            ents[i].msgState = 2;
+            ents[i].triIdx = ents[i].field_0x1FC;
+        } else {
+            ents[i].field_0x1DA++;
+            D_800D9630[i]->unk52 += ents[i].field_0x208;
+            if (D_800D9630[i]->unk0C - 1 < D_800D9630[i]->unk52) {
+                D_800D9630[i]->unk52 = 0;
+            }
+        }
+        ents[i].posX = func_800A0E54(ents[i].moveStartX, ents[i].msgTextPtr, ents[i].field_0x1D8, ents[i].field_0x1DA);
+        ents[i].posY = func_800A0E54(ents[i].moveStartY, ents[i].msgPosX, ents[i].field_0x1D8, ents[i].field_0x1DA);
+        ents[i].posZ = func_800A0E54(ents[i].moveStartZ, ents[i].msgPosY, ents[i].field_0x1D8, ents[i].field_0x1DA);
+    }
+}
 
 /**
  * @brief Aim the self entity at whichever entity is most directly "in front" of
