@@ -373,7 +373,7 @@ extern void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode);
 extern void func_8009B4A8(s16 idx, u8 anim, s16 mode, s8 delta);
 extern void func_8009F8D0(s16 idx);
 extern void func_8009F990(s16 idx, s32 flags);
-extern int  func_8009FE18();
+extern void func_8009FE18(s32 entIdx, Eline *ent, s32 flags);
 extern TILE *func_800A0640(TILE *prim);
 extern void func_800A06F0(s32 a, FieldFrameBuf *buf, u8 *b, u8 *c);
 extern void func_800A0D6C(u8 *buf);

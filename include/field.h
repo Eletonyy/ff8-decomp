@@ -1308,6 +1308,8 @@ extern u8 D_8007064B;
 extern u8 D_8007064D;
 extern u8 D_8007064E;
 extern u8 D_8007064F[];
+extern u8 D_80070656;      /**< Distance-per-step divisor: @c func_8009FE18 divides the remaining
+                                distance by it to get the leg's frame count. */
 extern u8 D_8007065C[];
 extern u8 D_80070652;
 extern u8 D_800704CA;

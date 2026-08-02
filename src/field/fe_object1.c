@@ -3281,7 +3281,167 @@ void func_8009F990(s16 idx, s32 flags) {
     }
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_8009FE18);
+/**
+ * @brief Advance one entity through the scripted "climb/step onto a ledge"
+ *        movement state machine.
+ *
+ * Dispatches on @c Eline::msgState and, for the moving states, interpolates the
+ * entity between two of its stored endpoints while seeding both breadcrumb path
+ * tables at the current write cursor @c D_8005F144 (@c field_0A marks the entry
+ * type, @c field_0B carries the heading) and replaying them into the animation
+ * system at their phase offsets (@c func_8009B74C).
+ *
+ * States:
+ *  - 0: latch the current position as the move origin, widen the two camera
+ *       tracking limits, then fall through to state 3.
+ *  - 3: step from the origin toward @c unk1A8..@c unk1B0. On arrival, derive the
+ *       next leg's duration from the remaining distance and hand over to state 1.
+ *  - 1: delegate to @c func_8009F990 (player-steerable walk).
+ *  - 2: idle -- the movement is finished.
+ *  - 4: step from @c field_0x1C0..@c field_0x1C8 toward @c msgTextPtr..@c msgPosY;
+ *       on arrival latch the destination triangle and go to state 6.
+ *  - 5: the reverse of state 3; on arrival go to state 6.
+ *  - 6: settle in place, narrow the camera limits, and pick a hold time from how
+ *       many party followers are present. On expiry go to state 2.
+ *
+ * @param entIdx Entity index; @c ent is @c D_80085224[entIdx].
+ * @param ent    The entity to advance.
+ * @param flags  Pad state, forwarded to @c func_8009F990 in state 1.
+ *
+ * @note @c idx is a working copy of @p entIdx; every use is a 16-bit narrowing,
+ *       so the parameter itself is only read once.
+ */
+void func_8009FE18(s32 entIdx, Eline *ent, s32 flags) {
+    s32 idx;
+    VECTOR d;
+    u16 p;
+
+    idx = entIdx;
+    ent->unk258 = 0;
+    switch (ent->msgState) {
+    case 0:
+        ent->headingBase = 0;
+        D_8005F160 = 0x1F;
+        D_8005F162 = 0x3E;
+        ent->moveStartX = ent->posX;
+        ent->moveStartY = ent->posY;
+        ent->moveStartZ = ent->posZ;
+        ent->field_0x1DA = 0;
+        ent->msgState = 3;
+        /* fallthrough: run the first step of state 3 on this same frame */
+    case 3:
+        if (ent->windowId == 1) {
+            p = D_8005F144;
+            D_80070760[p].field_0A = D_80070A60[p].field_0A = 3;
+            func_8009F7F4((s16)idx, 1, ent->field_0x252, 1);
+        } else {
+            p = D_8005F144;
+            D_80070760[p].field_0A = D_80070A60[p].field_0A = 5;
+            func_8009F7F4((s16)idx, -1, ent->field_0x254, 1);
+        }
+        ent->field_0x1D8 = (D_800D9630[(s16)idx]->unk0C >> 4) - 2;
+        ent->posX = func_800A0E54(ent->moveStartX, ent->unk1A8, ent->field_0x1D8, ent->field_0x1DA);
+        ent->posY = func_800A0E54(ent->moveStartY, ent->unk1AC, ent->field_0x1D8, ent->field_0x1DA);
+        ent->posZ = func_800A0E54(ent->moveStartZ, ent->unk1B0, ent->field_0x1D8, ent->field_0x1DA);
+        func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
+        func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+        p = D_8005F144;
+        D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
+        ent->field_0x1DA++;
+        if (ent->field_0x1DA < ent->field_0x1D8) {
+            break;
+        }
+        d.vx = (ent->field_0x1C0 - ent->unk1A8) / 1024;
+        d.vy = (ent->field_0x1C4 - ent->unk1AC) / 1024;
+        d.vz = (ent->field_0x1C8 - ent->unk1B0) / 1024;
+        ent->field_0x1D8 = func_8003F4A4(d.vx * d.vx + d.vy * d.vy + d.vz * d.vz) / D_80070656;
+        ent->field_0x1DA = 0;
+        ent->msgState = 1;
+        break;
+    case 1:
+        func_8009F990((s16)idx, flags);
+        break;
+    case 2:
+        break;
+    case 4:
+        if (ent->windowId == 1) {
+            p = D_8005F144;
+            D_80070760[p].field_0A = D_80070A60[p].field_0A = 5;
+            func_8009F7F4((s16)idx, 1, ent->field_0x254, 1);
+        } else {
+            p = D_8005F144;
+            D_80070760[p].field_0A = D_80070A60[p].field_0A = 3;
+            func_8009F7F4((s16)idx, -1, ent->field_0x252, 1);
+        }
+        ent->field_0x1D8 = (D_800D9630[(s16)idx]->unk0C >> 4) - 2;
+        ent->posX = func_800A0E54(ent->field_0x1C0, ent->msgTextPtr, ent->field_0x1D8, ent->field_0x1DA);
+        ent->posY = func_800A0E54(ent->field_0x1C4, ent->msgPosX, ent->field_0x1D8, ent->field_0x1DA);
+        ent->posZ = func_800A0E54(ent->field_0x1C8, ent->msgPosY, ent->field_0x1D8, ent->field_0x1DA);
+        func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
+        func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+        p = D_8005F144;
+        D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
+        ent->field_0x1DA++;
+        if (ent->field_0x1DA < ent->field_0x1D8) {
+            break;
+        }
+        ent->field_0x1DA = 0;
+        ent->msgState = 6;
+        ent->triIdx = ent->field_0x1FC;
+        break;
+    case 5:
+        if (ent->windowId == 1) {
+            p = D_8005F144;
+            D_80070760[p].field_0A = D_80070A60[p].field_0A = 3;
+            func_8009F7F4((s16)idx, -1, ent->field_0x252, 1);
+        } else {
+            p = D_8005F144;
+            D_80070760[p].field_0A = D_80070A60[p].field_0A = 5;
+            func_8009F7F4((s16)idx, 1, ent->field_0x254, 1);
+        }
+        ent->field_0x1D8 = (D_800D9630[(s16)idx]->unk0C >> 4) - 2;
+        ent->posX = func_800A0E54(ent->unk1A8, ent->moveStartX, ent->field_0x1D8, ent->field_0x1DA);
+        ent->posY = func_800A0E54(ent->unk1AC, ent->moveStartY, ent->field_0x1D8, ent->field_0x1DA);
+        ent->posZ = func_800A0E54(ent->unk1B0, ent->moveStartZ, ent->field_0x1D8, ent->field_0x1DA);
+        func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
+        func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+        p = D_8005F144;
+        D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
+        ent->field_0x1DA++;
+        if (ent->field_0x1DA < ent->field_0x1D8) {
+            break;
+        }
+        ent->field_0x1DA = 0;
+        ent->msgState = 6;
+        break;
+    case 6:
+        D_8005F160 = 0xF;
+        D_8005F162 = 0x1E;
+        p = D_8005F144;
+        D_80070760[p].field_0A = D_80070A60[p].field_0A = 2;
+        func_8009F7F4((s16)idx, -1, ent->field_0x24F, 1);
+        if (ent->field_0x1DA == 0) {
+            if (D_800704A8.entityIndex[2] != 0xFF) {
+                ent->field_0x1D8 = 0x20;
+            } else if (D_800704A8.entityIndex[1] != 0xFF) {
+                ent->field_0x1D8 = 0x10;
+            } else {
+                ent->field_0x1D8 = 1;
+            }
+        }
+        func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 2);
+        func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 2);
+        p = D_8005F144;
+        D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
+        ent->unk258 = 1;
+        ent->field_0x1DA++;
+        if (ent->field_0x1DA < ent->field_0x1D8) {
+            break;
+        }
+        ent->msgState = 2;
+        break;
+    }
+}
 
 /**
  * @brief Transcode the script entry list at @c D_800D5E90->entries into
