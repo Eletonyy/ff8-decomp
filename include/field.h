@@ -270,6 +270,18 @@ typedef struct {
     /* 0x0C */ s16 angle;      /**< Current tick (0..total). */
 } Oscillator;  /* 0x0E = 14 bytes */
 
+/* Analog-stick direction bits carried by @c SystemState::padHeld and by the
+ * derived pad word @c func_8009BEC8 receives. One bit per direction -- combine
+ * them at the use site instead of defining multi-bit masks. */
+#define FIELD_PAD_WALK  0x0010 /**< Selects the slow speed and step tables. Set from the
+                                    stick deflection each tick by @c func_8009BEC8.
+                                    @note Meaning inferred from use: the bit picks the
+                                    smaller speed constant and the shorter step delta. */
+#define FIELD_PAD_YLOW  0x1000 /**< Stick/d-pad Y-low. */
+#define FIELD_PAD_XHIGH 0x2000 /**< Stick/d-pad X-high. */
+#define FIELD_PAD_YHIGH 0x4000 /**< Stick/d-pad Y-high. */
+#define FIELD_PAD_XLOW  0x8000 /**< Stick/d-pad X-low. */
+
 /** @brief System state block (at @c D_800704A8); also aliased as @c g_fieldEntity. */
 typedef struct {
     /* 0x000 */ u8 mode;            /**< Top-level engine mode; @c 4 means exit. */

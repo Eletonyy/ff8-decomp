@@ -1863,44 +1863,44 @@ void func_8009BEC8(Eline *ents, s32 flags) {
         } else {
             dist[0] = 0xFFFF;
         }
-        if ((u32)(dist[0] - 0x31) < 0xCF || (flags & 0xF000)) {
+        if ((u32)(dist[0] - 0x31) < 0xCF || (flags & (FIELD_PAD_YLOW | FIELD_PAD_XHIGH | FIELD_PAD_YHIGH | FIELD_PAD_XLOW))) {
             if ((u32)(dist[0] - 0x31) >= 0xCF) {
-                if (flags & 0x1000) {
+                if (flags & FIELD_PAD_YLOW) {
                     ents[i].unk23F = 0;
-                    if (flags & 0x8000) {
+                    if (flags & FIELD_PAD_XLOW) {
                         ents[i].unk23F = 0x20;
                     }
-                    if (flags & 0x2000) {
+                    if (flags & FIELD_PAD_XHIGH) {
                         ents[i].unk23F = 0xE0;
                     }
-                } else if (flags & 0x4000) {
+                } else if (flags & FIELD_PAD_YHIGH) {
                     ents[i].unk23F = 0x80;
-                    if (flags & 0x8000) {
+                    if (flags & FIELD_PAD_XLOW) {
                         ents[i].unk23F = 0x60;
                     }
-                    if (flags & 0x2000) {
+                    if (flags & FIELD_PAD_XHIGH) {
                         ents[i].unk23F = 0xA0;
                     }
                 } else {
-                    if (flags & 0x2000) {
+                    if (flags & FIELD_PAD_XHIGH) {
                         ents[i].unk23F = 0xC0;
                     }
-                    if (flags & 0x8000) {
+                    if (flags & FIELD_PAD_XLOW) {
                         ents[i].unk23F = 0x40;
                     }
                 }
                 ents[i].unk23F += D_800704A8.unk1A8 + ents[i].headingBase;
             } else {
-                if (!(flags & 0x10)) {
+                if (!(flags & FIELD_PAD_WALK)) {
                     if (dist[0] >= 0x79) {
-                        flags &= ~0x10;
+                        flags &= ~FIELD_PAD_WALK;
                     } else {
-                        flags |= 0x10;
+                        flags |= FIELD_PAD_WALK;
                     }
                 }
                 ents[i].unk23F = dir + (D_800704A8.unk1A8 + D_8005F0F8->slotHeadingBias[D_800704A8.unk1A6]);
             }
-            if ((flags & 0x10) || D_800704A8.unk1A4 == 1) {
+            if ((flags & FIELD_PAD_WALK) || D_800704A8.unk1A4 == 1) {
                 if (func_800BE274() == 0) {
                     ents[D_8005F148].moveSpeed = (u32)(D_800704A8.unk00A * 0x4367) >> 7;
                 } else {
@@ -1917,7 +1917,7 @@ void func_8009BEC8(Eline *ents, s32 flags) {
             step = func_8009D598((s16)i);
             SCRATCH_STACK_LEAVE();
             if (step == 1) {
-                if ((flags & 0x10) || D_800704A8.unk1A4 == step) {
+                if ((flags & FIELD_PAD_WALK) || D_800704A8.unk1A4 == step) {
                     func_8009B4A8((s16)i, ents[i].field_0x250, 1, 1);
                     trail = D_8005F144;
                     D_80070A60[trail].field_0A = 0;
@@ -2053,7 +2053,7 @@ void func_8009BEC8(Eline *ents, s32 flags) {
         }
         if (i == D_8005F148 && D_800704A8.unk015 == 0) {
             if (ents[i].windowId == 0) {
-                if (flags & 0x3000) {
+                if (flags & (FIELD_PAD_YLOW | FIELD_PAD_XHIGH)) {
                     if (ents[i].field_0x1DA == 0) {
                         ents[i].msgState = 2;
                     } else {
@@ -2061,7 +2061,7 @@ void func_8009BEC8(Eline *ents, s32 flags) {
                         func_8009B4A8((s16)i, D_800D9630[i]->unk7E, 1, -1);
                     }
                 }
-                if (flags & 0x4000) {
+                if (flags & FIELD_PAD_YHIGH) {
                     if (ents[i].field_0x1DA == ents[i].field_0x1D8) {
                         ents[i].msgState = 2;
                         ents[i].triIdx = ents[i].field_0x1FC;
@@ -2071,7 +2071,7 @@ void func_8009BEC8(Eline *ents, s32 flags) {
                     }
                 }
             } else {
-                if (flags & 0xC000) {
+                if (flags & (FIELD_PAD_YHIGH | FIELD_PAD_XLOW)) {
                     if (ents[i].field_0x1DA == 0) {
                         ents[i].msgState = 2;
                     } else {
@@ -2079,7 +2079,7 @@ void func_8009BEC8(Eline *ents, s32 flags) {
                         func_8009B4A8((s16)i, D_800D9630[i]->unk7E, 1, -1);
                     }
                 }
-                if (flags & 0x1000) {
+                if (flags & FIELD_PAD_YLOW) {
                     if (ents[i].field_0x1DA == ents[i].field_0x1D8) {
                         ents[i].msgState = 2;
                         ents[i].triIdx = ents[i].field_0x1FC;
