@@ -3321,8 +3321,8 @@ void func_8009FE18(s32 entIdx, Eline *ent, s32 flags) {
     switch (ent->msgState) {
     case 0:
         ent->headingBase = 0;
-        D_8005F160 = 0x1F;
-        D_8005F162 = 0x3E;
+        D_8005F160 = 31;
+        D_8005F162 = 62;
         ent->moveStartX = ent->posX;
         ent->moveStartY = ent->posY;
         ent->moveStartZ = ent->posZ;
@@ -3415,16 +3415,16 @@ void func_8009FE18(s32 entIdx, Eline *ent, s32 flags) {
         ent->msgState = 6;
         break;
     case 6:
-        D_8005F160 = 0xF;
-        D_8005F162 = 0x1E;
+        D_8005F160 = 15;
+        D_8005F162 = 30;
         p = D_8005F144;
         D_80070760[p].field_0A = D_80070A60[p].field_0A = 2;
         func_8009F7F4((s16)idx, -1, ent->field_0x24F, 1);
         if (ent->field_0x1DA == 0) {
             if (D_800704A8.entityIndex[2] != 0xFF) {
-                ent->field_0x1D8 = 0x20;
+                ent->field_0x1D8 = 32;
             } else if (D_800704A8.entityIndex[1] != 0xFF) {
-                ent->field_0x1D8 = 0x10;
+                ent->field_0x1D8 = 16;
             } else {
                 ent->field_0x1D8 = 1;
             }
