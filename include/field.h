@@ -230,7 +230,10 @@ typedef struct {
 typedef struct {
     /* 0x000 */ u8 pad00[0x09];
     /* 0x009 */ u8 unk09;            /**< Copied into @c SystemState::unk1A8 and @c unk100 on field entry. */
-    /* 0x00A */ u8 pad0A[0x03];
+    /* 0x00A */ u8 pad0A;
+    /* 0x00B */ u8 slotHeadingBias[2]; /**< Per-party-slot heading bias the field bundle ships;
+                                            @c func_8009BEC8 adds it to the global heading before
+                                            the analog-stick direction. @note Name inferred from that use. */
     /* 0x00D */ u8 unk0D;            /**< Field-bundle variant flag: selects the @c D_800C315C command table over
                                           @c D_800C311C in @c func_800983F0, and forces the eline-pool install
                                           (@c func_800A1CC0) even for load modes 1 and 6. */
@@ -483,7 +486,10 @@ typedef struct {
     /* 0x190 */ s32 posX;           /**< Entity X position (fixed-point). */
     /* 0x194 */ s32 posY;           /**< Entity Y position (fixed-point). */
     /* 0x198 */ s32 posZ;           /**< Entity Z position (fixed-point). */
-    /* 0x19C */ u8 pad19C[0x0C];
+    /* 0x19C */ s32 moveStartX;    /**< Snapshot of @c posX taken when a move begins; the "from"
+                                        end of the @c func_800A0E54 interpolation in @c func_8009BEC8. */
+    /* 0x1A0 */ s32 moveStartY;    /**< Snapshot of @c posY; twin of @c moveStartX. */
+    /* 0x1A4 */ s32 moveStartZ;    /**< Snapshot of @c posZ; twin of @c moveStartX. */
     /* 0x1A8 */ s32 unk1A8;
     /* 0x1AC */ s32 unk1AC;
     /* 0x1B0 */ s32 unk1B0;
@@ -493,7 +499,9 @@ typedef struct {
     /* 0x1C0 */ s32 field_0x1C0;    /**< Saved message text pointer. */
     /* 0x1C4 */ s32 field_0x1C4;    /**< Saved message X position. */
     /* 0x1C8 */ s32 field_0x1C8;    /**< Saved message Y position. */
-    /* 0x1CC */ u8 pad1CC[0x0C];
+    /* 0x1CC */ u8 pad1CC[0x08];
+    /* 0x1D4 */ s32 arcVelZ;       /**< Initial vertical velocity of the hop in @c func_8009BEC8 's
+                                        @c msgActive @c == @c 2 arc; gravity is a fixed @c -0x3E80. */
     /* 0x1D8 */ s16 field_0x1D8;   /**< Total step count paired with @c field_0x1DA (read signed). */
     /* 0x1DA */ s16 field_0x1DA;   /**< Signed turn accumulator; @c func_8009D274 only steps the heading while it is within +/-0x100. */
     /* 0x1DC */ s16 field_0x1DC;
@@ -719,7 +727,9 @@ typedef struct {
     u8 animFlags;    /**< 0x72 — bit0x80 = retrigger, bit0x10 = active, low nibble reused. */
     u8 pad73;
     u8 timerReload;  /**< 0x74 — reload value for frameTimer when the period is non-negative. */
-    u8 pad75[0x0F];
+    u8 pad75[0x09];
+    u16 unk7E;       /**< 0x7E — animation id currently playing; @c func_8009B4A8 resets @c unk52 when it changes. */
+    u8 pad80[0x04];
     u16 field84;     /**< 0x84 — snapshot of @c unk10 (dirty-check by @c func_800A7224). */
     u16 field86;     /**< 0x86 — snapshot of @c unk12. */
     s16 field88;     /**< 0x88 — snapshot of @c unk14. */
@@ -841,6 +851,16 @@ extern FieldEntityC *D_80085384;
 
 /** @brief Number of entries in the @c D_80085384 entity array. */
 extern u8 D_80085228;
+
+/**
+ * @brief Per-entity latch for the line-trigger dispatcher, indexed by
+ *        @c FieldLineTrigger::marker (the @ref D_80085384 entity index).
+ *
+ * @c func_800A5FA4 uses it to make each trigger edge fire once: the even
+ * selectors only act while the byte is @c 0 (then set it), the odd ones only
+ * while it is @c 1 (then clear it).
+ */
+extern u8 D_80070628[];
 
 /** @brief Block D entity-array base; count is @c D_80085391. */
 extern FieldEntityD *D_800852F4;
