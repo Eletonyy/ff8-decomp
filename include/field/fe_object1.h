@@ -373,7 +373,7 @@ extern void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode);
 extern void func_8009B4A8(s16 idx, u8 anim, s16 mode, s8 delta);
 extern void func_8009F8D0(s16 idx);
 extern void func_8009F990(s16 idx, s32 flags);
-extern int  func_8009FE18();
+extern void func_8009FE18(s32 entIdx, Eline *ent, s32 flags);
 extern TILE *func_800A0640(TILE *prim);
 extern void func_800A06F0(s32 a, FieldFrameBuf *buf, u8 *b, u8 *c);
 extern void func_800A0D6C(u8 *buf);
@@ -660,8 +660,13 @@ extern u32 D_800C0904[];         /**< Streaming table: 24-byte (6-word) entries;
                                       addresses entry 0's size word, with its sector word
                                       in the preceding word. */
 extern u8 D_8005F103;
-extern PathEntry D_80070A60[64];
-extern PathEntry D_80070760[64];
+/** Length of the two breadcrumb path rings the party followers replay from.
+ *  Indices are taken modulo this, so the mask follows the tables' size. */
+#define FIELD_PATH_RING_LEN  64
+#define FIELD_PATH_RING_MASK (FIELD_PATH_RING_LEN - 1)
+
+extern PathEntry D_80070A60[FIELD_PATH_RING_LEN];
+extern PathEntry D_80070760[FIELD_PATH_RING_LEN];
 extern DRAWENV D_80067388[2];   /**< Double-buffered draw environments. */
 extern DISPENV D_80067440[2];   /**< Double-buffered display environments. */
 
