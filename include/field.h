@@ -370,7 +370,7 @@ typedef struct {
     /* 0x1AD */ u8 unk1AD;          /**< Non-zero makes @c func_80099348 skip the entity-aim, blob-shadow
                                          and shimmer-ribbon passes.
                                          @note Read only there; no writer decompiled yet. */
-    /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c opHandler_COUNTERCLOCKWISETURN2, read by @c func_8009FE18). */
+    /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c opHandler_COUNTERCLOCKWISETURN2, read by @c func_8009BEC8 as the distance-per-step divisor). */
     /* 0x1AF */ u8 packedFlagSlot;  /**< Last @c getPackedField2Bit result for the active dispatcher slot; written each tick by @c func_800BD9C4. */
     /* 0x1B0 */ u8 unk1B0;          /**< 1 selects the eline-pool install path on engine state 1. */
     /* 0x1B1 */ u8 unk1B1;

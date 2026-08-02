@@ -1642,7 +1642,7 @@ void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier)
  * @brief Update path-driven entity positions for slots 1 and 2.
  *
  * For each active slot (entityIndex != 0xFF), looks up a path waypoint by
- * angle (computed as (D_8005F144 - phase) & 0x3F → 0..63 entry) and writes
+ * angle (computed as (D_8005F144 - phase) & FIELD_PATH_RING_MASK → 0..63 entry) and writes
  * its x/y/z (shifted left 12 for fixed-point), unk6 halfword, and unk8 byte
  * to the entity at offsets 0x190, 0x194, 0x198, 0x1FA, 0x258 respectively.
  *
@@ -1653,7 +1653,7 @@ void func_8009BB18(void) {
     u16 angle;
 
     if (D_800704A8.entityIndex[2] != 0xFF) {
-        angle = (D_8005F144 - D_8005F11A) & 0x3F;
+        angle = (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK;
         D_80085224[D_800704A8.entityIndex[2]].posX   = D_80070A60[angle].x << 12;
         D_80085224[D_800704A8.entityIndex[2]].posY   = D_80070A60[angle].y << 12;
         D_80085224[D_800704A8.entityIndex[2]].posZ   = D_80070A60[angle].z << 12;
@@ -1661,7 +1661,7 @@ void func_8009BB18(void) {
         D_80085224[D_800704A8.entityIndex[2]].unk258 = D_80070A60[angle].unk8;
     }
     if (D_800704A8.entityIndex[1] != 0xFF) {
-        angle = (D_8005F144 - D_8005F118) & 0x3F;
+        angle = (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK;
         D_80085224[D_800704A8.entityIndex[1]].posX   = D_80070760[angle].x << 12;
         D_80085224[D_800704A8.entityIndex[1]].posY   = D_80070760[angle].y << 12;
         D_80085224[D_800704A8.entityIndex[1]].posZ   = D_80070760[angle].z << 12;
@@ -1723,7 +1723,7 @@ void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8) {
 
     if (mode == 1) {
         D_8005F144++;
-        if (D_8005F144 == 64) D_8005F144 = 0;
+        if (D_8005F144 == FIELD_PATH_RING_LEN) D_8005F144 = 0;
 
         if (D_8005F118 != D_8005F160) {
             if (D_8005F160 < D_8005F118) D_8005F118--;
@@ -1930,8 +1930,8 @@ void func_8009BEC8(Eline *ents, s32 flags) {
                     D_80070760[trail].field_0A = step;
                     D_800704A8.fieldStepDelta = 5;
                 }
-                func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
-                func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+                func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
+                func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
                 heading = ents[i].unk23F;
                 trail = D_8005F144;
                 D_80070A60[trail].field_0B = heading;
@@ -2830,7 +2830,7 @@ s32 func_8009E604(Eline *a, Eline *b) {
  * @c D_80070A60 and @c D_80070760 are the 64-entry breadcrumb rings the two
  * party followers walk along: @c D_8009B74C writes the player's current
  * waypoint at cursor @c D_8005F144 each step, and each follower samples the
- * ring at @c (cursor @c - @c lag) @c & @c 0x3F. Entering a field leaves the ring
+ * ring at @c (cursor @c - @c lag), taken modulo @c FIELD_PATH_RING_LEN. Entering a field leaves the ring
  * with no history, so it is refilled here. Every waypoint is marked walkable
  * (@c field_09 / @c unk8 @c = @c 1) and the two follower lag distances are reset
  * to their defaults, current (@c D_8005F118 / @c D_8005F11A) and target
@@ -3210,8 +3210,8 @@ void func_8009F990(s16 idx, s32 flags) {
                 D_80070760[p].field_0B = D_80070A60[p].field_0B = D_80085224[idx].field_0x241;
                 func_8009F7F4(idx, -1, D_80085224[idx].field_0x253, 1);
                 func_8009F8D0(idx);
-                func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
-                func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+                func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
+                func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
                 D_80085224[idx].field_0x1DA--;
                 if (D_80085224[idx].field_0x1DA < 0) {
                     D_80085224[idx].field_0x1DA = 0;
@@ -3224,8 +3224,8 @@ void func_8009F990(s16 idx, s32 flags) {
                 D_80070760[p].field_0B = D_80070A60[p].field_0B = D_80085224[idx].field_0x241;
                 func_8009F7F4(idx, 1, D_80085224[idx].field_0x253, 1);
                 func_8009F8D0(idx);
-                func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
-                func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+                func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
+                func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
                 D_80085224[idx].field_0x1DA++;
                 if (D_80085224[idx].field_0x1DA == D_80085224[idx].field_0x1D8) {
                     D_80085224[idx].field_0x1DA = 0;
@@ -3242,8 +3242,8 @@ void func_8009F990(s16 idx, s32 flags) {
                 D_80070760[p].field_0B = D_80070A60[p].field_0B = D_80085224[idx].field_0x241;
                 func_8009F7F4(idx, 1, D_80085224[idx].field_0x253, 1);
                 func_8009F8D0(idx);
-                func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
-                func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+                func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
+                func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
                 D_80085224[idx].field_0x1DA--;
                 if (D_80085224[idx].field_0x1DA < 0) {
                     D_80085224[idx].field_0x1DA = 0;
@@ -3256,8 +3256,8 @@ void func_8009F990(s16 idx, s32 flags) {
                 D_80070760[p].field_0B = D_80070A60[p].field_0B = D_80085224[idx].field_0x241;
                 func_8009F7F4(idx, -1, D_80085224[idx].field_0x253, 1);
                 func_8009F8D0(idx);
-                func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
-                func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+                func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
+                func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
                 D_80085224[idx].field_0x1DA++;
                 if (D_80085224[idx].field_0x1DA == D_80085224[idx].field_0x1D8) {
                     D_80085224[idx].field_0x1DA = 0;
@@ -3343,8 +3343,8 @@ void func_8009FE18(s32 entIdx, Eline *ent, s32 flags) {
         ent->posX = func_800A0E54(ent->moveStartX, ent->unk1A8, ent->field_0x1D8, ent->field_0x1DA);
         ent->posY = func_800A0E54(ent->moveStartY, ent->unk1AC, ent->field_0x1D8, ent->field_0x1DA);
         ent->posZ = func_800A0E54(ent->moveStartZ, ent->unk1B0, ent->field_0x1D8, ent->field_0x1DA);
-        func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
-        func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+        func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
+        func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
         p = D_8005F144;
         D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
         ent->field_0x1DA++;
@@ -3377,8 +3377,8 @@ void func_8009FE18(s32 entIdx, Eline *ent, s32 flags) {
         ent->posX = func_800A0E54(ent->field_0x1C0, ent->msgTextPtr, ent->field_0x1D8, ent->field_0x1DA);
         ent->posY = func_800A0E54(ent->field_0x1C4, ent->msgPosX, ent->field_0x1D8, ent->field_0x1DA);
         ent->posZ = func_800A0E54(ent->field_0x1C8, ent->msgPosY, ent->field_0x1D8, ent->field_0x1DA);
-        func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
-        func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+        func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
+        func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
         p = D_8005F144;
         D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
         ent->field_0x1DA++;
@@ -3403,8 +3403,8 @@ void func_8009FE18(s32 entIdx, Eline *ent, s32 flags) {
         ent->posX = func_800A0E54(ent->unk1A8, ent->moveStartX, ent->field_0x1D8, ent->field_0x1DA);
         ent->posY = func_800A0E54(ent->unk1AC, ent->moveStartY, ent->field_0x1D8, ent->field_0x1DA);
         ent->posZ = func_800A0E54(ent->unk1B0, ent->moveStartZ, ent->field_0x1D8, ent->field_0x1DA);
-        func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 1);
-        func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 1);
+        func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
+        func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
         p = D_8005F144;
         D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
         ent->field_0x1DA++;
@@ -3429,8 +3429,8 @@ void func_8009FE18(s32 entIdx, Eline *ent, s32 flags) {
                 ent->field_0x1D8 = 1;
             }
         }
-        func_8009B74C(2, (D_8005F144 - D_8005F11A) & 0x3F, D_80070A60, 2);
-        func_8009B74C(1, (D_8005F144 - D_8005F118) & 0x3F, D_80070760, 2);
+        func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 2);
+        func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 2);
         p = D_8005F144;
         D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
         ent->unk258 = 1;

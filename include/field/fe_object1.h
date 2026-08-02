@@ -660,8 +660,13 @@ extern u32 D_800C0904[];         /**< Streaming table: 24-byte (6-word) entries;
                                       addresses entry 0's size word, with its sector word
                                       in the preceding word. */
 extern u8 D_8005F103;
-extern PathEntry D_80070A60[64];
-extern PathEntry D_80070760[64];
+/** Length of the two breadcrumb path rings the party followers replay from.
+ *  Indices are taken modulo this, so the mask follows the tables' size. */
+#define FIELD_PATH_RING_LEN  64
+#define FIELD_PATH_RING_MASK (FIELD_PATH_RING_LEN - 1)
+
+extern PathEntry D_80070A60[FIELD_PATH_RING_LEN];
+extern PathEntry D_80070760[FIELD_PATH_RING_LEN];
 extern DRAWENV D_80067388[2];   /**< Double-buffered draw environments. */
 extern DISPENV D_80067440[2];   /**< Double-buffered display environments. */
 
