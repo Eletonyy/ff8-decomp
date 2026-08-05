@@ -4,6 +4,7 @@
 #include "field.h"
 #include "sound.h"
 #include "psxsdk/libgte.h"
+#include "field/fe_object1.h"
 #include "field/fe_object7.h"
 
 /**
@@ -12,8 +13,8 @@
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_WHERECARD(Actor *actor) {
-    actor->context.resultSlots[0] = getKeyItemValue(POP(actor));
+s32 opHandler_WHERECARD(ScriptContext *context) {
+    context->resultSlots[0] = getKeyItemValue(POP(context));
     return 2;
 }
 
@@ -28,24 +29,24 @@ s32 opHandler_WHERECARD(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 1 on first pass (battle started), 2 on return (result ready).
  */
-s32 opHandler_CARDGAME(Actor *actor) {
+s32 opHandler_CARDGAME(ScriptContext *context) {
     u8 *params;
     s32 result;
     s32 i;
 
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         EncounterParams *params = &D_80082C90;
-        params->field_08 = POP_BYTE(actor);
-        params->field_06 = POP_BYTE(actor);
-        params->field_07 = POP_BYTE(actor);
-        params->field_09 = POP_BYTE(actor);
-        params->field_04 = POP_BYTE(actor);
-        params->encounterPtr = POP(actor);
-        params->field_05 = POP_BYTE(actor);
+        params->field_08 = POP_BYTE(context);
+        params->field_06 = POP_BYTE(context);
+        params->field_07 = POP_BYTE(context);
+        params->field_09 = POP_BYTE(context);
+        params->field_04 = POP_BYTE(context);
+        params->encounterPtr = POP(context);
+        params->field_05 = POP_BYTE(context);
 
         result = sumItemQuantities(params);
-        actor->context.resultSlots[0] = result;
-        actor->context.resultSlots[1] = 0;
+        context->resultSlots[0] = result;
+        context->resultSlots[1] = 0;
 
         if (result >= 5) {
             if (!(g_fieldVars->stateFlags & FIELD_STATE_FIELD_READY)) {
@@ -87,9 +88,9 @@ s32 opHandler_CARDGAME(Actor *actor) {
         return 1;
     } else {
         if (D_80082C90.result == 3) {
-            actor->context.resultSlots[1] = -1;
+            context->resultSlots[1] = -1;
         } else {
-            actor->context.resultSlots[1] = D_80082C90.result;
+            context->resultSlots[1] = D_80082C90.result;
         }
         return 2;
     }
@@ -249,7 +250,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
     s32 i;
     s16 rect[4];
 
-    fieldIdx = PEEK(actor) - 1;
+    fieldIdx = PEEK(&actor->context) - 1;
     tableResult = lookupFieldTable(fieldIdx);
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
@@ -453,7 +454,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
  */
 s32 opHandler_SETDRAWPOINT(Actor *actor) {
     g_fieldVars->fieldF0 = 1;
-    g_fieldVars->fieldF1 = POP_BYTE(actor);
+    g_fieldVars->fieldF1 = POP_BYTE(&actor->context);
     func_800A4500(actor->posX, actor->posY, actor->posZ);
     func_800A4550(g_fieldVars->fieldF1 | g_fieldVars->field58);
     return 2;
@@ -465,8 +466,8 @@ s32 opHandler_SETDRAWPOINT(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_UNKNOWN10(Actor *actor) {
-    g_fieldVars->fieldF2 = POP_BYTE(actor);
+s32 opHandler_UNKNOWN10(ScriptContext *context) {
+    g_fieldVars->fieldF2 = POP_BYTE(context);
     g_fieldVars->fieldF2--;
     return 2;
 }
@@ -480,8 +481,8 @@ s32 opHandler_UNKNOWN10(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_PARTICLEON(Actor *actor) {
-    D_800704A8.slotActive[POP(actor) & 0xF] = 1;
+s32 opHandler_PARTICLEON(ScriptContext *context) {
+    D_800704A8.slotActive[POP(context) & 0xF] = 1;
     return 2;
 }
 
@@ -491,8 +492,8 @@ s32 opHandler_PARTICLEON(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_PARTICLEOFF(Actor *actor) {
-    D_800704A8.slotActive[POP(actor) & 0xF] = 0;
+s32 opHandler_PARTICLEOFF(ScriptContext *context) {
+    D_800704A8.slotActive[POP(context) & 0xF] = 0;
     return 2;
 }
 
@@ -503,7 +504,7 @@ s32 opHandler_PARTICLEOFF(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_PARTICLESET(Actor *actor) {
-    D_800704A8.slotActive[POP(actor) & 0xF] = actor->field_0x256 | 0x80;
+    D_800704A8.slotActive[POP(&actor->context) & 0xF] = actor->field_0x256 | 0x80;
     return 2;
 }
 
@@ -514,8 +515,8 @@ s32 opHandler_PARTICLESET(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_SETWITCH(Actor *actor) {
-    if (POP(actor)) {
+s32 opHandler_SETWITCH(ScriptContext *context) {
+    if (POP(context)) {
         func_800C0384();
     } else {
         func_800C03A0();
@@ -553,8 +554,8 @@ s32 func_800B6420(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_SETPLACE(Actor *actor) {
-    D_8007737C = POP(actor);
+s32 opHandler_SETPLACE(ScriptContext *context) {
+    D_8007737C = POP(context);
     return 2;
 }
 
@@ -564,8 +565,8 @@ s32 opHandler_SETPLACE(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_BATTLEMODE(Actor *actor) {
-    D_80082C0A = g_fieldVars->fieldB6 = POP(actor);
+s32 opHandler_BATTLEMODE(ScriptContext *context) {
+    D_80082C0A = g_fieldVars->fieldB6 = POP(context);
     do {} while (0);
     return 2;
 }
@@ -576,12 +577,12 @@ s32 opHandler_BATTLEMODE(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 3 (special return — triggers mode transition).
  */
-s32 opHandler_BATTLE(Actor *actor) {
+s32 opHandler_BATTLE(ScriptContext *context) {
     if (D_800704A8.mode == 0) {
         D_800704A8.mode = 3;
     }
-    D_80082C0A = POP(actor);
-    D_800704A8.counter = POP(actor);
+    D_80082C0A = POP(context);
+    D_800704A8.counter = POP(context);
     return 3;
 }
 
@@ -591,8 +592,8 @@ s32 opHandler_BATTLE(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_BATTLERESULT(Actor *actor) {
-    actor->context.resultSlots[0] = D_80082C0F;
+s32 opHandler_BATTLERESULT(ScriptContext *context) {
+    context->resultSlots[0] = D_80082C0F;
     return 2;
 }
 
@@ -624,7 +625,7 @@ s32 opHandler_BATTLEOFF(void) {
 }
 
 /** @brief No-op handler. Returns 2 (continue). */
-s32 opHandler_BATTLECUT(Actor *actor) {
+s32 opHandler_BATTLECUT(ScriptContext *context) {
     return 2;
 }
 
@@ -634,13 +635,13 @@ s32 opHandler_BATTLECUT(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 1 (yield).
  */
-s32 opHandler_GAMEOVER(Actor *actor) {
+s32 opHandler_GAMEOVER(ScriptContext *context) {
     D_800704A8.mode = 4;
     return 1;
 }
 
 /** @brief Yield handler. Returns 1 (wait). */
-s32 opHandler_ENDING(Actor *actor) {
+s32 opHandler_ENDING(ScriptContext *context) {
     return 1;
 }
 
@@ -650,8 +651,8 @@ s32 opHandler_ENDING(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_DISC(Actor *actor) {
-    g_fieldVars->expectedDiscId = POP_BYTE(actor);
+s32 opHandler_DISC(ScriptContext *context) {
+    g_fieldVars->expectedDiscId = POP_BYTE(context);
     D_800773C0 = g_fieldVars->expectedDiscId - 1;
     setDiscNumber(g_fieldVars->expectedDiscId);
     return 2;
@@ -789,7 +790,7 @@ void func_800B6854(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_MSPEED(Actor *actor) {
-    u16 channel = POP(actor);
+    u16 channel = POP(&actor->context);
 
     actor->moveSpeed = channel;
     actor->msgChannel = channel;
@@ -824,10 +825,10 @@ s32 opHandler_MOVE(Actor *actor) {
         actor->msgActive = 1;
         actor->msgState = 0;
 
-        actor->windowId = POP(actor);
-        actor->msgPosY = POP(actor) << 12;
-        actor->msgPosX = POP(actor) << 12;
-        new_var = POP(actor);
+        actor->windowId = POP(&actor->context);
+        actor->msgPosY = POP(&actor->context) << 12;
+        actor->msgPosX = POP(&actor->context) << 12;
+        new_var = POP(&actor->context);
         actor->moveSpeed = saved;
         actor->msgTextPtr = new_var << 12;
 
@@ -857,7 +858,7 @@ s32 opHandler_MOVEA(Actor *actor) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->msgActive = 1;
         actor->msgState = 0;
-        actor->windowId = POP(actor);
+        actor->windowId = POP(&actor->context);
         actor->moveSpeed = actor->msgChannel;
         func_800B6738(actor);
     }
@@ -868,9 +869,9 @@ s32 opHandler_MOVEA(Actor *actor) {
         return 2;
     }
 
-    actor->msgTextPtr = D_80085230[PEEK(actor)]->posX;
-    actor->msgPosX = D_80085230[PEEK(actor)]->posY;
-    actor->msgPosY = D_80085230[PEEK(actor)]->posZ;
+    actor->msgTextPtr = D_80085230[PEEK(&actor->context)]->posX;
+    actor->msgPosX = D_80085230[PEEK(&actor->context)]->posY;
+    actor->msgPosY = D_80085230[PEEK(&actor->context)]->posZ;
     return 1;
 }
 
@@ -890,7 +891,7 @@ s32 opHandler_PMOVEA(Actor *actor) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->msgActive = 1;
         actor->msgState = 0;
-        actor->windowId = POP(actor);
+        actor->windowId = POP(&actor->context);
         actor->moveSpeed = actor->msgChannel;
         func_800B6738(actor);
     }
@@ -901,7 +902,7 @@ s32 opHandler_PMOVEA(Actor *actor) {
         return 2;
     }
 
-    idx = g_fieldVars->memberSlot[PEEK(actor)];
+    idx = g_fieldVars->memberSlot[PEEK(&actor->context)];
     actor->msgTextPtr = D_80085224[idx].posX;
     actor->msgPosX = D_80085224[idx].posY;
     actor->msgPosY = D_80085224[idx].posZ;
@@ -922,11 +923,11 @@ s32 opHandler_CMOVE(Actor *actor) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->msgActive = 1;
         actor->msgState = 0;
-        actor->windowId = POP(actor);
+        actor->windowId = POP(&actor->context);
         actor->moveSpeed = actor->msgChannel;
-        actor->msgPosY = POP(actor) << 12;
-        actor->msgPosX = POP(actor) << 12;
-        actor->msgTextPtr = POP(actor) << 12;
+        actor->msgPosY = POP(&actor->context) << 12;
+        actor->msgPosX = POP(&actor->context) << 12;
+        actor->msgTextPtr = POP(&actor->context) << 12;
         actor->field_0x262 = 0;
         actor->field_0x240 = 1;
         actor->field_0x1DA = 0;
@@ -955,11 +956,11 @@ s32 opHandler_FMOVE(Actor *actor) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->msgActive = 1;
         actor->msgState = 0;
-        actor->windowId = POP(actor);
+        actor->windowId = POP(&actor->context);
         actor->moveSpeed = actor->msgChannel;
-        actor->msgPosY = POP(actor) << 12;
-        actor->msgPosX = POP(actor) << 12;
-        actor->msgTextPtr = POP(actor) << 12;
+        actor->msgPosY = POP(&actor->context) << 12;
+        actor->msgPosX = POP(&actor->context) << 12;
+        actor->msgTextPtr = POP(&actor->context) << 12;
         actor->field_0x1DA = 0;
     }
 
@@ -985,7 +986,7 @@ s32 opHandler_FMOVEA(Actor *actor) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->msgActive = 1;
         actor->msgState = 0;
-        actor->windowId = POP(actor);
+        actor->windowId = POP(&actor->context);
         actor->moveSpeed = actor->msgChannel;
         actor->field_0x1DA = 0;
     }
@@ -996,9 +997,9 @@ s32 opHandler_FMOVEA(Actor *actor) {
         return 2;
     }
 
-    actor->msgTextPtr = D_80085230[PEEK(actor)]->posX;
-    actor->msgPosX = D_80085230[PEEK(actor)]->posY;
-    actor->msgPosY = D_80085230[PEEK(actor)]->posZ;
+    actor->msgTextPtr = D_80085230[PEEK(&actor->context)]->posX;
+    actor->msgPosX = D_80085230[PEEK(&actor->context)]->posY;
+    actor->msgPosY = D_80085230[PEEK(&actor->context)]->posZ;
     return 1;
 }
 
@@ -1018,7 +1019,7 @@ s32 opHandler_FMOVEP(Actor *actor) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->msgActive = 1;
         actor->msgState = 0;
-        actor->windowId = POP(actor);
+        actor->windowId = POP(&actor->context);
         actor->moveSpeed = actor->msgChannel;
         actor->field_0x1DA = 0;
     }
@@ -1029,7 +1030,7 @@ s32 opHandler_FMOVEP(Actor *actor) {
         return 2;
     }
 
-    idx = g_fieldVars->memberSlot[PEEK(actor)];
+    idx = g_fieldVars->memberSlot[PEEK(&actor->context)];
     actor->msgTextPtr = D_80085224[idx].posX;
     actor->msgPosX = D_80085224[idx].posY;
     actor->msgPosY = D_80085224[idx].posZ;
@@ -1055,10 +1056,10 @@ s32 opHandler_RMOVE(Actor *actor) {
     actor->context.flags |= 0x20000;
     actor->msgState = 0;
 
-    actor->windowId = POP(actor);
-    actor->msgPosY = POP(actor) << 12;
-    actor->msgPosX = POP(actor) << 12;
-    new_var = POP(actor);
+    actor->windowId = POP(&actor->context);
+    actor->msgPosY = POP(&actor->context) << 12;
+    actor->msgPosX = POP(&actor->context) << 12;
+    new_var = POP(&actor->context);
     actor->moveSpeed = saved;
     actor->msgTextPtr = new_var << 12;
 
@@ -1080,13 +1081,13 @@ s32 opHandler_RMOVEA(Actor *actor) {
     actor->msgActive = 1;
     actor->context.flags |= 0x20000;
     actor->msgState = 0;
-    actor->windowId = POP(actor);
+    actor->windowId = POP(&actor->context);
     actor->moveSpeed = actor->msgChannel;
     func_800B6738(actor);
 
-    actor->msgTextPtr = D_80085230[PEEK(actor)]->posX;
-    actor->msgPosX = D_80085230[PEEK(actor)]->posY;
-    actor->msgPosY = D_80085230[POP(actor)]->posZ;
+    actor->msgTextPtr = D_80085230[PEEK(&actor->context)]->posX;
+    actor->msgPosX = D_80085230[PEEK(&actor->context)]->posY;
+    actor->msgPosY = D_80085230[POP(&actor->context)]->posZ;
     return 3;
 }
 
@@ -1106,11 +1107,11 @@ s32 opHandler_RPMOVEA(Actor *actor) {
     actor->msgActive = 1;
     actor->context.flags |= 0x20000;
     actor->msgState = 0;
-    actor->windowId = POP(actor);
+    actor->windowId = POP(&actor->context);
     actor->moveSpeed = actor->msgChannel;
     func_800B6738(actor);
 
-    idx = g_fieldVars->memberSlot[POP(actor)];
+    idx = g_fieldVars->memberSlot[POP(&actor->context)];
     actor->msgTextPtr = D_80085224[idx].posX;
     actor->msgPosX = D_80085224[idx].posY;
     actor->msgPosY = D_80085224[idx].posZ;
@@ -1132,11 +1133,11 @@ s32 opHandler_RCMOVE(Actor *actor) {
     actor->msgActive = 1;
     actor->context.flags |= 0x20000;
     actor->msgState = 0;
-    actor->windowId = POP(actor);
+    actor->windowId = POP(&actor->context);
     actor->moveSpeed = actor->msgChannel;
-    actor->msgPosY = POP(actor) << 12;
-    actor->msgPosX = POP(actor) << 12;
-    actor->msgTextPtr = POP(actor) << 12;
+    actor->msgPosY = POP(&actor->context) << 12;
+    actor->msgPosX = POP(&actor->context) << 12;
+    actor->msgTextPtr = POP(&actor->context) << 12;
     actor->field_0x1DA = 0;
     actor->field_0x262 = 0;
     actor->field_0x240 = 1;
@@ -1156,11 +1157,11 @@ s32 opHandler_RFMOVE(Actor *actor) {
     actor->msgActive = 1;
     actor->context.flags |= 0x20000;
     actor->msgState = 0;
-    actor->windowId = POP(actor);
+    actor->windowId = POP(&actor->context);
     actor->moveSpeed = actor->msgChannel;
-    actor->msgPosY = POP(actor) << 12;
-    actor->msgPosX = POP(actor) << 12;
-    actor->msgTextPtr = POP(actor) << 12;
+    actor->msgPosY = POP(&actor->context) << 12;
+    actor->msgPosX = POP(&actor->context) << 12;
+    actor->msgTextPtr = POP(&actor->context) << 12;
     actor->field_0x1DA = 0;
     return 3;
 }
@@ -1189,8 +1190,8 @@ s32 opHandler_MOVESYNC(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_MOVECANCEL(Actor *actor) {
-    s32 idx = POP(actor);
+s32 opHandler_MOVECANCEL(ScriptContext *context) {
+    s32 idx = POP(context);
 
     if (D_80085230[idx]->context.flags & 0x10000000) {
         if (D_80085230[idx]->msgActive != 1) {
@@ -1214,8 +1215,8 @@ s32 opHandler_MOVECANCEL(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_PMOVECANCEL(Actor *actor) {
-    u8 idx = g_fieldVars->memberSlot[POP(actor)];
+s32 opHandler_PMOVECANCEL(ScriptContext *context) {
+    u8 idx = g_fieldVars->memberSlot[POP(context)];
 
     if (D_80085224[idx].msgActive == 1) {
         D_80085224[idx].msgActive = 0;
@@ -1231,9 +1232,9 @@ s32 opHandler_PMOVECANCEL(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 1 (continue processing).
  */
-s32 opHandler_MOVEFLUSH(Actor *actor) {
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        actor->context.flags &= ~0x10000;
+s32 opHandler_MOVEFLUSH(ScriptContext *context) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
+        context->flags &= ~0x10000;
     }
     return 1;
 }
@@ -1245,7 +1246,7 @@ s32 opHandler_MOVEFLUSH(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_MLIMIT(Actor *actor) {
-    actor->field_0x262 = POP_BYTE(actor);
+    actor->field_0x262 = POP_BYTE(&actor->context);
     return 2;
 }
 
@@ -1288,11 +1289,11 @@ s32 opHandler_MACCEL(Actor *actor) {
         actor->msgActive = 1;
         actor->msgState = 0;
         actor->moveSpeed = actor->msgChannel;
-        actor->field_0x204 = POP(actor);
-        actor->windowId = POP(actor);
-        actor->msgPosY = POP(actor) << 12;
-        actor->msgPosX = POP(actor) << 12;
-        actor->msgTextPtr = POP(actor) << 12;
+        actor->field_0x204 = POP(&actor->context);
+        actor->windowId = POP(&actor->context);
+        actor->msgPosY = POP(&actor->context) << 12;
+        actor->msgPosX = POP(&actor->context) << 12;
+        actor->msgTextPtr = POP(&actor->context) << 12;
         actor->field_0x262 = 0;
         actor->field_0x240 = 1;
     }
@@ -1521,15 +1522,15 @@ s32 opHandler_SPLIT(Actor *actor) {
         D_800DE4F4 = 0;
         D_800DE4F0 = 0;
 
-        z2 = POP(actor) << 12;
-        y2 = POP(actor) << 12;
-        x2 = POP(actor) << 12;
-        z1 = POP(actor) << 12;
-        y1 = POP(actor) << 12;
-        x1 = POP(actor) << 12;
-        z0 = POP(actor) << 12;
-        y0 = POP(actor) << 12;
-        x0 = POP(actor) << 12;
+        z2 = POP(&actor->context) << 12;
+        y2 = POP(&actor->context) << 12;
+        x2 = POP(&actor->context) << 12;
+        z1 = POP(&actor->context) << 12;
+        y1 = POP(&actor->context) << 12;
+        x1 = POP(&actor->context) << 12;
+        z0 = POP(&actor->context) << 12;
+        y0 = POP(&actor->context) << 12;
+        x0 = POP(&actor->context) << 12;
 
         if (g_fieldVars->memberSlot[0] != 0xFF) {
             D_800DE4F0 = &D_80085224[g_fieldVars->memberSlot[0]];
@@ -1624,9 +1625,9 @@ s32 opHandler_JUMP(Actor *actor, s32 a1) {
     do {
         actor->msgActive = 2;
         actor->msgState = 0;
-        actor->field_0x1D8 = POP(actor);
-        actor->msgPosX = POP(actor) << 12;
-        actor->msgTextPtr = POP(actor) << 12;
+        actor->field_0x1D8 = POP(&actor->context);
+        actor->msgPosX = POP(&actor->context) << 12;
+        actor->msgTextPtr = POP(&actor->context) << 12;
         actor->field_0x1FC = a1;
     } while (0);
     return 1;
@@ -1657,10 +1658,10 @@ s32 opHandler_JUMP3(Actor *actor, s32 a1) {
     do {
         actor->msgActive = 2;
         actor->msgState = 0;
-        actor->field_0x1D8 = POP(actor);
-        actor->msgPosY = POP(actor) << 12;
-        actor->msgPosX = POP(actor) << 12;
-        actor->msgTextPtr = POP(actor) << 12;
+        actor->field_0x1D8 = POP(&actor->context);
+        actor->msgPosY = POP(&actor->context) << 12;
+        actor->msgPosX = POP(&actor->context) << 12;
+        actor->msgTextPtr = POP(&actor->context) << 12;
         actor->field_0x1FC = a1;
     } while (0);
     return 1;
@@ -1692,8 +1693,8 @@ s32 opHandler_PJUMPA(Actor *actor) {
         s32 m;
         actor->msgActive = 2;
         actor->msgState = 0;
-        actor->field_0x1D8 = POP(actor);
-        m = g_fieldVars->memberSlot[POP(actor)];
+        actor->field_0x1D8 = POP(&actor->context);
+        m = g_fieldVars->memberSlot[POP(&actor->context)];
         actor->msgTextPtr = D_80085224[m].posX;
         actor->msgPosX = D_80085224[m].posY;
         actor->msgPosY = D_80085224[m].posZ;
@@ -1713,8 +1714,8 @@ s32 opHandler_PJUMPA(Actor *actor) {
  * @param actor Script context.
  * @return 2 (advance PC).
  */
-s32 opHandler_COUNTERCLOCKWISETURN2(Actor *actor) {
-    D_800704A8.unk1AE = *(volatile s32 *)&POP(actor);
+s32 opHandler_COUNTERCLOCKWISETURN2(ScriptContext *context) {
+    D_800704A8.unk1AE = *(volatile s32 *)&POP(context);
     return 2;
 }
 
@@ -1747,11 +1748,11 @@ s32 opHandler_LADDERUP(Actor *actor, s32 a1) {
         actor->msgActive = 3;
         actor->windowId = 1;
         actor->msgState = 0;
-        func_800B912C(actor, (s16)POP(actor));
+        func_800B912C(actor, (s16)POP(&actor->context));
         actor->context.flags |= 0x2000;
-        actor->msgPosY = POP(actor) << 12;
-        actor->msgPosX = POP(actor) << 12;
-        actor->msgTextPtr = POP(actor) << 12;
+        actor->msgPosY = POP(&actor->context) << 12;
+        actor->msgPosX = POP(&actor->context) << 12;
+        actor->msgTextPtr = POP(&actor->context) << 12;
         actor->field_0x1FC = a1;
     }
     return 1;
@@ -1793,11 +1794,11 @@ s32 opHandler_LADDERDOWN(Actor *actor, s32 a1) {
         actor->msgActive = 3;
         actor->windowId = 0;
         actor->msgState = 0;
-        func_800B912C(actor, (s16)POP(actor));
+        func_800B912C(actor, (s16)POP(&actor->context));
         actor->context.flags |= 0x2000;
-        actor->msgPosY = POP(actor) << 12;
-        actor->msgPosX = POP(actor) << 12;
-        actor->msgTextPtr = POP(actor) << 12;
+        actor->msgPosY = POP(&actor->context) << 12;
+        actor->msgPosX = POP(&actor->context) << 12;
+        actor->msgTextPtr = POP(&actor->context) << 12;
         actor->field_0x1FC = a1;
     }
     return 1;
@@ -1833,15 +1834,15 @@ s32 opHandler_LADDERUP2(Actor *actor, s32 a1) {
         actor->msgActive = 4;
         actor->windowId = 1;
         actor->msgState = 0;
-        actor->msgPosY = POP(actor) << 12;
-        actor->msgPosX = POP(actor) << 12;
-        actor->msgTextPtr = POP(actor) << 12;
-        actor->field_0x1C8 = POP(actor) << 12;
-        actor->field_0x1C4 = POP(actor) << 12;
-        actor->field_0x1C0 = POP(actor) << 12;
-        actor->unk1B0 = POP(actor) << 12;
-        actor->unk1AC = POP(actor) << 12;
-        actor->unk1A8 = POP(actor) << 12;
+        actor->msgPosY = POP(&actor->context) << 12;
+        actor->msgPosX = POP(&actor->context) << 12;
+        actor->msgTextPtr = POP(&actor->context) << 12;
+        actor->field_0x1C8 = POP(&actor->context) << 12;
+        actor->field_0x1C4 = POP(&actor->context) << 12;
+        actor->field_0x1C0 = POP(&actor->context) << 12;
+        actor->unk1B0 = POP(&actor->context) << 12;
+        actor->unk1AC = POP(&actor->context) << 12;
+        actor->unk1A8 = POP(&actor->context) << 12;
         actor->field_0x1FC = a1;
     }
     return 1;
@@ -1876,15 +1877,15 @@ s32 opHandler_LADDERDOWN2(Actor *actor, s32 a1) {
         actor->msgActive = 4;
         actor->windowId = 0;
         actor->msgState = 0;
-        actor->msgPosY = POP(actor) << 12;
-        actor->msgPosX = POP(actor) << 12;
-        actor->msgTextPtr = POP(actor) << 12;
-        actor->field_0x1C8 = POP(actor) << 12;
-        actor->field_0x1C4 = POP(actor) << 12;
-        actor->field_0x1C0 = POP(actor) << 12;
-        actor->unk1B0 = POP(actor) << 12;
-        actor->unk1AC = POP(actor) << 12;
-        actor->unk1A8 = POP(actor) << 12;
+        actor->msgPosY = POP(&actor->context) << 12;
+        actor->msgPosX = POP(&actor->context) << 12;
+        actor->msgTextPtr = POP(&actor->context) << 12;
+        actor->field_0x1C8 = POP(&actor->context) << 12;
+        actor->field_0x1C4 = POP(&actor->context) << 12;
+        actor->field_0x1C0 = POP(&actor->context) << 12;
+        actor->unk1B0 = POP(&actor->context) << 12;
+        actor->unk1AC = POP(&actor->context) << 12;
+        actor->unk1A8 = POP(&actor->context) << 12;
         actor->field_0x1FC = a1;
     }
     return 1;
@@ -1905,13 +1906,13 @@ s32 opHandler_LADDERDOWN2(Actor *actor, s32 a1) {
  */
 s32 opHandler_DOFFSET(Actor *actor, s32 a1) {
     u16 a, b, c;
-    a = POP(actor);
+    a = POP(&actor->context);
     actor->posOfsZ = a;
     actor->field_0x1EE = a;
-    b = POP(actor);
+    b = POP(&actor->context);
     actor->posOfsY = b;
     actor->field_0x1E8 = b;
-    c = POP(actor);
+    c = POP(&actor->context);
     actor->field_0x1FC = a1;
     actor->unk245 = 0;
     actor->msgState = 0;
@@ -1935,13 +1936,13 @@ s32 opHandler_DOFFSET(Actor *actor, s32 a1) {
  */
 s32 opHandler_LOFFSETS(Actor *actor, s32 a1) {
     actor->unk245 = 1;
-    actor->field_0x1F2 = POP(actor);
-    actor->field_0x1F0 = POP(actor);
-    actor->field_0x1EA = POP(actor);
-    actor->field_0x1E4 = POP(actor);
-    actor->field_0x1EE = POP(actor);
-    actor->field_0x1E8 = POP(actor);
-    actor->field_0x1E2 = POP(actor);
+    actor->field_0x1F2 = POP(&actor->context);
+    actor->field_0x1F0 = POP(&actor->context);
+    actor->field_0x1EA = POP(&actor->context);
+    actor->field_0x1E4 = POP(&actor->context);
+    actor->field_0x1EE = POP(&actor->context);
+    actor->field_0x1E8 = POP(&actor->context);
+    actor->field_0x1E2 = POP(&actor->context);
     actor->field_0x1F4 = 0;
     return 2;
 }
@@ -1958,13 +1959,13 @@ s32 opHandler_LOFFSETS(Actor *actor, s32 a1) {
  */
 s32 opHandler_COFFSETS(Actor *actor, s32 a1) {
     actor->unk245 = 2;
-    actor->field_0x1F2 = POP(actor);
-    actor->field_0x1F0 = POP(actor);
-    actor->field_0x1EA = POP(actor);
-    actor->field_0x1E4 = POP(actor);
-    actor->field_0x1EE = POP(actor);
-    actor->field_0x1E8 = POP(actor);
-    actor->field_0x1E2 = POP(actor);
+    actor->field_0x1F2 = POP(&actor->context);
+    actor->field_0x1F0 = POP(&actor->context);
+    actor->field_0x1EA = POP(&actor->context);
+    actor->field_0x1E4 = POP(&actor->context);
+    actor->field_0x1EE = POP(&actor->context);
+    actor->field_0x1E8 = POP(&actor->context);
+    actor->field_0x1E2 = POP(&actor->context);
     actor->field_0x1F4 = 0;
     return 2;
 }
@@ -1985,7 +1986,7 @@ s32 opHandler_LOFFSET(Actor *actor, s32 a1) {
     s32 s1F0 = actor->field_0x1F0;
     s32 s1EA;
     actor->unk245 = 1;
-    actor->field_0x1F2 = POP(actor);
+    actor->field_0x1F2 = POP(&actor->context);
     s1EA = actor->field_0x1EA;
     actor->field_0x1E2 = s1E4;
     actor->field_0x1EE = s1F0;
@@ -1994,7 +1995,7 @@ s32 opHandler_LOFFSET(Actor *actor, s32 a1) {
     actor->field_0x1F0 = ((s32 *)actor)[s1EA];
     s1F0 = (s8)(actor->context.stackPtr--);
     actor->field_0x1EA = ((s32 *)actor)[s1F0];
-    actor->field_0x1E4 = POP(actor);
+    actor->field_0x1E4 = POP(&actor->context);
     actor->field_0x1F4 = 0;
     return 2;
 }
@@ -2023,7 +2024,7 @@ s32 opHandler_COFFSET(Actor *actor, s32 a1) {
     s32 s1F0 = actor->field_0x1F0;
     s32 s1EA;
     actor->unk245 = 2;
-    actor->field_0x1F2 = POP(actor);
+    actor->field_0x1F2 = POP(&actor->context);
     s1EA = actor->field_0x1EA;
     actor->field_0x1E2 = s1E4;
     actor->field_0x1EE = s1F0;
@@ -2032,7 +2033,7 @@ s32 opHandler_COFFSET(Actor *actor, s32 a1) {
     actor->field_0x1F0 = ((s32 *)actor)[s1EA];
     s1F0 = (s8)(actor->context.stackPtr--);
     actor->field_0x1EA = ((s32 *)actor)[s1F0];
-    actor->field_0x1E4 = POP(actor);
+    actor->field_0x1E4 = POP(&actor->context);
     actor->field_0x1F4 = 0;
     return 2;
 }
@@ -2056,35 +2057,43 @@ s32 opHandler_OFFSETSYNC(Actor *actor) {
 }
 
 /**
- * Sets the global byte D_8007064C to 1, returns 2.
+ * @brief Raise the run-disable gate, so the player can only walk.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @note Effect uncertain -- @c D_8007064C has no reader in decompiled code
+ *       yet, so "run" is read off the opcode name rather than observed.
+ *
+ * @param context Context of the script running the opcode (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_RUNDISABLE(u8 *a0) {
+s32 opHandler_RUNDISABLE(ScriptContext *context) {
     D_8007064C = 1;
     return 2;
 }
 
 /**
- * Clears the global byte D_8007064C, returns 2.
+ * @brief Clear the run-disable gate, restoring the player's run.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * Counterpart of @ref opHandler_RUNDISABLE; same uncertainty applies.
+ *
+ * @param context Context of the script running the opcode (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_RUNENABLE(u8 *a0) {
+s32 opHandler_RUNENABLE(ScriptContext *context) {
     D_8007064C = 0;
     return 2;
 }
 
 /**
- * Calls func_8009E660 and returns 2.
+ * @brief Seed the follower trail from the player's current position.
  *
- * @param a0 Pointer to the script/object structure.
+ * @ref func_8009E660 fills the whole waypoint ring in one go, so the
+ * followers have somewhere to stand before any movement has been recorded.
+ *
+ * @param context Context of the script running the opcode (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_INITTRACE(u8 *a0) {
-    func_8009E660(a0);
+s32 opHandler_INITTRACE(ScriptContext *context) {
+    func_8009E660();
     return 2;
 }
 
@@ -2098,7 +2107,7 @@ s32 opHandler_INITTRACE(u8 *a0) {
  *
  * @return 2 (advance) when @c unk104 == @c unk106, 1 (yield) otherwise.
  */
-s32 opHandler_AXISSYNC(Actor *actor) {
+s32 opHandler_AXISSYNC(ScriptContext *context) {
     if (D_800704A8.unk106 == D_800704A8.unk104) {
         return 2;
     }
@@ -2115,9 +2124,9 @@ s32 opHandler_AXISSYNC(Actor *actor) {
  * @param actor Script context.
  * @return 2 (advance PC).
  */
-s32 opHandler_AXIS(Actor *actor) {
-    D_800704A8.unk104 = POP(actor);
-    D_800704A8.unk102 = POP(actor);
+s32 opHandler_AXIS(ScriptContext *context) {
+    D_800704A8.unk104 = POP(context);
+    D_800704A8.unk102 = POP(context);
     D_800704A8.unk106 = 0;
     return 2;
 }
@@ -2130,7 +2139,7 @@ s32 opHandler_AXIS(Actor *actor) {
  * @return 2 (advance PC).
  */
 s32 opHandler_UNKNOWN4(Actor *actor) {
-    actor->field_0x240 = POP_BYTE(actor);
+    actor->field_0x240 = POP_BYTE(&actor->context);
     return 2;
 }
 

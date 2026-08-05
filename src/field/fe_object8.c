@@ -32,7 +32,7 @@ s32 opHandler_BLINKEYES(Actor *actor) {
     u8 byte;
 
     actor->context.flags = (actor->context.flags & 0xFFCFFFFF) | 0x80000;
-    byte = POP_BYTE(actor);
+    byte = POP_BYTE(&actor->context);
     actor->field_0x263 = byte;
     func_800A97E4(actor->field_0x256, 0x27, 0, actor->field_0x263);
     return 2;
@@ -199,15 +199,15 @@ s32 opHandler_POPANIME(Actor *actor) {
  * @brief Pop the top stack slot as a halfword into @c field_0x208.
  */
 s32 opHandler_ANIMESPEED(Actor *actor) {
-    actor->field_0x208 = POP(actor);
+    actor->field_0x208 = POP(&actor->context);
     return 2;
 }
 
 /**
  * @brief Returns 2 if the animation-complete flag (0x800) is set, else 1.
  */
-s32 opHandler_ANIMESYNC(Actor *actor) {
-    if (actor->context.flags & 0x800) {
+s32 opHandler_ANIMESYNC(ScriptContext *context) {
+    if (context->flags & 0x800) {
         return 2;
     }
     return 1;
@@ -277,8 +277,8 @@ s32 opHandler_CANIME(Actor *actor, s32 a1) {
     s32 tmp;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        v2 = POP_HALF(actor);
-        v1 = POP_HALF(actor);
+        v2 = POP_HALF(&actor->context);
+        v1 = POP_HALF(&actor->context);
         func_800B91D8(actor, a1, v2, v1);
         tmp = actor->context.flags | 0x4000;
         actor->context.flags = tmp;
@@ -297,8 +297,8 @@ s32 opHandler_CANIMEKEEP(Actor *actor, s32 a1) {
     s32 tmp;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        v2 = POP_HALF(actor);
-        v1 = POP_HALF(actor);
+        v2 = POP_HALF(&actor->context);
+        v1 = POP_HALF(&actor->context);
         func_800B91D8(actor, a1, v2, v1);
         tmp = actor->context.flags | 0x8000;
         actor->context.flags = tmp;
@@ -341,8 +341,8 @@ s32 opHandler_RCANIME(Actor *actor, s32 a1) {
     s32 v1;
     s32 tmp;
 
-    v2 = POP_HALF(actor);
-    v1 = POP_HALF(actor);
+    v2 = POP_HALF(&actor->context);
+    v1 = POP_HALF(&actor->context);
     func_800B91D8(actor, a1, v2, v1);
     tmp = actor->context.flags | 0x4000;
     actor->context.flags = tmp;
@@ -357,8 +357,8 @@ s32 opHandler_RCANIMEKEEP(Actor *actor, s32 a1) {
     s32 v1;
     s32 tmp;
 
-    v2 = POP_HALF(actor);
-    v1 = POP_HALF(actor);
+    v2 = POP_HALF(&actor->context);
+    v1 = POP_HALF(&actor->context);
     func_800B91D8(actor, a1, v2, v1);
     tmp = actor->context.flags | 0x8000;
     actor->context.flags = tmp;
@@ -383,8 +383,8 @@ s32 opHandler_RCANIMELOOP(Actor *actor, s32 a1) {
     s32 v1;
     s32 tmp;
 
-    v2 = POP_HALF(actor);
-    v1 = POP_HALF(actor);
+    v2 = POP_HALF(&actor->context);
+    v1 = POP_HALF(&actor->context);
     func_800B91D8(actor, a1, v2, v1);
     tmp = actor->context.flags | 0x2000;
     actor->context.flags = tmp;
@@ -400,9 +400,9 @@ s32 opHandler_RCANIMELOOP(Actor *actor, s32 a1) {
  * the entity at @c field_0x256 with the pointer to the 3-byte vector.
  */
 s32 opHandler_POLYCOLOR(Actor *actor) {
-    ((u8 *)&actor->unk18A)[2] = POP_BYTE(actor);
-    ((u8 *)&actor->unk18A)[1] = POP_BYTE(actor);
-    ((u8 *)&actor->unk18A)[0] = POP_BYTE(actor);
+    ((u8 *)&actor->unk18A)[2] = POP_BYTE(&actor->context);
+    ((u8 *)&actor->unk18A)[1] = POP_BYTE(&actor->context);
+    ((u8 *)&actor->unk18A)[0] = POP_BYTE(&actor->context);
     if (!(D_800DE8C8[1] & 0x2)) {
         func_800A97E4(actor->field_0x256, 0x10, (s32)&actor->unk18A, 0);
     }
@@ -418,14 +418,14 @@ s32 opHandler_POLYCOLOR(Actor *actor) {
  * @c D_800DE8CC & 0x2 is clear also dispatches command @c 0x10 to
  * the entity (with the local buffer as the arg).
  */
-s32 opHandler_POLYCOLORALL(Actor *actor) {
+s32 opHandler_POLYCOLORALL(ScriptContext *context) {
     u8 bytes[3];
     s32 i;
     Actor *p;
 
-    bytes[2] = POP_BYTE(actor);
-    bytes[1] = POP_BYTE(actor);
-    bytes[0] = POP_BYTE(actor);
+    bytes[2] = POP_BYTE(context);
+    bytes[1] = POP_BYTE(context);
+    bytes[0] = POP_BYTE(context);
 
     p = D_80085224;
     for (i = 0; i < D_80085388; i++) {
@@ -449,7 +449,7 @@ s32 opHandler_POLYCOLORALL(Actor *actor) {
  * (@c D_800D9630[D_800DE4FC]->unk61).
  */
 s32 opHandler_SETGETA(Actor *actor) {
-    u8 byte = POP_BYTE(actor);
+    u8 byte = POP_BYTE(&actor->context);
     actor->field_0x257 = byte;
     if (!(D_800DE8CC & 0x2)) {
         D_800D9630[D_800DE4FC]->unk61 = byte;
@@ -467,7 +467,7 @@ s32 opHandler_SETGETA(Actor *actor) {
  * @return 2 (advance PC).
  */
 s32 opHandler_SETROOTTRANS(Actor *actor) {
-    u16 half = POP(actor);
+    u16 half = POP(&actor->context);
     *(volatile u16 *)&actor->field_0x220 = half;
     if (!(D_800DE8CC & 0x2)) {
         D_800D9630[actor->field_0x256]->unk62 = half;
@@ -482,7 +482,7 @@ s32 opHandler_SETROOTTRANS(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_SHADESET(Actor *actor) {
-    s32 val = POP(actor) / 4;
+    s32 val = POP(&actor->context) / 4;
     actor->shadowRadius[3] = val;
     actor->shadowRadius[2] = val;
     actor->shadowRadius[1] = val;
@@ -507,14 +507,14 @@ s32 opHandler_SHADESET(Actor *actor) {
  * @return 2 (advance PC).
  */
 s32 opHandler_SHADEFORM(Actor *actor) {
-    actor->shadowRadius[3] = POP(actor) / 4;
-    actor->shadowRadius[2] = POP(actor) / 4;
-    actor->shadowRadius[1] = POP(actor) / 4;
-    actor->shadowRadius[0] = POP(actor) / 4;
-    actor->shadowRadius[7] = POP(actor) / 4;
-    actor->shadowRadius[6] = POP(actor) / 4;
-    actor->shadowRadius[5] = POP(actor) / 4;
-    actor->shadowRadius[4] = POP(actor) / 4;
+    actor->shadowRadius[3] = POP(&actor->context) / 4;
+    actor->shadowRadius[2] = POP(&actor->context) / 4;
+    actor->shadowRadius[1] = POP(&actor->context) / 4;
+    actor->shadowRadius[0] = POP(&actor->context) / 4;
+    actor->shadowRadius[7] = POP(&actor->context) / 4;
+    actor->shadowRadius[6] = POP(&actor->context) / 4;
+    actor->shadowRadius[5] = POP(&actor->context) / 4;
+    actor->shadowRadius[4] = POP(&actor->context) / 4;
     return 2;
 }
 
@@ -522,7 +522,7 @@ s32 opHandler_SHADEFORM(Actor *actor) {
  * @brief Pop a byte from the script stack into @c shadowLevel.
  */
 s32 opHandler_SHADELEVEL(Actor *actor) {
-    actor->shadowLevel = POP_BYTE(actor);
+    actor->shadowLevel = POP_BYTE(&actor->context);
     return 2;
 }
 
@@ -530,7 +530,7 @@ s32 opHandler_SHADELEVEL(Actor *actor) {
  * @brief Pop a byte from the script stack into @c field_0x241.
  */
 s32 opHandler_DIR(Actor *actor) {
-    actor->field_0x241 = POP_BYTE(actor);
+    actor->field_0x241 = POP_BYTE(&actor->context);
     return 2;
 }
 
@@ -577,7 +577,7 @@ s32 opHandler_DIRP(Actor *actor) {
  * @c field_0x241 (seeds turn-state for the next CTURN-family helper).
  */
 s32 opHandler_DIRA(Actor *actor) {
-    actor->field_0x241 = func_8009E604(actor, D_80085230[POP(actor)]);
+    actor->field_0x241 = func_8009E604(actor, D_80085230[POP(&actor->context)]);
     return 2;
 }
 
@@ -595,7 +595,7 @@ s32 opHandler_DIRA(Actor *actor) {
  * @return 2 (advance PC).
  */
 s32 opHandler_PDIRA(Actor *actor) {
-    s32 slot = POP(actor);
+    s32 slot = POP(&actor->context);
     actor->field_0x241 = func_8009E604(actor, &D_80085224[g_fieldVars->memberSlot[slot]]);
     return 2;
 }
@@ -612,12 +612,12 @@ s32 opHandler_OP16B(Actor *actor) {
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        byte1 = POP_BYTE(actor);
+        byte1 = POP_BYTE(&actor->context);
         actor->field_0x244 = 1;
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(actor);
+        raw = (u16)POP(&actor->context);
         actor->field_0x1DE = raw;
         if (actor->field_0x1DC < (s16)raw) {
             actor->field_0x1DE = raw - 0x100;
@@ -645,12 +645,12 @@ s32 opHandler_OP16C(Actor *actor) {
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        byte1 = POP_BYTE(actor);
+        byte1 = POP_BYTE(&actor->context);
         actor->field_0x244 = 1;
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(actor);
+        raw = (u16)POP(&actor->context);
         actor->field_0x1DE = raw;
         if ((s16)raw < actor->field_0x1DC) {
             actor->field_0x1DE = raw + 0x100;
@@ -671,12 +671,12 @@ s32 opHandler_OP16D(Actor *actor) {
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        byte1 = POP_BYTE(actor);
+        byte1 = POP_BYTE(&actor->context);
         actor->field_0x244 = 2;
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(actor);
+        raw = (u16)POP(&actor->context);
         actor->field_0x1DE = raw;
         if (actor->field_0x1DC < (s16)raw) {
             actor->field_0x1DE = raw - 0x100;
@@ -697,12 +697,12 @@ s32 opHandler_OP16E(Actor *actor) {
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        byte1 = POP_BYTE(actor);
+        byte1 = POP_BYTE(&actor->context);
         actor->field_0x244 = 2;
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(actor);
+        raw = (u16)POP(&actor->context);
         actor->field_0x1DE = raw;
         if ((s16)raw < actor->field_0x1DC) {
             actor->field_0x1DE = raw + 0x100;
@@ -758,12 +758,12 @@ s32 opHandler_LTURNR(Actor *actor) {
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        byte1 = POP_BYTE(actor);
+        byte1 = POP_BYTE(&actor->context);
         actor->field_0x244 = 1;
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(actor);
+        raw = (u16)POP(&actor->context);
         actor->field_0x1DE = raw;
         func_800BA3E0(actor);
     } else if (actor->field_0x244 == 3) {
@@ -780,12 +780,12 @@ s32 opHandler_LTURNL(Actor *actor) {
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        byte1 = POP_BYTE(actor);
+        byte1 = POP_BYTE(&actor->context);
         actor->field_0x244 = 1;
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(actor);
+        raw = (u16)POP(&actor->context);
         actor->field_0x1DE = raw;
         func_800BA3E0(actor);
     } else if (actor->field_0x244 == 3) {
@@ -802,12 +802,12 @@ s32 opHandler_CTURNR(Actor *actor) {
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        byte1 = POP_BYTE(actor);
+        byte1 = POP_BYTE(&actor->context);
         actor->field_0x244 = 2;
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(actor);
+        raw = (u16)POP(&actor->context);
         actor->field_0x1DE = raw;
         func_800BA3E0(actor);
     } else if (actor->field_0x244 == 3) {
@@ -824,12 +824,12 @@ s32 opHandler_CTURNL(Actor *actor) {
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        byte1 = POP_BYTE(actor);
+        byte1 = POP_BYTE(&actor->context);
         actor->field_0x244 = 2;
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(actor);
+        raw = (u16)POP(&actor->context);
         actor->field_0x1DE = raw;
         func_800BA3E0(actor);
     } else if (actor->field_0x244 == 3) {
@@ -860,8 +860,8 @@ s32 opHandler_LTURN(Actor *actor) {
     s32 idx;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        first = POP(actor);
-        idx = POP(actor);
+        first = POP(&actor->context);
+        idx = POP(&actor->context);
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x1DE = func_8009E604(actor, D_80085230[idx]) & 0xFF;
@@ -893,8 +893,8 @@ s32 opHandler_CTURN(Actor *actor) {
     s32 idx;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        first = POP(actor);
-        idx = POP(actor);
+        first = POP(&actor->context);
+        idx = POP(&actor->context);
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x1DE = func_8009E604(actor, D_80085230[idx]) & 0xFF;
@@ -927,8 +927,8 @@ s32 opHandler_PLTURN(Actor *actor) {
     s32 slot;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        first = POP(actor);
-        slot = POP(actor);
+        first = POP(&actor->context);
+        slot = POP(&actor->context);
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x1DE = func_8009E604(actor, &D_80085224[g_fieldVars->memberSlot[slot]]) & 0xFF;
@@ -959,8 +959,8 @@ s32 opHandler_PCTURN(Actor *actor) {
     s32 slot;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        first = POP(actor);
-        slot = POP(actor);
+        first = POP(&actor->context);
+        slot = POP(&actor->context);
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x1DE = func_8009E604(actor, &D_80085224[g_fieldVars->memberSlot[slot]]) & 0xFF;
@@ -996,8 +996,8 @@ s32 opHandler_HASITEM(Actor *actor) {
     s32 slot;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        first = POP(actor);
-        slot = POP(actor);
+        first = POP(&actor->context);
+        slot = POP(&actor->context);
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x1DE = func_8009E604(actor, &D_80085224[g_fieldVars->memberSlot[slot]]) & 0xFF;
@@ -1047,10 +1047,10 @@ s32 opHandler_FACEDIRSYNC(Actor *actor, s32 arg1) {
  */
 s32 opHandler_FACEDIRI(Actor *actor, s32 arg1) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        actor->turnLen = POP(actor);
-        actor->turnYawDst = POP(actor);
-        actor->turnRollDst = POP(actor);
-        actor->turnPitchDst = POP(actor);
+        actor->turnLen = POP(&actor->context);
+        actor->turnYawDst = POP(&actor->context);
+        actor->turnRollDst = POP(&actor->context);
+        actor->turnPitchDst = POP(&actor->context);
         actor->turnTick = 0;
         actor->turnMode = 0;
     }
@@ -1065,10 +1065,10 @@ s32 opHandler_FACEDIRI(Actor *actor, s32 arg1) {
  */
 s32 opHandler_FACEDIR(Actor *actor, s32 arg1) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        actor->turnLen = POP(actor);
-        actor->turnTgtZ = POP(actor);
-        actor->turnTgtY = POP(actor);
-        actor->turnTgtX = POP(actor);
+        actor->turnLen = POP(&actor->context);
+        actor->turnTgtZ = POP(&actor->context);
+        actor->turnTgtY = POP(&actor->context);
+        actor->turnTgtX = POP(&actor->context);
         actor->turnTick = 0;
         actor->turnMode = 1;
     }
@@ -1098,8 +1098,8 @@ s32 opHandler_FACEDIRA(Actor *actor, s32 arg1) {
     s16 buf[4];
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        actor->turnLen = POP(actor);
-        idx = POP(actor);
+        actor->turnLen = POP(&actor->context);
+        idx = POP(&actor->context);
         func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, (u32)D_800C71F8, buf);
         actor->turnTgtX = D_80085230[idx]->posX / 4096;
         actor->turnTgtY = D_80085230[idx]->posY / 4096;
@@ -1127,8 +1127,8 @@ s32 opHandler_FACEDIRP(Actor *actor, s32 arg1) {
     s16 buf[4];
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        actor->turnLen = POP(actor);
-        slot = g_fieldVars->memberSlot[POP(actor)];
+        actor->turnLen = POP(&actor->context);
+        slot = g_fieldVars->memberSlot[POP(&actor->context)];
         func_800A8DAC(slot, 0x1E, (u32)D_800C71F8, buf);
         actor->turnTgtX = D_80085224[slot].posX / 4096;
         actor->turnTgtY = D_80085224[slot].posY / 4096;
@@ -1159,7 +1159,7 @@ s32 opHandler_FACEDIROFF(Actor *actor, s32 arg1) {
     s16 buf[4];
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        actor->turnLen = POP(actor);
+        actor->turnLen = POP(&actor->context);
         ((void (*)(u8, s32, void *, void *))func_800A8DAC)(actor->field_0x256, 0x20, buf, 0);
         actor->turnPitchDst = buf[0] / 16;
         actor->turnRollDst = buf[1] / 16;
@@ -1180,10 +1180,10 @@ s32 opHandler_FACEDIROFF(Actor *actor, s32 arg1) {
  */
 s32 opHandler_RFACEDIRI(Actor *actor) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        actor->turnLen = POP(actor);
-        actor->turnYawDst = POP(actor);
-        actor->turnRollDst = POP(actor);
-        actor->turnPitchDst = POP(actor);
+        actor->turnLen = POP(&actor->context);
+        actor->turnYawDst = POP(&actor->context);
+        actor->turnRollDst = POP(&actor->context);
+        actor->turnPitchDst = POP(&actor->context);
         actor->turnTick = 0;
         actor->turnMode = 0;
     }
@@ -1198,10 +1198,10 @@ s32 opHandler_RFACEDIRI(Actor *actor) {
  */
 s32 opHandler_RFACEDIR(Actor *actor) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        actor->turnLen = POP(actor);
-        actor->turnTgtZ = POP(actor);
-        actor->turnTgtY = POP(actor);
-        actor->turnTgtX = POP(actor);
+        actor->turnLen = POP(&actor->context);
+        actor->turnTgtZ = POP(&actor->context);
+        actor->turnTgtY = POP(&actor->context);
+        actor->turnTgtX = POP(&actor->context);
         actor->turnTick = 0;
         actor->turnMode = 1;
     }

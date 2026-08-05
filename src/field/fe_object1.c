@@ -493,6 +493,15 @@ void func_8009895C(void) {
 }
 
 
+/**
+ * @brief Empty in the retail build, and called from nowhere.
+ *
+ * @note Purpose unknown. It survives as a real function -- the linker kept
+ *       its address and @c fe_object1.h still declares it -- so it was most
+ *       likely a debug or teardown hook whose body was compiled out, sitting
+ *       as it does between the shutdown path above and the SFX fade-out in
+ *       @ref func_8009912C.
+ */
 void func_80099124(void) {
 }
 

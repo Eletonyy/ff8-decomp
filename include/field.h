@@ -32,32 +32,6 @@
 
 
 /**
- * @brief Field entity overlay used by the line-trigger family.
- *
- * Bytes 0x188-0x195 of an entity are reused by the @c SETLINE / @c LINEON
- * / @c LINEOFF opcodes to describe a 3D line-segment hit volume (despite
- * the wiki's "line" name, it's actually a 3D box bounded by the two
- * end-points). The same storage is interpreted as movement state
- * (an animation-speed / @c unk188 step counter pair) by the MOVE/MSPEED family —
- * use whichever overlay corresponds to the entity's role.
- *
- * @c lineActive byte 0 is the "line collision enabled" flag (set by
- * @c LINEON, cleared by @c LINEOFF) and byte 1 is the script-character
- * marker copied from @c D_800DE4FC by @c SETLINE at init.
- */
-typedef struct {
-    u8  pad000[0x188];      /**< 0x000 */
-    u16 lineX1;             /**< 0x188 */
-    u16 lineY1;             /**< 0x18A */
-    u16 lineZ1;             /**< 0x18C */
-    u16 lineX2;             /**< 0x18E */
-    u16 lineY2;             /**< 0x190 */
-    u16 lineZ2;             /**< 0x192 */
-    u8  lineActive;         /**< 0x194: 1 while LINEON, 0 while LINEOFF. */
-    u8  lineCharMarker;     /**< 0x195: D_800DE4FC snapshot, set by SETLINE. */
-} EntityLineTrigger;
-
-/**
  * @brief One slot of the @c SystemState mode-slot table at
  *        @c D_800704A8.slots, stride 28 bytes.
  *
@@ -131,8 +105,9 @@ typedef struct {
  * flags an empty slot; @c type selects the @c func_800A5FA4 dispatch behaviour.
  * @c func_8009A2BC reads all three axes, so @c z0 / @c z1 are real Z coordinates.
  *
- * @note Separate storage from the per-entity @ref EntityLineTrigger (@c SETLINE
- *       opcode), which it resembles only in layout. The @ref EventQueue is a
+ * @note Separate storage from the per-entity trigger volume an @ref Eline
+ *       carries (the @c SETLINE opcode), which it resembles only in layout.
+ *       The @ref EventQueue is a
  *       field-script section: its base comes from @c D_800C7208 (set up with
  *       the other @c 0x800E1000 field-data section pointers by @c func_8009895C,
  *       then latched into @c D_8005F0F8 by @c func_800983F0). No game code
@@ -595,19 +570,19 @@ typedef struct {
 } Actor;
 
 /** @brief Push one s32 onto the actor's bytecode stack. */
-#define PUSH(actor, val) (((s32 *)(actor))[(s8)(++(actor)->context.stackPtr)] = (val))
+#define PUSH(ctx, val) (((s32 *)(ctx))[(s8)(++(ctx)->stackPtr)] = (val))
 
 /** @brief Pop one s32 from the actor's bytecode stack. */
-#define POP(actor) (((s32 *)(actor))[(s8)(actor)->context.stackPtr--])
+#define POP(ctx) (((s32 *)(ctx))[(s8)(ctx)->stackPtr--])
 
 /** @brief Pop one s32 then read low byte only. */
-#define POP_BYTE(actor) (*(u8 *)&POP(actor))
+#define POP_BYTE(ctx) (*(u8 *)&POP(ctx))
 
 /** @brief Pop one s32 then read low signed halfword (sign-extended to s32). */
-#define POP_HALF(actor) (*(s16 *)&POP(actor))
+#define POP_HALF(ctx) (*(s16 *)&POP(ctx))
 
 /** @brief Read the top s32 from the actor's bytecode stack without popping. */
-#define PEEK(actor) (((s32 *)(actor))[(actor)->context.stackPtr])
+#define PEEK(ctx) (((s32 *)(ctx))[(ctx)->stackPtr])
 
 /** @brief SeeD salary lookup table indexed by SeeD level (exp / 100). */
 extern u16 g_seedSalaryTable[];
@@ -758,10 +733,10 @@ extern u8 D_80085388;
  */
 typedef struct {
     /* 0x000 */ ScriptContext context; // Has to be first field in struct so that Eline instance can be cast as ScriptContext
-    /* 0x188 */ s16 x0, y0, z0;         /**< Trigger line-segment start (passed to @c func_8009A2BC as arg 0). */
-    /* 0x18E */ s16 x1, y1, z1;         /**< Trigger line-segment end. */
+    /* 0x188 */ s16 x0, y0, z0;         /**< Trigger line-segment start; set by @c SETLINE. */
+    /* 0x18E */ s16 x1, y1, z1;         /**< Trigger line-segment end; set by @c SETLINE. */
     /* 0x194 */ u8  activeMarker;       /**< Block-active gate; @c func_8009A4C0 / @c func_8009A7E8 process the record only when @c == 1. */
-    /* 0x195 */ u8  pad195;
+    /* 0x195 */ u8  charMarker;      /**< Script-character marker; @c SETLINE stamps @c D_800DE4FC here. */
     /* 0x196 */ u8  trigger4;       /**< In-range latch: @c func_8009A4C0 sets it while the query point projects inside @c actor->radius, clears it when out; cleared with @c unk19D by @c func_8009A8E0. */
     /* 0x197 */ u8  trigger5;       /**< Edge-straddle: @c func_8009A4C0 sets it when self and the query point fall on opposite sides of the segment edge (2D cross-product signs differ). */
     /* 0x198 */ u8  trigger6;       /**< Facing hit: @c func_8009A4C0 sets it when self coincides with the projected point or lies within a +/-64 facing window. */
@@ -1157,6 +1132,8 @@ extern u8 D_80082C11;
 /* ======================================================================== */
 
 /** @brief Sound-load handshake byte for the battle-fade sequence. */
+/** @brief Run-disable gate, written by @c RUNDISABLE / @c RUNENABLE.
+ *         Meaning inferred from those opcode names; no reader decompiled yet. */
 extern u8 D_8007064C;
 
 /** @brief Misc menu/field share scalar. */

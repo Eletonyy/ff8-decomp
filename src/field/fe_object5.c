@@ -21,8 +21,8 @@
  *
  * @return 2 (continue processing).
  */
-s32 opHandler_SEALEDOFF(Actor *actor) {
-    s32 popped = POP(actor);
+s32 opHandler_SEALEDOFF(ScriptContext *context) {
+    s32 popped = POP(context);
     g_fieldVars->fieldF3 &= ~popped;
     D_80082C10 = g_fieldVars->fieldF3;
     g_gameState.config.sealedFeatures = g_fieldVars->fieldF3;
@@ -34,13 +34,13 @@ s32 opHandler_SEALEDOFF(Actor *actor) {
  * @brief Pop a character/party token, resolve it via @c findCharacterSlot,
  *        and if the slot is valid hand it to @c func_80036B90.
  */
-s32 opHandler_RESETGF(Actor *actor) {
+s32 opHandler_RESETGF(ScriptContext *context) {
     u8 idx;
     s32 result;
 
-    idx = actor->context.stackPtr;
-    actor->context.stackPtr = idx - 1;
-    result = findCharacterSlot(actor->context.stack[(s8)idx]);
+    idx = context->stackPtr;
+    context->stackPtr = idx - 1;
+    result = findCharacterSlot(context->stack[(s8)idx]);
     if (result != 0xFF) {
         func_80036B90(result);
     }
@@ -59,16 +59,16 @@ s32 opHandler_RESETGF(Actor *actor) {
  *
  * @return 2 (continue processing).
  */
-s32 opHandler_HOLD(Actor *actor) {
+s32 opHandler_HOLD(ScriptContext *context) {
     u8 idx;
     s32 flag;
     s32 actorId;
 
-    idx = actor->context.stackPtr;
-    actor->context.stackPtr = idx - 2;
-    flag = actor->context.stack[(s8)(idx - 1)];
-    actor->context.stackPtr = idx - 3;
-    actorId = actor->context.stack[(s8)(idx - 2)];
+    idx = context->stackPtr;
+    context->stackPtr = idx - 2;
+    flag = context->stack[(s8)(idx - 1)];
+    context->stackPtr = idx - 3;
+    actorId = context->stack[(s8)(idx - 2)];
 
     if (actorId >= 8) {
         actorId = findCharacterSlot(actorId);
@@ -272,30 +272,30 @@ s32 opHandler_GETINFO(Actor *actor) {
  *
  * @return 2 (continue processing).
  */
-s32 opHandler_PGETINFO(Actor *actor) {
+s32 opHandler_PGETINFO(ScriptContext *context) {
     FieldVars *seed = g_fieldVars;
     u8 idx;
     s32 popped;
     s32 entIdx;
 
-    idx = actor->context.stackPtr;
-    actor->context.stackPtr = idx - 1;
-    popped = actor->context.stack[(s8)idx];
+    idx = context->stackPtr;
+    context->stackPtr = idx - 1;
+    popped = context->stack[(s8)idx];
     entIdx = seed->memberSlot[popped];
-    actor->context.resultSlots[0] = D_80085224[entIdx].posX / 4096;
-    actor->context.resultSlots[1] = D_80085224[entIdx].posY / 4096;
-    actor->context.resultSlots[2] = D_80085224[entIdx].posZ / 4096;
-    actor->context.resultSlots[4] = D_80085224[entIdx].field_0x241;
-    actor->context.resultSlots[5] = D_80085224[entIdx].triIdx;
-    actor->context.resultSlots[6] = D_80085224[entIdx].moveSpeed;
+    context->resultSlots[0] = D_80085224[entIdx].posX / 4096;
+    context->resultSlots[1] = D_80085224[entIdx].posY / 4096;
+    context->resultSlots[2] = D_80085224[entIdx].posZ / 4096;
+    context->resultSlots[4] = D_80085224[entIdx].field_0x241;
+    context->resultSlots[5] = D_80085224[entIdx].triIdx;
+    context->resultSlots[6] = D_80085224[entIdx].moveSpeed;
     return 2;
 }
 
 /** @brief Pop a character-id and stash @c findCharacterSlot's result in @c resultSlots[0]. */
-s32 opHandler_WHOAMI(Actor *actor) {
-    u8 idx = actor->context.stackPtr;
-    actor->context.stackPtr = idx - 1;
-    actor->context.resultSlots[0] = findCharacterSlot(actor->context.stack[(s8)idx]);
+s32 opHandler_WHOAMI(ScriptContext *context) {
+    u8 idx = context->stackPtr;
+    context->stackPtr = idx - 1;
+    context->resultSlots[0] = findCharacterSlot(context->stack[(s8)idx]);
     return 2;
 }
 
@@ -320,15 +320,15 @@ s32 opHandler_WHOAMI(Actor *actor) {
  *
  * @return 3 (advance two stack slots and continue).
  */
-s32 opHandler_JUNCTION(Actor *actor) {
+s32 opHandler_JUNCTION(ScriptContext *context) {
     s32 popped;
     s32 saveMode;
     s32 i;
 
     {
-        u8 idx = actor->context.stackPtr;
-        actor->context.stackPtr = idx - 1;
-        popped = actor->context.stack[(s8)idx];
+        u8 idx = context->stackPtr;
+        context->stackPtr = idx - 1;
+        popped = context->stack[(s8)idx];
     }
     saveMode = popped & 1;
     resetCardSlots(saveMode);
@@ -437,7 +437,7 @@ s32 opHandler_PCOPYINFO(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_ACTORMODE(Actor *actor) {
-    s32 mode = POP(actor);
+    s32 mode = POP(&actor->context);
     s32 a1_val;
     s32 a2_val;
 
@@ -484,12 +484,12 @@ s32 opHandler_ACTORMODE(Actor *actor) {
  *
  * @return 1 while CD read is pending, 2 once committed.
  */
-s32 opHandler_MOVIEREADY(Actor *actor) {
+s32 opHandler_MOVIEREADY(ScriptContext *context) {
     s32 priority;
     s32 entryIdx;
 
-    priority = actor->context.stack[(s8)actor->context.stackPtr];
-    entryIdx = actor->context.stack[(s8)actor->context.stackPtr - 1] + 1;
+    priority = context->stack[(s8)context->stackPtr];
+    entryIdx = context->stack[(s8)context->stackPtr - 1] + 1;
 
     switch (priority) {
     case 0:  priority = 8;   break;
@@ -497,7 +497,7 @@ s32 opHandler_MOVIEREADY(Actor *actor) {
     default: priority = 6;   break;
     }
 
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         D_8007064B = 1;
         func_800A59D0();
         func_80038868(D_800C2D14[0], D_800C2D14[1], 0x801E8000, 0);
@@ -515,7 +515,7 @@ s32 opHandler_MOVIEREADY(Actor *actor) {
                                1,
                                D_8005F13C);
     g_fieldVars->padInitStatus = 0;
-    actor->context.stackPtr -= 2;
+    context->stackPtr -= 2;
     return 2;
 }
 
@@ -537,7 +537,7 @@ s32 opHandler_MOVIEREADY(Actor *actor) {
  * @return 1 to block while the movie subsystem is busy, 2 once it
  *         takes over.
  */
-s32 opHandler_MOVIE(Actor *actor) {
+s32 opHandler_MOVIE(ScriptContext *context) {
     s32 i;
     Actor *p;
     s32 sc, mc, fc;
@@ -596,14 +596,21 @@ void func_800B14C8(void) {
 }
 
 /**
- * Calls func_801E8B84, returns 1 if result is nonzero, else 2.
+ * @brief Wait for the movie to finish playing.
  *
- * @param a0 Pointer to the script/object structure.
- * @return 1 if func_801E8B84 returns nonzero, 2 otherwise.
+ * Re-runs while @c func_801E8B84 returns nonzero, then lets the script
+ * advance.
+ *
+ * @note @c func_801E8B84 lives in another overlay and has no body here, so
+ *       "movie still playing" is inferred from the opcode name and from the
+ *       shape it shares with the other @c *SYNC waits.
+ *
+ * @param context Context of the script running the opcode.
+ * @return 1 to run this opcode again, 2 once the movie has finished.
  */
-s32 opHandler_MOVIESYNC(u8 *a0) {
+s32 opHandler_MOVIESYNC(ScriptContext *context) {
     s32 result;
-    result = func_801E8B84(a0);
+    result = func_801E8B84(context);
     if (result != 0) {
         return 1;
     }
@@ -628,10 +635,10 @@ s32 opHandler_MOVIESYNC(u8 *a0) {
  *
  * @return 1 while CD read is pending, 2 once the SPU bank is loaded.
  */
-s32 opHandler_SPUREADY(Actor *actor) {
-    s32 entryIdx = actor->context.stack[(s8)actor->context.stackPtr];
+s32 opHandler_SPUREADY(ScriptContext *context) {
+    s32 entryIdx = context->stack[(s8)context->stackPtr];
 
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         func_800A59D0();
         func_80038868(D_800C2D14[0], D_800C2D14[1], 0x801E8000, 0);
         D_800DE4FD[0] = 1;
@@ -646,7 +653,7 @@ s32 opHandler_SPUREADY(Actor *actor) {
                   2,
                   D_8005F13C);
     func_801E870C();
-    actor->context.stackPtr -= 1;
+    context->stackPtr -= 1;
     return 2;
 }
 
@@ -660,8 +667,8 @@ s32 opHandler_SPUREADY(Actor *actor) {
  * Counterpart to SPUREADY — used right after a sample upload to wait
  * for the SPU to actually have the requested sample loaded.
  */
-s32 opHandler_SPUSYNC(Actor *actor) {
-    s32 top = actor->context.stack[(s8)actor->context.stackPtr];
+s32 opHandler_SPUSYNC(ScriptContext *context) {
+    s32 top = context->stack[(s8)context->stackPtr];
     if (top > 0) {
         if ((u32)top >= D_800772B8) {
             return 1;
@@ -671,17 +678,21 @@ s32 opHandler_SPUSYNC(Actor *actor) {
             return 1;
         }
     }
-    actor->context.stackPtr--;
+    context->stackPtr--;
     return 2;
 }
 
 /**
- * Returns 2, indicating continue processing.
+ * @brief Movie-cut opcode; does nothing in the retail build.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @note Purpose uncertain -- the body is empty, so whatever cut/skip
+ *       handling the name implies was either dropped before release or
+ *       lives entirely in the movie overlay.
+ *
+ * @param context Context of the script running the opcode (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MOVIECUT(u8 *a0) {
+s32 opHandler_MOVIECUT(ScriptContext *context) {
     return 2;
 }
 
@@ -691,26 +702,29 @@ s32 opHandler_MOVIECUT(u8 *a0) {
  *        below it supplies the encounter id. The returned handle is
  *        stashed in @c D_800DE878 for later use.
  */
-s32 opHandler_SETVIBRATE(Actor *actor) {
+s32 opHandler_SETVIBRATE(ScriptContext *context) {
     u8 idx;
     s32 val1, val2;
 
-    idx = actor->context.stackPtr;
-    actor->context.stackPtr = idx - 1;
-    val1 = actor->context.stack[(s8)idx];
-    actor->context.stackPtr = idx - 2;
-    val2 = actor->context.stack[(s8)(idx - 1)];
+    idx = context->stackPtr;
+    context->stackPtr = idx - 1;
+    val1 = context->stack[(s8)idx];
+    context->stackPtr = idx - 2;
+    val2 = context->stack[(s8)(idx - 1)];
     *(s32 *)D_800DE878 = loadBattleCmd(D_800C5FB0, val2, val1 | 1);
     return 2;
 }
 
 /**
- * Returns 2, indicating continue processing.
+ * @brief Stop controller vibration; does nothing in the retail build.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @note Purpose uncertain -- the body is empty. The pad is left to finish
+ *       whatever effect is already running.
+ *
+ * @param context Context of the script running the opcode (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_STOPVIBRATE(u8 *a0) {
+s32 opHandler_STOPVIBRATE(ScriptContext *context) {
     return 2;
 }
 
@@ -718,7 +732,7 @@ s32 opHandler_STOPVIBRATE(u8 *a0) {
  * @brief Wait-on-CD-read opcode body — block until @c func_800393C8
  *        (a CD poll) returns @c 0, then advance.
  */
-s32 opHandler_LOADSYNC(Actor *actor) {
+s32 opHandler_LOADSYNC(ScriptContext *context) {
     if (func_800393C8() == 0) {
         return 2;
     }
@@ -756,8 +770,8 @@ s32 opHandler_INITSOUND(void) {
  *
  * @return 2 (continue processing).
  */
-s32 opHandler_SETBATTLEMUSIC(Actor *actor) {
-    g_fieldVars->battleMusicId = (u8)POP(actor);
+s32 opHandler_SETBATTLEMUSIC(ScriptContext *context) {
+    g_fieldVars->battleMusicId = (u8)POP(context);
     return 2;
 }
 
@@ -783,15 +797,15 @@ s32 opHandler_SETBATTLEMUSIC(Actor *actor) {
  *
  * @return 1 while loading, 2 once the bank is staged.
  */
-s32 opHandler_MUSICLOAD(Actor *actor) {
+s32 opHandler_MUSICLOAD(ScriptContext *context) {
     FieldVars *seed;
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         u8 sp;
         D_800DE8D0 = 0;
-        sp = actor->context.stackPtr;
+        sp = context->stackPtr;
         seed = g_fieldVars;
-        actor->context.stackPtr = sp - 1;
-        seed->nextSoundBank = (u8)actor->context.stack[(s8)sp];
+        context->stackPtr = sp - 1;
+        seed->nextSoundBank = (u8)context->stack[(s8)sp];
 
         if (g_fieldVars->audioChannel0State == (s8)g_fieldVars->nextSoundBank) return 2;
         if (g_fieldVars->soundHandle1 != -1) return 2;
@@ -879,8 +893,8 @@ s32 opHandler_MUSICREPLAY(void) {
  *
  * @return 2 if no swap queued, 3 once the new track is launched.
  */
-s32 opHandler_MUSICSKIP(Actor *actor) {
-    s32 popped = POP(actor);
+s32 opHandler_MUSICSKIP(ScriptContext *context) {
+    s32 popped = POP(context);
     u8 *flag = D_800DE8C8;
     if (flag[8] == 0) {
         return 2;
@@ -901,9 +915,9 @@ s32 opHandler_MUSICSKIP(Actor *actor) {
  *
  * @return 2 if no bank swap was queued, 3 once the new track starts.
  */
-s32 opHandler_CHOICEMUSIC(Actor *actor) {
-    s32 b = POP(actor);
-    s32 a = POP(actor);
+s32 opHandler_CHOICEMUSIC(ScriptContext *context) {
+    s32 b = POP(context);
+    s32 a = POP(context);
     s32 aMasked = a & 0x3FFFFFF;
     u8 *flag = D_800DE8C8;
     if (flag[8] == 0) {
@@ -925,10 +939,10 @@ s32 opHandler_CHOICEMUSIC(Actor *actor) {
  *
  * @return 2 if no bank swap was queued, 3 once the new track starts.
  */
-s32 opHandler_CROSSMUSIC(Actor *actor) {
-    s32 first = POP(actor);
+s32 opHandler_CROSSMUSIC(ScriptContext *context) {
+    s32 first = POP(context);
     s32 firstShifted = first << 1;
-    s32 second = POP(actor);
+    s32 second = POP(context);
     s32 secondMasked = second & 0x7F;
     u8 *flag = D_800DE8C8;
     if (flag[8] == 0) {
@@ -951,8 +965,8 @@ s32 opHandler_CROSSMUSIC(Actor *actor) {
  *
  * @return 2 if no bank-swap was queued, 3 once the new SFX track starts.
  */
-s32 opHandler_DUALMUSIC(Actor *actor) {
-    s32 masked = POP(actor) & 0x7F;
+s32 opHandler_DUALMUSIC(ScriptContext *context) {
+    s32 masked = POP(context) & 0x7F;
     u8 *flag = D_800DE8C8;
     u8 *bank;
     if (flag[8] == 0) {
@@ -971,12 +985,12 @@ s32 opHandler_DUALMUSIC(Actor *actor) {
 }
 
 /** @brief Pop a flag value and feed it to @c sndSetEngineFlag. */
-s32 opHandler_KEYSIGHNCHANGE(Actor *actor) {
+s32 opHandler_KEYSIGHNCHANGE(ScriptContext *context) {
     u8 idx;
 
-    idx = actor->context.stackPtr;
-    actor->context.stackPtr = idx - 1;
-    sndSetEngineFlag(actor->context.stack[(s8)idx]);
+    idx = context->stackPtr;
+    context->stackPtr = idx - 1;
+    sndSetEngineFlag(context->stack[(s8)idx]);
     return 2;
 }
 
@@ -987,8 +1001,8 @@ s32 opHandler_KEYSIGHNCHANGE(Actor *actor) {
  *
  * @return 2 (continue processing).
  */
-s32 opHandler_MUSICSTOP(Actor *actor) {
-    s32 ch = POP(actor) & 1;
+s32 opHandler_MUSICSTOP(ScriptContext *context) {
+    s32 ch = POP(context) & 1;
     s32 handle = (&g_fieldVars->soundHandle0)[ch];
     s8 *p;
     if (handle != -1) {
@@ -1029,9 +1043,9 @@ s32 opHandler_OP16F(Actor *actor) {
  *
  * @return 2 (continue processing).
  */
-s32 opHandler_MUSICVOL(Actor *actor) {
-    s32 vol = POP(actor);
-    s32 ch = POP(actor) & 1;
+s32 opHandler_MUSICVOL(ScriptContext *context) {
+    s32 vol = POP(context);
+    s32 ch = POP(context) & 1;
     u8 *p;
     sndCmdC1((&g_fieldVars->soundHandle0)[ch], 0x10, vol);
     /* 0xC5 is FieldVars.musicVolume, with sfxVolume adjacent at 0xC6. The
@@ -1052,10 +1066,10 @@ s32 opHandler_MUSICVOL(Actor *actor) {
  *
  * @return 2 (continue processing).
  */
-s32 opHandler_MUSICVOLTRANS(Actor *actor) {
-    s32 vol = POP(actor);
-    s32 ramp = POP(actor);
-    s32 ch = POP(actor) & 1;
+s32 opHandler_MUSICVOLTRANS(ScriptContext *context) {
+    s32 vol = POP(context);
+    s32 ramp = POP(context);
+    s32 ch = POP(context) & 1;
     u8 *p;
     sndCmdC1((&g_fieldVars->soundHandle0)[ch], ramp << 1, vol);
     /* Same base+ch / 0xC5 phrasing as opHandler_MUSICVOL, and required for the
@@ -1074,11 +1088,11 @@ s32 opHandler_MUSICVOLTRANS(Actor *actor) {
  *
  * @return 2 (continue processing).
  */
-s32 opHandler_MUSICVOLFADE(Actor *actor) {
-    s32 vol = POP(actor);
-    s32 depth = POP(actor);
-    s32 ramp = POP(actor);
-    s32 ch = POP(actor) & 1;
+s32 opHandler_MUSICVOLFADE(ScriptContext *context) {
+    s32 vol = POP(context);
+    s32 depth = POP(context);
+    s32 ramp = POP(context);
+    s32 ch = POP(context) & 1;
     u8 *p;
     sndCmdC2((&g_fieldVars->soundHandle0)[ch], ramp << 1, depth, vol);
     /* Same base+ch / 0xC5 phrasing as opHandler_MUSICVOL, and required for the
@@ -1089,12 +1103,14 @@ s32 opHandler_MUSICVOLFADE(Actor *actor) {
 }
 
 /**
- * Calls sndGetMaxVolume with argument 1, returns 1 if result is nonzero, else 2.
+ * @brief Wait for a music volume fade to reach its target.
  *
- * @param a0 Pointer to the script/object structure (unused).
- * @return 1 if sndGetMaxVolume returns nonzero, 2 otherwise.
+ * Re-runs while @ref sndGetMaxVolume still reports a fade in progress.
+ *
+ * @param context Context of the script running the opcode (unused).
+ * @return 1 to run this opcode again, 2 once the fade has settled.
  */
-s32 opHandler_MUSICVOLSYNC(u8 *a0) {
+s32 opHandler_MUSICVOLSYNC(ScriptContext *context) {
     s32 result;
     result = sndGetMaxVolume(1);
     if (result == 0) {
@@ -1154,13 +1170,13 @@ void func_800B21E0(void) {
  *
  * @return 1 while the CD read is pending, 2 once the bank is staged.
  */
-s32 opHandler_EFFECTLOAD(Actor *actor) {
+s32 opHandler_EFFECTLOAD(ScriptContext *context) {
     FieldVars *seed;
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
-        u8 sp = actor->context.stackPtr;
+    if ((context->activeMask >> context->scriptSlot) & 1) {
+        u8 sp = context->stackPtr;
         seed = g_fieldVars;
-        actor->context.stackPtr = sp - 1;
-        seed->audioChannel2State = (s8)actor->context.stack[(s8)sp];
+        context->stackPtr = sp - 1;
+        seed->audioChannel2State = (s8)context->stack[(s8)sp];
         func_800B21E0();
     }
     if (D_800DE8D5 != 0) {
@@ -1174,11 +1190,11 @@ s32 opHandler_EFFECTLOAD(Actor *actor) {
  *
  * @return 2 (continue processing).
  */
-s32 opHandler_EFFECTPLAY(Actor *actor) {
-    s32 d = POP(actor);
-    s32 c = POP(actor);
-    s32 b = POP(actor);
-    s32 a = POP(actor);
+s32 opHandler_EFFECTPLAY(ScriptContext *context) {
+    s32 d = POP(context);
+    s32 c = POP(context);
+    s32 b = POP(context);
+    s32 a = POP(context);
     sndPlaySfx(a, b, c, d);
     return 2;
 }

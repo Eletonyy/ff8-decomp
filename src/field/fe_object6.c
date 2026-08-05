@@ -15,11 +15,11 @@
  * @param a1    Dispatcher-supplied SFX bank index.
  * @return 2 (continue processing).
  */
-s32 opHandler_EFFECTPLAY2(Actor *actor, s32 a1) {
+s32 opHandler_EFFECTPLAY2(ScriptContext *context, s32 a1) {
     s32 val1, val2, val3;
-    val1 = POP(actor);
-    val2 = POP(actor);
-    val3 = POP(actor);
+    val1 = POP(context);
+    val2 = POP(context);
+    val3 = POP(context);
     val2 &= 0xFF;
     val3 &= 0x7F;
     sndPlayBankSfx((s32)func_8003974C(D_800D5EA4, a1), val1, val2, val3);
@@ -32,8 +32,8 @@ s32 opHandler_EFFECTPLAY2(Actor *actor, s32 a1) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ALLSEVOL(Actor *actor) {
-    sndSetMasterVolume(POP(actor));
+s32 opHandler_ALLSEVOL(ScriptContext *context) {
+    sndSetMasterVolume(POP(context));
     return 2;
 }
 
@@ -44,10 +44,10 @@ s32 opHandler_ALLSEVOL(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ALLSEVOLTRANS(Actor *actor) {
+s32 opHandler_ALLSEVOLTRANS(ScriptContext *context) {
     s32 val1, val2;
-    val1 = POP(actor);
-    val2 = POP(actor);
+    val1 = POP(context);
+    val2 = POP(context);
     sndSetChannelVolume(val2, val1 << 1);
     return 2;
 }
@@ -58,8 +58,8 @@ s32 opHandler_ALLSEVOLTRANS(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ALLSEPOS(Actor *actor) {
-    sndSeqSetTempo(POP(actor));
+s32 opHandler_ALLSEPOS(ScriptContext *context) {
+    sndSeqSetTempo(POP(context));
     return 2;
 }
 
@@ -70,10 +70,10 @@ s32 opHandler_ALLSEPOS(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ALLSEPOSTRANS(Actor *actor) {
+s32 opHandler_ALLSEPOSTRANS(ScriptContext *context) {
     s32 val1, val2;
-    val1 = POP(actor);
-    val2 = POP(actor);
+    val1 = POP(context);
+    val2 = POP(context);
     sndSeqSetChannelTempo(val2, val1 << 1);
     return 2;
 }
@@ -84,10 +84,10 @@ s32 opHandler_ALLSEPOSTRANS(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SEVOL(Actor *actor) {
+s32 opHandler_SEVOL(ScriptContext *context) {
     s32 val1, val2;
-    val1 = POP(actor);
-    val2 = POP(actor);
+    val1 = POP(context);
+    val2 = POP(context);
     sndSeqPlay7bit(0, val2, val1);
     return 2;
 }
@@ -99,11 +99,11 @@ s32 opHandler_SEVOL(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SEVOLTRANS(Actor *actor) {
+s32 opHandler_SEVOLTRANS(ScriptContext *context) {
     s32 val1, val2, val3;
-    val1 = POP(actor);
-    val2 = POP(actor);
-    val3 = POP(actor);
+    val1 = POP(context);
+    val2 = POP(context);
+    val3 = POP(context);
     sndSeqPlayPan7bit(0, val3, val2 << 1, val1);
     return 2;
 }
@@ -114,10 +114,10 @@ s32 opHandler_SEVOLTRANS(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SEPOS(Actor *actor) {
+s32 opHandler_SEPOS(ScriptContext *context) {
     s32 val1, val2;
-    val1 = POP(actor);
-    val2 = POP(actor);
+    val1 = POP(context);
+    val2 = POP(context);
     sndSeqPlay8bit(0, val2, val1);
     return 2;
 }
@@ -129,11 +129,11 @@ s32 opHandler_SEPOS(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SEPOSTRANS(Actor *actor) {
+s32 opHandler_SEPOSTRANS(ScriptContext *context) {
     s32 val1, val2, val3;
-    val1 = POP(actor);
-    val2 = POP(actor);
-    val3 = POP(actor);
+    val1 = POP(context);
+    val2 = POP(context);
+    val3 = POP(context);
     sndSeqPlayPan8bit(0, val3, val2 << 1, val1);
     return 2;
 }
@@ -147,15 +147,15 @@ s32 opHandler_SEPOSTRANS(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 once the SPU is free, 1 while still waiting.
  */
-s32 opHandler_SESTOP(Actor *actor) {
-    s32 top = PEEK(actor);
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
+s32 opHandler_SESTOP(ScriptContext *context) {
+    s32 top = PEEK(context);
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         sndCmd21(0, top);
     }
     if ((sndGatherKeyOnMask() & top) != 0) {
         return 1;
     }
-    actor->context.stackPtr--;
+    context->stackPtr--;
     return 2;
 }
 
@@ -165,14 +165,14 @@ s32 opHandler_SESTOP(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_COUNTERCLOCKWISETURN(Actor *actor) {
-    actor->context.resultSlots[0] = sndFindKeyOnMask(POP(actor));
+s32 opHandler_COUNTERCLOCKWISETURN(ScriptContext *context) {
+    context->resultSlots[0] = sndFindKeyOnMask(POP(context));
     return 2;
 }
 
 /** @brief Pop value, bitwise-NOT, store to D_8007065C. Returns 2. */
-s32 opHandler_CLOCKWISETURN2(Actor *actor) {
-    *(s32 *)D_8007065C = ~POP(actor);
+s32 opHandler_CLOCKWISETURN2(ScriptContext *context) {
+    *(s32 *)D_8007065C = ~POP(context);
     return 2;
 }
 
@@ -270,7 +270,7 @@ void func_800B2864(Actor *actor, s32 channel, s32 unused2, s32 unused3) {
  * @return 2 (continue processing).
  */
 s32 opHandler_FOOTSTEP(Actor *actor, s32 a1) {
-    actor->unk188 = POP_BYTE(actor);
+    actor->unk188 = POP_BYTE(&actor->context);
     actor->unk189 = a1;
     return 2;
 }
@@ -301,8 +301,8 @@ s32 opHandler_FOOTSTEPCOPY(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_FOOTSTEPON(Actor *actor) {
-    actor->context.flags |= 0x80;
+s32 opHandler_FOOTSTEPON(ScriptContext *context) {
+    context->flags |= 0x80;
     return 2;
 }
 
@@ -312,8 +312,8 @@ s32 opHandler_FOOTSTEPON(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_FOOTSTEPOFF(Actor *actor) {
-    actor->context.flags &= ~0x80;
+s32 opHandler_FOOTSTEPOFF(ScriptContext *context) {
+    context->flags &= ~0x80;
     return 2;
 }
 
@@ -325,7 +325,7 @@ s32 opHandler_FOOTSTEPOFF(Actor *actor) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_FOOTSTEPOFFALL(Actor *actor) {
+s32 opHandler_FOOTSTEPOFFALL(ScriptContext *context) {
     s32 i;
     Actor *p = D_80085224;
     for (i = 0; i < D_80085388; i++) {
@@ -565,7 +565,7 @@ s32 opHandler_BGANIMESYNC(Bganime *bganime) {
  * @return 2 (continue processing).
  */
 s32 opHandler_BGDRAW(Bganime *bganime) {
-    s32 val = POP(bganime);
+    s32 val = POP(&bganime->context);
     func_800B2D40(bganime, val, val);
     bganime->animSpeed2 = 1;
     bganime->animSpeed = 1;
@@ -603,7 +603,7 @@ s32 opHandler_BGOFF(Bganime *bganime) {
 /** @brief Pop halfword, store to both walkSpeed2 and walkSpeed. Returns 2. */
 s32 opHandler_BGANIMESPEED(Bganime *bganime) {
     Bganime *e = bganime;
-    e->animSpeed2 = (u16)POP(bganime);
+    e->animSpeed2 = (u16)POP(&bganime->context);
     e->animSpeed = e->animSpeed2;
     return 2;
 }
@@ -611,7 +611,7 @@ s32 opHandler_BGANIMESPEED(Bganime *bganime) {
 /** @brief Pop halfword, store to runSpeed. Returns 2. */
 s32 opHandler_BGANIMEFLAG(Bganime *bganime) {
     Bganime *e = bganime;
-    e->animFlag = (u16)POP(bganime);
+    e->animFlag = (u16)POP(&bganime->context);
     return 2;
 }
 
@@ -632,13 +632,13 @@ s32 opHandler_BGSHADE(Bganime *bganime) {
     if ((bganime->context.activeMask >> bganime->context.scriptSlot) & 1) {
         e->context.flags &= ~0x600;
         e->unk19E = 0;
-        e->unk1AC = POP_BYTE(bganime);
-        e->unk1AB = POP_BYTE(bganime);
-        e->unk1AA = POP_BYTE(bganime);
-        e->unk1A9 = POP_BYTE(bganime);
-        e->unk1A8 = POP_BYTE(bganime);
-        e->unk1A7 = POP_BYTE(bganime);
-        e->shadeCounter = (u16)POP(bganime);
+        e->unk1AC = POP_BYTE(&bganime->context);
+        e->unk1AB = POP_BYTE(&bganime->context);
+        e->unk1AA = POP_BYTE(&bganime->context);
+        e->unk1A9 = POP_BYTE(&bganime->context);
+        e->unk1A8 = POP_BYTE(&bganime->context);
+        e->unk1A7 = POP_BYTE(&bganime->context);
+        e->shadeCounter = (u16)POP(&bganime->context);
     } else if ((s16)e->shadeCounter == 0) {
         return 2;
     }
@@ -665,36 +665,36 @@ s32 opHandler_RBGSHADELOOP(Bganime *bganime) {
     bganime->context.flags |= 0x600;
     e->unk19E = 0;
 
-    e->unk1A6 = POP_BYTE(bganime);
-    e->unk1A5 = POP_BYTE(bganime);
+    e->unk1A6 = POP_BYTE(&bganime->context);
+    e->unk1A5 = POP_BYTE(&bganime->context);
 
-    v = POP_BYTE(bganime);
+    v = POP_BYTE(&bganime->context);
     e->unk1AC = v;
     e->unk1B2 = v;
 
-    v = POP_BYTE(bganime);
+    v = POP_BYTE(&bganime->context);
     e->unk1AB = v;
     e->unk1B1 = v;
 
-    v = POP_BYTE(bganime);
+    v = POP_BYTE(&bganime->context);
     e->unk1AA = v;
     e->unk1B0 = v;
 
-    v = POP_BYTE(bganime);
+    v = POP_BYTE(&bganime->context);
     e->unk1A9 = v;
     e->unk1AF = v;
 
-    v = POP_BYTE(bganime);
+    v = POP_BYTE(&bganime->context);
     e->unk1A8 = v;
     e->unk1AE = v;
 
-    v = POP_BYTE(bganime);
+    v = POP_BYTE(&bganime->context);
     e->unk1A7 = v;
     e->unk1AD = v;
 
-    e->unk1A2 = (u16)POP(bganime);
+    e->unk1A2 = (u16)POP(&bganime->context);
 
-    hw = (u16)POP(bganime);
+    hw = (u16)POP(&bganime->context);
     e->unk1A0 = hw;
     e->shadeCounter = hw;
 
@@ -760,13 +760,13 @@ s32 opHandler_BGSHADEOFF(Bganime *bganime) {
  * @param actor Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_SHAKE(Actor *actor) {
+s32 opHandler_SHAKE(ScriptContext *context) {
     D_800704A8.oscillators[0].mode = 1;
     D_800704A8.oscillators[1].mode = 1;
-    D_800704A8.oscillators[1].total = (u16)POP(actor);
-    D_800704A8.oscillators[1].amplitude = (u16)POP(actor);
-    D_800704A8.oscillators[0].total = (u16)POP(actor);
-    D_800704A8.oscillators[0].amplitude = (u16)POP(actor);
+    D_800704A8.oscillators[1].total = (u16)POP(context);
+    D_800704A8.oscillators[1].amplitude = (u16)POP(context);
+    D_800704A8.oscillators[0].total = (u16)POP(context);
+    D_800704A8.oscillators[0].amplitude = (u16)POP(context);
     return 3;
 }
 
@@ -776,7 +776,7 @@ s32 opHandler_SHAKE(Actor *actor) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_SHAKEOFF(Actor *actor) {
+s32 opHandler_SHAKEOFF(ScriptContext *context) {
     D_800704A8.oscillators[0].mode = 0;
     D_800704A8.oscillators[1].mode = 0;
     return 2;
@@ -789,9 +789,9 @@ s32 opHandler_SHAKEOFF(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLL(Actor *actor) {
-    D_800704A8.slots[0].p2 = (u16)POP(actor);
-    D_800704A8.slots[0].p1 = (u16)POP(actor);
+s32 opHandler_DSCROLL(ScriptContext *context) {
+    D_800704A8.slots[0].p2 = (u16)POP(context);
+    D_800704A8.slots[0].p1 = (u16)POP(context);
     D_800704A8.slots[0].mode = 3;
     D_800704A8.slots[0].submode = 0;
     return 3;
@@ -806,10 +806,10 @@ s32 opHandler_DSCROLL(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLL(Actor *actor) {
-    D_800704A8.slots[0].timer = (u16)POP(actor);
-    D_800704A8.slots[0].p2 = (u16)POP(actor);
-    D_800704A8.slots[0].p1 = (u16)POP(actor);
+s32 opHandler_LSCROLL(ScriptContext *context) {
+    D_800704A8.slots[0].timer = (u16)POP(context);
+    D_800704A8.slots[0].p2 = (u16)POP(context);
+    D_800704A8.slots[0].p1 = (u16)POP(context);
     D_800704A8.slots[0].mode = 4;
     D_800704A8.slots[0].submode = 0;
     return 2;
@@ -823,10 +823,10 @@ s32 opHandler_LSCROLL(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLL(Actor *actor) {
-    D_800704A8.slots[0].timer = (u16)POP(actor);
-    D_800704A8.slots[0].p2 = (u16)POP(actor);
-    D_800704A8.slots[0].p1 = (u16)POP(actor);
+s32 opHandler_CSCROLL(ScriptContext *context) {
+    D_800704A8.slots[0].timer = (u16)POP(context);
+    D_800704A8.slots[0].p2 = (u16)POP(context);
+    D_800704A8.slots[0].p1 = (u16)POP(context);
     D_800704A8.slots[0].mode = 5;
     D_800704A8.slots[0].submode = 0;
     return 2;
@@ -841,8 +841,8 @@ s32 opHandler_CSCROLL(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLLA(Actor *actor) {
-    s32 val = POP(actor);
+s32 opHandler_DSCROLLA(ScriptContext *context) {
+    s32 val = POP(context);
     u8 byte = D_80085230[val]->field_0x256;
     D_800704A8.slots[0].mode = 0;
     D_800704A8.slots[0].submode = 0;
@@ -859,9 +859,9 @@ s32 opHandler_DSCROLLA(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLLA(Actor *actor) {
-    s32 val1 = POP(actor);
-    s32 val2 = POP(actor);
+s32 opHandler_LSCROLLA(ScriptContext *context) {
+    s32 val1 = POP(context);
+    s32 val2 = POP(context);
     D_800704A8.slots[0].timer = val1;
     D_800704A8.slots[0].param = D_80085230[val2]->field_0x256;
     D_800704A8.slots[0].mode = 1;
@@ -875,9 +875,9 @@ s32 opHandler_LSCROLLA(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLLA(Actor *actor) {
-    s32 val1 = POP(actor);
-    s32 val2 = POP(actor);
+s32 opHandler_CSCROLLA(ScriptContext *context) {
+    s32 val1 = POP(context);
+    s32 val2 = POP(context);
     D_800704A8.slots[0].timer = val1;
     D_800704A8.slots[0].param = D_80085230[val2]->field_0x256;
     D_800704A8.slots[0].mode = 2;
@@ -893,9 +893,9 @@ s32 opHandler_CSCROLLA(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLLP(Actor *actor) {
+s32 opHandler_DSCROLLP(ScriptContext *context) {
     FieldVars *ss = g_fieldVars;
-    s32 val = POP(actor);
+    s32 val = POP(context);
     D_800704A8.slots[0].param = ss->memberSlot[val];
     D_800704A8.slots[0].mode = 0;
     D_800704A8.slots[0].submode = 0;
@@ -910,12 +910,12 @@ s32 opHandler_DSCROLLP(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLLP(Actor *actor) {
-    u16 timer = (u16)POP(actor);
+s32 opHandler_LSCROLLP(ScriptContext *context) {
+    u16 timer = (u16)POP(context);
     FieldVars *ss = g_fieldVars;
     s32 partySlot;
     D_800704A8.slots[0].timer = timer;
-    partySlot = POP(actor);
+    partySlot = POP(context);
     D_800704A8.slots[0].param = ss->memberSlot[partySlot];
     D_800704A8.slots[0].mode = 1;
     D_800704A8.slots[0].submode = 0;
@@ -928,12 +928,12 @@ s32 opHandler_LSCROLLP(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLLP(Actor *actor) {
-    u16 timer = (u16)POP(actor);
+s32 opHandler_CSCROLLP(ScriptContext *context) {
+    u16 timer = (u16)POP(context);
     FieldVars *ss = g_fieldVars;
     s32 partySlot;
     D_800704A8.slots[0].timer = timer;
-    partySlot = POP(actor);
+    partySlot = POP(context);
     D_800704A8.slots[0].param = ss->memberSlot[partySlot];
     D_800704A8.slots[0].mode = 2;
     D_800704A8.slots[0].submode = 0;
@@ -946,7 +946,7 @@ s32 opHandler_CSCROLLP(Actor *actor) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 2 if D_800704CA is 2, else 1.
  */
-s32 opHandler_SCROLLSYNC(Actor *actor) {
+s32 opHandler_SCROLLSYNC(ScriptContext *context) {
     if (D_800704CA == 2) {
         return 2;
     }
@@ -962,10 +962,10 @@ s32 opHandler_SCROLLSYNC(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 once the slot reaches submode 2, 1 while still waiting.
  */
-s32 opHandler_SCROLLSYNC2(Actor *actor) {
-    s32 idx = PEEK(actor);
+s32 opHandler_SCROLLSYNC2(ScriptContext *context) {
+    s32 idx = PEEK(context);
     if (D_800704A8.slots[idx].submode == 2) {
-        actor->context.stackPtr--;
+        context->stackPtr--;
         return 2;
     }
     return 1;
@@ -979,10 +979,10 @@ s32 opHandler_SCROLLSYNC2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLL2(Actor *actor) {
-    u16 p2 = (u16)POP(actor);
-    u16 p1 = (u16)POP(actor);
-    s32 idx = POP(actor);
+s32 opHandler_DSCROLL2(ScriptContext *context) {
+    u16 p2 = (u16)POP(context);
+    u16 p1 = (u16)POP(context);
+    s32 idx = POP(context);
     D_800704A8.slots[idx].p2 = p2;
     D_800704A8.slots[idx].p1 = p1;
     D_800704A8.slots[idx].mode = 3;
@@ -997,11 +997,11 @@ s32 opHandler_DSCROLL2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLL2(Actor *actor) {
-    u16 timer = (u16)POP(actor);
-    u16 p2 = (u16)POP(actor);
-    u16 p1 = (u16)POP(actor);
-    s32 idx = POP(actor);
+s32 opHandler_LSCROLL2(ScriptContext *context) {
+    u16 timer = (u16)POP(context);
+    u16 p2 = (u16)POP(context);
+    u16 p1 = (u16)POP(context);
+    s32 idx = POP(context);
     D_800704A8.slots[idx].timer = timer;
     D_800704A8.slots[idx].p2 = p2;
     D_800704A8.slots[idx].p1 = p1;
@@ -1016,11 +1016,11 @@ s32 opHandler_LSCROLL2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLL2(Actor *actor) {
-    u16 timer = (u16)POP(actor);
-    u16 p2 = (u16)POP(actor);
-    u16 p1 = (u16)POP(actor);
-    s32 idx = POP(actor);
+s32 opHandler_CSCROLL2(ScriptContext *context) {
+    u16 timer = (u16)POP(context);
+    u16 p2 = (u16)POP(context);
+    u16 p1 = (u16)POP(context);
+    s32 idx = POP(context);
     D_800704A8.slots[idx].timer = timer;
     D_800704A8.slots[idx].p2 = p2;
     D_800704A8.slots[idx].p1 = p1;
@@ -1037,9 +1037,9 @@ s32 opHandler_CSCROLL2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLLA2(Actor *actor) {
-    s32 entityIdx = POP(actor);
-    s32 slotIdx = POP(actor);
+s32 opHandler_DSCROLLA2(ScriptContext *context) {
+    s32 entityIdx = POP(context);
+    s32 slotIdx = POP(context);
     D_800704A8.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
     D_800704A8.slots[slotIdx].mode = 0;
     D_800704A8.slots[slotIdx].submode = 0;
@@ -1054,10 +1054,10 @@ s32 opHandler_DSCROLLA2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLLA2(Actor *actor) {
-    u16 timer = (u16)POP(actor);
-    s32 entityIdx = POP(actor);
-    s32 slotIdx = POP(actor);
+s32 opHandler_LSCROLLA2(ScriptContext *context) {
+    u16 timer = (u16)POP(context);
+    s32 entityIdx = POP(context);
+    s32 slotIdx = POP(context);
     D_800704A8.slots[slotIdx].timer = timer;
     D_800704A8.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
     D_800704A8.slots[slotIdx].mode = 1;
@@ -1071,10 +1071,10 @@ s32 opHandler_LSCROLLA2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLLA2(Actor *actor) {
-    u16 timer = (u16)POP(actor);
-    s32 entityIdx = POP(actor);
-    s32 slotIdx = POP(actor);
+s32 opHandler_CSCROLLA2(ScriptContext *context) {
+    u16 timer = (u16)POP(context);
+    s32 entityIdx = POP(context);
+    s32 slotIdx = POP(context);
     D_800704A8.slots[slotIdx].timer = timer;
     D_800704A8.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
     D_800704A8.slots[slotIdx].mode = 2;
@@ -1090,11 +1090,11 @@ s32 opHandler_CSCROLLA2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLLP2(Actor *actor) {
+s32 opHandler_DSCROLLP2(ScriptContext *context) {
     FieldVars *ss = g_fieldVars;
-    s32 partySlot = POP(actor);
+    s32 partySlot = POP(context);
     u8 byte = ss->memberSlot[partySlot];
-    s32 slotIdx = POP(actor);
+    s32 slotIdx = POP(context);
     D_800704A8.slots[slotIdx].param = byte;
     D_800704A8.slots[slotIdx].mode = 0;
     D_800704A8.slots[slotIdx].submode = 0;
@@ -1109,12 +1109,12 @@ s32 opHandler_DSCROLLP2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLLP2(Actor *actor) {
-    u16 timer = (u16)POP(actor);
+s32 opHandler_LSCROLLP2(ScriptContext *context) {
+    u16 timer = (u16)POP(context);
     FieldVars *ss = g_fieldVars;
-    s32 partySlot = POP(actor);
+    s32 partySlot = POP(context);
     u8 byte = ss->memberSlot[partySlot];
-    s32 slotIdx = POP(actor);
+    s32 slotIdx = POP(context);
     D_800704A8.slots[slotIdx].timer = timer;
     D_800704A8.slots[slotIdx].param = byte;
     D_800704A8.slots[slotIdx].mode = 1;
@@ -1128,12 +1128,12 @@ s32 opHandler_LSCROLLP2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLLP2(Actor *actor) {
-    u16 timer = (u16)POP(actor);
+s32 opHandler_CSCROLLP2(ScriptContext *context) {
+    u16 timer = (u16)POP(context);
     FieldVars *ss = g_fieldVars;
-    s32 partySlot = POP(actor);
+    s32 partySlot = POP(context);
     u8 byte = ss->memberSlot[partySlot];
-    s32 slotIdx = POP(actor);
+    s32 slotIdx = POP(context);
     D_800704A8.slots[slotIdx].timer = timer;
     D_800704A8.slots[slotIdx].param = byte;
     D_800704A8.slots[slotIdx].mode = 2;
@@ -1149,12 +1149,12 @@ s32 opHandler_CSCROLLP2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SCROLLMODE2(Actor *actor) {
-    u16 p6 = (u16)POP(actor);
-    u16 p5 = (u16)POP(actor);
-    u16 p4 = (u16)POP(actor);
-    u16 p3 = (u16)POP(actor);
-    s32 slotIdx = POP(actor);
+s32 opHandler_SCROLLMODE2(ScriptContext *context) {
+    u16 p6 = (u16)POP(context);
+    u16 p5 = (u16)POP(context);
+    u16 p4 = (u16)POP(context);
+    u16 p3 = (u16)POP(context);
+    s32 slotIdx = POP(context);
     D_800704A8.slots[slotIdx].p3 = p3;
     D_800704A8.slots[slotIdx].p4 = p4;
     D_800704A8.slots[slotIdx].p5 = p5;
@@ -1169,10 +1169,10 @@ s32 opHandler_SCROLLMODE2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SCROLLRATIO2(Actor *actor) {
-    u16 p6 = (u16)POP(actor);
-    u16 p5 = (u16)POP(actor);
-    s32 slotIdx = POP(actor);
+s32 opHandler_SCROLLRATIO2(ScriptContext *context) {
+    u16 p6 = (u16)POP(context);
+    u16 p5 = (u16)POP(context);
+    s32 slotIdx = POP(context);
     D_800704A8.slots[slotIdx].p5 = p5;
     D_800704A8.slots[slotIdx].p6 = p6;
     return 2;
@@ -1186,10 +1186,10 @@ s32 opHandler_SCROLLRATIO2(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLL3(Actor *actor) {
-    u16 p2 = (u16)POP(actor);
-    u16 p1 = (u16)POP(actor);
-    s32 slotIdx = POP(actor);
+s32 opHandler_DSCROLL3(ScriptContext *context) {
+    u16 p2 = (u16)POP(context);
+    u16 p1 = (u16)POP(context);
+    s32 slotIdx = POP(context);
     D_800704A8.slots[slotIdx].p1 = p1;
     D_800704A8.slots[slotIdx].p2 = p2;
     D_800704A8.slots[slotIdx].mode = 3;
@@ -1205,13 +1205,13 @@ s32 opHandler_DSCROLL3(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLL3(Actor *actor) {
-    u16 timer = (u16)POP(actor);
-    u16 p2 = (u16)POP(actor);
-    u16 p1 = (u16)POP(actor);
-    u16 q2 = (u16)POP(actor);
-    u16 q1 = (u16)POP(actor);
-    s32 slotIdx = POP(actor);
+s32 opHandler_LSCROLL3(ScriptContext *context) {
+    u16 timer = (u16)POP(context);
+    u16 p2 = (u16)POP(context);
+    u16 p1 = (u16)POP(context);
+    u16 q2 = (u16)POP(context);
+    u16 q1 = (u16)POP(context);
+    s32 slotIdx = POP(context);
     D_800704A8.slots[slotIdx].q1 = q1;
     D_800704A8.slots[slotIdx].q2 = q2;
     D_800704A8.slots[slotIdx].p1 = p1;
@@ -1228,13 +1228,13 @@ s32 opHandler_LSCROLL3(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLL3(Actor *actor) {
-    u16 timer = (u16)POP(actor);
-    u16 p2 = (u16)POP(actor);
-    u16 p1 = (u16)POP(actor);
-    u16 q2 = (u16)POP(actor);
-    u16 q1 = (u16)POP(actor);
-    s32 slotIdx = POP(actor);
+s32 opHandler_CSCROLL3(ScriptContext *context) {
+    u16 timer = (u16)POP(context);
+    u16 p2 = (u16)POP(context);
+    u16 p1 = (u16)POP(context);
+    u16 q2 = (u16)POP(context);
+    u16 q1 = (u16)POP(context);
+    s32 slotIdx = POP(context);
     D_800704A8.slots[slotIdx].q1 = q1;
     D_800704A8.slots[slotIdx].q2 = q2;
     D_800704A8.slots[slotIdx].p1 = p1;
@@ -1252,7 +1252,7 @@ s32 opHandler_CSCROLL3(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_BGCLEAR(Bganime *bganime) {
-    D_80070652 = POP_BYTE(bganime);
+    D_80070652 = POP_BYTE(&bganime->context);
     return 2;
 }
 
@@ -1263,9 +1263,9 @@ s32 opHandler_BGCLEAR(Bganime *bganime) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SETTIMER(Actor *actor) {
+s32 opHandler_SETTIMER(ScriptContext *context) {
     volatile GameState *gs = &g_gameState;
-    gs->mainData.countdownTimer = POP(actor);
+    gs->mainData.countdownTimer = POP(context);
     return 2;
 }
 
@@ -1275,9 +1275,9 @@ s32 opHandler_SETTIMER(Actor *actor) {
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_GETTIMER(Actor *actor) {
+s32 opHandler_GETTIMER(ScriptContext *context) {
     volatile GameState *gs = &g_gameState;
-    actor->context.resultSlots[0] = gs->mainData.countdownTimer;
+    context->resultSlots[0] = gs->mainData.countdownTimer;
     return 2;
 }
 
@@ -1290,9 +1290,9 @@ s32 opHandler_GETTIMER(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_DISPTIMER(Actor *actor) {
-    g_fieldVars->cameraShakeY = POP_BYTE(actor);
-    g_fieldVars->cameraShakeX = POP_BYTE(actor);
+s32 opHandler_DISPTIMER(ScriptContext *context) {
+    g_fieldVars->cameraShakeY = POP_BYTE(context);
+    g_fieldVars->cameraShakeX = POP_BYTE(context);
     g_fieldVars->stateFlags |= FIELD_STATE_CAMERA_SHAKE;
     g_fieldVars->fieldB6 |= 0x4;
     g_battleConfig.unk2 |= 0x4;
@@ -1309,7 +1309,7 @@ s32 opHandler_DISPTIMER(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_KILLTIMER(Actor *actor) {
+s32 opHandler_KILLTIMER(ScriptContext *context) {
     g_fieldVars->stateFlags &= ~FIELD_STATE_CAMERA_SHAKE;
     g_fieldVars->fieldB6 &= ~0x4;
     g_battleConfig.unk2 &= ~0x4;
@@ -1323,8 +1323,8 @@ s32 opHandler_KILLTIMER(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SHADETIMER(Actor *actor) {
-    setCameraVibrateIntensity(POP(actor));
+s32 opHandler_SHADETIMER(ScriptContext *context) {
+    setCameraVibrateIntensity(POP(context));
     return 2;
 }
 
@@ -1339,15 +1339,15 @@ s32 opHandler_SHADETIMER(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 1 (yield to dispatcher without advancing PC).
  */
-s32 opHandler_WORLDMAPJUMP(Actor *actor) {
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
+s32 opHandler_WORLDMAPJUMP(ScriptContext *context) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         if (D_800704A8.unk1A2 != 0) {
-            actor->context.stackPtr -= 3;
+            context->stackPtr -= 3;
         } else {
             D_800704A8.mode = 7;
-            D_800704A8.anim_state = (u16)POP(actor);
-            D_800704A8.spawnTriIdx = (u16)POP(actor);
-            D_800704A8.counter = (u16)POP(actor);
+            D_800704A8.anim_state = (u16)POP(context);
+            D_800704A8.spawnTriIdx = (u16)POP(context);
+            D_800704A8.counter = (u16)POP(context);
             func_800B4F40();
         }
     }
@@ -1362,9 +1362,9 @@ s32 opHandler_WORLDMAPJUMP(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SETCAMERA(Actor *actor) {
+s32 opHandler_SETCAMERA(ScriptContext *context) {
     s32 i;
-    D_8007064E = POP(actor) & 0x3;
+    D_8007064E = POP(context) & 0x3;
     for (i = 0; i < D_80085388; i++) {
         func_800A97E4(i, 0x25, 0, 0);
     }
@@ -1372,8 +1372,8 @@ s32 opHandler_SETCAMERA(Actor *actor) {
 }
 
 /** @brief Pop byte, store to global D_8007064F. Returns 2. */
-s32 opHandler_SETDCAMERA(Actor *actor) {
-    *(u8 *)D_8007064F = POP_BYTE(actor);
+s32 opHandler_SETDCAMERA(ScriptContext *context) {
+    *(u8 *)D_8007064F = POP_BYTE(context);
     return 2;
 }
 
@@ -1387,17 +1387,17 @@ s32 opHandler_SETDCAMERA(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_PREMAPJUMP(Actor *actor) {
+s32 opHandler_PREMAPJUMP(ScriptContext *context) {
     s32 t = 0;
     if (D_8005F0F8->entries[0].field16 != 0x7FFF) {
         do {
             t++;
         } while (D_8005F0F8->entries[t].field16 != 0x7FFF);
     }
-    D_8005F0F8->entries[t].y1 = (u16)POP(actor);
-    D_8005F0F8->entries[t].x1 = (u16)POP(actor);
-    D_8005F0F8->entries[t].z0 = (u16)POP(actor);
-    D_8005F0F8->entries[t].field16 = (u16)POP(actor);
+    D_8005F0F8->entries[t].y1 = (u16)POP(context);
+    D_8005F0F8->entries[t].x1 = (u16)POP(context);
+    D_8005F0F8->entries[t].z0 = (u16)POP(context);
+    D_8005F0F8->entries[t].field16 = (u16)POP(context);
     D_8005F0F8->entries[t].field14 = 0xFFFF;
     D_8005F0F8->entries[t + 1].field16 = 0x7FFF;
     return 2;
@@ -1410,7 +1410,7 @@ s32 opHandler_PREMAPJUMP(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 func_800B45CC(Actor *actor) {
-    func_800A5A14(POP(actor));
+    func_800A5A14(POP(&actor->context));
     return 2;
 }
 
@@ -1423,14 +1423,14 @@ s32 func_800B45CC(Actor *actor) {
  * @param a1    Dispatcher-supplied mode-1 trigger word.
  * @return 1 (yield to dispatcher without advancing PC).
  */
-s32 opHandler_MAPJUMP(Actor *actor, s32 a1) {
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
+s32 opHandler_MAPJUMP(ScriptContext *context, s32 a1) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         D_800704A8.mode = 1;
         D_800704A8.spawnTriIdx = a1;
-        D_800704A8.anim_state = (u16)POP(actor);
-        D_800704A8.position_y = (u16)POP(actor);
-        D_800704A8.position_x = (u16)POP(actor);
-        D_800704A8.counter = (u16)POP(actor);
+        D_800704A8.anim_state = (u16)POP(context);
+        D_800704A8.position_y = (u16)POP(context);
+        D_800704A8.position_x = (u16)POP(context);
+        D_800704A8.counter = (u16)POP(context);
     }
     return 1;
 }
@@ -1443,15 +1443,15 @@ s32 opHandler_MAPJUMP(Actor *actor, s32 a1) {
  * @param a1    Dispatcher-supplied mode-1 trigger word.
  * @return 1 (yield to dispatcher without advancing PC).
  */
-s32 opHandler_MAPJUMP3(Actor *actor, s32 a1) {
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
+s32 opHandler_MAPJUMP3(ScriptContext *context, s32 a1) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         D_800704A8.mode = 1;
         D_800704A8.spawnTriIdx = a1;
-        D_800704A8.anim_state = (u16)POP(actor);
-        D_800704A8.unk008 = (u16)POP(actor);
-        D_800704A8.position_y = (u16)POP(actor);
-        D_800704A8.position_x = (u16)POP(actor);
-        D_800704A8.counter = (u16)POP(actor);
+        D_800704A8.anim_state = (u16)POP(context);
+        D_800704A8.unk008 = (u16)POP(context);
+        D_800704A8.position_y = (u16)POP(context);
+        D_800704A8.position_x = (u16)POP(context);
+        D_800704A8.counter = (u16)POP(context);
     }
     return 1;
 }
@@ -1464,16 +1464,16 @@ s32 opHandler_MAPJUMP3(Actor *actor, s32 a1) {
  * @param a1    Dispatcher-supplied mode-6 trigger word.
  * @return 1 (yield to dispatcher without advancing PC).
  */
-s32 opHandler_DISCJUMP(Actor *actor, s32 a1) {
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
+s32 opHandler_DISCJUMP(ScriptContext *context, s32 a1) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         D_800704A8.mode = 6;
         D_800704A8.unk1A0 = 1;
         D_800704A8.spawnTriIdx = a1;
-        D_800704A8.anim_state = (u16)POP(actor);
-        D_800704A8.unk008 = (u16)POP(actor);
-        D_800704A8.position_y = (u16)POP(actor);
-        D_800704A8.position_x = (u16)POP(actor);
-        D_800704A8.counter = (u16)POP(actor);
+        D_800704A8.anim_state = (u16)POP(context);
+        D_800704A8.unk008 = (u16)POP(context);
+        D_800704A8.position_y = (u16)POP(context);
+        D_800704A8.position_x = (u16)POP(context);
+        D_800704A8.counter = (u16)POP(context);
     }
     return 1;
 }
@@ -1485,14 +1485,14 @@ s32 opHandler_DISCJUMP(Actor *actor, s32 a1) {
  * @param actor Pointer to the Actor event-script context.
  * @return 1 (yield to dispatcher without advancing PC).
  */
-s32 opHandler_MAPJUMPO(Actor *actor) {
-    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
+s32 opHandler_MAPJUMPO(ScriptContext *context) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         D_800704A8.mode = 1;
         D_800704A8.anim_state = 0;
-        D_800704A8.spawnTriIdx = (u16)POP(actor);
+        D_800704A8.spawnTriIdx = (u16)POP(context);
         D_800704A8.position_x = 0x7FFF;
         D_800704A8.position_y = 0x7FFF;
-        D_800704A8.counter = (u16)POP(actor);
+        D_800704A8.counter = (u16)POP(context);
     }
     return 1;
 }
@@ -1503,7 +1503,7 @@ s32 opHandler_MAPJUMPO(Actor *actor) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MAPJUMPON(Actor *actor) {
+s32 opHandler_MAPJUMPON(ScriptContext *context) {
     D_8007064A = 0;
     return 2;
 }
@@ -1514,7 +1514,7 @@ s32 opHandler_MAPJUMPON(Actor *actor) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MAPJUMPOFF(Actor *actor) {
+s32 opHandler_MAPJUMPOFF(ScriptContext *context) {
     D_8007064A = 1;
     return 2;
 }
@@ -1525,7 +1525,7 @@ s32 opHandler_MAPJUMPOFF(Actor *actor) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MAPFADEOFF(Actor *actor) {
+s32 opHandler_MAPFADEOFF(ScriptContext *context) {
     D_8007064D = 1;
     return 2;
 }
@@ -1536,7 +1536,7 @@ s32 opHandler_MAPFADEOFF(Actor *actor) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MAPFADEON(Actor *actor) {
+s32 opHandler_MAPFADEON(ScriptContext *context) {
     D_8007064D = 0;
     return 2;
 }
@@ -1547,7 +1547,7 @@ s32 opHandler_MAPFADEON(Actor *actor) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MENUDISABLE(Actor *actor) {
+s32 opHandler_MENUDISABLE(ScriptContext *context) {
     D_8007064B = 1;
     return 2;
 }
@@ -1558,7 +1558,7 @@ s32 opHandler_MENUDISABLE(Actor *actor) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MENUENABLE(Actor *actor) {
+s32 opHandler_MENUENABLE(ScriptContext *context) {
     D_8007064B = 0;
     return 2;
 }
@@ -1578,7 +1578,7 @@ s32 opHandler_MENUNORMAL(void) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 3.
  */
-s32 opHandler_MENUPHS(Actor *actor) {
+s32 opHandler_MENUPHS(ScriptContext *context) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 1;
     D_800704A8.unk1AB = 2;
@@ -1591,10 +1591,10 @@ s32 opHandler_MENUPHS(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_MENUSHOP(Actor *actor) {
+s32 opHandler_MENUSHOP(ScriptContext *context) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 0x17;
-    D_800704A8.unk1AB = POP_BYTE(actor);
+    D_800704A8.unk1AB = POP_BYTE(context);
     return 3;
 }
 
@@ -1610,11 +1610,11 @@ s32 opHandler_MENUSHOP(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_MENUNAME(Actor *actor) {
+s32 opHandler_MENUNAME(ScriptContext *context) {
     s32 val;
     D_800704A8.mode = 5;
     D_800704A8.unk1AB = 1;
-    val = POP(actor);
+    val = POP(context);
     switch (val) {
     case 0:  D_800704AA = 2;  break;
     case 1:  D_800704AA = 3;  break;
@@ -1648,7 +1648,7 @@ s32 opHandler_MENUNAME(Actor *actor) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 3.
  */
-s32 opHandler_MENUTUTO(Actor *actor) {
+s32 opHandler_MENUTUTO(ScriptContext *context) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 0x1A;
     D_800704A8.unk1AB = 1;
@@ -1664,7 +1664,7 @@ s32 opHandler_MENUTUTO(Actor *actor) {
 s32 func_800B4D34(Actor *actor) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 0x1D;
-    D_800704A8.unk1AB = POP_BYTE(actor);
+    D_800704A8.unk1AB = POP_BYTE(&actor->context);
     return 3;
 }
 
@@ -1674,8 +1674,8 @@ s32 func_800B4D34(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_MENUTIPS(Actor *actor) {
-    setFieldFlag(POP(actor) & 0x7F);
+s32 opHandler_MENUTIPS(ScriptContext *context) {
+    setFieldFlag(POP(context) & 0x7F);
     return 2;
 }
 
@@ -1708,9 +1708,9 @@ s32 opHandler_DYING(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SETHP(Actor *actor) {
-    u16 hp = (u16)POP(actor);
-    s32 charId = POP(actor);
+s32 opHandler_SETHP(ScriptContext *context) {
+    u16 hp = (u16)POP(context);
+    s32 charId = POP(context);
     g_gameState.chars[charId].currentHp = hp;
     return 2;
 }
@@ -1722,9 +1722,9 @@ s32 opHandler_SETHP(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_GETHP(Actor *actor) {
-    s32 charId = POP(actor);
-    actor->context.resultSlots[0] = g_gameState.chars[charId].currentHp;
+s32 opHandler_GETHP(ScriptContext *context) {
+    s32 charId = POP(context);
+    context->resultSlots[0] = g_gameState.chars[charId].currentHp;
     return 2;
 }
 
@@ -1735,7 +1735,7 @@ s32 opHandler_GETHP(Actor *actor) {
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 3.
  */
-s32 opHandler_MENUSAVE(Actor *actor) {
+s32 opHandler_MENUSAVE(ScriptContext *context) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 0x18;
     D_800704A8.unk1AB = 1;
@@ -1749,8 +1749,8 @@ s32 opHandler_MENUSAVE(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SAVEENABLE(Actor *actor) {
-    if (POP(actor) != 0) {
+s32 opHandler_SAVEENABLE(ScriptContext *context) {
+    if (POP(context) != 0) {
         g_fieldVars->fieldD1 |= 0x01;
     } else {
         g_fieldVars->fieldD1 &= ~0x01;
@@ -1780,8 +1780,8 @@ void func_800B4F40(void) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_PHSPOWER(Actor *actor) {
-    if (POP(actor) != 0) {
+s32 opHandler_PHSPOWER(ScriptContext *context) {
+    if (POP(context) != 0) {
         g_fieldVars->stateFlags &= ~FIELD_STATE_FLAG_200;
     } else {
         g_fieldVars->stateFlags |= FIELD_STATE_FLAG_200;
@@ -1798,8 +1798,8 @@ s32 opHandler_PHSPOWER(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_PHSENABLE(Actor *actor) {
-    s32 val = POP(actor);
+s32 opHandler_PHSENABLE(ScriptContext *context) {
+    s32 val = POP(context);
     if (!(g_fieldVars->stateFlags & FIELD_STATE_FLAG_200)) {
         if (val != 0) {
             g_fieldVars->fieldD1 |= 0x02;
@@ -1820,10 +1820,10 @@ s32 opHandler_PHSENABLE(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ADDMAGIC(Actor *actor) {
-    s32 count = POP(actor);
-    s32 val2 = POP(actor);
-    s32 charId = POP(actor);
+s32 opHandler_ADDMAGIC(ScriptContext *context) {
+    s32 count = POP(context);
+    s32 val2 = POP(context);
+    s32 charId = POP(context);
     s32 slot = func_80037C6C(charId);
     if (slot != 0xFF) {
         s32 i;
@@ -1842,8 +1842,8 @@ s32 opHandler_ADDMAGIC(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_OP16A(Actor *actor) {
-    actor->context.resultSlots[0] = func_800C0410(POP(actor));
+s32 opHandler_OP16A(ScriptContext *context) {
+    context->resultSlots[0] = func_800C0410(POP(context));
     return 2;
 }
 
@@ -1853,11 +1853,11 @@ s32 opHandler_OP16A(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ADDITEM(Actor *actor) {
+s32 opHandler_ADDITEM(ScriptContext *context) {
     s32 val1, val2;
 
-    val1 = POP(actor);
-    val2 = POP(actor);
+    val1 = POP(context);
+    val2 = POP(context);
     addItemToInventory(val1, val2);
     return 2;
 }
@@ -1870,8 +1870,8 @@ s32 opHandler_ADDITEM(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ADDGIL(Actor *actor) {
-    s32 delta = POP(actor);
+s32 opHandler_ADDGIL(ScriptContext *context) {
+    s32 delta = POP(context);
     g_gameState.mainData.party.gil += delta;
     if (g_gameState.mainData.party.gil > 0x05F5E0FE) {
         g_gameState.mainData.party.gil = 0x05F5E0FF;
@@ -1887,8 +1887,8 @@ s32 opHandler_ADDGIL(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ADDPASTGIL(Actor *actor) {
-    s32 delta = POP(actor);
+s32 opHandler_ADDPASTGIL(ScriptContext *context) {
+    s32 delta = POP(context);
     g_gameState.mainData.party.dreamGil += delta;
     if (g_gameState.mainData.party.dreamGil > 0x05F5E0FE) {
         g_gameState.mainData.party.dreamGil = 0x05F5E0FF;
@@ -1904,8 +1904,8 @@ s32 opHandler_ADDPASTGIL(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ADDSEEDLEVEL(Actor *actor) {
-    s32 delta = POP(actor);
+s32 opHandler_ADDSEEDLEVEL(ScriptContext *context) {
+    s32 delta = POP(context);
     g_fieldVars->seedExp += delta;
     if ((s16)g_fieldVars->seedExp < 100) {
         g_fieldVars->seedExp = 100;
@@ -1921,8 +1921,8 @@ s32 opHandler_ADDSEEDLEVEL(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_GETCARD(Actor *actor) {
-    actor->context.resultSlots[0] = markItemPresent(POP(actor));
+s32 opHandler_GETCARD(ScriptContext *context) {
+    context->resultSlots[0] = markItemPresent(POP(context));
     return 2;
 }
 
@@ -1932,12 +1932,12 @@ s32 opHandler_GETCARD(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SETCARD(Actor *actor) {
+s32 opHandler_SETCARD(ScriptContext *context) {
     s32 val1, val2;
 
-    val1 = POP(actor);
-    val2 = POP(actor);
-    actor->context.resultSlots[0] = modifyItemQuantity(val1, val2);
+    val1 = POP(context);
+    val2 = POP(context);
+    context->resultSlots[0] = modifyItemQuantity(val1, val2);
     return 2;
 }
 
@@ -1947,7 +1947,7 @@ s32 opHandler_SETCARD(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_HOWMANYCARD(Actor *actor) {
-    actor->context.resultSlots[0] = func_80023B14(POP(actor));
+s32 opHandler_HOWMANYCARD(ScriptContext *context) {
+    context->resultSlots[0] = func_80023B14(POP(context));
     return 2;
 }
