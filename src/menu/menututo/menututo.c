@@ -218,7 +218,7 @@ void func_801E2ABC(TutoState *output) {
     g_gameState.mainData.limitBreaks.quistisLimits = 1;
     g_gameState.mainData.limitBreaks.irvineLimits = 1;
     g_gameState.mainData.limitBreaks.selphieLimits = 1;
-    g_gameState.config.pad07 = 0;
+    g_gameState.config.sealedFeatures = 0;
     g_gameState.mainData.partyLockFlag = 0;
     g_gameState.mainData.party.trickLearning = 0;
     g_gameState.mainData.fieldD20 = 0;

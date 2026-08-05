@@ -35,7 +35,6 @@ typedef struct {
  * @param includeJunction  Non-zero to include junction-style entries.
  * @return Number of entries written.
  */
-extern s32 func_800369CC(s32 gfIndex, AbilityListEntry *output, s32 includeJunction);
 
 
 #endif /* ABILITY_LIST_H */

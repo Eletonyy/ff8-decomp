@@ -5,47 +5,14 @@
 #include "gamestate.h"
 #include "ability_list.h"
 #include "character.h"
+#include "card.h"
 
-/** @brief GF ability learn requirement (4 bytes). */
-typedef struct {
-    u8 levelReq;        /* 0x00: level required, or index for chained abilities (101+) */
-    u8 prereq;          /* 0x01: prerequisite ability index (0xFF = none) */
-    u8 slot;            /* 0x02: ability slot index */
-    u8 pad03;
-} GfAbilityEntry;
-
-/** @brief GF learnable ability table (stride 0x84). */
-typedef struct {
-    u8 pad00[0x1C];
-    GfAbilityEntry abilities[21];
-    u8 pad70[0x14];
-} GfLearnData;
-
-extern GfLearnData D_80079D78[];  /* g_gfData + 0xF78: GF learn tables */
+/* @c g_gfData is also declared in gf.h as a GfData struct; this unit walks it
+ * as raw bytes. Unifying the two views must be byte-verified separately. */
 extern u8 g_gfData[];
 extern CharacterData g_characters[];
 extern u16 D_80078894;
 extern u8 D_800780B0[];
-
-/** @brief Ability slot entry in the 128-slot working buffer (2 bytes). */
-typedef struct {
-    u8 type;           /**< Slot state: 0=empty, 1=chained, 2=learned, 3=level-eligible. */
-    u8 abilityIndex;   /**< Ability index (0xFF = unused). */
-} AbilitySlot;
-
-/**
- * @brief Ability category lookup info (4 bytes, indexed by category 0-6).
- *
- * Maps ability categories to offsets within g_gfData for looking up
- * ability-specific data (e.g. AP cost, stat modifiers).
- */
-typedef struct {
-    u16 dataOffset;    /**< Byte offset into g_gfData for this category's table. */
-    u8 startIndex;     /**< First slot index in this category range. */
-    u8 stride;         /**< Byte stride between entries in the data table. */
-} AbilityCategoryInfo;
-
-extern AbilityCategoryInfo D_80053C3C[];
 
 /**
  * @brief Initialize 128 ability slots to empty.
@@ -472,7 +439,7 @@ void setPartyLeader(s32 charId) {
 /**
  * @brief Build a bitmask of available characters, optionally filtered by party.
  *
- * If partyLockFlag bit 0 is set, only characters currently in the party
+ * If @ref PARTY_LOCK_LOCKED is set, only characters currently in the party
  * are eligible. Otherwise all existing characters are included.
  *
  * @return Bitmask where bit N is set if character N is available.
@@ -483,7 +450,7 @@ u16 func_80036EC0(void) {
     u16 partyMask;
 
     partyMask = 0xFFFF;
-    if (g_gameState.mainData.partyLockFlag & 1) {
+    if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
         partyMask = 0;
         for (i = 0; i < 3; i++) {
             u8 slot = g_gameState.mainData.party.party[i];

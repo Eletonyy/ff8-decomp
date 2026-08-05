@@ -1,6 +1,7 @@
 #include "common.h"
 #include "psxsdk/libetc.h"
 #include "psxsdk/libgpu.h"
+#include "gamestate.h"
 
 /** @brief Battle render command block (linked-list node, 0x10 bytes). */
 typedef struct CmdBlk_ {
@@ -31,7 +32,6 @@ extern s32 getAnimFrameParam(s32 idx, s32 offset);
 extern void func_8009AF64(void *cmd, ...);
 
 extern s16 D_800D3C70;
-extern u8 D_80077E5F;
 extern u8 D_80077E92;
 extern u8 D_8007809A;
 extern u8 D_8009801C[];
@@ -201,7 +201,7 @@ void func_80098920(s32 idx, s32 flag) {
 /**
  * @brief Decode input flags into battle render configuration bytes.
  *
- * Reads bits from D_8007809A, D_80077E5F, and D_80077E92 and writes
+ * Reads bits from D_8007809A, @c GameConfig.sealedFeatures, and D_80077E92 and writes
  * corresponding flag bytes to the D_800D3C30 region. Then iterates
  * through 0x1D name table slots calling func_80098920 with values
  * from D_800D3C30.
@@ -227,43 +227,43 @@ void func_80098958(void) {
         D_800D3C38 = 0;
     }
 
-    if (D_80077E5F & 0x1) {
+    if (g_gameState.config.sealedFeatures & SEALED_FLAG_01) {
         D_800D3C39 = 1;
     } else {
         D_800D3C39 = 0;
     }
 
-    if (D_80077E5F & 0x2) {
+    if (g_gameState.config.sealedFeatures & SEALED_FLAG_02) {
         D_800D3C3A = 1;
     } else {
         D_800D3C3A = 0;
     }
 
-    if (D_80077E5F & 0x4) {
+    if (g_gameState.config.sealedFeatures & SEALED_FLAG_04) {
         D_800D3C3B = 1;
     } else {
         D_800D3C3B = 0;
     }
 
-    if (D_80077E5F & 0x8) {
+    if (g_gameState.config.sealedFeatures & SEALED_FLAG_08) {
         D_800D3C3C = 1;
     } else {
         D_800D3C3C = 0;
     }
 
-    if (D_80077E5F & 0x10) {
+    if (g_gameState.config.sealedFeatures & SEALED_FLAG_10) {
         D_800D3C3D = 1;
     } else {
         D_800D3C3D = 0;
     }
 
-    if (D_80077E5F & 0x20) {
+    if (g_gameState.config.sealedFeatures & SEALED_FLAG_20) {
         D_800D3C3E = 1;
     } else {
         D_800D3C3E = 0;
     }
 
-    if (D_80077E5F & 0x40) {
+    if (g_gameState.config.sealedFeatures & SEALED_FLAG_40) {
         D_800D3C3F = 1;
     } else {
         D_800D3C3F = 0;

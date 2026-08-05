@@ -58,7 +58,7 @@ typedef struct {
  * 3D line-segment coordinate view: six consecutive s16 coordinates
  * (start XYZ, end XYZ). This is the layout shared by the head of
  * @ref FieldLineTrigger and the per-entity trigger segment embedded in
- * @ref Eline at 0x188 — @c func_8009A2BC accepts either through this view.
+ * @ref Actor at 0x188 — @c func_8009A2BC accepts either through this view.
  */
 typedef struct {
     /* 0x00 */ s16 x0, y0, z0;
@@ -318,19 +318,19 @@ typedef struct {
 
 extern void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier);
 extern void func_8009BB18(void);
-extern void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8);
+extern void func_8009BD50(Actor *actor, s16 mode, s8 b9, u8 b8);
 extern s16  func_8009D234(s32 a0);
 extern s16  func_8009D254(s32 a0);
 extern void func_8009DED8(Vec3i *out, SVert *a, SVert *b);
 extern s32  func_8009E468(s16 selfIdx, Vec3i *pos);
-extern s32  func_8009E604(Eline *a, Eline *b);
+extern s32  func_8009E604(Actor *a, Actor *b);
 extern void func_800A17A4(u8 *a0);
 extern void func_800A1C64(void);
 extern void func_800A1CC0(void);
 extern void func_800A2EE0(u8 *a0);
 extern void func_800A2F28(s32 a0, u8 *a1);
 extern void func_800A303C(s16 emIdx, ParticleSystem *sys, s16 *pos, s16 count);
-extern void func_800A355C(FieldActor *actor, s32 slot, s32 a2);
+extern void func_800A355C(ActorAnim *actor, s32 slot, s32 a2);
 extern void func_800A44D8(void);
 extern void func_800A4550(s16 a0);
 extern s32  func_800A4910(s32 a0, s32 a1, s32 a2, s32 a3);
@@ -349,18 +349,18 @@ extern void func_80099180(void);
 extern void func_80099348(void);
 extern s32  func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist);
 extern s32  func_8009A2BC(LineSeg *seg, Vec3i *p, Vec3i *out);
-extern s32  func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt);
-extern void func_8009A7E8(Eline *e, FieldEntityB *pool);
-extern void func_8009A8E0(FieldEntityB *e);
-extern void func_8009A920(Eline *eline, FieldEntityB *entities);
+extern s32  func_8009A4C0(Actor *actor, Eline *records, VECTOR *pt);
+extern void func_8009A7E8(Actor *actor, Eline *pool);
+extern void func_8009A8E0(Eline *eline);
+extern void func_8009A920(Actor *actor, Eline *entities);
 extern void func_8009AA64(EventEntry *e);
-extern void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt);
+extern void func_8009AAC8(Actor *actor, EventEntry *segs, Vec3i *pt);
 extern s16  func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list);
 /** @brief Place every field entity on the navmesh when a field is entered. */
 extern void func_8009AEC0(void);
-extern void func_8009BEC8(Eline *ents, s32 flags);
+extern void func_8009BEC8(Actor *ents, s32 flags);
 extern void func_8009CEE8(void);
-extern s32  func_8009D274(Eline *self, s16 pad);
+extern s32  func_8009D274(Actor *actor, s16 pad);
 extern s32  func_8009D500();  /* arg2 is a file-private scratchpad view in fe_object1.c */
 extern s32  func_8009D598(s16 index);
 extern s32  func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux);
@@ -368,12 +368,12 @@ extern s32 func_8009E338(Vec3i *a0, Vec3i *a1, Vec3i *a2, Vec3s *a3);  /* plane-
 /** @brief Refill both follower path rings from the player's position on field entry. */
 extern void func_8009E660(void);
 extern void func_8009ECA4(void);
-extern s32  func_8009F74C(Eline *a, Eline *b);
+extern s32  func_8009F74C(Actor *a, Actor *b);
 extern void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode);
 extern void func_8009B4A8(s16 idx, u8 anim, s16 mode, s8 delta);
 extern void func_8009F8D0(s16 idx);
 extern void func_8009F990(s16 idx, s32 flags);
-extern void func_8009FE18(s32 entIdx, Eline *ent, s32 flags);
+extern void func_8009FE18(s32 entIdx, Actor *actor, s32 flags);
 extern TILE *func_800A0640(TILE *prim);
 extern void func_800A06F0(s32 a, FieldFrameBuf *buf, u8 *b, u8 *c);
 extern void func_800A0D6C(u8 *buf);
@@ -388,10 +388,10 @@ extern void func_800A15C0(FieldFrameBuf *buf, DRAWENV *env, s16 slotIdx);
 void func_800A17B8(Oscillator *osc);
 extern int  func_800A19B8();
 extern void func_800A1BB8(void);
-extern void func_800A1CFC(Eline *ents, FieldFrameBuf *frame);
+extern void func_800A1CFC(Actor *ents, FieldFrameBuf *frame);
 extern void func_800A2128();  /* arg is a file-private buffer view in fe_object1.c */
 /** @brief Draws each active entity's blob shadow as a flat-shaded 8-triangle fan. */
-extern void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Eline *ents);
+extern void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Actor *ents);
 /**
  * @brief Shape @c func_800A29C0 sees: array of 20-byte items with five
  *        leading bytes that get initialized per item.
@@ -424,8 +424,8 @@ extern s16  func_800A2EA4(s16 range);
 extern void func_800A2F48();  /* arg is a file-private buffer view in fe_object1.c */
 extern void func_800A2F70();  /* arg is a file-private buffer view in fe_object1.c */
 extern s16  func_800A2FE0();  /* arg is a file-private buffer view in fe_object1.c */
-extern void func_800A327C();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
-extern void func_800A3488();  /* arg0 is a file-private Eline-stack view in fe_object1.c */
+extern void func_800A327C();  /* arg0 is a file-private Actor-stack view in fe_object1.c */
+extern void func_800A3488();  /* arg0 is a file-private Actor-stack view in fe_object1.c */
 extern void func_800A3534();  /* arg is a file-private buffer view in fe_object1.c */
 extern void func_800A37A8(MATRIX *m, FieldFrameBuf *frame, FieldSubsceneBuffer *buf);
 
@@ -487,11 +487,11 @@ extern u8 D_80070649;
 
 extern void func_800A5788(FieldFrameBuf *buf);
 extern void func_800A5898(FieldFrameBuf *buf);
-extern void func_800A5A20(Eline *self, EventEntry *entries);
+extern void func_800A5A20(Actor *actor, EventEntry *entries);
 extern s32  func_800A5C9C(void);
 extern void func_800A5D28(void);
 extern s32  func_800A5FA4(FieldLineTrigger *seg, s32 sel);
-extern void func_800A6100(Eline *eline, FieldLineTrigger *segs, Vec3i *pt);
+extern void func_800A6100(Actor *actor, FieldLineTrigger *segs, Vec3i *pt);
 extern void func_800A62EC(FieldLineTrigger *segs);
 extern int  func_800A63AC();
 extern int  func_800A6A80();
@@ -581,7 +581,6 @@ extern u8 **D_800C71F4;          /**< Field-data section pointer: per-field enco
 extern u16 **D_800C720C;         /**< Field-data section pointer: 4-entry battle formation table. */
 extern u16 D_8005F160;
 extern u16 D_8005F162;
-extern u8 D_80085388;
 extern u8 D_800C319C[];          /**< Arctangent lookup table (byte per 2*|component| step) for func_8009A0E8. */
 extern u8 D_800C32A0[];
 extern u8 D_800C3320[];

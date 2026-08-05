@@ -4,6 +4,7 @@
 #include "gamestate.h"
 #include "character.h"
 #include "field.h"
+#include "card.h"
 
 extern u8 D_8007809B[];
 extern u8 g_chocoboWorld;
@@ -13,7 +14,6 @@ extern u8 D_8005F388[];
 extern u8 D_80063388[];
 extern s32 D_80085220;
 extern u8 D_8005644B[];
-extern u8 D_80077E5A;
 extern u16 D_800562C8[];
 extern s32 D_800562D4;
 
@@ -423,14 +423,14 @@ INCLUDE_ASM("asm/nonmatchings/gamestate", func_80038030);
  * both g_fieldEntity.entityIndex and g_fieldVars->memberSlot. Defaults to
  * 0xFF when no entity matches.
  *
- * Part 2: When the bench-list flag (stateFlags & 0x800) is set, build the
+ * Part 2: When the bench-list flag (stateFlags & FIELD_STATE_PARTY_OVERRIDE) is set, build the
  * list of character IDs *not* currently in the active battle party
  * (partyOrderA/B at 0xBC/0xBF — initialized identically here).
  */
 void func_800381BC(void) {
     s32 i;
     s32 j;
-    Eline *ent;
+    Actor *ent;
 
     for (i = 0; i < 3; i++) {
         g_fieldEntity.entityIndex[i] = 0xFF;
@@ -447,7 +447,7 @@ void func_800381BC(void) {
         }
     }
 
-    if (g_fieldVars->stateFlags & 0x800) {
+    if (g_fieldVars->stateFlags & FIELD_STATE_PARTY_OVERRIDE) {
         j = 0;
         for (i = 0; i < 6; i++) {
             if (findBattlePartySlot(i) == 0xFF) {
@@ -469,20 +469,21 @@ void func_800381BC(void) {
  */
 void clearEntityFlags(void) {
     s32 i;
-    Eline *ent = D_80085224;
+    Actor *ent = D_80085224;
     u8 count = D_80085388;
 
     for (i = 0; i < count; i++, ent++) {
-        ent->flags &= ~0x44;
+        ent->context.flags &= ~0x44;
     }
 
     func_800381BC();
 }
 
 
-/** @brief Returns bits 3-4 of the flags word at offset 0x68 through g_fieldVars. */
+/** @brief Returns the transition/ready bits of @c g_fieldVars->stateFlags
+ *         (@ref FIELD_STATE_TRANSITION | @ref FIELD_STATE_FIELD_READY). */
 s32 getFieldStateFlags(void) {
-    return g_fieldVars->stateFlags & 0x18;
+    return g_fieldVars->stateFlags & (FIELD_STATE_TRANSITION | FIELD_STATE_FIELD_READY);
 }
 
 
@@ -498,7 +499,7 @@ s32 getFieldStateFlags(void) {
  */
 s32 getPackedField2Bit(s32 entryIdx) {
     entryIdx &= 0xFF;
-    return (g_fieldVars->packedFlags[entryIdx / 4] >> ((entryIdx % 4) * 2)) & 3;
+    return (g_fieldVars->drawPointFlag[entryIdx / 4] >> ((entryIdx % 4) * 2)) & 3;
 }
 
 
@@ -514,9 +515,9 @@ u8 lookupFieldTable(s32 tableIdx) {
 }
 
 
-/** @brief Returns halfword from D_800562C8 table indexed by D_80077E5A. */
+/** @brief Returns halfword from D_800562C8 table indexed by the field message speed. */
 u16 getCurrentFieldMusic(void) {
-    return D_800562C8[D_80077E5A];
+    return D_800562C8[g_gameState.config.fieldMsgSpeed];
 }
 
 

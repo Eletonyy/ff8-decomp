@@ -6,7 +6,6 @@ extern u8 D_800786D8[];
 extern u8 D_800EE424[];
 extern u8 D_800EE43C[];
 extern u8 D_800EE462[];
-extern u8 D_80077E58[];
 void func_800A5948(s32, s32);
 void func_800A18E0(s32);
 void func_800A589C(s32);
@@ -813,7 +812,7 @@ void func_800A5454(void) {
 /**
  * @brief Store a timer value into an entity entry at D_800ED158.
  *
- * Computes (D_80077E58[0] + 1) * 4000, stores it at entry offset 0x10,
+ * Computes (@c GameConfig.battleSpeed + 1) * 4000, stores it at entry offset 0x10,
  * and clears offset 0x14. The entry is at D_800ED158 + a0 * 208.
  *
  * @param a0 Entity index (stride 208).

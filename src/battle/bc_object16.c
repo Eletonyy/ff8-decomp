@@ -2,6 +2,8 @@
 #include "battle.h"
 #include "psxsdk/libgte.h"
 
+void func_800A5454(void);
+
 extern u8 D_800FB42C[];
 extern u8 D_800FB428[];
 extern u8 D_800FB434[];
@@ -22,7 +24,6 @@ s32 func_800C6B1C(s32 idx);
 s32 func_800CBC68(s32 prim, s32 a1, s32 a2, s32 a3);
 
 void func_800CE158(void);
-void func_800A5454(void);
 u32 func_8009A2E0(void);
 void func_800D13CC(void);
 void func_800D5E48(void);
@@ -278,6 +279,12 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CE918);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CEA7C);
 
+/**
+ * @brief Empty routine — present in the original build and still called by the
+ *        battle code path; the compiler emits a bare @c "jr ra" for it.
+ * @note Purpose uncertain: likely a stub left where a debug or platform hook
+ *       was compiled out.
+ */
 void func_800CEBE4(void) {
 }
 

@@ -1086,7 +1086,6 @@ typedef struct {
 extern BattleCharState g_battleChars;
 extern BattleConfig    g_battleConfig;
 extern s16             D_8005F11C;
-extern u16             D_80077E5C;
 extern u8              D_800786D9;
 extern BattleSceneData D_80078E00;
 extern u16             D_80082C0A;
