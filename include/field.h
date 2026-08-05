@@ -393,7 +393,7 @@ extern SystemState g_fieldEntity;
  * added as their usages are identified.
  */
 typedef struct {
-    /* 0x00 */ u32 pad00;
+    /* 0x00 */ u8 magic[4];             /**< "FF-8" signature bytes, written on full reset by @c func_800C00C8. */
     /* 0x04 */ u32 stepCounter;         /**< Total step delta accumulator, mirrored to D_80082C14. */
     /* 0x08 */ s32 seedExpStepAcc;      /**< Step accumulator: fires the SeeD level-up tick at @c 0x6000. */
     /* 0x0C */ s32 hpRegenStepAcc;      /**< Step accumulator: fires HP regen ticks at @c 8. */
@@ -417,7 +417,8 @@ typedef struct {
     /* 0x68 */ s32 stateFlags;          /**< Field state flags (bits 3-4 checked by getFieldStateFlags). */
     /* 0x6C */ s32 soundHandle0;        /**< Sound channel 0 handle (music; @ref SND_HANDLE_NONE = inactive). */
     /* 0x70 */ s32 soundHandle1;        /**< Sound channel 1 handle (SFX; @ref SND_HANDLE_NONE = inactive). */
-    /* 0x74 */ u8 packedFlags[0x40];    /**< Packed 2-bit-per-entry flag table (256 entries, indexed by 8-bit key). */
+    /* 0x74 */ u8 packedFlags[0x40];    /**< Packed 2-bit-per-entry flag table (256 entries, indexed by 8-bit key).
+                                             Called "DrawPointFlag" by the field-init debug trace. */
     /* 0xB4 */ u16 packedFlagsStepAcc;  /**< Step accumulator: fires packed-flags processing at @c 0x2800. */
     /* 0xB6 */ u16 fieldB6;             /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0xB8 */ u16 levelUpDisplayTimer; /**< Frames remaining for the SeeD-rank-up notification (set to 150). */
@@ -463,6 +464,12 @@ typedef struct {
     /* 0xF4 */ s32 angeloLearnStepAcc;  /**< Step accumulator: fires the Angelo trick learn tick at @c 0x250. */
     /* 0xF8 */ u8 padF8[0x08];
 } FieldVars; /* 0x100 = 256 bytes */
+
+/* FieldVars.stateFlags bits (partial map — bits are named as their usages
+ * are identified; several more bits are used as bare hex elsewhere). */
+#define FIELD_STATE_TRANSITION     0x8   /**< Bit 3: transition gate — its inverse is pushed to @c setTransitionFlag at field init. Set on new game. */
+#define FIELD_STATE_FIELD_READY    0x10  /**< Bit 4: set on new game; returned (with bit 3) by @c getFieldStateFlags. @note Purpose uncertain. */
+#define FIELD_STATE_PARTY_OVERRIDE 0x800 /**< Bit 11: while set, @c fieldF3 mirrors into @c g_battleConfig.unk8 / @c GameConfig.sealedFeatures and SETPARTY2 replays at field init. */
 
 /** @brief Field-engine variable block (canonical extern also in gamestate.h). */
 extern FieldVars *g_fieldVars;
@@ -1229,9 +1236,6 @@ extern u8  D_80082C8D;
 extern s32 D_800705E8;
 extern s32 D_800705F0;
 extern s32 D_800705F8;
-
-/** @brief Misc field-VM byte; set by fe_object4 from @c g_fieldVars->fieldF3. */
-extern u8  D_80077E5F;
 
 /** @brief @c &g_gameState.fieldVars exposed as a byte array for fe_object4's
  *         script-VM M-memory load/store opcodes (offsets are popped from the

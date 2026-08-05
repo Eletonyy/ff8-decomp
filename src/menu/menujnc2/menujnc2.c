@@ -11,6 +11,7 @@
 #include "ability_list.h"
 
 #include "menujnc2.h"
+#include "card.h"
 
 /*
  * Foreign symbols owned by other units (menumain/gamestate/battle/...). Kept

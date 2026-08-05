@@ -1,35 +1,157 @@
 #include "common.h"
 #include "gamestate.h"
 #include "game.h"
+#include "field.h"
+#include "battle.h"
+#include "btl_color.h"
+#include "cdrom.h"
+#include "render.h"
+#include "snd_cd.h"
+#include "snd_init.h"
+#include "psxsdk/libc.h"
+#include "psxsdk/libpress.h"
+#include "field/fe_object4.h"
 #include "field/fe_object12.h"
 
 extern u8 D_80077BA8[];
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C00C8);
+/* Debug trace format strings (field overlay .rodata at 0x8009823C..).
+ * Kept as symbol references rather than C literals so they stay in the
+ * overlay's own rodata block at their original addresses. */
+extern const char D_8009823C[]; /* "::SmInitEventAll(%d);\n" */
+extern const char D_80098254[]; /* "----------------------------------------\n" */
+extern const char D_80098280[]; /* "sizeof(actor) %d\n" */
+extern const char D_80098294[]; /* "sizeof(eline) %d\n" */
+extern const char D_800982A8[]; /* "sizeof(dline) %d\n" */
+extern const char D_800982BC[]; /* "sizeof(bganime) %d\n" */
+extern const char D_800982D0[]; /* "address(DrawPointFlag) %p\n" */
+extern const char D_800982EC[]; /* "%x\n" */
 
-/** @brief Sets bit 0x20 of the partyLockFlag. */
+/**
+ * @brief Field-engine state initializer (new game / field reset).
+ *
+ * Opens with the debug trace the original developers left in — a banner
+ * naming this routine (@c "::SmInitEventAll(%d);"), the sizes of the four
+ * field data structures (@c actor 612, @c eline 416, @c dline 396,
+ * @c bganime 436 — the game's own names for them), and the addresses of
+ * the packed-flag table ("DrawPointFlag"), @c g_fieldVars and its
+ * @c stateFlags. It then resets the MDEC decoder and:
+ *  - On @p fullReset: wipes the first 0xF8 bytes of @c *g_fieldVars,
+ *    stamps the "FF-8" magic, and seeds the defaults — disc 1, battle
+ *    music 5, both volumes 0x7F, SeeD exp 500, the @ref FIELD_STATE_TRANSITION
+ *    and @ref FIELD_STATE_FIELD_READY state bits,
+ *    and message speed 2 (@c GameConfig.fieldMsgSpeed).
+ *  - Always: clears the SFX masks and the first two anim-shadow slots,
+ *    disables reverb, resets the sound-bank selector, and marks all
+ *    three audio channel states and both sound handles inactive (-1).
+ *  - Mirrors @c fieldB6 into @c g_battleConfig.unk2; when
+ *    @ref FIELD_STATE_PARTY_OVERRIDE is set, also mirrors @c fieldF3 into @c g_battleConfig.unk8
+ *    and @c GameConfig.sealedFeatures and replays @c opHandler_SETPARTY2.
+ *  - Publishes @c field56 to @c D_80082C8D, pushes the expected disc to
+ *    the CD layer (@c setDiscNumber, @c D_800773C0 = disc - 1), derives
+ *    the transition flag from @ref FIELD_STATE_TRANSITION, and installs the
+ *    @c stopAllSounds VSync callback and @c func_80037D40 draw callback.
+ *
+ * @param fullReset Nonzero to wipe @c *g_fieldVars and apply new-game
+ *                  defaults; zero to keep current values.
+ */
+void func_800C00C8(s32 fullReset)
+{
+    s32 i;
+    s32 neg;
+    s32 m;
+    s32 disc;
+    FieldVars *fv;
+    volatile FieldVars *vfv;
+
+    printf(D_8009823C, fullReset);
+    printf(D_80098254);
+    printf(D_80098280, sizeof(FieldActor));
+    printf(D_80098294, sizeof(FieldEntityB));
+    printf(D_800982A8, sizeof(FieldEntityC));
+    printf(D_800982BC, sizeof(FieldEntityD));
+    printf(D_800982D0, g_fieldVars->packedFlags);
+    printf(D_800982EC, &g_fieldVars);
+    printf(D_800982EC, &g_fieldVars->stateFlags);
+    DecDCTReset(0);
+
+    if (fullReset) {
+        func_800396E0(g_fieldVars, 0xF8);
+        g_fieldVars->magic[0] = 'F';
+        g_fieldVars->magic[1] = 'F';
+        g_fieldVars->magic[2] = '-';
+        g_fieldVars->magic[3] = '8';
+        g_fieldVars->expectedDiscId = 1;
+        g_fieldVars->battleMusicId = 5;
+        g_fieldVars->musicVolume = 0x7F;
+        g_fieldVars->sfxVolume = 0x7F;
+        g_fieldVars->seedExp = 500;
+        g_fieldVars->stateFlags |= FIELD_STATE_TRANSITION | FIELD_STATE_FIELD_READY;
+        g_gameState.config.fieldMsgSpeed = 2;
+    }
+
+    g_fieldVars->sfxStartMask = 0;
+    g_fieldVars->sfxEntryMask = 0;
+    g_fieldVars->sfxActiveMask = 0;
+    for (i = 0; i < 2; i++) {
+        D_80085398[i].flag = 0;
+        clearAnimEntryActive(i);
+    }
+    sndDisableReverb(0);
+    g_fieldVars->soundBankSelector = 0;
+    neg = -1;
+    g_fieldVars->audioChannel0State = neg;
+    g_fieldVars->audioChannel1State = neg;
+    neg = 0; /* dead-set: retires the live -1 so the next group rematerializes it (regalloc) */
+    fv = g_fieldVars;
+    m = -1;  /* fresh name: one rematerialized -1 serves all three stores below (regalloc) */
+    fv->audioChannel2State = m;
+    fv->soundHandle0 = m;
+    fv->soundHandle1 = m;
+
+    g_battleConfig.unk2 = g_fieldVars->fieldB6;
+    if (g_fieldVars->stateFlags & FIELD_STATE_PARTY_OVERRIDE) {
+        g_battleConfig.unk8 = g_fieldVars->fieldF3;
+        g_gameState.config.sealedFeatures = g_fieldVars->fieldF3;
+        opHandler_SETPARTY2(NULL, 0);
+    } else {
+        g_battleConfig.unk8 = 0;
+        g_gameState.config.sealedFeatures = 0;
+    }
+
+    D_80082C8D = g_fieldVars->field56;
+    setDiscNumber(g_fieldVars->expectedDiscId);
+    vfv = g_fieldVars; /* volatile view: forces the tail's reloads of disc/stateFlags */
+    disc = vfv->expectedDiscId;
+    do { D_800773C0 = disc - 1; } while (0);
+    setTransitionFlag((((u32)vfv->stateFlags >> 3) ^ 1) & 1);
+    setVsyncCallback((s32)stopAllSounds);
+    setDrawCallback((s32)func_80037D40);
+}
+
+/** @brief Sets @ref PARTY_LOCK_FLAG_20 in the partyLockFlag. */
 void func_800C0384(void) {
-    g_gameState.mainData.partyLockFlag |= 0x20;
+    g_gameState.mainData.partyLockFlag |= PARTY_LOCK_FLAG_20;
 }
 
-/** @brief Clears bit 0x20 of the partyLockFlag. */
+/** @brief Clears @ref PARTY_LOCK_FLAG_20 in the partyLockFlag. */
 void func_800C03A0(void) {
-    g_gameState.mainData.partyLockFlag &= ~0x20;
+    g_gameState.mainData.partyLockFlag &= ~PARTY_LOCK_FLAG_20;
 }
 
-/** @brief Sets bit 0x10 of the partyLockFlag. */
+/** @brief Sets @ref PARTY_LOCK_FLAG_10 in the partyLockFlag. */
 void func_800C03BC(void) {
-    g_gameState.mainData.partyLockFlag |= 0x10;
+    g_gameState.mainData.partyLockFlag |= PARTY_LOCK_FLAG_10;
 }
 
-/** @brief Clears bit 0x10 of the partyLockFlag. */
+/** @brief Clears @ref PARTY_LOCK_FLAG_10 in the partyLockFlag. */
 void func_800C03D8(void) {
-    g_gameState.mainData.partyLockFlag &= ~0x10;
+    g_gameState.mainData.partyLockFlag &= ~PARTY_LOCK_FLAG_10;
 }
 
-/** @brief Sets bit 0x02 of the partyLockFlag. */
+/** @brief Sets @ref PARTY_LOCK_FLAG_02 in the partyLockFlag. */
 void func_800C03F4(void) {
-    g_gameState.mainData.partyLockFlag |= 0x02;
+    g_gameState.mainData.partyLockFlag |= PARTY_LOCK_FLAG_02;
 }
 
 /**
@@ -114,10 +236,6 @@ void func_800C048C(s32 magicId, s32 quantity) {
     } else {
         for (i = 0; i < CHARACTER_COUNT; i++) {
             if (g_gameState.chars[i].exists & CHAR_FLAG_PRESENT) {
-                /* Skip characters already holding the spell. A goto is the
-                 * only spelling that matches: measured goto-free forms
-                 * (scan flag, `if (j < 32) continue`, folded loop condition)
-                 * all change codegen. */
                 for (j = 0; j < MAGIC_SLOT_COUNT; j++) {
                     if (g_gameState.chars[i].magic[j].magicId == magicId) {
                         goto next_char;
@@ -131,7 +249,7 @@ void func_800C048C(s32 magicId, s32 quantity) {
                     }
                 }
             }
-next_char:;
+next_char:
         }
     }
 }

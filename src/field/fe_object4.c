@@ -1,6 +1,7 @@
 #include "common.h"
 #include "field.h"
 #include "gamestate.h"
+#include "card.h"
 #include "cd.h"
 #include "field/fe_object3.h"
 #include "field/fe_object4.h"
@@ -1396,7 +1397,7 @@ s32 opHandler_SUBPARTY(Eline *e) {
     }
     slot = func_80037C6C(charId);
     if (slot != PARTY_SLOT_EMPTY) {
-        if (g_gameState.mainData.partyLockFlag & 1) {
+        if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
             func_80036B90(g_gameState.mainData.party.party[slot]);
         }
         g_gameState.mainData.party.party[slot] = PARTY_SLOT_EMPTY;
@@ -1472,7 +1473,7 @@ s32 opHandler_SETPARTY(Eline *e) {
     s32 slot1 = POP(e);
     s32 slot0 = POP(e);
 
-    if (g_gameState.mainData.partyLockFlag & 1) {
+    if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
         if (slot0 == 0xFF) {
             func_80036B90(findCharacterSlot(g_gameState.battleParty[0]));
         }
@@ -1702,7 +1703,7 @@ s32 opHandler_SWAP(Eline *e) {
 /**
  * @brief Set stateFlags bit 0x800, then if popped value is nonzero
  *        force fieldF3 to 0xFF; mirror fieldF3 into @c D_80082C10 and
- *        @c D_80077E5F, then tail into @c opHandler_SETPARTY2.
+ *        @c GameConfig.sealedFeatures, then tail into @c opHandler_SETPARTY2.
  *
  * @return 2 (VM continue).
  */
@@ -1712,14 +1713,14 @@ s32 opHandler_LASTIN(Eline *e, s32 a1) {
         g_fieldVars->fieldF3 = 0xFF;
     }
     D_80082C10 = g_fieldVars->fieldF3;
-    D_80077E5F = g_fieldVars->fieldF3;
+    g_gameState.config.sealedFeatures = g_fieldVars->fieldF3;
     opHandler_SETPARTY2(e, a1);
     return 2;
 }
 
 /**
  * Clears bit 0x800 in entity flags at g_fieldVars+0x68, clears
- * D_80082C10 and D_80077E5F, then calls recalcPartyStats.
+ * D_80082C10 and @c GameConfig.sealedFeatures, then calls recalcPartyStats.
  *
  * @param a0 Unused.
  * @return 2 (continue processing).
@@ -1727,11 +1728,11 @@ s32 opHandler_LASTIN(Eline *e, s32 a1) {
 s32 opHandler_LASTOUT(Eline *e) {
     /* Take the address of stateFlags so gcc materializes the read & write
      * through one register — keeps the seedState updates together
-     * (before D_80082C10/D_80077E5F + recalcPartyStats() in the schedule). */
+     * (before D_80082C10/sealedFeatures + recalcPartyStats() in the schedule). */
     s32 *p = &g_fieldVars->stateFlags;
     *p = *p & ~0x800;
     D_80082C10 = 0;
-    D_80077E5F = 0;
+    g_gameState.config.sealedFeatures = 0;
     recalcPartyStats();
     return 2;
 }

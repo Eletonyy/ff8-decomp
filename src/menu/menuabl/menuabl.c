@@ -119,7 +119,7 @@ s32 func_801E2944(s32 a0) {
  * Scans all 20 shop slots in @c g_gameState and emits an index list
  * (@c D_801E3DA4) of those whose @c visited flag is set AND whose per-slot
  * filter (@c D_801E3D70[i]) is "in sync" with the party-lock bit
- * (@c g_gameState.mainData.partyLockFlag bit 0): both set or both clear.
+ * (@ref PARTY_LOCK_LOCKED): both set or both clear.
  * The total count is stored in @c D_801E3DB8.
  */
 void func_801E2990(void) {
@@ -132,7 +132,7 @@ void func_801E2990(void) {
         u8         *filter = D_801E3D70;
 
         do {
-            u8 lockBit = gs->mainData.partyLockFlag & 1;
+            u8 lockBit = gs->mainData.partyLockFlag & PARTY_LOCK_LOCKED;
             u8 f;
             if (lockBit) {
                 f = *filter;

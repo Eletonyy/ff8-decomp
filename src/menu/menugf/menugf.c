@@ -1,13 +1,10 @@
 #include "common.h"
+#include "card.h"
+#include "menugf.h"
 
-extern u8 D_801E7DD0[];
-extern u8 D_801E7E88;
 extern u8 g_menuDisplayCfg[];
 extern u8 g_gameState[];
 extern s32 g_menuColor;
-extern void func_801E5A60();
-extern void func_801E6A8C();
-extern void func_801E7988();
 
 INCLUDE_ASM("asm/ovl/menugf/nonmatchings/menugf", func_801E5800);
 

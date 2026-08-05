@@ -1,6 +1,7 @@
 #include "common.h"
 #include "field.h"
 #include "gamestate.h"
+#include "card.h"
 #include "sound.h"
 #include "cd.h"
 #include "battle.h"
@@ -13,7 +14,7 @@
  *        Ultimecia's-Castle features.
  *
  * Clears the popped bits from @c g_fieldVars->fieldF3 (the "sealed
- * status" byte), mirrors the result into @c D_80082C10 / @c D_80077E5F,
+ * status" byte), mirrors the result into @c D_80082C10 / @c GameConfig.sealedFeatures,
  * and recalculates party stats so menus reflect the newly-available
  * features. Counterpart to @c opHandler_LASTIN (which sets the same
  * byte to all-sealed = @c 0xFF on entry).
@@ -24,7 +25,7 @@ s32 opHandler_SEALEDOFF(Eline *e) {
     s32 popped = POP(e);
     g_fieldVars->fieldF3 &= ~popped;
     D_80082C10 = g_fieldVars->fieldF3;
-    D_80077E5F = g_fieldVars->fieldF3;
+    g_gameState.config.sealedFeatures = g_fieldVars->fieldF3;
     recalcPartyStats();
     return 2;
 }

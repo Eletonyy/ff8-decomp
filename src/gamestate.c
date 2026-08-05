@@ -4,6 +4,7 @@
 #include "gamestate.h"
 #include "character.h"
 #include "field.h"
+#include "card.h"
 
 extern u8 D_8007809B[];
 extern u8 g_chocoboWorld;
@@ -13,7 +14,6 @@ extern u8 D_8005F388[];
 extern u8 D_80063388[];
 extern s32 D_80085220;
 extern u8 D_8005644B[];
-extern u8 D_80077E5A;
 extern u16 D_800562C8[];
 extern s32 D_800562D4;
 
@@ -480,9 +480,10 @@ void clearEntityFlags(void) {
 }
 
 
-/** @brief Returns bits 3-4 of the flags word at offset 0x68 through g_fieldVars. */
+/** @brief Returns the transition/ready bits of @c g_fieldVars->stateFlags
+ *         (@ref FIELD_STATE_TRANSITION | @ref FIELD_STATE_FIELD_READY). */
 s32 getFieldStateFlags(void) {
-    return g_fieldVars->stateFlags & 0x18;
+    return g_fieldVars->stateFlags & (FIELD_STATE_TRANSITION | FIELD_STATE_FIELD_READY);
 }
 
 
@@ -514,9 +515,9 @@ u8 lookupFieldTable(s32 tableIdx) {
 }
 
 
-/** @brief Returns halfword from D_800562C8 table indexed by D_80077E5A. */
+/** @brief Returns halfword from D_800562C8 table indexed by the field message speed. */
 u16 getCurrentFieldMusic(void) {
-    return D_800562C8[D_80077E5A];
+    return D_800562C8[g_gameState.config.fieldMsgSpeed];
 }
 
 
