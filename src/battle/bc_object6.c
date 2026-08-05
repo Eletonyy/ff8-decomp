@@ -1,16 +1,15 @@
 #include "common.h"
 #include "battle.h"
+#include "gamestate.h"
 
 extern u8 D_800EE441[];
 extern u8 D_80077EBC[];
 s32 func_800A980C(void);
 s32 func_800A9888(void);
-extern u8 D_80077E59[];
 void func_800AD4A4(s32);
 void func_800AE6C0(void);
 void func_80048BB8(s32);
 void sndStopAll(void);
-extern u8 g_gameState[];
 void resetCdDrive(void);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object6", func_800AB4A8);
@@ -164,14 +163,14 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object6", func_800AD8E4);
  * @brief Dispatch queued entity action and clear the queue.
  *
  * If the entity action pointer at D_800ED148+0x12DC is non-zero,
- * loads the byte from D_80077E59, computes palette offset (byte*8+8),
+ * loads @c GameConfig.battleMsgSpeed, computes palette offset (byte*8+8),
  * calls func_8009AF3C with the entity pointer and palette params,
  * then clears the action pointer.
  */
 void func_800AD960(void) {
     s32 base = (s32)&D_800ED148;
     if (*(volatile s32 *)(base + 0x12DC) != 0) {
-        u8 byte = *(u8 *)D_80077E59;
+        u8 byte = g_gameState.config.battleMsgSpeed;
         func_8009AF3C(*(volatile s32 *)(base + 0x12DC), (s32)byte * 8 + 8, 3, 0x80, 0x56);
         *(s32 *)(base + 0x12DC) = 0;
     }
@@ -344,7 +343,7 @@ s32 getMenuString(s32);
  * allocate a message entry, then func_8009AE08(0xA) to set mode.
  * If a0 is not -1, calls getMenuString to look up the character,
  * then func_8009AF3C with animation parameters derived from
- * D_80077E59 and a stack argument of 0x56.
+ * @c GameConfig.battleMsgSpeed and a stack argument of 0x56.
  *
  * @param a0 Character index, or -1 to skip animation setup.
  */
@@ -355,7 +354,7 @@ void func_800AEACC(s32 a0) {
     func_8009AE08(0xA);
     if (saved != -1) {
         s32 result = getMenuString(saved);
-        s32 idx = *(u8 *)D_80077E59;
+        s32 idx = g_gameState.config.battleMsgSpeed;
         func_8009AF3C(result, idx * 8 + 8, 3, 0x80, 0x56);
     }
 }
@@ -381,7 +380,7 @@ void func_800AEC04(void) {
         return;
     }
     {
-        s32 gstate = (s32)g_gameState;
+        s32 gstate = (s32)&g_gameState;
         REGALLOC_BARRIER(gstate);
         if (*(s32 *)(gstate + 0xCD4) != 0) {
             return;
@@ -483,7 +482,6 @@ void func_800AEE64(void) {
     resetCdDrive();
 }
 
-extern u8 D_80078DF8[];
 
 /**
  * @brief Classify the current animation frame into a range bucket.

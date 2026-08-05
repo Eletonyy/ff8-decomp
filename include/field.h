@@ -198,8 +198,7 @@ typedef struct {
  *
  * A 3D line segment from @c (x0,y0,z0) to @c (x1,y1,z1). @c marker @c == @c 0xFF
  * flags an empty slot; @c type selects the @c func_800A5FA4 dispatch behaviour.
- * @c func_8009A2BC reads all three axes, so @c z0 / @c z1 are real Z coordinates
- * (they were previously mislabelled as @c unk04 / @c unk0A).
+ * @c func_8009A2BC reads all three axes, so @c z0 / @c z1 are real Z coordinates.
  *
  * @note Separate storage from the per-entity @ref EntityLineTrigger (@c SETLINE
  *       opcode), which it resembles only in layout. The @ref EventQueue is a
@@ -235,7 +234,7 @@ typedef struct {
                                             @c func_8009BEC8 adds it to the global heading before
                                             the analog-stick direction. @note Name inferred from that use. */
     /* 0x00D */ u8 unk0D;            /**< Field-bundle variant flag: selects the @c D_800C315C command table over
-                                          @c D_800C311C in @c func_800983F0, and forces the eline-pool install
+                                          @c D_800C311C in @c func_800983F0, and forces the actor-pool install
                                           (@c func_800A1CC0) even for load modes 1 and 6. */
     /* 0x00E */ u8 unk0E;            /**< When @c == 1, @c func_800A1BB8 issues a StoreImage to VRAM. */
     /* 0x00F */ u8 pad0F;
@@ -372,7 +371,7 @@ typedef struct {
                                          @note Read only there; no writer decompiled yet. */
     /* 0x1AE */ u8 unk1AE;          /**< Script-writable byte (set by opcode handler @c opHandler_COUNTERCLOCKWISETURN2, read by @c func_8009BEC8 as the distance-per-step divisor). */
     /* 0x1AF */ u8 packedFlagSlot;  /**< Last @c getPackedField2Bit result for the active dispatcher slot; written each tick by @c func_800BD9C4. */
-    /* 0x1B0 */ u8 unk1B0;          /**< 1 selects the eline-pool install path on engine state 1. */
+    /* 0x1B0 */ u8 unk1B0;          /**< 1 selects the actor-pool install path on engine state 1. */
     /* 0x1B1 */ u8 unk1B1;
     /* 0x1B2 */ u8 pad1B2[0x02];
     /* 0x1B4 */ s32 field1B4;       /**< Initialised to @c 0xFFFFFF by @c func_800BFBBC on full reset. */
@@ -383,17 +382,31 @@ extern SystemState D_800704A8;
 extern SystemState g_fieldEntity;
 
 /**
- * @brief 256-byte misc3 region of @c GameState — held at @c g_gameState+0xD60
+ * @brief Field-engine variable block (248 bytes) — held at @c g_gameState+0xD60
  * and aliased through the @c g_fieldVars pointer.
  *
- * Despite the name, this region tracks general field/world state — step
+ * The surrounding @c GameState region runs to @c 0xE60 (256 bytes); the 8
+ * bytes past this struct are @c GameState.padE58 and are not part of it —
+ * @ref SmInitEventAll clears exactly @c sizeof(FieldVars).
+ *
+ * Despite the legacy "misc3" name for the region (see
+ * @ref GAMESTATE_MISC3_OFFSET), it tracks general field/world state — step
  * accumulators that drive periodic ticks, SeeD experience and rank
  * bookkeeping, sound channel handles, the packed 2-bit flag table, party
  * ordering, audio channel state, etc. Only partially mapped; fields are
  * added as their usages are identified.
  */
 typedef struct {
-    /* 0x00 */ u8 magic[4];             /**< "FF-8" signature bytes, written on full reset by @c func_800C00C8. */
+    /* 0x00 */ u8 initTag[4];           /**< ASCII @c "FF-8" stamped here by @ref SmInitEventAll on a full reset.
+                                             Write-only: no code anywhere in the executable or its overlays reads
+                                             these bytes back — verified across all four ways the block is reached
+                                             (the @c D_800780D8 symbol, @c g_gameState+0xD60, offset 0 through the
+                                             @c g_fieldVars pointer, and the computed @c (u8*)g_fieldVars+n
+                                             accesses, which only ever touch @c 0xC5). Not called "magic" for that
+                                             reason — contrast @c SoundBank.magic, which @c sndValidateBank
+                                             actually validates. Field scripts could read it as M-memory
+                                             @c 0x00..0x03 via @c PSHM_B, and it also watermarks the block in RAM
+                                             and save dumps; which of those was intended is unknown. */
     /* 0x04 */ u32 stepCounter;         /**< Total step delta accumulator, mirrored to D_80082C14. */
     /* 0x08 */ s32 seedExpStepAcc;      /**< Step accumulator: fires the SeeD level-up tick at @c 0x6000. */
     /* 0x0C */ s32 hpRegenStepAcc;      /**< Step accumulator: fires HP regen ticks at @c 8. */
@@ -463,18 +476,8 @@ typedef struct {
     /* 0xF2 */ u8 fieldF2;              /**< Set to popped field index by fe_object7 dispatch handler. */
     /* 0xF3 */ u8 fieldF3;              /**< Mirrored to D_80082C10 when @ref FIELD_STATE_PARTY_OVERRIDE is set. */
     /* 0xF4 */ s32 angeloLearnStepAcc;  /**< Step accumulator: fires the Angelo trick learn tick at @c 0x250. */
-    /* 0xF8 */ u8 padF8[0x08];
-} FieldVars; /* 0x100 = 256 bytes */
+} FieldVars; /* 0xF8 = 248 bytes */
 
-/**
- * @brief Bytes of @ref FieldVars cleared on a full field reset.
- *
- * Covers everything through the last live field (@c angeloLearnStepAcc, which
- * ends at @c 0xF8); the trailing @c padF8 bytes are deliberately left intact.
- * The original struct may well have been this size, with those 8 bytes
- * belonging to whatever follows in @c GameState — nothing reads them.
- */
-#define FIELD_VARS_RESET_SIZE 0xF8
 
 /* FieldVars.stateFlags bits (partial map — bits are named as their usages
  * are identified; several more bits are used as bare hex elsewhere). */
@@ -636,20 +639,20 @@ typedef struct {
     /* 0x263 */ u8 field_0x263;
 } Actor;
 
-/** @brief Push one s32 onto the eline's bytecode stack. */
-#define PUSH(eline, val) (((s32 *)(eline))[(s8)(++(eline)->stackPtr)] = (val))
+/** @brief Push one s32 onto the actor's bytecode stack. */
+#define PUSH(actor, val) (((s32 *)(actor))[(s8)(++(actor)->stackPtr)] = (val))
 
-/** @brief Pop one s32 from the eline's bytecode stack. */
-#define POP(eline) (((s32 *)(eline))[(s8)(eline)->stackPtr--])
+/** @brief Pop one s32 from the actor's bytecode stack. */
+#define POP(actor) (((s32 *)(actor))[(s8)(actor)->stackPtr--])
 
 /** @brief Pop one s32 then read low byte only. */
-#define POP_BYTE(eline) (*(u8 *)&POP(eline))
+#define POP_BYTE(actor) (*(u8 *)&POP(actor))
 
 /** @brief Pop one s32 then read low signed halfword (sign-extended to s32). */
-#define POP_HALF(eline) (*(s16 *)&POP(eline))
+#define POP_HALF(actor) (*(s16 *)&POP(actor))
 
-/** @brief Read the top s32 from the eline's bytecode stack without popping. */
-#define PEEK(eline) (((s32 *)(eline))[(eline)->stackPtr])
+/** @brief Read the top s32 from the actor's bytecode stack without popping. */
+#define PEEK(actor) (((s32 *)(actor))[(actor)->stackPtr])
 
 /** @brief SeeD salary lookup table indexed by SeeD level (exp / 100). */
 extern u16 g_seedSalaryTable[];
@@ -669,7 +672,6 @@ extern u16 g_seedSalaryTable[];
  * wiki opcode @c N (0x000-0x175) corresponds to our index @c N + 0x12.
  * See @c src/field/opcodes.c for the full opcode-to-handler mapping.
  */
-extern s32 (*g_fieldOpcodeTable[392])();
 
 /** @brief Read the 2-bit packed flag at the given key (256-entry table). */
 extern s32 getPackedField2Bit(s32 key);
@@ -778,7 +780,7 @@ typedef struct {
     s32 subBuffer;   /**< @c 0x98 — caller of @c func_800A8CDC uses the returned @c &subBuffer pointer. */
 } EntityRenderSlot;
 
-/** @brief Entity render-slot pointer table; indexed by @c eline->field_0x256. */
+/** @brief Entity render-slot pointer table; indexed by @c actor->field_0x256. */
 extern EntityRenderSlot *D_800D9630[];
 
 /** @brief Entity Actor pointer table; indexed by raw field-entity id. */
@@ -815,13 +817,13 @@ typedef struct {
     /* 0x18E */ s16 x1, y1, z1;         /**< Trigger line-segment end. */
     /* 0x194 */ u8  activeMarker;       /**< Block-active gate; @c func_8009A4C0 / @c func_8009A7E8 process the record only when @c == 1. */
     /* 0x195 */ u8  pad195;
-    /* 0x196 */ u8  trigger4;       /**< In-range latch: @c func_8009A4C0 sets it while the query point projects inside @c eline->radius, clears it when out; cleared with @c unk19D by @c func_8009A8E0. */
+    /* 0x196 */ u8  trigger4;       /**< In-range latch: @c func_8009A4C0 sets it while the query point projects inside @c actor->radius, clears it when out; cleared with @c unk19D by @c func_8009A8E0. */
     /* 0x197 */ u8  trigger5;       /**< Edge-straddle: @c func_8009A4C0 sets it when self and the query point fall on opposite sides of the segment edge (2D cross-product signs differ). */
     /* 0x198 */ u8  trigger6;       /**< Facing hit: @c func_8009A4C0 sets it when self coincides with the projected point or lies within a +/-64 facing window. */
     /* 0x199 */ u8  trigger7;       /**< Set to 1/2 by @c func_8009A4C0 / @c func_8009A7E8 from the current pad-hold mode (@c D_800704A8 unk150/unk154 bits 0x40/0x80) when the active-marker test + diff window pass. */
     /* 0x19A */ u8  trigger2;       /**< Entered: @c func_8009A4C0 sets it on the frame the record first comes into range. */
     /* 0x19B */ u8  trigger3;       /**< Exited: @c func_8009A4C0 sets it on the frame the record leaves range. */
-    /* 0x19C */ u8  unk19C;         /**< Facing angle to the projected point, written by @c func_8009A4C0 (@ref func_8009A0E8); compared (with diff bias) against @c eline->unk23F by @c func_8009A4C0 / @c func_8009A7E8. */
+    /* 0x19C */ u8  unk19C;         /**< Facing angle to the projected point, written by @c func_8009A4C0 (@ref func_8009A0E8); compared (with diff bias) against @c actor->unk23F by @c func_8009A4C0 / @c func_8009A7E8. */
     /* 0x19D */ u8  unk19D;         /**< Fired-this-frame flag: @c func_8009A4C0 raises it with @c trigger6; @c func_8009A7E8 gates the pad-mode write on it; cleared by @c func_8009A8E0 alongside @c trigger4. */
     /* 0x19E */ u8  pad19E[0x02];
 } Eline; /* 0x1A0 = 416 bytes — the game's "eline" (per the field-init trace). */
@@ -1160,7 +1162,7 @@ extern s32 D_800DE4D8;
 /** @brief Global SFX-status flags packed scalar (tested with 0xC0 etc.). */
 extern s32 D_80070600;
 
-/** @brief Active field-script entity index (mirrors @c eline->field_0x256). */
+/** @brief Active field-script entity index (mirrors @c actor->field_0x256). */
 extern u8 D_800DE4FC;
 extern u8 D_800DE4FD[];
 extern u8 D_80085390;
@@ -1257,7 +1259,13 @@ extern s32 D_800705F8;
 
 /** @brief @c &g_gameState.fieldVars exposed as a byte array for fe_object4's
  *         script-VM M-memory load/store opcodes (offsets are popped from the
- *         eline stack). */
+ *         actor stack). */
+/** @brief The field script-VM's M-memory block — the same storage as
+ *         @c *g_fieldVars, addressed by byte offset by the @c PSHM_ / @c POPM_
+ *         opcodes (M-offset @c N is @c FieldVars + @c N).
+ *  @note A second view of memory that @ref FieldVars already describes; the
+ *        opcode handlers use this byte-array form because the offset is a
+ *        runtime script argument, not a named field. */
 extern u8  D_800780D8[];
 
 /** @brief Field-side status flag byte; bitfield (0x1, 0x2, 0x4, 0x8, 0x10, 0x20). */

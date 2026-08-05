@@ -1,4 +1,5 @@
 #include "common.h"
+#include "gamestate.h"
 
 extern u8 D_800F16A4[];
 extern u8 D_800F16A8[];
@@ -8,7 +9,6 @@ extern u8 D_800F02F4[];
 extern u8 D_800F16B4[];
 extern u8 D_800F16BC[];
 extern u8 D_800F1468[];
-extern u8 D_80077E59[];
 extern u8 D_800F1668[];
 extern u8 D_800EF2D0[];
 extern u8 D_800EEC58[];
@@ -151,10 +151,8 @@ void func_800BD230(void) {
  */
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BD260);
 
-/**
- * @brief Call func_800BFE1C with the pointer stored in D_800F16A8.
- */
-void opHandler_OP167(void) {
+/** @brief Call @c func_800BFE1C with the pointer stored in @c D_800F16A8. */
+void func_800BD2AC(void) {
     func_800BFE1C(*(s32 *)D_800F16A8);
 }
 
@@ -266,7 +264,7 @@ void func_800BD5B0(s32 a0, s32 a1) {
  * @brief Conditionally dispatch visual effect command based on D_800F16B4 flag.
  *
  * If D_800F16B4 is zero, returns immediately. Otherwise, loads the byte
- * at D_80077E59, computes slot = byte * 8 + 8, reads the pointer at
+ * from @c GameConfig.battleMsgSpeed, computes slot = byte * 8 + 8, reads the pointer at
  * D_800F16A4 + 0xC, and calls func_800B2E04 with that pointer, the
  * computed slot, mode 1, and parameter 0. Clears D_800F16B4 on return.
  */
@@ -275,7 +273,7 @@ void func_800BD5FC(void) {
         return;
     }
     {
-        s32 a1 = *(u8 *)D_80077E59;
+        s32 a1 = g_gameState.config.battleMsgSpeed;
         s32 a0 = *(s32 *)(*(s32 *)D_800F16A4 + 0xC);
         a1 = a1 * 8 + 8;
         func_800B2E04(a0, a1, 1, 0);

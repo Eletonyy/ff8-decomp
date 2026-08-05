@@ -1,5 +1,6 @@
 #include "common.h"
 #include "field.h"
+#include "field/opcodes.h"
 #include "gamestate.h"
 #include "card.h"
 #include "cd.h"
@@ -151,7 +152,7 @@ void opHandler_GE(Actor *e) {
 /**
  * @brief Stack less-than comparison: stack[top-1] = stack[top-1] < stack[top].
  *
- * @param eline Pointer to the event line (script context).
+ * @param actor Pointer to the actor (script context).
  */
 void opHandler_LT(Actor *e) {
     s32 idx;
@@ -251,7 +252,7 @@ void opHandler_LSH(Actor *e) {
  *
  * Reads the second-byte sub-opcode (@p opcode) from the script bytecode
  * stream, looks up the handler in @c g_fieldOpcodeTable[opcode], and
- * tail-calls it with the current eline. This is itself bound to entry
+ * tail-calls it with the current actor. This is itself bound to entry
  * 0x13 of the table (wiki opcode @c 0x001) — the runtime dispatcher
  * hits it when the bytecode contains a "0x01 NN" pair, with @c NN
  * decoded as the sub-opcode and arriving in @c a1.
@@ -260,12 +261,12 @@ void opHandler_LSH(Actor *e) {
  * and to re-enter the main opcode table by raw index when the bytecode
  * needs an opcode that does not have its own direct entry.
  *
- * @param eline  Pointer to the event line (script context).
+ * @param actor  Pointer to the actor (script context).
  * @param opcode Raw index into @c g_fieldOpcodeTable (0..391).
  * @return 2 (continue processing).
  */
-s32 opHandler_CAL(Actor *eline, s32 opcode) {
-    g_fieldOpcodeTable[opcode](eline);
+s32 opHandler_CAL(Actor *actor, s32 opcode) {
+    g_fieldOpcodeTable[opcode](actor);
     return 2;
 }
 
@@ -301,28 +302,28 @@ s32 opHandler_GJMP(Actor *e, s32 a1) {
  * @brief Opcode 0x05 — SAV: spill result-slot register file to the
  *        bytecode stack and reset the slots.
  *
- * Pushes the eight result-register values (@c eline->resultSlots[0..7])
+ * Pushes the eight result-register values (@c actor->resultSlots[0..7])
  * onto the bytecode stack in order, then clears each slot to zero.
- * After the spill, if @c FLAG_SAV_SUCCESS is set in @c eline->flags,
+ * After the spill, if @c FLAG_SAV_SUCCESS is set in @c actor->flags,
  * slot 0 is re-armed to @c 1 — a "success/default" marker the caller
  * can fall through to.
  *
  * This is the script-VM analogue of a save-registers prologue; a
  * later opcode pops the saved values back to restore the slot file.
  *
- * @param eline Script context.
+ * @param actor Script context.
  * @param a1    Ignored (dispatcher-supplied opcode argument).
  * @return 2 (advance PC).
  */
-s32 opHandler_LBL(Actor *eline, s32 a1) {
+s32 opHandler_LBL(Actor *actor, s32 a1) {
     s32 i;
 
     for (i = 0; i < 8; i++) {
-        PUSH(eline, eline->resultSlots[i]);
-        eline->resultSlots[i] = 0;
+        PUSH(actor, actor->resultSlots[i]);
+        actor->resultSlots[i] = 0;
     }
-    if (eline->flags & 0x20) {
-        eline->resultSlots[0] = 1;
+    if (actor->flags & 0x20) {
+        actor->resultSlots[0] = 1;
     }
     return 2;
 }
@@ -489,14 +490,14 @@ s32 opHandler_PSHI_L(Actor *e, s32 a1) {
     return 2;
 }
 
-/** @brief Load byte from g_gameState+a1+0xD60, call func_800AE3A4 with mode 5, push result. Returns 2. */
+/** @brief Load a field-variable byte (@c g_gameState + @ref GAMESTATE_MISC3_OFFSET + a1),
+ *         call @c func_800AE3A4 with mode 5, push the result. Returns 2. */
 s32 opHandler_PSHM_B(Actor *e, s32 a1) {
-    /* Script-VM M-memory byte (= seedState[a1]); 0xD60 is the offset of
-     * seedState inside g_gameState. Phrased as g_gameState+a1, then
-     * [0xD60] so gcc keeps 0xD60 in the lbu instead of folding it into
-     * the symbol address. */
+    /* Script-VM M-memory byte (= fieldVars[a1]). Phrased as g_gameState+a1
+     * first and indexed by the block offset second, so gcc keeps that offset
+     * in the lbu instead of folding it into the symbol address. */
     u8 *p = (u8 *)&g_gameState + a1;
-    s32 result = func_800AE3A4(p[0xD60], 5);
+    s32 result = func_800AE3A4(p[GAMESTATE_MISC3_OFFSET], 5);
     PUSH(e, result);
     return 2;
 }
@@ -542,11 +543,24 @@ s32 opHandler_POPI_L(Actor *e, s32 a1) {
     return 2;
 }
 
+/**
+ * @brief Script-VM M-memory byte store: @c fieldVars[a1] = top-of-stack.
+ *
+ * Writes the popped value as a byte into the field-variable block, which lives
+ * at @c g_gameState + @ref GAMESTATE_MISC3_OFFSET (what @c g_fieldVars points at).
+ *
+ * @note The address is built by raw arithmetic on @c &g_gameState rather than
+ *       through the struct because the index is a byte offset into the whole
+ *       block, not a named field; the folded form is what the original
+ *       codegen emits.
+ *
+ * @param e  Script-VM actor whose stack is popped.
+ * @param a1 Byte offset into the field-variable block.
+ * @return @c 2 (continue processing).
+ */
 s32 opHandler_POPM_B(Actor *e, s32 a1) {
-    /* Script-VM M-memory byte store (= seedState[a1] = top-of-stack);
-     * 0xD60 = seedState offset inside g_gameState. */
     u8 *p = (u8 *)&g_gameState + a1;
-    p[0xD60] = (u8)POP(e);
+    p[GAMESTATE_MISC3_OFFSET] = (u8)POP(e);
     return 2;
 }
 
@@ -573,7 +587,7 @@ s32 opHandler_PSHAC(Actor *e, s32 a1) {
  *        slot and look up the new PC from @c D_800852F0[slot] table.
  *
  * Used by @c opHandler_REQSW / @c opHandler_REQEW to context-switch the
- * eline's script context.  Calls @c func_800B663C to flush pending
+ * actor's script context.  Calls @c func_800B663C to flush pending
  * state.
  *
  * @brief Central VM context-switch helper. If @c newGroup's slot is
@@ -905,7 +919,7 @@ s32 opHandler_CLEAR(void) {
     s32 i;
     for (i = 0x100; i < 0x500; i++) {
         u8 *p = (u8 *)&g_gameState + i;
-        p[0xD60] = 0;
+        p[GAMESTATE_MISC3_OFFSET] = 0;
     }
     return 2;
 }
@@ -1091,7 +1105,7 @@ s32 opHandler_SARALYDISPON(void) {
 }
 
 /**
- * @brief Pops 6 stack halfwords and writes them to eline offsets
+ * @brief Pops 6 stack halfwords and writes them to actor offsets
  *        0x192/0x190/0x18E/0x18C/0x18A/0x188 (in pop order), then sets
  *        bytes at 0x194=1 and 0x195=D_800DE4FC.
  *
@@ -1297,7 +1311,7 @@ s32 opHandler_UCOFF(void) {
 }
 
 /**
- * @brief Pop a value from the eline stack; set @c D_800704BD to 0 if
+ * @brief Pop a value from the actor stack; set @c D_800704BD to 0 if
  *        nonzero, to 1 if zero. Returns 2 (VM continue).
  */
 s32 opHandler_KEY(Actor *e) {
@@ -1310,7 +1324,7 @@ s32 opHandler_KEY(Actor *e) {
 }
 
 /**
- * @brief Pop a slot id, set eline flag bit 7; if id is in {3,4,5,7}
+ * @brief Pop a slot id, set actor flag bit 7; if id is in {3,4,5,7}
  *        also set flag bit 0x4000000; if id matches none of the active
  *        battle-party slots (@c battleParty[0..2]), clear flag bit 2.
  */

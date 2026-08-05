@@ -7,11 +7,15 @@
  * answers category queries about individual slots, and maintains the
  * party/GF availability masks and HP mirrors in @c g_gameState.
  *
- * @note @c getGfAvailabilityMask is defined here but declared in @c gf.h,
- *       which types it @c s32 while @c card.c defines it @c u16. Moving the
- *       declaration here (as @c u16) was measured to change caller codegen
- *       and break @c menugf.ovl / @c menujnc2.ovl, so the two must be
- *       reconciled deliberately — with a byte-verify — before it moves.
+ * @note @c getGfAvailabilityMask is defined by this unit but declared in
+ *       @c gf.h, and the widths deliberately differ. The definition must be
+ *       @c u16 (its epilogue is @c "andi v0, a1, 0xffff"; an @c s32 definition
+ *       breaks @c SLUS_008.92), while callers must see an int-width
+ *       declaration (declaring @c u16 to them breaks @c menugf.ovl and
+ *       @c menujnc2.ovl). That is faithful to the original build, in which
+ *       @c card.c did not include the header its callers used — which is also
+ *       why @c menugf.c masks the result by hand with @c "& 0xFFFF".
+ *       Do not "reconcile" the two.
  */
 #ifndef CARD_H
 #define CARD_H

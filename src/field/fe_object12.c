@@ -18,12 +18,13 @@ extern u8 D_80077BA8[];
 /**
  * @brief Field-engine state initializer (new game / field reset).
  *
- * Opens with the developers' own debug trace, which is where the original
- * 1998 names survive: this routine was called @c SmInitEventAll, and the
- * four field structures were @c actor / @c eline / @c dline / @c bganime.
+ * The developers' own debug trace opens the routine, and is where its name
+ * comes from — it prints @c "::SmInitEventAll" followed by the sizes of the
+ * four field structures the game calls @c actor, @c eline, @c dline and
+ * @c bganime (@ref Actor, @ref Eline, @ref Dline, @ref Bganime here).
  * It then resets the MDEC decoder and:
- *  - On @p fullReset: clears @c *g_fieldVars through its last live field,
- *    stamps the "FF-8" magic, and seeds the defaults — disc 1, battle
+ *  - On @p fullReset: clears the whole of @c *g_fieldVars,
+ *    stamps the "FF-8" init tag, and seeds the defaults — disc 1, battle
  *    music 5, both volumes 0x7F, SeeD exp 500, the @ref FIELD_STATE_TRANSITION
  *    and @ref FIELD_STATE_FIELD_READY state bits,
  *    and message speed 2 (@c GameConfig.fieldMsgSpeed).
@@ -41,7 +42,7 @@ extern u8 D_80077BA8[];
  * @param fullReset Nonzero to wipe @c *g_fieldVars and apply new-game
  *                  defaults; zero to keep current values.
  */
-void func_800C00C8(s32 fullReset)
+void SmInitEventAll(s32 fullReset)
 {
     s32 i;
     s32 neg;
@@ -62,11 +63,11 @@ void func_800C00C8(s32 fullReset)
     DecDCTReset(0);
 
     if (fullReset) {
-        func_800396E0(g_fieldVars, FIELD_VARS_RESET_SIZE);
-        g_fieldVars->magic[0] = 'F';
-        g_fieldVars->magic[1] = 'F';
-        g_fieldVars->magic[2] = '-';
-        g_fieldVars->magic[3] = '8';
+        func_800396E0(g_fieldVars, sizeof(FieldVars));
+        g_fieldVars->initTag[0] = 'F';
+        g_fieldVars->initTag[1] = 'F';
+        g_fieldVars->initTag[2] = '-';
+        g_fieldVars->initTag[3] = '8';
         g_fieldVars->expectedDiscId = 1;
         g_fieldVars->battleMusicId = 5;
         g_fieldVars->musicVolume = 0x7F;

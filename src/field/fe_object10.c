@@ -1,5 +1,6 @@
 #include "common.h"
 #include "field.h"
+#include "field/opcodes.h"
 #include "gamestate.h"
 #include "character.h"
 #include "battle.h"
@@ -72,7 +73,7 @@ s32 opHandler_OP167(FieldEntity *entity) {
  * dispatch — used when the source direction needs to be inverted.
  */
 s32 opHandler_OP168(FieldEntity *entity) {
-    Actor *eline = (Actor *)entity;
+    Actor *actor = (Actor *)entity;
     u8 idx = entity->stackIdx;
     s16 buf[4];
     entity->stackIdx = idx - 1;
@@ -80,7 +81,7 @@ s32 opHandler_OP168(FieldEntity *entity) {
     buf[0] = -buf[0];
     buf[1] = -buf[1];
     buf[2] = -buf[2];
-    func_800A9434(eline->field_0x256, 0x30, 1, (u8 *)buf, 0x1E);
+    func_800A9434(actor->field_0x256, 0x30, 1, (u8 *)buf, 0x1E);
     return 2;
 }
 
@@ -313,7 +314,7 @@ void func_800BD804(s32 stepDelta) {
  *     plain script tick, finalized by @c func_800B2BA0.
  *
  * Each inner VM iteration reads an opcode via @c func_80037B7C, dispatches
- * @c g_fieldOpcodeTable[opcode + 0x12], and processes the return bits:
+ * @c g_fieldOpcodeTable[opcode + @ref FIELD_OPCODE_BASE], and processes the return bits:
  *   - bit 0 (0x1) — terminate this entity's tick (zeros the iteration counter)
  *   - bit 1 (0x2) — advance @c pc, set @c activeMask bit
  *   - bit 2 (0x4) — keep @c activeMask bit (else clear it)
@@ -397,7 +398,7 @@ void func_800BD9C4(FieldFrameBuf *frame) {
                     do {
                         s32 ret;
                         func_80037B7C(&D_80085380[e->pc], &sp50, &sp54);
-                        ret = g_fieldOpcodeTable[sp50 + 0x12](e, sp54);
+                        ret = g_fieldOpcodeTable[sp50 + FIELD_OPCODE_BASE](e, sp54);
                         if (!(ret & 4)) {
                             e->activeMask &= ~(1 << e->scriptGroup);
                         }
@@ -461,7 +462,7 @@ void func_800BD9C4(FieldFrameBuf *frame) {
                 do {
                     s32 ret;
                     func_80037B7C(&D_80085380[eb->pc], &sp50, &sp54);
-                    ret = g_fieldOpcodeTable[sp50 + 0x12](eb, sp54);
+                    ret = g_fieldOpcodeTable[sp50 + FIELD_OPCODE_BASE](eb, sp54);
                     if (!(ret & 4)) {
                         eb->activeMask &= ~(1 << eb->scriptGroup);
                     }
@@ -503,7 +504,7 @@ void func_800BD9C4(FieldFrameBuf *frame) {
                 do {
                     s32 ret;
                     func_80037B7C(&D_80085380[ec->pc], &sp50, &sp54);
-                    ret = g_fieldOpcodeTable[sp50 + 0x12](ec, sp54);
+                    ret = g_fieldOpcodeTable[sp50 + FIELD_OPCODE_BASE](ec, sp54);
                     if (!(ret & 4)) {
                         ec->activeMask &= ~(1 << ec->scriptGroup);
                     }
@@ -531,7 +532,7 @@ void func_800BD9C4(FieldFrameBuf *frame) {
                 do {
                     s32 ret;
                     func_80037B7C(&D_80085380[ed->pc], &sp50, &sp54);
-                    ret = g_fieldOpcodeTable[sp50 + 0x12](ed, sp54);
+                    ret = g_fieldOpcodeTable[sp50 + FIELD_OPCODE_BASE](ed, sp54);
                     if (!(ret & 4)) {
                         ed->activeMask &= ~(1 << ed->scriptGroup);
                     }
@@ -710,27 +711,21 @@ s32 *func_800BE4B0(u8 *header, u16 *table) {
 INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BE5E4);
 
 /**
- * @brief Initialize the Block B field-entity pool (stride 0x1A0).
+ * @brief Initialize the @ref Eline pool — the "Block B" field entities.
  *
- * Block B entities are smaller field actors (0x1A0 bytes each) but share
- * the script-VM header (offsets 0x000..0x187) with @c Actor, so we type
- * them as @c Actor* and walk with manual stride. Memsets the buffer,
+ * An @ref Eline (416 bytes, the structure the field-init debug trace calls
+ * @c eline) is a smaller field entity than an @ref Actor, but carries the
+ * same script-VM header at offsets @c 0x000..0x187. Memsets the buffer,
  * then for each entry pulls a packed (upper:9, lower:7) value from
  * @c D_800DE4E0, derives @c rangeLo / @c rangeHi / @c pc, and registers
  * the entity in @c D_80085230 at indices @c [D_80085388, D_80085388+count).
  * pc is masked with @c 0x7FFF. Returns the post-init free-slot pointer.
  *
- * @param buf Entity buffer (Block B pool base).
- * @return Pointer past the last initialized Block B slot.
- *
- * @note The pool records are @ref Eline (416 bytes — the structure the
- *       field-init debug trace calls @c eline), but @p buf is typed @c Actor*,
- *       which is 612 bytes. That mismatch is why the walk needs an explicit
- *       byte cast instead of @c e++. Retyping it is a codegen-affecting change
- *       and wants its own byte-verified pass.
+ * @param buf Entity buffer (@ref Eline pool base).
+ * @return Pointer past the last initialized slot (the next pool's base).
  */
-Actor *func_800BE7F4(Actor *buf) {
-    Actor *e = buf;
+Eline *func_800BE7F4(Eline *buf) {
+    Eline *e = buf;
     func_800396E0(buf, D_800852F8 * sizeof(Eline));
     {
         s32 k = 0;
@@ -744,7 +739,8 @@ Actor *func_800BE7F4(Actor *buf) {
             u16 lower;
             u16 pcVal;
 
-            D_80085230[D_80085388 + k] = e;
+            /* Shared entity table: holds Actor and Eline records alike. */
+            D_80085230[D_80085388 + k] = (Actor *)e;
             e->flags = 0x20000000;
             e->stackPtr = -1;
 
@@ -770,7 +766,7 @@ Actor *func_800BE7F4(Actor *buf) {
             e->pc = pcVal & 0x7FFF;
             e->groupRanges[7] = 0xFFFF;
 
-            e = (Actor *)((u8 *)e + sizeof(Eline));
+            e++;
             k++;
         } while (k < D_800852F8);
 
@@ -914,7 +910,7 @@ Dline *func_800BEA84(Dline *buf) {
  * Iterates pools in order D, C, B, A (large stride first). For each
  * entity, runs the script VM: calls @c func_800393C8 (yield-poll),
  * fetches the next opcode via @c func_80037B7C, dispatches
- * @c g_fieldOpcodeTable[opcode + 0x12] with the arg from
+ * @c g_fieldOpcodeTable[opcode + @ref FIELD_OPCODE_BASE] with the arg from
  * @c func_80037B7C, and processes the return bits exactly like
  * @c func_800BD9C4's per-iter dispatch (bit 2 keeps the @c activeMask
  * bit; bit 1 advances @c pc and sets the bit). Unlike the main tick,
@@ -941,7 +937,7 @@ void func_800BEBD0(void) {
                     func_800393C8();
                     func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
                     if (sp10 == 6 && sp14 < 9) break;
-                    ret = g_fieldOpcodeTable[sp10 + 0x12](e, sp14);
+                    ret = g_fieldOpcodeTable[sp10 + FIELD_OPCODE_BASE](e, sp14);
                     if (!(ret & 4)) {
                         e->activeMask &= ~(1 << e->scriptGroup);
                     }
@@ -967,7 +963,7 @@ void func_800BEBD0(void) {
                     func_800393C8();
                     func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
                     if (sp10 == 6 && sp14 < 9) break;
-                    ret = g_fieldOpcodeTable[sp10 + 0x12](e, sp14);
+                    ret = g_fieldOpcodeTable[sp10 + FIELD_OPCODE_BASE](e, sp14);
                     if (!(ret & 4)) {
                         e->activeMask &= ~(1 << e->scriptGroup);
                     }
@@ -993,7 +989,7 @@ void func_800BEBD0(void) {
                     func_800393C8();
                     func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
                     if (sp10 == 6 && sp14 < 9) break;
-                    ret = g_fieldOpcodeTable[sp10 + 0x12](e, sp14);
+                    ret = g_fieldOpcodeTable[sp10 + FIELD_OPCODE_BASE](e, sp14);
                     if (!(ret & 4)) {
                         e->activeMask &= ~(1 << e->scriptGroup);
                     }
@@ -1019,7 +1015,7 @@ void func_800BEBD0(void) {
                     func_800393C8();
                     func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
                     if (sp10 == 6 && sp14 < 9) break;
-                    ret = g_fieldOpcodeTable[sp10 + 0x12](e, sp14);
+                    ret = g_fieldOpcodeTable[sp10 + FIELD_OPCODE_BASE](e, sp14);
                     if (!(ret & 4)) {
                         e->activeMask &= ~(1 << e->scriptGroup);
                     }
@@ -1112,9 +1108,9 @@ void func_800BF080(void) {
  * animation update.
  */
 void func_800BF230(FieldEntity *entity) {
-    Actor *eline = (Actor *)entity;
-    func_800AA46C(eline->field_0x256, 0xD, eline->field_0x24E, 0);
-    D_800D9630[eline->field_0x256]->unk52 = eline->field_0x206;
+    Actor *actor = (Actor *)entity;
+    func_800AA46C(actor->field_0x256, 0xD, actor->field_0x24E, 0);
+    D_800D9630[actor->field_0x256]->unk52 = actor->field_0x206;
 }
 
 /**

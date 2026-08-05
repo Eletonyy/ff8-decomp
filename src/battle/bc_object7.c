@@ -1,15 +1,13 @@
 #include "common.h"
 #include "battle.h"
+#include "gamestate.h"
 
 extern u8 D_800EE490[];
-extern u8 D_80082C10[];
 extern u8 D_80077EBC[];
 extern u8 D_800EEBE8[];
-extern u8 D_80077E58;
 s32 func_800B0204(u8 *, s32, s32, s32);
 void func_800A4C84(s32);
 void func_800AE524(s32);
-extern u8 g_gameState[];
 extern u8 D_800E3CF0[];
 extern u8 D_800EE4E8[];
 void func_800AE4A0(void);
@@ -312,7 +310,7 @@ s32 func_800B054C(s32 a0) {
  * @brief Store scaled animation value at entity's bit position offset.
  *
  * Calls func_800B054C to find the lowest set bit in a1. If the result
- * is less than 14, computes a scale factor from D_80077E58 and a table
+ * is less than 14, computes a scale factor from @c GameConfig.battleSpeed and a table
  * value from D_80078E00, multiplies them, and stores the result at the
  * entity's bit-indexed halfword slot.
  *
@@ -325,7 +323,7 @@ void func_800B0574(s32 arg0, u32 arg1) {
     temp_v0 = func_800B054C(arg1);
     if (temp_v0 < 14) {
         u8 val = D_80078E00.unk_4CCC[temp_v0];
-        s32 temp = ((D_80077E58 + 1) * 4);
+        s32 temp = ((g_gameState.config.battleSpeed + 1) * 4);
         D_800ED148.entities[arg0].field64.perBit[temp_v0] = val * temp;
     }
 }
@@ -462,9 +460,9 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0CC4);
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0D8C);
 
 /**
- * @brief Dispatch call based on D_80082C10 flag bit 1.
+ * @brief Dispatch call based on @ref SEALED_FLAG_02 in D_80082C10.
  *
- * If bit 1 of D_80082C10 is set, passes 0xFF to func_800B0CC4.
+ * If @ref SEALED_FLAG_02 is set, passes 0xFF to func_800B0CC4.
  * Otherwise calls func_800B0D8C with a0 and mode 2, then passes
  * the result to func_800B0CC4.
  *
@@ -472,7 +470,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0D8C);
  */
 s32 func_800B0DDC(s32 a0) {
     s32 val;
-    if (*(u8 *)D_80082C10 & 2) {
+    if (D_80082C10 & SEALED_FLAG_02) {
         val = 0xFF;
     } else {
         val = func_800B0D8C(a0, 2);
@@ -483,9 +481,9 @@ s32 func_800B0DDC(s32 a0) {
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0E30);
 
 /**
- * @brief Dispatch call based on D_80082C10 flag bit 0.
+ * @brief Dispatch call based on @ref SEALED_FLAG_01 in D_80082C10.
  *
- * If bit 0 of D_80082C10 is set, passes 0xFF to func_800B0E30.
+ * If @ref SEALED_FLAG_01 is set, passes 0xFF to func_800B0E30.
  * Otherwise calls func_800B0D8C with a0 and mode 4, then passes
  * the result to func_800B0E30.
  *
@@ -493,7 +491,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0E30);
  */
 s32 func_800B0F3C(s32 a0) {
     s32 val;
-    if (*(u8 *)D_80082C10 & 1) {
+    if (D_80082C10 & SEALED_FLAG_01) {
         val = 0xFF;
     } else {
         val = func_800B0D8C(a0, 4);

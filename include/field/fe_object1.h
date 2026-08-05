@@ -352,9 +352,9 @@ extern s32  func_8009A2BC(LineSeg *seg, Vec3i *p, Vec3i *out);
 extern s32  func_8009A4C0(Actor *self, Eline *records, VECTOR *pt);
 extern void func_8009A7E8(Actor *e, Eline *pool);
 extern void func_8009A8E0(Eline *e);
-extern void func_8009A920(Actor *eline, Eline *entities);
+extern void func_8009A920(Actor *actor, Eline *entities);
 extern void func_8009AA64(EventEntry *e);
-extern void func_8009AAC8(Actor *eline, EventEntry *segs, Vec3i *pt);
+extern void func_8009AAC8(Actor *actor, EventEntry *segs, Vec3i *pt);
 extern s16  func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list);
 /** @brief Place every field entity on the navmesh when a field is entered. */
 extern void func_8009AEC0(void);
@@ -491,7 +491,7 @@ extern void func_800A5A20(Actor *self, EventEntry *entries);
 extern s32  func_800A5C9C(void);
 extern void func_800A5D28(void);
 extern s32  func_800A5FA4(FieldLineTrigger *seg, s32 sel);
-extern void func_800A6100(Actor *eline, FieldLineTrigger *segs, Vec3i *pt);
+extern void func_800A6100(Actor *actor, FieldLineTrigger *segs, Vec3i *pt);
 extern void func_800A62EC(FieldLineTrigger *segs);
 extern int  func_800A63AC();
 extern int  func_800A6A80();
@@ -581,7 +581,6 @@ extern u8 **D_800C71F4;          /**< Field-data section pointer: per-field enco
 extern u16 **D_800C720C;         /**< Field-data section pointer: 4-entry battle formation table. */
 extern u16 D_8005F160;
 extern u16 D_8005F162;
-extern u8 D_80085388;
 extern u8 D_800C319C[];          /**< Arctangent lookup table (byte per 2*|component| step) for func_8009A0E8. */
 extern u8 D_800C32A0[];
 extern u8 D_800C3320[];

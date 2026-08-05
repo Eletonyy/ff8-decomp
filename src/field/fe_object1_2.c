@@ -1655,7 +1655,7 @@ void func_800A44D8(void) {
  * slot as occupied.
  *
  * Called from the @c SETDRAWPOINT script opcode with the source
- * eline's position.
+ * actor's position.
  */
 void func_800A4500(s32 x, s32 y, s32 z) {
     s32 i;

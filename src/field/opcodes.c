@@ -6,7 +6,7 @@
  *     Invoked via the CAL opcode (op001 @ table index 0x013), which is
  *     @c opHandler_CAL. CAL reads a sub-opcode in @c a1 and tail-calls
  *     @c g_fieldOpcodeTable[a1]. The 18 entries are pure stack ops on
- *     the eline's value stack at offset 0x184: ADD, SUB, MUL, DIV, MOD,
+ *     the actor's value stack at offset 0x184: ADD, SUB, MUL, DIV, MOD,
  *     NEG, EQ, GT, GE, LT, LE, NE, AND, OR, EOR, NOT, RSH, LSH.
  *
  *   Indices 0x012-0x187 (374 entries) — main field-VM opcode dispatch.
@@ -23,6 +23,7 @@
  */
 #include "common.h"
 #include "field.h"
+#include "field/opcodes.h"
 #include "field/fe_object1.h"
 #include "field/fe_object2.h"
 #include "field/fe_object3.h"
@@ -36,10 +37,8 @@
 #include "field/fe_object11.h"
 #include "field/fe_object12.h"
 
-/* Forward declarations for the 392 opcode handlers (K&R-style
- * unprototyped — the table cast handles arg-type compatibility). */
-
-typedef s32 (*OpcodeFn)();
+/* Handler forward declarations come from the per-unit fe_object*.h headers
+ * included above; OpcodeFn and the table's extern live in opcodes.h. */
 
 s32 (*g_fieldOpcodeTable[392])() = {
     /* 0x000  arith ADD              */ (OpcodeFn)opHandler_ADD,

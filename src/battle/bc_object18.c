@@ -1,4 +1,5 @@
 #include "common.h"
+#include "gamestate.h"
 
 extern u8 D_80102E40[];
 extern u8 D_80102E70[];
@@ -6,7 +7,6 @@ extern u8 D_80102E78[];
 extern u8 D_80103240[];
 extern u8 D_80103308[];
 extern u8 D_80103420[];
-extern u8 D_80077E5C[];
 extern u8 D_80078842[];
 extern u8 D_8007873E[];
 void func_800D18B0(void);
@@ -357,15 +357,15 @@ void func_800D422C(s32 a0) {
 }
 
 /**
- * @brief Conditionally call func_800D422C based on D_80077E5C flag.
+ * @brief Conditionally call func_800D422C based on the cursor config flag.
  *
- * If bit 2 of the halfword at D_80077E5C is clear, calls func_800D422C
+ * If @ref CONFIG_CURSOR is clear, calls func_800D422C
  * with the passed pointer.
  *
  * @param a0 Base pointer passed through to func_800D422C.
  */
 void func_800D4264(s32 a0) {
-    if ((*(u16 *)D_80077E5C & 4) == 0) {
+    if ((g_gameState.config.flags & CONFIG_CURSOR) == 0) {
         func_800D422C(a0);
     }
 }

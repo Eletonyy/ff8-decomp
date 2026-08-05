@@ -6,7 +6,6 @@ extern u8 D_80102E18[];
 extern u8 D_80102E20[];
 extern u8 D_801032F8[];
 extern u8 D_80103420[];
-extern u8 D_80077E5C[];
 s32 func_800D134C(void);
 void intToDecStringShort(s32, u8 *, s32);
 void replaceLeadingZeros(u8 *, s32, s32, s32);

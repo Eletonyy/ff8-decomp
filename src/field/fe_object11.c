@@ -261,14 +261,14 @@ s32 *func_800BFBBC(u8 *entity, Eline *a1, u16 *a2, s32 mode) {
         D_800852F0 = (u16 *)D_800DE4E4;
         D_80085380 = (s32 *)D_800DE4E8;
         D_80082C0A = g_fieldVars->fieldB6;
-        D_80085384 = (Dline *)func_800BE7F4((Actor *)a1);
+        D_80085384 = (Dline *)func_800BE7F4((Eline *)a1);
         D_800852F4 = (Bganime *)func_800BEA84(D_80085384);
         D_80085224 = (Actor *)func_800BE924(D_800852F4);
         func_800BE5E4(D_80085224);
 
         gs_bytes = (u8 *)&g_gameState;
         for (i = 0x400; i < 0x500; i++) {
-            gs_bytes[i + 0xD60] = 0;
+            gs_bytes[i + GAMESTATE_MISC3_OFFSET] = 0;
         }
         D_800704A8.dialogState = 4;
         D_800704A8.entityIndex[0] = 0xFF;

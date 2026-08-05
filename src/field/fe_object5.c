@@ -1034,6 +1034,11 @@ s32 opHandler_MUSICVOL(Actor *e) {
     s32 ch = POP(e) & 1;
     u8 *p;
     sndCmdC1((&g_fieldVars->soundHandle0)[ch], 0x10, vol);
+    /* 0xC5 is FieldVars.musicVolume, with sfxVolume adjacent at 0xC6. The
+     * base+ch expression must come first and the constant index second, so gcc
+     * folds 0xC5 into the store displacement. The typed equivalents
+     * (&g_fieldVars->musicVolume)[ch] and p = &g_fieldVars->musicVolume; p[ch]
+     * do not match. */
     p = (u8 *)g_fieldVars + ch;
     p[0xC5] = vol;
     return 2;
@@ -1053,6 +1058,8 @@ s32 opHandler_MUSICVOLTRANS(Actor *e) {
     s32 ch = POP(e) & 1;
     u8 *p;
     sndCmdC1((&g_fieldVars->soundHandle0)[ch], ramp << 1, vol);
+    /* Same base+ch / 0xC5 phrasing as opHandler_MUSICVOL, and required for the
+     * same reason — see the note there. */
     p = (u8 *)g_fieldVars + ch;
     p[0xC5] = vol;
     return 2;
@@ -1074,6 +1081,8 @@ s32 opHandler_MUSICVOLFADE(Actor *e) {
     s32 ch = POP(e) & 1;
     u8 *p;
     sndCmdC2((&g_fieldVars->soundHandle0)[ch], ramp << 1, depth, vol);
+    /* Same base+ch / 0xC5 phrasing as opHandler_MUSICVOL, and required for the
+     * same reason — see the note there. */
     p = (u8 *)g_fieldVars + ch;
     p[0xC5] = vol;
     return 2;

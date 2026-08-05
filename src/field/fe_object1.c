@@ -249,7 +249,7 @@ void func_80098934(void) {
  *   - For all modes except 6: snapshot 12 consecutive pointer-table fields
  *     from the freshly-loaded overlay at @c 0x800E1000 into the
  *     @c D_800C7208 / @c D_800C71E8 / @c D_800D5E* globals, then call
- *     @c func_800983F0 to install the eline pool.
+ *     @c func_800983F0 to install the actor pool.
  *   - Compute centered screen rectangles into @c D_800C7210 / @c D_800C7214
  *     from @c D_8005F0F8 's bounding-box fields, then derive
  *     @c D_800C71F0 (entry-table start = @c *D_800C7204 + 4) and
@@ -1101,9 +1101,9 @@ s32 func_8009A4C0(Actor *self, Eline *records, VECTOR *pt) {
  * Iterates the @c D_800852F8 entities at @c pool. For each entity that
  * passes the gating tests
  *   - @c activeMarker == 1
- *   - @c eline->msgActive == 0
+ *   - @c actor->msgActive == 0
  *   - @c unk19D == @c activeMarker (so @c unk19D == 1)
- *   - @c entity->unk19C falls within a @c +/-32 window of @c eline->unk23F
+ *   - @c entity->unk19C falls within a @c +/-32 window of @c actor->unk23F
  *
  * writes @c trigger7 from the @c D_800704A8.unk150 / @c unk154 pair:
  *   - bit 6 set in @c unk150 and clear in @c unk154 → @c trigger7 = @c unk19D (= 1)
@@ -1166,20 +1166,20 @@ void func_8009A8E0(Eline *e) {
 
 /**
  * @brief Per-frame proximity check, for each @c Eline in
- *        @c D_800852F8 entries, run @c func_8009A2BC against the eline's
+ *        @c D_800852F8 entries, run @c func_8009A2BC against the actor's
  *        position and set per-entity trigger bytes based on the hit
- *        distance vs the eline's collision radius.
+ *        distance vs the actor's collision radius.
  *
- * Writes the eline's @c (posX, posY, posZ) @c >> @c 12 to the PSX
+ * Writes the actor's @c (posX, posY, posZ) @c >> @c 12 to the PSX
  * scratchpad at @c getScratchAddr(2..4), then iterates each
- * @c Eline and (when active and the eline isn't in a message)
+ * @c Eline and (when active and the actor isn't in a message)
  * calls @c func_8009A2BC. The returned distance is compared against
  * @c radius*radius:
  *  - hit (in range): @c trigger4=1; also @c trigger2=1 when
  *    @c D_8005F14C @c == @c 3
  *  - miss (out of range or @c -1): @c trigger3=1, @c trigger4=0
  *
- * @param eline    Querying entity (position, radius, message state).
+ * @param actor    Querying entity (position, radius, message state).
  * @param entities @c Eline pool; walked directly as the loop cursor.
  *
  * @note @c fc is a vestigial second cursor: initialized and stepped in
@@ -1187,23 +1187,23 @@ void func_8009A8E0(Eline *e) {
  *       changes the register allocation away from the original, the
  *       original source evidently carried it, so it stays.
  */
-void func_8009A920(Actor *eline, Eline *entities) {
+void func_8009A920(Actor *actor, Eline *entities) {
     Vec3i *scratch = (Vec3i *)getScratchAddr(0);
     Vec3i *out = (Vec3i *)getScratchAddr(4);
     Eline *fc;
     s32 i;
     s32 dist;
 
-    scratch->x = eline->posX >> 12;
+    scratch->x = actor->posX >> 12;
     i = 0;
-    scratch->y = eline->posY >> 12;
-    scratch->z = eline->posZ >> 12;
+    scratch->y = actor->posY >> 12;
+    scratch->z = actor->posZ >> 12;
     if (i < D_800852F8) {
         fc = entities;
         do {
-            if (entities->activeMarker == 1 && eline->msgActive == 0) {
+            if (entities->activeMarker == 1 && actor->msgActive == 0) {
                 dist = func_8009A2BC((LineSeg *)&entities->x0, scratch, out);
-                if (dist != -1 && dist < eline->radius * eline->radius) {
+                if (dist != -1 && dist < actor->radius * actor->radius) {
                     if (D_8005F14C == 3) {
                         entities->trigger2 = 1;
                     }
@@ -1248,16 +1248,16 @@ void func_8009AA64(EventEntry *e) {
  * @brief Scan the 12-entry event queue for trigger segments the query point
  *        crosses, and fire the event restore for each hit.
  *
- * Stages the eline's position (@c >>12) into the scratchpad at
+ * Stages the actor's position (@c >>12) into the scratchpad at
  * @c getScratchAddr(0) and the query point (X/Y from @p pt, Z from the
- * eline) at @c getScratchAddr(4), then for each armed @ref EventEntry
+ * actor) at @c getScratchAddr(4), then for each armed @ref EventEntry
  * (@c counter != 0x7FFF, @c rotation != 0xFFFF): projects the query point
  * onto the entry's trigger segment via @ref func_8009A2BC, and when the
- * squared distance is inside @c eline->radius² and the eline and the query
+ * squared distance is inside @c actor->radius² and the actor and the query
  * point lie on opposite sides of the segment (2D cross-product signs
  * differ), restores the entry's event snapshot via @ref func_8009AA64.
  *
- * @param eline Querying entity.
+ * @param actor Querying entity.
  * @param segs  12-entry @ref EventEntry queue (32-byte stride).
  * @param pt    Query point (world fixed-point; only X/Y read).
  *
@@ -1265,7 +1265,7 @@ void func_8009AA64(EventEntry *e) {
  *       compiler shares one scratchpad base register (addu+ori), as in the
  *       original.
  */
-void func_8009AAC8(Actor *eline, EventEntry *segs, Vec3i *pt) {
+void func_8009AAC8(Actor *actor, EventEntry *segs, Vec3i *pt) {
     Vec3i *A = (Vec3i *)getScratchAddr(0);
     Vec3i *B;
     Vec3i *C;
@@ -1274,14 +1274,14 @@ void func_8009AAC8(Actor *eline, EventEntry *segs, Vec3i *pt) {
     s32 crossSelf;
     s32 crossPt;
 
-    A->x = eline->posX >> 12;
+    A->x = actor->posX >> 12;
     B = (Vec3i *)((u32)A | 0x10);
-    A->y = eline->posY >> 12;
+    A->y = actor->posY >> 12;
     C = (Vec3i *)((u32)A | 0x20);
-    A->z = eline->posZ >> 12;
+    A->z = actor->posZ >> 12;
     B->x = pt->x >> 12;
     B->y = pt->y >> 12;
-    B->z = eline->posZ >> 12;
+    B->z = actor->posZ >> 12;
     for (i = 0; i < 12; i++, segs++) {
         if (segs->counter == 0x7FFF) {
             continue;
@@ -1293,7 +1293,7 @@ void func_8009AAC8(Actor *eline, EventEntry *segs, Vec3i *pt) {
         if (dist == -1) {
             continue;
         }
-        if (dist < eline->radius * eline->radius) {
+        if (dist < actor->radius * actor->radius) {
             crossSelf = (segs->x1 - segs->x0) * (A->y - segs->y0)
                       - (A->x - segs->x0) * (segs->y1 - segs->y0);
             crossPt = (segs->x1 - segs->x0) * (B->y - segs->y0)

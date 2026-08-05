@@ -22,6 +22,6 @@ extern u8 D_80077C40[];
 extern int  func_800C0098();
 
 /** @brief Field-engine state initializer (new game / field reset). */
-extern void func_800C00C8(s32 fullReset);
+extern void SmInitEventAll(s32 fullReset);
 
 #endif

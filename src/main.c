@@ -352,7 +352,7 @@ void ff8main(void) {
         if (!(result & 2)) {
             RestoreSnapshot();
             loadFieldDataA();
-            func_800C00C8(0);
+            SmInitEventAll(0);
         } else {
             g_currentMusicTrack = 0x4A;
             g_gameState.battleParty[0] = 0;
@@ -360,7 +360,7 @@ void ff8main(void) {
             g_gameState.battleParty[2] = 0xFF;
             g_gameState.battleParty[3] = 0xFF;
             loadFieldDataA();
-            func_800C00C8(1);
+            SmInitEventAll(1);
         }
         if (g_fieldVars->expectedDiscId != getDiscId()) {
             func_80038868(D_80097400[1].sector, D_80097400[1].size, 0x80098000, 0);

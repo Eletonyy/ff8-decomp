@@ -320,7 +320,7 @@ typedef struct {
 #define GAMESTATE_LIMITB_OFFSET     0xB14  /**< LimitBreakData (16 bytes). */
 #define GAMESTATE_ITEMS_OFFSET      0xB24  /**< ItemData (428 bytes). */
 #define GAMESTATE_MISC2_OFFSET      0xCD0  /**< Battle vars / misc (144 bytes). */
-#define GAMESTATE_MISC3_OFFSET      0xD60  /**< Steps, SeeD rank, counters (256 bytes). */
+#define GAMESTATE_MISC3_OFFSET      0xD60  /**< Steps, SeeD rank, counters: 256-byte region holding the 248-byte @ref FieldVars plus @c padE58. */
 #define GAMESTATE_FIELD_OFFSET      0xE60  /**< Field script vars, TT rules (1024 bytes). */
 #define GAMESTATE_WORLDMAP_OFFSET   0x1260 /**< World map position/vehicles (128 bytes). */
 #define GAMESTATE_TTCARDS_OFFSET    0x12E0 /**< TripleTriadData (128 bytes). */
@@ -401,6 +401,7 @@ typedef struct {
     /* 0xD40 */ CameraSnapshot cameraSnapshot;   /**< Camera/field snapshot (saved across battle). */
     /* 0xD5E */ u8             padD5D[2];        /**< Battle vars / misc (continued). */
     /* 0xD60 */ FieldVars     fieldVars;                   /**< Steps, SeeD rank, counters (@c &g_gameState.fieldVars == @c g_fieldVars). */
+    /* 0xE58 */ u8            padE58[0x08];                /**< Trailing 8 bytes of the 0xD60 region; not part of @ref FieldVars (the field-reset wipe stops at 0xE58) and read by nothing so far. */
     /* 0xE60 */ u8            padE60[0x400];               /**< Field script vars, TT rules. */
     /* 0x1260 */ u8           pad1260[0x80];               /**< World map position/vehicles. */
     /* 0x12E0 */ TripleTriadData cards;                    /**< Triple Triad data (128 bytes). */
@@ -424,7 +425,6 @@ extern FieldVars *g_fieldVars;
 extern void setMcBusy(void);
 extern u32  isMcBusy(void);
 
-extern u8 D_80085388;                  /**< @c Actor entity count at @c D_80085224. */
 
 /** @brief Halfword lookup table indexed by @c GameConfig.fieldMsgSpeed.
  *         Used as the per-entity SFX pitch in @c func_800BF718's common tail. */
@@ -434,7 +434,7 @@ extern u16 D_800562C8[];
  *         callback during field-engine init. */
 extern void stopAllSounds(void);
 
-/** @brief Draw callback installed by @c func_800C00C8 (gamestate.c).
+/** @brief Draw callback installed by @c SmInitEventAll (gamestate.c).
  *  @note Purpose uncertain — body still in assembly. */
 extern void func_80037D40();
 
