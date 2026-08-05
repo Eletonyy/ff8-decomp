@@ -11,11 +11,11 @@
  * the dispatcher-keyed bank table @c D_800D5EA4, and plays the resulting
  * bank SFX with the popped parameters (volume masked to 8 bits, pan to 7).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @param a1    Dispatcher-supplied SFX bank index.
  * @return 2 (continue processing).
  */
-s32 opHandler_EFFECTPLAY2(Eline *eline, s32 a1) {
+s32 opHandler_EFFECTPLAY2(Actor *eline, s32 a1) {
     s32 val1, val2, val3;
     val1 = POP(eline);
     val2 = POP(eline);
@@ -29,10 +29,10 @@ s32 opHandler_EFFECTPLAY2(Eline *eline, s32 a1) {
 /**
  * Pops a parameter and calls sndSetMasterVolume, returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ALLSEVOL(Eline *eline) {
+s32 opHandler_ALLSEVOL(Actor *eline) {
     sndSetMasterVolume(POP(eline));
     return 2;
 }
@@ -41,10 +41,10 @@ s32 opHandler_ALLSEVOL(Eline *eline) {
  * Pops two parameters from the stack, shifts the first left by 1,
  * and calls sndSetChannelVolume with them.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ALLSEVOLTRANS(Eline *eline) {
+s32 opHandler_ALLSEVOLTRANS(Actor *eline) {
     s32 val1, val2;
     val1 = POP(eline);
     val2 = POP(eline);
@@ -55,10 +55,10 @@ s32 opHandler_ALLSEVOLTRANS(Eline *eline) {
 /**
  * Pops a parameter and calls sndSeqSetTempo, returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ALLSEPOS(Eline *eline) {
+s32 opHandler_ALLSEPOS(Actor *eline) {
     sndSeqSetTempo(POP(eline));
     return 2;
 }
@@ -67,10 +67,10 @@ s32 opHandler_ALLSEPOS(Eline *eline) {
  * Pops two parameters from the stack, shifts the first left by 1,
  * and calls sndSeqSetChannelTempo.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ALLSEPOSTRANS(Eline *eline) {
+s32 opHandler_ALLSEPOSTRANS(Actor *eline) {
     s32 val1, val2;
     val1 = POP(eline);
     val2 = POP(eline);
@@ -81,10 +81,10 @@ s32 opHandler_ALLSEPOSTRANS(Eline *eline) {
 /**
  * Pops two parameters from the stack and calls sndSeqPlay7bit(0, val2, val1).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SEVOL(Eline *eline) {
+s32 opHandler_SEVOL(Actor *eline) {
     s32 val1, val2;
     val1 = POP(eline);
     val2 = POP(eline);
@@ -96,10 +96,10 @@ s32 opHandler_SEVOL(Eline *eline) {
  * Pops three parameters from the stack and calls
  * sndSeqPlayPan7bit(0, val3, val2 << 1, val1).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SEVOLTRANS(Eline *eline) {
+s32 opHandler_SEVOLTRANS(Actor *eline) {
     s32 val1, val2, val3;
     val1 = POP(eline);
     val2 = POP(eline);
@@ -111,10 +111,10 @@ s32 opHandler_SEVOLTRANS(Eline *eline) {
 /**
  * Pops two parameters from the stack and calls sndSeqPlay8bit(0, val2, val1).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SEPOS(Eline *eline) {
+s32 opHandler_SEPOS(Actor *eline) {
     s32 val1, val2;
     val1 = POP(eline);
     val2 = POP(eline);
@@ -126,10 +126,10 @@ s32 opHandler_SEPOS(Eline *eline) {
  * Pops three parameters from the stack and calls
  * sndSeqPlayPan8bit(0, val3, val2 << 1, val1).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SEPOSTRANS(Eline *eline) {
+s32 opHandler_SEPOSTRANS(Actor *eline) {
     s32 val1, val2, val3;
     val1 = POP(eline);
     val2 = POP(eline);
@@ -144,10 +144,10 @@ s32 opHandler_SEPOSTRANS(Eline *eline) {
  * with a matching channel (queried via @c sndGatherKeyOnMask), keep the stack
  * intact and return 1 (wait). Otherwise pop the value and return 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 once the SPU is free, 1 while still waiting.
  */
-s32 opHandler_SESTOP(Eline *eline) {
+s32 opHandler_SESTOP(Actor *eline) {
     s32 top = PEEK(eline);
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         sndCmd21(0, top);
@@ -162,16 +162,16 @@ s32 opHandler_SESTOP(Eline *eline) {
 /**
  * Pops a parameter, calls sndFindKeyOnMask, stores result at offset 0x140.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_COUNTERCLOCKWISETURN(Eline *eline) {
+s32 opHandler_COUNTERCLOCKWISETURN(Actor *eline) {
     eline->resultSlots[0] = sndFindKeyOnMask(POP(eline));
     return 2;
 }
 
 /** @brief Pop value, bitwise-NOT, store to D_8007065C. Returns 2. */
-s32 opHandler_CLOCKWISETURN2(Eline *eline) {
+s32 opHandler_CLOCKWISETURN2(Actor *eline) {
     *(s32 *)D_8007065C = ~POP(eline);
     return 2;
 }
@@ -215,10 +215,10 @@ void func_800B27C4(s32 entityIdx, s32 *sxy, s32 *out) {
  * looked-up bank SFX is played directly; otherwise a fallback SFX is
  * selected based on the @c 0x4000000 emphasis flag.
  *
- * @param eline   Pointer to the Eline event-script context.
+ * @param eline   Pointer to the Actor event-script context.
  * @param channel Output channel (0 = left bus, 1 = right bus).
  */
-void func_800B2864(Eline *eline, s32 channel, s32 unused2, s32 unused3) {
+void func_800B2864(Actor *eline, s32 channel, s32 unused2, s32 unused3) {
     s32 pitch;
     s32 volume;
 
@@ -265,28 +265,28 @@ void func_800B2864(Eline *eline, s32 channel, s32 unused2, s32 unused3) {
  * Pops a byte from the stack, stores it at offset 0x188, and stores
  * the second argument at offset 0x189. Returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @param a1 Value to store at offset 0x189.
  * @return 2 (continue processing).
  */
-s32 opHandler_FOOTSTEP(Eline *eline, s32 a1) {
+s32 opHandler_FOOTSTEP(Actor *eline, s32 a1) {
     eline->unk188 = POP_BYTE(eline);
     eline->unk189 = a1;
     return 2;
 }
 
 /**
- * Broadcast the current Eline's @c unk188 / @c unk189 script parameter
- * bytes to every active @c Eline slot. Iterates over the
+ * Broadcast the current Actor's @c unk188 / @c unk189 script parameter
+ * bytes to every active @c Actor slot. Iterates over the
  * @c D_80085224 array (count @c D_80085388, stride 0x264) and writes
  * the same pair into each entry's mirror fields at +0x188 / +0x189.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_FOOTSTEPCOPY(Eline *eline) {
+s32 opHandler_FOOTSTEPCOPY(Actor *eline) {
     s32 i;
-    Eline *p = D_80085224;
+    Actor *p = D_80085224;
     for (i = 0; i < D_80085388; i++) {
         p->unk188 = eline->unk188;
         p->unk189 = eline->unk189;
@@ -298,10 +298,10 @@ s32 opHandler_FOOTSTEPCOPY(Eline *eline) {
 /**
  * Sets bit 0x80 in the flags at offset 0x160, returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_FOOTSTEPON(Eline *eline) {
+s32 opHandler_FOOTSTEPON(Actor *eline) {
     eline->flags |= 0x80;
     return 2;
 }
@@ -309,25 +309,25 @@ s32 opHandler_FOOTSTEPON(Eline *eline) {
 /**
  * Clears bit 0x80 in the flags at offset 0x160, returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_FOOTSTEPOFF(Eline *eline) {
+s32 opHandler_FOOTSTEPOFF(Actor *eline) {
     eline->flags &= ~0x80;
     return 2;
 }
 
 /**
- * Clear bit 0x80 in the flags word of every active @c Eline
+ * Clear bit 0x80 in the flags word of every active @c Actor
  * slot (count @c D_80085388, stride 0x264 at @c D_80085224). Used by a
  * script opcode to reset a per-entity activation flag across the party.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_FOOTSTEPOFFALL(Eline *eline) {
+s32 opHandler_FOOTSTEPOFFALL(Actor *eline) {
     s32 i;
-    Eline *p = D_80085224;
+    Actor *p = D_80085224;
     for (i = 0; i < D_80085388; i++) {
         p->flags &= ~0x80;
         p++;
@@ -338,10 +338,10 @@ s32 opHandler_FOOTSTEPOFFALL(Eline *eline) {
 /**
  * Sets bytes at offsets 0x188 and 0x189 to 0xFF, returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_FOOTSTEPCUT(Eline *eline) {
+s32 opHandler_FOOTSTEPCUT(Actor *eline) {
     *(s8 *)&eline->unk188 = -1;
     *(s8 *)&eline->unk189 = -1;
     return 2;
@@ -355,9 +355,9 @@ s32 opHandler_FOOTSTEPCUT(Eline *eline) {
  *    (mask @c 0xFFFF07FF), set the @c 0x1000 marker, fall through.
  * Then set the @c 0x800 marker regardless.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  */
-void func_800B2B48(Eline *eline) {
+void func_800B2B48(Actor *eline) {
     s32 flags = eline->flags;
     if (flags & 0x2000) {
         *(u16 *)&eline->unk188 = eline->unk18C;
@@ -452,11 +452,11 @@ void func_800B2BA0(FieldEntity *e) {
  * direction bit, then sets the appropriate direction marker and
  * pre-offsets the start position by 0x3F.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @param a1    Source value (scaled by 64 into @c unk18E).
  * @param a2    Destination value (scaled by 64 into @c unk18C).
  */
-void func_800B2D40(Eline *eline, s32 a1, s32 a2) {
+void func_800B2D40(Actor *eline, s32 a1, s32 a2) {
     eline->unk18C = a2 << 6;
     eline->unk18E = a1 << 6;
 
@@ -481,12 +481,12 @@ void func_800B2D40(Eline *eline, s32 a1, s32 a2) {
  * is clear, return @c 2 once the @c 0x800 done flag is set (otherwise
  * @c 1 to keep waiting for the bit to flip).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 1 to keep the opcode active, 2 when @c 0x800 is set on the
  *         else-branch path.
  */
-s32 opHandler_BGANIME(Eline *eline) {
-    Eline *self = eline;
+s32 opHandler_BGANIME(Actor *eline) {
+    Actor *self = eline;
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         s8 idx = self->stackPtr;
         s8 idx2 = idx - 1;
@@ -504,7 +504,7 @@ s32 opHandler_BGANIME(Eline *eline) {
  * Pops two parameters from the stack, calls func_800B2D40, then sets
  * bit 0x8000 in flags at offset 0x160.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
 /**
@@ -512,10 +512,10 @@ s32 opHandler_BGANIME(Eline *eline) {
  * movement-sweep setup helper @c func_800B2D40, and arm the @c 0x8000
  * marker flag for the subsequent movement tick.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_RBGANIME(Eline *eline) {
+s32 opHandler_RBGANIME(Actor *eline) {
     s8 idx = eline->stackPtr;
     s8 idx2 = idx - 1;
     eline->stackPtr = idx - 2;
@@ -529,10 +529,10 @@ s32 opHandler_RBGANIME(Eline *eline) {
  * Variant of @c opHandler_RBGANIME that arms the @c 0x2000 marker flag
  * instead of @c 0x8000 after running the movement-sweep init.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_RBGANIMELOOP(Eline *eline) {
+s32 opHandler_RBGANIMELOOP(Actor *eline) {
     s8 idx = eline->stackPtr;
     s8 idx2 = idx - 1;
     eline->stackPtr = idx - 2;
@@ -545,10 +545,10 @@ s32 opHandler_RBGANIMELOOP(Eline *eline) {
 /**
  * Returns 2 if bit 0x800 is set in the flags at offset 0x160, otherwise 1.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 if flag 0x800 is set, else 1.
  */
-s32 opHandler_BGANIMESYNC(Eline *eline) {
+s32 opHandler_BGANIMESYNC(Actor *eline) {
     if (eline->flags & 0x800) {
         return 2;
     }
@@ -561,10 +561,10 @@ s32 opHandler_BGANIMESYNC(Eline *eline) {
  * walk-speed countdown halfwords to 1, and arm the @c 0x1000 stop
  * marker so the next tick records completion immediately.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_BGDRAW(Eline *eline) {
+s32 opHandler_BGDRAW(Actor *eline) {
     s32 val = POP(eline);
     func_800B2D40(eline, val, val);
     ((FieldEntity *)eline)->walkSpeed2 = 1;
@@ -576,7 +576,7 @@ s32 opHandler_BGDRAW(Eline *eline) {
 /**
  * Reset movement parameters: set walk speed to 1, clear directions, update flags.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
 /**
@@ -585,10 +585,10 @@ s32 opHandler_BGDRAW(Eline *eline) {
  * clear both saved endpoints, then mask the flags to clear high-mode
  * bits + direction bit and arm the @c 0x1000 stop marker.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_BGOFF(Eline *eline) {
+s32 opHandler_BGOFF(Actor *eline) {
     *(s16 *)&eline->unk188 = -1;
     ((FieldEntity *)eline)->walkSpeed2 = 1;
     ((FieldEntity *)eline)->walkSpeed = 1;
@@ -601,7 +601,7 @@ s32 opHandler_BGOFF(Eline *eline) {
 }
 
 /** @brief Pop halfword, store to both walkSpeed2 and walkSpeed. Returns 2. */
-s32 opHandler_BGANIMESPEED(Eline *eline) {
+s32 opHandler_BGANIMESPEED(Actor *eline) {
     FieldEntity *e = (FieldEntity *)eline;
     e->walkSpeed2 = (u16)POP(eline);
     e->walkSpeed = e->walkSpeed2;
@@ -609,7 +609,7 @@ s32 opHandler_BGANIMESPEED(Eline *eline) {
 }
 
 /** @brief Pop halfword, store to runSpeed. Returns 2. */
-s32 opHandler_BGANIMEFLAG(Eline *eline) {
+s32 opHandler_BGANIMEFLAG(Actor *eline) {
     FieldEntity *e = (FieldEntity *)eline;
     e->runSpeed = (u16)POP(eline);
     return 2;
@@ -624,10 +624,10 @@ s32 opHandler_BGANIMEFLAG(Eline *eline) {
  * @c 2 only if the @c unk19C counter has hit zero (otherwise @c 1 to
  * keep waiting).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 1 to keep the opcode active, 2 once the wait counter drains.
  */
-s32 opHandler_BGSHADE(Eline *eline) {
+s32 opHandler_BGSHADE(Actor *eline) {
     FieldEntity *e = (FieldEntity *)eline;
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         e->unk160 &= ~0x600;
@@ -654,10 +654,10 @@ s32 opHandler_BGSHADE(Eline *eline) {
  * @c unk19C (broadcast), and primes the per-tick counter @c unk1A4
  * from the saved tick total @c unk1A5.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_RBGSHADELOOP(Eline *eline) {
+s32 opHandler_RBGSHADELOOP(Actor *eline) {
     FieldEntity *e = (FieldEntity *)eline;
     u8 v;
     u16 hw;
@@ -706,10 +706,10 @@ s32 opHandler_RBGSHADELOOP(Eline *eline) {
  * Clears bits 0x600 in the entity flags and zeroes the halfword at
  * @c unk19C. Returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_BGSHADESTOP(Eline *eline) {
+s32 opHandler_BGSHADESTOP(Actor *eline) {
     FieldEntity *e = (FieldEntity *)eline;
     e->unk19C = 0;
     e->unk160 = e->unk160 & ~0x600;
@@ -720,10 +720,10 @@ s32 opHandler_BGSHADESTOP(Eline *eline) {
  * Clear movement state: zero many fields, clear bits 0x600 in flags,
  * copy byte @c unk1A5 to @c unk1A4. Returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_BGSHADEOFF(Eline *eline) {
+s32 opHandler_BGSHADEOFF(Actor *eline) {
     FieldEntity *e = (FieldEntity *)eline;
     s32 flags = e->unk160;
     u8 val;
@@ -757,10 +757,10 @@ s32 opHandler_BGSHADEOFF(Eline *eline) {
  * The four pops land in reverse order: oscillator 1's duration and amplitude
  * first, then oscillator 0's.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_SHAKE(Eline *eline) {
+s32 opHandler_SHAKE(Actor *eline) {
     D_800704A8.oscillators[0].mode = 1;
     D_800704A8.oscillators[1].mode = 1;
     D_800704A8.oscillators[1].total = (u16)POP(eline);
@@ -773,10 +773,10 @@ s32 opHandler_SHAKE(Eline *eline) {
 /**
  * Stops both field oscillators (screen shake off), returns 2.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_SHAKEOFF(Eline *eline) {
+s32 opHandler_SHAKEOFF(Actor *eline) {
     D_800704A8.oscillators[0].mode = 0;
     D_800704A8.oscillators[1].mode = 0;
     return 2;
@@ -786,10 +786,10 @@ s32 opHandler_SHAKEOFF(Eline *eline) {
  * Pop two halfwords into the @c unk030 / @c unk032 SystemState parameter
  * pair, then write mode byte @c unk020 = 3 and clear submode @c unk022.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLL(Eline *eline) {
+s32 opHandler_DSCROLL(Actor *eline) {
     D_800704A8.slots[0].p2 = (u16)POP(eline);
     D_800704A8.slots[0].p1 = (u16)POP(eline);
     D_800704A8.slots[0].mode = 3;
@@ -803,10 +803,10 @@ s32 opHandler_DSCROLL(Eline *eline) {
  * @c unk022. Return value differs from @c opHandler_DSCROLL (returns 2
  * here, ending the opcode normally).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLL(Eline *eline) {
+s32 opHandler_LSCROLL(Actor *eline) {
     D_800704A8.slots[0].timer = (u16)POP(eline);
     D_800704A8.slots[0].p2 = (u16)POP(eline);
     D_800704A8.slots[0].p1 = (u16)POP(eline);
@@ -820,10 +820,10 @@ s32 opHandler_LSCROLL(Eline *eline) {
  * @c unk020 = 5. Identical structure to @c opHandler_LSCROLL apart from the
  * mode byte.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLL(Eline *eline) {
+s32 opHandler_CSCROLL(Actor *eline) {
     D_800704A8.slots[0].timer = (u16)POP(eline);
     D_800704A8.slots[0].p2 = (u16)POP(eline);
     D_800704A8.slots[0].p1 = (u16)POP(eline);
@@ -838,10 +838,10 @@ s32 opHandler_CSCROLL(Eline *eline) {
  * SystemState @c unk021 with mode @c unk020 = 0 and submode @c unk022
  * = 0.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLLA(Eline *eline) {
+s32 opHandler_DSCROLLA(Actor *eline) {
     s32 val = POP(eline);
     u8 byte = D_80085230[val]->field_0x256;
     D_800704A8.slots[0].mode = 0;
@@ -856,10 +856,10 @@ s32 opHandler_DSCROLLA(Eline *eline) {
  * entity-pointer table and copy @c field_0x256 into @c unk021. Mode
  * byte is set to 1.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLLA(Eline *eline) {
+s32 opHandler_LSCROLLA(Actor *eline) {
     s32 val1 = POP(eline);
     s32 val2 = POP(eline);
     D_800704A8.slots[0].timer = val1;
@@ -872,10 +872,10 @@ s32 opHandler_LSCROLLA(Eline *eline) {
 /**
  * Variant of @c opHandler_LSCROLLA with mode @c unk020 = 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLLA(Eline *eline) {
+s32 opHandler_CSCROLLA(Actor *eline) {
     s32 val1 = POP(eline);
     s32 val2 = POP(eline);
     D_800704A8.slots[0].timer = val1;
@@ -890,10 +890,10 @@ s32 opHandler_CSCROLLA(Eline *eline) {
  * for that slot in @c g_fieldVars->memberSlot, and stage it into
  * SystemState @c unk021 with mode @c unk020 = 0.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLLP(Eline *eline) {
+s32 opHandler_DSCROLLP(Actor *eline) {
     FieldVars *ss = g_fieldVars;
     s32 val = POP(eline);
     D_800704A8.slots[0].param = ss->memberSlot[val];
@@ -907,10 +907,10 @@ s32 opHandler_DSCROLLP(Eline *eline) {
  * party-slot index; arm slot[0] with @c mode = 1 and the active
  * battle-entity index from @c g_fieldVars->memberSlot.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLLP(Eline *eline) {
+s32 opHandler_LSCROLLP(Actor *eline) {
     u16 timer = (u16)POP(eline);
     FieldVars *ss = g_fieldVars;
     s32 partySlot;
@@ -925,10 +925,10 @@ s32 opHandler_LSCROLLP(Eline *eline) {
 /**
  * Variant of @c opHandler_LSCROLLP that arms @c mode = 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLLP(Eline *eline) {
+s32 opHandler_CSCROLLP(Actor *eline) {
     u16 timer = (u16)POP(eline);
     FieldVars *ss = g_fieldVars;
     s32 partySlot;
@@ -943,10 +943,10 @@ s32 opHandler_CSCROLLP(Eline *eline) {
 /**
  * Returns 2 if D_800704CA equals 2, otherwise returns 1.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 2 if D_800704CA is 2, else 1.
  */
-s32 opHandler_SCROLLSYNC(Eline *eline) {
+s32 opHandler_SCROLLSYNC(Actor *eline) {
     if (D_800704CA == 2) {
         return 2;
     }
@@ -959,10 +959,10 @@ s32 opHandler_SCROLLSYNC(Eline *eline) {
  * advances past the wait opcode. Otherwise keep the stack intact and
  * return 1 to retry next frame.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 once the slot reaches submode 2, 1 while still waiting.
  */
-s32 opHandler_SCROLLSYNC2(Eline *eline) {
+s32 opHandler_SCROLLSYNC2(Actor *eline) {
     s32 idx = PEEK(eline);
     if (D_800704A8.slots[idx].submode == 2) {
         eline->stackPtr--;
@@ -976,10 +976,10 @@ s32 opHandler_SCROLLSYNC2(Eline *eline) {
  * into @c slots[idx].p1 / @c .p2, then arm the slot with @c mode = 3
  * and @c submode = 0.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLL2(Eline *eline) {
+s32 opHandler_DSCROLL2(Actor *eline) {
     u16 p2 = (u16)POP(eline);
     u16 p1 = (u16)POP(eline);
     s32 idx = POP(eline);
@@ -994,10 +994,10 @@ s32 opHandler_DSCROLL2(Eline *eline) {
  * Pop a timer halfword, two parameter halfwords, and a slot index;
  * arm @c slots[idx] with @c mode = 4 and the popped parameters.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLL2(Eline *eline) {
+s32 opHandler_LSCROLL2(Actor *eline) {
     u16 timer = (u16)POP(eline);
     u16 p2 = (u16)POP(eline);
     u16 p1 = (u16)POP(eline);
@@ -1013,10 +1013,10 @@ s32 opHandler_LSCROLL2(Eline *eline) {
 /**
  * Variant of @c opHandler_LSCROLL2 that arms the slot with @c mode = 5.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLL2(Eline *eline) {
+s32 opHandler_CSCROLL2(Actor *eline) {
     u16 timer = (u16)POP(eline);
     u16 p2 = (u16)POP(eline);
     u16 p1 = (u16)POP(eline);
@@ -1034,10 +1034,10 @@ s32 opHandler_CSCROLL2(Eline *eline) {
  * @c field_0x256 byte via @c D_80085230 and stage it into
  * @c slots[slotIdx].param with @c mode = 0.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLLA2(Eline *eline) {
+s32 opHandler_DSCROLLA2(Actor *eline) {
     s32 entityIdx = POP(eline);
     s32 slotIdx = POP(eline);
     D_800704A8.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
@@ -1051,10 +1051,10 @@ s32 opHandler_DSCROLLA2(Eline *eline) {
  * @c slots[slotIdx] with @c mode = 1, the timer, and the entity's
  * @c field_0x256 byte from @c D_80085230.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLLA2(Eline *eline) {
+s32 opHandler_LSCROLLA2(Actor *eline) {
     u16 timer = (u16)POP(eline);
     s32 entityIdx = POP(eline);
     s32 slotIdx = POP(eline);
@@ -1068,10 +1068,10 @@ s32 opHandler_LSCROLLA2(Eline *eline) {
 /**
  * Variant of @c opHandler_LSCROLLA2 that arms @c mode = 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLLA2(Eline *eline) {
+s32 opHandler_CSCROLLA2(Actor *eline) {
     u16 timer = (u16)POP(eline);
     s32 entityIdx = POP(eline);
     s32 slotIdx = POP(eline);
@@ -1087,10 +1087,10 @@ s32 opHandler_CSCROLLA2(Eline *eline) {
  * index from @c g_fieldVars->memberSlot and stage it into
  * @c slots[slotIdx].param with @c mode = 0.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLLP2(Eline *eline) {
+s32 opHandler_DSCROLLP2(Actor *eline) {
     FieldVars *ss = g_fieldVars;
     s32 partySlot = POP(eline);
     u8 byte = ss->memberSlot[partySlot];
@@ -1106,10 +1106,10 @@ s32 opHandler_DSCROLLP2(Eline *eline) {
  * index and look up the active battle-entity index, then pop the
  * target slot index; arm @c slots[slotIdx] with @c mode = 1.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLLP2(Eline *eline) {
+s32 opHandler_LSCROLLP2(Actor *eline) {
     u16 timer = (u16)POP(eline);
     FieldVars *ss = g_fieldVars;
     s32 partySlot = POP(eline);
@@ -1125,10 +1125,10 @@ s32 opHandler_LSCROLLP2(Eline *eline) {
 /**
  * Variant of @c opHandler_LSCROLLP2 that arms @c mode = 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLLP2(Eline *eline) {
+s32 opHandler_CSCROLLP2(Actor *eline) {
     u16 timer = (u16)POP(eline);
     FieldVars *ss = g_fieldVars;
     s32 partySlot = POP(eline);
@@ -1146,10 +1146,10 @@ s32 opHandler_CSCROLLP2(Eline *eline) {
  * @c slots[slotIdx].p3..p6 (tail parameters used by the wider mode
  * bodies). Does not change @c mode or @c submode.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SCROLLMODE2(Eline *eline) {
+s32 opHandler_SCROLLMODE2(Actor *eline) {
     u16 p6 = (u16)POP(eline);
     u16 p5 = (u16)POP(eline);
     u16 p4 = (u16)POP(eline);
@@ -1166,10 +1166,10 @@ s32 opHandler_SCROLLMODE2(Eline *eline) {
  * Pop two tail parameters and a slot index; stage them into
  * @c slots[slotIdx].p5 / @c .p6.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SCROLLRATIO2(Eline *eline) {
+s32 opHandler_SCROLLRATIO2(Actor *eline) {
     u16 p6 = (u16)POP(eline);
     u16 p5 = (u16)POP(eline);
     s32 slotIdx = POP(eline);
@@ -1183,10 +1183,10 @@ s32 opHandler_SCROLLRATIO2(Eline *eline) {
  * @c slots[slotIdx].p1 / @c .p2 and arm with @c mode = 3.
  * Sibling of @c opHandler_DSCROLL2 with stores in @c p1 / @c p2 order.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_DSCROLL3(Eline *eline) {
+s32 opHandler_DSCROLL3(Actor *eline) {
     u16 p2 = (u16)POP(eline);
     u16 p1 = (u16)POP(eline);
     s32 slotIdx = POP(eline);
@@ -1202,10 +1202,10 @@ s32 opHandler_DSCROLL3(Eline *eline) {
  * @c p2), and a slot index; arm @c slots[slotIdx] with @c mode = 4 and
  * the popped values. Used by movement-with-vector mode opcodes.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_LSCROLL3(Eline *eline) {
+s32 opHandler_LSCROLL3(Actor *eline) {
     u16 timer = (u16)POP(eline);
     u16 p2 = (u16)POP(eline);
     u16 p1 = (u16)POP(eline);
@@ -1225,10 +1225,10 @@ s32 opHandler_LSCROLL3(Eline *eline) {
 /**
  * Variant of @c opHandler_LSCROLL3 that arms @c mode = 5.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_CSCROLL3(Eline *eline) {
+s32 opHandler_CSCROLL3(Actor *eline) {
     u16 timer = (u16)POP(eline);
     u16 p2 = (u16)POP(eline);
     u16 p1 = (u16)POP(eline);
@@ -1251,7 +1251,7 @@ s32 opHandler_CSCROLL3(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_BGCLEAR(Eline *eline) {
+s32 opHandler_BGCLEAR(Actor *eline) {
     D_80070652 = POP_BYTE(eline);
     return 2;
 }
@@ -1260,10 +1260,10 @@ s32 opHandler_BGCLEAR(Eline *eline) {
  * Pop a value and store it into @c g_gameState.mainData.countdownTimer
  * (the battle state word at @c g_gameState+0xCD4 used by camera shake).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SETTIMER(Eline *eline) {
+s32 opHandler_SETTIMER(Actor *eline) {
     volatile GameState *gs = &g_gameState;
     gs->mainData.countdownTimer = POP(eline);
     return 2;
@@ -1275,7 +1275,7 @@ s32 opHandler_SETTIMER(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_GETTIMER(Eline *eline) {
+s32 opHandler_GETTIMER(Actor *eline) {
     volatile GameState *gs = &g_gameState;
     eline->resultSlots[0] = gs->mainData.countdownTimer;
     return 2;
@@ -1287,13 +1287,13 @@ s32 opHandler_GETTIMER(Eline *eline) {
  * field flag bits and the battle-config bit, then drive
  * @c setCameraShakeParams + @c setCameraVibrateState(1).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_DISPTIMER(Eline *eline) {
+s32 opHandler_DISPTIMER(Actor *eline) {
     g_fieldVars->cameraShakeY = POP_BYTE(eline);
     g_fieldVars->cameraShakeX = POP_BYTE(eline);
-    g_fieldVars->stateFlags |= 0x40;
+    g_fieldVars->stateFlags |= FIELD_STATE_CAMERA_SHAKE;
     g_fieldVars->fieldB6 |= 0x4;
     g_battleConfig.unk2 |= 0x4;
     setCameraShakeParams(g_fieldVars->cameraShakeX, g_fieldVars->cameraShakeY);
@@ -1302,15 +1302,15 @@ s32 opHandler_DISPTIMER(Eline *eline) {
 }
 
 /**
- * Stop camera-shake mode: clear the @c stateFlags bit 0x40, the
+ * Stop camera-shake mode: clear @ref FIELD_STATE_CAMERA_SHAKE, the
  * @c fieldB6 bit 0x4 and the @c g_battleConfig.unk2 bit 0x4, then call
  * @c setCameraVibrateState(0). Inverse of @c opHandler_DISPTIMER.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_KILLTIMER(Eline *eline) {
-    g_fieldVars->stateFlags &= ~0x40;
+s32 opHandler_KILLTIMER(Actor *eline) {
+    g_fieldVars->stateFlags &= ~FIELD_STATE_CAMERA_SHAKE;
     g_fieldVars->fieldB6 &= ~0x4;
     g_battleConfig.unk2 &= ~0x4;
     setCameraVibrateState(0);
@@ -1320,10 +1320,10 @@ s32 opHandler_KILLTIMER(Eline *eline) {
 /**
  * Pops a parameter and calls setCameraVibrateIntensity, returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SHADETIMER(Eline *eline) {
+s32 opHandler_SHADETIMER(Actor *eline) {
     setCameraVibrateIntensity(POP(eline));
     return 2;
 }
@@ -1336,10 +1336,10 @@ s32 opHandler_SHADETIMER(Eline *eline) {
  * If @c unk1A2 is set (operation already in progress), rewind the
  * stack pointer by 3 instead so the script re-runs the opcode.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 1 (yield to dispatcher without advancing PC).
  */
-s32 opHandler_WORLDMAPJUMP(Eline *eline) {
+s32 opHandler_WORLDMAPJUMP(Actor *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         if (D_800704A8.unk1A2 != 0) {
             eline->stackPtr -= 3;
@@ -1357,12 +1357,12 @@ s32 opHandler_WORLDMAPJUMP(Eline *eline) {
 /**
  * Pop a value (masked to 2 bits) into the global mode byte @c D_8007064E
  * and then fire @c func_800A97E4(i, 0x25, 0, 0) once per active
- * @c Eline slot (count from @c D_80085388).
+ * @c Actor slot (count from @c D_80085388).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SETCAMERA(Eline *eline) {
+s32 opHandler_SETCAMERA(Actor *eline) {
     s32 i;
     D_8007064E = POP(eline) & 0x3;
     for (i = 0; i < D_80085388; i++) {
@@ -1372,7 +1372,7 @@ s32 opHandler_SETCAMERA(Eline *eline) {
 }
 
 /** @brief Pop byte, store to global D_8007064F. Returns 2. */
-s32 opHandler_SETDCAMERA(Eline *eline) {
+s32 opHandler_SETDCAMERA(Actor *eline) {
     *(u8 *)D_8007064F = POP_BYTE(eline);
     return 2;
 }
@@ -1384,10 +1384,10 @@ s32 opHandler_SETDCAMERA(Eline *eline) {
  * @c 0xFFFF to mark the slot armed, and re-arm the next entry's
  * @c field16 to @c 0x7FFF as the new sentinel.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_PREMAPJUMP(Eline *eline) {
+s32 opHandler_PREMAPJUMP(Actor *eline) {
     s32 t = 0;
     if (D_8005F0F8->entries[0].field16 != 0x7FFF) {
         do {
@@ -1406,10 +1406,10 @@ s32 opHandler_PREMAPJUMP(Eline *eline) {
 /**
  * Pops a parameter and calls func_800A5A14, returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 func_800B45CC(Eline *eline) {
+s32 func_800B45CC(Actor *eline) {
     func_800A5A14(POP(eline));
     return 2;
 }
@@ -1419,11 +1419,11 @@ s32 func_800B45CC(Eline *eline) {
  * @c unk00C, then pop four halfwords into @c unk00E / @c unk006 /
  * @c unk004 / @c counter.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @param a1    Dispatcher-supplied mode-1 trigger word.
  * @return 1 (yield to dispatcher without advancing PC).
  */
-s32 opHandler_MAPJUMP(Eline *eline, s32 a1) {
+s32 opHandler_MAPJUMP(Actor *eline, s32 a1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 1;
         D_800704A8.spawnTriIdx = a1;
@@ -1439,11 +1439,11 @@ s32 opHandler_MAPJUMP(Eline *eline, s32 a1) {
  * Variant of @c opHandler_MAPJUMP that pops one extra halfword into
  * @c unk008 (between @c unk00E and @c unk006).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @param a1    Dispatcher-supplied mode-1 trigger word.
  * @return 1 (yield to dispatcher without advancing PC).
  */
-s32 opHandler_MAPJUMP3(Eline *eline, s32 a1) {
+s32 opHandler_MAPJUMP3(Actor *eline, s32 a1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 1;
         D_800704A8.spawnTriIdx = a1;
@@ -1460,11 +1460,11 @@ s32 opHandler_MAPJUMP3(Eline *eline, s32 a1) {
  * Mode-6 init: identical structure to @c opHandler_MAPJUMP3 but sets
  * @c mode = 6 and also flags @c slotActive[0] = 1.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @param a1    Dispatcher-supplied mode-6 trigger word.
  * @return 1 (yield to dispatcher without advancing PC).
  */
-s32 opHandler_DISCJUMP(Eline *eline, s32 a1) {
+s32 opHandler_DISCJUMP(Actor *eline, s32 a1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 6;
         D_800704A8.unk1A0 = 1;
@@ -1482,10 +1482,10 @@ s32 opHandler_DISCJUMP(Eline *eline, s32 a1) {
  * Mode-1 init seeded with @c 0x7FFF sentinels in the inner-loop bounds
  * and a single-pop @c unk00C parameter. Mode is set to 1.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 1 (yield to dispatcher without advancing PC).
  */
-s32 opHandler_MAPJUMPO(Eline *eline) {
+s32 opHandler_MAPJUMPO(Actor *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800704A8.mode = 1;
         D_800704A8.anim_state = 0;
@@ -1500,10 +1500,10 @@ s32 opHandler_MAPJUMPO(Eline *eline) {
 /**
  * Clears the global byte D_8007064A, returns 2.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MAPJUMPON(Eline *eline) {
+s32 opHandler_MAPJUMPON(Actor *eline) {
     D_8007064A = 0;
     return 2;
 }
@@ -1511,10 +1511,10 @@ s32 opHandler_MAPJUMPON(Eline *eline) {
 /**
  * Sets the global byte D_8007064A to 1, returns 2.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MAPJUMPOFF(Eline *eline) {
+s32 opHandler_MAPJUMPOFF(Actor *eline) {
     D_8007064A = 1;
     return 2;
 }
@@ -1522,10 +1522,10 @@ s32 opHandler_MAPJUMPOFF(Eline *eline) {
 /**
  * Sets the global byte D_8007064D to 1, returns 2.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MAPFADEOFF(Eline *eline) {
+s32 opHandler_MAPFADEOFF(Actor *eline) {
     D_8007064D = 1;
     return 2;
 }
@@ -1533,10 +1533,10 @@ s32 opHandler_MAPFADEOFF(Eline *eline) {
 /**
  * Clears the global byte D_8007064D, returns 2.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MAPFADEON(Eline *eline) {
+s32 opHandler_MAPFADEON(Actor *eline) {
     D_8007064D = 0;
     return 2;
 }
@@ -1544,10 +1544,10 @@ s32 opHandler_MAPFADEON(Eline *eline) {
 /**
  * Sets the global byte D_8007064B to 1, returns 2.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MENUDISABLE(Eline *eline) {
+s32 opHandler_MENUDISABLE(Actor *eline) {
     D_8007064B = 1;
     return 2;
 }
@@ -1555,10 +1555,10 @@ s32 opHandler_MENUDISABLE(Eline *eline) {
 /**
  * Clears the global byte D_8007064B, returns 2.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 2 (continue processing).
  */
-s32 opHandler_MENUENABLE(Eline *eline) {
+s32 opHandler_MENUENABLE(Actor *eline) {
     D_8007064B = 0;
     return 2;
 }
@@ -1575,10 +1575,10 @@ s32 opHandler_MENUNORMAL(void) {
  * Sets D_800704A8 to 5, sets the halfword at D_800704A8+2 to 1,
  * sets the byte at D_800704A8+0x1AB to 2, returns 3.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 3.
  */
-s32 opHandler_MENUPHS(Eline *eline) {
+s32 opHandler_MENUPHS(Actor *eline) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 1;
     D_800704A8.unk1AB = 2;
@@ -1588,10 +1588,10 @@ s32 opHandler_MENUPHS(Eline *eline) {
 /**
  * Mode-5 init: set mode = 5, counter = 0x17, pop a byte into @c unk1AB.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_MENUSHOP(Eline *eline) {
+s32 opHandler_MENUSHOP(Actor *eline) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 0x17;
     D_800704A8.unk1AB = POP_BYTE(eline);
@@ -1607,10 +1607,10 @@ s32 opHandler_MENUSHOP(Eline *eline) {
  * @c 14 / @c 15 pairs are deliberately written swapped in source to
  * match the original case body order.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 opHandler_MENUNAME(Eline *eline) {
+s32 opHandler_MENUNAME(Actor *eline) {
     s32 val;
     D_800704A8.mode = 5;
     D_800704A8.unk1AB = 1;
@@ -1645,10 +1645,10 @@ s32 opHandler_MENUNAME(Eline *eline) {
  * Sets D_800704A8 to 5, sets the halfword at D_800704A8+2 to 0x1A,
  * sets the byte at D_800704A8+0x1AB to 1, returns 3.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 3.
  */
-s32 opHandler_MENUTUTO(Eline *eline) {
+s32 opHandler_MENUTUTO(Actor *eline) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 0x1A;
     D_800704A8.unk1AB = 1;
@@ -1658,10 +1658,10 @@ s32 opHandler_MENUTUTO(Eline *eline) {
 /**
  * Mode-5 init with counter 0x1D — variant of @c opHandler_MENUSHOP.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3 (yield to dispatcher with state change).
  */
-s32 func_800B4D34(Eline *eline) {
+s32 func_800B4D34(Actor *eline) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 0x1D;
     D_800704A8.unk1AB = POP_BYTE(eline);
@@ -1671,10 +1671,10 @@ s32 func_800B4D34(Eline *eline) {
 /**
  * Pops a parameter, masks it with 0x7F, and calls setFieldFlag, returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_MENUTIPS(Eline *eline) {
+s32 opHandler_MENUTIPS(Actor *eline) {
     setFieldFlag(POP(eline) & 0x7F);
     return 2;
 }
@@ -1682,10 +1682,10 @@ s32 opHandler_MENUTIPS(Eline *eline) {
 /**
  * Calls func_80037240 and returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_REST(Eline *eline) {
+s32 opHandler_REST(Actor *eline) {
     func_80037240(eline);
     return 2;
 }
@@ -1693,10 +1693,10 @@ s32 opHandler_REST(Eline *eline) {
 /**
  * Calls func_800ADC04 and returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_DYING(Eline *eline) {
+s32 opHandler_DYING(Actor *eline) {
     func_800ADC04(eline);
     return 2;
 }
@@ -1705,10 +1705,10 @@ s32 opHandler_DYING(Eline *eline) {
  * Pop a halfword HP value and a character index, then set
  * @c g_gameState.chars[charId].currentHp to the popped value.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SETHP(Eline *eline) {
+s32 opHandler_SETHP(Actor *eline) {
     u16 hp = (u16)POP(eline);
     s32 charId = POP(eline);
     g_gameState.chars[charId].currentHp = hp;
@@ -1719,10 +1719,10 @@ s32 opHandler_SETHP(Eline *eline) {
  * Pop a character index, read @c g_gameState.chars[charId].currentHp
  * and stage it into the script result slot 0.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_GETHP(Eline *eline) {
+s32 opHandler_GETHP(Actor *eline) {
     s32 charId = POP(eline);
     eline->resultSlots[0] = g_gameState.chars[charId].currentHp;
     return 2;
@@ -1732,10 +1732,10 @@ s32 opHandler_GETHP(Eline *eline) {
  * Sets D_800704A8 to 5, sets the halfword at D_800704A8+2 to 0x18,
  * sets the byte at D_800704A8+0x1AB to 1, returns 3.
  *
- * @param eline Pointer to the Eline event-script context (unused).
+ * @param eline Pointer to the Actor event-script context (unused).
  * @return 3.
  */
-s32 opHandler_MENUSAVE(Eline *eline) {
+s32 opHandler_MENUSAVE(Actor *eline) {
     D_800704A8.mode = 5;
     D_800704A8.counter = 0x18;
     D_800704A8.unk1AB = 1;
@@ -1746,10 +1746,10 @@ s32 opHandler_MENUSAVE(Eline *eline) {
  * Pops a parameter from the stack. If nonzero, sets bit 0x01 in
  * g_fieldVars+0xD1. Otherwise clears it. Returns 2.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SAVEENABLE(Eline *eline) {
+s32 opHandler_SAVEENABLE(Actor *eline) {
     if (POP(eline) != 0) {
         g_fieldVars->fieldD1 |= 0x01;
     } else {
@@ -1766,7 +1766,7 @@ s32 opHandler_SAVEENABLE(Eline *eline) {
  * Otherwise, sets bit 2.
  */
 void func_800B4F40(void) {
-    if (g_fieldVars->stateFlags & 0x200) {
+    if (g_fieldVars->stateFlags & FIELD_STATE_FLAG_200) {
         g_fieldVars->fieldD1 &= 0xFD;
     } else {
         g_fieldVars->fieldD1 |= 0x2;
@@ -1774,33 +1774,33 @@ void func_800B4F40(void) {
 }
 
 /**
- * Pop a flag value. Nonzero clears @c stateFlags bit @c 0x200; zero
+ * Pop a flag value. Nonzero clears @ref FIELD_STATE_FLAG_200; zero
  * sets bit @c 0x200 and additionally clears bit @c 0x02 of @c fieldD1.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_PHSPOWER(Eline *eline) {
+s32 opHandler_PHSPOWER(Actor *eline) {
     if (POP(eline) != 0) {
-        g_fieldVars->stateFlags &= ~0x200;
+        g_fieldVars->stateFlags &= ~FIELD_STATE_FLAG_200;
     } else {
-        g_fieldVars->stateFlags |= 0x200;
+        g_fieldVars->stateFlags |= FIELD_STATE_FLAG_200;
         g_fieldVars->fieldD1 &= ~0x02;
     }
     return 2;
 }
 
 /**
- * Pop a flag value. If @c stateFlags bit @c 0x200 is clear, set or
+ * Pop a flag value. If @ref FIELD_STATE_FLAG_200 is clear, set or
  * clear bit @c 0x02 in @c fieldD1 based on the popped value. If
  * @c 0x200 is set, leave @c fieldD1 alone.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_PHSENABLE(Eline *eline) {
+s32 opHandler_PHSENABLE(Actor *eline) {
     s32 val = POP(eline);
-    if (!(g_fieldVars->stateFlags & 0x200)) {
+    if (!(g_fieldVars->stateFlags & FIELD_STATE_FLAG_200)) {
         if (val != 0) {
             g_fieldVars->fieldD1 |= 0x02;
         } else {
@@ -1817,10 +1817,10 @@ s32 opHandler_PHSENABLE(Eline *eline) {
  * up to @p count times, exiting early on the first non-zero return.
  * Always returns 2 — the action is purely side-effecting.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ADDMAGIC(Eline *eline) {
+s32 opHandler_ADDMAGIC(Actor *eline) {
     s32 count = POP(eline);
     s32 val2 = POP(eline);
     s32 charId = POP(eline);
@@ -1839,10 +1839,10 @@ s32 opHandler_ADDMAGIC(Eline *eline) {
 /**
  * Pops a parameter, calls func_800C0410, stores result at offset 0x140.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_OP16A(Eline *eline) {
+s32 opHandler_OP16A(Actor *eline) {
     eline->resultSlots[0] = func_800C0410(POP(eline));
     return 2;
 }
@@ -1850,10 +1850,10 @@ s32 opHandler_OP16A(Eline *eline) {
 /**
  * Pops two parameters from the stack and calls addItemToInventory(val1, val2).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ADDITEM(Eline *eline) {
+s32 opHandler_ADDITEM(Actor *eline) {
     s32 val1, val2;
 
     val1 = POP(eline);
@@ -1867,10 +1867,10 @@ s32 opHandler_ADDITEM(Eline *eline) {
  * clamped to the FF gil cap of 99,999,999. Mirror the new total into
  * @c g_fieldVars->gilMirror.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ADDGIL(Eline *eline) {
+s32 opHandler_ADDGIL(Actor *eline) {
     s32 delta = POP(eline);
     g_gameState.mainData.party.gil += delta;
     if (g_gameState.mainData.party.gil > 0x05F5E0FE) {
@@ -1884,10 +1884,10 @@ s32 opHandler_ADDGIL(Eline *eline) {
  * Variant of @c opHandler_ADDGIL that operates on @c dreamGil instead of
  * @c gil and mirrors the result into @c g_fieldVars->dreamGilMirror.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ADDPASTGIL(Eline *eline) {
+s32 opHandler_ADDPASTGIL(Actor *eline) {
     s32 delta = POP(eline);
     g_gameState.mainData.party.dreamGil += delta;
     if (g_gameState.mainData.party.dreamGil > 0x05F5E0FE) {
@@ -1901,10 +1901,10 @@ s32 opHandler_ADDPASTGIL(Eline *eline) {
  * Pop a delta and add it to @c g_fieldVars->seedExp, clamping the
  * resulting value to the legal SeeD-rank range [@c 100, @c 3100].
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_ADDSEEDLEVEL(Eline *eline) {
+s32 opHandler_ADDSEEDLEVEL(Actor *eline) {
     s32 delta = POP(eline);
     g_fieldVars->seedExp += delta;
     if ((s16)g_fieldVars->seedExp < 100) {
@@ -1918,10 +1918,10 @@ s32 opHandler_ADDSEEDLEVEL(Eline *eline) {
 /**
  * Pops a parameter, calls markItemPresent, stores result in resultSlots[0].
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_GETCARD(Eline *eline) {
+s32 opHandler_GETCARD(Actor *eline) {
     eline->resultSlots[0] = markItemPresent(POP(eline));
     return 2;
 }
@@ -1929,10 +1929,10 @@ s32 opHandler_GETCARD(Eline *eline) {
 /**
  * Pops two values, calls modifyItemQuantity(val1, val2), stores result in resultSlots[0].
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_SETCARD(Eline *eline) {
+s32 opHandler_SETCARD(Actor *eline) {
     s32 val1, val2;
 
     val1 = POP(eline);
@@ -1944,10 +1944,10 @@ s32 opHandler_SETCARD(Eline *eline) {
 /**
  * Pops a parameter, calls func_80023B14, stores result in resultSlots[0].
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
-s32 opHandler_HOWMANYCARD(Eline *eline) {
+s32 opHandler_HOWMANYCARD(Actor *eline) {
     eline->resultSlots[0] = func_80023B14(POP(eline));
     return 2;
 }

@@ -6,19 +6,19 @@
 
 /*
  * ============================================================================
- * Field entity overlay (FieldEntity / Eline)
+ * Field entity overlay (FieldEntity / Actor)
  * ============================================================================
  *
  * One field entity slot is 612 bytes (0x264). Three typedefs describe
  * the SAME 612-byte memory at @ref D_80085224, each capturing a
  * different valid type-interpretation of the bytes:
  *
- *   - @ref Eline       — bytecode VM view (stack[80], resultSlots[8],
+ *   - @ref Actor       — bytecode VM view (stack[80], resultSlots[8],
  *                        msg* / field_0xNN naming, opcode handlers).
  *   - @ref FieldEntity — movement / animation view (walkSpeed[2],
  *                        unk1A0..unk1B3 sequencer state, used by
  *                        movement helpers in fe_object4/6/9/10).
- *   - @ref FieldActor  — animation slot view (AnimRec rows[4] /
+ *   - @ref ActorAnim  — animation slot view (AnimRec rows[4] /
  *                        timers[4] / animOffset / mode at the upper
  *                        half of the stack region; used by
  *                        @c func_800A355C only).
@@ -36,7 +36,7 @@
 /**
  * @brief Field script entity / VM execution context — movement/animation view.
  *
- * See the overlay comment block above for the relationship to @ref Eline.
+ * See the overlay comment block above for the relationship to @ref Actor.
  *
  * Used by the field engine's stack-based virtual machine. Each entity
  * has a stack of s32 values (slots 0-95), a stack pointer, result
@@ -303,10 +303,10 @@ typedef struct {
                                          written there as @c *69020>>9 and here as @c *17255>>7), so
                                          the entity starts exactly at that threshold.
                                          @note Both quantities are unnamed; only ever written as 20. */
-    /* 0x00C */ s16 spawnTriIdx;    /**< Spawn navmesh triangle — assigned straight to @c Eline::triIdx
+    /* 0x00C */ s16 spawnTriIdx;    /**< Spawn navmesh triangle — assigned straight to @c Actor::triIdx
                                          by both @c func_8009AEC0 and @c func_800BE264.
                                          @c SPAWN_UNSET means "keep the entity where it is". */
-    /* 0x00E */ u16 anim_state;     /**< Spawn animation id, copied to @c Eline::field_0x241. */
+    /* 0x00E */ u16 anim_state;     /**< Spawn animation id, copied to @c Actor::field_0x241. */
     /* 0x010 */ u16 unk010;         /**< Set to 2 by @c func_8009895C on load modes other than 0/1/2. */
     /* 0x012 */ u8 entityIndex[3];  /**< Per-active-slot field-entity index (mirror of g_fieldVars->memberSlot[]). */
     /* 0x015 */ u8 unk015;          /**< Cleared by @c opHandler_UCON along with the trigger flag. */
@@ -414,18 +414,19 @@ typedef struct {
     /* 0x57 */ u8 field57;              /**< Low byte of @c D_8005F14C, set by @c func_800BFBBC. */
     /* 0x58 */ u8 field58;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0x59 */ u8 pad59[0x0F];
-    /* 0x68 */ s32 stateFlags;          /**< Field state flags (bits 3-4 checked by getFieldStateFlags). */
+    /* 0x68 */ s32 stateFlags;          /**< Field state flags (see FIELD_STATE_*). */
     /* 0x6C */ s32 soundHandle0;        /**< Sound channel 0 handle (music; @ref SND_HANDLE_NONE = inactive). */
     /* 0x70 */ s32 soundHandle1;        /**< Sound channel 1 handle (SFX; @ref SND_HANDLE_NONE = inactive). */
-    /* 0x74 */ u8 packedFlags[0x40];    /**< Packed 2-bit-per-entry flag table (256 entries, indexed by 8-bit key).
-                                             Called "DrawPointFlag" by the field-init debug trace. */
+    /* 0x74 */ u8 drawPointFlag[0x40];  /**< Packed 2-bit-per-entry flag table (256 entries, indexed by
+                                             8-bit key). Named after the field-init debug trace, which
+                                             prints its address as @c "address(DrawPointFlag)". */
     /* 0xB4 */ u16 packedFlagsStepAcc;  /**< Step accumulator: fires packed-flags processing at @c 0x2800. */
     /* 0xB6 */ u16 fieldB6;             /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0xB8 */ u16 levelUpDisplayTimer; /**< Frames remaining for the SeeD-rank-up notification (set to 150). */
     /* 0xBA */ u16 prevSeedExp;         /**< Snapshot of @c seedExp from the previous tick (for rank-change detection). */
     /* 0xBC */ u8 partyOrderA[3];       /**< Bench list (members not in active party). */
     /* 0xBF */ u8 partyOrderB[3];       /**< Bench list duplicate (initialized identically). */
-    /* 0xC2 */ u8 memberSlot[3];        /**< For each active party slot, the Eline index (0xFF = none). */
+    /* 0xC2 */ u8 memberSlot[3];        /**< For each active party slot, the Actor index (0xFF = none). */
     /* 0xC5 */ u8 musicVolume;          /**< Music channel volume (0..0x7F). */
     /* 0xC6 */ u8 sfxVolume;            /**< Sound-effects channel volume (0..0x7F). */
     /* 0xC7 */ s8 audioChannel0State;   /**< Audio channel 0 state byte; -1 = reset/inactive. */
@@ -460,27 +461,44 @@ typedef struct {
     /* 0xF0 */ u8 fieldF0;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0xF1 */ u8 fieldF1;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0xF2 */ u8 fieldF2;              /**< Set to popped field index by fe_object7 dispatch handler. */
-    /* 0xF3 */ u8 fieldF3;              /**< Mirrored to D_80082C10 when stateFlags bit 0x800 is set. */
+    /* 0xF3 */ u8 fieldF3;              /**< Mirrored to D_80082C10 when @ref FIELD_STATE_PARTY_OVERRIDE is set. */
     /* 0xF4 */ s32 angeloLearnStepAcc;  /**< Step accumulator: fires the Angelo trick learn tick at @c 0x250. */
     /* 0xF8 */ u8 padF8[0x08];
 } FieldVars; /* 0x100 = 256 bytes */
+
+/**
+ * @brief Bytes of @ref FieldVars cleared on a full field reset.
+ *
+ * Covers everything through the last live field (@c angeloLearnStepAcc, which
+ * ends at @c 0xF8); the trailing @c padF8 bytes are deliberately left intact.
+ * The original struct may well have been this size, with those 8 bytes
+ * belonging to whatever follows in @c GameState — nothing reads them.
+ */
+#define FIELD_VARS_RESET_SIZE 0xF8
 
 /* FieldVars.stateFlags bits (partial map — bits are named as their usages
  * are identified; several more bits are used as bare hex elsewhere). */
 #define FIELD_STATE_TRANSITION     0x8   /**< Bit 3: transition gate — its inverse is pushed to @c setTransitionFlag at field init. Set on new game. */
 #define FIELD_STATE_FIELD_READY    0x10  /**< Bit 4: set on new game; returned (with bit 3) by @c getFieldStateFlags. @note Purpose uncertain. */
+#define FIELD_STATE_CAMERA_SHAKE   0x40  /**< Bit 6: arms the camera shake/vibrate pass in the field tick tail. */
+#define FIELD_STATE_FLAG_200       0x200 /**< Bit 9: toggled by the fe_object6 music/state helper. @note Purpose unknown. */
+#define FIELD_STATE_FLAG_400       0x400 /**< Bit 10: staged from @c fieldCF by the music-state machine, then cleared. @note Purpose unknown. */
 #define FIELD_STATE_PARTY_OVERRIDE 0x800 /**< Bit 11: while set, @c fieldF3 mirrors into @c g_battleConfig.unk8 / @c GameConfig.sealedFeatures and SETPARTY2 replays at field init. */
+#define FIELD_STATE_FLAG_1000      0x1000 /**< Bit 12: set/cleared around the fe_object5 sound-bank swap. @note Purpose unknown. */
 
 /** @brief Field-engine variable block (canonical extern also in gamestate.h). */
 extern FieldVars *g_fieldVars;
 
 /**
- * @brief Eline (event line) — opcode handler / script-VM view.
+ * @brief Actor — opcode handler / script-VM view of a field entity.
+ *
+ * Named for the game's own term: the field-init debug trace prints
+ * @c "sizeof(actor)" for this 612-byte structure.
  *
  * See the overlay comment block before @ref FieldEntity for the relationship
  * between the two typedefs. Both describe the same 612-byte field entity
  * slot, with this view named for opcode handler usage. The size discrepancy
- * (FieldEntity ≥ 0x24D, Eline ~0x264) is because each typedef only declares
+ * (FieldEntity ≥ 0x24D, Actor ~0x264) is because each typedef only declares
  * up through the highest offset its callers reference; both bound the same
  * 612-byte allocation.
  */
@@ -584,7 +602,7 @@ typedef struct {
     /* 0x23D */ u8 pad23D;
     /* 0x23E */ u8 headingBase;     /**< Heading reference subtracted from the bearing to the
                                          destination (@c func_8009D274 walk-toward step). */
-    /* 0x23F */ u8 unk23F;          /**< Facing/heading angle (8-bit BAM, sin/cos source per FF8 wiki entity-struct). @c func_8009A4C0 / @c func_8009A7E8 compare a trigger's bearing (@c FieldEntityB.unk19C) against it in a +/-facing window. */
+    /* 0x23F */ u8 unk23F;          /**< Facing/heading angle (8-bit BAM, sin/cos source per FF8 wiki entity-struct). @c func_8009A4C0 / @c func_8009A7E8 compare a trigger's bearing (@c Eline.unk19C) against it in a +/-facing window. */
     /* 0x240 */ u8 field_0x240;
     /* 0x241 */ u8 field_0x241;
     /* 0x242 */ u8 field_0x242;
@@ -616,7 +634,7 @@ typedef struct {
     /* 0x261 */ u8 shadowLevel;     /**< Blob-shadow grey level, set by @c SHADELEVEL. */
     /* 0x262 */ u8 field_0x262;
     /* 0x263 */ u8 field_0x263;
-} Eline;
+} Actor;
 
 /** @brief Push one s32 onto the eline's bytecode stack. */
 #define PUSH(eline, val) (((s32 *)(eline))[(s8)(++(eline)->stackPtr)] = (val))
@@ -734,7 +752,7 @@ typedef struct {
     EntityRenderXform xform;  /**< 0x20 — transform block (field20..field2C); see @c func_800A74B4. */
     u8 pad30[0x20];
     u16 unk50;       /**< Cleared on init. */
-    u16 unk52;       /**< Current motion halfword (mirror of Eline @c field_0x206). */
+    u16 unk52;       /**< Current motion halfword (mirror of Actor @c field_0x206). */
     u8 pad54[0x0C];
     u8 unk60;
     u8 unk61;
@@ -763,22 +781,22 @@ typedef struct {
 /** @brief Entity render-slot pointer table; indexed by @c eline->field_0x256. */
 extern EntityRenderSlot *D_800D9630[];
 
-/** @brief Entity Eline pointer table; indexed by raw field-entity id. */
-extern Eline *D_80085230[];
+/** @brief Entity Actor pointer table; indexed by raw field-entity id. */
+extern Actor *D_80085230[];
 
-/** @brief Eline entity array (count @c D_80085388, stride 612). */
-extern Eline *D_80085224;
+/** @brief Actor entity array (count @c D_80085388, stride 612). */
+extern Actor *D_80085224;
 
 /** @brief Number of entries in the @c D_80085224 entity array. */
 extern u8 D_80085388;
 
 /**
  * @brief Block B field entity — stride @c 0x1A0, dispatched by
- *        @c func_800BD9C4 alongside the full-sized @c Eline pool.
+ *        @c func_800BD9C4 alongside the full-sized @c Actor pool.
  *
- * Shares the script-VM state layout with @c Eline at offsets
+ * Shares the script-VM state layout with @c Actor at offsets
  * @c 0x160..0x178, but with a 7-byte SFX trigger region at @c 0x194..0x19B
- * instead of the full @c Eline body. Used by the field engine for compact
+ * instead of the full @c Actor body. Used by the field engine for compact
  * actors that don't need the full 612-byte slot.
  */
 typedef struct {
@@ -806,11 +824,11 @@ typedef struct {
     /* 0x19C */ u8  unk19C;         /**< Facing angle to the projected point, written by @c func_8009A4C0 (@ref func_8009A0E8); compared (with diff bias) against @c eline->unk23F by @c func_8009A4C0 / @c func_8009A7E8. */
     /* 0x19D */ u8  unk19D;         /**< Fired-this-frame flag: @c func_8009A4C0 raises it with @c trigger6; @c func_8009A7E8 gates the pad-mode write on it; cleared by @c func_8009A8E0 alongside @c trigger4. */
     /* 0x19E */ u8  pad19E[0x02];
-} FieldEntityB; /* 0x1A0 */
+} Eline; /* 0x1A0 = 416 bytes — the game's "eline" (per the field-init trace). */
 
 /**
  * @brief Block C field entity — stride @c 0x18C, dispatched by
- *        @c func_800BD9C4. Same script-VM front-end as @c FieldEntityB
+ *        @c func_800BD9C4. Same script-VM front-end as @c Eline
  *        but with only two SFX triggers at @c 0x18A / @c 0x18B.
  */
 typedef struct {
@@ -829,7 +847,7 @@ typedef struct {
     /* 0x189 */ u8  pad189;
     /* 0x18A */ u8  trigger6;
     /* 0x18B */ u8  trigger7;
-} FieldEntityC; /* 0x18C */
+} Dline; /* 0x18C = 396 bytes — the game's "dline" (per the field-init trace). */
 
 /**
  * @brief Block D field entity — stride @c 0x1B4, dispatched by
@@ -855,18 +873,18 @@ typedef struct {
     /* 0x1AB */ u8  unk1AB;
     /* 0x1AC */ u8  unk1AC;
     /* 0x1AD */ u8  pad1AD[0x07];
-} FieldEntityD; /* 0x1B4 */
+} Bganime; /* 0x1B4 = 436 bytes — the game's "bganime" (per the field-init trace). */
 
 /** @brief Self/anchor pointer used by @c func_8009A8E0 after the
  *         party-member copy in @c opHandler_COPYINFO / @c opHandler_PCOPYINFO; also
  *         the base of the Block B entity array dispatched by @c func_800BD9C4. */
-extern FieldEntityB *D_8008538C;
+extern Eline *D_8008538C;
 
 /** @brief Number of entries in the @c D_8008538C entity array. */
 extern u8 D_800852F8;
 
 /** @brief Block C entity-array base; count is @c D_80085228. */
-extern FieldEntityC *D_80085384;
+extern Dline *D_80085384;
 
 /** @brief Number of entries in the @c D_80085384 entity array. */
 extern u8 D_80085228;
@@ -882,7 +900,7 @@ extern u8 D_80085228;
 extern u8 D_80070628[];
 
 /** @brief Block D entity-array base; count is @c D_80085391. */
-extern FieldEntityD *D_800852F4;
+extern Bganime *D_800852F4;
 
 /** @brief Number of entries in the @c D_800852F4 entity array. */
 extern u8 D_80085391;
@@ -903,8 +921,8 @@ extern s32  func_801E8B58(void);
  * @brief Animation slot record (one of four per actor).
  *
  * Used by @c func_800A355C to drive per-actor animation playback. Lives
- * inside the @c FieldActor view (see below) at offset @c 0x80, which
- * shares storage with @c Eline.stack[32..49] — the bytecode VM only
+ * inside the @c ActorAnim view (see below) at offset @c 0x80, which
+ * shares storage with @c Actor.stack[32..49] — the bytecode VM only
  * uses stack slots @c 0..31 during script execution, so the upper
  * half of the stack region doubles as animation state.
  */
@@ -915,17 +933,17 @@ typedef struct {
 
 /**
  * @brief Animation-mode view of a field entity (alternate typedef
- *        over the same memory as @ref Eline).
+ *        over the same memory as @ref Actor).
  *
  * The bytecode VM's @c stack[80] region (offsets @c 0x00..0x13F of
- * @c Eline) is repurposed as animation state once the script reaches
+ * @c Actor) is repurposed as animation state once the script reaches
  * a movement opcode and surrenders its stack frame: @c rows[4]
  * occupies @c 0x80..0xC7, @c timers[4] occupies @c 0xC8..0xCF, and
  * @c animOffset / @c mode appear at @c 0xF4 / @c 0xFC. The rest of
- * the struct is identical to @c Eline from offset @c 0x140 onward.
+ * the struct is identical to @c Actor from offset @c 0x140 onward.
  *
- * Use a cast (@c (FieldActor *)&D_80085224[idx]) only inside the
- * animation engine; everywhere else, access via @c Eline.
+ * Use a cast (@c (ActorAnim *)&D_80085224[idx]) only inside the
+ * animation engine; everywhere else, access via @c Actor.
  */
 typedef struct {
     /* 0x000 */ u8 pad000[0x80];
@@ -935,8 +953,8 @@ typedef struct {
     /* 0x0F4 */ s16 animOffset;     /**< Byte offset from @c rows[] to source row table. */
     /* 0x0F6 */ u8 padF6[0x06];
     /* 0x0FC */ s16 mode;           /**< Dispatch mode (1/2/3 = different sources). */
-    /* 0x0FE */ u8 padFE[0x166];    /**< Rest of the 612-byte slot mirrors @c Eline. */
-} FieldActor; /* 0x264 = 612 bytes */
+    /* 0x0FE */ u8 padFE[0x166];    /**< Rest of the 612-byte slot mirrors @c Actor. */
+} ActorAnim; /* 0x264 = 612 bytes — second view of the same slot as @ref Actor. */
 
 /**
  * @brief One 20-byte movement-command step: an endpoint plus the tick count to
@@ -999,17 +1017,17 @@ typedef struct {
  * @brief One 254-byte animation slot in the field "subscene" buffer walked by
  *        @ref func_800A37A8.
  *
- * The leading @c subscene region is a packed @ref FieldActor — only its first
+ * The leading @c subscene region is a packed @ref ActorAnim — only its first
  * @c 0xFE bytes are live, so slots pack at 254-byte stride — and is passed to
- * @c func_800A355C as its @c FieldActor argument. @c h2 mirrors
- * @c FieldActor.animOffset (offset @c 0xF4).
+ * @c func_800A355C as its @c ActorAnim argument. @c h2 mirrors
+ * @c ActorAnim.animOffset (offset @c 0xF4).
  */
 typedef struct {
-    /* 0x00 */ u8 subscene[0xD0]; /**< Packed FieldActor head (rows/timers/...). */
+    /* 0x00 */ u8 subscene[0xD0]; /**< Packed ActorAnim head (rows/timers/...). */
     /* 0xD0 */ u8 table[0x20];    /**< Animation source bytes, indexed by @c h2. */
     /* 0xF0 */ s16 h0;            /**< State counter (advanced each active tick). */
     /* 0xF2 */ s16 h1;            /**< State counter, compared against @c table[h2]. */
-    /* 0xF4 */ s16 h2;            /**< Table cursor (mirror of @c FieldActor.animOffset). */
+    /* 0xF4 */ s16 h2;            /**< Table cursor (mirror of @c ActorAnim.animOffset). */
     /* 0xF6 */ u16 padF6;
     /* 0xF8 */ s16 frameCount;    /**< Frames this slot plays for; @c func_800A3FE0 runs the
                                        whole buffer for @c max(frameCount) ticks and drops the
@@ -1266,10 +1284,10 @@ extern s8 D_800DE4D2;
 extern s8 D_800DE4D3;
 extern s8 D_800DE4D4;
 
-/** @brief Eline-pointer slots used by fe_object7 to remember last-active entities. */
-extern Eline *D_800DE4F0;
-extern Eline *D_800DE4F4;
-extern Eline *D_800DE4F8;
+/** @brief Actor-pointer slots used by fe_object7 to remember last-active entities. */
+extern Actor *D_800DE4F0;
+extern Actor *D_800DE4F4;
+extern Actor *D_800DE4F8;
 
 /** @brief Per-text status array consumed by fe_object7 dialog flow. */
 extern u8 D_800DE880[];

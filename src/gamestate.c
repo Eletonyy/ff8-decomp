@@ -423,14 +423,14 @@ INCLUDE_ASM("asm/nonmatchings/gamestate", func_80038030);
  * both g_fieldEntity.entityIndex and g_fieldVars->memberSlot. Defaults to
  * 0xFF when no entity matches.
  *
- * Part 2: When the bench-list flag (stateFlags & 0x800) is set, build the
+ * Part 2: When the bench-list flag (stateFlags & FIELD_STATE_PARTY_OVERRIDE) is set, build the
  * list of character IDs *not* currently in the active battle party
  * (partyOrderA/B at 0xBC/0xBF — initialized identically here).
  */
 void func_800381BC(void) {
     s32 i;
     s32 j;
-    Eline *ent;
+    Actor *ent;
 
     for (i = 0; i < 3; i++) {
         g_fieldEntity.entityIndex[i] = 0xFF;
@@ -447,7 +447,7 @@ void func_800381BC(void) {
         }
     }
 
-    if (g_fieldVars->stateFlags & 0x800) {
+    if (g_fieldVars->stateFlags & FIELD_STATE_PARTY_OVERRIDE) {
         j = 0;
         for (i = 0; i < 6; i++) {
             if (findBattlePartySlot(i) == 0xFF) {
@@ -469,7 +469,7 @@ void func_800381BC(void) {
  */
 void clearEntityFlags(void) {
     s32 i;
-    Eline *ent = D_80085224;
+    Actor *ent = D_80085224;
     u8 count = D_80085388;
 
     for (i = 0; i < count; i++, ent++) {
@@ -499,7 +499,7 @@ s32 getFieldStateFlags(void) {
  */
 s32 getPackedField2Bit(s32 entryIdx) {
     entryIdx &= 0xFF;
-    return (g_fieldVars->packedFlags[entryIdx / 4] >> ((entryIdx % 4) * 2)) & 3;
+    return (g_fieldVars->drawPointFlag[entryIdx / 4] >> ((entryIdx % 4) * 2)) & 3;
 }
 
 

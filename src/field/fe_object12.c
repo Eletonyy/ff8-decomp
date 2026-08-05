@@ -15,28 +15,14 @@
 
 extern u8 D_80077BA8[];
 
-/* Debug trace format strings (field overlay .rodata at 0x8009823C..).
- * Kept as symbol references rather than C literals so they stay in the
- * overlay's own rodata block at their original addresses. */
-extern const char D_8009823C[]; /* "::SmInitEventAll(%d);\n" */
-extern const char D_80098254[]; /* "----------------------------------------\n" */
-extern const char D_80098280[]; /* "sizeof(actor) %d\n" */
-extern const char D_80098294[]; /* "sizeof(eline) %d\n" */
-extern const char D_800982A8[]; /* "sizeof(dline) %d\n" */
-extern const char D_800982BC[]; /* "sizeof(bganime) %d\n" */
-extern const char D_800982D0[]; /* "address(DrawPointFlag) %p\n" */
-extern const char D_800982EC[]; /* "%x\n" */
-
 /**
  * @brief Field-engine state initializer (new game / field reset).
  *
- * Opens with the debug trace the original developers left in — a banner
- * naming this routine (@c "::SmInitEventAll(%d);"), the sizes of the four
- * field data structures (@c actor 612, @c eline 416, @c dline 396,
- * @c bganime 436 — the game's own names for them), and the addresses of
- * the packed-flag table ("DrawPointFlag"), @c g_fieldVars and its
- * @c stateFlags. It then resets the MDEC decoder and:
- *  - On @p fullReset: wipes the first 0xF8 bytes of @c *g_fieldVars,
+ * Opens with the developers' own debug trace, which is where the original
+ * 1998 names survive: this routine was called @c SmInitEventAll, and the
+ * four field structures were @c actor / @c eline / @c dline / @c bganime.
+ * It then resets the MDEC decoder and:
+ *  - On @p fullReset: clears @c *g_fieldVars through its last live field,
  *    stamps the "FF-8" magic, and seeds the defaults — disc 1, battle
  *    music 5, both volumes 0x7F, SeeD exp 500, the @ref FIELD_STATE_TRANSITION
  *    and @ref FIELD_STATE_FIELD_READY state bits,
@@ -64,19 +50,19 @@ void func_800C00C8(s32 fullReset)
     FieldVars *fv;
     volatile FieldVars *vfv;
 
-    printf(D_8009823C, fullReset);
-    printf(D_80098254);
-    printf(D_80098280, sizeof(FieldActor));
-    printf(D_80098294, sizeof(FieldEntityB));
-    printf(D_800982A8, sizeof(FieldEntityC));
-    printf(D_800982BC, sizeof(FieldEntityD));
-    printf(D_800982D0, g_fieldVars->packedFlags);
-    printf(D_800982EC, &g_fieldVars);
-    printf(D_800982EC, &g_fieldVars->stateFlags);
+    printf("::SmInitEventAll(%d);\n", fullReset);
+    printf("----------------------------------------\n");
+    printf("sizeof(actor) %d\n", sizeof(Actor));
+    printf("sizeof(eline) %d\n", sizeof(Eline));
+    printf("sizeof(dline) %d\n", sizeof(Dline));
+    printf("sizeof(bganime) %d\n", sizeof(Bganime));
+    printf("address(DrawPointFlag) %p\n", g_fieldVars->drawPointFlag);
+    printf("%x\n", &g_fieldVars);
+    printf("%x\n", &g_fieldVars->stateFlags);
     DecDCTReset(0);
 
     if (fullReset) {
-        func_800396E0(g_fieldVars, 0xF8);
+        func_800396E0(g_fieldVars, FIELD_VARS_RESET_SIZE);
         g_fieldVars->magic[0] = 'F';
         g_fieldVars->magic[1] = 'F';
         g_fieldVars->magic[2] = '-';

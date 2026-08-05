@@ -84,7 +84,7 @@ s32 func_800A5FA4(FieldLineTrigger *seg, s32 sel) {
  *       from reordering the @c posY store ahead of the @c posX store while
  *       staging the scratchpad, matching the original prologue schedule.
  */
-void func_800A6100(Eline *eline, FieldLineTrigger *segs, Vec3i *pt) {
+void func_800A6100(Actor *eline, FieldLineTrigger *segs, Vec3i *pt) {
     s32 *p = getScratchAddr(0);
     s32 *q;
     FieldLineTrigger *seg;

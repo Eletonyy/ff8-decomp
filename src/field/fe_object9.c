@@ -22,7 +22,7 @@
  * Same body as @c opHandler_FACEDIRA in fe_object8 but standalone — no
  * @c opHandler_FACEDIRSYNC tail call, always returns 2.
  */
-s32 opHandler_RFACEDIRA(Eline *eline) {
+s32 opHandler_RFACEDIRA(Actor *eline) {
     s16 buf[4];
     s32 idx;
 
@@ -48,7 +48,7 @@ s32 opHandler_RFACEDIRA(Eline *eline) {
  * the entity index into @c D_80085224, and pass that same byte as the
  * spatial argument to @c func_800A8DAC.
  */
-s32 opHandler_RFACEDIRP(Eline *eline) {
+s32 opHandler_RFACEDIRP(Actor *eline) {
     s16 buf[4];
     u8 slot;
 
@@ -74,7 +74,7 @@ s32 opHandler_RFACEDIRP(Eline *eline) {
  * entry by 16, and stores into @c turnPitchDst / @c turnRollDst /
  * @c turnYawDst. Clears @c turnTick and @c turnMode.
  */
-s32 opHandler_RFACEDIROFF(Eline *eline) {
+s32 opHandler_RFACEDIROFF(Actor *eline) {
     s16 buf[4];
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
@@ -93,7 +93,7 @@ s32 opHandler_RFACEDIROFF(Eline *eline) {
  * @brief Pop three bytes into @c turnPitchRate / @c field_0x239 /
  *        @c turnYawRate (top-of-stack first).
  */
-s32 opHandler_FACEDIRLIMIT(Eline *eline) {
+s32 opHandler_FACEDIRLIMIT(Actor *eline) {
     eline->turnYawRate = POP_BYTE(eline);
     eline->field_0x239 = POP_BYTE(eline);
     eline->turnPitchRate = POP_BYTE(eline);
@@ -108,7 +108,7 @@ s32 opHandler_FACEDIRLIMIT(Eline *eline) {
  * @c turnRollCur, @c buf[2]/16 into @c turnYawCur, and clears
  * @c turnPitchCur. (@c buf[0] is queried but discarded.)
  */
-s32 opHandler_FACEDIRINIT(Eline *eline) {
+s32 opHandler_FACEDIRINIT(Actor *eline) {
     s16 buf[4];
 
     func_800A8DAC(eline->field_0x256, 0x20, (u8 *)buf, 0);
@@ -201,7 +201,7 @@ s32 opHandler_FADEOUT(void) {
  * this function) — the symbol was removed from @c symbol_addrs.field
  * so the two halves merge back into one function.
  */
-s32 opHandler_DCOLADD(Eline *eline) {
+s32 opHandler_DCOLADD(Actor *eline) {
     D_800704A8.dialogState = 7;
     D_800704A8.dialogTimer = 0;
     D_800704A8.field_0x112 = POP(eline);
@@ -220,7 +220,7 @@ s32 opHandler_DCOLADD(Eline *eline) {
  * @note Originally split by splat at @c func_800BB90C — symbol removed
  * from @c symbol_addrs.field so the two halves merge back.
  */
-s32 opHandler_DCOLSUB(Eline *eline) {
+s32 opHandler_DCOLSUB(Actor *eline) {
     D_800704A8.dialogState = 8;
     D_800704A8.dialogTimer = 0;
     D_800704A8.field_0x112 = POP(eline);
@@ -243,7 +243,7 @@ s32 opHandler_DCOLSUB(Eline *eline) {
  * @note Originally split by splat at @c func_800BB9A8 — symbol removed
  * from @c symbol_addrs.field so the two halves merge back.
  */
-s32 opHandler_TCOLADD(Eline *eline) {
+s32 opHandler_TCOLADD(Actor *eline) {
     D_800704A8.dialogState = 5;
     D_800704A8.dialogTimer = 0;
     D_800704A8.dialogCount = POP(eline);
@@ -261,7 +261,7 @@ s32 opHandler_TCOLADD(Eline *eline) {
 /**
  * @brief Same shape as @c opHandler_TCOLADD with @c dialogState=6.
  */
-s32 opHandler_TCOLSUB(Eline *eline) {
+s32 opHandler_TCOLSUB(Actor *eline) {
     D_800704A8.dialogState = 6;
     D_800704A8.dialogTimer = 0;
     D_800704A8.dialogCount = POP(eline);
@@ -287,7 +287,7 @@ s32 opHandler_TCOLSUB(Eline *eline) {
  * BBC08); the trailing symbols were removed from
  * @c symbol_addrs.field to merge them back.
  */
-s32 opHandler_FCOLADD(Eline *eline) {
+s32 opHandler_FCOLADD(Actor *eline) {
     D_800704A8.dialogState = 5;
     D_800704A8.dialogTimer = 0;
     D_800704A8.dialogCount = POP(eline);
@@ -306,7 +306,7 @@ s32 opHandler_FCOLADD(Eline *eline) {
 /**
  * @brief Same shape as @c opHandler_FCOLADD with @c dialogState=6.
  */
-s32 opHandler_FCOLSUB(Eline *eline) {
+s32 opHandler_FCOLSUB(Actor *eline) {
     D_800704A8.dialogState = 6;
     D_800704A8.dialogTimer = 0;
     D_800704A8.dialogCount = POP(eline);
@@ -410,7 +410,7 @@ s32 opHandler_FADEBLACK(void) {
  * next. The @c & @c 7 mask suggests @c val2 is a 3-bit selector
  * (e.g. SFX channel id).
  */
-s32 opHandler_MESVAR(Eline *eline) {
+s32 opHandler_MESVAR(Actor *eline) {
     s32 val1 = POP(eline);
     s32 val2 = POP(eline);
     func_8002E1B4(val2 & 7, val1);
@@ -420,13 +420,13 @@ s32 opHandler_MESVAR(Eline *eline) {
 /**
  * @brief Register an SFX entry's volume and type via VM stack args.
  *
- * Pops three values from the Eline stack: @c vol (top), @c kind, then
+ * Pops three values from the Actor stack: @c vol (top), @c kind, then
  * @c idx. Forwards @c vol to @c setSfxEntryVolume and remaps the
  * caller-supplied @c kind through a 3-way switch (0→2, 1→3, 2→0) before
  * calling @c setSfxEntityType. Mirrors both into the per-slot SFX entry
  * at @c D_80085300[idx]. Returns 2 (VM continue).
  */
-s32 opHandler_MESMODE(Eline *eline) {
+s32 opHandler_MESMODE(Actor *eline) {
     s32 vol  = POP(eline);
     s32 kind = POP(eline);
     s32 idx  = POP(eline);
@@ -451,7 +451,7 @@ s32 opHandler_MESMODE(Eline *eline) {
  * Reads @c stack[ptr-1] and @c stack[ptr] without decrementing
  * @c stackPtr, then calls @c setSfxPitch(stack[ptr-1], stack[ptr]).
  */
-s32 opHandler_SETMESSPEED(Eline *eline) {
+s32 opHandler_SETMESSPEED(Actor *eline) {
     s8 idx = (s8)eline->stackPtr;
     setSfxPitch(eline->stack[idx - 1], eline->stack[idx]);
     return 2;
@@ -463,14 +463,14 @@ s32 opHandler_SETMESSPEED(Eline *eline) {
  * Peeks two stack values: @c val1 (top, the SFX data index) and
  * @c sfxIdx (one below, the playback slot).
  *
- * If the Eline's @c activeMask bit for the current @c scriptGroup is
+ * If the Actor's @c activeMask bit for the current @c scriptGroup is
  * set: returns 5 immediately when the slot bit is already in
  * @c sfxStartMask; otherwise looks up the SFX data via
  * @c func_8003974C(D_800704C0, val1), kicks off playback
  * (@c initSfxPlayback / @c startSfxSlow), promotes the global flag
  * and marks the slot bit in @c sfxStartMask. Returns 1.
  *
- * If the Eline's @c activeMask bit is NOT set: returns 1 when the
+ * If the Actor's @c activeMask bit is NOT set: returns 1 when the
  * slot is already running, otherwise pops two stack slots and returns
  * 3 to fall through to the next opcode.
  *
@@ -479,7 +479,7 @@ s32 opHandler_SETMESSPEED(Eline *eline) {
  * @c (1 << sfxIdx) constant load with the @c lw of @c g_fieldVars,
  * matching the target's register allocation.
  */
-s32 opHandler_MESW(Eline *eline) {
+s32 opHandler_MESW(Actor *eline) {
     s32 val1   = eline->stack[(s8)eline->stackPtr];
     s32 sfxIdx = eline->stack[(s8)eline->stackPtr - 1];
 
@@ -540,7 +540,7 @@ void func_800BC12C(s32 idx, s32 val, u16 *src) {
  *
  * Returns 3 on success.
  */
-s32 opHandler_MES(Eline *eline) {
+s32 opHandler_MES(Actor *eline) {
     u8 buf[8];
     s32 val1   = eline->stack[(s8)eline->stackPtr];
     s32 sfxIdx = eline->stack[(s8)eline->stackPtr - 1];
@@ -598,7 +598,7 @@ void func_800BC258(Rect *r) {
  * @return 5 if slot busy, 1 on success (kicks off SFX + entry),
  *         3 once the slot frees up while inactive (pops 4).
  */
-s32 opHandler_AMESW(Eline *eline) {
+s32 opHandler_AMESW(Actor *eline) {
     Rect buf;
     s32 sfxIdx;
     s32 textIdx;
@@ -643,7 +643,7 @@ s32 opHandler_AMESW(Eline *eline) {
  *
  * @return 5 if slot busy, 3 otherwise.
  */
-s32 opHandler_AMES(Eline *eline) {
+s32 opHandler_AMES(Actor *eline) {
     Rect buf;
     s32 sfxIdx;
     s32 textIdx;
@@ -686,7 +686,7 @@ s32 opHandler_AMES(Eline *eline) {
  *
  * @return 5 if slot busy, 2 on success.
  */
-s32 opHandler_RAMESW(Eline *eline) {
+s32 opHandler_RAMESW(Actor *eline) {
     Rect buf;
     s32 sfxIdx;
     s32 textIdx;
@@ -733,7 +733,7 @@ s32 opHandler_RAMESW(Eline *eline) {
  *
  * @return 1 working, 3 done, 5 slot busy.
  */
-s32 opHandler_ASK(Eline *e) {
+s32 opHandler_ASK(Actor *e) {
     s32 sfxIdx;
     s32 textIdx;
     s32 paramY;
@@ -810,7 +810,7 @@ s32 opHandler_ASK(Eline *e) {
  * @return 1 while still working, 3 when the state-1 release completes,
  *         5 when the slot was already active.
  */
-s32 opHandler_AASK(Eline *e) {
+s32 opHandler_AASK(Actor *e) {
     s16 buf[4];
     s32 sfxIdx;
     s32 textIdx;
@@ -893,7 +893,7 @@ s32 opHandler_AASK(Eline *e) {
  *
  * @return 1 while waiting, 2 when torn down.
  */
-s32 opHandler_MESSYNC(Eline *e) {
+s32 opHandler_MESSYNC(Actor *e) {
     s32 sfxIdx = e->stack[(s8)e->stackPtr];
 
     if ((g_fieldVars->sfxEntryMask >> sfxIdx) & 1) {
@@ -925,7 +925,7 @@ s32 opHandler_MESSYNC(Eline *e) {
 /**
  * @brief Pop the top stack slot and pass it to @c setSfxGlobalFlag.
  */
-s32 opHandler_MESFORCUS(Eline *eline) {
+s32 opHandler_MESFORCUS(Actor *eline) {
     setSfxGlobalFlag(POP(eline));
     return 2;
 }
@@ -938,7 +938,7 @@ s32 opHandler_MESFORCUS(Eline *eline) {
  * it via @c func_8002E064, register an entry with @c data=0 via
  * @c func_800BC12C, pop 5, and return 2.
  */
-s32 opHandler_WINSIZE(Eline *e) {
+s32 opHandler_WINSIZE(Actor *e) {
     Rect buf;
     s32 sfxIdx = e->stack[(s8)e->stackPtr - 4];
 
@@ -966,7 +966,7 @@ s32 opHandler_WINSIZE(Eline *e) {
  * fully done, clear both @c sfxStartMask and @c sfxEntryMask bits,
  * pop one, and return 2.
  */
-s32 opHandler_WINCLOSE(Eline *e) {
+s32 opHandler_WINCLOSE(Actor *e) {
     s32 sfxIdx = e->stack[(s8)e->stackPtr];
 
     if (!getSfxField1C(sfxIdx)) {
@@ -982,11 +982,11 @@ s32 opHandler_WINCLOSE(Eline *e) {
 /**
  * @brief Update the @c field4 slot of a @c D_80085398 entry.
  *
- * Pops @c (idx, val) from the Eline stack, calls @c updateAnimEntry
+ * Pops @c (idx, val) from the Actor stack, calls @c updateAnimEntry
  * to refresh whatever runtime state the helper tracks, then writes
  * @c val into @c D_80085398[idx].field4 and returns 2.
  */
-s32 opHandler_SETBAR(Eline *e) {
+s32 opHandler_SETBAR(Actor *e) {
     s32 val = POP(e);
     s32 idx = POP(e);
     updateAnimEntry(idx, val);
@@ -1006,7 +1006,7 @@ s32 opHandler_SETBAR(Eline *e) {
  * After the helper returns, all six values plus a @c flag=1 marker
  * are recorded into the per-slot entry at @c D_80085398[idx].
  */
-s32 opHandler_DISPBAR(Eline *e) {
+s32 opHandler_DISPBAR(Actor *e) {
     u16 buf[2];
     s32 v1 = POP(e);
     s32 v2 = POP(e);
@@ -1038,7 +1038,7 @@ s32 opHandler_DISPBAR(Eline *e) {
  * value lands as the 7th register/stack arg), and records all 8 plus
  * a @c flag=2 marker into the per-slot entry at @c D_80085398[idx].
  */
-s32 opHandler_BROKEN(Eline *e) {
+s32 opHandler_BROKEN(Actor *e) {
     u16 buf[2];
     s32 v0 = POP(e);
     s32 v1 = POP(e);
@@ -1073,7 +1073,7 @@ s32 opHandler_BROKEN(Eline *e) {
  * @param entity Script entity context.
  * @return 2.
  */
-s32 opHandler_KILLBAR(Eline *eline) {
+s32 opHandler_KILLBAR(Actor *eline) {
     s32 val = POP(eline);
     D_80085398[val].flag = 0;
     clearAnimEntryActive(val);

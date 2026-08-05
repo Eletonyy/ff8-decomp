@@ -155,9 +155,9 @@ s32 *func_800983F0(void) {
     D_800704B2 = 20;
 
     if (D_8005F14C == 3) {
-        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (FieldEntityB *)0x80090800, (u16 *)*D_800D5ED4, 0);
+        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (Eline *)0x80090800, (u16 *)*D_800D5ED4, 0);
     } else {
-        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (FieldEntityB *)0x80090800, (u16 *)*D_800D5ED4, 1);
+        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (Eline *)0x80090800, (u16 *)*D_800D5ED4, 1);
     }
 
     D_800C6D98[0] = buf;
@@ -809,7 +809,7 @@ void func_80099348(void) {
             break;
         }
 
-        if ((g_fieldVars->stateFlags & 0x40) && g_gameState.mainData.countdownTimer == 0
+        if ((g_fieldVars->stateFlags & FIELD_STATE_CAMERA_SHAKE) && g_gameState.mainData.countdownTimer == 0
             && (g_fieldVars->fieldB6 & 0x100) == 0) {
             D_800704A8.counter = 0x4B;
             D_800704A8.mode = 1;
@@ -990,7 +990,7 @@ done:
 }
 
 /**
- * @brief Per-frame update of the @ref FieldEntityB trigger pool against the
+ * @brief Per-frame update of the @ref Eline trigger pool against the
  *        self entity's position.
  *
  * Stages @p self 's position and a secondary query point @p pt (its Z is taken
@@ -1006,7 +1006,7 @@ done:
  * When out of range, @c trigger3 is raised on the frame the record leaves.
  *
  * @param self    Querying entity.
- * @param records @ref FieldEntityB pool (count @c D_800852F8).
+ * @param records @ref Eline pool (count @c D_800852F8).
  * @param pt      Secondary query point; its Z is taken from @p self.
  * @return Always 0.
  *
@@ -1019,12 +1019,12 @@ done:
  *       @c fc++,rec++ increment order pin the original's register allocation
  *       and the loop-end branch-delay schedule.
  */
-s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
+s32 func_8009A4C0(Actor *self, Eline *records, VECTOR *pt) {
     VECTOR *selfPos = (VECTOR *)getScratchAddr(0);
     VECTOR *queryPt;
     VECTOR *proj;
-    FieldEntityB *fc;
-    FieldEntityB *rec;
+    Eline *fc;
+    Eline *rec;
     s32 i;
     s32 dist;
 
@@ -1095,7 +1095,7 @@ s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
 }
 
 /**
- * @brief Sync per-entity @c trigger7 across the FieldEntityB pool from
+ * @brief Sync per-entity @c trigger7 across the Eline pool from
  *        the global @c unk150 / @c unk154 SFX flag pair.
  *
  * Iterates the @c D_800852F8 entities at @c pool. For each entity that
@@ -1114,7 +1114,7 @@ s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
  * count-reload @c lbu 's load-delay slot, target leaves that slot
  * as a @c nop.
  */
-void func_8009A7E8(Eline *e, FieldEntityB *pool) {
+void func_8009A7E8(Actor *e, Eline *pool) {
     s32 i;
     for (i = 0; i < D_800852F8; i++, pool++) {
         if (pool->activeMarker == 1) {
@@ -1139,7 +1139,7 @@ void func_8009A7E8(Eline *e, FieldEntityB *pool) {
 }
 
 /**
- * @brief Clear @c trigger4 and @c unk19D across every @c FieldEntityB in the pool.
+ * @brief Clear @c trigger4 and @c unk19D across every @c Eline in the pool.
  *
  * Walks the entire @c D_8008538C pool (size @c D_800852F8) and zeros each
  * entity's @c trigger4 (offset 0x196) and @c unk19D (offset 0x19D). Called
@@ -1152,7 +1152,7 @@ void func_8009A7E8(Eline *e, FieldEntityB *pool) {
  * is in range"). The pool count @c D_800852F8 is reloaded each iteration
  * because gcc can't prove the stores through @p e don't alias it.
  */
-void func_8009A8E0(FieldEntityB *e) {
+void func_8009A8E0(Eline *e) {
     s32 i = 0;
     if (D_800852F8 != 0) {
         do {
@@ -1165,14 +1165,14 @@ void func_8009A8E0(FieldEntityB *e) {
 }
 
 /**
- * @brief Per-frame proximity check, for each @c FieldEntityB in
+ * @brief Per-frame proximity check, for each @c Eline in
  *        @c D_800852F8 entries, run @c func_8009A2BC against the eline's
  *        position and set per-entity trigger bytes based on the hit
  *        distance vs the eline's collision radius.
  *
  * Writes the eline's @c (posX, posY, posZ) @c >> @c 12 to the PSX
  * scratchpad at @c getScratchAddr(2..4), then iterates each
- * @c FieldEntityB and (when active and the eline isn't in a message)
+ * @c Eline and (when active and the eline isn't in a message)
  * calls @c func_8009A2BC. The returned distance is compared against
  * @c radius*radius:
  *  - hit (in range): @c trigger4=1; also @c trigger2=1 when
@@ -1180,17 +1180,17 @@ void func_8009A8E0(FieldEntityB *e) {
  *  - miss (out of range or @c -1): @c trigger3=1, @c trigger4=0
  *
  * @param eline    Querying entity (position, radius, message state).
- * @param entities @c FieldEntityB pool; walked directly as the loop cursor.
+ * @param entities @c Eline pool; walked directly as the loop cursor.
  *
  * @note @c fc is a vestigial second cursor: initialized and stepped in
  *       lockstep but never read. Removing it (or reading through it)
  *       changes the register allocation away from the original, the
  *       original source evidently carried it, so it stays.
  */
-void func_8009A920(Eline *eline, FieldEntityB *entities) {
+void func_8009A920(Actor *eline, Eline *entities) {
     Vec3i *scratch = (Vec3i *)getScratchAddr(0);
     Vec3i *out = (Vec3i *)getScratchAddr(4);
-    FieldEntityB *fc;
+    Eline *fc;
     s32 i;
     s32 dist;
 
@@ -1265,7 +1265,7 @@ void func_8009AA64(EventEntry *e) {
  *       compiler shares one scratchpad base register (addu+ori), as in the
  *       original.
  */
-void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt) {
+void func_8009AAC8(Actor *eline, EventEntry *segs, Vec3i *pt) {
     Vec3i *A = (Vec3i *)getScratchAddr(0);
     Vec3i *B;
     Vec3i *C;
@@ -1388,7 +1388,7 @@ s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
     return (s16)bestIdx;
 }
 
-/** @brief Scale applied to @c D_800704A8.unk00A when seeding @c Eline::moveSpeed. */
+/** @brief Scale applied to @c D_800704A8.unk00A when seeding @c Actor::moveSpeed. */
 #define FIELD_CHANNEL_SCALE 0x4367
 
 /** @brief Sentinel in @c D_800704A8.spawnTriIdx / @c position_x meaning "no override". */
@@ -1513,7 +1513,7 @@ void func_8009AEC0(void) {
  * requested animation differs from the one already playing.
  *
  * @p delta then advances the slot's phase counter @c unk52 by
- * @c delta @c * the entity's per-frame phase step (@ref Eline::field_0x208),
+ * @c delta @c * the entity's per-frame phase step (@ref Actor::field_0x208),
  * wrapping against the cycle length @c unk0C: forward motion past the end
  * restarts at zero, reverse motion below zero jumps to the last phase. A
  * @p delta of zero leaves the phase alone (the entity is standing still).
@@ -1527,7 +1527,7 @@ void func_8009AEC0(void) {
  * crossing regardless of step size or direction.
  *
  * @param idx   Field-entity index; selects both the render slot
- *              (@ref D_800D9630) and the Eline record (@ref D_80085224).
+ *              (@ref D_800D9630) and the Actor record (@ref D_80085224).
  * @param anim  Animation id to play.
  * @param mode  @c 1 to emit footstep sounds while stepping, @c 0 to stay silent.
  * @param delta Signed number of phase steps to advance this frame.
@@ -1692,7 +1692,7 @@ void func_8009BB18(void) {
  * @param b9  Byte stored at offset 9 of each waypoint.
  * @param b8  Byte stored at offset 8 of each waypoint.
  */
-void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8) {
+void func_8009BD50(Actor *e, s16 mode, s8 b9, u8 b8) {
     PathEntry *base1 = D_80070760;
     PathEntry *p1 = base1 + D_8005F144;
     PathEntry *base0 = D_80070A60;
@@ -1762,7 +1762,7 @@ void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8) {
  *              0x4000 = up, 0x8000 = left, 0x10 = run). Bit 0x10 is updated
  *              in place from the analog stick's deflection.
  */
-void func_8009BEC8(Eline *ents, s32 flags) {
+void func_8009BEC8(Actor *ents, s32 flags) {
     VECTOR a;
     VECTOR b;
     VECTOR pt;
@@ -2235,7 +2235,7 @@ s16 func_8009D254(s32 a0) {
  * @param pad  Extra arrival slack added to the radius; 0 disables the test.
  * @return 1 while still travelling, 0 once arrived (or stopped short).
  */
-s32 func_8009D274(Eline *self, s16 pad) {
+s32 func_8009D274(Actor *self, s16 pad) {
     VECTOR cur;
     VECTOR dst;
     s32 dist;
@@ -2812,7 +2812,7 @@ s32 func_8009E468(s16 selfIdx, Vec3i *pos) {
  * @param a0 First entity pointer.
  * @param a1 Second entity pointer.
  */
-s32 func_8009E604(Eline *a, Eline *b) {
+s32 func_8009E604(Actor *a, Actor *b) {
     s32 pos1[4];
     s32 pos2[4];
     s32 result[2];
@@ -3071,7 +3071,7 @@ void func_8009ECA4(void) {
 }
 
 /**
- * @brief Asymmetric overlap test between two Eline entities.
+ * @brief Asymmetric overlap test between two Actor entities.
  *
  * Checks whether entity @p b is within entity @p a 's talk-trigger area:
  *   - Z-axis separation must satisfy @c -126 <= (b->posZ - a->posZ)/4096 <= 127.
@@ -3092,7 +3092,7 @@ void func_8009ECA4(void) {
  *       used. Not "natural" C, it's a deliberate trick that survived
  *       to match.
  */
-s32 func_8009F74C(Eline *a, Eline *b) {
+s32 func_8009F74C(Actor *a, Actor *b) {
     s32 dz;
     s16 i;
     s32 dx;
@@ -3126,7 +3126,7 @@ s32 func_8009F74C(Eline *a, Eline *b) {
  *   - @c sign  > 0 → @c (idx, b, 1,  1)  (forward step)
  *   - @c sign  < 0 → @c (idx, b, 1, -1)  (reverse step)
  *
- * After that, calls @c func_8009BD50 (path recorder) on the Eline
+ * After that, calls @c func_8009BD50 (path recorder) on the Actor
  * @c D_80085224[idx] with the requested @c mode and @c sign, then
  * @c func_8009BB18 to publish the resulting waypoint.
  */
@@ -3143,7 +3143,7 @@ void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode) {
 }
 
 /**
- * @brief Interpolate an Eline's X/Y/Z position via the safe-lerp helper.
+ * @brief Interpolate an Actor's X/Y/Z position via the safe-lerp helper.
  *
  * Looks up @c D_80085224[idx] and runs @c func_800A0E54 three times to
  * compute @c posX / @c posY / @c posZ from the unk1A8/AC/B0 endpoints
@@ -3285,7 +3285,7 @@ void func_8009F990(s16 idx, s32 flags) {
  * @brief Advance one entity through the scripted "climb/step onto a ledge"
  *        movement state machine.
  *
- * Dispatches on @c Eline::msgState and, for the moving states, interpolates the
+ * Dispatches on @c Actor::msgState and, for the moving states, interpolates the
  * entity between two of its stored endpoints while seeding both breadcrumb path
  * tables at the current write cursor @c D_8005F144 (@c field_0A marks the entry
  * type, @c field_0B carries the heading) and replaying them into the animation
@@ -3311,7 +3311,7 @@ void func_8009F990(s16 idx, s32 flags) {
  * @note @c idx is a working copy of @p entIdx; every use is a 16-bit narrowing,
  *       so the parameter itself is only read once.
  */
-void func_8009FE18(s32 entIdx, Eline *ent, s32 flags) {
+void func_8009FE18(s32 entIdx, Actor *ent, s32 flags) {
     s32 idx;
     VECTOR d;
     u16 p;

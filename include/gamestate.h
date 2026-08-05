@@ -370,7 +370,7 @@ typedef struct {
     /* 0x06 */ u16 positionsX[3];    /**< Party member X positions (>>12 integer). */
     /* 0x0C */ u16 positionsY[3];    /**< Party member Y positions (>>12 integer). */
     /* 0x12 */ u16 triIdxs[3];       /**< Navmesh triangle each party member stands on
-                                         (saved from @c Eline::triIdx, restored into
+                                         (saved from @c Actor::triIdx, restored into
                                          @c SystemState::spawnTriIdx). */
     /* 0x18 */ u8  animStates[3];    /**< Party member animation states. */
     /* 0x1B */ u8  fade1;
@@ -424,7 +424,7 @@ extern FieldVars *g_fieldVars;
 extern void setMcBusy(void);
 extern u32  isMcBusy(void);
 
-extern u8 D_80085388;                  /**< @c Eline entity count at @c D_80085224. */
+extern u8 D_80085388;                  /**< @c Actor entity count at @c D_80085224. */
 
 /** @brief Halfword lookup table indexed by @c GameConfig.fieldMsgSpeed.
  *         Used as the per-entity SFX pitch in @c func_800BF718's common tail. */

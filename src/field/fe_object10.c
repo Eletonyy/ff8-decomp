@@ -5,6 +5,7 @@
 #include "battle.h"
 #include "sound.h"
 #include "cd.h"
+#include "btl_entity.h"
 #include "field/fe_object10.h"
 
 /**
@@ -57,7 +58,7 @@ s32 opHandler_OP167(FieldEntity *entity) {
     s16 buf[4];
     entity->stackIdx = idx - 1;
     func_800BD250(entity->stack[(s8)idx], buf);
-    func_800A9434(((Eline *)entity)->field_0x256, 0x30, 1, (u8 *)buf, 0x1E);
+    func_800A9434(((Actor *)entity)->field_0x256, 0x30, 1, (u8 *)buf, 0x1E);
     return 2;
 }
 
@@ -71,7 +72,7 @@ s32 opHandler_OP167(FieldEntity *entity) {
  * dispatch — used when the source direction needs to be inverted.
  */
 s32 opHandler_OP168(FieldEntity *entity) {
-    Eline *eline = (Eline *)entity;
+    Actor *eline = (Actor *)entity;
     u8 idx = entity->stackIdx;
     s16 buf[4];
     entity->stackIdx = idx - 1;
@@ -127,8 +128,8 @@ void updateSeedLevel(void) {
     if (g_gameState.mainData.party.gil > 0x5F5E0FEu)
         g_gameState.mainData.party.gil = 0x5F5E0FF;
 
-    if (!(g_fieldVars->stateFlags & 0x0010)) {
-        if (!(g_fieldVars->stateFlags & 0x1000)) {
+    if (!(g_fieldVars->stateFlags & FIELD_STATE_FIELD_READY)) {
+        if (!(g_fieldVars->stateFlags & FIELD_STATE_FLAG_1000)) {
             s32 oldLevel = (s16)g_fieldVars->prevSeedExp / 100;
             s32 newLevel = (s16)g_fieldVars->seedExp / 100;
 
@@ -302,13 +303,13 @@ void func_800BD804(s32 stepDelta) {
  * dispatcher slot and stores the result into @c D_800704A8.packedFlagSlot.
  *
  * Runs four script-VM dispatch loops in order:
- *   - @c D_80085224 / @c D_80085388  — full @c Eline pool (stride 0x264);
+ *   - @c D_80085224 / @c D_80085388  — full @c Actor pool (stride 0x264);
  *     each tick processes SFX-trigger 6/7 plus up to 16 opcode steps.
- *   - @c D_8008538C / @c D_800852F8 — @c FieldEntityB pool (stride 0x1A0);
+ *   - @c D_8008538C / @c D_800852F8 — @c Eline pool (stride 0x1A0);
  *     6 SFX triggers (groups 2..7) gated by @c D_800704BD.
- *   - @c D_80085384 / @c D_80085228 — @c FieldEntityC pool (stride 0x18C);
+ *   - @c D_80085384 / @c D_80085228 — @c Dline pool (stride 0x18C);
  *     2 SFX triggers (groups 6/7) gated by @c D_800704A8.unk015.
- *   - @c D_800852F4 / @c D_80085391 — @c FieldEntityD pool (stride 0x1B4);
+ *   - @c D_800852F4 / @c D_80085391 — @c Bganime pool (stride 0x1B4);
  *     plain script tick, finalized by @c func_800B2BA0.
  *
  * Each inner VM iteration reads an opcode via @c func_80037B7C, dispatches
@@ -366,9 +367,9 @@ void func_800BD9C4(FieldFrameBuf *frame) {
         sys->packedFlagSlot = packed;
     }
 
-    /* Block A: full-Eline pool (stride 0x264). */
+    /* Block A: full-Actor pool (stride 0x264). */
     {
-        Eline *e = D_80085224;
+        Actor *e = D_80085224;
         D_800DE4FC = 0;
         if (D_80085388 != 0) {
             do {
@@ -417,9 +418,9 @@ void func_800BD9C4(FieldFrameBuf *frame) {
         }
     }
 
-    /* Block B: FieldEntityB pool (stride 0x1A0). */
+    /* Block B: Eline pool (stride 0x1A0). */
     {
-        FieldEntityB *eb = D_8008538C;
+        Eline *eb = D_8008538C;
         D_800DE4FC = 0;
         if (D_800852F8 != 0) {
             do {
@@ -478,9 +479,9 @@ void func_800BD9C4(FieldFrameBuf *frame) {
         }
     }
 
-    /* Block C: FieldEntityC pool (stride 0x18C). */
+    /* Block C: Dline pool (stride 0x18C). */
     {
-        FieldEntityC *ec = D_80085384;
+        Dline *ec = D_80085384;
         D_800DE4FC = 0;
         if (D_80085228 != 0) {
             do {
@@ -520,9 +521,9 @@ void func_800BD9C4(FieldFrameBuf *frame) {
         }
     }
 
-    /* Block D: FieldEntityD pool (stride 0x1B4). */
+    /* Block D: Bganime pool (stride 0x1B4). */
     {
-        FieldEntityD *ed = D_800852F4;
+        Bganime *ed = D_800852F4;
         D_800DE4FC = 0;
         if (D_80085391 != 0) {
             do {
@@ -608,21 +609,21 @@ void func_800BE30C(u8 *header) {
  *
  * Re-binds the event preamble via @c func_800BE30C(header), then sweeps
  * the @c D_80085224 entity pool and keeps only entries whose @c flags
- * bit @c 0x2 is set. Each kept @c Eline is copied to the next compacted
+ * bit @c 0x2 is set. Each kept @c Actor is copied to the next compacted
  * slot at the head of the array, tagged with its new index in
  * @c field_0x256, and registered in @c D_80085230 (NULL for dropped
  * entries). @c D_80085388 is set to the new entry count.
  *
  * @param header Event preamble forwarded to @c func_800BE30C.
- * @return Pointer to the first free @c Eline slot past the compacted set.
+ * @return Pointer to the first free @c Actor slot past the compacted set.
  */
-Eline *func_800BE36C(u8 *header) {
+Actor *func_800BE36C(u8 *header) {
     func_800BE30C(header);
     {
         s32 srcIdx = 0;
         s32 dstIdx = 0;
-        Eline *src = D_80085224;
-        Eline *dst = src;
+        Actor *src = D_80085224;
+        Actor *dst = src;
 
         if (D_80085388 != 0) {
             do {
@@ -647,14 +648,14 @@ Eline *func_800BE36C(u8 *header) {
 /**
  * @brief Test if @c val falls within any active entity's @c [rangeLo, rangeHi].
  *
- * Scans all active Elines (@ref D_80085224, count @ref D_80085388);
+ * Scans all active Actors (@ref D_80085224, count @ref D_80085388);
  * returns 1 on the first entity whose @c rangeLo @c <= @c val @c <= @c rangeHi,
  * otherwise 0. Used by script-trigger dispatch to test whether the
  * popped value matches any registered range.
  */
 s32 func_800BE44C(s32 val) {
     s32 i;
-    Eline *e = &D_80085224[0];
+    Actor *e = &D_80085224[0];
     u8 count = D_80085388;
 
     for (i = 0; i < count; i++) {
@@ -712,8 +713,8 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BE5E4);
  * @brief Initialize the Block B field-entity pool (stride 0x1A0).
  *
  * Block B entities are smaller field actors (0x1A0 bytes each) but share
- * the script-VM header (offsets 0x000..0x187) with @c Eline, so we type
- * them as @c Eline* and walk with manual stride. Memsets the buffer,
+ * the script-VM header (offsets 0x000..0x187) with @c Actor, so we type
+ * them as @c Actor* and walk with manual stride. Memsets the buffer,
  * then for each entry pulls a packed (upper:9, lower:7) value from
  * @c D_800DE4E0, derives @c rangeLo / @c rangeHi / @c pc, and registers
  * the entity in @c D_80085230 at indices @c [D_80085388, D_80085388+count).
@@ -721,10 +722,16 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object10", func_800BE5E4);
  *
  * @param buf Entity buffer (Block B pool base).
  * @return Pointer past the last initialized Block B slot.
+ *
+ * @note The pool records are @ref Eline (416 bytes — the structure the
+ *       field-init debug trace calls @c eline), but @p buf is typed @c Actor*,
+ *       which is 612 bytes. That mismatch is why the walk needs an explicit
+ *       byte cast instead of @c e++. Retyping it is a codegen-affecting change
+ *       and wants its own byte-verified pass.
  */
-Eline *func_800BE7F4(Eline *buf) {
-    Eline *e = buf;
-    func_800396E0(buf, D_800852F8 * 0x1A0);
+Actor *func_800BE7F4(Actor *buf) {
+    Actor *e = buf;
+    func_800396E0(buf, D_800852F8 * sizeof(Eline));
     {
         s32 k = 0;
         u16 new_var;
@@ -763,7 +770,7 @@ Eline *func_800BE7F4(Eline *buf) {
             e->pc = pcVal & 0x7FFF;
             e->groupRanges[7] = 0xFFFF;
 
-            e = (Eline *)((u8 *)e + 0x1A0);
+            e = (Actor *)((u8 *)e + sizeof(Eline));
             k++;
         } while (k < D_800852F8);
 
@@ -772,7 +779,7 @@ Eline *func_800BE7F4(Eline *buf) {
 }
 
 /**
- * @brief Initialize the @c FieldEntityD pool (Block D entities, stride 0x1B4).
+ * @brief Initialize the @c Bganime pool (Block D entities, stride 0x1B4).
  *
  * Memsets the supplied buffer for @c D_80085391 entities, then for each
  * entry pulls a packed (upper:9, lower:7) value from @c D_800DE4E0,
@@ -780,13 +787,13 @@ Eline *func_800BE7F4(Eline *buf) {
  * @c D_80085230 at indices @c [D_80085388+D_800852F8, ...). pc is masked
  * with @c 0x7FFF. Returns the post-init free-slot pointer.
  *
- * @param buf Entity buffer (becomes the @c FieldEntityD pool base).
- * @return Pointer past the last initialized @c FieldEntityD slot.
+ * @param buf Entity buffer (becomes the @c Bganime pool base).
+ * @return Pointer past the last initialized @c Bganime slot.
  */
-FieldEntityD *func_800BE924(FieldEntityD *buf) {
-    FieldEntityD *e = buf;
+Bganime *func_800BE924(Bganime *buf) {
+    Bganime *e = buf;
 
-    func_800396E0(buf, D_80085391 * 0x1B4);
+    func_800396E0(buf, D_80085391 * sizeof(Bganime));
     {
         s32 k = 0;
         u16 groupIdx;
@@ -799,7 +806,7 @@ FieldEntityD *func_800BE924(FieldEntityD *buf) {
             u16 lower;
             u16 pcVal;
 
-            D_80085230[D_80085388 + D_800852F8 + k] = (Eline *)e;
+            D_80085230[D_80085388 + D_800852F8 + k] = (Actor *)e;
             e->flags = 0x80001000;
             e->stackPtr = -1;
 
@@ -839,7 +846,7 @@ FieldEntityD *func_800BE924(FieldEntityD *buf) {
 }
 
 /**
- * @brief Initialize the @c FieldEntityC pool (Block C entities, stride 0x18C).
+ * @brief Initialize the @c Dline pool (Block C entities, stride 0x18C).
  *
  * Memsets the supplied buffer for @c D_80085228 entities, then for each
  * entry pulls a packed (upper:9, lower:7) value from @c D_800DE4E0,
@@ -847,13 +854,13 @@ FieldEntityD *func_800BE924(FieldEntityD *buf) {
  * @c D_80085230 at indices @c [D_80085388+D_800852F8+D_80085391, ...).
  * pc is masked with @c 0x7FFF; @c activeMarker is set to 1.
  *
- * @param buf Entity buffer (becomes the @c FieldEntityC pool base).
- * @return Pointer past the last initialized @c FieldEntityC slot.
+ * @param buf Entity buffer (becomes the @c Dline pool base).
+ * @return Pointer past the last initialized @c Dline slot.
  */
-FieldEntityC *func_800BEA84(FieldEntityC *buf) {
-    FieldEntityC *e = buf;
+Dline *func_800BEA84(Dline *buf) {
+    Dline *e = buf;
 
-    func_800396E0(buf, D_80085228 * 0x18C);
+    func_800396E0(buf, D_80085228 * sizeof(Dline));
     {
         s32 k = 0;
         u16 groupIdx;
@@ -866,7 +873,7 @@ FieldEntityC *func_800BEA84(FieldEntityC *buf) {
             u16 lower;
             u16 pcVal;
 
-            D_80085230[D_80085388 + D_800852F8 + D_80085391 + k] = (Eline *)e;
+            D_80085230[D_80085388 + D_800852F8 + D_80085391 + k] = (Actor *)e;
             e->flags = 0x40000000;
             e->stackPtr = -1;
 
@@ -925,7 +932,7 @@ void func_800BEBD0(void) {
 
     /* Block D: D_800852F4 entities (stride 0x1B4). */
     {
-        FieldEntityD *e = D_800852F4;
+        Bganime *e = D_800852F4;
         D_800DE4FC = 0;
         if (D_80085391 != 0) {
             do {
@@ -951,7 +958,7 @@ void func_800BEBD0(void) {
 
     /* Block C: D_80085384 entities (stride 0x18C). */
     {
-        FieldEntityC *e = D_80085384;
+        Dline *e = D_80085384;
         D_800DE4FC = 0;
         if (D_80085228 != 0) {
             do {
@@ -977,7 +984,7 @@ void func_800BEBD0(void) {
 
     /* Block B: D_8008538C entities (stride 0x1A0). */
     {
-        FieldEntityB *e = D_8008538C;
+        Eline *e = D_8008538C;
         D_800DE4FC = 0;
         if (D_800852F8 != 0) {
             do {
@@ -1001,9 +1008,9 @@ void func_800BEBD0(void) {
         }
     }
 
-    /* Block A: D_80085224 entities (full Eline, stride 0x264). */
+    /* Block A: D_80085224 entities (full Actor, stride 0x264). */
     {
-        Eline *e = D_80085224;
+        Actor *e = D_80085224;
         D_800DE4FC = 0;
         if (D_80085388 != 0) {
             do {
@@ -1040,7 +1047,7 @@ void func_800BEBD0(void) {
 void func_800BF080(void) {
     /* Block A */
     {
-        Eline *e = D_80085224;
+        Actor *e = D_80085224;
         u16 val;
         s32 k = 0;
         for (k = 0; k < D_80085388; k++, e++) {
@@ -1054,7 +1061,7 @@ void func_800BF080(void) {
 
     /* Block C */
     {
-        FieldEntityC *e = D_80085384;
+        Dline *e = D_80085384;
         u16 val;
         s32 k = 0;
         for (k = 0; k < D_80085228; k++, e++) {
@@ -1069,7 +1076,7 @@ void func_800BF080(void) {
 
     /* Block B */
     {
-        FieldEntityB *e = D_8008538C;
+        Eline *e = D_8008538C;
         u16 val;
         s32 k = 0;
         for (k = 0; k < D_800852F8; k++, e++) {
@@ -1084,7 +1091,7 @@ void func_800BF080(void) {
 
     /* Block D */
     {
-        FieldEntityD *e = D_800852F4;
+        Bganime *e = D_800852F4;
         u16 val;
         s32 k = 0;
         for (k = 0; k < D_80085391; k++, e++) {
@@ -1105,13 +1112,13 @@ void func_800BF080(void) {
  * animation update.
  */
 void func_800BF230(FieldEntity *entity) {
-    Eline *eline = (Eline *)entity;
+    Actor *eline = (Actor *)entity;
     func_800AA46C(eline->field_0x256, 0xD, eline->field_0x24E, 0);
     D_800D9630[eline->field_0x256]->unk52 = eline->field_0x206;
 }
 
 /**
- * @brief Per-entity dispatch refresh for the Eline pool (Block A).
+ * @brief Per-entity dispatch refresh for the Actor pool (Block A).
  *
  * For each entity in @c D_80085224, picks the appropriate initial draw
  * path: if @p a0 != 0 AND the entity's @c flags bit @c 0x4 is clear,
@@ -1133,7 +1140,7 @@ void func_800BF230(FieldEntity *entity) {
  *           for entities without flags-bit-4 set.
  */
 void func_800BF28C(s32 a0) {
-    Eline *e = D_80085224;
+    Actor *e = D_80085224;
     D_800DE4FC = 0;
     if (D_80085388 != 0) {
         do {
@@ -1172,7 +1179,6 @@ void func_800BF28C(s32 a0) {
     }
 }
 
-extern s32 getMaxBattleEntities(void);
 
 /**
  * @brief Restore SFX/anim channels and dialog state after a load.

@@ -12,7 +12,7 @@
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_WHERECARD(Eline *eline) {
+s32 opHandler_WHERECARD(Actor *eline) {
     eline->resultSlots[0] = getKeyItemValue(POP(eline));
     return 2;
 }
@@ -28,7 +28,7 @@ s32 opHandler_WHERECARD(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 on first pass (battle started), 2 on return (result ready).
  */
-s32 opHandler_CARDGAME(Eline *eline) {
+s32 opHandler_CARDGAME(Actor *eline) {
     u8 *params;
     s32 result;
     s32 i;
@@ -48,7 +48,7 @@ s32 opHandler_CARDGAME(Eline *eline) {
         eline->resultSlots[1] = 0;
 
         if (result >= 5) {
-            if (!(g_fieldVars->stateFlags & 0x10)) {
+            if (!(g_fieldVars->stateFlags & FIELD_STATE_FIELD_READY)) {
                 initBattleTransition();
             }
 
@@ -213,7 +213,7 @@ u8 *func_800B57E8(s32 maxCount, s32 abilityId) {
 s32 func_800B5990(void) {
     s32 i;
 
-    if (g_fieldVars->stateFlags & 0x800) {
+    if (g_fieldVars->stateFlags & FIELD_STATE_PARTY_OVERRIDE) {
         D_80082C10 = g_fieldVars->fieldF3;
     } else {
         D_80082C10 = 0;
@@ -241,7 +241,7 @@ s32 func_800B5990(void) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while processing, 2 when complete.
  */
-s32 opHandler_DRAWPOINT(Eline *eline) {
+s32 opHandler_DRAWPOINT(Actor *eline) {
     s32 fieldIdx;
     s32 tableResult;
     u8 *text;
@@ -451,7 +451,7 @@ s32 opHandler_DRAWPOINT(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_SETDRAWPOINT(Eline *eline) {
+s32 opHandler_SETDRAWPOINT(Actor *eline) {
     g_fieldVars->fieldF0 = 1;
     g_fieldVars->fieldF1 = POP_BYTE(eline);
     func_800A4500(eline->posX, eline->posY, eline->posZ);
@@ -465,7 +465,7 @@ s32 opHandler_SETDRAWPOINT(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_UNKNOWN10(Eline *eline) {
+s32 opHandler_UNKNOWN10(Actor *eline) {
     g_fieldVars->fieldF2 = POP_BYTE(eline);
     g_fieldVars->fieldF2--;
     return 2;
@@ -480,7 +480,7 @@ s32 opHandler_UNKNOWN10(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_PARTICLEON(Eline *eline) {
+s32 opHandler_PARTICLEON(Actor *eline) {
     D_800704A8.slotActive[POP(eline) & 0xF] = 1;
     return 2;
 }
@@ -491,7 +491,7 @@ s32 opHandler_PARTICLEON(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_PARTICLEOFF(Eline *eline) {
+s32 opHandler_PARTICLEOFF(Actor *eline) {
     D_800704A8.slotActive[POP(eline) & 0xF] = 0;
     return 2;
 }
@@ -502,7 +502,7 @@ s32 opHandler_PARTICLEOFF(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_PARTICLESET(Eline *eline) {
+s32 opHandler_PARTICLESET(Actor *eline) {
     D_800704A8.slotActive[POP(eline) & 0xF] = eline->field_0x256 | 0x80;
     return 2;
 }
@@ -514,7 +514,7 @@ s32 opHandler_PARTICLESET(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_SETWITCH(Eline *eline) {
+s32 opHandler_SETWITCH(Actor *eline) {
     if (POP(eline)) {
         func_800C0384();
     } else {
@@ -529,7 +529,7 @@ s32 opHandler_SETWITCH(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_SETODIN(Eline *eline) {
+s32 opHandler_SETODIN(Actor *eline) {
     func_800C03F4(eline);
     return 2;
 }
@@ -540,7 +540,7 @@ s32 opHandler_SETODIN(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 func_800B6420(Eline *eline) {
+s32 func_800B6420(Actor *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->field_0x204 = 0;
     }
@@ -553,7 +553,7 @@ s32 func_800B6420(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_SETPLACE(Eline *eline) {
+s32 opHandler_SETPLACE(Actor *eline) {
     D_8007737C = POP(eline);
     return 2;
 }
@@ -564,7 +564,7 @@ s32 opHandler_SETPLACE(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_BATTLEMODE(Eline *eline) {
+s32 opHandler_BATTLEMODE(Actor *eline) {
     D_80082C0A = g_fieldVars->fieldB6 = POP(eline);
     do {} while (0);
     return 2;
@@ -576,7 +576,7 @@ s32 opHandler_BATTLEMODE(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 3 (special return — triggers mode transition).
  */
-s32 opHandler_BATTLE(Eline *eline) {
+s32 opHandler_BATTLE(Actor *eline) {
     if (D_800704A8.mode == 0) {
         D_800704A8.mode = 3;
     }
@@ -591,7 +591,7 @@ s32 opHandler_BATTLE(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_BATTLERESULT(Eline *eline) {
+s32 opHandler_BATTLERESULT(Actor *eline) {
     eline->resultSlots[0] = D_80082C0F;
     return 2;
 }
@@ -603,7 +603,7 @@ s32 opHandler_BATTLERESULT(Eline *eline) {
  */
 s32 opHandler_BATTLEON(void) {
     if (D_800DE8D0) {
-        g_fieldVars->stateFlags |= 0x400;
+        g_fieldVars->stateFlags |= FIELD_STATE_FLAG_400;
     } else {
         g_fieldVars->fieldCF = 0;
     }
@@ -619,12 +619,12 @@ s32 opHandler_BATTLEOFF(void) {
     FieldVars *ctx = g_fieldVars;
 
     ctx->fieldCF = 1;
-    ctx->stateFlags &= ~0x400;
+    ctx->stateFlags &= ~FIELD_STATE_FLAG_400;
     return 2;
 }
 
 /** @brief No-op handler. Returns 2 (continue). */
-s32 opHandler_BATTLECUT(Eline *eline) {
+s32 opHandler_BATTLECUT(Actor *eline) {
     return 2;
 }
 
@@ -634,13 +634,13 @@ s32 opHandler_BATTLECUT(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 (yield).
  */
-s32 opHandler_GAMEOVER(Eline *eline) {
+s32 opHandler_GAMEOVER(Actor *eline) {
     D_800704A8.mode = 4;
     return 1;
 }
 
 /** @brief Yield handler. Returns 1 (wait). */
-s32 opHandler_ENDING(Eline *eline) {
+s32 opHandler_ENDING(Actor *eline) {
     return 1;
 }
 
@@ -650,7 +650,7 @@ s32 opHandler_ENDING(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_DISC(Eline *eline) {
+s32 opHandler_DISC(Actor *eline) {
     g_fieldVars->expectedDiscId = POP_BYTE(eline);
     D_800773C0 = g_fieldVars->expectedDiscId - 1;
     setDiscNumber(g_fieldVars->expectedDiscId);
@@ -667,7 +667,7 @@ s32 opHandler_DISC(Eline *eline) {
  *
  * @param eline Pointer to the event line (script context).
  */
-void func_800B663C(Eline *eline) {
+void func_800B663C(Actor *eline) {
     if (!(eline->flags & 0x10000000)) {
         return;
     }
@@ -696,7 +696,7 @@ void func_800B663C(Eline *eline) {
  *
  * @param eline Pointer to the event line (script context).
  */
-void func_800B66A8(Eline *eline) {
+void func_800B66A8(Actor *eline) {
     if (!(eline->flags & 0x10000000)) {
         return;
     }
@@ -727,7 +727,7 @@ void func_800B66A8(Eline *eline) {
  *
  * @param eline Pointer to the event line (script context).
  */
-void func_800B6738(Eline *eline) {
+void func_800B6738(Actor *eline) {
     s32 threshold = (D_800704B2 * 69020) >> 9;
 
     if (eline->moveSpeed >= threshold) {
@@ -755,7 +755,7 @@ void func_800B6738(Eline *eline) {
  *
  * @param eline Pointer to the event line (script context).
  */
-void func_800B67F4(Eline *eline) {
+void func_800B67F4(Actor *eline) {
     if (eline->flags & 0x40000) {
         func_800B912C(eline, eline->field_0x24F);
         eline->flags = (eline->flags | 0x2000) & ~0x40000;
@@ -772,7 +772,7 @@ void func_800B67F4(Eline *eline) {
  *
  * @param eline Pointer to the event line (script context).
  */
-void func_800B6854(Eline *eline) {
+void func_800B6854(Actor *eline) {
     if ((eline->flags & 0x20000) && eline->msgState == 2) {
         func_800B67F4(eline);
         eline->flags &= ~0x20000;
@@ -788,7 +788,7 @@ void func_800B6854(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_MSPEED(Eline *eline) {
+s32 opHandler_MSPEED(Actor *eline) {
     u16 channel = POP(eline);
 
     eline->moveSpeed = channel;
@@ -815,7 +815,7 @@ s32 opHandler_MSPEED(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 if motion is complete, 1 otherwise (yield).
  */
-s32 opHandler_MOVE(Eline *eline) {
+s32 opHandler_MOVE(Actor *eline) {
     s32 new_var;
     u16 saved;
 
@@ -853,7 +853,7 @@ s32 opHandler_MOVE(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while message is active, 2 when complete.
  */
-s32 opHandler_MOVEA(Eline *eline) {
+s32 opHandler_MOVEA(Actor *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->msgActive = 1;
         eline->msgState = 0;
@@ -884,7 +884,7 @@ s32 opHandler_MOVEA(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while message is active, 2 when complete.
  */
-s32 opHandler_PMOVEA(Eline *eline) {
+s32 opHandler_PMOVEA(Actor *eline) {
     u8 idx;
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
@@ -918,7 +918,7 @@ s32 opHandler_PMOVEA(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while prompt is active, 2 when answered.
  */
-s32 opHandler_CMOVE(Eline *eline) {
+s32 opHandler_CMOVE(Actor *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->msgActive = 1;
         eline->msgState = 0;
@@ -951,7 +951,7 @@ s32 opHandler_CMOVE(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while message is active, 2 when complete.
  */
-s32 opHandler_FMOVE(Eline *eline) {
+s32 opHandler_FMOVE(Actor *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->msgActive = 1;
         eline->msgState = 0;
@@ -981,7 +981,7 @@ s32 opHandler_FMOVE(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while message is active, 2 when complete.
  */
-s32 opHandler_FMOVEA(Eline *eline) {
+s32 opHandler_FMOVEA(Actor *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->msgActive = 1;
         eline->msgState = 0;
@@ -1012,7 +1012,7 @@ s32 opHandler_FMOVEA(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while message is active, 2 when complete.
  */
-s32 opHandler_FMOVEP(Eline *eline) {
+s32 opHandler_FMOVEP(Actor *eline) {
     u8 idx;
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
@@ -1046,7 +1046,7 @@ s32 opHandler_FMOVEP(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 3 (message scheduled, deferred completion).
  */
-s32 opHandler_RMOVE(Eline *eline) {
+s32 opHandler_RMOVE(Actor *eline) {
     s32 new_var;
     u16 saved;
 
@@ -1076,7 +1076,7 @@ s32 opHandler_RMOVE(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 3 (message scheduled, deferred completion).
  */
-s32 opHandler_RMOVEA(Eline *eline) {
+s32 opHandler_RMOVEA(Actor *eline) {
     eline->msgActive = 1;
     eline->flags |= 0x20000;
     eline->msgState = 0;
@@ -1100,7 +1100,7 @@ s32 opHandler_RMOVEA(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 3 (message scheduled, deferred completion).
  */
-s32 opHandler_RPMOVEA(Eline *eline) {
+s32 opHandler_RPMOVEA(Actor *eline) {
     u8 idx;
 
     eline->msgActive = 1;
@@ -1128,7 +1128,7 @@ s32 opHandler_RPMOVEA(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 3 (prompt scheduled, deferred completion).
  */
-s32 opHandler_RCMOVE(Eline *eline) {
+s32 opHandler_RCMOVE(Actor *eline) {
     eline->msgActive = 1;
     eline->flags |= 0x20000;
     eline->msgState = 0;
@@ -1152,7 +1152,7 @@ s32 opHandler_RCMOVE(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 3 (message scheduled, deferred completion).
  */
-s32 opHandler_RFMOVE(Eline *eline) {
+s32 opHandler_RFMOVE(Actor *eline) {
     eline->msgActive = 1;
     eline->flags |= 0x20000;
     eline->msgState = 0;
@@ -1171,7 +1171,7 @@ s32 opHandler_RFMOVE(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 if msgState == 2 (message complete), 1 otherwise (still displaying).
  */
-s32 opHandler_MOVESYNC(Eline *eline) {
+s32 opHandler_MOVESYNC(Actor *eline) {
     if (eline->msgState == 2) {
         return 2;
     }
@@ -1189,7 +1189,7 @@ s32 opHandler_MOVESYNC(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_MOVECANCEL(Eline *eline) {
+s32 opHandler_MOVECANCEL(Actor *eline) {
     s32 idx = POP(eline);
 
     if (D_80085230[idx]->flags & 0x10000000) {
@@ -1214,7 +1214,7 @@ s32 opHandler_MOVECANCEL(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_PMOVECANCEL(Eline *eline) {
+s32 opHandler_PMOVECANCEL(Actor *eline) {
     u8 idx = g_fieldVars->memberSlot[POP(eline)];
 
     if (D_80085224[idx].msgActive == 1) {
@@ -1231,7 +1231,7 @@ s32 opHandler_PMOVECANCEL(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 1 (continue processing).
  */
-s32 opHandler_MOVEFLUSH(Eline *eline) {
+s32 opHandler_MOVEFLUSH(Actor *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->flags &= ~0x10000;
     }
@@ -1244,7 +1244,7 @@ s32 opHandler_MOVEFLUSH(Eline *eline) {
  * @param eline Pointer to the event line (script context).
  * @return 2 (continue processing).
  */
-s32 opHandler_MLIMIT(Eline *eline) {
+s32 opHandler_MLIMIT(Actor *eline) {
     eline->field_0x262 = POP_BYTE(eline);
     return 2;
 }
@@ -1260,7 +1260,7 @@ s32 opHandler_MLIMIT(Eline *eline) {
  * @param self Pointer to the event line (script context).
  * @return Integer distance between the two positions.
  */
-s32 func_800B76A4(Eline *self) {
+s32 func_800B76A4(Actor *self) {
     s32 dx = (self->msgTextPtr - self->posX) / 4096;
     s32 dy = (self->msgPosX - self->posY) / 4096;
     dx = dx * dx;
@@ -1281,7 +1281,7 @@ s32 func_800B76A4(Eline *self) {
  * @param self Pointer to the event line (script context).
  * @return 1 while message is animating, 2 when complete.
  */
-s32 opHandler_MACCEL(Eline *self) {
+s32 opHandler_MACCEL(Actor *self) {
     s32 delta = 0;
 
     if ((self->activeMask >> self->scriptGroup) & 1) {
@@ -1323,7 +1323,7 @@ s32 opHandler_MACCEL(Eline *self) {
  * @param self Pointer to the event line (script context).
  * @param target The entity whose position anchors the message.
  */
-void func_800B788C(Eline *self, Eline *target) {
+void func_800B788C(Actor *self, Actor *target) {
     s32 dx, dy, distSq;
 
     dx = (target->posX - self->posX) / 4096;
@@ -1368,7 +1368,7 @@ void func_800B788C(Eline *self, Eline *target) {
  * @param eline Script context (the speaker).
  * @return 1 while waiting, 2 once both other-party messages finish.
  */
-s32 opHandler_JOIN(Eline *eline) {
+s32 opHandler_JOIN(Actor *eline) {
     s32 i;
     s32 idx;
 
@@ -1471,7 +1471,7 @@ s32 opHandler_JOIN(Eline *eline) {
  * @param y     Anchor Y (Q19.12 fixed-point).
  * @param z     Anchor Z (Q19.12 fixed-point).
  */
-void func_800B7D44(Eline *eline, s32 x, s32 y, s32 z) {
+void func_800B7D44(Actor *eline, s32 x, s32 y, s32 z) {
     s32 dx, dy, distSq;
 
     dx = (x - eline->posX) / 4096;
@@ -1512,9 +1512,9 @@ void func_800B7D44(Eline *eline, s32 x, s32 y, s32 z) {
  * @param eline Pointer to the event line (script context).
  * @return 1 while still moving, 2 when all entities have completed.
  */
-s32 opHandler_SPLIT(Eline *eline) {
+s32 opHandler_SPLIT(Actor *eline) {
     s32 z2, y2, x2, z1, y1, x1, z0, y0, x0;
-    Eline *e0, *e4, *e8;
+    Actor *e0, *e4, *e8;
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         D_800DE4F8 = 0;
@@ -1613,7 +1613,7 @@ s32 opHandler_SPLIT(Eline *eline) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 3 once the message has been read.
  */
-s32 opHandler_JUMP(Eline *eline, s32 a1) {
+s32 opHandler_JUMP(Actor *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState != 2) {
             return 1;
@@ -1646,7 +1646,7 @@ s32 opHandler_JUMP(Eline *eline, s32 a1) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 3 once the message has been read.
  */
-s32 opHandler_JUMP3(Eline *eline, s32 a1) {
+s32 opHandler_JUMP3(Actor *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState != 2) {
             return 1;
@@ -1680,7 +1680,7 @@ s32 opHandler_JUMP3(Eline *eline, s32 a1) {
  * @param eline Script context.
  * @return 1 while running, 3 once the message has been read.
  */
-s32 opHandler_PJUMPA(Eline *eline) {
+s32 opHandler_PJUMPA(Actor *eline) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState != 2) {
             return 1;
@@ -1713,7 +1713,7 @@ s32 opHandler_PJUMPA(Eline *eline) {
  * @param eline Script context.
  * @return 2 (advance PC).
  */
-s32 opHandler_COUNTERCLOCKWISETURN2(Eline *eline) {
+s32 opHandler_COUNTERCLOCKWISETURN2(Actor *eline) {
     D_800704A8.unk1AE = *(volatile s32 *)&POP(eline);
     return 2;
 }
@@ -1737,7 +1737,7 @@ s32 opHandler_COUNTERCLOCKWISETURN2(Eline *eline) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 2 once read.
  */
-s32 opHandler_LADDERUP(Eline *eline, s32 a1) {
+s32 opHandler_LADDERUP(Actor *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState == 2) {
             eline->msgActive = 0;
@@ -1783,7 +1783,7 @@ s32 opHandler_LADDERUP(Eline *eline, s32 a1) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 2 once read.
  */
-s32 opHandler_LADDERDOWN(Eline *eline, s32 a1) {
+s32 opHandler_LADDERDOWN(Actor *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState == 2) {
             eline->msgActive = 0;
@@ -1810,7 +1810,7 @@ s32 opHandler_LADDERDOWN(Eline *eline, s32 a1) {
  * On the active frame: @c msgActive = 4 (distinct from sibling
  * handlers), @c windowId = 1, @c msgState = 0; then pops nine s32
  * values, each scaled into Q19.12, into a contiguous region of the
- * Eline:
+ * Actor:
  *   - @c msgPosY  / @c msgPosX  / @c msgTextPtr   (current msg coords)
  *   - @c field_0x1C8 / @c field_0x1C4 / @c field_0x1C0 (saved msg coords)
  *   - @c unk1B0 / @c unk1AC / @c unk1A8 (three extra slots)
@@ -1823,7 +1823,7 @@ s32 opHandler_LADDERDOWN(Eline *eline, s32 a1) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 2 once read.
  */
-s32 opHandler_LADDERUP2(Eline *eline, s32 a1) {
+s32 opHandler_LADDERUP2(Actor *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState == 2) {
             eline->msgActive = 0;
@@ -1866,7 +1866,7 @@ s32 opHandler_LADDERUP2(Eline *eline, s32 a1) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 1 while running, 2 once read.
  */
-s32 opHandler_LADDERDOWN2(Eline *eline, s32 a1) {
+s32 opHandler_LADDERDOWN2(Actor *eline, s32 a1) {
     if (!((eline->activeMask >> eline->scriptGroup) & 1)) {
         if (eline->msgState == 2) {
             eline->msgActive = 0;
@@ -1903,7 +1903,7 @@ s32 opHandler_LADDERDOWN2(Eline *eline, s32 a1) {
  * @param a1    Opcode argument (stored as halfword to field_0x1FC).
  * @return 2 (advance PC).
  */
-s32 opHandler_DOFFSET(Eline *eline, s32 a1) {
+s32 opHandler_DOFFSET(Actor *eline, s32 a1) {
     u16 a, b, c;
     a = POP(eline);
     eline->posOfsZ = a;
@@ -1933,7 +1933,7 @@ s32 opHandler_DOFFSET(Eline *eline, s32 a1) {
  * @param a1    Ignored.
  * @return 2 (advance PC).
  */
-s32 opHandler_LOFFSETS(Eline *eline, s32 a1) {
+s32 opHandler_LOFFSETS(Actor *eline, s32 a1) {
     eline->unk245 = 1;
     eline->field_0x1F2 = POP(eline);
     eline->field_0x1F0 = POP(eline);
@@ -1956,7 +1956,7 @@ s32 opHandler_LOFFSETS(Eline *eline, s32 a1) {
  * @param a1    Ignored.
  * @return 2 (advance PC).
  */
-s32 opHandler_COFFSETS(Eline *eline, s32 a1) {
+s32 opHandler_COFFSETS(Actor *eline, s32 a1) {
     eline->unk245 = 2;
     eline->field_0x1F2 = POP(eline);
     eline->field_0x1F0 = POP(eline);
@@ -1980,7 +1980,7 @@ s32 opHandler_COFFSETS(Eline *eline, s32 a1) {
  * @param a1    Ignored.
  * @return 2 (advance PC).
  */
-s32 opHandler_LOFFSET(Eline *eline, s32 a1) {
+s32 opHandler_LOFFSET(Actor *eline, s32 a1) {
     s32 s1E4 = eline->field_0x1E4;
     s32 s1F0 = eline->field_0x1F0;
     s32 s1EA;
@@ -2018,7 +2018,7 @@ s32 opHandler_LOFFSET(Eline *eline, s32 a1) {
  * @param a1    Ignored.
  * @return 2 (advance PC).
  */
-s32 opHandler_COFFSET(Eline *eline, s32 a1) {
+s32 opHandler_COFFSET(Actor *eline, s32 a1) {
     s32 s1E4 = eline->field_0x1E4;
     s32 s1F0 = eline->field_0x1F0;
     s32 s1EA;
@@ -2048,7 +2048,7 @@ s32 opHandler_COFFSET(Eline *eline, s32 a1) {
  * @param eline Script context.
  * @return 2 if @c unk245 == 3 (advance), 1 otherwise (yield).
  */
-s32 opHandler_OFFSETSYNC(Eline *eline) {
+s32 opHandler_OFFSETSYNC(Actor *eline) {
     if (eline->unk245 == 3) {
         return 2;
     }
@@ -2098,7 +2098,7 @@ s32 opHandler_INITTRACE(u8 *a0) {
  *
  * @return 2 (advance) when @c unk104 == @c unk106, 1 (yield) otherwise.
  */
-s32 opHandler_AXISSYNC(Eline *eline) {
+s32 opHandler_AXISSYNC(Actor *eline) {
     if (D_800704A8.unk106 == D_800704A8.unk104) {
         return 2;
     }
@@ -2115,7 +2115,7 @@ s32 opHandler_AXISSYNC(Eline *eline) {
  * @param eline Script context.
  * @return 2 (advance PC).
  */
-s32 opHandler_AXIS(Eline *eline) {
+s32 opHandler_AXIS(Actor *eline) {
     D_800704A8.unk104 = POP(eline);
     D_800704A8.unk102 = POP(eline);
     D_800704A8.unk106 = 0;
@@ -2129,7 +2129,7 @@ s32 opHandler_AXIS(Eline *eline) {
  * @param eline Script context.
  * @return 2 (advance PC).
  */
-s32 opHandler_UNKNOWN4(Eline *eline) {
+s32 opHandler_UNKNOWN4(Actor *eline) {
     eline->field_0x240 = POP_BYTE(eline);
     return 2;
 }
@@ -2145,7 +2145,7 @@ s32 opHandler_UNKNOWN4(Eline *eline) {
  * @param eline Script context.
  * @return 2 (advance PC).
  */
-s32 opHandler_OPENEYES(Eline *eline) {
+s32 opHandler_OPENEYES(Actor *eline) {
     eline->flags = (eline->flags & ~0x280000) | 0x100000;
     func_800A97E4(eline->field_0x256, 0x2E, 0, 0);
     return 2;

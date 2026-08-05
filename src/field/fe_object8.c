@@ -9,10 +9,10 @@
  * Clear bits @c 0x180000 and set bit @c 0x200000 in @c flags, then call
  * @c func_800A97E4(spatialIndex, 0x2F, 0, 0).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (advance PC).
  */
-s32 opHandler_CLOSEEYES(Eline *eline) {
+s32 opHandler_CLOSEEYES(Actor *eline) {
     eline->flags = (eline->flags & 0xFFE7FFFF) | 0x200000;
     func_800A97E4(eline->field_0x256, 0x2F, 0, 0);
     return 2;
@@ -25,10 +25,10 @@ s32 opHandler_CLOSEEYES(Eline *eline) {
  * @c func_800A97E4 with the entity's @c spatialIndex (offset 0x256),
  * opcode @c 0x27, @c 0, and the popped byte.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (advance PC).
  */
-s32 opHandler_BLINKEYES(Eline *eline) {
+s32 opHandler_BLINKEYES(Actor *eline) {
     u8 byte;
 
     eline->flags = (eline->flags & 0xFFCFFFFF) | 0x80000;
@@ -49,7 +49,7 @@ s32 opHandler_BLINKEYES(Eline *eline) {
  * @c unk52, and clears the @c 0xF800 flag band. Called by the RANIME
  * family handlers in this file.
  */
-void func_800B912C(Eline *eline, s16 a1) {
+void func_800B912C(Actor *eline, s16 a1) {
     func_800AA46C(eline->field_0x256, 0xD, a1, 0);
     eline->field_0x24E = a1;
     eline->field_0x206 = 0;
@@ -70,7 +70,7 @@ void func_800B912C(Eline *eline, s16 a1) {
  * then dispatches motion command @c 0xD with byte arg @p a1 via
  * @c func_800AA46C and clears flag band @c 0xF800.
  */
-void func_800B91D8(Eline *eline, s32 a1, s32 a2, s32 a3) {
+void func_800B91D8(Actor *eline, s32 a1, s32 a2, s32 a3) {
     if (D_800DE4FC != eline->field_0x256) {
         while (1) {}
     }
@@ -98,7 +98,7 @@ void func_800B91D8(Eline *eline, s32 a1, s32 a2, s32 a3) {
  * @c field_0x206 into the render slot's @c unk52 at the end (unless
  * the early @c 0x4 disable bit was set on entry).
  */
-void func_800B9288(Eline *eline) {
+void func_800B9288(Actor *eline) {
     s32 flags;
     s32 newPos;
     s32 oldSigned;
@@ -161,7 +161,7 @@ void func_800B9288(Eline *eline) {
  * @c field_0x24E into @c field_0x24D, and saves the four halfwords
  * @c field_0x206/208/20A/20C into @c field_0x210/212/214/216.
  */
-s32 opHandler_PUSHANIME(Eline *eline) {
+s32 opHandler_PUSHANIME(Actor *eline) {
     eline->field_0x20E = eline->flags;
     eline->field_0x24D = eline->field_0x24E;
     eline->field_0x210 = eline->field_0x206;
@@ -181,7 +181,7 @@ s32 opHandler_PUSHANIME(Eline *eline) {
  * slot's @c unk52, and restores the saved 0xF800 flag band from
  * @c field_0x20E.
  */
-s32 opHandler_POPANIME(Eline *eline) {
+s32 opHandler_POPANIME(Actor *eline) {
     eline->field_0x24E = eline->field_0x24D;
     eline->field_0x206 = eline->field_0x210;
     eline->field_0x208 = eline->field_0x212;
@@ -198,7 +198,7 @@ s32 opHandler_POPANIME(Eline *eline) {
 /**
  * @brief Pop the top stack slot as a halfword into @c field_0x208.
  */
-s32 opHandler_ANIMESPEED(Eline *eline) {
+s32 opHandler_ANIMESPEED(Actor *eline) {
     eline->field_0x208 = POP(eline);
     return 2;
 }
@@ -206,7 +206,7 @@ s32 opHandler_ANIMESPEED(Eline *eline) {
 /**
  * @brief Returns 2 if the animation-complete flag (0x800) is set, else 1.
  */
-s32 opHandler_ANIMESYNC(Eline *eline) {
+s32 opHandler_ANIMESYNC(Actor *eline) {
     if (eline->flags & 0x800) {
         return 2;
     }
@@ -217,10 +217,10 @@ s32 opHandler_ANIMESYNC(Eline *eline) {
  * Call @c func_800B912C with the entity's byte at offset @c 0x24F as
  * the second arg, then set bit @c 0x2000 in @c flags. Returns @c 3.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 3.
  */
-s32 opHandler_ANIMESTOP(Eline *eline) {
+s32 opHandler_ANIMESTOP(Actor *eline) {
     func_800B912C(eline, eline->field_0x24F);
     eline->flags |= 0x2000;
     return 3;
@@ -235,7 +235,7 @@ s32 opHandler_ANIMESTOP(Eline *eline) {
  * is no longer active for this script group; return 3 once flag 0x800
  * (animation complete) is set, else keep yielding with return 1.
  */
-s32 opHandler_ANIME(Eline *eline, s32 a1) {
+s32 opHandler_ANIME(Actor *eline, s32 a1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         func_800B912C(eline, (s16)a1);
         eline->flags |= 0x4000;
@@ -251,7 +251,7 @@ s32 opHandler_ANIME(Eline *eline, s32 a1) {
  * Same shape as @c opHandler_ANIME (ANIME) but sets flag bit @c 0x8000
  * instead of @c 0x4000 to preserve the final frame after completion.
  */
-s32 opHandler_ANIMEKEEP(Eline *eline, s32 a1) {
+s32 opHandler_ANIMEKEEP(Actor *eline, s32 a1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         func_800B912C(eline, (s16)a1);
         eline->flags |= 0x8000;
@@ -271,7 +271,7 @@ s32 opHandler_ANIMEKEEP(Eline *eline, s32 a1) {
  * flag 0x800 (animation complete) to decide between return 3 and
  * return 1.
  */
-s32 opHandler_CANIME(Eline *eline, s32 a1) {
+s32 opHandler_CANIME(Actor *eline, s32 a1) {
     s32 v2;
     s32 v1;
     s32 tmp;
@@ -291,7 +291,7 @@ s32 opHandler_CANIME(Eline *eline, s32 a1) {
 /**
  * @brief CANIMEKEEP opcode 0x030 handler — same as CANIME but flag 0x8000.
  */
-s32 opHandler_CANIMEKEEP(Eline *eline, s32 a1) {
+s32 opHandler_CANIMEKEEP(Actor *eline, s32 a1) {
     s32 v2;
     s32 v1;
     s32 tmp;
@@ -312,7 +312,7 @@ s32 opHandler_CANIMEKEEP(Eline *eline, s32 a1) {
  * Sign-extend @p a1 to @c s16 and call @c func_800B912C, then set bit
  * @c 0x4000 in @c flags. Returns @c 3.
  */
-s32 opHandler_RANIME(Eline *eline, s32 a1) {
+s32 opHandler_RANIME(Actor *eline, s32 a1) {
     func_800B912C(eline, (s16)a1);
     eline->flags |= 0x4000;
     return 3;
@@ -322,7 +322,7 @@ s32 opHandler_RANIME(Eline *eline, s32 a1) {
  * Sign-extend @p a1 to @c s16 and call @c func_800B912C, then set bit
  * @c 0x8000 in @c flags. Returns @c 3.
  */
-s32 opHandler_RANIMEKEEP(Eline *eline, s32 a1) {
+s32 opHandler_RANIMEKEEP(Actor *eline, s32 a1) {
     func_800B912C(eline, (s16)a1);
     eline->flags |= 0x8000;
     return 3;
@@ -336,7 +336,7 @@ s32 opHandler_RANIMEKEEP(Eline *eline, s32 a1) {
  * with them and the bytecode arg, sets animation-active flag (0x4000),
  * then returns 3 to advance the script PC immediately.
  */
-s32 opHandler_RCANIME(Eline *eline, s32 a1) {
+s32 opHandler_RCANIME(Actor *eline, s32 a1) {
     s32 v2;
     s32 v1;
     s32 tmp;
@@ -352,7 +352,7 @@ s32 opHandler_RCANIME(Eline *eline, s32 a1) {
 /**
  * @brief RCANIMEKEEP opcode 0x034 handler — like RCANIME but sets flag 0x8000.
  */
-s32 opHandler_RCANIMEKEEP(Eline *eline, s32 a1) {
+s32 opHandler_RCANIMEKEEP(Actor *eline, s32 a1) {
     s32 v2;
     s32 v1;
     s32 tmp;
@@ -369,7 +369,7 @@ s32 opHandler_RCANIMEKEEP(Eline *eline, s32 a1) {
  * Sign-extend @p a1 to @c s16 and call @c func_800B912C, then set bit
  * @c 0x2000 in @c flags. Returns @c 3.
  */
-s32 opHandler_RANIMELOOP(Eline *eline, s32 a1) {
+s32 opHandler_RANIMELOOP(Actor *eline, s32 a1) {
     func_800B912C(eline, (s16)a1);
     eline->flags |= 0x2000;
     return 3;
@@ -378,7 +378,7 @@ s32 opHandler_RANIMELOOP(Eline *eline, s32 a1) {
 /**
  * @brief RCANIMELOOP opcode 0x036 handler — like RCANIME but sets flag 0x2000.
  */
-s32 opHandler_RCANIMELOOP(Eline *eline, s32 a1) {
+s32 opHandler_RCANIMELOOP(Actor *eline, s32 a1) {
     s32 v2;
     s32 v1;
     s32 tmp;
@@ -399,7 +399,7 @@ s32 opHandler_RCANIMELOOP(Eline *eline, s32 a1) {
  * If @c D_800DE8CC bit @c 0x2 is clear, dispatches command @c 0x10 to
  * the entity at @c field_0x256 with the pointer to the 3-byte vector.
  */
-s32 opHandler_POLYCOLOR(Eline *eline) {
+s32 opHandler_POLYCOLOR(Actor *eline) {
     ((u8 *)&eline->unk18A)[2] = POP_BYTE(eline);
     ((u8 *)&eline->unk18A)[1] = POP_BYTE(eline);
     ((u8 *)&eline->unk18A)[0] = POP_BYTE(eline);
@@ -418,10 +418,10 @@ s32 opHandler_POLYCOLOR(Eline *eline) {
  * @c D_800DE8CC & 0x2 is clear also dispatches command @c 0x10 to
  * the entity (with the local buffer as the arg).
  */
-s32 opHandler_POLYCOLORALL(Eline *eline) {
+s32 opHandler_POLYCOLORALL(Actor *eline) {
     u8 bytes[3];
     s32 i;
-    Eline *p;
+    Actor *p;
 
     bytes[2] = POP_BYTE(eline);
     bytes[1] = POP_BYTE(eline);
@@ -448,7 +448,7 @@ s32 opHandler_POLYCOLORALL(Eline *eline) {
  * also stores the same byte into the active entity's render slot
  * (@c D_800D9630[D_800DE4FC]->unk61).
  */
-s32 opHandler_SETGETA(Eline *eline) {
+s32 opHandler_SETGETA(Actor *eline) {
     u8 byte = POP_BYTE(eline);
     eline->field_0x257 = byte;
     if (!(D_800DE8CC & 0x2)) {
@@ -463,10 +463,10 @@ s32 opHandler_SETGETA(Eline *eline) {
  * store the same halfword into the entity's render slot at
  * @c D_800D9630[eline->field_0x256]->unk62.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (advance PC).
  */
-s32 opHandler_SETROOTTRANS(Eline *eline) {
+s32 opHandler_SETROOTTRANS(Actor *eline) {
     u16 half = POP(eline);
     *(volatile u16 *)&eline->field_0x220 = half;
     if (!(D_800DE8CC & 0x2)) {
@@ -481,7 +481,7 @@ s32 opHandler_SETROOTTRANS(Eline *eline) {
  * @param a0 Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 opHandler_SHADESET(Eline *eline) {
+s32 opHandler_SHADESET(Actor *eline) {
     s32 val = POP(eline) / 4;
     eline->shadowRadius[3] = val;
     eline->shadowRadius[2] = val;
@@ -503,10 +503,10 @@ s32 opHandler_SHADESET(Eline *eline) {
  * @c 0x25F, @c 0x25E, @c 0x25D — the 8-entry vertical strip is
  * filled outward from the centre.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (advance PC).
  */
-s32 opHandler_SHADEFORM(Eline *eline) {
+s32 opHandler_SHADEFORM(Actor *eline) {
     eline->shadowRadius[3] = POP(eline) / 4;
     eline->shadowRadius[2] = POP(eline) / 4;
     eline->shadowRadius[1] = POP(eline) / 4;
@@ -521,7 +521,7 @@ s32 opHandler_SHADEFORM(Eline *eline) {
 /**
  * @brief Pop a byte from the script stack into @c shadowLevel.
  */
-s32 opHandler_SHADELEVEL(Eline *eline) {
+s32 opHandler_SHADELEVEL(Actor *eline) {
     eline->shadowLevel = POP_BYTE(eline);
     return 2;
 }
@@ -529,7 +529,7 @@ s32 opHandler_SHADELEVEL(Eline *eline) {
 /**
  * @brief Pop a byte from the script stack into @c field_0x241.
  */
-s32 opHandler_DIR(Eline *eline) {
+s32 opHandler_DIR(Actor *eline) {
     eline->field_0x241 = POP_BYTE(eline);
     return 2;
 }
@@ -548,9 +548,9 @@ s32 opHandler_DIR(Eline *eline) {
  * @c moveSpeed, and three stack entries are discarded.
  * Returns 2 (advance PC).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  */
-s32 opHandler_DIRP(Eline *eline) {
+s32 opHandler_DIRP(Actor *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->msgActive    = 1;
         eline->msgState     = 0;
@@ -572,11 +572,11 @@ s32 opHandler_DIRP(Eline *eline) {
  * @brief Pop an entity index, dispatch the bearing-resolver, store byte to @c field_0x241.
  *
  * Pops one s32 from the script stack and uses it as an index into
- * @c D_80085230 to fetch a target @c Eline. Calls @c func_8009E604 with
+ * @c D_80085230 to fetch a target @c Actor. Calls @c func_8009E604 with
  * the current entity and the target, and writes the byte result into
  * @c field_0x241 (seeds turn-state for the next CTURN-family helper).
  */
-s32 opHandler_DIRA(Eline *eline) {
+s32 opHandler_DIRA(Actor *eline) {
     eline->field_0x241 = func_8009E604(eline, D_80085230[POP(eline)]);
     return 2;
 }
@@ -587,14 +587,14 @@ s32 opHandler_DIRA(Eline *eline) {
  *
  * Pops one s32 from the stack as a slot index, uses it to read
  * @c g_fieldVars->memberSlot[slot], indexes that into the entity
- * array @c D_80085224 to fetch a target @c Eline, dispatches
+ * array @c D_80085224 to fetch a target @c Actor, dispatches
  * @c func_8009E604 with the current entity and the target, and writes
  * the byte result into @c field_0x241.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @return 2 (advance PC).
  */
-s32 opHandler_PDIRA(Eline *eline) {
+s32 opHandler_PDIRA(Actor *eline) {
     s32 slot = POP(eline);
     eline->field_0x241 = func_8009E604(eline, &D_80085224[g_fieldVars->memberSlot[slot]]);
     return 2;
@@ -607,7 +607,7 @@ s32 opHandler_PDIRA(Eline *eline) {
  * @c 0x100 from the heading if @c field_0x1DC is less than @c (s16)raw.
  * Sets @c field_0x244 to @c 1.
  */
-s32 opHandler_OP16B(Eline *eline) {
+s32 opHandler_OP16B(Actor *eline) {
     s32 raw;
     u8 byte1;
 
@@ -640,7 +640,7 @@ s32 opHandler_OP16B(Eline *eline) {
  *
  * Inactive path: return 2 unless @c field_0x244 == 3, otherwise 1.
  */
-s32 opHandler_OP16C(Eline *eline) {
+s32 opHandler_OP16C(Actor *eline) {
     s32 raw;
     u8 byte1;
 
@@ -666,7 +666,7 @@ s32 opHandler_OP16C(Eline *eline) {
  *
  * Same as @c opHandler_OP16B but sets @c field_0x244 to @c 2.
  */
-s32 opHandler_OP16D(Eline *eline) {
+s32 opHandler_OP16D(Actor *eline) {
     s32 raw;
     u8 byte1;
 
@@ -692,7 +692,7 @@ s32 opHandler_OP16D(Eline *eline) {
  *
  * Same as @c opHandler_OP16C but sets @c field_0x244 to @c 2.
  */
-s32 opHandler_OP16E(Eline *eline) {
+s32 opHandler_OP16E(Actor *eline) {
     s32 raw;
     u8 byte1;
 
@@ -728,7 +728,7 @@ s32 opHandler_OP16E(Eline *eline) {
  * adjusts @c field_0x1DE by @c ±0x100 so the rotation takes the short way
  * around. Also clears the per-step kind byte @c field_0x243.
  */
-void func_800BA3E0(Eline *eline) {
+void func_800BA3E0(Actor *eline) {
     s16 de = eline->field_0x1DE;
     s16 dc = eline->field_0x1DC;
     u16 deu = eline->field_0x1DE;
@@ -753,7 +753,7 @@ void func_800BA3E0(Eline *eline) {
  * @c func_800BA3E0 (which picks the shortest rotation direction).
  * Sets @c field_0x244 to @c 1.
  */
-s32 opHandler_LTURNR(Eline *eline) {
+s32 opHandler_LTURNR(Actor *eline) {
     s32 raw;
     u8 byte1;
 
@@ -775,7 +775,7 @@ s32 opHandler_LTURNR(Eline *eline) {
 /**
  * @brief Op 0x083 handler — identical to @c opHandler_LTURNR.
  */
-s32 opHandler_LTURNL(Eline *eline) {
+s32 opHandler_LTURNL(Actor *eline) {
     s32 raw;
     u8 byte1;
 
@@ -797,7 +797,7 @@ s32 opHandler_LTURNL(Eline *eline) {
 /**
  * @brief CTURNR opcode 0x084 handler — same shape as @c opHandler_LTURNR with kind 2.
  */
-s32 opHandler_CTURNR(Eline *eline) {
+s32 opHandler_CTURNR(Actor *eline) {
     s32 raw;
     u8 byte1;
 
@@ -819,7 +819,7 @@ s32 opHandler_CTURNR(Eline *eline) {
 /**
  * @brief CTURNL opcode 0x085 handler — identical to CTURNR (@c opHandler_CTURNR).
  */
-s32 opHandler_CTURNL(Eline *eline) {
+s32 opHandler_CTURNL(Actor *eline) {
     s32 raw;
     u8 byte1;
 
@@ -843,7 +843,7 @@ s32 opHandler_CTURNL(Eline *eline) {
  *
  * If the entity's @c activeMask bit (selected by @c scriptGroup) is set,
  * pops two values: the target bearing byte (@c first) and a SeeD-party
- * member index. Looks up the target Eline via @c D_80085230[idx],
+ * member index. Looks up the target Actor via @c D_80085230[idx],
  * snapshots @c field_0x241 into @c field_0x1DC, dispatches
  * @c func_8009E604 to compute the target bearing into @c field_0x1DE,
  * and writes @c first into @c field_0x242. If the snapshot matches the
@@ -853,9 +853,9 @@ s32 opHandler_CTURNL(Eline *eline) {
  * If the bit is clear and @c field_0x244 == 3, returns @c 2 (turn
  * complete). Otherwise returns @c 1 (wait).
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  */
-s32 opHandler_LTURN(Eline *eline) {
+s32 opHandler_LTURN(Actor *eline) {
     s32 first;
     s32 idx;
 
@@ -886,9 +886,9 @@ s32 opHandler_LTURN(Eline *eline) {
  * (instead of @c 1) when a turn needs to start. The "turn complete"
  * sentinel is still @c 3 in the bit-clear branch.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  */
-s32 opHandler_CTURN(Eline *eline) {
+s32 opHandler_CTURN(Actor *eline) {
     s32 first;
     s32 idx;
 
@@ -917,12 +917,12 @@ s32 opHandler_CTURN(Eline *eline) {
  *        SeeD party-member slot table.
  *
  * Same control flow as @c opHandler_LTURN, but the index popped after
- * the bearing byte is treated as a SeeD-party slot. The target Eline
+ * the bearing byte is treated as a SeeD-party slot. The target Actor
  * is obtained via @c &D_80085224[g_fieldVars->memberSlot[slot]].
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  */
-s32 opHandler_PLTURN(Eline *eline) {
+s32 opHandler_PLTURN(Actor *eline) {
     s32 first;
     s32 slot;
 
@@ -952,9 +952,9 @@ s32 opHandler_PLTURN(Eline *eline) {
  * Same as @c opHandler_PLTURN but writes @c field_0x244 = 2 when a turn
  * needs to start.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  */
-s32 opHandler_PCTURN(Eline *eline) {
+s32 opHandler_PCTURN(Actor *eline) {
     s32 first;
     s32 slot;
 
@@ -989,9 +989,9 @@ s32 opHandler_PCTURN(Eline *eline) {
  *
  * Always returns @c 2 — the caller never has to wait.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  */
-s32 opHandler_HASITEM(Eline *eline) {
+s32 opHandler_HASITEM(Actor *eline) {
     s32 first;
     s32 slot;
 
@@ -1015,7 +1015,7 @@ s32 opHandler_HASITEM(Eline *eline) {
 /**
  * @brief Returns 2 once the turn-state kind byte reaches 3, otherwise 1.
  */
-s32 opHandler_CLOCKWISETURN(Eline *eline) {
+s32 opHandler_CLOCKWISETURN(Actor *eline) {
     if (eline->field_0x244 == 3) {
         return 2;
     }
@@ -1031,7 +1031,7 @@ s32 opHandler_CLOCKWISETURN(Eline *eline) {
  * straight through (e.g. @c opHandler_FACEDIRA) so the function pointer
  * call lands with a real value in @c a1.
  */
-s32 opHandler_FACEDIRSYNC(Eline *eline, s32 arg1) {
+s32 opHandler_FACEDIRSYNC(Actor *eline, s32 arg1) {
     if (eline->turnLen == eline->turnTick) {
         return 2;
     }
@@ -1045,7 +1045,7 @@ s32 opHandler_FACEDIRSYNC(Eline *eline, s32 arg1) {
  * @c turnTick and @c turnMode), then tail-calls
  * @c opHandler_FACEDIRSYNC to apply the queued state.
  */
-s32 opHandler_FACEDIRI(Eline *eline, s32 arg1) {
+s32 opHandler_FACEDIRI(Actor *eline, s32 arg1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->turnLen = POP(eline);
         eline->turnYawDst = POP(eline);
@@ -1063,7 +1063,7 @@ s32 opHandler_FACEDIRI(Eline *eline, s32 arg1) {
  * Like @c opHandler_RFACEDIR (active path) but ends by calling
  * @c opHandler_FACEDIRSYNC to apply the queued facing state.
  */
-s32 opHandler_FACEDIR(Eline *eline, s32 arg1) {
+s32 opHandler_FACEDIR(Actor *eline, s32 arg1) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->turnLen = POP(eline);
         eline->turnTgtZ = POP(eline);
@@ -1090,10 +1090,10 @@ s32 opHandler_FACEDIR(Eline *eline, s32 arg1) {
  * Always dispatches @c opHandler_FACEDIRSYNC at the end (which compares the
  * queued bearing against the current one) and returns its result.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @param arg1  Forwarded as the second argument to @c opHandler_FACEDIRSYNC.
  */
-s32 opHandler_FACEDIRA(Eline *eline, s32 arg1) {
+s32 opHandler_FACEDIRA(Actor *eline, s32 arg1) {
     s32 idx;
     s16 buf[4];
 
@@ -1116,13 +1116,13 @@ s32 opHandler_FACEDIRA(Eline *eline, s32 arg1) {
  *
  * Same body as @c opHandler_FACEDIRA, but the index popped from the stack
  * is treated as a SeeD party-slot. The target entity is the one whose
- * Eline lives at @c &D_80085224[g_fieldVars->memberSlot[slot]], and
+ * Actor lives at @c &D_80085224[g_fieldVars->memberSlot[slot]], and
  * that same byte index is the spatial argument to @c func_800A8DAC.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @param arg1  Forwarded as the second argument to @c opHandler_FACEDIRSYNC.
  */
-s32 opHandler_FACEDIRP(Eline *eline, s32 arg1) {
+s32 opHandler_FACEDIRP(Actor *eline, s32 arg1) {
     u8 slot;
     s16 buf[4];
 
@@ -1152,10 +1152,10 @@ s32 opHandler_FACEDIRP(Eline *eline, s32 arg1) {
  *
  * Always dispatches @c opHandler_FACEDIRSYNC at the end.
  *
- * @param eline Pointer to the Eline event-script context.
+ * @param eline Pointer to the Actor event-script context.
  * @param arg1  Forwarded as the second argument to @c opHandler_FACEDIRSYNC.
  */
-s32 opHandler_FACEDIROFF(Eline *eline, s32 arg1) {
+s32 opHandler_FACEDIROFF(Actor *eline, s32 arg1) {
     s16 buf[4];
 
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
@@ -1178,7 +1178,7 @@ s32 opHandler_FACEDIROFF(Eline *eline, s32 arg1) {
  * @c turnRollDst, then @c turnPitchDst); clears @c turnTick and
  * @c turnMode. Returns 2.
  */
-s32 opHandler_RFACEDIRI(Eline *eline) {
+s32 opHandler_RFACEDIRI(Actor *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->turnLen = POP(eline);
         eline->turnYawDst = POP(eline);
@@ -1196,7 +1196,7 @@ s32 opHandler_RFACEDIRI(Eline *eline) {
  * Like @c opHandler_RFACEDIRI but stores into @c turnTgtX/0x224/0x226/0x234
  * and sets @c turnMode to 1 (instead of 0). Returns 2.
  */
-s32 opHandler_RFACEDIR(Eline *eline) {
+s32 opHandler_RFACEDIR(Actor *eline) {
     if ((eline->activeMask >> eline->scriptGroup) & 1) {
         eline->turnLen = POP(eline);
         eline->turnTgtZ = POP(eline);

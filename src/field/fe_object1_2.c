@@ -52,7 +52,7 @@ void func_800A10F4(void) {
  *        project it through @c func_800A0F34, then call @c func_800A0FB8
  *        with a flag selected by the active-slot index.
  *
- * Reads @c D_800704A8.slots[unk1A6].param to pick an @ref Eline entity,
+ * Reads @c D_800704A8.slots[unk1A6].param to pick an @ref Actor entity,
  * fills @c svec.{vx,vy,vz} from its @c posX/posY/posZ shifted right by
  * @c 12, biasing @c vz by @c D_8005F0F8->baseZ. The projection result is
  * latched to @c D_800C71FC. The trailing @c func_800A0FB8 clamp call gets
@@ -397,7 +397,7 @@ void func_800A1CC0(void) {
 }
 
 /**
- * @brief Per-frame turn/aim update for every @ref Eline entity, then flush.
+ * @brief Per-frame turn/aim update for every @ref Actor entity, then flush.
  *
  * For each of the @c D_80085388 entities: publishes the render-slot angle
  * vector (0, 0, @c field_0x241<<4 + 0x400) via @ref func_800A736C and the
@@ -416,10 +416,10 @@ void func_800A1CC0(void) {
  * Entities also emit op 0x25 whenever @ref func_800BE274 reports active.
  * Finally @ref func_800A63AC flushes with @p arg1.
  *
- * @param ents Eline entity array (@c D_80085224).
+ * @param ents Actor entity array (@c D_80085224).
  * @param arg1 Pass-through context for the @ref func_800A63AC flush.
  */
-void func_800A1CFC(Eline *ents, FieldFrameBuf *frame) {
+void func_800A1CFC(Actor *ents, FieldFrameBuf *frame) {
     Vec3i pB;       /* sp+0x10: bearing arg B */
     Vec3i pA;       /* sp+0x20: bearing arg A */
     Vec3s v30;      /* sp+0x30: world-position vector */
@@ -427,7 +427,7 @@ void func_800A1CFC(Eline *ents, FieldFrameBuf *frame) {
     s16 buf[4];     /* sp+0x40: func_800A8DAC output (buf[2] = target height) */
     s32 dist;       /* sp+0x48: horizontal distance from the first bearing */
     s32 i;
-    Eline *ent;
+    Actor *ent;
     /* Separate clamp variables per axis: sharing one diff/cmp pair across
        both clamps changes the allocno densities and rotates a0/v1. */
     s32 diff;
@@ -611,7 +611,7 @@ void func_800A2128(func_800A2128_arg0 *t) {
  *
  * Builds a unit octagon once per call, @c func_8009D234 / @c func_8009D254 sampled
  * at the eight 32-step headings give the cos/sin pair for each ring point, then
- * walks the @ref Eline pool. An entity casts a shadow only when it is not flagged
+ * walks the @ref Actor pool. An entity casts a shadow only when it is not flagged
  * out (@c flags bit 3), is active (@c unk218 @c != @c -1) and is in the state
  * @c unk258 @c == @c 1.
  *
@@ -628,7 +628,7 @@ void func_800A2128(func_800A2128_arg0 *t) {
  * @param m    Camera matrix loaded into the GTE before projecting.
  * @param prim Triangle arena; advanced eight prims per shadow drawn.
  * @param tp   Tpage commands; advanced one per shadow drawn.
- * @param ents The @ref Eline pool (@c D_80085388 entries).
+ * @param ents The @ref Actor pool (@c D_80085388 entries).
  *
  * @note The scratchpad holds the octagon tables and the nine working points:
  *       cos at @c getScratchAddr(2), sin at @c getScratchAddr(6), points at
@@ -639,7 +639,7 @@ void func_800A2128(func_800A2128_arg0 *t) {
  *       what makes gcc give it an induction variable of its own alongside the two
  *       octagon tables, which is how the original walks all three.
  */
-void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Eline *ents) {
+void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Actor *ents) {
     s16 *cosTbl = (s16 *)getScratchAddr(2);
     s16 *sinTbl = (s16 *)getScratchAddr(6);
     SVECTOR *pt = (SVECTOR *)getScratchAddr(10);
@@ -1074,7 +1074,7 @@ void func_800A303C(s16 emIdx, ParticleSystem *sys, s16 *pos, s16 count) {
 }
 
 /**
- * @brief View of the Eline stack region used by @c func_800A327C, three
+ * @brief View of the Actor stack region used by @c func_800A327C, three
  * @c s16 control points (@c a, @c b, @c c) and a @c num/denom progress ratio.
  *
  * @note Named after the function/arg, mirroring @ref func_800A3488_arg0
@@ -1129,11 +1129,11 @@ void func_800A327C(func_800A327C_arg0 *a, SVECTOR *out) {
 }
 
 /**
- * @brief View of the Eline stack region used by @c func_800A3488, two
+ * @brief View of the Actor stack region used by @c func_800A3488, two
  * @c s16 endpoints (@c a, @c b) and a @c num/denom progress ratio.
  *
  * @note Named after the function/arg. The same memory is normally the
- *       Eline bytecode @c stack[]; @c func_800A3488 's caller has
+ *       Actor bytecode @c stack[]; @c func_800A3488 's caller has
  *       already stashed animation state into specific stack slots
  *       before invoking the interpolation.
  */
@@ -1223,7 +1223,7 @@ void func_800A3534(func_800A3534_arg0 *t) {
  * @param slot  Index into D_800704A8.slotActive (0..15).
  * @param a2    Second arg passed through to func_800A303C.
  */
-void func_800A355C(FieldActor *actor, s32 slot, s32 a2) {
+void func_800A355C(ActorAnim *actor, s32 slot, s32 a2) {
     SVECTOR pos;
     s32 i;
 
@@ -1253,11 +1253,11 @@ void func_800A355C(FieldActor *actor, s32 slot, s32 a2) {
                 func_800A303C(actor->rows[i].id, a2, (SVECTOR *)actor, ratio);
                 break;
             case 2:
-                func_800A3488((Eline *)actor, &pos);
+                func_800A3488((Actor *)actor, &pos);
                 func_800A303C(actor->rows[i].id, a2, &pos, ratio);
                 break;
             case 3:
-                func_800A327C((Eline *)actor, &pos);
+                func_800A327C((Actor *)actor, &pos);
                 func_800A303C(actor->rows[i].id, a2, &pos, ratio);
                 break;
             }
@@ -1279,7 +1279,7 @@ void func_800A355C(FieldActor *actor, s32 slot, s32 a2) {
  *    advance the table cursor @c h2, and if the next table entry is @c 0 wrap
  *    @c h2 and @c h0 back to 0;
  *  - dispatch the visual update via @c func_800A355C (the slot's @c subscene is
- *    the @ref FieldActor argument), then advance @c h0 and @c h1.
+ *    the @ref ActorAnim argument), then advance @c h0 and @c h1.
  * Inactive slots have all three state halfwords (@c h0 / @c h1 / @c h2) cleared.
  *
  * @param arg0 Unused.
@@ -1303,7 +1303,7 @@ void func_800A37A8(MATRIX *m, FieldFrameBuf *frame, FieldSubsceneBuffer *buf) {
                     buf->slots[i].h0 = 0;
                 }
             }
-            func_800A355C((FieldActor *)&buf->slots[i], i, (s32)buf);
+            func_800A355C((ActorAnim *)&buf->slots[i], i, (s32)buf);
             buf->slots[i].h0++;
             buf->slots[i].h1++;
         } else {
@@ -1680,7 +1680,7 @@ void func_800A4550(s16 a0) {
  * @brief Spawn the 8 shimmer objects aimed at an entity.
  *
  * Computes the facing angle from draw-point 0 (@c D_800706A0[0]) to entity
- * @p entityIdx 's world position (@ref Eline @c posX / @c posY, right-shifted
+ * @p entityIdx 's world position (@ref Actor @c posX / @c posY, right-shifted
  * out of 12-bit fixed point) via @c func_8009A0E8, then arms all 8 object slots:
  *  - marks each slot flag @c D_8005F168[i] @c = @c 2 ("spawned"; later detected
  *    by the @c ==2 scan);
@@ -1693,7 +1693,7 @@ void func_800A4550(s16 a0) {
  *  - resets the per-object tick (@c field80 @c = @c 0x18 @c + slot*2) and
  *    @c field82.
  *
- * @param entityIdx Index into the @ref Eline entity array (@c D_80085224) that
+ * @param entityIdx Index into the @ref Actor entity array (@c D_80085224) that
  *                  the shimmer objects are aimed at.
  */
 void func_800A455C(s16 entityIdx) {
@@ -2325,7 +2325,7 @@ void func_800A5A14(s16 a0) {
  * @param self    Player entity, read for its 20.12 world position.
  * @param entries Event-queue entry array (12 slots).
  */
-void func_800A5A20(Eline *self, EventEntry *entries) {
+void func_800A5A20(Actor *self, EventEntry *entries) {
     Vec3i *scratch = (Vec3i *)getScratchAddr(0);
     s32 best;
     s32 i;
