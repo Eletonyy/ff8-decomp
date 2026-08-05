@@ -61,7 +61,80 @@ void func_800C0448(void) {
     memzero16((s32 *)D_80077BA8, 4);
 }
 
-INCLUDE_ASM("asm/field/nonmatchings/fe_object12", func_800C048C);
+/**
+ * @brief Give stocked magic to the party.
+ *
+ * Distributes @p quantity copies of spell @p magicId across all present
+ * characters (@c exists bit 0): first tops up every existing stack of the
+ * spell to the 100 cap, carrying any remainder onward; whatever remains
+ * (or the full amount when no character holds the spell) is placed in the
+ * first empty magic slot of the first present character that does not
+ * already know the spell. Silently drops the spell when everyone who could
+ * take it is full.
+ *
+ * @param magicId  Magic spell ID to add (see MAGIC_* defines).
+ * @param quantity Number of copies to add.
+ */
+void func_800C048C(s32 magicId, s32 quantity) {
+    s32 total;
+    s32 i;
+    s32 j;
+
+    total = 0;
+    for (i = 0; i < CHARACTER_COUNT; i++) {
+        if (g_gameState.chars[i].exists & CHAR_FLAG_PRESENT) {
+            for (j = 0; j < MAGIC_SLOT_COUNT; j++) {
+                if (g_gameState.chars[i].magic[j].magicId == magicId) {
+                    total = g_gameState.chars[i].magic[j].quantity;
+                    total += quantity;
+                    if (total > 100) {
+                        g_gameState.chars[i].magic[j].quantity = 100;
+                        quantity = total - 100;
+                        break;
+                    }
+                    g_gameState.chars[i].magic[j].quantity = total;
+                    return;
+                }
+            }
+        }
+    }
+
+    if (total == 0) {
+        for (i = 0; i < CHARACTER_COUNT; i++) {
+            if (g_gameState.chars[i].exists & CHAR_FLAG_PRESENT) {
+                for (j = 0; j < MAGIC_SLOT_COUNT; j++) {
+                    if (g_gameState.chars[i].magic[j].magicId == 0) {
+                        g_gameState.chars[i].magic[j].magicId = magicId;
+                        g_gameState.chars[i].magic[j].quantity = quantity;
+                        return;
+                    }
+                }
+            }
+        }
+    } else {
+        for (i = 0; i < CHARACTER_COUNT; i++) {
+            if (g_gameState.chars[i].exists & CHAR_FLAG_PRESENT) {
+                /* Skip characters already holding the spell. A goto is the
+                 * only spelling that matches: measured goto-free forms
+                 * (scan flag, `if (j < 32) continue`, folded loop condition)
+                 * all change codegen. */
+                for (j = 0; j < MAGIC_SLOT_COUNT; j++) {
+                    if (g_gameState.chars[i].magic[j].magicId == magicId) {
+                        goto next_char;
+                    }
+                }
+                for (j = 0; j < MAGIC_SLOT_COUNT; j++) {
+                    if (g_gameState.chars[i].magic[j].magicId == 0) {
+                        g_gameState.chars[i].magic[j].magicId = magicId;
+                        g_gameState.chars[i].magic[j].quantity = quantity;
+                        return;
+                    }
+                }
+            }
+next_char:;
+        }
+    }
+}
 
 /**
  * @brief Apply and clear character slot 7's stocked magic.
