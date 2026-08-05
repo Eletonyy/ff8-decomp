@@ -149,13 +149,13 @@ s32 opHandler_SEPOSTRANS(Actor *actor) {
  */
 s32 opHandler_SESTOP(Actor *actor) {
     s32 top = PEEK(actor);
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         sndCmd21(0, top);
     }
     if ((sndGatherKeyOnMask() & top) != 0) {
         return 1;
     }
-    actor->stackPtr--;
+    actor->context.stackPtr--;
     return 2;
 }
 
@@ -166,7 +166,7 @@ s32 opHandler_SESTOP(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_COUNTERCLOCKWISETURN(Actor *actor) {
-    actor->resultSlots[0] = sndFindKeyOnMask(POP(actor));
+    actor->context.resultSlots[0] = sndFindKeyOnMask(POP(actor));
     return 2;
 }
 
@@ -222,7 +222,7 @@ void func_800B2864(Actor *actor, s32 channel, s32 unused2, s32 unused3) {
     s32 pitch;
     s32 volume;
 
-    if (!(actor->flags & 0x80)) return;
+    if (!(actor->context.flags & 0x80)) return;
 
     func_800B27C4(actor->field_0x256, &pitch, &volume);
 
@@ -241,7 +241,7 @@ void func_800B2864(Actor *actor, s32 channel, s32 unused2, s32 unused3) {
             sndPlaySfx(0x40, 0x400000, pitch, volume);
         } else if ((s8)actor->unk188 != -1) {
             sndPlayBankSfx((s32)func_8003974C(D_800D5EA4, (s8)actor->unk188), 0x400000, pitch, volume);
-        } else if (actor->flags & 0x4000000) {
+        } else if (actor->context.flags & 0x4000000) {
             sndPlaySfx(0x36, 0x400000, pitch, volume);
         } else {
             sndPlaySfx(3, 0x400000, pitch, volume);
@@ -252,7 +252,7 @@ void func_800B2864(Actor *actor, s32 channel, s32 unused2, s32 unused3) {
             sndPlaySfx(0x3F, 0x400000, pitch, volume);
         } else if ((s8)actor->unk189 != -1) {
             sndPlayBankSfx((s32)func_8003974C(D_800D5EA4, (s8)actor->unk189), 0x800000, pitch, volume);
-        } else if (actor->flags & 0x4000000) {
+        } else if (actor->context.flags & 0x4000000) {
             sndPlaySfx(0x35, 0x400000, pitch, volume);
         } else {
             sndPlaySfx(2, 0x400000, pitch, volume);
@@ -302,7 +302,7 @@ s32 opHandler_FOOTSTEPCOPY(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_FOOTSTEPON(Actor *actor) {
-    actor->flags |= 0x80;
+    actor->context.flags |= 0x80;
     return 2;
 }
 
@@ -313,7 +313,7 @@ s32 opHandler_FOOTSTEPON(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_FOOTSTEPOFF(Actor *actor) {
-    actor->flags &= ~0x80;
+    actor->context.flags &= ~0x80;
     return 2;
 }
 
@@ -329,7 +329,7 @@ s32 opHandler_FOOTSTEPOFFALL(Actor *actor) {
     s32 i;
     Actor *p = D_80085224;
     for (i = 0; i < D_80085388; i++) {
-        p->flags &= ~0x80;
+        p->context.flags &= ~0x80;
         p++;
     }
     return 2;
@@ -349,7 +349,7 @@ s32 opHandler_FOOTSTEPCUT(Actor *actor) {
 
 /**
  * Restore the @c unk188 / @c unk189 script-parameter halfword from one of
- * two saved snapshots, conditioned on flag bits set in @c actor->flags:
+ * two saved snapshots, conditioned on flag bits set in @c actor->context.flags:
  *  - bit 0x2000: copy from @c unk18C and return (no flag mutation).
  *  - bit 0x8000: copy from @c unk18E, clear high-mode bits in flags
  *    (mask @c 0xFFFF07FF), set the @c 0x1000 marker, fall through.
@@ -358,88 +358,88 @@ s32 opHandler_FOOTSTEPCUT(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  */
 void func_800B2B48(Actor *actor) {
-    s32 flags = actor->flags;
+    s32 flags = actor->context.flags;
     if (flags & 0x2000) {
         *(u16 *)&actor->unk188 = actor->unk18C;
         return;
     }
     if (flags & 0x8000) {
-        actor->flags = (flags & 0xFFFF07FF) | 0x1000;
+        actor->context.flags = (flags & 0xFFFF07FF) | 0x1000;
         *(u16 *)&actor->unk188 = actor->unk18E;
     }
-    actor->flags |= 0x800;
+    actor->context.flags |= 0x800;
 }
 
 /**
  * Per-frame movement-step tick. If the @c 0x200 axis-active flag is set
- * and the inner counter @c unk19C is zero, refill the active movement
+ * and the inner counter @c shadeCounter is zero, refill the active movement
  * state from one of two saved snapshots (selected by the @c 0x400
  * direction bit) and decrement the tick counter @c unk1A4. Then decrement
- * the @c walkSpeed countdown; when it hits zero, reload it from
- * @c walkSpeed2, apply a @c +/- @c unk18A step to @c unk188 (direction
+ * the @c animSpeed countdown; when it hits zero, reload it from
+ * @c animSpeed2, apply a @c +/- @c unk18A step to @c unk188 (direction
  * gated by the @c 0x100 flag, suppressed by the @c 0x1000 stop marker),
  * and either advance toward the @c unk18E target (helper
  * @c func_800B2B48) or — once the target is reached — clear the
  * @c 0x800 done marker.
  *
- * @param e Pointer to the FieldEntity movement view of the entity.
+ * @param bganime Background-animation entity to tick.
  */
-void func_800B2BA0(FieldEntity *e) {
-    s32 flags = e->unk160;
+void func_800B2BA0(Bganime *bganime) {
+    s32 flags = bganime->context.flags;
 
-    if ((flags & 0x200) && (s16)e->unk19C == 0) {
-        if (e->unk1A4 == 0) {
+    if ((flags & 0x200) && (s16)bganime->shadeCounter == 0) {
+        if (bganime->unk1A4 == 0) {
             if (flags & 0x400) {
-                e->unk160 = flags & ~0x400;
-                e->unk19E = 0;
-                e->unk1A4 = e->unk1A6;
-                e->unk19C = e->unk1A2;
-                e->unk1AC = e->unk1AF;
-                e->unk1AB = e->unk1AE;
-                e->unk1AA = e->unk1AD;
-                e->unk1A9 = e->unk1B2;
-                e->unk1A8 = e->unk1B1;
-                e->unk1A7 = e->unk1B0;
+                bganime->context.flags = flags & ~0x400;
+                bganime->unk19E = 0;
+                bganime->unk1A4 = bganime->unk1A6;
+                bganime->shadeCounter = bganime->unk1A2;
+                bganime->unk1AC = bganime->unk1AF;
+                bganime->unk1AB = bganime->unk1AE;
+                bganime->unk1AA = bganime->unk1AD;
+                bganime->unk1A9 = bganime->unk1B2;
+                bganime->unk1A8 = bganime->unk1B1;
+                bganime->unk1A7 = bganime->unk1B0;
             } else {
-                e->unk160 = flags | 0x400;
-                e->unk19E = 0;
-                e->unk1A4 = e->unk1A5;
-                e->unk19C = e->unk1A0;
-                e->unk1AC = e->unk1B2;
-                e->unk1AB = e->unk1B1;
-                e->unk1AA = e->unk1B0;
-                e->unk1A9 = e->unk1AF;
-                e->unk1A8 = e->unk1AE;
-                e->unk1A7 = e->unk1AD;
+                bganime->context.flags = flags | 0x400;
+                bganime->unk19E = 0;
+                bganime->unk1A4 = bganime->unk1A5;
+                bganime->shadeCounter = bganime->unk1A0;
+                bganime->unk1AC = bganime->unk1B2;
+                bganime->unk1AB = bganime->unk1B1;
+                bganime->unk1AA = bganime->unk1B0;
+                bganime->unk1A9 = bganime->unk1AF;
+                bganime->unk1A8 = bganime->unk1AE;
+                bganime->unk1A7 = bganime->unk1AD;
             }
         }
-        e->unk1A4--;
+        bganime->unk1A4--;
     }
 
-    e->walkSpeed -= 1;
-    if ((s16)e->walkSpeed <= 0) {
+    bganime->animSpeed -= 1;
+    if ((s16)bganime->animSpeed <= 0) {
         s32 f1, f2;
-        e->walkSpeed = e->walkSpeed2;
-        f1 = e->unk160;
+        bganime->animSpeed = bganime->animSpeed2;
+        f1 = bganime->context.flags;
         if (!(f1 & 0x1000)) {
             if (f1 & 0x100) {
-                *(u16 *)&e->unk188 = *(u16 *)&e->unk188 - e->unk18A;
+                *(u16 *)&bganime->unk188 = *(u16 *)&bganime->unk188 - bganime->unk18A;
             } else {
-                *(u16 *)&e->unk188 = *(u16 *)&e->unk188 + e->unk18A;
+                *(u16 *)&bganime->unk188 = *(u16 *)&bganime->unk188 + bganime->unk18A;
             }
         }
-        f2 = e->unk160;
+        f2 = bganime->context.flags;
         if (f2 & 0x100) {
-            if (*(s16 *)&e->unk188 < (s16)e->unk18E) {
-                func_800B2B48(e);
+            if (*(s16 *)&bganime->unk188 < (s16)bganime->unk18E) {
+                func_800B2B48(bganime);
             } else {
-                e->unk160 = f2 & ~0x800;
+                bganime->context.flags = f2 & ~0x800;
             }
         } else {
-            if (*(s16 *)&e->unk188 >= (s16)e->unk18E) {
-                func_800B2B48(e);
+            if (*(s16 *)&bganime->unk188 >= (s16)bganime->unk18E) {
+                func_800B2B48(bganime);
             } else {
-                e->unk160 = f2 & ~0x800;
+                bganime->context.flags = f2 & ~0x800;
             }
         }
     }
@@ -452,49 +452,49 @@ void func_800B2BA0(FieldEntity *e) {
  * direction bit, then sets the appropriate direction marker and
  * pre-offsets the start position by 0x3F.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @param a1    Source value (scaled by 64 into @c unk18E).
  * @param a2    Destination value (scaled by 64 into @c unk18C).
  */
-void func_800B2D40(Actor *actor, s32 a1, s32 a2) {
-    actor->unk18C = a2 << 6;
-    actor->unk18E = a1 << 6;
+void func_800B2D40(Bganime *bganime, s32 a1, s32 a2) {
+    bganime->unk18C = a2 << 6;
+    bganime->unk18E = a1 << 6;
 
-    actor->flags &= 0xFFFF07FF;
-    actor->flags &= ~0x100;
-    *(u16 *)&actor->unk188 = actor->unk18C;
+    bganime->context.flags &= 0xFFFF07FF;
+    bganime->context.flags &= ~0x100;
+    *(u16 *)&bganime->unk188 = bganime->unk18C;
 
     if (a1 < a2) {
-        actor->flags |= 0x100;
-        *(u16 *)&actor->unk188 = actor->unk18C + 0x3F;
-        actor->unk18C = actor->unk18C + 0x3F;
+        bganime->context.flags |= 0x100;
+        *(u16 *)&bganime->unk188 = bganime->unk18C + 0x3F;
+        bganime->unk18C = bganime->unk18C + 0x3F;
     } else {
-        actor->unk18E += 0x3F;
+        bganime->unk18E += 0x3F;
     }
 }
 
 /**
  * Per-frame movement-sweep arm helper. When the entity's @c activeMask
- * bit for the current @c scriptGroup is set, pop two parameters from
+ * bit for the current @c scriptSlot is set, pop two parameters from
  * the script stack, forward them to @c func_800B2D40 (which sets up
  * the sweep state), and set the @c 0x8000 marker flag. When the bit
  * is clear, return @c 2 once the @c 0x800 done flag is set (otherwise
  * @c 1 to keep waiting for the bit to flip).
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 1 to keep the opcode active, 2 when @c 0x800 is set on the
  *         else-branch path.
  */
-s32 opHandler_BGANIME(Actor *actor) {
-    Actor *self = actor;
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
-        s8 idx = self->stackPtr;
+s32 opHandler_BGANIME(Bganime *bganime) {
+    Bganime *self = bganime;
+    if ((bganime->context.activeMask >> bganime->context.scriptSlot) & 1) {
+        s8 idx = self->context.stackPtr;
         s8 idx2 = idx - 1;
-        self->stackPtr = idx - 2;
+        self->context.stackPtr = idx - 2;
         func_800B2D40(self, ((s32 *)self)[(s8)idx],
                             ((s32 *)self)[(s8)idx2]);
-        self->flags |= 0x8000;
-    } else if (self->flags & 0x800) {
+        self->context.flags |= 0x8000;
+    } else if (self->context.flags & 0x800) {
         return 2;
     }
     return 1;
@@ -504,7 +504,7 @@ s32 opHandler_BGANIME(Actor *actor) {
  * Pops two parameters from the stack, calls func_800B2D40, then sets
  * bit 0x8000 in flags at offset 0x160.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 2 (continue processing).
  */
 /**
@@ -512,16 +512,16 @@ s32 opHandler_BGANIME(Actor *actor) {
  * movement-sweep setup helper @c func_800B2D40, and arm the @c 0x8000
  * marker flag for the subsequent movement tick.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 2 (continue processing).
  */
-s32 opHandler_RBGANIME(Actor *actor) {
-    s8 idx = actor->stackPtr;
+s32 opHandler_RBGANIME(Bganime *bganime) {
+    s8 idx = bganime->context.stackPtr;
     s8 idx2 = idx - 1;
-    actor->stackPtr = idx - 2;
-    func_800B2D40(actor, ((s32 *)actor)[(s8)idx],
-                         ((s32 *)actor)[(s8)idx2]);
-    actor->flags |= 0x8000;
+    bganime->context.stackPtr = idx - 2;
+    func_800B2D40(bganime, ((s32 *)bganime)[(s8)idx],
+                         ((s32 *)bganime)[(s8)idx2]);
+    bganime->context.flags |= 0x8000;
     return 2;
 }
 
@@ -529,27 +529,27 @@ s32 opHandler_RBGANIME(Actor *actor) {
  * Variant of @c opHandler_RBGANIME that arms the @c 0x2000 marker flag
  * instead of @c 0x8000 after running the movement-sweep init.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 2 (continue processing).
  */
-s32 opHandler_RBGANIMELOOP(Actor *actor) {
-    s8 idx = actor->stackPtr;
+s32 opHandler_RBGANIMELOOP(Bganime *bganime) {
+    s8 idx = bganime->context.stackPtr;
     s8 idx2 = idx - 1;
-    actor->stackPtr = idx - 2;
-    func_800B2D40(actor, ((s32 *)actor)[(s8)idx],
-                         ((s32 *)actor)[(s8)idx2]);
-    actor->flags |= 0x2000;
+    bganime->context.stackPtr = idx - 2;
+    func_800B2D40(bganime, ((s32 *)bganime)[(s8)idx],
+                         ((s32 *)bganime)[(s8)idx2]);
+    bganime->context.flags |= 0x2000;
     return 2;
 }
 
 /**
  * Returns 2 if bit 0x800 is set in the flags at offset 0x160, otherwise 1.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 2 if flag 0x800 is set, else 1.
  */
-s32 opHandler_BGANIMESYNC(Actor *actor) {
-    if (actor->flags & 0x800) {
+s32 opHandler_BGANIMESYNC(Bganime *bganime) {
+    if (bganime->context.flags & 0x800) {
         return 2;
     }
     return 1;
@@ -561,22 +561,22 @@ s32 opHandler_BGANIMESYNC(Actor *actor) {
  * walk-speed countdown halfwords to 1, and arm the @c 0x1000 stop
  * marker so the next tick records completion immediately.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 2 (continue processing).
  */
-s32 opHandler_BGDRAW(Actor *actor) {
-    s32 val = POP(actor);
-    func_800B2D40(actor, val, val);
-    ((FieldEntity *)actor)->walkSpeed2 = 1;
-    ((FieldEntity *)actor)->walkSpeed = 1;
-    actor->flags |= 0x1000;
+s32 opHandler_BGDRAW(Bganime *bganime) {
+    s32 val = POP(bganime);
+    func_800B2D40(bganime, val, val);
+    bganime->animSpeed2 = 1;
+    bganime->animSpeed = 1;
+    bganime->context.flags |= 0x1000;
     return 2;
 }
 
 /**
  * Reset movement parameters: set walk speed to 1, clear directions, update flags.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 2 (continue processing).
  */
 /**
@@ -585,61 +585,61 @@ s32 opHandler_BGDRAW(Actor *actor) {
  * clear both saved endpoints, then mask the flags to clear high-mode
  * bits + direction bit and arm the @c 0x1000 stop marker.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 2 (continue processing).
  */
-s32 opHandler_BGOFF(Actor *actor) {
-    *(s16 *)&actor->unk188 = -1;
-    ((FieldEntity *)actor)->walkSpeed2 = 1;
-    ((FieldEntity *)actor)->walkSpeed = 1;
-    actor->unk18E = 0;
-    actor->unk18C = 0;
-    actor->flags &= 0xFFFF07FF;
-    actor->flags &= ~0x100;
-    actor->flags |= 0x1000;
+s32 opHandler_BGOFF(Bganime *bganime) {
+    *(s16 *)&bganime->unk188 = -1;
+    bganime->animSpeed2 = 1;
+    bganime->animSpeed = 1;
+    bganime->unk18E = 0;
+    bganime->unk18C = 0;
+    bganime->context.flags &= 0xFFFF07FF;
+    bganime->context.flags &= ~0x100;
+    bganime->context.flags |= 0x1000;
     return 2;
 }
 
 /** @brief Pop halfword, store to both walkSpeed2 and walkSpeed. Returns 2. */
-s32 opHandler_BGANIMESPEED(Actor *actor) {
-    FieldEntity *e = (FieldEntity *)actor;
-    e->walkSpeed2 = (u16)POP(actor);
-    e->walkSpeed = e->walkSpeed2;
+s32 opHandler_BGANIMESPEED(Bganime *bganime) {
+    Bganime *e = bganime;
+    e->animSpeed2 = (u16)POP(bganime);
+    e->animSpeed = e->animSpeed2;
     return 2;
 }
 
 /** @brief Pop halfword, store to runSpeed. Returns 2. */
-s32 opHandler_BGANIMEFLAG(Actor *actor) {
-    FieldEntity *e = (FieldEntity *)actor;
-    e->runSpeed = (u16)POP(actor);
+s32 opHandler_BGANIMEFLAG(Bganime *bganime) {
+    Bganime *e = bganime;
+    e->animFlag = (u16)POP(bganime);
     return 2;
 }
 
 /**
  * Per-frame helper for the dual-axis movement state when the entity's
- * @c activeMask bit for the current @c scriptGroup is set: clears the
+ * @c activeMask bit for the current @c scriptSlot is set: clears the
  * @c 0x600 axis-active flags, zeros @c unk19E, and pops a fresh
  * parameter block of six bytes (@c unk1AC..@c unk1A7) plus a halfword
- * (@c unk19C) from the script stack. When the bit is clear, returns
- * @c 2 only if the @c unk19C counter has hit zero (otherwise @c 1 to
+ * (@c shadeCounter) from the script stack. When the bit is clear, returns
+ * @c 2 only if @c shadeCounter has hit zero (otherwise @c 1 to
  * keep waiting).
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 1 to keep the opcode active, 2 once the wait counter drains.
  */
-s32 opHandler_BGSHADE(Actor *actor) {
-    FieldEntity *e = (FieldEntity *)actor;
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
-        e->unk160 &= ~0x600;
+s32 opHandler_BGSHADE(Bganime *bganime) {
+    Bganime *e = bganime;
+    if ((bganime->context.activeMask >> bganime->context.scriptSlot) & 1) {
+        e->context.flags &= ~0x600;
         e->unk19E = 0;
-        e->unk1AC = POP_BYTE(actor);
-        e->unk1AB = POP_BYTE(actor);
-        e->unk1AA = POP_BYTE(actor);
-        e->unk1A9 = POP_BYTE(actor);
-        e->unk1A8 = POP_BYTE(actor);
-        e->unk1A7 = POP_BYTE(actor);
-        e->unk19C = (u16)POP(actor);
-    } else if ((s16)e->unk19C == 0) {
+        e->unk1AC = POP_BYTE(bganime);
+        e->unk1AB = POP_BYTE(bganime);
+        e->unk1AA = POP_BYTE(bganime);
+        e->unk1A9 = POP_BYTE(bganime);
+        e->unk1A8 = POP_BYTE(bganime);
+        e->unk1A7 = POP_BYTE(bganime);
+        e->shadeCounter = (u16)POP(bganime);
+    } else if ((s16)e->shadeCounter == 0) {
         return 2;
     }
     return 1;
@@ -651,52 +651,52 @@ s32 opHandler_BGSHADE(Actor *actor) {
  * "current/target" bytes into the active/saved slot ranges
  * (@c unk1A7..unk1AC mirroring @c unk1AD..unk1B2), pops the timer
  * halfword @c unk1A2, pops the loop counter halfword @c unk1A0 /
- * @c unk19C (broadcast), and primes the per-tick counter @c unk1A4
+ * @c shadeCounter (broadcast), and primes the per-tick counter @c unk1A4
  * from the saved tick total @c unk1A5.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 2 (continue processing).
  */
-s32 opHandler_RBGSHADELOOP(Actor *actor) {
-    FieldEntity *e = (FieldEntity *)actor;
+s32 opHandler_RBGSHADELOOP(Bganime *bganime) {
+    Bganime *e = bganime;
     u8 v;
     u16 hw;
 
-    actor->flags |= 0x600;
+    bganime->context.flags |= 0x600;
     e->unk19E = 0;
 
-    e->unk1A6 = POP_BYTE(actor);
-    e->unk1A5 = POP_BYTE(actor);
+    e->unk1A6 = POP_BYTE(bganime);
+    e->unk1A5 = POP_BYTE(bganime);
 
-    v = POP_BYTE(actor);
+    v = POP_BYTE(bganime);
     e->unk1AC = v;
     e->unk1B2 = v;
 
-    v = POP_BYTE(actor);
+    v = POP_BYTE(bganime);
     e->unk1AB = v;
     e->unk1B1 = v;
 
-    v = POP_BYTE(actor);
+    v = POP_BYTE(bganime);
     e->unk1AA = v;
     e->unk1B0 = v;
 
-    v = POP_BYTE(actor);
+    v = POP_BYTE(bganime);
     e->unk1A9 = v;
     e->unk1AF = v;
 
-    v = POP_BYTE(actor);
+    v = POP_BYTE(bganime);
     e->unk1A8 = v;
     e->unk1AE = v;
 
-    v = POP_BYTE(actor);
+    v = POP_BYTE(bganime);
     e->unk1A7 = v;
     e->unk1AD = v;
 
-    e->unk1A2 = (u16)POP(actor);
+    e->unk1A2 = (u16)POP(bganime);
 
-    hw = (u16)POP(actor);
+    hw = (u16)POP(bganime);
     e->unk1A0 = hw;
-    e->unk19C = hw;
+    e->shadeCounter = hw;
 
     e->unk1A4 = e->unk1A5;
     return 2;
@@ -704,15 +704,15 @@ s32 opHandler_RBGSHADELOOP(Actor *actor) {
 
 /**
  * Clears bits 0x600 in the entity flags and zeroes the halfword at
- * @c unk19C. Returns 2.
+ * @c shadeCounter. Returns 2.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 2 (continue processing).
  */
-s32 opHandler_BGSHADESTOP(Actor *actor) {
-    FieldEntity *e = (FieldEntity *)actor;
-    e->unk19C = 0;
-    e->unk160 = e->unk160 & ~0x600;
+s32 opHandler_BGSHADESTOP(Bganime *bganime) {
+    Bganime *e = bganime;
+    e->shadeCounter = 0;
+    e->context.flags = e->context.flags & ~0x600;
     return 2;
 }
 
@@ -720,12 +720,12 @@ s32 opHandler_BGSHADESTOP(Actor *actor) {
  * Clear movement state: zero many fields, clear bits 0x600 in flags,
  * copy byte @c unk1A5 to @c unk1A4. Returns 2.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param bganime Background-animation entity whose script is running.
  * @return 2 (continue processing).
  */
-s32 opHandler_BGSHADEOFF(Actor *actor) {
-    FieldEntity *e = (FieldEntity *)actor;
-    s32 flags = e->unk160;
+s32 opHandler_BGSHADEOFF(Bganime *bganime) {
+    Bganime *e = bganime;
+    s32 flags = e->context.flags;
     u8 val;
     *(volatile u8 *)&e->unk1A5 = 0;
     val = *(volatile u8 *)&e->unk1A5;
@@ -745,8 +745,8 @@ s32 opHandler_BGSHADEOFF(Actor *actor) {
     e->unk1AD = 0;
     e->unk1A2 = 0;
     e->unk1A0 = 0;
-    e->unk19C = 0;
-    e->unk160 = flags & ~0x600;
+    e->shadeCounter = 0;
+    e->context.flags = flags & ~0x600;
     e->unk1A4 = val;
     return 2;
 }
@@ -833,7 +833,7 @@ s32 opHandler_CSCROLL(Actor *actor) {
 }
 
 /**
- * Pop a script index, look up the corresponding @c FieldEntity pointer
+ * Pop a script index, look up the corresponding entity pointer
  * via the @c D_80085230 table, and stage its @c field_0x256 byte into
  * SystemState @c unk021 with mode @c unk020 = 0 and submode @c unk022
  * = 0.
@@ -965,7 +965,7 @@ s32 opHandler_SCROLLSYNC(Actor *actor) {
 s32 opHandler_SCROLLSYNC2(Actor *actor) {
     s32 idx = PEEK(actor);
     if (D_800704A8.slots[idx].submode == 2) {
-        actor->stackPtr--;
+        actor->context.stackPtr--;
         return 2;
     }
     return 1;
@@ -1248,11 +1248,11 @@ s32 opHandler_CSCROLL3(Actor *actor) {
 /**
  * @brief Pop a byte from the stack and store to D_80070652.
  *
- * @param actor Pointer to the actor (script context).
+ * @param bganime Background-animation entity whose script is running.
  * @return 2 (continue processing).
  */
-s32 opHandler_BGCLEAR(Actor *actor) {
-    D_80070652 = POP_BYTE(actor);
+s32 opHandler_BGCLEAR(Bganime *bganime) {
+    D_80070652 = POP_BYTE(bganime);
     return 2;
 }
 
@@ -1277,7 +1277,7 @@ s32 opHandler_SETTIMER(Actor *actor) {
  */
 s32 opHandler_GETTIMER(Actor *actor) {
     volatile GameState *gs = &g_gameState;
-    actor->resultSlots[0] = gs->mainData.countdownTimer;
+    actor->context.resultSlots[0] = gs->mainData.countdownTimer;
     return 2;
 }
 
@@ -1340,9 +1340,9 @@ s32 opHandler_SHADETIMER(Actor *actor) {
  * @return 1 (yield to dispatcher without advancing PC).
  */
 s32 opHandler_WORLDMAPJUMP(Actor *actor) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         if (D_800704A8.unk1A2 != 0) {
-            actor->stackPtr -= 3;
+            actor->context.stackPtr -= 3;
         } else {
             D_800704A8.mode = 7;
             D_800704A8.anim_state = (u16)POP(actor);
@@ -1424,7 +1424,7 @@ s32 func_800B45CC(Actor *actor) {
  * @return 1 (yield to dispatcher without advancing PC).
  */
 s32 opHandler_MAPJUMP(Actor *actor, s32 a1) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         D_800704A8.mode = 1;
         D_800704A8.spawnTriIdx = a1;
         D_800704A8.anim_state = (u16)POP(actor);
@@ -1444,7 +1444,7 @@ s32 opHandler_MAPJUMP(Actor *actor, s32 a1) {
  * @return 1 (yield to dispatcher without advancing PC).
  */
 s32 opHandler_MAPJUMP3(Actor *actor, s32 a1) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         D_800704A8.mode = 1;
         D_800704A8.spawnTriIdx = a1;
         D_800704A8.anim_state = (u16)POP(actor);
@@ -1465,7 +1465,7 @@ s32 opHandler_MAPJUMP3(Actor *actor, s32 a1) {
  * @return 1 (yield to dispatcher without advancing PC).
  */
 s32 opHandler_DISCJUMP(Actor *actor, s32 a1) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         D_800704A8.mode = 6;
         D_800704A8.unk1A0 = 1;
         D_800704A8.spawnTriIdx = a1;
@@ -1486,7 +1486,7 @@ s32 opHandler_DISCJUMP(Actor *actor, s32 a1) {
  * @return 1 (yield to dispatcher without advancing PC).
  */
 s32 opHandler_MAPJUMPO(Actor *actor) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         D_800704A8.mode = 1;
         D_800704A8.anim_state = 0;
         D_800704A8.spawnTriIdx = (u16)POP(actor);
@@ -1724,7 +1724,7 @@ s32 opHandler_SETHP(Actor *actor) {
  */
 s32 opHandler_GETHP(Actor *actor) {
     s32 charId = POP(actor);
-    actor->resultSlots[0] = g_gameState.chars[charId].currentHp;
+    actor->context.resultSlots[0] = g_gameState.chars[charId].currentHp;
     return 2;
 }
 
@@ -1843,7 +1843,7 @@ s32 opHandler_ADDMAGIC(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_OP16A(Actor *actor) {
-    actor->resultSlots[0] = func_800C0410(POP(actor));
+    actor->context.resultSlots[0] = func_800C0410(POP(actor));
     return 2;
 }
 
@@ -1922,7 +1922,7 @@ s32 opHandler_ADDSEEDLEVEL(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_GETCARD(Actor *actor) {
-    actor->resultSlots[0] = markItemPresent(POP(actor));
+    actor->context.resultSlots[0] = markItemPresent(POP(actor));
     return 2;
 }
 
@@ -1937,7 +1937,7 @@ s32 opHandler_SETCARD(Actor *actor) {
 
     val1 = POP(actor);
     val2 = POP(actor);
-    actor->resultSlots[0] = modifyItemQuantity(val1, val2);
+    actor->context.resultSlots[0] = modifyItemQuantity(val1, val2);
     return 2;
 }
 
@@ -1948,6 +1948,6 @@ s32 opHandler_SETCARD(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_HOWMANYCARD(Actor *actor) {
-    actor->resultSlots[0] = func_80023B14(POP(actor));
+    actor->context.resultSlots[0] = func_80023B14(POP(actor));
     return 2;
 }

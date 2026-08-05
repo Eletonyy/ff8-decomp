@@ -70,7 +70,7 @@ void func_800BF718(s32 mode) {
         if (D_80085388 != 0) {
             do {
                 if (e->unk218 == -1) {
-                    e->flags &= ~8;
+                    e->context.flags &= ~8;
                     e->field_0x24C = 0;
                     e->unk249 = 0;
                     e->field_0x24B = 0;
@@ -172,7 +172,7 @@ void func_800BF718(s32 mode) {
  * @param entity  Area / event header passed through to
  *                @ref func_800BE30C / @ref func_800BE36C /
  *                @ref func_800BE4B0.
- * @param a1      Block-B entity table base (stored to @c D_8008538C
+ * @param eline      Block-B entity table base (stored to @c D_8008538C
  *                and passed to @ref func_800BE7F4).
  * @param a2      Halfword table base forwarded to @ref func_800BE4B0.
  * @param mode    Reset selector: 0 / 2 = common only, 1 / 3 = full
@@ -180,7 +180,7 @@ void func_800BF718(s32 mode) {
  * @return        @ref func_800BE4B0 's return — the per-area
  *                script-VM dispatch table.
  */
-s32 *func_800BFBBC(u8 *entity, Eline *a1, u16 *a2, s32 mode) {
+s32 *func_800BFBBC(u8 *entity, Eline *eline, u16 *a2, s32 mode) {
     s32 t14;
     u16 t18, t1A;
     u16 t57;
@@ -253,7 +253,7 @@ s32 *func_800BFBBC(u8 *entity, Eline *a1, u16 *a2, s32 mode) {
         }
         g_fieldVars->fieldF0 = 0;
         g_fieldVars->fieldF1 = 0;
-        D_8008538C = a1;
+        D_8008538C = eline;
         D_80085388 = D_800DE8C0;
         D_80085228 = D_800DE8D9;
         D_800852F8 = D_800DE8DA;
@@ -261,7 +261,7 @@ s32 *func_800BFBBC(u8 *entity, Eline *a1, u16 *a2, s32 mode) {
         D_800852F0 = (u16 *)D_800DE4E4;
         D_80085380 = (s32 *)D_800DE4E8;
         D_80082C0A = g_fieldVars->fieldB6;
-        D_80085384 = (Dline *)func_800BE7F4((Eline *)a1);
+        D_80085384 = (Dline *)func_800BE7F4((Eline *)eline);
         D_800852F4 = (Bganime *)func_800BEA84(D_80085384);
         D_80085224 = (Actor *)func_800BE924(D_800852F4);
         func_800BE5E4(D_80085224);
@@ -288,7 +288,7 @@ s32 *func_800BFBBC(u8 *entity, Eline *a1, u16 *a2, s32 mode) {
                     e->posY = (s32)((s16)D_800704A8.position_y) << 12;
                     e->field_0x241 = (u8)D_800704A8.anim_state;
                     rot = D_800704A8.spawnTriIdx;
-                    e->flags |= 4;
+                    e->context.flags |= 4;
                     e->triIdx = rot;
                     g_fieldVars->memberSlot[i] = e->field_0x256;
                     D_800704A8.entityIndex[i] = e->field_0x256;

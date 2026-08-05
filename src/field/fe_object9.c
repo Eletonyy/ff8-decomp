@@ -26,7 +26,7 @@ s32 opHandler_RFACEDIRA(Actor *actor) {
     s16 buf[4];
     s32 idx;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(actor);
         idx = POP(actor);
         func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, (u32)D_800C71F8, buf);
@@ -52,7 +52,7 @@ s32 opHandler_RFACEDIRP(Actor *actor) {
     s16 buf[4];
     u8 slot;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(actor);
         slot = g_fieldVars->memberSlot[POP(actor)];
         func_800A8DAC(slot, 0x1E, (u32)D_800C71F8, buf);
@@ -77,7 +77,7 @@ s32 opHandler_RFACEDIRP(Actor *actor) {
 s32 opHandler_RFACEDIROFF(Actor *actor) {
     s16 buf[4];
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(actor);
         ((void (*)(u8, s32, void *, void *))func_800A8DAC)(actor->field_0x256, 0x20, buf, 0);
         actor->turnPitchDst = buf[0] / 16;
@@ -452,8 +452,8 @@ s32 opHandler_MESMODE(Actor *actor) {
  * @c stackPtr, then calls @c setSfxPitch(stack[ptr-1], stack[ptr]).
  */
 s32 opHandler_SETMESSPEED(Actor *actor) {
-    s8 idx = (s8)actor->stackPtr;
-    setSfxPitch(actor->stack[idx - 1], actor->stack[idx]);
+    s8 idx = (s8)actor->context.stackPtr;
+    setSfxPitch(actor->context.stack[idx - 1], actor->context.stack[idx]);
     return 2;
 }
 
@@ -463,7 +463,7 @@ s32 opHandler_SETMESSPEED(Actor *actor) {
  * Peeks two stack values: @c val1 (top, the SFX data index) and
  * @c sfxIdx (one below, the playback slot).
  *
- * If the Actor's @c activeMask bit for the current @c scriptGroup is
+ * If the Actor's @c activeMask bit for the current @c scriptSlot is
  * set: returns 5 immediately when the slot bit is already in
  * @c sfxStartMask; otherwise looks up the SFX data via
  * @c func_8003974C(D_800704C0, val1), kicks off playback
@@ -480,10 +480,10 @@ s32 opHandler_SETMESSPEED(Actor *actor) {
  * matching the target's register allocation.
  */
 s32 opHandler_MESW(Actor *actor) {
-    s32 val1   = actor->stack[(s8)actor->stackPtr];
-    s32 sfxIdx = actor->stack[(s8)actor->stackPtr - 1];
+    s32 val1   = actor->context.stack[(s8)actor->context.stackPtr];
+    s32 sfxIdx = actor->context.stack[(s8)actor->context.stackPtr - 1];
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         u8 mask;
         if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
             return 5;
@@ -500,7 +500,7 @@ s32 opHandler_MESW(Actor *actor) {
     if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 1;
     }
-    actor->stackPtr -= 2;
+    actor->context.stackPtr -= 2;
     return 3;
 }
 
@@ -542,8 +542,8 @@ void func_800BC12C(s32 idx, s32 val, u16 *src) {
  */
 s32 opHandler_MES(Actor *actor) {
     u8 buf[8];
-    s32 val1   = actor->stack[(s8)actor->stackPtr];
-    s32 sfxIdx = actor->stack[(s8)actor->stackPtr - 1];
+    s32 val1   = actor->context.stack[(s8)actor->context.stackPtr];
+    s32 sfxIdx = actor->context.stack[(s8)actor->context.stackPtr - 1];
     u8 *data;
 
     if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
@@ -558,7 +558,7 @@ s32 opHandler_MES(Actor *actor) {
     g_fieldVars->sfxStartMask  |= (1 << sfxIdx);
     g_fieldVars->sfxEntryMask  |= (1 << sfxIdx);
 
-    actor->stackPtr -= 2;
+    actor->context.stackPtr -= 2;
     func_800BC12C(sfxIdx, (s32)data, (u16 *)buf);
     return 3;
 }
@@ -605,12 +605,12 @@ s32 opHandler_AMESW(Actor *actor) {
     u8 *data;
     s32 dims;
 
-    sfxIdx  = actor->stack[(s8)actor->stackPtr - 3];
-    textIdx = actor->stack[(s8)actor->stackPtr - 2];
-    buf.x   = (u16)actor->stack[(s8)actor->stackPtr - 1];
-    buf.y   = (u16)actor->stack[(s8)actor->stackPtr];
+    sfxIdx  = actor->context.stack[(s8)actor->context.stackPtr - 3];
+    textIdx = actor->context.stack[(s8)actor->context.stackPtr - 2];
+    buf.x   = (u16)actor->context.stack[(s8)actor->context.stackPtr - 1];
+    buf.y   = (u16)actor->context.stack[(s8)actor->context.stackPtr];
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
             return 5;
         }
@@ -630,7 +630,7 @@ s32 opHandler_AMESW(Actor *actor) {
     if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 1;
     }
-    actor->stackPtr -= 4;
+    actor->context.stackPtr -= 4;
     return 3;
 }
 
@@ -650,10 +650,10 @@ s32 opHandler_AMES(Actor *actor) {
     u8 *data;
     s32 dims;
 
-    sfxIdx  = actor->stack[(s8)actor->stackPtr - 3];
-    textIdx = actor->stack[(s8)actor->stackPtr - 2];
-    buf.x   = (u16)actor->stack[(s8)actor->stackPtr - 1];
-    buf.y   = (u16)actor->stack[(s8)actor->stackPtr];
+    sfxIdx  = actor->context.stack[(s8)actor->context.stackPtr - 3];
+    textIdx = actor->context.stack[(s8)actor->context.stackPtr - 2];
+    buf.x   = (u16)actor->context.stack[(s8)actor->context.stackPtr - 1];
+    buf.y   = (u16)actor->context.stack[(s8)actor->context.stackPtr];
 
     if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 5;
@@ -672,7 +672,7 @@ s32 opHandler_AMES(Actor *actor) {
     g_fieldVars->sfxStartMask |= (1 << sfxIdx);
     g_fieldVars->sfxEntryMask |= (1 << sfxIdx);
 
-    actor->stackPtr -= 4;
+    actor->context.stackPtr -= 4;
     func_800BC12C(sfxIdx, (s32)data, (u16 *)&buf);
     return 3;
 }
@@ -733,7 +733,7 @@ s32 opHandler_RAMESW(Actor *actor) {
  *
  * @return 1 working, 3 done, 5 slot busy.
  */
-s32 opHandler_ASK(Actor *e) {
+s32 opHandler_ASK(Actor *actor) {
     s32 sfxIdx;
     s32 textIdx;
     s32 paramY;
@@ -744,14 +744,14 @@ s32 opHandler_ASK(Actor *e) {
     s32 r;
     s32 state;
 
-    paramV  = e->stack[(s8)e->stackPtr];
-    paramW  = e->stack[(s8)e->stackPtr - 1];
-    paramZ  = e->stack[(s8)e->stackPtr - 2];
-    paramY  = e->stack[(s8)e->stackPtr - 3];
-    textIdx = e->stack[(s8)e->stackPtr - 4];
-    sfxIdx  = e->stack[(s8)e->stackPtr - 5];
+    paramV  = actor->context.stack[(s8)actor->context.stackPtr];
+    paramW  = actor->context.stack[(s8)actor->context.stackPtr - 1];
+    paramZ  = actor->context.stack[(s8)actor->context.stackPtr - 2];
+    paramY  = actor->context.stack[(s8)actor->context.stackPtr - 3];
+    textIdx = actor->context.stack[(s8)actor->context.stackPtr - 4];
+    sfxIdx  = actor->context.stack[(s8)actor->context.stackPtr - 5];
 
-    if ((e->activeMask >> e->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         if ((g_fieldVars->sfxActiveMask >> sfxIdx) & 1) {
             return 5;
         }
@@ -759,25 +759,25 @@ s32 opHandler_ASK(Actor *e) {
         data = func_8003974C(D_800704C0, textIdx);
         func_8002D784(sfxIdx, data, paramY, paramZ, paramW, paramV);
         startSfxSlow(sfxIdx);
-        e->field_0x204 = 0;
+        actor->field_0x204 = 0;
         g_fieldVars->sfxStartMask  |= (1 << sfxIdx);
         g_fieldVars->sfxActiveMask |= (1 << sfxIdx);
     } else {
-        state = e->field_0x204;
+        state = actor->field_0x204;
         switch (state) {
         case 0:
             setSfxGlobalFlag(sfxIdx);
             r = func_8002CE84(sfxIdx);
-            e->resultSlots[0] = r;
+            actor->context.resultSlots[0] = r;
             if (r >= 0) {
                 fadeOutSfxSlow(sfxIdx);
-                e->field_0x204++;
+                actor->field_0x204++;
             }
             break;
         case 1:
             if (getSfxField1C(sfxIdx) == 0) {
                 g_fieldVars->sfxActiveMask &= ~(state << sfxIdx);
-                e->stackPtr -= 6;
+                actor->context.stackPtr -= 6;
                 setSfxGlobalFlag(D_800DE4D8);
                 return 3;
             }
@@ -793,7 +793,7 @@ s32 opHandler_ASK(Actor *e) {
  * Reads 8 stack params (top two as packed u16 halfwords for an x/y rect
  * source, six s32 args including the SFX slot id, a text/data id, and
  * four playback parameters). When the entity's @c activeMask bit for the
- * current @c scriptGroup is set:
+ * current @c scriptSlot is set:
  *   - Returns 5 if the SFX slot is already active (bit set in @c field_0xD2).
  *   - Otherwise, saves the current global SFX flag, resolves a text pointer,
  *     measures it via @c func_8002E680, fills the rect's bottom-right corner
@@ -810,7 +810,7 @@ s32 opHandler_ASK(Actor *e) {
  * @return 1 while still working, 3 when the state-1 release completes,
  *         5 when the slot was already active.
  */
-s32 opHandler_AASK(Actor *e) {
+s32 opHandler_AASK(Actor *actor) {
     s16 buf[4];
     s32 sfxIdx;
     s32 textIdx;
@@ -823,16 +823,16 @@ s32 opHandler_AASK(Actor *e) {
     s32 r;
     s32 state;
 
-    buf[1] = *(u16 *)&e->stack[e->stackPtr];
-    buf[0] = *(u16 *)&e->stack[e->stackPtr - 1];
-    paramV  = e->stack[e->stackPtr - 2];
-    paramW  = e->stack[e->stackPtr - 3];
-    paramZ  = e->stack[e->stackPtr - 4];
-    paramY  = e->stack[e->stackPtr - 5];
-    textIdx = e->stack[e->stackPtr - 6];
-    sfxIdx  = e->stack[e->stackPtr - 7];
+    buf[1] = *(u16 *)&actor->context.stack[actor->context.stackPtr];
+    buf[0] = *(u16 *)&actor->context.stack[actor->context.stackPtr - 1];
+    paramV  = actor->context.stack[actor->context.stackPtr - 2];
+    paramW  = actor->context.stack[actor->context.stackPtr - 3];
+    paramZ  = actor->context.stack[actor->context.stackPtr - 4];
+    paramY  = actor->context.stack[actor->context.stackPtr - 5];
+    textIdx = actor->context.stack[actor->context.stackPtr - 6];
+    sfxIdx  = actor->context.stack[actor->context.stackPtr - 7];
 
-    if ((e->activeMask >> e->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         if ((g_fieldVars->sfxActiveMask >> sfxIdx) & 1) {
             return 5;
         }
@@ -845,25 +845,25 @@ s32 opHandler_AASK(Actor *e) {
         func_8002E064(sfxIdx, buf);
         func_8002D784(sfxIdx, text, paramY, paramZ, paramW, paramV);
         startSfxSlow(sfxIdx);
-        e->field_0x204 = 0;
+        actor->field_0x204 = 0;
         g_fieldVars->sfxStartMask |= (1 << sfxIdx);
         g_fieldVars->sfxActiveMask |= (1 << sfxIdx);
     } else {
-        state = e->field_0x204;
+        state = actor->field_0x204;
         switch (state) {
         case 0:
             setSfxGlobalFlag(sfxIdx);
             r = func_8002CE84(sfxIdx);
-            e->resultSlots[0] = r;
+            actor->context.resultSlots[0] = r;
             if (r >= 0) {
                 fadeOutSfxSlow(sfxIdx);
-                e->field_0x204++;
+                actor->field_0x204++;
             }
             break;
         case 1:
             if (getSfxField1C(sfxIdx) == 0) {
                 g_fieldVars->sfxActiveMask &= ~(state << sfxIdx);
-                e->stackPtr -= 8;
+                actor->context.stackPtr -= 8;
                 setSfxGlobalFlag(D_800DE4DC);
                 return 3;
             }
@@ -893,8 +893,8 @@ s32 opHandler_AASK(Actor *e) {
  *
  * @return 1 while waiting, 2 when torn down.
  */
-s32 opHandler_MESSYNC(Actor *e) {
-    s32 sfxIdx = e->stack[(s8)e->stackPtr];
+s32 opHandler_MESSYNC(Actor *actor) {
+    s32 sfxIdx = actor->context.stack[(s8)actor->context.stackPtr];
 
     if ((g_fieldVars->sfxEntryMask >> sfxIdx) & 1) {
         if (!((g_fieldVars->sfxStartMask >> sfxIdx) & 1)) {
@@ -912,13 +912,13 @@ s32 opHandler_MESSYNC(Actor *e) {
         }
         g_fieldVars->sfxStartMask &= ~(1 << sfxIdx);
         g_fieldVars->sfxEntryMask &= ~(1 << sfxIdx);
-        e->stackPtr -= 1;
+        actor->context.stackPtr -= 1;
         return 2;
     }
     if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 1;
     }
-    e->stackPtr -= 1;
+    actor->context.stackPtr -= 1;
     return 2;
 }
 
@@ -938,22 +938,22 @@ s32 opHandler_MESFORCUS(Actor *actor) {
  * it via @c func_8002E064, register an entry with @c data=0 via
  * @c func_800BC12C, pop 5, and return 2.
  */
-s32 opHandler_WINSIZE(Actor *e) {
+s32 opHandler_WINSIZE(Actor *actor) {
     Rect buf;
-    s32 sfxIdx = e->stack[(s8)e->stackPtr - 4];
+    s32 sfxIdx = actor->context.stack[(s8)actor->context.stackPtr - 4];
 
     if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
         return 5;
     }
 
-    buf.h = (u16)e->stack[(s8)e->stackPtr];
-    buf.w = (u16)e->stack[(s8)e->stackPtr - 1];
-    buf.y = (u16)e->stack[(s8)e->stackPtr - 2];
-    buf.x = (u16)e->stack[(s8)e->stackPtr - 3];
+    buf.h = (u16)actor->context.stack[(s8)actor->context.stackPtr];
+    buf.w = (u16)actor->context.stack[(s8)actor->context.stackPtr - 1];
+    buf.y = (u16)actor->context.stack[(s8)actor->context.stackPtr - 2];
+    buf.x = (u16)actor->context.stack[(s8)actor->context.stackPtr - 3];
 
     func_800BC258(&buf);
     func_8002E064(sfxIdx, &buf);
-    e->stackPtr -= 5;
+    actor->context.stackPtr -= 5;
     func_800BC12C(sfxIdx, 0, (u16 *)&buf);
     return 2;
 }
@@ -966,13 +966,13 @@ s32 opHandler_WINSIZE(Actor *e) {
  * fully done, clear both @c sfxStartMask and @c sfxEntryMask bits,
  * pop one, and return 2.
  */
-s32 opHandler_WINCLOSE(Actor *e) {
-    s32 sfxIdx = e->stack[(s8)e->stackPtr];
+s32 opHandler_WINCLOSE(Actor *actor) {
+    s32 sfxIdx = actor->context.stack[(s8)actor->context.stackPtr];
 
     if (!getSfxField1C(sfxIdx)) {
         g_fieldVars->sfxStartMask &= ~(1 << sfxIdx);
         g_fieldVars->sfxEntryMask &= ~(1 << sfxIdx);
-        e->stackPtr -= 1;
+        actor->context.stackPtr -= 1;
         return 2;
     }
     fadeOutSfxSlow(sfxIdx);
@@ -986,9 +986,9 @@ s32 opHandler_WINCLOSE(Actor *e) {
  * to refresh whatever runtime state the helper tracks, then writes
  * @c val into @c D_80085398[idx].field4 and returns 2.
  */
-s32 opHandler_SETBAR(Actor *e) {
-    s32 val = POP(e);
-    s32 idx = POP(e);
+s32 opHandler_SETBAR(Actor *actor) {
+    s32 val = POP(actor);
+    s32 idx = POP(actor);
     updateAnimEntry(idx, val);
     D_80085398[idx].field4 = val;
     return 2;
@@ -1006,15 +1006,15 @@ s32 opHandler_SETBAR(Actor *e) {
  * After the helper returns, all six values plus a @c flag=1 marker
  * are recorded into the per-slot entry at @c D_80085398[idx].
  */
-s32 opHandler_DISPBAR(Actor *e) {
+s32 opHandler_DISPBAR(Actor *actor) {
     u16 buf[2];
-    s32 v1 = POP(e);
-    s32 v2 = POP(e);
-    s32 v3 = POP(e);
-    s32 v4 = POP(e);
-    s32 v5 = POP(e);
-    s32 v6 = POP(e);
-    s32 idx = POP(e);
+    s32 v1 = POP(actor);
+    s32 v2 = POP(actor);
+    s32 v3 = POP(actor);
+    s32 v4 = POP(actor);
+    s32 v5 = POP(actor);
+    s32 v6 = POP(actor);
+    s32 idx = POP(actor);
 
     buf[0] = v6;
     buf[1] = v5;
@@ -1038,16 +1038,16 @@ s32 opHandler_DISPBAR(Actor *e) {
  * value lands as the 7th register/stack arg), and records all 8 plus
  * a @c flag=2 marker into the per-slot entry at @c D_80085398[idx].
  */
-s32 opHandler_BROKEN(Actor *e) {
+s32 opHandler_BROKEN(Actor *actor) {
     u16 buf[2];
-    s32 v0 = POP(e);
-    s32 v1 = POP(e);
-    s32 v2 = POP(e);
-    s32 v3 = POP(e);
-    s32 v4 = POP(e);
-    s32 v5 = POP(e);
-    s32 v6 = POP(e);
-    s32 idx = POP(e);
+    s32 v0 = POP(actor);
+    s32 v1 = POP(actor);
+    s32 v2 = POP(actor);
+    s32 v3 = POP(actor);
+    s32 v4 = POP(actor);
+    s32 v5 = POP(actor);
+    s32 v6 = POP(actor);
+    s32 idx = POP(actor);
 
     buf[0] = v6;
     buf[1] = v5;
@@ -1070,7 +1070,7 @@ s32 opHandler_BROKEN(Actor *e) {
  * Pops the stack to get an index, clears the halfword at D_80085398[idx * 16],
  * then calls clearAnimEntryActive with the popped value.
  *
- * @param entity Script entity context.
+ * @param actor Script entity context.
  * @return 2.
  */
 s32 opHandler_KILLBAR(Actor *actor) {

@@ -6,18 +6,15 @@
 
 /*
  * ============================================================================
- * Field entity overlay (FieldEntity / Actor)
+ * Field entity overlay (Actor / ActorAnim)
  * ============================================================================
  *
- * One field entity slot is 612 bytes (0x264). Three typedefs describe
+ * One field entity slot is 612 bytes (0x264). Two typedefs describe
  * the SAME 612-byte memory at @ref D_80085224, each capturing a
  * different valid type-interpretation of the bytes:
  *
- *   - @ref Actor       — bytecode VM view (stack[80], resultSlots[8],
+ *   - @ref Actor       — bytecode VM view (@ref ScriptContext header,
  *                        msg* / field_0xNN naming, opcode handlers).
- *   - @ref FieldEntity — movement / animation view (walkSpeed[2],
- *                        unk1A0..unk1B3 sequencer state, used by
- *                        movement helpers in fe_object4/6/9/10).
  *   - @ref ActorAnim  — animation slot view (AnimRec rows[4] /
  *                        timers[4] / animOffset / mode at the upper
  *                        half of the stack region; used by
@@ -33,72 +30,6 @@
  * isn't aliased.
  */
 
-/**
- * @brief Field script entity / VM execution context — movement/animation view.
- *
- * See the overlay comment block above for the relationship to @ref Actor.
- *
- * Used by the field engine's stack-based virtual machine. Each entity
- * has a stack of s32 values (slots 0-95), a stack pointer, result
- * registers, and various state fields for animation, movement, and
- * script execution.
- */
-typedef struct {
-    s32 stack[80];          /**< 0x000: Stack slots (s32 each, indexed by stackIdx). */
-    s32 result;             /**< 0x140: Result/output register. */
-    s32 result2;            /**< 0x144: Secondary result register. */
-    u8 pad148[0x18];        /**< 0x148 */
-    s32 unk160;             /**< 0x160 */
-    u8 pad164[0x12];        /**< 0x164 */
-    u16 unk176;             /**< 0x176 */
-    u8 pad178[0x0C];        /**< 0x178 */
-    u8 stackIdx;            /**< 0x184: Stack pointer index. */
-    u8 pad185[0x03];        /**< 0x185 */
-    u8 unk188;              /**< 0x188: Script parameter byte. */
-    u8 unk189;              /**< 0x189: Script parameter byte. */
-    u16 unk18A;             /**< 0x18A: Step delta added to unk188 each movement tick. */
-    u16 unk18C;             /**< 0x18C */
-    u16 unk18E;             /**< 0x18E */
-    u16 walkSpeed;          /**< 0x190: Walk speed (primary). */
-    u16 walkSpeed2;         /**< 0x192: Walk speed (copy). */
-    u16 runSpeed;           /**< 0x194: Run speed. */
-    u8 pad196[0x06];        /**< 0x196 */
-    u16 unk19C;             /**< 0x19C */
-    u16 unk19E;             /**< 0x19E */
-    u16 unk1A0;             /**< 0x1A0 */
-    u16 unk1A2;             /**< 0x1A2 */
-    u8 unk1A4;              /**< 0x1A4 */
-    u8 unk1A5;              /**< 0x1A5 */
-    u8 unk1A6;              /**< 0x1A6 */
-    u8 unk1A7;              /**< 0x1A7 */
-    u8 unk1A8;              /**< 0x1A8 */
-    u8 unk1A9;              /**< 0x1A9 */
-    u8 unk1AA;              /**< 0x1AA */
-    u8 unk1AB;              /**< 0x1AB */
-    u8 unk1AC;              /**< 0x1AC */
-    u8 unk1AD;              /**< 0x1AD */
-    u8 unk1AE;              /**< 0x1AE */
-    u8 unk1AF;              /**< 0x1AF */
-    u8 unk1B0;              /**< 0x1B0 */
-    u8 unk1B1;              /**< 0x1B1 */
-    u8 unk1B2;              /**< 0x1B2 */
-    u8 unk1B3;              /**< 0x1B3 */
-    u8 pad1B4[0x42];        /**< 0x1B4 */
-    u16 unk1F6;             /**< 0x1F6 */
-    u16 unk1F8;             /**< 0x1F8 */
-    u8 pad1FA[0x1E];        /**< 0x1FA */
-    u8 pad218[0x06];        /**< 0x218 */
-    u16 unk21E;             /**< 0x21E */
-    u8 pad220[0x20];        /**< 0x220 */
-    u8 unk240;              /**< 0x240: Animation/display byte. */
-    u8 pad241[0x04];        /**< 0x241 */
-    u8 unk245;              /**< 0x245 */
-    u8 pad246[0x03];        /**< 0x246 */
-    u8 unk249;              /**< 0x249 */
-    u8 pad24A;              /**< 0x24A */
-    u8 unk24B;              /**< 0x24B */
-    u8 unk24C;              /**< 0x24C */
-} FieldEntity;              /* size >= 0x24D */
 
 /**
  * @brief Field entity overlay used by the line-trigger family.
@@ -107,7 +38,7 @@ typedef struct {
  * / @c LINEOFF opcodes to describe a 3D line-segment hit volume (despite
  * the wiki's "line" name, it's actually a 3D box bounded by the two
  * end-points). The same storage is interpreted as movement state
- * (@c walkSpeed / @c unk188 step counter) by the MOVE/MSPEED family —
+ * (an animation-speed / @c unk188 step counter pair) by the MOVE/MSPEED family —
  * use whichever overlay corresponds to the entity's role.
  *
  * @c lineActive byte 0 is the "line collision enabled" flag (set by
@@ -493,31 +424,55 @@ typedef struct {
 extern FieldVars *g_fieldVars;
 
 /**
+ * @brief Block C field entity — stride @c 0x18C, dispatched by
+ *        @c func_800BD9C4. Same script-VM front-end as @c Eline
+ *        but with only two SFX triggers at @c 0x18A / @c 0x18B.
+ */
+/**
+ * @brief The script-VM context every field entity begins with (0x188 bytes).
+ *
+ * @ref Actor, @ref Eline, @ref Dline and @ref Bganime each carry one as their
+ * first member, so a handler can take a @c ScriptContext* whatever kind of
+ * entity is running. Handlers that need kind-specific state cast back down.
+ */
+typedef struct {
+    /* 0x000 */ s32 stack[80];      /**< Private evaluation stack, indexed by @c stackPtr. */
+    /* 0x140 */ s32 resultSlots[8]; /**< Result-slot register file (opcodes 0x08/0x09 read/write). */
+    /* 0x160 */ s32 flags;
+    /* 0x164 */ u16 savedPc[8];     /**< Suspended instruction pointer per script slot (@c 0xFFFF = idle). */
+    /* 0x174 */ u8  scriptSlot;     /**< Script slot currently executing. */
+    /* 0x175 */ u8  activeMask;     /**< One bit per script slot: set = that slot may run. */
+    /* 0x176 */ u16 pc;             /**< Instruction pointer of the running slot. */
+    /* 0x178 */ u16 rangeLo;        /**< Lower bound of this entity's script range. */
+    /* 0x17A */ u16 rangeHi;        /**< Upper bound of this entity's script range. */
+    /* 0x17C */ u8  savedStackPtr[8]; /**< Saved stack base per script slot. */
+    /* 0x184 */ s8  stackPtr;       /**< Top stack slot; @c -1 when empty, pre-incremented by @c PUSH. */
+    /* 0x185 */ u8  pad185[0x03];
+} ScriptContext; /* 0x188 */
+
+/**
  * @brief Actor — opcode handler / script-VM view of a field entity.
+ *
+ * Every field entity is a script thread: the first 320 bytes are its private
+ * evaluation stack, and it holds 8 script slots, each with its own suspended
+ * @c savedPc and @c savedStackPtr so one can be resumed after another runs.
+ * Slot 0 is the script installed at reset; the engine enters the others on
+ * events (@c func_800AE8B4 starts slot 7 and slot 6 from the per-frame tick).
+ * @c actor, @c eline, @c dline and @c bganime all share this header and are
+ * dispatched through the same @c g_fieldOpcodeTable.
+ *
+ * Every field entity is a script thread: the first 320 bytes are its private
+ * evaluation stack, and it runs up to 8 concurrent scripts held in priority
+ * slots (0 = highest), each with its own suspended @ref savedPc and
+ * @ref savedStackPtr. @c actor, @c eline, @c dline and @c bganime all share
+ * this header and are dispatched through the same @ref g_fieldOpcodeTable.
  *
  * Named for the game's own term: the field-init debug trace prints
  * @c "sizeof(actor)" for this 612-byte structure.
- *
- * See the overlay comment block before @ref FieldEntity for the relationship
- * between the two typedefs. Both describe the same 612-byte field entity
- * slot, with this view named for opcode handler usage. The size discrepancy
- * (FieldEntity ≥ 0x24D, Actor ~0x264) is because each typedef only declares
- * up through the highest offset its callers reference; both bound the same
- * 612-byte allocation.
+
  */
 typedef struct {
-    /* 0x000 */ s32 stack[80];      /**< Bytecode stack slots (s32 each, indexed by @c stackPtr). */
-    /* 0x140 */ s32 resultSlots[8]; /**< Result-slot register file (opcodes 0x08/0x09 read/write). */
-    /* 0x160 */ s32 flags;
-    /* 0x164 */ u16 groupRanges[8]; /**< Per-script-group saved PC table (0xFFFF = empty); written by @c opHandler_RET. */
-    /* 0x174 */ u8 scriptGroup;     /**< Script group index. */
-    /* 0x175 */ u8 activeMask;      /**< Entity active bitmask. */
-    /* 0x176 */ u16 pc;             /**< Script-VM program counter (advanced by JMP / JPF; pushed by CAL). */
-    /* 0x178 */ u16 rangeLo;        /**< Lower bound of script trigger range (tested by @c func_800BE44C). */
-    /* 0x17A */ u16 rangeHi;        /**< Upper bound of script trigger range. */
-    /* 0x17C */ u8 groupStackBase[8]; /**< Per-script-group saved stackPtr base (used by context-switch in @c opHandler_RET). */
-    /* 0x184 */ s8 stackPtr;        /**< Bytecode stack pointer (signed, grows down). */
-    /* 0x185 */ u8 pad185[0x03];
+    /* 0x000 */ ScriptContext context; // Has to be first field in struct so that Actor instance can be cast as ScriptContext
     /* 0x188 */ u8 unk188;          /**< Script parameter byte. */
     /* 0x189 */ u8 unk189;          /**< Script parameter byte. */
     /* 0x18A */ u16 unk18A;         /**< Step delta added to unk188 each movement tick. */
@@ -640,10 +595,10 @@ typedef struct {
 } Actor;
 
 /** @brief Push one s32 onto the actor's bytecode stack. */
-#define PUSH(actor, val) (((s32 *)(actor))[(s8)(++(actor)->stackPtr)] = (val))
+#define PUSH(actor, val) (((s32 *)(actor))[(s8)(++(actor)->context.stackPtr)] = (val))
 
 /** @brief Pop one s32 from the actor's bytecode stack. */
-#define POP(actor) (((s32 *)(actor))[(s8)(actor)->stackPtr--])
+#define POP(actor) (((s32 *)(actor))[(s8)(actor)->context.stackPtr--])
 
 /** @brief Pop one s32 then read low byte only. */
 #define POP_BYTE(actor) (*(u8 *)&POP(actor))
@@ -652,7 +607,7 @@ typedef struct {
 #define POP_HALF(actor) (*(s16 *)&POP(actor))
 
 /** @brief Read the top s32 from the actor's bytecode stack without popping. */
-#define PEEK(actor) (((s32 *)(actor))[(actor)->stackPtr])
+#define PEEK(actor) (((s32 *)(actor))[(actor)->context.stackPtr])
 
 /** @brief SeeD salary lookup table indexed by SeeD level (exp / 100). */
 extern u16 g_seedSalaryTable[];
@@ -802,17 +757,7 @@ extern u8 D_80085388;
  * actors that don't need the full 612-byte slot.
  */
 typedef struct {
-    /* 0x000 */ u8  pad000[0x160];
-    /* 0x160 */ s32 flags;
-    /* 0x164 */ u16 groupRanges[8];
-    /* 0x174 */ u8  scriptGroup;
-    /* 0x175 */ u8  activeMask;
-    /* 0x176 */ u16 pc;
-    /* 0x178 */ u16 rangeLo;
-    /* 0x17A */ u16 rangeHi;
-    /* 0x17C */ u8  pad17C[0x08];
-    /* 0x184 */ s8  stackPtr;
-    /* 0x185 */ u8  pad185[0x03];
+    /* 0x000 */ ScriptContext context; // Has to be first field in struct so that Eline instance can be cast as ScriptContext
     /* 0x188 */ s16 x0, y0, z0;         /**< Trigger line-segment start (passed to @c func_8009A2BC as arg 0). */
     /* 0x18E */ s16 x1, y1, z1;         /**< Trigger line-segment end. */
     /* 0x194 */ u8  activeMarker;       /**< Block-active gate; @c func_8009A4C0 / @c func_8009A7E8 process the record only when @c == 1. */
@@ -828,23 +773,10 @@ typedef struct {
     /* 0x19E */ u8  pad19E[0x02];
 } Eline; /* 0x1A0 = 416 bytes — the game's "eline" (per the field-init trace). */
 
-/**
- * @brief Block C field entity — stride @c 0x18C, dispatched by
- *        @c func_800BD9C4. Same script-VM front-end as @c Eline
- *        but with only two SFX triggers at @c 0x18A / @c 0x18B.
- */
+
+
 typedef struct {
-    /* 0x000 */ u8  pad000[0x160];
-    /* 0x160 */ s32 flags;
-    /* 0x164 */ u16 groupRanges[8];
-    /* 0x174 */ u8  scriptGroup;
-    /* 0x175 */ u8  activeMask;
-    /* 0x176 */ u16 pc;
-    /* 0x178 */ u16 rangeLo;
-    /* 0x17A */ u16 rangeHi;
-    /* 0x17C */ u8  pad17C[0x08];
-    /* 0x184 */ s8  stackPtr;
-    /* 0x185 */ u8  pad185[0x03];
+    /* 0x000 */ ScriptContext context; // Has to be first field in struct so that Dline instance can be cast as ScriptContext
     /* 0x188 */ u8  activeMarker;
     /* 0x189 */ u8  pad189;
     /* 0x18A */ u8  trigger6;
@@ -857,24 +789,35 @@ typedef struct {
  *        each tick ends with a call to @c func_800B2BA0.
  */
 typedef struct {
-    /* 0x000 */ u8  pad000[0x160];
-    /* 0x160 */ s32 flags;
-    /* 0x164 */ u16 groupRanges[8];
-    /* 0x174 */ u8  scriptGroup;
-    /* 0x175 */ u8  activeMask;
-    /* 0x176 */ u16 pc;
-    /* 0x178 */ u16 rangeLo;
-    /* 0x17A */ u16 rangeHi;
-    /* 0x17C */ u8  pad17C[0x08];
-    /* 0x184 */ s8  stackPtr;
-    /* 0x185 */ u8  pad185[0x03];
+    /* 0x000 */ ScriptContext context; // Has to be first field in struct so that Bganime instance can be cast as ScriptContext
     /* 0x188 */ s16 unk188;
     /* 0x18A */ u16 unk18A;
-    /* 0x18C */ u8  pad18C[0x1E];
+    /* 0x18C */ u16 unk18C;         /**< Movement/animation end value, set by @c func_800B2D40. */
+    /* 0x18E */ u16 unk18E;         /**< Movement/animation start value, set by @c func_800B2D40. */
+    /* 0x190 */ u16 animSpeed;      /**< Animation speed; @c BGANIMESPEED sets it, @c BGDRAW / @c BGOFF force it to 1. */
+    /* 0x192 */ u16 animSpeed2;     /**< Reload partner of @ref animSpeed; written with the same value. */
+    /* 0x194 */ u16 animFlag;       /**< Set by @c BGANIMEFLAG from the script stack. */
+    /* 0x196 */ u8  pad196[0x06];
+    /* 0x19C */ u16 shadeCounter;   /**< Shade wait counter; @c BGSHADE pops it, @c BGSHADESTOP zeros it, the opcode finishes when it reaches 0. */
+    /* 0x19E */ u16 unk19E;         /**< Zeroed whenever a shade sequence starts or stops. */
+    /* 0x1A0 */ u16 unk1A0;         /**< Loop counter popped by @c RBGSHADELOOP. */
+    /* 0x1A2 */ u16 unk1A2;         /**< Timer popped by @c RBGSHADELOOP. */
+    /* 0x1A4 */ u8  unk1A4;         /**< Per-tick counter, primed from @ref unk1A5. */
+    /* 0x1A5 */ u8  unk1A5;         /**< Saved tick total. */
+    /* 0x1A6 */ u8  unk1A6;
+    /* 0x1A7 */ u8  unk1A7;         /**< Shade parameter block (@c 0x1A7..0x1AC), popped by @c BGSHADE. */
+    /* 0x1A8 */ u8  unk1A8;
+    /* 0x1A9 */ u8  unk1A9;
     /* 0x1AA */ u8  unk1AA;
     /* 0x1AB */ u8  unk1AB;
     /* 0x1AC */ u8  unk1AC;
-    /* 0x1AD */ u8  pad1AD[0x07];
+    /* 0x1AD */ u8  unk1AD;         /**< Saved mirror of the shade block (@c 0x1AD..0x1B2). */
+    /* 0x1AE */ u8  unk1AE;
+    /* 0x1AF */ u8  unk1AF;
+    /* 0x1B0 */ u8  unk1B0;
+    /* 0x1B1 */ u8  unk1B1;
+    /* 0x1B2 */ u8  unk1B2;
+    /* 0x1B3 */ u8  pad1B3;
 } Bganime; /* 0x1B4 = 436 bytes — the game's "bganime" (per the field-init trace). */
 
 /** @brief Self/anchor pointer used by @c func_8009A8E0 after the
@@ -1287,7 +1230,7 @@ extern s16 D_800704B2;
 /** @brief Dialog companion halfword (mirrors @c D_800DE4DC s32 view). */
 extern s16 D_800DE4D0;
 
-/** @brief Per-script-group scratch bytes used by fe_object7 dialog opcodes. */
+/** @brief Per-script slot scratch bytes used by fe_object7 dialog opcodes. */
 extern s8 D_800DE4D2;
 extern s8 D_800DE4D3;
 extern s8 D_800DE4D4;

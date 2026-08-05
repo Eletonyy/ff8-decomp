@@ -32,15 +32,15 @@ extern void func_800BC258(Rect *r);
 extern s32  opHandler_AMESW(Actor *actor);
 extern s32  opHandler_AMES(Actor *actor);
 extern s32  opHandler_RAMESW(Actor *actor);
-extern s32  opHandler_ASK(Actor *e);
-extern s32  opHandler_AASK(Actor *e);
-extern s32  opHandler_MESSYNC(Actor *e);
+extern s32  opHandler_ASK(Actor *actor);
+extern s32  opHandler_AASK(Actor *actor);
+extern s32  opHandler_MESSYNC(Actor *actor);
 extern s32  opHandler_MESFORCUS(Actor *actor);
-extern s32  opHandler_WINSIZE(Actor *e);
-extern s32  opHandler_WINCLOSE(Actor *e);
-extern s32  opHandler_SETBAR(Actor *e);
-extern s32  opHandler_DISPBAR(Actor *e);
-extern s32  opHandler_BROKEN(Actor *e);
+extern s32  opHandler_WINSIZE(Actor *actor);
+extern s32  opHandler_WINCLOSE(Actor *actor);
+extern s32  opHandler_SETBAR(Actor *actor);
+extern s32  opHandler_DISPBAR(Actor *actor);
+extern s32  opHandler_BROKEN(Actor *actor);
 extern s32  opHandler_KILLBAR(Actor *actor);
 
 #endif

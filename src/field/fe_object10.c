@@ -13,13 +13,13 @@
  * @brief Pop value from script stack and branch to one of two handlers.
  *
  * Calls func_800C03BC if popped value is nonzero, func_800C03D8 if zero.
- * @param entity Script entity context.
+ * @param context Script entity context.
  * @return 2.
  */
-s32 opHandler_DISABLEANGELO(FieldEntity *entity) {
-    u8 idx = entity->stackIdx;
-    entity->stackIdx = idx - 1;
-    if (entity->stack[(s8)idx] != 0) {
+s32 opHandler_DISABLEANGELO(ScriptContext *context) {
+    u8 idx = context->stackPtr;
+    context->stackPtr = idx - 1;
+    if (context->stack[(s8)idx] != 0) {
         func_800C03BC();
     } else {
         func_800C03D8();
@@ -54,12 +54,25 @@ void func_800BD250(s32 dir, s16 *out) {
     }
 }
 
-s32 opHandler_OP167(FieldEntity *entity) {
-    u8 idx = entity->stackIdx;
+/**
+ * @brief Pop a direction code and dispatch the rect/offset triple it selects.
+ *
+ * Pops one value off the actor's script stack, passes it to
+ * @c func_800BD250 to fill @c buf with a 3-halfword rect derived from that
+ * direction code, then dispatches @c func_800A9434 against the actor's
+ * @c field_0x256 with cmd @c 0x30 and sub-cmd @c 1.
+ *
+ * @param actor Actor whose script is running.
+ * @return @c 2 (continue processing).
+ *
+ * @see opHandler_OP168, which negates the triple before dispatching.
+ */
+s32 opHandler_OP167(Actor *actor) {
+    u8 idx = actor->context.stackPtr;
     s16 buf[4];
-    entity->stackIdx = idx - 1;
-    func_800BD250(entity->stack[(s8)idx], buf);
-    func_800A9434(((Actor *)entity)->field_0x256, 0x30, 1, (u8 *)buf, 0x1E);
+    actor->context.stackPtr = idx - 1;
+    func_800BD250(actor->context.stack[(s8)idx], buf);
+    func_800A9434(actor->field_0x256, 0x30, 1, (u8 *)buf, 0x1E);
     return 2;
 }
 
@@ -72,12 +85,11 @@ s32 opHandler_OP167(FieldEntity *entity) {
  * difference is the three leading halfwords are sign-negated before the
  * dispatch — used when the source direction needs to be inverted.
  */
-s32 opHandler_OP168(FieldEntity *entity) {
-    Actor *actor = (Actor *)entity;
-    u8 idx = entity->stackIdx;
+s32 opHandler_OP168(Actor *actor) {
+    u8 idx = actor->context.stackPtr;
     s16 buf[4];
-    entity->stackIdx = idx - 1;
-    func_800BD250(entity->stack[(s8)idx], buf);
+    actor->context.stackPtr = idx - 1;
+    func_800BD250(actor->context.stack[(s8)idx], buf);
     buf[0] = -buf[0];
     buf[1] = -buf[1];
     buf[2] = -buf[2];
@@ -383,33 +395,33 @@ void func_800BD9C4(FieldFrameBuf *frame) {
                 } else {
                     if (e->triggerSfx7 != 0) {
                         if (e->triggerSfx7 == 2) {
-                            e->flags |= 0x20;
+                            e->context.flags |= 0x20;
                         }
-                        func_800AE8B4(e, 7, (u16)(e->rangeLo + 2));
+                        func_800AE8B4(e, 7, (u16)(e->context.rangeLo + 2));
                         e->triggerSfx7 = 0;
                     }
                     if (e->unk248 != 0) {
-                        func_800AE8B4(e, 6, (u16)(e->rangeLo + 3));
+                        func_800AE8B4(e, 6, (u16)(e->context.rangeLo + 3));
                         e->unk248 = 0;
                     }
                 }
 
-                if (!(e->flags & 1)) {
+                if (!(e->context.flags & 1)) {
                     do {
                         s32 ret;
-                        func_80037B7C(&D_80085380[e->pc], &sp50, &sp54);
+                        func_80037B7C(&D_80085380[e->context.pc], &sp50, &sp54);
                         ret = g_fieldOpcodeTable[sp50 + FIELD_OPCODE_BASE](e, sp54);
                         if (!(ret & 4)) {
-                            e->activeMask &= ~(1 << e->scriptGroup);
+                            e->context.activeMask &= ~(1 << e->context.scriptSlot);
                         }
                         if (ret & 2) {
-                            e->pc++;
-                            e->activeMask |= (1 << e->scriptGroup);
+                            e->context.pc++;
+                            e->context.activeMask |= (1 << e->context.scriptSlot);
                         }
                         if (ret & 1) s1 = 0;
                         else s1--;
                         if (s1 == 0) break;
-                    } while (!(e->flags & 1));
+                    } while (!(e->context.flags & 1));
                 }
 
                 func_800B6854(e);
@@ -428,27 +440,27 @@ void func_800BD9C4(FieldFrameBuf *frame) {
                 s1 = 0x10;
                 if (eb->activeMarker != 0 && !D_800704BD) {
                     if (eb->trigger7 != 0) {
-                        if (eb->trigger7 == 2) eb->flags |= 0x20;
-                        func_800AE8B4(eb, 7, (u16)(eb->rangeLo + 2));
+                        if (eb->trigger7 == 2) eb->context.flags |= 0x20;
+                        func_800AE8B4(eb, 7, (u16)(eb->context.rangeLo + 2));
                         eb->trigger7 = 0;
                     }
                     if (eb->trigger6 != 0) {
-                        func_800AE8B4(eb, 6, (u16)(eb->rangeLo + 3));
+                        func_800AE8B4(eb, 6, (u16)(eb->context.rangeLo + 3));
                         eb->trigger6 = 0;
                     }
                     if (eb->trigger5 != 0) {
-                        func_800AE8B4(eb, 5, (u16)(eb->rangeLo + 4));
+                        func_800AE8B4(eb, 5, (u16)(eb->context.rangeLo + 4));
                         eb->trigger5 = 0;
                     }
                     if (eb->trigger4 != 0) {
-                        func_800AE8B4(eb, 4, (u16)(eb->rangeLo + 5));
+                        func_800AE8B4(eb, 4, (u16)(eb->context.rangeLo + 5));
                     }
                     if (eb->trigger3 != 0) {
-                        func_800AE8B4(eb, 3, (u16)(eb->rangeLo + 6));
+                        func_800AE8B4(eb, 3, (u16)(eb->context.rangeLo + 6));
                         eb->trigger3 = 0;
                     }
                     if (eb->trigger2 != 0) {
-                        func_800AE8B4(eb, 2, (u16)(eb->rangeLo + 7));
+                        func_800AE8B4(eb, 2, (u16)(eb->context.rangeLo + 7));
                         eb->trigger2 = 0;
                     }
                 } else {
@@ -461,14 +473,14 @@ void func_800BD9C4(FieldFrameBuf *frame) {
 
                 do {
                     s32 ret;
-                    func_80037B7C(&D_80085380[eb->pc], &sp50, &sp54);
+                    func_80037B7C(&D_80085380[eb->context.pc], &sp50, &sp54);
                     ret = g_fieldOpcodeTable[sp50 + FIELD_OPCODE_BASE](eb, sp54);
                     if (!(ret & 4)) {
-                        eb->activeMask &= ~(1 << eb->scriptGroup);
+                        eb->context.activeMask &= ~(1 << eb->context.scriptSlot);
                     }
                     if (ret & 2) {
-                        eb->pc++;
-                        eb->activeMask |= (1 << eb->scriptGroup);
+                        eb->context.pc++;
+                        eb->context.activeMask |= (1 << eb->context.scriptSlot);
                     }
                     if (ret & 1) s1 = 0;
                     else s1--;
@@ -489,11 +501,11 @@ void func_800BD9C4(FieldFrameBuf *frame) {
                 s1 = 0x10;
                 if (ec->activeMarker != 0 && !D_800704A8.unk015) {
                     if (ec->trigger6 != 0) {
-                        func_800AE8B4(ec, 6, (u16)(ec->rangeLo + 2));
+                        func_800AE8B4(ec, 6, (u16)(ec->context.rangeLo + 2));
                         ec->trigger6 = 0;
                     }
                     if (ec->trigger7 != 0) {
-                        func_800AE8B4(ec, 7, (u16)(ec->rangeLo + 3));
+                        func_800AE8B4(ec, 7, (u16)(ec->context.rangeLo + 3));
                         ec->trigger7 = 0;
                     }
                 } else {
@@ -503,14 +515,14 @@ void func_800BD9C4(FieldFrameBuf *frame) {
 
                 do {
                     s32 ret;
-                    func_80037B7C(&D_80085380[ec->pc], &sp50, &sp54);
+                    func_80037B7C(&D_80085380[ec->context.pc], &sp50, &sp54);
                     ret = g_fieldOpcodeTable[sp50 + FIELD_OPCODE_BASE](ec, sp54);
                     if (!(ret & 4)) {
-                        ec->activeMask &= ~(1 << ec->scriptGroup);
+                        ec->context.activeMask &= ~(1 << ec->context.scriptSlot);
                     }
                     if (ret & 2) {
-                        ec->pc++;
-                        ec->activeMask |= (1 << ec->scriptGroup);
+                        ec->context.pc++;
+                        ec->context.activeMask |= (1 << ec->context.scriptSlot);
                     }
                     if (ret & 1) s1 = 0;
                     else s1--;
@@ -531,14 +543,14 @@ void func_800BD9C4(FieldFrameBuf *frame) {
                 s1 = 0x10;
                 do {
                     s32 ret;
-                    func_80037B7C(&D_80085380[ed->pc], &sp50, &sp54);
+                    func_80037B7C(&D_80085380[ed->context.pc], &sp50, &sp54);
                     ret = g_fieldOpcodeTable[sp50 + FIELD_OPCODE_BASE](ed, sp54);
                     if (!(ret & 4)) {
-                        ed->activeMask &= ~(1 << ed->scriptGroup);
+                        ed->context.activeMask &= ~(1 << ed->context.scriptSlot);
                     }
                     if (ret & 2) {
-                        ed->pc++;
-                        ed->activeMask |= (1 << ed->scriptGroup);
+                        ed->context.pc++;
+                        ed->context.activeMask |= (1 << ed->context.scriptSlot);
                     }
                     if (ret & 1) s1 = 0;
                     else s1--;
@@ -629,7 +641,7 @@ Actor *func_800BE36C(u8 *header) {
         if (D_80085388 != 0) {
             do {
                 D_80085230[srcIdx] = NULL;
-                if (src->flags & 2) {
+                if (src->context.flags & 2) {
                     D_80085230[srcIdx] = dst;
                     *dst = *src;
                     dst->field_0x256 = (u8)dstIdx;
@@ -660,7 +672,7 @@ s32 func_800BE44C(s32 val) {
     u8 count = D_80085388;
 
     for (i = 0; i < count; i++) {
-        if (val >= e->rangeLo && val <= e->rangeHi) {
+        if (val >= e->context.rangeLo && val <= e->context.rangeHi) {
             return 1;
         }
         e++;
@@ -672,7 +684,7 @@ s32 func_800BE44C(s32 val) {
  * @brief Script-table relinker — flattens per-group bytecode ranges
  *        into a single contiguous slice of @c D_80085380.
  *
- * For each script-group entry @c k in @p table (the @c [lo,hi] pair list),
+ * For each script slot entry @c k in @p table (the @c [lo,hi] pair list),
  * if the corresponding @c D_800DE4E4 marker has bit @c 0x8000 set OR
  * @c func_800BE44C(k) returns non-zero, copies all @c D_800DE4E8 entries
  * @c [orig..hi) into @c D_80085380 starting at the current write cursor,
@@ -741,30 +753,30 @@ Eline *func_800BE7F4(Eline *buf) {
 
             /* Shared entity table: holds Actor and Eline records alike. */
             D_80085230[D_80085388 + k] = (Actor *)e;
-            e->flags = 0x20000000;
-            e->stackPtr = -1;
+            e->context.flags = 0x20000000;
+            e->context.stackPtr = -1;
 
             packed = *D_800DE4E0;
             D_800DE4E0++;
             upper = packed >> 7;
             new_var = upper;
             lower = packed & 0x7F;
-            e->rangeLo = new_var;
-            e->rangeHi = lower;
-            upper = e->rangeLo;
-            e->rangeHi = (new_var + lower) + 1;
+            e->context.rangeLo = new_var;
+            e->context.rangeHi = lower;
+            upper = e->context.rangeLo;
+            e->context.rangeHi = (new_var + lower) + 1;
 
             pcVal = D_800852F0[upper];
-            e->activeMask = 0xFF;
-            e->groupRanges[0] = 0xFFFF;
-            e->groupRanges[1] = 0xFFFF;
-            e->groupRanges[2] = 0xFFFF;
-            e->groupRanges[3] = 0xFFFF;
-            e->groupRanges[4] = 0xFFFF;
-            e->groupRanges[5] = 0xFFFF;
-            e->groupRanges[6] = 0xFFFF;
-            e->pc = pcVal & 0x7FFF;
-            e->groupRanges[7] = 0xFFFF;
+            e->context.activeMask = 0xFF;
+            e->context.savedPc[0] = 0xFFFF;
+            e->context.savedPc[1] = 0xFFFF;
+            e->context.savedPc[2] = 0xFFFF;
+            e->context.savedPc[3] = 0xFFFF;
+            e->context.savedPc[4] = 0xFFFF;
+            e->context.savedPc[5] = 0xFFFF;
+            e->context.savedPc[6] = 0xFFFF;
+            e->context.pc = pcVal & 0x7FFF;
+            e->context.savedPc[7] = 0xFFFF;
 
             e++;
             k++;
@@ -803,32 +815,32 @@ Bganime *func_800BE924(Bganime *buf) {
             u16 pcVal;
 
             D_80085230[D_80085388 + D_800852F8 + k] = (Actor *)e;
-            e->flags = 0x80001000;
-            e->stackPtr = -1;
+            e->context.flags = 0x80001000;
+            e->context.stackPtr = -1;
 
             packed = *D_800DE4E0;
             D_800DE4E0++;
             upper = packed >> 7;
             groupIdx = upper;
             lower = packed & 0x7F;
-            e->rangeLo = groupIdx;
-            e->rangeHi = lower;
-            upper = e->rangeLo;
-            e->rangeHi = (groupIdx + lower) + 1;
+            e->context.rangeLo = groupIdx;
+            e->context.rangeHi = lower;
+            upper = e->context.rangeLo;
+            e->context.rangeHi = (groupIdx + lower) + 1;
 
             pcVal = D_800852F0[upper];
-            e->activeMask = 0xFF;
+            e->context.activeMask = 0xFF;
             e->unk18A = 0x40;
-            e->groupRanges[0] = 0xFFFF;
-            e->groupRanges[1] = 0xFFFF;
-            e->groupRanges[2] = 0xFFFF;
-            e->groupRanges[3] = 0xFFFF;
-            e->groupRanges[4] = 0xFFFF;
-            e->groupRanges[5] = 0xFFFF;
-            e->groupRanges[6] = 0xFFFF;
-            e->groupRanges[7] = 0xFFFF;
+            e->context.savedPc[0] = 0xFFFF;
+            e->context.savedPc[1] = 0xFFFF;
+            e->context.savedPc[2] = 0xFFFF;
+            e->context.savedPc[3] = 0xFFFF;
+            e->context.savedPc[4] = 0xFFFF;
+            e->context.savedPc[5] = 0xFFFF;
+            e->context.savedPc[6] = 0xFFFF;
+            e->context.savedPc[7] = 0xFFFF;
             e->unk188 = -1;
-            e->pc = pcVal & 0x7FFF;
+            e->context.pc = pcVal & 0x7FFF;
             e->unk1AC = 0x80;
             e->unk1AB = 0x80;
             e->unk1AA = 0x80;
@@ -870,30 +882,30 @@ Dline *func_800BEA84(Dline *buf) {
             u16 pcVal;
 
             D_80085230[D_80085388 + D_800852F8 + D_80085391 + k] = (Actor *)e;
-            e->flags = 0x40000000;
-            e->stackPtr = -1;
+            e->context.flags = 0x40000000;
+            e->context.stackPtr = -1;
 
             packed = *D_800DE4E0;
             D_800DE4E0++;
             upper = packed >> 7;
             groupIdx = upper;
             lower = packed & 0x7F;
-            e->rangeLo = groupIdx;
-            e->rangeHi = lower;
-            upper = e->rangeLo;
-            e->rangeHi = (groupIdx + lower) + 1;
+            e->context.rangeLo = groupIdx;
+            e->context.rangeHi = lower;
+            upper = e->context.rangeLo;
+            e->context.rangeHi = (groupIdx + lower) + 1;
 
             pcVal = D_800852F0[upper];
-            e->activeMask = 0xFF;
-            e->groupRanges[0] = 0xFFFF;
-            e->groupRanges[1] = 0xFFFF;
-            e->groupRanges[2] = 0xFFFF;
-            e->groupRanges[3] = 0xFFFF;
-            e->groupRanges[4] = 0xFFFF;
-            e->groupRanges[5] = 0xFFFF;
-            e->groupRanges[6] = 0xFFFF;
-            e->groupRanges[7] = 0xFFFF;
-            e->pc = pcVal & 0x7FFF;
+            e->context.activeMask = 0xFF;
+            e->context.savedPc[0] = 0xFFFF;
+            e->context.savedPc[1] = 0xFFFF;
+            e->context.savedPc[2] = 0xFFFF;
+            e->context.savedPc[3] = 0xFFFF;
+            e->context.savedPc[4] = 0xFFFF;
+            e->context.savedPc[5] = 0xFFFF;
+            e->context.savedPc[6] = 0xFFFF;
+            e->context.savedPc[7] = 0xFFFF;
+            e->context.pc = pcVal & 0x7FFF;
             e->activeMarker = 1;
 
             e++;
@@ -935,15 +947,15 @@ void func_800BEBD0(void) {
                 while (1) {
                     s32 ret;
                     func_800393C8();
-                    func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
+                    func_80037B7C(&D_80085380[e->context.pc], &sp10, &sp14);
                     if (sp10 == 6 && sp14 < 9) break;
                     ret = g_fieldOpcodeTable[sp10 + FIELD_OPCODE_BASE](e, sp14);
                     if (!(ret & 4)) {
-                        e->activeMask &= ~(1 << e->scriptGroup);
+                        e->context.activeMask &= ~(1 << e->context.scriptSlot);
                     }
                     if (ret & 2) {
-                        e->pc++;
-                        e->activeMask |= (1 << e->scriptGroup);
+                        e->context.pc++;
+                        e->context.activeMask |= (1 << e->context.scriptSlot);
                     }
                 }
                 e++;
@@ -961,15 +973,15 @@ void func_800BEBD0(void) {
                 while (1) {
                     s32 ret;
                     func_800393C8();
-                    func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
+                    func_80037B7C(&D_80085380[e->context.pc], &sp10, &sp14);
                     if (sp10 == 6 && sp14 < 9) break;
                     ret = g_fieldOpcodeTable[sp10 + FIELD_OPCODE_BASE](e, sp14);
                     if (!(ret & 4)) {
-                        e->activeMask &= ~(1 << e->scriptGroup);
+                        e->context.activeMask &= ~(1 << e->context.scriptSlot);
                     }
                     if (ret & 2) {
-                        e->pc++;
-                        e->activeMask |= (1 << e->scriptGroup);
+                        e->context.pc++;
+                        e->context.activeMask |= (1 << e->context.scriptSlot);
                     }
                 }
                 e++;
@@ -987,15 +999,15 @@ void func_800BEBD0(void) {
                 while (1) {
                     s32 ret;
                     func_800393C8();
-                    func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
+                    func_80037B7C(&D_80085380[e->context.pc], &sp10, &sp14);
                     if (sp10 == 6 && sp14 < 9) break;
                     ret = g_fieldOpcodeTable[sp10 + FIELD_OPCODE_BASE](e, sp14);
                     if (!(ret & 4)) {
-                        e->activeMask &= ~(1 << e->scriptGroup);
+                        e->context.activeMask &= ~(1 << e->context.scriptSlot);
                     }
                     if (ret & 2) {
-                        e->pc++;
-                        e->activeMask |= (1 << e->scriptGroup);
+                        e->context.pc++;
+                        e->context.activeMask |= (1 << e->context.scriptSlot);
                     }
                 }
                 e++;
@@ -1013,15 +1025,15 @@ void func_800BEBD0(void) {
                 while (1) {
                     s32 ret;
                     func_800393C8();
-                    func_80037B7C(&D_80085380[e->pc], &sp10, &sp14);
+                    func_80037B7C(&D_80085380[e->context.pc], &sp10, &sp14);
                     if (sp10 == 6 && sp14 < 9) break;
                     ret = g_fieldOpcodeTable[sp10 + FIELD_OPCODE_BASE](e, sp14);
                     if (!(ret & 4)) {
-                        e->activeMask &= ~(1 << e->scriptGroup);
+                        e->context.activeMask &= ~(1 << e->context.scriptSlot);
                     }
                     if (ret & 2) {
-                        e->pc++;
-                        e->activeMask |= (1 << e->scriptGroup);
+                        e->context.pc++;
+                        e->context.activeMask |= (1 << e->context.scriptSlot);
                     }
                 }
                 e++;
@@ -1032,12 +1044,12 @@ void func_800BEBD0(void) {
 }
 
 /**
- * @brief Reset each entity in all 4 pools to its NEXT script-group entry.
+ * @brief Reset each entity in all 4 pools to its NEXT script slot entry.
  *
- * For each entity (Block A first, then C, B, D), sets @c scriptGroup to
- * @c 0, clears the stack (@c stackPtr = -1), points @c groupRanges[0]
+ * For each entity (Block A first, then C, B, D), sets @c scriptSlot to
+ * @c 0, clears the stack (@c stackPtr = -1), points @c savedPc[0]
  * and @c pc at @c D_800852F0[rangeLo + 1] + 1 (= start of the next
- * script group, one past), and (for Blocks C/B/D) resets the entity's
+ * script slot, one past), and (for Blocks C/B/D) resets the entity's
  * @c activeMask to @c 0xFF.
  */
 void func_800BF080(void) {
@@ -1047,11 +1059,11 @@ void func_800BF080(void) {
         u16 val;
         s32 k = 0;
         for (k = 0; k < D_80085388; k++, e++) {
-            e->scriptGroup = 0;
-            val = D_800852F0[e->rangeLo + 1] + 1;
-            e->groupRanges[0] = val;
-            e->pc = val;
-            e->stackPtr = -1;
+            e->context.scriptSlot = 0;
+            val = D_800852F0[e->context.rangeLo + 1] + 1;
+            e->context.savedPc[0] = val;
+            e->context.pc = val;
+            e->context.stackPtr = -1;
         }
     }
 
@@ -1061,12 +1073,12 @@ void func_800BF080(void) {
         u16 val;
         s32 k = 0;
         for (k = 0; k < D_80085228; k++, e++) {
-            e->scriptGroup = 0;
-            val = D_800852F0[e->rangeLo + 1] + 1;
-            e->stackPtr = -1;
-            e->groupRanges[0] = val;
-            e->pc = val;
-            e->activeMask = 0xFF;
+            e->context.scriptSlot = 0;
+            val = D_800852F0[e->context.rangeLo + 1] + 1;
+            e->context.stackPtr = -1;
+            e->context.savedPc[0] = val;
+            e->context.pc = val;
+            e->context.activeMask = 0xFF;
         }
     }
 
@@ -1076,12 +1088,12 @@ void func_800BF080(void) {
         u16 val;
         s32 k = 0;
         for (k = 0; k < D_800852F8; k++, e++) {
-            e->scriptGroup = 0;
-            val = D_800852F0[e->rangeLo + 1] + 1;
-            e->stackPtr = -1;
-            e->groupRanges[0] = val;
-            e->pc = val;
-            e->activeMask = 0xFF;
+            e->context.scriptSlot = 0;
+            val = D_800852F0[e->context.rangeLo + 1] + 1;
+            e->context.stackPtr = -1;
+            e->context.savedPc[0] = val;
+            e->context.pc = val;
+            e->context.activeMask = 0xFF;
         }
     }
 
@@ -1091,12 +1103,12 @@ void func_800BF080(void) {
         u16 val;
         s32 k = 0;
         for (k = 0; k < D_80085391; k++, e++) {
-            e->scriptGroup = 0;
-            val = D_800852F0[e->rangeLo + 1] + 1;
-            e->stackPtr = -1;
-            e->groupRanges[0] = val;
-            e->pc = val;
-            e->activeMask = 0xFF;
+            e->context.scriptSlot = 0;
+            val = D_800852F0[e->context.rangeLo + 1] + 1;
+            e->context.stackPtr = -1;
+            e->context.savedPc[0] = val;
+            e->context.pc = val;
+            e->context.activeMask = 0xFF;
         }
     }
 }
@@ -1107,8 +1119,7 @@ void func_800BF080(void) {
  * by the dispatch table to keep the renderer in sync after an
  * animation update.
  */
-void func_800BF230(FieldEntity *entity) {
-    Actor *actor = (Actor *)entity;
+void func_800BF230(Actor *actor) {
     func_800AA46C(actor->field_0x256, 0xD, actor->field_0x24E, 0);
     D_800D9630[actor->field_0x256]->unk52 = actor->field_0x206;
 }
@@ -1141,13 +1152,13 @@ void func_800BF28C(s32 a0) {
     if (D_80085388 != 0) {
         do {
             s32 flags;
-            if (a0 != 0 && !(e->flags & 4)) {
+            if (a0 != 0 && !(e->context.flags & 4)) {
                 func_800BF230(e);
             } else {
                 func_800B912C(e, e->field_0x24F);
-                e->flags |= 0x2000;
+                e->context.flags |= 0x2000;
             }
-            flags = e->flags;
+            flags = e->context.flags;
             if (flags & 0x100000) {
                 func_800A97E4(D_800DE4FC, 0x2E, 0, 0);
             } else if (flags & 0x200000) {
@@ -1155,7 +1166,7 @@ void func_800BF28C(s32 a0) {
             } else if (flags & 0x80000) {
                 func_800A97E4(e->field_0x256, 0x27, 0, e->field_0x263);
             }
-            if (e->flags & 8) {
+            if (e->context.flags & 8) {
                 D_800D9630[D_800DE4FC]->unk60 = 1;
             } else {
                 D_800D9630[D_800DE4FC]->unk60 = 0;
@@ -1163,10 +1174,10 @@ void func_800BF28C(s32 a0) {
             D_800D9630[D_800DE4FC]->unk62 = e->field_0x220;
             D_800D9630[D_800DE4FC]->unk61 = e->field_0x257;
             func_800A97E4(e->field_0x256, 0x10, (s32)&e->unk18A, 0);
-            if (e->flags & 0x1000000) {
+            if (e->context.flags & 0x1000000) {
                 func_800A97E4(e->field_0x256, 0x21, 0, 0);
             }
-            if (e->flags & 0x2000000) {
+            if (e->context.flags & 0x2000000) {
                 func_800A97E4(e->field_0x256, 0xF, 1, 0);
             }
             D_800DE4FC++;

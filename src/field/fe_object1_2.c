@@ -417,7 +417,7 @@ void func_800A1CC0(void) {
  * Finally @ref func_800A63AC flushes with @p arg1.
  *
  * @param ents Actor entity array (@c D_80085224).
- * @param arg1 Pass-through context for the @ref func_800A63AC flush.
+ * @param frame Pass-through context for the @ref func_800A63AC flush.
  */
 void func_800A1CFC(Actor *ents, FieldFrameBuf *frame) {
     Vec3i pB;       /* sp+0x10: bearing arg B */
@@ -662,7 +662,7 @@ void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Actor *ents)
     SetTransMatrix(m);
 
     for (i = 0; i < D_80085388; ents++, i++) {
-        if (ents->flags & 8) {
+        if (ents->context.flags & 8) {
             continue;
         }
         if (ents->unk218 == -1) {
@@ -1283,7 +1283,7 @@ void func_800A355C(ActorAnim *actor, s32 slot, s32 a2) {
  * Inactive slots have all three state halfwords (@c h0 / @c h1 / @c h2) cleared.
  *
  * @param arg0 Unused.
- * @param arg1 Unused.
+ * @param frame Unused.
  * @param buf  Subscene buffer (from the @c D_800C7200 table).
  *
  * @note @c pos is declared but unused: the original reserves an 8-byte stack
@@ -2322,10 +2322,10 @@ void func_800A5A14(s16 a0) {
  * fixed descriptor @c D_800974D0. @c D_8005F14A is left at 1 to mark the read
  * in flight.
  *
- * @param self    Player entity, read for its 20.12 world position.
+ * @param actor    Player entity, read for its 20.12 world position.
  * @param entries Event-queue entry array (12 slots).
  */
-void func_800A5A20(Actor *self, EventEntry *entries) {
+void func_800A5A20(Actor *actor, EventEntry *entries) {
     Vec3i *scratch = (Vec3i *)getScratchAddr(0);
     s32 best;
     s32 i;
@@ -2341,9 +2341,9 @@ void func_800A5A20(Actor *self, EventEntry *entries) {
         }
     }
     best = 0x7FFFFFFF;
-    scratch->x = self->posX >> 12;
-    scratch->y = self->posY >> 12;
-    scratch->z = self->posZ >> 12;
+    scratch->x = actor->posX >> 12;
+    scratch->y = actor->posY >> 12;
+    scratch->z = actor->posZ >> 12;
 
     if (D_800704BD == 0) {
         for (i = 0; i < 12; i++, entries++) {

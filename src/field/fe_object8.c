@@ -13,7 +13,7 @@
  * @return 2 (advance PC).
  */
 s32 opHandler_CLOSEEYES(Actor *actor) {
-    actor->flags = (actor->flags & 0xFFE7FFFF) | 0x200000;
+    actor->context.flags = (actor->context.flags & 0xFFE7FFFF) | 0x200000;
     func_800A97E4(actor->field_0x256, 0x2F, 0, 0);
     return 2;
 }
@@ -31,7 +31,7 @@ s32 opHandler_CLOSEEYES(Actor *actor) {
 s32 opHandler_BLINKEYES(Actor *actor) {
     u8 byte;
 
-    actor->flags = (actor->flags & 0xFFCFFFFF) | 0x80000;
+    actor->context.flags = (actor->context.flags & 0xFFCFFFFF) | 0x80000;
     byte = POP_BYTE(actor);
     actor->field_0x263 = byte;
     func_800A97E4(actor->field_0x256, 0x27, 0, actor->field_0x263);
@@ -56,7 +56,7 @@ void func_800B912C(Actor *actor, s16 a1) {
     actor->field_0x20A = 0;
     actor->field_0x20C = D_800D9630[actor->field_0x256]->unk0C;
     D_800D9630[actor->field_0x256]->unk52 = actor->field_0x206;
-    actor->flags &= ~0xF800;
+    actor->context.flags &= ~0xF800;
 }
 
 /**
@@ -80,7 +80,7 @@ void func_800B91D8(Actor *actor, s32 a1, s32 a2, s32 a3) {
     actor->field_0x206 = actor->field_0x20A;
     D_800D9630[actor->field_0x256]->unk52 = actor->field_0x20A;
     func_800AA46C(actor->field_0x256, 0xD, a1, 0);
-    actor->flags &= ~0xF800;
+    actor->context.flags &= ~0xF800;
 }
 
 /**
@@ -108,7 +108,7 @@ void func_800B9288(Actor *actor) {
     s32 s1_v;
     s32 s2_v;
 
-    flags = actor->flags;
+    flags = actor->context.flags;
     if (flags & 0x4) {
         return;
     }
@@ -118,7 +118,7 @@ void func_800B9288(Actor *actor) {
         newPos = oldUnsigned;
         newPos = newPos + (u16)actor->field_0x208;
         actor->field_0x206 = newPos;
-        if ((actor->flags & 0x80) && actor->msgActive == 1) {
+        if ((actor->context.flags & 0x80) && actor->msgActive == 1) {
             newMid = (s16)newPos - 0x80;
             oldMid = 0x80;
             oldMid = oldSigned - oldMid;
@@ -136,20 +136,20 @@ void func_800B9288(Actor *actor) {
         }
     }
     if ((s16)actor->field_0x206 >= (s16)actor->field_0x20C) {
-        flags = actor->flags;
+        flags = actor->context.flags;
         if (flags & 0x2000) {
             actor->field_0x206 = actor->field_0x20A;
         } else if (flags & 0x8000) {
-            actor->flags = (flags & ~0xF800) | 0x1000;
+            actor->context.flags = (flags & ~0xF800) | 0x1000;
             actor->field_0x20C -= actor->field_0x208;
             actor->field_0x206 = actor->field_0x20C;
         } else if (flags & 0x4000) {
             func_800B912C(actor, actor->field_0x24F);
-            actor->flags = (actor->flags & ~0xF800) | 0x2000;
+            actor->context.flags = (actor->context.flags & ~0xF800) | 0x2000;
         }
-        actor->flags |= 0x800;
+        actor->context.flags |= 0x800;
     } else {
-        actor->flags &= ~0x800;
+        actor->context.flags &= ~0x800;
     }
     D_800D9630[actor->field_0x256]->unk52 = actor->field_0x206;
 }
@@ -162,7 +162,7 @@ void func_800B9288(Actor *actor) {
  * @c field_0x206/208/20A/20C into @c field_0x210/212/214/216.
  */
 s32 opHandler_PUSHANIME(Actor *actor) {
-    actor->field_0x20E = actor->flags;
+    actor->field_0x20E = actor->context.flags;
     actor->field_0x24D = actor->field_0x24E;
     actor->field_0x210 = actor->field_0x206;
     actor->field_0x212 = actor->field_0x208;
@@ -189,9 +189,9 @@ s32 opHandler_POPANIME(Actor *actor) {
     actor->field_0x20C = actor->field_0x216;
     func_800AA46C(actor->field_0x256, 0xD, actor->field_0x24E, 0);
     D_800D9630[actor->field_0x256]->unk52 = actor->field_0x206;
-    actor->flags &= ~0xF800;
+    actor->context.flags &= ~0xF800;
     actor->field_0x20E &= 0xF800;
-    actor->flags |= actor->field_0x20E;
+    actor->context.flags |= actor->field_0x20E;
     return 2;
 }
 
@@ -207,7 +207,7 @@ s32 opHandler_ANIMESPEED(Actor *actor) {
  * @brief Returns 2 if the animation-complete flag (0x800) is set, else 1.
  */
 s32 opHandler_ANIMESYNC(Actor *actor) {
-    if (actor->flags & 0x800) {
+    if (actor->context.flags & 0x800) {
         return 2;
     }
     return 1;
@@ -222,7 +222,7 @@ s32 opHandler_ANIMESYNC(Actor *actor) {
  */
 s32 opHandler_ANIMESTOP(Actor *actor) {
     func_800B912C(actor, actor->field_0x24F);
-    actor->flags |= 0x2000;
+    actor->context.flags |= 0x2000;
     return 3;
 }
 
@@ -232,14 +232,14 @@ s32 opHandler_ANIMESTOP(Actor *actor) {
  * While the entity's @c activeMask bit is set: call @c func_800B912C with
  * the sign-extended @p a1, set the animation-active flag (0x4000), and
  * return 1 (yield, retry next frame). On subsequent frames, the entity
- * is no longer active for this script group; return 3 once flag 0x800
+ * is no longer active for this script slot; return 3 once flag 0x800
  * (animation complete) is set, else keep yielding with return 1.
  */
 s32 opHandler_ANIME(Actor *actor, s32 a1) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         func_800B912C(actor, (s16)a1);
-        actor->flags |= 0x4000;
-    } else if (actor->flags & 0x800) {
+        actor->context.flags |= 0x4000;
+    } else if (actor->context.flags & 0x800) {
         return 3;
     }
     return 1;
@@ -252,10 +252,10 @@ s32 opHandler_ANIME(Actor *actor, s32 a1) {
  * instead of @c 0x4000 to preserve the final frame after completion.
  */
 s32 opHandler_ANIMEKEEP(Actor *actor, s32 a1) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         func_800B912C(actor, (s16)a1);
-        actor->flags |= 0x8000;
-    } else if (actor->flags & 0x800) {
+        actor->context.flags |= 0x8000;
+    } else if (actor->context.flags & 0x800) {
         return 3;
     }
     return 1;
@@ -267,7 +267,7 @@ s32 opHandler_ANIMEKEEP(Actor *actor, s32 a1) {
  * Blocking variant of RCANIME. While the entity's @c activeMask bit is
  * set: pop two signed halfwords from the stack, dispatch via
  * @c func_800B91D8 with the bytecode arg, set the animation-active
- * flag (0x4000), and yield. Once the script-group bit clears, check
+ * flag (0x4000), and yield. Once the script slot bit clears, check
  * flag 0x800 (animation complete) to decide between return 3 and
  * return 1.
  */
@@ -276,13 +276,13 @@ s32 opHandler_CANIME(Actor *actor, s32 a1) {
     s32 v1;
     s32 tmp;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         v2 = POP_HALF(actor);
         v1 = POP_HALF(actor);
         func_800B91D8(actor, a1, v2, v1);
-        tmp = actor->flags | 0x4000;
-        actor->flags = tmp;
-    } else if (actor->flags & 0x800) {
+        tmp = actor->context.flags | 0x4000;
+        actor->context.flags = tmp;
+    } else if (actor->context.flags & 0x800) {
         return 3;
     }
     return 1;
@@ -296,13 +296,13 @@ s32 opHandler_CANIMEKEEP(Actor *actor, s32 a1) {
     s32 v1;
     s32 tmp;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         v2 = POP_HALF(actor);
         v1 = POP_HALF(actor);
         func_800B91D8(actor, a1, v2, v1);
-        tmp = actor->flags | 0x8000;
-        actor->flags = tmp;
-    } else if (actor->flags & 0x800) {
+        tmp = actor->context.flags | 0x8000;
+        actor->context.flags = tmp;
+    } else if (actor->context.flags & 0x800) {
         return 3;
     }
     return 1;
@@ -314,7 +314,7 @@ s32 opHandler_CANIMEKEEP(Actor *actor, s32 a1) {
  */
 s32 opHandler_RANIME(Actor *actor, s32 a1) {
     func_800B912C(actor, (s16)a1);
-    actor->flags |= 0x4000;
+    actor->context.flags |= 0x4000;
     return 3;
 }
 
@@ -324,7 +324,7 @@ s32 opHandler_RANIME(Actor *actor, s32 a1) {
  */
 s32 opHandler_RANIMEKEEP(Actor *actor, s32 a1) {
     func_800B912C(actor, (s16)a1);
-    actor->flags |= 0x8000;
+    actor->context.flags |= 0x8000;
     return 3;
 }
 
@@ -344,8 +344,8 @@ s32 opHandler_RCANIME(Actor *actor, s32 a1) {
     v2 = POP_HALF(actor);
     v1 = POP_HALF(actor);
     func_800B91D8(actor, a1, v2, v1);
-    tmp = actor->flags | 0x4000;
-    actor->flags = tmp;
+    tmp = actor->context.flags | 0x4000;
+    actor->context.flags = tmp;
     return 3;
 }
 
@@ -360,8 +360,8 @@ s32 opHandler_RCANIMEKEEP(Actor *actor, s32 a1) {
     v2 = POP_HALF(actor);
     v1 = POP_HALF(actor);
     func_800B91D8(actor, a1, v2, v1);
-    tmp = actor->flags | 0x8000;
-    actor->flags = tmp;
+    tmp = actor->context.flags | 0x8000;
+    actor->context.flags = tmp;
     return 3;
 }
 
@@ -371,7 +371,7 @@ s32 opHandler_RCANIMEKEEP(Actor *actor, s32 a1) {
  */
 s32 opHandler_RANIMELOOP(Actor *actor, s32 a1) {
     func_800B912C(actor, (s16)a1);
-    actor->flags |= 0x2000;
+    actor->context.flags |= 0x2000;
     return 3;
 }
 
@@ -386,8 +386,8 @@ s32 opHandler_RCANIMELOOP(Actor *actor, s32 a1) {
     v2 = POP_HALF(actor);
     v1 = POP_HALF(actor);
     func_800B91D8(actor, a1, v2, v1);
-    tmp = actor->flags | 0x2000;
-    actor->flags = tmp;
+    tmp = actor->context.flags | 0x2000;
+    actor->context.flags = tmp;
     return 3;
 }
 
@@ -478,7 +478,7 @@ s32 opHandler_SETROOTTRANS(Actor *actor) {
 /**
  * Pop value, divide by 4 (signed, round toward zero), store to 8 entity bytes.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
 s32 opHandler_SHADESET(Actor *actor) {
@@ -537,7 +537,7 @@ s32 opHandler_DIR(Actor *actor) {
 /**
  * @brief Conditionally activate a message based on the entity's active bit.
  *
- * If bit @c scriptGroup of @c activeMask is set, peek the top three
+ * If bit @c scriptSlot of @c activeMask is set, peek the top three
  * stack slots, shift each left by 12, and write them as the message's
  * @c textPtr / @c posX / @c posY (fixed-point). Also clears
  * @c msgState, @c windowId, @c moveSpeed and sets @c msgActive=1.
@@ -551,19 +551,19 @@ s32 opHandler_DIR(Actor *actor) {
  * @param actor Pointer to the Actor event-script context.
  */
 s32 opHandler_DIRP(Actor *actor) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->msgActive    = 1;
         actor->msgState     = 0;
         actor->windowId     = 0;
         actor->moveSpeed = 0;
-        actor->msgTextPtr = actor->stack[(s8)actor->stackPtr - 2] << 12;
-        actor->msgPosX    = actor->stack[(s8)actor->stackPtr - 1] << 12;
-        actor->msgPosY    = actor->stack[(s8)actor->stackPtr]     << 12;
+        actor->msgTextPtr = actor->context.stack[(s8)actor->context.stackPtr - 2] << 12;
+        actor->msgPosX    = actor->context.stack[(s8)actor->context.stackPtr - 1] << 12;
+        actor->msgPosY    = actor->context.stack[(s8)actor->context.stackPtr]     << 12;
         return 1;
     }
     actor->msgState     = 2;
     actor->msgActive    = 0;
-    actor->stackPtr    -= 3;
+    actor->context.stackPtr    -= 3;
     actor->moveSpeed = actor->msgChannel;
     return 2;
 }
@@ -611,7 +611,7 @@ s32 opHandler_OP16B(Actor *actor) {
     s32 raw;
     u8 byte1;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         byte1 = POP_BYTE(actor);
         actor->field_0x244 = 1;
         actor->field_0x243 = 0;
@@ -644,7 +644,7 @@ s32 opHandler_OP16C(Actor *actor) {
     s32 raw;
     u8 byte1;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         byte1 = POP_BYTE(actor);
         actor->field_0x244 = 1;
         actor->field_0x243 = 0;
@@ -670,7 +670,7 @@ s32 opHandler_OP16D(Actor *actor) {
     s32 raw;
     u8 byte1;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         byte1 = POP_BYTE(actor);
         actor->field_0x244 = 2;
         actor->field_0x243 = 0;
@@ -696,7 +696,7 @@ s32 opHandler_OP16E(Actor *actor) {
     s32 raw;
     u8 byte1;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         byte1 = POP_BYTE(actor);
         actor->field_0x244 = 2;
         actor->field_0x243 = 0;
@@ -718,7 +718,7 @@ s32 opHandler_OP16E(Actor *actor) {
  * If abs(0x1DE - 0x1DC) >= 0x81, adjusts by +/- 0x100.
  * Also clears byte at 0x243.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
 /**
  * @brief Wrap the target heading to the shorter arc when |target-current|>0x80.
@@ -757,7 +757,7 @@ s32 opHandler_LTURNR(Actor *actor) {
     s32 raw;
     u8 byte1;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         byte1 = POP_BYTE(actor);
         actor->field_0x244 = 1;
         actor->field_0x243 = 0;
@@ -779,7 +779,7 @@ s32 opHandler_LTURNL(Actor *actor) {
     s32 raw;
     u8 byte1;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         byte1 = POP_BYTE(actor);
         actor->field_0x244 = 1;
         actor->field_0x243 = 0;
@@ -801,7 +801,7 @@ s32 opHandler_CTURNR(Actor *actor) {
     s32 raw;
     u8 byte1;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         byte1 = POP_BYTE(actor);
         actor->field_0x244 = 2;
         actor->field_0x243 = 0;
@@ -823,7 +823,7 @@ s32 opHandler_CTURNL(Actor *actor) {
     s32 raw;
     u8 byte1;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         byte1 = POP_BYTE(actor);
         actor->field_0x244 = 2;
         actor->field_0x243 = 0;
@@ -841,7 +841,7 @@ s32 opHandler_CTURNL(Actor *actor) {
 /**
  * @brief Op 0x???  — start an N-step rotation if the entity's bit is set.
  *
- * If the entity's @c activeMask bit (selected by @c scriptGroup) is set,
+ * If the entity's @c activeMask bit (selected by @c scriptSlot) is set,
  * pops two values: the target bearing byte (@c first) and a SeeD-party
  * member index. Looks up the target Actor via @c D_80085230[idx],
  * snapshots @c field_0x241 into @c field_0x1DC, dispatches
@@ -859,7 +859,7 @@ s32 opHandler_LTURN(Actor *actor) {
     s32 first;
     s32 idx;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         first = POP(actor);
         idx = POP(actor);
         actor->field_0x243 = 0;
@@ -892,7 +892,7 @@ s32 opHandler_CTURN(Actor *actor) {
     s32 first;
     s32 idx;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         first = POP(actor);
         idx = POP(actor);
         actor->field_0x243 = 0;
@@ -926,7 +926,7 @@ s32 opHandler_PLTURN(Actor *actor) {
     s32 first;
     s32 slot;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         first = POP(actor);
         slot = POP(actor);
         actor->field_0x243 = 0;
@@ -958,7 +958,7 @@ s32 opHandler_PCTURN(Actor *actor) {
     s32 first;
     s32 slot;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         first = POP(actor);
         slot = POP(actor);
         actor->field_0x243 = 0;
@@ -995,7 +995,7 @@ s32 opHandler_HASITEM(Actor *actor) {
     s32 first;
     s32 slot;
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         first = POP(actor);
         slot = POP(actor);
         actor->field_0x243 = 0;
@@ -1046,7 +1046,7 @@ s32 opHandler_FACEDIRSYNC(Actor *actor, s32 arg1) {
  * @c opHandler_FACEDIRSYNC to apply the queued state.
  */
 s32 opHandler_FACEDIRI(Actor *actor, s32 arg1) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(actor);
         actor->turnYawDst = POP(actor);
         actor->turnRollDst = POP(actor);
@@ -1064,7 +1064,7 @@ s32 opHandler_FACEDIRI(Actor *actor, s32 arg1) {
  * @c opHandler_FACEDIRSYNC to apply the queued facing state.
  */
 s32 opHandler_FACEDIR(Actor *actor, s32 arg1) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(actor);
         actor->turnTgtZ = POP(actor);
         actor->turnTgtY = POP(actor);
@@ -1097,7 +1097,7 @@ s32 opHandler_FACEDIRA(Actor *actor, s32 arg1) {
     s32 idx;
     s16 buf[4];
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(actor);
         idx = POP(actor);
         func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, (u32)D_800C71F8, buf);
@@ -1126,7 +1126,7 @@ s32 opHandler_FACEDIRP(Actor *actor, s32 arg1) {
     u8 slot;
     s16 buf[4];
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(actor);
         slot = g_fieldVars->memberSlot[POP(actor)];
         func_800A8DAC(slot, 0x1E, (u32)D_800C71F8, buf);
@@ -1158,7 +1158,7 @@ s32 opHandler_FACEDIRP(Actor *actor, s32 arg1) {
 s32 opHandler_FACEDIROFF(Actor *actor, s32 arg1) {
     s16 buf[4];
 
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(actor);
         ((void (*)(u8, s32, void *, void *))func_800A8DAC)(actor->field_0x256, 0x20, buf, 0);
         actor->turnPitchDst = buf[0] / 16;
@@ -1179,7 +1179,7 @@ s32 opHandler_FACEDIROFF(Actor *actor, s32 arg1) {
  * @c turnMode. Returns 2.
  */
 s32 opHandler_RFACEDIRI(Actor *actor) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(actor);
         actor->turnYawDst = POP(actor);
         actor->turnRollDst = POP(actor);
@@ -1197,7 +1197,7 @@ s32 opHandler_RFACEDIRI(Actor *actor) {
  * and sets @c turnMode to 1 (instead of 0). Returns 2.
  */
 s32 opHandler_RFACEDIR(Actor *actor) {
-    if ((actor->activeMask >> actor->scriptGroup) & 1) {
+    if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(actor);
         actor->turnTgtZ = POP(actor);
         actor->turnTgtY = POP(actor);

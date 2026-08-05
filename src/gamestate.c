@@ -473,7 +473,7 @@ void clearEntityFlags(void) {
     u8 count = D_80085388;
 
     for (i = 0; i < count; i++, ent++) {
-        ent->flags &= ~0x44;
+        ent->context.flags &= ~0x44;
     }
 
     func_800381BC();

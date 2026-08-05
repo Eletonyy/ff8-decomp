@@ -4,10 +4,10 @@
 #include "common.h"
 #include "field.h"
 
-extern s32  opHandler_DISABLEANGELO(FieldEntity *entity);
+extern s32  opHandler_DISABLEANGELO(ScriptContext *context);
 extern void func_800BD250(s32 dir, s16 *out);
-extern s32  opHandler_OP167(FieldEntity *entity);
-extern s32  opHandler_OP168(FieldEntity *entity);
+extern s32  opHandler_OP167(Actor *actor);
+extern s32  opHandler_OP168(Actor *actor);
 extern void updateSeedLevel(void);
 extern void func_800BD5E0(void);
 extern void func_800BD64C(void);
@@ -19,7 +19,7 @@ extern void func_800BE2AC(void);
 extern void func_800BE2DC(void);
 extern void func_800BE30C(u8 *header);
 extern s32  func_800BE44C(s32 val);
-extern void func_800BF230(FieldEntity *entity);
+extern void func_800BF230(Actor *actor);
 extern void func_800BF4A4(void);
 
 extern void func_800BD804(s32 stepDelta);
