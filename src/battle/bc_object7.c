@@ -94,7 +94,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF918);
  * @return Byte at @c (*entities[a0].linkedPtr)[0x14F].
  */
 s32 func_800AF988(s32 a0) {
-    return D_800ED148.entities[a0].linkedPtr->data->unk14F;
+    return (*D_800ED148.entities[a0].entityData)->unk14F;
 }
 
 /**
@@ -177,7 +177,7 @@ void func_800B0054(void) {
  * @return First s32 word at @c entities[idx].linkedPtr.
  */
 s32 func_800B0074(s32 idx) {
-    return (s32)D_800ED148.entities[idx].linkedPtr->data;
+    return (s32)*D_800ED148.entities[idx].entityData;
 }
 
 /**
@@ -374,7 +374,7 @@ s32 func_800B0668(s32 a0, s32 a1) {
  */
 void func_800B06DC(u16 arg0) {
     func_800A4C84(arg0);
-    if (D_800ED148.entities[0].pad0E == 0) {
+    if (D_800ED148.entities[0].unk0E == 0) {
         func_8009AE08(5);
         func_800AE524(D_800ED148.unk5C0 - 1);
         D_800ED148.entries[D_800ED148.unk5C0 - 1].unk10 = 0;
@@ -510,7 +510,7 @@ s32 func_800B0F3C(s32 a0) {
  * @param arg0 Ability flags.
  * @return Bitmask with bits 14 and/or 13 set.
  */
-s32 func_800B0F7C(s32 arg0) {
+u16 func_800B0F7C(s32 arg0) {
     s32 temp_v1;
     int new_var;
     s32 var_v0;
@@ -541,10 +541,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B1050);
  * @return Combined 16-bit ability flags.
  */
 u16 func_800B1104(s32 a0) {
-    s32 result;
-    result = func_800B1050(D_80078E00.spells[a0].magicId);
-    result |= func_800B0F7C(D_80078E00.spells[a0].magicId);
-    return (u16)result;
+    return func_800B1050(D_80078E00.spells[a0].magicId) | func_800B0F7C(D_80078E00.spells[a0].magicId);
 }
 
 /**
@@ -570,7 +567,7 @@ s32 func_800B115C(s32 selfIdx, s32 cmdIdx, s32 *outId, u16 *outFlags) {
     u8 m = func_8009B15C() % 3;
     s32 cmd = g_battleChars.chars[selfIdx].cmdSlots[cmdIdx].cmdType;
     s32 a;
-    s32 v1;
+    u16 v1;
 
     *outId = 0;
 
@@ -592,9 +589,7 @@ s32 func_800B115C(s32 selfIdx, s32 cmdIdx, s32 *outId, u16 *outFlags) {
         if ((m & 0xFF) != 0) {
             *outFlags = func_800B1104(a);
         } else {
-            v1 = func_800B0F9C(D_80078E00.spells[a].magicId);
-            v1 |= func_800B0F7C(D_80078E00.spells[*outId].magicId);
-            *outFlags = v1;
+            *outFlags = func_800B0F9C(D_80078E00.spells[a].magicId) | func_800B0F7C(D_80078E00.spells[*outId].magicId);
         }
         return cmd;
     case 4:
@@ -605,13 +600,11 @@ s32 func_800B115C(s32 selfIdx, s32 cmdIdx, s32 *outId, u16 *outFlags) {
         }
         func_800AF4BC(a, 1);
         if ((m & 0xFF) != 0) {
-            v1 = func_800B1050(D_80078E00.abilities[*outId].abilityId);
-            v1 |= func_800B0F7C(D_80078E00.abilities[*outId].abilityId);
+            *outFlags = func_800B1050(D_80078E00.abilities[*outId].abilityId) | func_800B0F7C(D_80078E00.abilities[*outId].abilityId);
         } else {
-            v1 = func_800B0F9C(D_80078E00.abilities[*outId].abilityId);
-            v1 |= func_800B0F7C(D_80078E00.abilities[*outId].abilityId);
+            *outFlags = func_800B0F9C(D_80078E00.abilities[*outId].abilityId) | func_800B0F7C(D_80078E00.abilities[*outId].abilityId);
         }
-        *outFlags = v1;
+        
         return cmd;
     }
     return 0;

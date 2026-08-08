@@ -1449,7 +1449,7 @@ void func_8009EAEC(s32 charIdx) {
 s32 func_8009ED2C(s32 arg0) {
     BattleEntityData* temp_s0;
     
-    temp_s0 = D_800ED148.entities[arg0].linkedPtr->data;
+    temp_s0 = *D_800ED148.entities[arg0].entityData;
     if((temp_s0->unkF9 == 255) && (temp_s0->unkFA == temp_s0->unkF9)) {
         return 0;
     }
@@ -1495,7 +1495,7 @@ void func_8009EE44(s32 unused, s32 arg1) {
 s32 func_8009EF64(s32 arg0, s32 unused, s32 unused2, s32 arg3) {
     BattleEntityData* curr;
 
-    curr = D_800ED148.entities[arg0].linkedPtr->data;
+    curr = *D_800ED148.entities[arg0].entityData;
     switch (D_800EE9E8.subEntries[arg0 - 3].unk46) {
     case 0:
         arg3 = curr->unkFB;
@@ -1751,7 +1751,7 @@ s32 func_8009F65C(s32 arg0, s32 arg1) {
     s32 i;
     BattleEntityData* data;
     
-    data = D_800ED148.entities[arg0].linkedPtr->data;
+    data = *D_800ED148.entities[arg0].entityData;
     offset = D_800EE9E8.subEntries[arg0 - 3].unk46 * 8;
 
     for (i = 0; i < 4; i++, offset += 2) {
@@ -2253,11 +2253,6 @@ s32 func_800A085C(void) {
     return total / count;
 }
 
-/**
- * @brief Get the active entity count, defaulting to 1 if unset.
- *
- * @return The value of D_800786D9, or 1 if it is zero.
- */
 u8 func_800A08C0(void) {
     u8 var_v0;
 
@@ -2308,7 +2303,7 @@ void func_800A0978(s32 arg0) {
     }
 }
 
-void func_800A09D0(u32 arg0) { // no return value here
+void func_800A09D0(s32 arg0) {
     BattleSystem* bs;
     BattleEntity* temp_a0;
     s32 temp_s4;
@@ -2616,7 +2611,7 @@ void func_800A09D0(u32 arg0) { // no return value here
         break;
 
     case 251:       
-        var_s3 = D_80078E00.array37A9[g_gameState.chars[g_gameState.mainData.party.party[temp_s4]].characterId].unk0;
+        var_s3 = D_80078E00.array37A6[g_gameState.chars[g_gameState.mainData.party.party[temp_s4]].characterId].unk3;
         goto wait_oh_god_make_it_stop;
 
     case 243:       
@@ -2712,7 +2707,7 @@ void func_800A1760(s32 arg0, BattleCharData* arg1) {
  * @param attr Attribute value (masked to 7 bits).
  * @param flags Flag value (masked to 0x30E7FFF).
  */
-void func_800A184C(s32 arg0, s32 arg1, s32 arg2) {
+void func_800A184C(s32 arg0, u16 arg1, s32 arg2) {
     BattleCharData* temp_v1;
 
     temp_v1 = &g_battleChars.chars[arg0];

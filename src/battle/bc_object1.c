@@ -93,6 +93,8 @@ s32  func_8009B7F4(s32, s32);
 void func_8009B878(s32, u16 *, s32 *, s32);
 s32  func_8009BA5C(s32, s32);
 //s32  func_8009B3D0(void*); this function prototype most likely has been forgotten originally too
+void func_8009B320(u8 arg0, TaskLink* arg1, u8* arg2); // outside of bc_object1 this prototype has been forgotten to be included (i.e func_800A589C in bc_object3)
+
 /* Overlay-conflict externs: same MIPS address holds different functions
    in other overlays, so these cannot be hoisted into a shared header. */
 void func_8009A638(void);     /* also in world */
@@ -102,6 +104,8 @@ s32  func_8009B74C(s32, s32); /* also in field_engine */
 
 extern void func_800D0F74(void); /* defined in another battle TU */
 extern SoundCmd *func_800B8564(s32, s32); /* defined in bc_object9.c */
+
+
 
 /**
  * @brief Battle initialization entry point.
@@ -299,10 +303,9 @@ void func_8009A3F4(void) {
  * @param off Hit-type table index.
  */
 void func_8009A42C(s32 idx, s32 off) {
-    SoundCmd *cmd = func_8009B134(0x66, 0x80, (s32)&D_800ED158.slots[idx]);
-    u8 *hitType = &D_800ED158.unkD04[off];
+    SoundCmd *cmd = func_8009B134(0x66, 0x80, &D_800ED148.entities[idx].entityData);
     cmd->unk0 = idx;
-    cmd->unk2.hword = *hitType;
+    cmd->unk2.hword = D_800ED148.unkD14[off];
 }
 
 /**
@@ -359,7 +362,7 @@ void func_8009A528(s32 idx, s32 off) {
 
     func_8009AFF0(idx);
     func_800A1CFC(idx);
-    cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED148.entities[idx].linkedPtr);
+    cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED148.entities[idx].entityData);
     cmd->unk0 = idx;
     cmd->unk2.b.lo = 1;
     if (D_800ED148.entities[idx].controlFlags & 2) {
@@ -419,7 +422,7 @@ void func_8009A6A8(s32 idx) {
     func_8009AFF0(idx);
     entities = (BattleEntity *)D_800ED148.entities;
     func_800A1AB8(idx, entities[idx].status, entities[idx].flags);
-    cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED148.entities[idx].linkedPtr);
+    cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED148.entities[idx].entityData);
     cmd->unk0 = idx;
     cmd->unk2.b.lo = 0;
     cmd->unk2.b.hi = 0;
@@ -488,9 +491,9 @@ void func_8009A74C(void) {
  * @param idx Entity slot index.
  */
 void func_8009A8B4(s32 idx) {
-    SoundCmd *cmd = func_8009B134(0x66, 0x80, (s32)&D_800ED158.slots[idx]);
+    SoundCmd *cmd = func_8009B134(0x66, 0x80, &D_800ED148.entities[idx].entityData);
     cmd->unk0 = idx;
-    cmd->unk2.hword = *(u8 *)&D_800ED158.slots[idx].linkedIdx2;
+    cmd->unk2.hword = D_800ED148.entities[idx].linkedIdx;
 }
 
 /**
@@ -855,7 +858,7 @@ void func_8009AF3C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
 void func_8009AF98(s32 idx) {
     SoundCmd *cmd;
     func_8009AFF0(idx);
-    cmd = func_8009B134(0x75, 0x80, (s32)&D_800ED158.slots[idx]);
+    cmd = func_8009B134(0x75, 0x80, &D_800ED148.entities[idx].entityData);
     cmd->unk0 = idx;
 }
 
@@ -877,7 +880,7 @@ void func_8009AFF0(s32 idx) {
     e->flagsBackup = e->flags;
 
     if (idx >= 3) {
-        linked = e->linkedPtr->data;
+        linked = *e->entityData;
         if (linked->immunityFlags & 1) {
             e->statusBackup &= 0xFFBF;
         }
@@ -942,8 +945,10 @@ void func_8009B0F8(s32 a0) {
  * @param entry Caller-supplied context pointer / value.
  * @return Pointer to the command buffer, or NULL if the queue is full.
  */
-SoundCmd* func_8009B134(s16 arg0, s32 arg1, s32 unused) {
-    return func_800B8564(arg0, arg1 & 0xFF);
+ 
+ // some functions want arg1 to be s32, probably forgot to include the prototype
+SoundCmd* func_8009B134(s16 arg0, u8 arg1, s32 unused) {
+    return func_800B8564(arg0, arg1);
 }
 
 /**
@@ -1090,30 +1095,22 @@ u32 func_8009B2A4(TaskLink* arg0, u8* taskHead, s32 arg2) {
  * @param a1 Pointer to task entry array.
  * @param a2 Pointer to head index storage.
  */
-void func_8009B320(s32 a0, u8 *a1, u8 *a2) {
-    u8 *entry;
-    s32 sentinel;
-    s32 fwd;
-
-    entry = (u8 *)((a0 & 0xFF) * 4 + (s32)a1);
-    sentinel = 0xFF;
-
-    fwd = entry[0];
-    if (fwd != sentinel) {
-        a1[fwd * 4 + 1] = entry[1];
+void func_8009B320(u8 arg0, TaskLink* arg1, u8* arg2) {  
+    if (arg1[arg0].fwd != 255) {
+        arg1[arg1[arg0].fwd].bwd = arg1[arg0].bwd;
     }
-    fwd = entry[1];
-    if (fwd != sentinel) {
-        a1[fwd * 4] = entry[0];
-    } else {
-        *a2 = entry[0];
+    
+    if (arg1[arg0].bwd != 255) {
+        arg1[arg1[arg0].bwd].fwd = arg1[arg0].fwd;
+    } 
+    
+    else {
+        *arg2 = arg1[arg0].fwd;
     }
-    {
-        u8 *e2 = (u8 *)((a0 & 0xFF) * 4 + (s32)a1);
-        e2[2] = 0;
-        e2[1] = 0;
-        e2[0] = 0;
-    }
+    
+    arg1[arg0].unk2 = 0;
+    arg1[arg0].bwd = 0;
+    arg1[arg0].fwd = 0;
 }
 
 /**
@@ -1209,11 +1206,11 @@ found:
  */
 void func_8009B520(void) {
     s32 i;
+    
     for (i = 0; i < 16; i++) {
-        s32 slot = i & 0xFF;
         if (D_800ED148.taskData[i].done == 1) {
             D_800ED148.taskData[i].done = 0;
-            func_8009B320(slot, (u8 *)D_800ED148.taskLinks, (u8 *)&D_800ED148.taskHead);
+            func_8009B320(i, D_800ED148.taskLinks, &D_800ED148.taskHead);
         }
     }
 }
@@ -1417,7 +1414,7 @@ void func_8009B878(s32 a0, u16 *a1, s32 *a2, s32 a3) {
     if (a0 < 3) {
         return;
     }
-    linked = D_800ED148.entities[a0].linkedPtr->data;
+    linked = *D_800ED148.entities[a0].entityData;
     status = *a1;
     if (status & 0x40) {
         if (linked->immunityFlags & 1) {
@@ -1491,8 +1488,7 @@ void func_8009B924(s32 slot, s32 clearMask, s32 applyMask) {
 s32 func_8009BA5C(s32 slot, s32 defaultStatus) {
     unsigned short result;
 
-    result = func_800B0F9C(g_gfData.subTableS[slot].abilityFlags);
-    result |= func_800B0F7C(g_gfData.subTableS[slot].abilityFlags);
+    result = func_800B0F9C(g_gfData.subTableS[slot].abilityFlags) | func_800B0F7C(g_gfData.subTableS[slot].abilityFlags);
 
     if (result & 0x8000)
         return (u16)result;

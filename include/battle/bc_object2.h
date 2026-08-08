@@ -189,11 +189,11 @@ void func_800A08E0(s32 unused, s32 unused2);
 
 void func_800A0978(s32 entityIdx);
 
-void func_800A09D0(u32 arg0);
+void func_800A09D0(s32 arg0);
 
 void func_800A1760(s32 arg0, BattleCharData* arg1);
 
-void func_800A184C(s32 idx, s32 attr, s32 flags);
+void func_800A184C(s32 idx, u16 attr, s32 flags);
 
 void func_800A1888(s32 arg0);
 
