@@ -14,7 +14,6 @@ void func_800E1880(s32, s32);
 void func_800AF8A4(s32);
 u16 func_800A4F28(u16, u16, u16);
 void func_800A1AB8(s32, u16, s32);
-
 u16 func_800A475C(u16);                             /* extern */
 void func_800A47E4(s32);                               /* extern */
 u16 func_800A4A74(s32, u16);                        /* extern */

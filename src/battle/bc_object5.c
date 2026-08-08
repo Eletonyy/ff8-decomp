@@ -192,8 +192,8 @@ top:
  * @param bitPos Bit position (0-15).
  * @return 16-bit mask with bit at bitPos set.
  */
-u16 func_800A97FC(s32 bitPos) {
-    return (1 << bitPos) & 0xFFFF;
+u16 func_800A97FC(s32 arg0) {
+    return 1 << arg0;
 }
 
 /**

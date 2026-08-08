@@ -392,10 +392,9 @@ void func_800B06DC(u16 arg0) {
  * @param a2 Third parameter passed through.
  * @param a3 Fourth parameter (16-bit truncated, passed as 6th arg).
  */
-void func_800B0754(s32 a0, s32 a1, s32 a2, s32 a3) {
-    s32 val = (u16)a3;
-    func_800A30F8(a0, a1, a2, 0, a0, val, 0);
-    func_800B06DC(val);
+void func_800B0754(s32 a0, s32 a1, s32 a2, u16 a3) {
+    func_800A30F8(a0, a1, a2, 0, a0, a3, 0);
+    func_800B06DC(a3);
 }
 
 /**
