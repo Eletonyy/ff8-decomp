@@ -60,31 +60,31 @@ s32 func_800A5FA4(FieldLineTrigger *seg, s32 sel) {
 }
 
 /**
- * @brief Scan the 12-entry eline segment table and fire per-segment triggers
- *        based on proximity, facing angle, and edge orientation to @p eline.
+ * @brief Scan the 12-entry actor segment table and fire per-segment triggers
+ *        based on proximity, facing angle, and edge orientation to @p actor.
  *
- * Stages @p eline 's world position (@c posX/Y/Z >> 12) into the scratchpad
+ * Stages @p actor 's world position (@c posX/Y/Z >> 12) into the scratchpad
  * at @c getScratchAddr(0), then for each non-empty segment (@c marker != 0xFF):
  *  - Runs @c func_8009A2BC (which projects the segment and returns a squared
  *    distance, also writing the projected point to @c getScratchAddr(8)).
- *  - If the point is within @c eline->radius²: the segment fires
+ *  - If the point is within @c actor->radius²: the segment fires
  *    (@c func_800A5FA4 with the segment @c type) when either the projected
- *    point coincides with @p eline, or the facing angle from @c func_8009A0E8
- *    lies within a @c +/-64 window of @c eline->unk23F.
+ *    point coincides with @p actor, or the facing angle from @c func_8009A0E8
+ *    lies within a @c +/-64 window of @c actor->unk23F.
  *  - Otherwise (out of range): segments with @c type >= 4 are gated by a
  *    cross-product orientation test against the segment edge, then
  *    @c type 2/4 fire with flag 1 and @c type 3/5 fire with flag 0.
  *
- * @param eline The querying eline entity.
+ * @param actor The querying actor entity.
  * @param segs  The 12-entry, 16-byte-stride segment table.
  * @param pt    Query point supplied by @c func_8009D598; unused here, the
- *              scan runs against the eline's own position.
+ *              scan runs against the actor's own position.
  *
  * @note The empty @c do{}while(0) is a scheduling barrier: it keeps gcc 2.7.2
  *       from reordering the @c posY store ahead of the @c posX store while
  *       staging the scratchpad, matching the original prologue schedule.
  */
-void func_800A6100(Eline *eline, FieldLineTrigger *segs, Vec3i *pt) {
+void func_800A6100(Actor *actor, FieldLineTrigger *segs, Vec3i *pt) {
     s32 *p = getScratchAddr(0);
     s32 *q;
     FieldLineTrigger *seg;
@@ -93,20 +93,20 @@ void func_800A6100(Eline *eline, FieldLineTrigger *segs, Vec3i *pt) {
 
     seg = segs;
     q = getScratchAddr(8);
-    p[0] = eline->posX >> 12;
+    p[0] = actor->posX >> 12;
     do { } while (0);
-    p[1] = eline->posY >> 12;
-    p[2] = eline->posZ >> 12;
+    p[1] = actor->posY >> 12;
+    p[2] = actor->posZ >> 12;
 
     for (i = 0; i < 12; i++, seg++) {
         if (seg->marker == 0xFF) {
             continue;
         }
         dist = func_8009A2BC(seg, p, q);
-        if (dist != -1 && dist < eline->radius * eline->radius) {
+        if (dist != -1 && dist < actor->radius * actor->radius) {
             if (p[0] == q[0] && p[1] == q[1]) {
                 func_800A5FA4(seg, seg->type);
-            } else if ((((func_8009A0E8(p, q, &dist) & 0xFF) - eline->unk23F + 0x40) & 0xFF) < 0x80) {
+            } else if ((((func_8009A0E8(p, q, &dist) & 0xFF) - actor->unk23F + 0x40) & 0xFF) < 0x80) {
                 func_800A5FA4(seg, seg->type);
             }
         } else {

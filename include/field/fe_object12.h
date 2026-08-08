@@ -17,9 +17,11 @@ extern void func_800C0634(void);
 /** @brief Slot-7 magic list; aliases @c &g_gameState.chars[7].magic (64 bytes). */
 extern u8 D_80077C40[];
 
-/* INCLUDE_ASM stubs — bodies still in assembly, signatures unknown.
- * Declared K&R-style; refine when these get decomped to C. */
+/* INCLUDE_ASM stub — body still in assembly, signature unknown.
+ * Declared K&R-style; refine when it gets decomped to C. */
 extern int  func_800C0098();
-extern int  func_800C00C8();
+
+/** @brief Field-engine state initializer (new game / field reset). */
+extern void SmInitEventAll(s32 fullReset);
 
 #endif

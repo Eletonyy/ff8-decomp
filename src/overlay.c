@@ -468,8 +468,8 @@ s32 func_8003646C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 
 /** @brief Initialize or reset card hand slot states.
  *
- *  If @p a0 is non-zero, sets chars[0].characterId to 8 and sets bit 0 of
- *  mainData.partyLockFlag. If @p a0 is zero, clears bit 0 of partyLockFlag
+ *  If @p a0 is non-zero, sets chars[0].characterId to 8 and sets
+ *  @ref PARTY_LOCK_LOCKED. If @p a0 is zero, clears that bit
  *  and fills all 8 character slots with descending index values (7 down to 0).
  *
  *  @param a0 Non-zero to set single slot, zero to reset all 8 character slots.
@@ -478,10 +478,10 @@ void resetCardSlots(s32 a0) {
     if (a0 != 0) {
         u8 flags = g_gameState.mainData.partyLockFlag;
         g_gameState.chars[0].characterId = 8;
-        g_gameState.mainData.partyLockFlag = flags | 1;
+        g_gameState.mainData.partyLockFlag = flags | PARTY_LOCK_LOCKED;
     } else {
         a0 = 7;
-        g_gameState.mainData.partyLockFlag &= 0xFE;
+        g_gameState.mainData.partyLockFlag &= ~PARTY_LOCK_LOCKED;
         do {
             g_gameState.chars[a0].characterId = a0;
             a0--;

@@ -299,6 +299,12 @@ typedef struct {
 /** @brief Runtime GF data region (BSS, populated at load time). */
 extern GfData g_gfData;
 
+/** @brief Bitmask of GFs currently available (bit N = GF N unlocked).
+ *  @note Defined in @c card.c as @c u16, declared int-width here on purpose:
+ *        callers were built against an int-width declaration and narrowing it
+ *        breaks @c menugf.ovl / @c menujnc2.ovl. See the note in @c card.h. */
+s32 getGfAvailabilityMask(void);
+
 /**
  * @brief Per-magic-spell junction data (stride 60 bytes).
  *
@@ -324,7 +330,6 @@ typedef struct {
 } MagicJunctionData; /* 60 bytes */
 
 extern MagicJunctionData g_magicJunctionData[];
-s32 getGfAvailabilityMask(void);
 u8 *func_80020EF4(s32);
 u8 *func_80020F84(s32);
 

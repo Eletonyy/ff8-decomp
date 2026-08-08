@@ -155,9 +155,9 @@ s32 *func_800983F0(void) {
     D_800704B2 = 20;
 
     if (D_8005F14C == 3) {
-        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (FieldEntityB *)0x80090800, (u16 *)*D_800D5ED4, 0);
+        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (Eline *)0x80090800, (u16 *)*D_800D5ED4, 0);
     } else {
-        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (FieldEntityB *)0x80090800, (u16 *)*D_800D5ED4, 1);
+        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (Eline *)0x80090800, (u16 *)*D_800D5ED4, 1);
     }
 
     D_800C6D98[0] = buf;
@@ -249,7 +249,7 @@ void func_80098934(void) {
  *   - For all modes except 6: snapshot 12 consecutive pointer-table fields
  *     from the freshly-loaded overlay at @c 0x800E1000 into the
  *     @c D_800C7208 / @c D_800C71E8 / @c D_800D5E* globals, then call
- *     @c func_800983F0 to install the eline pool.
+ *     @c func_800983F0 to install the actor pool.
  *   - Compute centered screen rectangles into @c D_800C7210 / @c D_800C7214
  *     from @c D_8005F0F8 's bounding-box fields, then derive
  *     @c D_800C71F0 (entry-table start = @c *D_800C7204 + 4) and
@@ -493,6 +493,15 @@ void func_8009895C(void) {
 }
 
 
+/**
+ * @brief Empty in the retail build, and called from nowhere.
+ *
+ * @note Purpose unknown. It survives as a real function -- the linker kept
+ *       its address and @c fe_object1.h still declares it -- so it was most
+ *       likely a debug or teardown hook whose body was compiled out, sitting
+ *       as it does between the shutdown path above and the SFX fade-out in
+ *       @ref func_8009912C.
+ */
 void func_80099124(void) {
 }
 
@@ -809,7 +818,7 @@ void func_80099348(void) {
             break;
         }
 
-        if ((g_fieldVars->stateFlags & 0x40) && g_gameState.mainData.countdownTimer == 0
+        if ((g_fieldVars->stateFlags & FIELD_STATE_CAMERA_SHAKE) && g_gameState.mainData.countdownTimer == 0
             && (g_fieldVars->fieldB6 & 0x100) == 0) {
             D_800704A8.counter = 0x4B;
             D_800704A8.mode = 1;
@@ -990,7 +999,7 @@ done:
 }
 
 /**
- * @brief Per-frame update of the @ref FieldEntityB trigger pool against the
+ * @brief Per-frame update of the @ref Eline trigger pool against the
  *        self entity's position.
  *
  * Stages @p self 's position and a secondary query point @p pt (its Z is taken
@@ -1005,8 +1014,8 @@ done:
  * (@ref func_8009A0E8), and @c trigger7 (1/2) from the current pad-hold mode.
  * When out of range, @c trigger3 is raised on the frame the record leaves.
  *
- * @param self    Querying entity.
- * @param records @ref FieldEntityB pool (count @c D_800852F8).
+ * @param actor    Querying entity.
+ * @param records @ref Eline pool (count @c D_800852F8).
  * @param pt      Secondary query point; its Z is taken from @p self.
  * @return Always 0.
  *
@@ -1019,25 +1028,25 @@ done:
  *       @c fc++,rec++ increment order pin the original's register allocation
  *       and the loop-end branch-delay schedule.
  */
-s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
+s32 func_8009A4C0(Actor *actor, Eline *records, VECTOR *pt) {
     VECTOR *selfPos = (VECTOR *)getScratchAddr(0);
     VECTOR *queryPt;
     VECTOR *proj;
-    FieldEntityB *fc;
-    FieldEntityB *rec;
+    Eline *fc;
+    Eline *rec;
     s32 i;
     s32 dist;
 
     fc = records;
     rec = records;
-    selfPos->vx = self->posX >> 12;
-    selfPos->vy = self->posY >> 12;
-    selfPos->vz = self->posZ >> 12;
+    selfPos->vx = actor->posX >> 12;
+    selfPos->vy = actor->posY >> 12;
+    selfPos->vz = actor->posZ >> 12;
     queryPt = (VECTOR *)((u32)selfPos | 0x10);
     proj = (VECTOR *)((u32)selfPos | 0x20);
     queryPt->vx = pt->vx >> 12;
     queryPt->vy = pt->vy >> 12;
-    queryPt->vz = self->posZ >> 12;
+    queryPt->vz = actor->posZ >> 12;
     fc = records;
     do { } while (0);
 
@@ -1047,7 +1056,7 @@ s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
         }
         fc->unk19D = 0;
         dist = func_8009A2BC((LineSeg *)&rec->x0, queryPt, proj);
-        if (dist != -1 && dist < self->radius * self->radius) {
+        if (dist != -1 && dist < actor->radius * actor->radius) {
             s32 dx;
             s32 dy;
             s32 crossSelf;
@@ -1070,12 +1079,12 @@ s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
                 fc->unk19D = 1;
             } else {
                 fc->unk19C = func_8009A0E8((s32 *)selfPos, (s32 *)proj, &dist);
-                if (((fc->unk19C - self->unk23F + 0x40) & 0xFF) < 0x80) {
+                if (((fc->unk19C - actor->unk23F + 0x40) & 0xFF) < 0x80) {
                     fc->trigger6 = 1;
                     fc->unk19D = 1;
                 }
             }
-            if (fc->unk19D == 1 && ((fc->unk19C - self->unk23F + 0x20) & 0xFF) < 0x40) {
+            if (fc->unk19D == 1 && ((fc->unk19C - actor->unk23F + 0x20) & 0xFF) < 0x40) {
                 if ((D_800704A8.unk150 & 0x40) && !(D_800704A8.unk154 & 0x40)) {
                     fc->trigger7 = 1;
                 }
@@ -1095,15 +1104,15 @@ s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
 }
 
 /**
- * @brief Sync per-entity @c trigger7 across the FieldEntityB pool from
+ * @brief Sync per-entity @c trigger7 across the Eline pool from
  *        the global @c unk150 / @c unk154 SFX flag pair.
  *
  * Iterates the @c D_800852F8 entities at @c pool. For each entity that
  * passes the gating tests
  *   - @c activeMarker == 1
- *   - @c eline->msgActive == 0
+ *   - @c actor->msgActive == 0
  *   - @c unk19D == @c activeMarker (so @c unk19D == 1)
- *   - @c entity->unk19C falls within a @c +/-32 window of @c eline->unk23F
+ *   - @c entity->unk19C falls within a @c +/-32 window of @c actor->unk23F
  *
  * writes @c trigger7 from the @c D_800704A8.unk150 / @c unk154 pair:
  *   - bit 6 set in @c unk150 and clear in @c unk154 → @c trigger7 = @c unk19D (= 1)
@@ -1114,13 +1123,13 @@ s32 func_8009A4C0(Eline *self, FieldEntityB *records, VECTOR *pt) {
  * count-reload @c lbu 's load-delay slot, target leaves that slot
  * as a @c nop.
  */
-void func_8009A7E8(Eline *e, FieldEntityB *pool) {
+void func_8009A7E8(Actor *actor, Eline *pool) {
     s32 i;
     for (i = 0; i < D_800852F8; i++, pool++) {
         if (pool->activeMarker == 1) {
-            if (e->msgActive == 0) {
+            if (actor->msgActive == 0) {
                 if (pool->unk19D == pool->activeMarker) {
-                    if ((s32)(((s32)pool->unk19C - (s32)e->unk23F + 0x20) & 0xFF) < 0x40) {
+                    if ((s32)(((s32)pool->unk19C - (s32)actor->unk23F + 0x20) & 0xFF) < 0x40) {
                         if (D_800704A8.unk150 & 0x40) {
                             if (!(D_800704A8.unk154 & 0x40)) {
                                 pool->trigger7 = pool->unk19D;
@@ -1139,7 +1148,7 @@ void func_8009A7E8(Eline *e, FieldEntityB *pool) {
 }
 
 /**
- * @brief Clear @c trigger4 and @c unk19D across every @c FieldEntityB in the pool.
+ * @brief Clear @c trigger4 and @c unk19D across every @c Eline in the pool.
  *
  * Walks the entire @c D_8008538C pool (size @c D_800852F8) and zeros each
  * entity's @c trigger4 (offset 0x196) and @c unk19D (offset 0x19D). Called
@@ -1152,58 +1161,58 @@ void func_8009A7E8(Eline *e, FieldEntityB *pool) {
  * is in range"). The pool count @c D_800852F8 is reloaded each iteration
  * because gcc can't prove the stores through @p e don't alias it.
  */
-void func_8009A8E0(FieldEntityB *e) {
+void func_8009A8E0(Eline *eline) {
     s32 i = 0;
     if (D_800852F8 != 0) {
         do {
             i++;
-            e->trigger4 = 0;
-            e->unk19D = 0;
-            e++;
+            eline->trigger4 = 0;
+            eline->unk19D = 0;
+            eline++;
         } while (i < D_800852F8);
     }
 }
 
 /**
- * @brief Per-frame proximity check, for each @c FieldEntityB in
- *        @c D_800852F8 entries, run @c func_8009A2BC against the eline's
+ * @brief Per-frame proximity check, for each @c Eline in
+ *        @c D_800852F8 entries, run @c func_8009A2BC against the actor's
  *        position and set per-entity trigger bytes based on the hit
- *        distance vs the eline's collision radius.
+ *        distance vs the actor's collision radius.
  *
- * Writes the eline's @c (posX, posY, posZ) @c >> @c 12 to the PSX
+ * Writes the actor's @c (posX, posY, posZ) @c >> @c 12 to the PSX
  * scratchpad at @c getScratchAddr(2..4), then iterates each
- * @c FieldEntityB and (when active and the eline isn't in a message)
+ * @c Eline and (when active and the actor isn't in a message)
  * calls @c func_8009A2BC. The returned distance is compared against
  * @c radius*radius:
  *  - hit (in range): @c trigger4=1; also @c trigger2=1 when
  *    @c D_8005F14C @c == @c 3
  *  - miss (out of range or @c -1): @c trigger3=1, @c trigger4=0
  *
- * @param eline    Querying entity (position, radius, message state).
- * @param entities @c FieldEntityB pool; walked directly as the loop cursor.
+ * @param actor    Querying entity (position, radius, message state).
+ * @param entities @c Eline pool; walked directly as the loop cursor.
  *
  * @note @c fc is a vestigial second cursor: initialized and stepped in
  *       lockstep but never read. Removing it (or reading through it)
  *       changes the register allocation away from the original, the
  *       original source evidently carried it, so it stays.
  */
-void func_8009A920(Eline *eline, FieldEntityB *entities) {
+void func_8009A920(Actor *actor, Eline *entities) {
     Vec3i *scratch = (Vec3i *)getScratchAddr(0);
     Vec3i *out = (Vec3i *)getScratchAddr(4);
-    FieldEntityB *fc;
+    Eline *fc;
     s32 i;
     s32 dist;
 
-    scratch->x = eline->posX >> 12;
+    scratch->x = actor->posX >> 12;
     i = 0;
-    scratch->y = eline->posY >> 12;
-    scratch->z = eline->posZ >> 12;
+    scratch->y = actor->posY >> 12;
+    scratch->z = actor->posZ >> 12;
     if (i < D_800852F8) {
         fc = entities;
         do {
-            if (entities->activeMarker == 1 && eline->msgActive == 0) {
+            if (entities->activeMarker == 1 && actor->msgActive == 0) {
                 dist = func_8009A2BC((LineSeg *)&entities->x0, scratch, out);
-                if (dist != -1 && dist < eline->radius * eline->radius) {
+                if (dist != -1 && dist < actor->radius * actor->radius) {
                     if (D_8005F14C == 3) {
                         entities->trigger2 = 1;
                     }
@@ -1248,16 +1257,16 @@ void func_8009AA64(EventEntry *e) {
  * @brief Scan the 12-entry event queue for trigger segments the query point
  *        crosses, and fire the event restore for each hit.
  *
- * Stages the eline's position (@c >>12) into the scratchpad at
+ * Stages the actor's position (@c >>12) into the scratchpad at
  * @c getScratchAddr(0) and the query point (X/Y from @p pt, Z from the
- * eline) at @c getScratchAddr(4), then for each armed @ref EventEntry
+ * actor) at @c getScratchAddr(4), then for each armed @ref EventEntry
  * (@c counter != 0x7FFF, @c rotation != 0xFFFF): projects the query point
  * onto the entry's trigger segment via @ref func_8009A2BC, and when the
- * squared distance is inside @c eline->radius² and the eline and the query
+ * squared distance is inside @c actor->radius² and the actor and the query
  * point lie on opposite sides of the segment (2D cross-product signs
  * differ), restores the entry's event snapshot via @ref func_8009AA64.
  *
- * @param eline Querying entity.
+ * @param actor Querying entity.
  * @param segs  12-entry @ref EventEntry queue (32-byte stride).
  * @param pt    Query point (world fixed-point; only X/Y read).
  *
@@ -1265,7 +1274,7 @@ void func_8009AA64(EventEntry *e) {
  *       compiler shares one scratchpad base register (addu+ori), as in the
  *       original.
  */
-void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt) {
+void func_8009AAC8(Actor *actor, EventEntry *segs, Vec3i *pt) {
     Vec3i *A = (Vec3i *)getScratchAddr(0);
     Vec3i *B;
     Vec3i *C;
@@ -1274,14 +1283,14 @@ void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt) {
     s32 crossSelf;
     s32 crossPt;
 
-    A->x = eline->posX >> 12;
+    A->x = actor->posX >> 12;
     B = (Vec3i *)((u32)A | 0x10);
-    A->y = eline->posY >> 12;
+    A->y = actor->posY >> 12;
     C = (Vec3i *)((u32)A | 0x20);
-    A->z = eline->posZ >> 12;
+    A->z = actor->posZ >> 12;
     B->x = pt->x >> 12;
     B->y = pt->y >> 12;
-    B->z = eline->posZ >> 12;
+    B->z = actor->posZ >> 12;
     for (i = 0; i < 12; i++, segs++) {
         if (segs->counter == 0x7FFF) {
             continue;
@@ -1293,7 +1302,7 @@ void func_8009AAC8(Eline *eline, EventEntry *segs, Vec3i *pt) {
         if (dist == -1) {
             continue;
         }
-        if (dist < eline->radius * eline->radius) {
+        if (dist < actor->radius * actor->radius) {
             crossSelf = (segs->x1 - segs->x0) * (A->y - segs->y0)
                       - (A->x - segs->x0) * (segs->y1 - segs->y0);
             crossPt = (segs->x1 - segs->x0) * (B->y - segs->y0)
@@ -1388,7 +1397,7 @@ s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
     return (s16)bestIdx;
 }
 
-/** @brief Scale applied to @c D_800704A8.unk00A when seeding @c Eline::moveSpeed. */
+/** @brief Scale applied to @c D_800704A8.unk00A when seeding @c Actor::moveSpeed. */
 #define FIELD_CHANNEL_SCALE 0x4367
 
 /** @brief Sentinel in @c D_800704A8.spawnTriIdx / @c position_x meaning "no override". */
@@ -1513,7 +1522,7 @@ void func_8009AEC0(void) {
  * requested animation differs from the one already playing.
  *
  * @p delta then advances the slot's phase counter @c unk52 by
- * @c delta @c * the entity's per-frame phase step (@ref Eline::field_0x208),
+ * @c delta @c * the entity's per-frame phase step (@ref Actor::field_0x208),
  * wrapping against the cycle length @c unk0C: forward motion past the end
  * restarts at zero, reverse motion below zero jumps to the last phase. A
  * @p delta of zero leaves the phase alone (the entity is standing still).
@@ -1527,7 +1536,7 @@ void func_8009AEC0(void) {
  * crossing regardless of step size or direction.
  *
  * @param idx   Field-entity index; selects both the render slot
- *              (@ref D_800D9630) and the Eline record (@ref D_80085224).
+ *              (@ref D_800D9630) and the Actor record (@ref D_80085224).
  * @param anim  Animation id to play.
  * @param mode  @c 1 to emit footstep sounds while stepping, @c 0 to stay silent.
  * @param delta Signed number of phase steps to advance this frame.
@@ -1687,12 +1696,12 @@ void func_8009BB18(void) {
  * Each xyz coordinate uses signed `/ 4096` (target compiles this as
  * `bgez; addiu +0xFFF; sra 12`, the round-toward-zero idiom).
  *
- * @param e   Source entity providing posX/posY/posZ/unk1FA.
+ * @param actor   Source entity providing posX/posY/posZ/unk1FA.
  * @param mode If 1, advance D_8005F144 and the phase counters.
  * @param b9  Byte stored at offset 9 of each waypoint.
  * @param b8  Byte stored at offset 8 of each waypoint.
  */
-void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8) {
+void func_8009BD50(Actor *actor, s16 mode, s8 b9, u8 b8) {
     PathEntry *base1 = D_80070760;
     PathEntry *p1 = base1 + D_8005F144;
     PathEntry *base0 = D_80070A60;
@@ -1700,16 +1709,16 @@ void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8) {
     s16 v;
     u16 u;
 
-    v = e->posX / 4096;
+    v = actor->posX / 4096;
     p0->x = v;
     p1->x = v;
-    v = e->posY / 4096;
+    v = actor->posY / 4096;
     p0->y = v;
     p1->y = v;
-    v = e->posZ / 4096;
+    v = actor->posZ / 4096;
     p0->z = v;
     p1->z = v;
-    u = e->triIdx;
+    u = actor->triIdx;
     p0->unk6 = u;
     p1->unk6 = u;
     p0->field_09 = b9;
@@ -1762,7 +1771,7 @@ void func_8009BD50(Eline *e, s16 mode, s8 b9, u8 b8) {
  *              0x4000 = up, 0x8000 = left, 0x10 = run). Bit 0x10 is updated
  *              in place from the analog stick's deflection.
  */
-void func_8009BEC8(Eline *ents, s32 flags) {
+void func_8009BEC8(Actor *ents, s32 flags) {
     VECTOR a;
     VECTOR b;
     VECTOR pt;
@@ -2231,11 +2240,11 @@ s16 func_8009D254(s32 a0) {
  * offset the compared angles by 0x100 to keep the window continuous across
  * the wrap), snapping when the target already lies inside the step window.
  *
- * @param self Entity to advance.
+ * @param actor Entity to advance.
  * @param pad  Extra arrival slack added to the radius; 0 disables the test.
  * @return 1 while still travelling, 0 once arrived (or stopped short).
  */
-s32 func_8009D274(Eline *self, s16 pad) {
+s32 func_8009D274(Actor *actor, s16 pad) {
     VECTOR cur;
     VECTOR dst;
     s32 dist;
@@ -2248,13 +2257,13 @@ s32 func_8009D274(Eline *self, s16 pad) {
     u16 rate;
     u16 c;
 
-    cur.vx = self->posX >> 12;
-    cur.vy = self->posY >> 12;
-    dst.vx = self->msgTextPtr >> 12;
+    cur.vx = actor->posX >> 12;
+    cur.vy = actor->posY >> 12;
+    dst.vx = actor->msgTextPtr >> 12;
     dx = dst.vx - cur.vx;
-    dst.vy = self->msgPosX >> 12;
+    dst.vy = actor->msgPosX >> 12;
     dy = dst.vy - cur.vy;
-    r = self->radius + pad;
+    r = actor->radius + pad;
     rr = r * r;
     dist = dx * dx + dy * dy;
     lim = rr + 0x1000;
@@ -2263,60 +2272,60 @@ s32 func_8009D274(Eline *self, s16 pad) {
             return 0;
         }
     }
-    if (dist < (self->moveSpeed * self->moveSpeed) >> 16 || dist < 4) {
-        self->posX = self->msgTextPtr;
-        self->posY = self->msgPosX;
+    if (dist < (actor->moveSpeed * actor->moveSpeed) >> 16 || dist < 4) {
+        actor->posX = actor->msgTextPtr;
+        actor->posY = actor->msgPosX;
         return 0;
     }
 
-    delta = (func_8009A0E8(&cur.vx, &dst.vx, &dist) & 0xFF) - self->headingBase;
-    if (dist < self->radius || self->field_0x1DA > 0x100 || self->field_0x1DA < -0x100) {
+    delta = (func_8009A0E8(&cur.vx, &dst.vx, &dist) & 0xFF) - actor->headingBase;
+    if (dist < actor->radius || actor->field_0x1DA > 0x100 || actor->field_0x1DA < -0x100) {
         rate = 0;
     } else {
-        rate = self->field_0x262;
+        rate = actor->field_0x262;
     }
     if (rate == 0) {
-        self->unk23F = delta;
+        actor->unk23F = delta;
     } else {
-        self->unk23F = self->field_0x241;
-        c = self->unk23F;
+        actor->unk23F = actor->field_0x241;
+        c = actor->unk23F;
         if (c == (u8)delta) {
-            self->unk23F = delta;
+            actor->unk23F = delta;
         } else if ((u16)delta < c) {
             if (c - (u16)delta >= 0x81) {
                 delta += 0x100;
                 if ((u16)delta < c + rate && c - rate < (u16)delta) {
-                    self->unk23F = delta;
+                    actor->unk23F = delta;
                 } else {
-                    self->unk23F += rate;
-                    self->field_0x1DA += rate;
+                    actor->unk23F += rate;
+                    actor->field_0x1DA += rate;
                 }
             } else {
                 c += 0x100;
                 delta += 0x100;
                 if ((u16)delta < c + rate && c - rate < (u16)delta) {
-                    self->unk23F = delta;
+                    actor->unk23F = delta;
                 } else {
-                    self->unk23F -= rate;
-                    self->field_0x1DA -= rate;
+                    actor->unk23F -= rate;
+                    actor->field_0x1DA -= rate;
                 }
             }
         } else if ((u16)delta - c >= 0x81) {
             c += 0x100;
             if ((u16)delta < c + rate && c - rate < (u16)delta) {
-                self->unk23F = delta;
+                actor->unk23F = delta;
             } else {
-                self->unk23F -= rate;
-                self->field_0x1DA -= rate;
+                actor->unk23F -= rate;
+                actor->field_0x1DA -= rate;
             }
         } else {
             c += 0x100;
             delta += 0x100;
             if ((u16)delta < c + rate && c - rate < (u16)delta) {
-                self->unk23F = delta;
+                actor->unk23F = delta;
             } else {
-                self->unk23F += rate;
-                self->field_0x1DA += rate;
+                actor->unk23F += rate;
+                actor->field_0x1DA += rate;
             }
         }
     }
@@ -2809,10 +2818,10 @@ s32 func_8009E468(s16 selfIdx, Vec3i *pos) {
  * Extracts position data from two entity structures (offsets 0x190/0x194,
  * right-shifted by 12) and calls func_8009A0E8 with them.
  *
- * @param a0 First entity pointer.
- * @param a1 Second entity pointer.
+ * @param a First entity pointer.
+ * @param a Second entity pointer.
  */
-s32 func_8009E604(Eline *a, Eline *b) {
+s32 func_8009E604(Actor *a, Actor *b) {
     s32 pos1[4];
     s32 pos2[4];
     s32 result[2];
@@ -3071,7 +3080,7 @@ void func_8009ECA4(void) {
 }
 
 /**
- * @brief Asymmetric overlap test between two Eline entities.
+ * @brief Asymmetric overlap test between two Actor entities.
  *
  * Checks whether entity @p b is within entity @p a 's talk-trigger area:
  *   - Z-axis separation must satisfy @c -126 <= (b->posZ - a->posZ)/4096 <= 127.
@@ -3092,7 +3101,7 @@ void func_8009ECA4(void) {
  *       used. Not "natural" C, it's a deliberate trick that survived
  *       to match.
  */
-s32 func_8009F74C(Eline *a, Eline *b) {
+s32 func_8009F74C(Actor *a, Actor *b) {
     s32 dz;
     s16 i;
     s32 dx;
@@ -3126,7 +3135,7 @@ s32 func_8009F74C(Eline *a, Eline *b) {
  *   - @c sign  > 0 → @c (idx, b, 1,  1)  (forward step)
  *   - @c sign  < 0 → @c (idx, b, 1, -1)  (reverse step)
  *
- * After that, calls @c func_8009BD50 (path recorder) on the Eline
+ * After that, calls @c func_8009BD50 (path recorder) on the Actor
  * @c D_80085224[idx] with the requested @c mode and @c sign, then
  * @c func_8009BB18 to publish the resulting waypoint.
  */
@@ -3143,7 +3152,7 @@ void func_8009F7F4(s16 idx, s8 sign, u8 b, s16 mode) {
 }
 
 /**
- * @brief Interpolate an Eline's X/Y/Z position via the safe-lerp helper.
+ * @brief Interpolate an Actor's X/Y/Z position via the safe-lerp helper.
  *
  * Looks up @c D_80085224[idx] and runs @c func_800A0E54 three times to
  * compute @c posX / @c posY / @c posZ from the unk1A8/AC/B0 endpoints
@@ -3285,7 +3294,7 @@ void func_8009F990(s16 idx, s32 flags) {
  * @brief Advance one entity through the scripted "climb/step onto a ledge"
  *        movement state machine.
  *
- * Dispatches on @c Eline::msgState and, for the moving states, interpolates the
+ * Dispatches on @c Actor::msgState and, for the moving states, interpolates the
  * entity between two of its stored endpoints while seeding both breadcrumb path
  * tables at the current write cursor @c D_8005F144 (@c field_0A marks the entry
  * type, @c field_0B carries the heading) and replaying them into the animation
@@ -3305,58 +3314,58 @@ void func_8009F990(s16 idx, s32 flags) {
  *       many party followers are present. On expiry go to state 2.
  *
  * @param entIdx Entity index; @c ent is @c D_80085224[entIdx].
- * @param ent    The entity to advance.
+ * @param actor    The entity to advance.
  * @param flags  Pad state, forwarded to @c func_8009F990 in state 1.
  *
  * @note @c idx is a working copy of @p entIdx; every use is a 16-bit narrowing,
  *       so the parameter itself is only read once.
  */
-void func_8009FE18(s32 entIdx, Eline *ent, s32 flags) {
+void func_8009FE18(s32 entIdx, Actor *actor, s32 flags) {
     s32 idx;
     VECTOR d;
     u16 p;
 
     idx = entIdx;
-    ent->unk258 = 0;
-    switch (ent->msgState) {
+    actor->unk258 = 0;
+    switch (actor->msgState) {
     case 0:
-        ent->headingBase = 0;
+        actor->headingBase = 0;
         D_8005F160 = 31;
         D_8005F162 = 62;
-        ent->moveStartX = ent->posX;
-        ent->moveStartY = ent->posY;
-        ent->moveStartZ = ent->posZ;
-        ent->field_0x1DA = 0;
-        ent->msgState = 3;
+        actor->moveStartX = actor->posX;
+        actor->moveStartY = actor->posY;
+        actor->moveStartZ = actor->posZ;
+        actor->field_0x1DA = 0;
+        actor->msgState = 3;
         /* fallthrough: run the first step of state 3 on this same frame */
     case 3:
-        if (ent->windowId == 1) {
+        if (actor->windowId == 1) {
             p = D_8005F144;
             D_80070760[p].field_0A = D_80070A60[p].field_0A = 3;
-            func_8009F7F4((s16)idx, 1, ent->field_0x252, 1);
+            func_8009F7F4((s16)idx, 1, actor->field_0x252, 1);
         } else {
             p = D_8005F144;
             D_80070760[p].field_0A = D_80070A60[p].field_0A = 5;
-            func_8009F7F4((s16)idx, -1, ent->field_0x254, 1);
+            func_8009F7F4((s16)idx, -1, actor->field_0x254, 1);
         }
-        ent->field_0x1D8 = (D_800D9630[(s16)idx]->unk0C >> 4) - 2;
-        ent->posX = func_800A0E54(ent->moveStartX, ent->unk1A8, ent->field_0x1D8, ent->field_0x1DA);
-        ent->posY = func_800A0E54(ent->moveStartY, ent->unk1AC, ent->field_0x1D8, ent->field_0x1DA);
-        ent->posZ = func_800A0E54(ent->moveStartZ, ent->unk1B0, ent->field_0x1D8, ent->field_0x1DA);
+        actor->field_0x1D8 = (D_800D9630[(s16)idx]->unk0C >> 4) - 2;
+        actor->posX = func_800A0E54(actor->moveStartX, actor->unk1A8, actor->field_0x1D8, actor->field_0x1DA);
+        actor->posY = func_800A0E54(actor->moveStartY, actor->unk1AC, actor->field_0x1D8, actor->field_0x1DA);
+        actor->posZ = func_800A0E54(actor->moveStartZ, actor->unk1B0, actor->field_0x1D8, actor->field_0x1DA);
         func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
         func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
         p = D_8005F144;
-        D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
-        ent->field_0x1DA++;
-        if (ent->field_0x1DA < ent->field_0x1D8) {
+        D_80070760[p].field_0B = D_80070A60[p].field_0B = actor->field_0x241;
+        actor->field_0x1DA++;
+        if (actor->field_0x1DA < actor->field_0x1D8) {
             break;
         }
-        d.vx = (ent->field_0x1C0 - ent->unk1A8) / 1024;
-        d.vy = (ent->field_0x1C4 - ent->unk1AC) / 1024;
-        d.vz = (ent->field_0x1C8 - ent->unk1B0) / 1024;
-        ent->field_0x1D8 = func_8003F4A4(d.vx * d.vx + d.vy * d.vy + d.vz * d.vz) / D_80070656;
-        ent->field_0x1DA = 0;
-        ent->msgState = 1;
+        d.vx = (actor->field_0x1C0 - actor->unk1A8) / 1024;
+        d.vy = (actor->field_0x1C4 - actor->unk1AC) / 1024;
+        d.vz = (actor->field_0x1C8 - actor->unk1B0) / 1024;
+        actor->field_0x1D8 = func_8003F4A4(d.vx * d.vx + d.vy * d.vy + d.vz * d.vz) / D_80070656;
+        actor->field_0x1DA = 0;
+        actor->msgState = 1;
         break;
     case 1:
         func_8009F990((s16)idx, flags);
@@ -3364,81 +3373,81 @@ void func_8009FE18(s32 entIdx, Eline *ent, s32 flags) {
     case 2:
         break;
     case 4:
-        if (ent->windowId == 1) {
+        if (actor->windowId == 1) {
             p = D_8005F144;
             D_80070760[p].field_0A = D_80070A60[p].field_0A = 5;
-            func_8009F7F4((s16)idx, 1, ent->field_0x254, 1);
+            func_8009F7F4((s16)idx, 1, actor->field_0x254, 1);
         } else {
             p = D_8005F144;
             D_80070760[p].field_0A = D_80070A60[p].field_0A = 3;
-            func_8009F7F4((s16)idx, -1, ent->field_0x252, 1);
+            func_8009F7F4((s16)idx, -1, actor->field_0x252, 1);
         }
-        ent->field_0x1D8 = (D_800D9630[(s16)idx]->unk0C >> 4) - 2;
-        ent->posX = func_800A0E54(ent->field_0x1C0, ent->msgTextPtr, ent->field_0x1D8, ent->field_0x1DA);
-        ent->posY = func_800A0E54(ent->field_0x1C4, ent->msgPosX, ent->field_0x1D8, ent->field_0x1DA);
-        ent->posZ = func_800A0E54(ent->field_0x1C8, ent->msgPosY, ent->field_0x1D8, ent->field_0x1DA);
+        actor->field_0x1D8 = (D_800D9630[(s16)idx]->unk0C >> 4) - 2;
+        actor->posX = func_800A0E54(actor->field_0x1C0, actor->msgTextPtr, actor->field_0x1D8, actor->field_0x1DA);
+        actor->posY = func_800A0E54(actor->field_0x1C4, actor->msgPosX, actor->field_0x1D8, actor->field_0x1DA);
+        actor->posZ = func_800A0E54(actor->field_0x1C8, actor->msgPosY, actor->field_0x1D8, actor->field_0x1DA);
         func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
         func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
         p = D_8005F144;
-        D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
-        ent->field_0x1DA++;
-        if (ent->field_0x1DA < ent->field_0x1D8) {
+        D_80070760[p].field_0B = D_80070A60[p].field_0B = actor->field_0x241;
+        actor->field_0x1DA++;
+        if (actor->field_0x1DA < actor->field_0x1D8) {
             break;
         }
-        ent->field_0x1DA = 0;
-        ent->msgState = 6;
-        ent->triIdx = ent->field_0x1FC;
+        actor->field_0x1DA = 0;
+        actor->msgState = 6;
+        actor->triIdx = actor->field_0x1FC;
         break;
     case 5:
-        if (ent->windowId == 1) {
+        if (actor->windowId == 1) {
             p = D_8005F144;
             D_80070760[p].field_0A = D_80070A60[p].field_0A = 3;
-            func_8009F7F4((s16)idx, -1, ent->field_0x252, 1);
+            func_8009F7F4((s16)idx, -1, actor->field_0x252, 1);
         } else {
             p = D_8005F144;
             D_80070760[p].field_0A = D_80070A60[p].field_0A = 5;
-            func_8009F7F4((s16)idx, 1, ent->field_0x254, 1);
+            func_8009F7F4((s16)idx, 1, actor->field_0x254, 1);
         }
-        ent->field_0x1D8 = (D_800D9630[(s16)idx]->unk0C >> 4) - 2;
-        ent->posX = func_800A0E54(ent->unk1A8, ent->moveStartX, ent->field_0x1D8, ent->field_0x1DA);
-        ent->posY = func_800A0E54(ent->unk1AC, ent->moveStartY, ent->field_0x1D8, ent->field_0x1DA);
-        ent->posZ = func_800A0E54(ent->unk1B0, ent->moveStartZ, ent->field_0x1D8, ent->field_0x1DA);
+        actor->field_0x1D8 = (D_800D9630[(s16)idx]->unk0C >> 4) - 2;
+        actor->posX = func_800A0E54(actor->unk1A8, actor->moveStartX, actor->field_0x1D8, actor->field_0x1DA);
+        actor->posY = func_800A0E54(actor->unk1AC, actor->moveStartY, actor->field_0x1D8, actor->field_0x1DA);
+        actor->posZ = func_800A0E54(actor->unk1B0, actor->moveStartZ, actor->field_0x1D8, actor->field_0x1DA);
         func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
         func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
         p = D_8005F144;
-        D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
-        ent->field_0x1DA++;
-        if (ent->field_0x1DA < ent->field_0x1D8) {
+        D_80070760[p].field_0B = D_80070A60[p].field_0B = actor->field_0x241;
+        actor->field_0x1DA++;
+        if (actor->field_0x1DA < actor->field_0x1D8) {
             break;
         }
-        ent->field_0x1DA = 0;
-        ent->msgState = 6;
+        actor->field_0x1DA = 0;
+        actor->msgState = 6;
         break;
     case 6:
         D_8005F160 = 15;
         D_8005F162 = 30;
         p = D_8005F144;
         D_80070760[p].field_0A = D_80070A60[p].field_0A = 2;
-        func_8009F7F4((s16)idx, -1, ent->field_0x24F, 1);
-        if (ent->field_0x1DA == 0) {
+        func_8009F7F4((s16)idx, -1, actor->field_0x24F, 1);
+        if (actor->field_0x1DA == 0) {
             if (D_800704A8.entityIndex[2] != 0xFF) {
-                ent->field_0x1D8 = 32;
+                actor->field_0x1D8 = 32;
             } else if (D_800704A8.entityIndex[1] != 0xFF) {
-                ent->field_0x1D8 = 16;
+                actor->field_0x1D8 = 16;
             } else {
-                ent->field_0x1D8 = 1;
+                actor->field_0x1D8 = 1;
             }
         }
         func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 2);
         func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 2);
         p = D_8005F144;
-        D_80070760[p].field_0B = D_80070A60[p].field_0B = ent->field_0x241;
-        ent->unk258 = 1;
-        ent->field_0x1DA++;
-        if (ent->field_0x1DA < ent->field_0x1D8) {
+        D_80070760[p].field_0B = D_80070A60[p].field_0B = actor->field_0x241;
+        actor->unk258 = 1;
+        actor->field_0x1DA++;
+        if (actor->field_0x1DA < actor->field_0x1D8) {
             break;
         }
-        ent->msgState = 2;
+        actor->msgState = 2;
         break;
     }
 }

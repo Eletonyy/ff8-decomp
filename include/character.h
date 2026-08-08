@@ -198,6 +198,9 @@ typedef enum {
 
 #define MAGIC_SLOT_COUNT 32
 
+/** @brief CharacterData::exists bit 0: character is present in the roster. */
+#define CHAR_FLAG_PRESENT 0x1
+
 /**
  * @brief Magic inventory entry (2 bytes).
  *
@@ -239,7 +242,7 @@ typedef struct {
     /* 0x70 */ u16 gfCompatibility[16];/**< GF compatibility values (one per GF). */
     /* 0x90 */ u16 kills;              /**< Kill count. */
     /* 0x92 */ u16 kos;                /**< KO count. */
-    /* 0x94 */ u16 exists;              /**< Character exists/flags. */
+    /* 0x94 */ u16 exists;              /**< Character exists/flags (see CHAR_FLAG_PRESENT). */
     /* 0x96 */ u16 statusFlags;        /**< Status/condition flags. */
 } CharacterData; /* 0x98 = 152 bytes */
 

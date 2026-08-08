@@ -33,7 +33,6 @@ extern u16 D_801FACE4;
 extern s32 D_801FAAE4;
 extern s32 D_801FAAE8;
 extern u16 D_801FAAF2;
-extern u8 D_80077E5F;
 extern u16 g_configFlags;
 extern u8 D_801F889C[];
 extern u8 D_801F7F98[];
@@ -1590,9 +1589,9 @@ void func_801F7954(void) {
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F798C);
 
-/** @brief Test config flag bits (returns D_80077E5F & a0). */
+/** @brief Test sealed-features bits (@c GameConfig.sealedFeatures & @p a0). */
 s32 func_801F79F8(s32 a0) {
-    return D_80077E5F & a0;
+    return g_gameState.config.sealedFeatures & a0;
 }
 
 /** @brief Update config vibration flag based on slot 0 status. */

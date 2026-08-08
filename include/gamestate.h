@@ -14,9 +14,11 @@
  * Layout verified against the Hyne save editor (src/SaveData.h):
  *   https://github.com/myst6re/hyne
  *
- * @note Decomped code accesses g_gameState via raw pointer arithmetic with
- *       (s32) casts to prevent CC1PSX symbol+constant folding. The struct
- *       definitions here are for documentation and future use.
+ * @note Prefer struct-based access (g_gameState.config.fieldMsgSpeed etc.);
+ *       it emits the same symbol+offset bytes and carries the struct memory
+ *       class the original codegen shows. Raw pointer arithmetic with an
+ *       (s32)&g_gameState cast remains for the few sites where preventing
+ *       CC1PSX symbol+constant folding is match-required.
  */
 
 #include "common.h"
@@ -126,9 +128,22 @@ typedef struct {
                                         bit5=controller, bit6=vibration, bit7=analog,
                                         bit8=scan mode. */
     /* 0x06 */ u8 camera;          /**< Camera mode. */
-    /* 0x07 */ u8 pad07;           /**< Unknown. */
+    /* 0x07 */ u8 sealedFeatures;  /**< Ultimecia's-Castle sealed-features mask — mirror of
+                                        @c FieldVars.fieldF3 (all-sealed = 0xFF via LASTIN,
+                                        bits cleared by SEALEDOFF). Menus and battle-render
+                                        gate features on these bits (see SEALED_FLAG_*). */
     /* 0x08 */ u8 buttons[12];      /**< Button remapping table (L2,R2,L1,R1,Tri,Cir,X,Sq,Sel,?,?,Start). */
 } GameConfig; /* 0x14 = 20 bytes */
+
+/* GameConfig.sealedFeatures bits. Bit -> feature mapping not yet identified
+ * (placeholder names); battle_render decodes each into a per-feature byte. */
+#define SEALED_FLAG_01 0x01
+#define SEALED_FLAG_02 0x02
+#define SEALED_FLAG_04 0x04
+#define SEALED_FLAG_08 0x08
+#define SEALED_FLAG_10 0x10
+#define SEALED_FLAG_20 0x20
+#define SEALED_FLAG_40 0x40
 
 /** @brief GameConfig.flags bitfield. */
 #define CONFIG_ATB        0x001  /**< ATB mode (0=active, 1=wait). */
@@ -305,7 +320,7 @@ typedef struct {
 #define GAMESTATE_LIMITB_OFFSET     0xB14  /**< LimitBreakData (16 bytes). */
 #define GAMESTATE_ITEMS_OFFSET      0xB24  /**< ItemData (428 bytes). */
 #define GAMESTATE_MISC2_OFFSET      0xCD0  /**< Battle vars / misc (144 bytes). */
-#define GAMESTATE_MISC3_OFFSET      0xD60  /**< Steps, SeeD rank, counters (256 bytes). */
+#define GAMESTATE_MISC3_OFFSET      0xD60  /**< Steps, SeeD rank, counters: 256-byte region holding the 248-byte @ref FieldVars plus @c padE58. */
 #define GAMESTATE_FIELD_OFFSET      0xE60  /**< Field script vars, TT rules (1024 bytes). */
 #define GAMESTATE_WORLDMAP_OFFSET   0x1260 /**< World map position/vehicles (128 bytes). */
 #define GAMESTATE_TTCARDS_OFFSET    0x12E0 /**< TripleTriadData (128 bytes). */
@@ -333,7 +348,7 @@ typedef struct {
     /* 0x218 */ u32          array[1];                      /* used in func_8009F52C */
     /* 0x21C */ u8           pad21C[0x10];                 /**< Battle vars / misc (continued). */  
     /* 0x22C */ u16          fieldD20;                    /**< Unknown (zeroed on save init). */
-    /* 0x22E */ u8           partyLockFlag;               /**< Bit 0: party is locked. */
+    /* 0x22E */ u8           partyLockFlag;               /**< Party/menu lock bits (see PARTY_LOCK_*). */
     /* 0x22F */ u8           pad2F[0x10];                 /**< Battle vars / misc (continued). */
     /* 0x23F */ u8           tutoEntryCount;              /**< Current tutorial section entry count.
                                                                Read/written as D_800780AB in menututo.
@@ -355,7 +370,7 @@ typedef struct {
     /* 0x06 */ u16 positionsX[3];    /**< Party member X positions (>>12 integer). */
     /* 0x0C */ u16 positionsY[3];    /**< Party member Y positions (>>12 integer). */
     /* 0x12 */ u16 triIdxs[3];       /**< Navmesh triangle each party member stands on
-                                         (saved from @c Eline::triIdx, restored into
+                                         (saved from @c Actor::triIdx, restored into
                                          @c SystemState::spawnTriIdx). */
     /* 0x18 */ u8  animStates[3];    /**< Party member animation states. */
     /* 0x1B */ u8  fade1;
@@ -386,11 +401,19 @@ typedef struct {
     /* 0xD40 */ CameraSnapshot cameraSnapshot;   /**< Camera/field snapshot (saved across battle). */
     /* 0xD5E */ u8             padD5D[2];        /**< Battle vars / misc (continued). */
     /* 0xD60 */ FieldVars     fieldVars;                   /**< Steps, SeeD rank, counters (@c &g_gameState.fieldVars == @c g_fieldVars). */
+    /* 0xE58 */ u8            padE58[0x08];                /**< Trailing 8 bytes of the 0xD60 region; not part of @ref FieldVars (the field-reset wipe stops at 0xE58) and read by nothing so far. */
     /* 0xE60 */ u8            padE60[0x400];               /**< Field script vars, TT rules. */
     /* 0x1260 */ u8           pad1260[0x80];               /**< World map position/vehicles. */
     /* 0x12E0 */ TripleTriadData cards;                    /**< Triple Triad data (128 bytes). */
     /* 0x1360 */ ChocoboWorldData chocobo;                 /* D_800786D8 *< Chocobo World data (64 bytes). */
 } GameState; /* 0x13A0 = 5024 bytes */
+
+/* SaveMainData.partyLockFlag bits. Only bit 0 has a confirmed meaning; the
+ * rest are placeholder names pending identification. */
+#define PARTY_LOCK_LOCKED  0x01  /**< Party composition is locked (fixed story party). */
+#define PARTY_LOCK_FLAG_02 0x02  /**< Purpose unknown; set by the field engine. */
+#define PARTY_LOCK_FLAG_10 0x10  /**< Purpose unknown; set and cleared by the field engine. */
+#define PARTY_LOCK_FLAG_20 0x20  /**< Purpose unknown; set and cleared by the field engine. */
 
 /** @brief Main game state (BSS at 0x80077378). */
 extern GameState g_gameState;
@@ -402,12 +425,18 @@ extern FieldVars *g_fieldVars;
 extern void setMcBusy(void);
 extern u32  isMcBusy(void);
 
-extern u8 D_80085388;                  /**< @c Eline entity count at @c D_80085224. */
 
-/** @brief Halfword lookup table indexed by @c GameConfig.fieldMsgSpeed
- *         (a.k.a. @c D_80077E5A). Used as the per-entity SFX pitch in
- *         @c func_800BF718's common tail. */
+/** @brief Halfword lookup table indexed by @c GameConfig.fieldMsgSpeed.
+ *         Used as the per-entity SFX pitch in @c func_800BF718's common tail. */
 extern u16 D_800562C8[];
+
+/** @brief Stop all sound playback (gamestate.c); installed as the VSync
+ *         callback during field-engine init. */
+extern void stopAllSounds(void);
+
+/** @brief Draw callback installed by @c SmInitEventAll (gamestate.c).
+ *  @note Purpose uncertain — body still in assembly. */
+extern void func_80037D40();
 
 /* Render dispatch mode + fade bytes (main-binary state shared across units). */
 extern volatile s16 g_renderMode;
@@ -435,14 +464,6 @@ extern void enableChocoboWorld(void);
 
 /** @brief Resolve a character ID (e.g. party slot) to its global character code. */
 extern s32 func_80037C6C(s32 charId);
-
-/** @brief Card / character refresh hook (src/card.c). Invoked when a
- *         party member changes; refreshes derived character data. */
-extern void func_80036B90(s32 charIndex);
-
-/** @brief Companion to @ref func_80036B90 — applies a bitmask of
- *         flags to the active-party char records. */
-extern void func_80036D44(s32 mask);
 
 extern CharacterData D_80077808[];
 extern u8 D_800788E4;

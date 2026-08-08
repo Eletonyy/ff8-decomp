@@ -3,6 +3,7 @@
 #include "battle.h"
 #include "gf.h"
 #include "gamestate.h"
+#include "gf_curve.h"
 
 INCLUDE_ASM("asm/nonmatchings/gf_curve", func_8002153C);
 
@@ -230,13 +231,13 @@ s32 calcHpFromLevel(s32 level, s32 charIdx) {
  * @param fallback Fallback value returned when characterId is not 8, 9, or 10 in locked mode.
  * @return GF index from PartyData if party is locked and characterId is 8/9/10,
  *         weaponId if party is unlocked, or fallback otherwise.
- * @note When partyLockFlag bit 0 is set, maps characterId 8->gfIndex0, 9->gfIndex1, 10->gfIndex2.
+ * @note When @ref PARTY_LOCK_LOCKED is set, maps characterId 8->gfIndex0, 9->gfIndex1, 10->gfIndex2.
  *       When party is unlocked, returns the character's weaponId.
  */
 s32 func_80021B58(s32 charIdx, s32 fallback) {
     s32 val;
     s32 charId;
-    if (g_gameState.mainData.partyLockFlag & 1) {
+    if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
         charId = g_gameState.chars[charIdx].characterId;
         val = fallback;
         switch (charId) {

@@ -1,6 +1,8 @@
 #include "common.h"
 #include "field.h"
+#include "field/opcodes.h"
 #include "gamestate.h"
+#include "card.h"
 #include "cd.h"
 #include "field/fe_object3.h"
 #include "field/fe_object4.h"
@@ -46,203 +48,203 @@ void func_800ADC04(void) {
 /**
  * Returns 0, indicating no action taken.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param actor Pointer to the script/object structure (unused).
  * @return 0.
  */
-s32 opHandler_NOP(Eline *e) {
+s32 opHandler_NOP(ScriptContext *context) {
     return 0;
 }
 
 /**
  * Pops the stack index, adds the value at [idx] to [idx+1], stores at [idx].
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_ADD(Eline *e) {
+void opHandler_ADD(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] += e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] += context->stack[idx + 1];
 }
 
 /**
  * Pops the stack index, subtracts [idx+1] from [idx], stores at [idx].
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_SUB(Eline *e) {
+void opHandler_SUB(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] -= e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] -= context->stack[idx + 1];
 }
 
 /**
  * Negates the top-of-stack value in-place.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_NEG(Eline *e) {
-    s32 idx = (s8)e->stackPtr;
-    e->stack[idx] = -e->stack[idx];
+void opHandler_NEG(ScriptContext *context) {
+    s32 idx = (s8)context->stackPtr;
+    context->stack[idx] = -context->stack[idx];
 }
 
 /**
  * Pops the stack index, multiplies [idx] by [idx+1], stores at [idx].
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_MUL(Eline *e) {
+void opHandler_MUL(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] *= e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] *= context->stack[idx + 1];
 }
 
 /** @brief Stack division: [idx] = [idx] / [idx+1]. */
-void opHandler_DIV(Eline *e) {
+void opHandler_DIV(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] /= e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] /= context->stack[idx + 1];
 }
 
 /** @brief Stack modulo: [idx] = [idx] % [idx+1]. */
-void opHandler_MOD(Eline *e) {
+void opHandler_MOD(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] %= e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] %= context->stack[idx + 1];
 }
 
 /**
  * Pops the stack index, tests [idx] == [idx+1], stores boolean at [idx].
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_EQ(Eline *e) {
+void opHandler_EQ(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] = e->stack[idx] == e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] = context->stack[idx] == context->stack[idx + 1];
 }
 
 /** @brief Stack greater-than: [idx] = [idx] > [idx+1]. */
-void opHandler_GT(Eline *e) {
+void opHandler_GT(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] = e->stack[idx] > e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] = context->stack[idx] > context->stack[idx + 1];
 }
 
 /**
  * Pops the stack index, compares [idx] >= [idx+1], stores boolean at [idx].
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_GE(Eline *e) {
+void opHandler_GE(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] = e->stack[idx] >= e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] = context->stack[idx] >= context->stack[idx + 1];
 }
 
 /**
  * @brief Stack less-than comparison: stack[top-1] = stack[top-1] < stack[top].
  *
- * @param eline Pointer to the event line (script context).
+ * @param actor Pointer to the actor (script context).
  */
-void opHandler_LT(Eline *e) {
+void opHandler_LT(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] = e->stack[idx] < e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] = context->stack[idx] < context->stack[idx + 1];
 }
 
 /**
  * Pops the stack index, compares [idx] <= [idx+1], stores boolean at [idx].
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_LE(Eline *e) {
+void opHandler_LE(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] = e->stack[idx] <= e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] = context->stack[idx] <= context->stack[idx + 1];
 }
 
 /**
  * Pops the stack index, tests [idx] != [idx+1], stores boolean at [idx].
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_NE(Eline *e) {
+void opHandler_NE(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] = e->stack[idx] != e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] = context->stack[idx] != context->stack[idx + 1];
 }
 
 /**
  * Pops the stack index, ANDs [idx] with [idx+1], stores at [idx].
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_AND(Eline *e) {
+void opHandler_AND(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] &= e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] &= context->stack[idx + 1];
 }
 
 /**
  * Pops the stack index, ORs [idx] with [idx+1], stores at [idx].
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_OR(Eline *e) {
+void opHandler_OR(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] |= e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] |= context->stack[idx + 1];
 }
 
 /**
  * Pops the stack index, XORs [idx] with [idx+1], stores at [idx].
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_EOR(Eline *e) {
+void opHandler_EOR(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] ^= e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] ^= context->stack[idx + 1];
 }
 
 /**
  * Bitwise NOTs the top-of-stack value in-place.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  */
-void opHandler_NOT(Eline *e) {
-    s32 idx = (s8)e->stackPtr;
-    e->stack[idx] = ~e->stack[idx];
+void opHandler_NOT(ScriptContext *context) {
+    s32 idx = (s8)context->stackPtr;
+    context->stack[idx] = ~context->stack[idx];
 }
 
 /** @brief Stack arithmetic right shift: [idx] = [idx] >> [idx+1]. */
-void opHandler_RSH(Eline *e) {
+void opHandler_RSH(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] >>= e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] >>= context->stack[idx + 1];
 }
 
 /** @brief Stack left shift: [idx] = [idx] << [idx+1]. */
-void opHandler_LSH(Eline *e) {
+void opHandler_LSH(ScriptContext *context) {
     s32 idx;
-    e->stackPtr--;
-    idx = (s8)e->stackPtr;
-    e->stack[idx] <<= e->stack[idx + 1];
+    context->stackPtr--;
+    idx = (s8)context->stackPtr;
+    context->stack[idx] <<= context->stack[idx + 1];
 }
 
 /**
@@ -250,7 +252,7 @@ void opHandler_LSH(Eline *e) {
  *
  * Reads the second-byte sub-opcode (@p opcode) from the script bytecode
  * stream, looks up the handler in @c g_fieldOpcodeTable[opcode], and
- * tail-calls it with the current eline. This is itself bound to entry
+ * tail-calls it with the current actor. This is itself bound to entry
  * 0x13 of the table (wiki opcode @c 0x001) — the runtime dispatcher
  * hits it when the bytecode contains a "0x01 NN" pair, with @c NN
  * decoded as the sub-opcode and arriving in @c a1.
@@ -259,40 +261,40 @@ void opHandler_LSH(Eline *e) {
  * and to re-enter the main opcode table by raw index when the bytecode
  * needs an opcode that does not have its own direct entry.
  *
- * @param eline  Pointer to the event line (script context).
+ * @param actor  Pointer to the actor (script context).
  * @param opcode Raw index into @c g_fieldOpcodeTable (0..391).
  * @return 2 (continue processing).
  */
-s32 opHandler_CAL(Eline *eline, s32 opcode) {
-    g_fieldOpcodeTable[opcode](eline);
+s32 opHandler_CAL(Actor *actor, s32 opcode) {
+    g_fieldOpcodeTable[opcode](actor);
     return 2;
 }
 
 /**
  * Adds a1 to the halfword at offset 0x176 in the object, returns 4.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @param a1 Value to add.
  * @return 4.
  */
-s32 opHandler_JMP(Eline *e, s32 a1) {
-    e->pc += a1;
+s32 opHandler_JMP(ScriptContext *context, s32 a1) {
+    context->pc += a1;
     return 4;
 }
 
 /** @brief Conditional branch: if top-of-stack is zero, add a1 to PC. */
-s32 opHandler_JPF(Eline *e, s32 a1) {
-    if (POP(e) != 0) {
+s32 opHandler_JPF(ScriptContext *context, s32 a1) {
+    if (POP(context) != 0) {
         return 2;
     }
-    e->pc += a1;
+    context->pc += a1;
     return 4;
 }
 
 /** @brief Push (halfword at 0x176)+1 onto stack, load new 0x176 from table. Returns 4. */
-s32 opHandler_GJMP(Eline *e, s32 a1) {
-    PUSH(e, e->pc + 1);
-    e->pc = D_800852F0[a1];
+s32 opHandler_GJMP(ScriptContext *context, s32 a1) {
+    PUSH(context, context->pc + 1);
+    context->pc = D_800852F0[a1];
     return 4;
 }
 
@@ -300,102 +302,102 @@ s32 opHandler_GJMP(Eline *e, s32 a1) {
  * @brief Opcode 0x05 — SAV: spill result-slot register file to the
  *        bytecode stack and reset the slots.
  *
- * Pushes the eight result-register values (@c eline->resultSlots[0..7])
+ * Pushes the eight result-register values (@c actor->context.resultSlots[0..7])
  * onto the bytecode stack in order, then clears each slot to zero.
- * After the spill, if @c FLAG_SAV_SUCCESS is set in @c eline->flags,
+ * After the spill, if @c FLAG_SAV_SUCCESS is set in @c actor->context.flags,
  * slot 0 is re-armed to @c 1 — a "success/default" marker the caller
  * can fall through to.
  *
  * This is the script-VM analogue of a save-registers prologue; a
  * later opcode pops the saved values back to restore the slot file.
  *
- * @param eline Script context.
+ * @param actor Script context.
  * @param a1    Ignored (dispatcher-supplied opcode argument).
  * @return 2 (advance PC).
  */
-s32 opHandler_LBL(Eline *eline, s32 a1) {
+s32 opHandler_LBL(ScriptContext *context, s32 a1) {
     s32 i;
 
     for (i = 0; i < 8; i++) {
-        PUSH(eline, eline->resultSlots[i]);
-        eline->resultSlots[i] = 0;
+        PUSH(context, context->resultSlots[i]);
+        context->resultSlots[i] = 0;
     }
-    if (eline->flags & 0x20) {
-        eline->resultSlots[0] = 1;
+    if (context->flags & 0x20) {
+        context->resultSlots[0] = 1;
     }
     return 2;
 }
 
 /** @brief Pop halfword from stack and store to entity offset 0x176. */
-void func_800AE184(Eline *e) {
-    e->pc = (u16)POP(e);
+void func_800AE184(Actor *actor) {
+    actor->context.pc = (u16)POP(&actor->context);
 }
 
 /**
  * @brief Script-VM context-switch / "RET" dispatcher.
  *
- * Pops 8 stack words into the result-slot file (saving the active
- * group's register frame onto resultSlots), clears flag bit 0x20,
- * sets @c activeMask bit for the current script group, then dispatches:
+ * Pops 8 stack words into the result-slot file (saving the running slot's
+ * register frame onto @c resultSlots), clears flag bit 0x20, sets the
+ * @c activeMask bit for the current script slot, then dispatches:
  *   - case 9: simple pop PC via @c func_800AE184.
- *   - case 8: backward scan of @c groupRanges[] looking for first
- *             non-0xFFFF; set @c pc and @c scriptGroup to that slot.
- *   - default: switch to script group @c a1 — mark current group's
- *             range as 0xFFFF, scan downward clearing ranges + setting
- *             @c activeMask bits, reset @c stackPtr from
- *             @c groupStackBase[a1], reload that group's 8 saved words
+ *   - case 8: backward scan of @c savedPc[] looking for the first
+ *             non-0xFFFF entry; set @c pc and @c scriptSlot to that slot.
+ *   - default: switch to script slot @c a1 — mark the current slot's
+ *             @c savedPc as 0xFFFF, scan downward clearing saved PCs and
+ *             setting @c activeMask bits, reset @c stackPtr from
+ *             @c savedStackPtr[a1], and reload that slot's 8 saved words
  *             into @c resultSlots.
  *
  * Counterpart of @c opHandler_LBL which performs the save half of the
  * context switch (pushes @c resultSlots[0..7] back onto @c stack and
  * zeros them).
  */
-s32 opHandler_RET(Eline *e, s32 a1) {
+s32 opHandler_RET(Actor *actor, s32 a1) {
     s32 i;
     s32 sg;
 
     for (sg = 0; sg < 8; sg++) {
-        e->resultSlots[sg] = POP(e);
+        actor->context.resultSlots[sg] = POP(&actor->context);
     }
 
-    e->flags &= ~0x20;
-    e->activeMask |= (1 << e->scriptGroup);
+    actor->context.flags &= ~0x20;
+    actor->context.activeMask |= (1 << actor->context.scriptSlot);
 
     switch (a1) {
     case 9:
-        func_800AE184(e);
+        func_800AE184(actor);
         break;
     case 8:
-        func_800B66A8(e);
-        e->groupRanges[e->scriptGroup] = 0xFFFF;
-        sg = e->scriptGroup - 1;
+        func_800B66A8(actor);
+        actor->context.savedPc[actor->context.scriptSlot] = 0xFFFF;
+        sg = actor->context.scriptSlot - 1;
         while (sg >= 0) {
-            if (e->groupRanges[sg] != 0xFFFF) {
-                e->pc = e->groupRanges[sg];
-                e->scriptGroup = sg;
+            if (actor->context.savedPc[sg] != 0xFFFF) {
+                actor->context.pc = actor->context.savedPc[sg];
+                actor->context.scriptSlot = sg;
                 break;
             }
             sg--;
         }
         break;
     default:
-        func_800B66A8(e);
-        e->groupRanges[e->scriptGroup] = 0xFFFF;
-        for (sg = e->scriptGroup - 1; sg > a1; sg--) {
-            if (e->groupRanges[sg] != 0xFFFF) {
-                e->activeMask |= (1 << sg);
-                e->groupRanges[sg] = 0xFFFF;
+        func_800B66A8(actor);
+        actor->context.savedPc[actor->context.scriptSlot] = 0xFFFF;
+        for (sg = actor->context.scriptSlot - 1; sg > a1; sg--) {
+            if (actor->context.savedPc[sg] != 0xFFFF) {
+                actor->context.activeMask |= (1 << sg);
+                actor->context.savedPc[sg] = 0xFFFF;
             }
         }
 
-        e->stackPtr = e->groupStackBase[a1] + 8;
+        actor->context.stackPtr = actor->context.savedStackPtr[a1] + 8;
 
         for (i = 0; i < 8; i++) {
-            e->resultSlots[i] = POP(e);
+            actor->context.resultSlots[i] = POP(&actor->context);
         }
 
-        e->pc = e->groupRanges[a1];
-        e->scriptGroup = a1;
+        actor->context.pc = actor->context.savedPc[a1];
+        actor->context.scriptSlot = a1;
         break;
     }
 
@@ -475,95 +477,108 @@ s32 func_800AE3A4(s32 value, s32 mode) {
 }
 
 /** @brief Call func_800AE3A4 with a1 and mode 4, push result onto stack. Returns 2. */
-s32 opHandler_PSHN_L(Eline *e, s32 a1) {
+s32 opHandler_PSHN_L(ScriptContext *context, s32 a1) {
     s32 result = func_800AE3A4(a1, 4);
-    PUSH(e, result);
+    PUSH(context, result);
     return 2;
 }
 
 /** @brief Load entity slot value a1*4+0x140, call func_800AE3A4 with mode 4, push result. Returns 2. */
-s32 opHandler_PSHI_L(Eline *e, s32 a1) {
-    s32 result = func_800AE3A4(e->resultSlots[a1], 4);
-    PUSH(e, result);
+s32 opHandler_PSHI_L(ScriptContext *context, s32 a1) {
+    s32 result = func_800AE3A4(context->resultSlots[a1], 4);
+    PUSH(context, result);
     return 2;
 }
 
-/** @brief Load byte from g_gameState+a1+0xD60, call func_800AE3A4 with mode 5, push result. Returns 2. */
-s32 opHandler_PSHM_B(Eline *e, s32 a1) {
-    /* Script-VM M-memory byte (= seedState[a1]); 0xD60 is the offset of
-     * seedState inside g_gameState. Phrased as g_gameState+a1, then
-     * [0xD60] so gcc keeps 0xD60 in the lbu instead of folding it into
-     * the symbol address. */
+/** @brief Load a field-variable byte (@c g_gameState + @ref GAMESTATE_MISC3_OFFSET + a1),
+ *         call @c func_800AE3A4 with mode 5, push the result. Returns 2. */
+s32 opHandler_PSHM_B(ScriptContext *context, s32 a1) {
+    /* Script-VM M-memory byte (= fieldVars[a1]). Phrased as g_gameState+a1
+     * first and indexed by the block offset second, so gcc keeps that offset
+     * in the lbu instead of folding it into the symbol address. */
     u8 *p = (u8 *)&g_gameState + a1;
-    s32 result = func_800AE3A4(p[0xD60], 5);
-    PUSH(e, result);
+    s32 result = func_800AE3A4(p[GAMESTATE_MISC3_OFFSET], 5);
+    PUSH(context, result);
     return 2;
 }
 
 /** @brief Load halfword from D_800780D8+a1, call func_800AE3A4 with mode 6, push result. Returns 2. */
-s32 opHandler_PSHM_W(Eline *e, s32 a1) {
+s32 opHandler_PSHM_W(ScriptContext *context, s32 a1) {
     s32 result = func_800AE3A4(*(u16 *)&D_800780D8[a1], 6);
-    PUSH(e, result);
+    PUSH(context, result);
     return 2;
 }
 
 /** @brief Load word from D_800780D8+a1, call func_800AE3A4 with mode 7, push result. Returns 2. */
-s32 opHandler_PSHM_L(Eline *e, s32 a1) {
+s32 opHandler_PSHM_L(ScriptContext *context, s32 a1) {
     s32 result = func_800AE3A4(*(s32 *)&D_800780D8[a1], 7);
-    PUSH(e, result);
+    PUSH(context, result);
     return 2;
 }
 
 /** @brief Load signed byte from D_800780D8+a1, call func_800AE3A4 with mode 2, push result. Returns 2. */
-s32 opHandler_PSHSM_B(Eline *e, s32 a1) {
+s32 opHandler_PSHSM_B(ScriptContext *context, s32 a1) {
     s32 result = func_800AE3A4(*(s8 *)&D_800780D8[a1], 2);
-    PUSH(e, result);
+    PUSH(context, result);
     return 2;
 }
 
 /** @brief Load signed halfword from D_800780D8+a1, call func_800AE3A4 with mode 3, push result. Returns 2. */
-s32 opHandler_PSHSM_W(Eline *e, s32 a1) {
+s32 opHandler_PSHSM_W(ScriptContext *context, s32 a1) {
     s32 result = func_800AE3A4(*(s16 *)&D_800780D8[a1], 3);
-    PUSH(e, result);
+    PUSH(context, result);
     return 2;
 }
 
 /** @brief Load word from D_800780D8+a1, call func_800AE3A4 with mode 4, push result. Returns 2. */
-s32 opHandler_PSHSM_L(Eline *e, s32 a1) {
+s32 opHandler_PSHSM_L(ScriptContext *context, s32 a1) {
     s32 result = func_800AE3A4(*(s32 *)&D_800780D8[a1], 4);
-    PUSH(e, result);
+    PUSH(context, result);
     return 2;
 }
 
 /** @brief Pop top-of-stack and store to result slot a1*4+0x140. Returns 2. */
-s32 opHandler_POPI_L(Eline *e, s32 a1) {
-    e->resultSlots[a1] = POP(e);
+s32 opHandler_POPI_L(ScriptContext *context, s32 a1) {
+    context->resultSlots[a1] = POP(context);
     return 2;
 }
 
-s32 opHandler_POPM_B(Eline *e, s32 a1) {
-    /* Script-VM M-memory byte store (= seedState[a1] = top-of-stack);
-     * 0xD60 = seedState offset inside g_gameState. */
+/**
+ * @brief Script-VM M-memory byte store: @c fieldVars[a1] = top-of-stack.
+ *
+ * Writes the popped value as a byte into the field-variable block, which lives
+ * at @c g_gameState + @ref GAMESTATE_MISC3_OFFSET (what @c g_fieldVars points at).
+ *
+ * @note The address is built by raw arithmetic on @c &g_gameState rather than
+ *       through the struct because the index is a byte offset into the whole
+ *       block, not a named field; the folded form is what the original
+ *       codegen emits.
+ *
+ * @param actor  Script-VM actor whose stack is popped.
+ * @param a1 Byte offset into the field-variable block.
+ * @return @c 2 (continue processing).
+ */
+s32 opHandler_POPM_B(ScriptContext *context, s32 a1) {
     u8 *p = (u8 *)&g_gameState + a1;
-    p[0xD60] = (u8)POP(e);
+    p[GAMESTATE_MISC3_OFFSET] = (u8)POP(context);
     return 2;
 }
 
 /** @brief Pop halfword from stack and store to D_800780D8[a1]. Returns 2. */
-s32 opHandler_POPM_W(Eline *e, s32 a1) {
-    *(u16 *)&D_800780D8[a1] = (u16)POP(e);
+s32 opHandler_POPM_W(ScriptContext *context, s32 a1) {
+    *(u16 *)&D_800780D8[a1] = (u16)POP(context);
     return 2;
 }
 
 /** @brief Pop word from stack and store to D_800780D8[a1]. Returns 2. */
-s32 opHandler_POPM_L(Eline *e, s32 a1) {
-    *(s32 *)&D_800780D8[a1] = POP(e);
+s32 opHandler_POPM_L(ScriptContext *context, s32 a1) {
+    *(s32 *)&D_800780D8[a1] = POP(context);
     return 2;
 }
 
 /** @brief Push immediate value a1 onto stack. Returns 2. */
-s32 opHandler_PSHAC(Eline *e, s32 a1) {
-    PUSH(e, a1);
+s32 opHandler_PSHAC(ScriptContext *context, s32 a1) {
+    PUSH(context, a1);
     return 2;
 }
 
@@ -572,54 +587,54 @@ s32 opHandler_PSHAC(Eline *e, s32 a1) {
  *        slot and look up the new PC from @c D_800852F0[slot] table.
  *
  * Used by @c opHandler_REQSW / @c opHandler_REQEW to context-switch the
- * eline's script context.  Calls @c func_800B663C to flush pending
+ * actor's script context.  Calls @c func_800B663C to flush pending
  * state.
  *
  * @brief Central VM context-switch helper. If @c newGroup's slot is
- *        free (@c groupRanges[newGroup] == @c 0xFFFF), saves the current
+ *        free (@c savedPc[newGroup] == @c 0xFFFF), saves the current
  *        group's stack pointer; if @c newGroup is higher than the
  *        current group, also saves the pc and switches to the new
  *        group's pc-table entry (calling @c func_800B663C). Always
  *        writes the new group's @c D_800852F0[pcIdx] into
- *        @c groupRanges[newGroup]. Returns 1 on success, 0 if the
+ *        @c savedPc[newGroup]. Returns 1 on success, 0 if the
  *        slot was already taken.
  */
-s32 func_800AE8B4(Eline *e, u8 newGroup, u16 pcIdx) {
-    if (e->groupRanges[newGroup] != 0xFFFF) {
+s32 func_800AE8B4(Actor *actor, u8 newGroup, u16 pcIdx) {
+    if (actor->context.savedPc[newGroup] != 0xFFFF) {
         return 0;
     }
 
-    e->groupStackBase[e->scriptGroup] = e->stackPtr;
+    actor->context.savedStackPtr[actor->context.scriptSlot] = actor->context.stackPtr;
 
-    if (e->scriptGroup < newGroup) {
-        e->groupRanges[e->scriptGroup] = e->pc;
-        e->scriptGroup = newGroup;
-        e->pc = D_800852F0[pcIdx];
-        func_800B663C(e);
+    if (actor->context.scriptSlot < newGroup) {
+        actor->context.savedPc[actor->context.scriptSlot] = actor->context.pc;
+        actor->context.scriptSlot = newGroup;
+        actor->context.pc = D_800852F0[pcIdx];
+        func_800B663C(actor);
     }
 
-    e->groupRanges[newGroup] = D_800852F0[pcIdx];
+    actor->context.savedPc[newGroup] = D_800852F0[pcIdx];
     return 1;
 }
 
 /**
  * @brief Pop @c pcIdx and @c newGroup off the script stack, look up
  *        @c D_80085230[a1] (the target entity); if the target is active
- *        and its @c field_0x256 matches @c D_800DE4FC, bump @c e->pc
+ *        and its @c field_0x256 matches @c D_800DE4FC, bump @c e->context.pc
  *        and return 4. Otherwise return 3. The popped values are passed
  *        to @c func_800AE8B4 which applies the actual group/pc update.
  *
  * Returns 3 if @c D_80085230[a1] is @c NULL (no call made).
  */
-s32 opHandler_REQ(Eline *e, s32 a1) {
-    s32 pcIdx = POP(e);
-    s32 newGroup = POP(e);
+s32 opHandler_REQ(ScriptContext *context, s32 a1) {
+    s32 pcIdx = POP(context);
+    s32 newGroup = POP(context);
     s32 retVal;
 
     if (D_80085230[a1] != 0) {
         if (D_800DE4FC == D_80085230[a1]->field_0x256) {
             retVal = 4;
-            e->pc++;
+            context->pc++;
         } else {
             retVal = 3;
         }
@@ -634,34 +649,34 @@ s32 opHandler_REQ(Eline *e, s32 a1) {
  * @brief Script-VM "test entity bit + branch" opcode.
  *
  * Looks up entity @c D_80085230[a1]; if it has bit set in
- * @c activeMask matching @c scriptGroup, calls @c func_800AE8B4 to
+ * @c activeMask matching @c scriptSlot, calls @c func_800AE8B4 to
  * forward a stack-popped value to it. If the call succeeds and the
- * target entity's @c scriptGroup matches the peeked value, the 2-slot
+ * target entity's @c scriptSlot matches the peeked value, the 2-slot
  * peek gets popped and @c 3 is returned; otherwise @c 1 is returned
  * leaving the stack intact.
  */
-s32 opHandler_REQSW(Eline *e, s32 a1) {
+s32 opHandler_REQSW(ScriptContext *context, s32 a1) {
     s32 value;
     s32 callResult;
 
     if (D_80085230[a1] == NULL) {
-        e->stackPtr -= 2;
+        context->stackPtr -= 2;
         return 3;
     }
 
-    value = e->stack[(s8)e->stackPtr - 1];
+    value = context->stack[(s8)context->stackPtr - 1];
 
-    if ((e->activeMask >> e->scriptGroup) & 1) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         callResult = func_800AE8B4(D_80085230[a1], (u8)value,
-                                   (u16)e->stack[(s8)e->stackPtr]);
+                                   (u16)context->stack[(s8)context->stackPtr]);
         if (callResult == 0) {
-            e->stackPtr -= 2;
+            context->stackPtr -= 2;
             return 3;
         }
     }
 
-    if (D_80085230[a1]->scriptGroup == value) {
-        e->stackPtr -= 2;
+    if (D_80085230[a1]->context.scriptSlot == value) {
+        context->stackPtr -= 2;
         return 3;
     }
 
@@ -670,30 +685,30 @@ s32 opHandler_REQSW(Eline *e, s32 a1) {
 
 /**
  * @brief Variant of @c opHandler_REQSW — identical shape but the final
- *        scriptGroup check uses @c < instead of @c == .
+ *        scriptSlot check uses @c < instead of @c == .
  */
-s32 opHandler_REQEW(Eline *e, s32 a1) {
+s32 opHandler_REQEW(ScriptContext *context, s32 a1) {
     s32 value;
     s32 callResult;
 
     if (D_80085230[a1] == NULL) {
-        e->stackPtr -= 2;
+        context->stackPtr -= 2;
         return 3;
     }
 
-    value = e->stack[(s8)e->stackPtr - 1];
+    value = context->stack[(s8)context->stackPtr - 1];
 
-    if ((e->activeMask >> e->scriptGroup) & 1) {
+    if ((context->activeMask >> context->scriptSlot) & 1) {
         callResult = func_800AE8B4(D_80085230[a1], (u8)value,
-                                   (u16)e->stack[(s8)e->stackPtr]);
+                                   (u16)context->stack[(s8)context->stackPtr]);
         if (callResult == 0) {
-            e->stackPtr -= 2;
+            context->stackPtr -= 2;
             return 3;
         }
     }
 
-    if (D_80085230[a1]->scriptGroup < value) {
-        e->stackPtr -= 2;
+    if (D_80085230[a1]->context.scriptSlot < value) {
+        context->stackPtr -= 2;
         return 3;
     }
 
@@ -708,12 +723,12 @@ s32 opHandler_REQEW(Eline *e, s32 a1) {
  * @c lbu reads) rather than caching it — a cached form re-allocates
  * registers and breaks the match.
  */
-s32 opHandler_PREQ(Eline *e, s32 a1) {
-    s32 v1_pop = POP(e);
-    s32 v2_pop = POP(e);
+s32 opHandler_PREQ(ScriptContext *context, s32 a1) {
+    s32 v1_pop = POP(context);
+    s32 v2_pop = POP(context);
     if (g_fieldVars->memberSlot[a1] != 0xFF) {
-        Eline *entity = &D_80085224[g_fieldVars->memberSlot[a1]];
-        func_800AE8B4(entity, v2_pop, entity->rangeLo + v1_pop);
+        Actor *entity = &D_80085224[g_fieldVars->memberSlot[a1]];
+        func_800AE8B4(entity, v2_pop, entity->context.rangeLo + v1_pop);
     }
     return 3;
 }
@@ -727,91 +742,91 @@ s32 opHandler_PREQ(Eline *e, s32 a1) {
  * @c D_80085224 (stride 612), indexed via @c g_fieldVars->memberSlot[a1].
  * If the slot is empty (0xFF), pops the 2 peeked values and returns 3.
  */
-s32 opHandler_PREQSW(Eline *e, s32 a1) {
+s32 opHandler_PREQSW(ScriptContext *context, s32 a1) {
     s32 value;
     s32 top;
     s32 callResult;
-    Eline *entity;
+    Actor *entity;
 
-    value = e->stack[(s8)e->stackPtr - 1];
-    top = e->stack[(s8)e->stackPtr];
+    value = context->stack[(s8)context->stackPtr - 1];
+    top = context->stack[(s8)context->stackPtr];
 
     if (g_fieldVars->memberSlot[a1] != 0xFF) {
-        if ((e->activeMask >> e->scriptGroup) & 1) {
+        if ((context->activeMask >> context->scriptSlot) & 1) {
             entity = &D_80085224[g_fieldVars->memberSlot[a1]];
             callResult = func_800AE8B4(entity, (u8)value,
-                                       (u16)(entity->rangeLo + top));
+                                       (u16)(entity->context.rangeLo + top));
             if (callResult == 0) {
-                e->stackPtr -= 2;
+                context->stackPtr -= 2;
                 return 3;
             }
         }
 
-        if (D_80085224[g_fieldVars->memberSlot[a1]].scriptGroup == value) {
-            e->stackPtr -= 2;
+        if (D_80085224[g_fieldVars->memberSlot[a1]].context.scriptSlot == value) {
+            context->stackPtr -= 2;
             return 3;
         }
 
         return 1;
     }
 
-    e->stackPtr -= 2;
+    context->stackPtr -= 2;
     return 3;
 }
 
 /**
  * @brief Variant of @c opHandler_PREQSW — identical shape but the final
- *        scriptGroup check uses @c < instead of @c == .
+ *        scriptSlot check uses @c < instead of @c == .
  */
-s32 opHandler_PREQEW(Eline *e, s32 a1) {
+s32 opHandler_PREQEW(ScriptContext *context, s32 a1) {
     s32 value;
     s32 top;
     s32 callResult;
-    Eline *entity;
+    Actor *entity;
 
-    value = e->stack[(s8)e->stackPtr - 1];
-    top = e->stack[(s8)e->stackPtr];
+    value = context->stack[(s8)context->stackPtr - 1];
+    top = context->stack[(s8)context->stackPtr];
 
     if (g_fieldVars->memberSlot[a1] != 0xFF) {
-        if ((e->activeMask >> e->scriptGroup) & 1) {
+        if ((context->activeMask >> context->scriptSlot) & 1) {
             entity = &D_80085224[g_fieldVars->memberSlot[a1]];
             callResult = func_800AE8B4(entity, (u8)value,
-                                       (u16)(entity->rangeLo + top));
+                                       (u16)(entity->context.rangeLo + top));
             if (callResult == 0) {
-                e->stackPtr -= 2;
+                context->stackPtr -= 2;
                 return 3;
             }
         }
 
-        if (D_80085224[g_fieldVars->memberSlot[a1]].scriptGroup < value) {
-            e->stackPtr -= 2;
+        if (D_80085224[g_fieldVars->memberSlot[a1]].context.scriptSlot < value) {
+            context->stackPtr -= 2;
             return 3;
         }
 
         return 1;
     }
 
-    e->stackPtr -= 2;
+    context->stackPtr -= 2;
     return 3;
 }
 
 /**
  * Returns 3, indicating skip to next entity.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param actor Pointer to the script/object structure (unused).
  * @return 3.
  */
-s32 opHandler_DEBUG(Eline *e) {
+s32 opHandler_DEBUG(ScriptContext *context) {
     return 3;
 }
 
 /**
  * Returns 1, indicating wait/yield.
  *
- * @param a0 Pointer to the script/object structure (unused).
+ * @param actor Pointer to the script/object structure (unused).
  * @return 1.
  */
-s32 opHandler_HALT(Eline *e) {
+s32 opHandler_HALT(ScriptContext *context) {
     return 1;
 }
 
@@ -821,10 +836,10 @@ s32 opHandler_HALT(Eline *e) {
  *
  * @return 2 (VM continue).
  */
-s32 opHandler_SET(Eline *e, s32 a1) {
-    e->posY = POP(e) << 12;
-    e->posX = POP(e) << 12;
-    e->triIdx = a1;
+s32 opHandler_SET(Actor *actor, s32 a1) {
+    actor->posY = POP(&actor->context) << 12;
+    actor->posX = POP(&actor->context) << 12;
+    actor->triIdx = a1;
     func_8009A8E0(D_8008538C);
     return 2;
 }
@@ -835,11 +850,11 @@ s32 opHandler_SET(Eline *e, s32 a1) {
  *
  * @return 2 (VM continue).
  */
-s32 opHandler_SET3(Eline *e, s32 a1) {
-    e->posZ = POP(e) << 12;
-    e->posY = POP(e) << 12;
-    e->posX = POP(e) << 12;
-    e->triIdx = a1;
+s32 opHandler_SET3(Actor *actor, s32 a1) {
+    actor->posZ = POP(&actor->context) << 12;
+    actor->posY = POP(&actor->context) << 12;
+    actor->posX = POP(&actor->context) << 12;
+    actor->triIdx = a1;
     func_8009A8E0(D_8008538C);
     return 2;
 }
@@ -854,7 +869,7 @@ s32 opHandler_SET3(Eline *e, s32 a1) {
  *       field offset into the @c D_800704A8 symbol — the asm uses
  *       @c lbu 0x1b8(a1) with the offset as an immediate.
  */
-s32 opHandler_IDLOCK(Eline *e, s32 bit) {
+s32 opHandler_IDLOCK(ScriptContext *context, s32 bit) {
     SystemState *p = &D_800704A8;
     s32 byteIdx = bit / 8;
     p->statusBits[byteIdx] |= (u8)(1 << (bit - byteIdx * 8));
@@ -865,7 +880,7 @@ s32 opHandler_IDLOCK(Eline *e, s32 bit) {
  * @brief Clear bit @p bit in @c D_800704A8.statusBits. Counterpart to
  *        @c opHandler_IDLOCK.
  */
-s32 opHandler_IDUNLOCK(Eline *e, s32 bit) {
+s32 opHandler_IDUNLOCK(ScriptContext *context, s32 bit) {
     SystemState *p = &D_800704A8;
     s32 byteIdx = bit / 8;
     p->statusBits[byteIdx] &= ~(1 << (bit - byteIdx * 8));
@@ -876,15 +891,15 @@ s32 opHandler_IDUNLOCK(Eline *e, s32 bit) {
  * Decrement top-of-stack timer. If reaches zero, pop and return 3 (done).
  * Otherwise return 1 (wait).
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @return 1 if timer still active, 3 if timer expired.
  */
-s32 opHandler_WAIT(Eline *e) {
-    s32 idx = (s8)e->stackPtr;
-    s32 val = e->stack[idx] - 1;
-    e->stack[idx] = val;
+s32 opHandler_WAIT(ScriptContext *context) {
+    s32 idx = (s8)context->stackPtr;
+    s32 val = context->stack[idx] - 1;
+    context->stack[idx] = val;
     if (val == 0) {
-        e->stackPtr--;
+        context->stackPtr--;
         return 3;
     }
     return 1;
@@ -904,7 +919,7 @@ s32 opHandler_CLEAR(void) {
     s32 i;
     for (i = 0x100; i < 0x500; i++) {
         u8 *p = (u8 *)&g_gameState + i;
-        p[0xD60] = 0;
+        p[GAMESTATE_MISC3_OFFSET] = 0;
     }
     return 2;
 }
@@ -912,23 +927,23 @@ s32 opHandler_CLEAR(void) {
 /**
  * Stores a random byte (0..0xFF) into the entity's @c result register.
  *
- * @param entity Script entity.
+ * @param context Script entity.
  * @return 2 (continue processing).
  */
-s32 opHandler_RND(FieldEntity *entity) {
-    entity->result = fieldRandom() & 0xFF;
+s32 opHandler_RND(ScriptContext *context) {
+    context->resultSlots[0] = fieldRandom() & 0xFF;
     return 2;
 }
 
 /**
  * Stores a1 as a halfword at offset 0x218 in the object, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @param a1 Value to store.
  * @return 2 (continue processing).
  */
-s32 opHandler_SETMODEL(Eline *e, s32 a1) {
-    e->unk218 = a1;
+s32 opHandler_SETMODEL(Actor *actor, s32 a1) {
+    actor->unk218 = a1;
     return 2;
 }
 
@@ -941,9 +956,9 @@ s32 opHandler_SETMODEL(Eline *e, s32 a1) {
  *
  * @return 2 (VM continue).
  */
-s32 opHandler_SETDRESS(Eline *e) {
-    s32 val = POP(e);
-    s32 result = findCharacterSlot(POP(e));
+s32 opHandler_SETDRESS(ScriptContext *context) {
+    s32 val = POP(context);
+    s32 result = findCharacterSlot(POP(context));
     u8 *base = (u8 *)&g_gameState;
     base[result * 152 + 0x4EB] = (u8)val;
     return 2;
@@ -953,24 +968,24 @@ s32 opHandler_SETDRESS(Eline *e) {
  * Pops a value, calls findCharacterSlot to look up an index, then loads
  * the byte at g_gameState + index * 152 + 0x4EB into result slot 0x140.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 opHandler_GETDRESS(Eline *e) {
+s32 opHandler_GETDRESS(ScriptContext *context) {
     /* g_gameState.chars[result].alternateModel — chars[] @ 0x490, stride
      * 152 bytes (sizeof CharacterData), alternateModel @ +0x5B inside
      * each => absolute byte offset 0x4EB for chars[0].  Split base from
      * index so gcc keeps 0x4EB as the lbu's immediate offset. */
-    s32 result = findCharacterSlot(POP(e));
+    s32 result = findCharacterSlot(POP(context));
     u8 *base = (u8 *)&g_gameState;
-    e->resultSlots[0] = base[result * 152 + 0x4EB];
+    context->resultSlots[0] = base[result * 152 + 0x4EB];
     return 2;
 }
 
 /**
  * Store a1 to offset 0x24F, double-pop bytes to 0x250 and 0x251. Returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @param a1 Value to store at offset 0x24F.
  * @return 2 (continue processing).
  */
@@ -980,10 +995,10 @@ s32 opHandler_GETDRESS(Eline *e) {
  *
  * @return 2 (VM continue).
  */
-s32 opHandler_BASEANIME(Eline *e, s32 a1) {
-    e->field_0x24F = (u8)a1;
-    e->field_0x250 = (u8)POP(e);
-    e->field_0x251 = (u8)POP(e);
+s32 opHandler_BASEANIME(Actor *actor, s32 a1) {
+    actor->field_0x24F = (u8)a1;
+    actor->field_0x250 = (u8)POP(&actor->context);
+    actor->field_0x251 = (u8)POP(&actor->context);
     return 2;
 }
 
@@ -993,49 +1008,49 @@ s32 opHandler_BASEANIME(Eline *e, s32 a1) {
  *
  * @return 2 (VM continue).
  */
-s32 opHandler_LADDERANIME(Eline *e, s32 a1) {
-    e->field_0x252 = (u8)a1;
-    e->field_0x253 = (u8)POP(e);
-    e->field_0x254 = (u8)POP(e);
+s32 opHandler_LADDERANIME(Actor *actor, s32 a1) {
+    actor->field_0x252 = (u8)a1;
+    actor->field_0x253 = (u8)POP(&actor->context);
+    actor->field_0x254 = (u8)POP(&actor->context);
     return 2;
 }
 
 /** @brief Pop mask, test against D_800705F8, store boolean at result. Returns 2. */
-s32 opHandler_KEYSCAN(Eline *e) {
-    if (D_800705F8 & POP(e)) {
-        e->resultSlots[0] = 1;
+s32 opHandler_KEYSCAN(ScriptContext *context) {
+    if (D_800705F8 & POP(context)) {
+        context->resultSlots[0] = 1;
     } else {
-        e->resultSlots[0] = 0;
+        context->resultSlots[0] = 0;
     }
     return 2;
 }
 
 /** @brief Pop mask, test against D_80070600, store boolean at result. Returns 2. */
-s32 opHandler_KEYON(Eline *e) {
-    if (D_80070600 & POP(e)) {
-        e->resultSlots[0] = 1;
+s32 opHandler_KEYON(ScriptContext *context) {
+    if (D_80070600 & POP(context)) {
+        context->resultSlots[0] = 1;
     } else {
-        e->resultSlots[0] = 0;
+        context->resultSlots[0] = 0;
     }
     return 2;
 }
 
 /** @brief Pop mask, test against D_800705E8, store boolean at result. Returns 2. */
-s32 opHandler_KEYSCAN2(Eline *e) {
-    if (D_800705E8 & POP(e)) {
-        e->resultSlots[0] = 1;
+s32 opHandler_KEYSCAN2(ScriptContext *context) {
+    if (D_800705E8 & POP(context)) {
+        context->resultSlots[0] = 1;
     } else {
-        e->resultSlots[0] = 0;
+        context->resultSlots[0] = 0;
     }
     return 2;
 }
 
 /** @brief Pop mask, test against D_800705F0, store boolean at result. Returns 2. */
-s32 opHandler_KEYON2(Eline *e) {
-    if (D_800705F0 & POP(e)) {
-        e->resultSlots[0] = 1;
+s32 opHandler_KEYON2(ScriptContext *context) {
+    if (D_800705F0 & POP(context)) {
+        context->resultSlots[0] = 1;
     } else {
-        e->resultSlots[0] = 0;
+        context->resultSlots[0] = 0;
     }
     return 2;
 }
@@ -1044,10 +1059,10 @@ s32 opHandler_KEYON2(Eline *e) {
  * Sets bits 0x18 in entity flags at g_fieldVars+0x68, then calls
  * setTransitionFlag with the inverted bit 3 value.
  *
- * @param a0 Unused.
+ * @param actor Unused.
  * @return 2 (continue processing).
  */
-s32 opHandler_SARALYOFF(Eline *e) {
+s32 opHandler_SARALYOFF(ScriptContext *context) {
     s32 flags;
 
     flags = g_fieldVars->stateFlags;
@@ -1071,7 +1086,7 @@ s32 opHandler_SARALYOFF(Eline *e) {
  */
 s32 opHandler_SARALYON() {
     s32 dummy[2];
-    g_fieldVars->stateFlags &= ~0x18;
+    g_fieldVars->stateFlags &= ~(FIELD_STATE_TRANSITION | FIELD_STATE_FIELD_READY);
     setTransitionFlag(1);
     return 2;
     dummy[0] = 0;
@@ -1079,104 +1094,104 @@ s32 opHandler_SARALYON() {
 
 /** @brief Set bit 0x10 in @c g_fieldVars->stateFlags. Returns 2. */
 s32 opHandler_SARALYDISPOFF(void) {
-    g_fieldVars->stateFlags |= 0x10;
+    g_fieldVars->stateFlags |= FIELD_STATE_FIELD_READY;
     return 2;
 }
 
 /** @brief Clear bit 0x10 in @c g_fieldVars->stateFlags. Returns 2. */
 s32 opHandler_SARALYDISPON(void) {
-    g_fieldVars->stateFlags &= ~0x10;
+    g_fieldVars->stateFlags &= ~FIELD_STATE_FIELD_READY;
     return 2;
 }
 
 /**
- * @brief Pops 6 stack halfwords and writes them to eline offsets
- *        0x192/0x190/0x18E/0x18C/0x18A/0x188 (in pop order), then sets
- *        bytes at 0x194=1 and 0x195=D_800DE4FC.
+ * @brief Define this eline's trigger segment and arm it. Returns 2.
  *
- *        These offsets span the entity's parameter halfwords + walkSpeed
- *        pair, then writes a 1 / @c D_800DE4FC pair into runSpeed.
+ * Pops the two end-points off the script stack in the order z1, y1, x1,
+ * z0, y0, x0, arms the record, and stamps the current script-character
+ * marker into it. @c func_8009A4C0 scans armed records against the party
+ * each frame.
  *
- * The entity is the same memory as the @c Eline (overlay view), so we
- * access it as a @c FieldEntity to use the parameter / walkSpeed /
- * runSpeed field names.
+ * @param eline Eline running the script.
  */
-s32 opHandler_SETLINE(Eline *e) {
-    EntityLineTrigger *line = (EntityLineTrigger *)e;
+s32 opHandler_SETLINE(Eline *eline) {
     u16 lastPop;
-    line->lineZ2 = POP(e);
-    line->lineY2 = POP(e);
-    line->lineX2 = POP(e);
-    line->lineZ1 = POP(e);
-    line->lineY1 = POP(e);
-    lastPop = POP(e);
-    line->lineActive = 1;
-    line->lineCharMarker = D_800DE4FC;
-    line->lineX1 = lastPop;
+    eline->z1 = POP(&eline->context);
+    eline->y1 = POP(&eline->context);
+    eline->x1 = POP(&eline->context);
+    eline->z0 = POP(&eline->context);
+    eline->y0 = POP(&eline->context);
+    lastPop = POP(&eline->context);
+    eline->activeMarker = 1;
+    eline->charMarker = D_800DE4FC;
+    eline->x0 = lastPop;
     return 2;
 }
 
 /**
- * @brief Sets the low byte of @c runSpeed to 1, returns 2.
+ * @brief Arm this eline's trigger segment. Returns 2.
  *
- * Counterpart of @c opHandler_LINEOFF. The runSpeed field is u16 but only
- * the low byte is used as a script-VM flag; @c opHandler_SETLINE writes
- * both bytes (low = 1, high = @c D_800DE4FC) at script init.
+ * Counterpart of @ref opHandler_LINEOFF; the segment itself is set up once
+ * by @ref opHandler_SETLINE.
+ *
+ * @param eline Eline running the script.
  */
-s32 opHandler_LINEON(Eline *e) {
-    ((EntityLineTrigger *)e)->lineActive = 1;
+s32 opHandler_LINEON(Eline *eline) {
+    eline->activeMarker = 1;
     return 2;
 }
 
 /**
- * @brief Clears the low byte of @c runSpeed, returns 2.
+ * @brief Disarm this eline's trigger segment. Returns 2.
+ *
+ * @param eline Eline running the script.
  */
-s32 opHandler_LINEOFF(Eline *e) {
-    ((EntityLineTrigger *)e)->lineActive = 0;
+s32 opHandler_LINEOFF(Eline *eline) {
+    eline->activeMarker = 0;
     return 2;
 }
 
 /**
  * Sets the byte at offset 0x188 to 1, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 opHandler_DOORLINEON(Eline *e) {
-    e->unk188 = 1;
+s32 opHandler_DOORLINEON(Actor *actor) {
+    actor->unk188 = 1;
     return 2;
 }
 
 /**
  * Clears the byte at offset 0x188, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 opHandler_DOORLINEOFF(Eline *e) {
-    e->unk188 = 0;
+s32 opHandler_DOORLINEOFF(Actor *actor) {
+    actor->unk188 = 0;
     return 2;
 }
 
 /**
  * Sets bit 0x2 in the flags at offset 0x160, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 opHandler_USE(Eline *e) {
-    e->flags |= 0x2;
+s32 opHandler_USE(ScriptContext *context) {
+    context->flags |= 0x2;
     return 2;
 }
 
 /**
  * Clears bit 0x2 in the flags at offset 0x160, returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 opHandler_UNUSE(Eline *e) {
-    e->flags &= ~0x2;
+s32 opHandler_UNUSE(ScriptContext *context) {
+    context->flags &= ~0x2;
     return 2;
 }
 
@@ -1204,21 +1219,21 @@ s32 opHandler_UCON(void) {
     D_800704A8.unk015 = 0;
 
     if (g_fieldVars->memberSlot[0] != 0xFF
-        && !(D_80085224[g_fieldVars->memberSlot[0]].flags & 0x40)) {
+        && !(D_80085224[g_fieldVars->memberSlot[0]].context.flags & 0x40)) {
         D_800704A8.entityIndex[0] = g_fieldVars->memberSlot[0];
-        D_80085224[g_fieldVars->memberSlot[0]].flags |= 4;
+        D_80085224[g_fieldVars->memberSlot[0]].context.flags |= 4;
     }
 
     if (g_fieldVars->memberSlot[1] != 0xFF
-        && !(D_80085224[g_fieldVars->memberSlot[1]].flags & 0x40)) {
+        && !(D_80085224[g_fieldVars->memberSlot[1]].context.flags & 0x40)) {
         D_800704BB = g_fieldVars->memberSlot[1];
-        D_80085224[g_fieldVars->memberSlot[1]].flags |= 4;
+        D_80085224[g_fieldVars->memberSlot[1]].context.flags |= 4;
     }
 
     if (g_fieldVars->memberSlot[2] != 0xFF
-        && !(D_80085224[g_fieldVars->memberSlot[2]].flags & 0x40)) {
+        && !(D_80085224[g_fieldVars->memberSlot[2]].context.flags & 0x40)) {
         D_800704BC = g_fieldVars->memberSlot[2];
-        D_80085224[g_fieldVars->memberSlot[2]].flags |= 4;
+        D_80085224[g_fieldVars->memberSlot[2]].context.flags |= 4;
     }
 
     return 2;
@@ -1257,9 +1272,9 @@ s32 opHandler_UCOFF(void) {
         D_80085224[g_fieldVars->memberSlot[0]].field_0x20A = 0;
         D_80085224[g_fieldVars->memberSlot[0]].field_0x20C =
             D_800D9630[g_fieldVars->memberSlot[0]]->unk0C;
-        D_80085224[g_fieldVars->memberSlot[0]].flags &= 0xFFFF07FF;
-        D_80085224[g_fieldVars->memberSlot[0]].flags |= 0x2000;
-        D_80085224[g_fieldVars->memberSlot[0]].flags &= ~4;
+        D_80085224[g_fieldVars->memberSlot[0]].context.flags &= 0xFFFF07FF;
+        D_80085224[g_fieldVars->memberSlot[0]].context.flags |= 0x2000;
+        D_80085224[g_fieldVars->memberSlot[0]].context.flags &= ~4;
     }
 
     if (D_800704A8.entityIndex[1] != 0xFF) {
@@ -1271,10 +1286,10 @@ s32 opHandler_UCOFF(void) {
         D_80085224[g_fieldVars->memberSlot[1]].field_0x20A = 0;
         D_80085224[g_fieldVars->memberSlot[1]].field_0x20C =
             D_800D9630[g_fieldVars->memberSlot[1]]->unk0C;
-        D_80085224[g_fieldVars->memberSlot[1]].flags &= 0xFFFF07FF;
-        D_80085224[g_fieldVars->memberSlot[1]].flags |= 0x2000;
+        D_80085224[g_fieldVars->memberSlot[1]].context.flags &= 0xFFFF07FF;
+        D_80085224[g_fieldVars->memberSlot[1]].context.flags |= 0x2000;
         D_800704A8.entityIndex[1] = 0xFF;
-        D_80085224[g_fieldVars->memberSlot[1]].flags &= ~4;
+        D_80085224[g_fieldVars->memberSlot[1]].context.flags &= ~4;
     }
 
     if (D_800704A8.entityIndex[2] != 0xFF) {
@@ -1286,21 +1301,21 @@ s32 opHandler_UCOFF(void) {
         D_80085224[g_fieldVars->memberSlot[2]].field_0x20A = 0;
         D_80085224[g_fieldVars->memberSlot[2]].field_0x20C =
             D_800D9630[g_fieldVars->memberSlot[2]]->unk0C;
-        D_80085224[g_fieldVars->memberSlot[2]].flags &= 0xFFFF07FF;
-        D_80085224[g_fieldVars->memberSlot[2]].flags |= 0x2000;
+        D_80085224[g_fieldVars->memberSlot[2]].context.flags &= 0xFFFF07FF;
+        D_80085224[g_fieldVars->memberSlot[2]].context.flags |= 0x2000;
         D_800704A8.entityIndex[2] = 0xFF;
-        D_80085224[g_fieldVars->memberSlot[2]].flags &= ~4;
+        D_80085224[g_fieldVars->memberSlot[2]].context.flags &= ~4;
     }
 
     return 2;
 }
 
 /**
- * @brief Pop a value from the eline stack; set @c D_800704BD to 0 if
+ * @brief Pop a value from the actor stack; set @c D_800704BD to 0 if
  *        nonzero, to 1 if zero. Returns 2 (VM continue).
  */
-s32 opHandler_KEY(Eline *e) {
-    if (POP(e)) {
+s32 opHandler_KEY(ScriptContext *context) {
+    if (POP(context)) {
         D_800704BD = 0;
     } else {
         D_800704BD = 1;
@@ -1309,22 +1324,22 @@ s32 opHandler_KEY(Eline *e) {
 }
 
 /**
- * @brief Pop a slot id, set eline flag bit 7; if id is in {3,4,5,7}
+ * @brief Pop a slot id, set actor flag bit 7; if id is in {3,4,5,7}
  *        also set flag bit 0x4000000; if id matches none of the active
  *        battle-party slots (@c battleParty[0..2]), clear flag bit 2.
  */
-s32 opHandler_SETPC(Eline *e) {
+s32 opHandler_SETPC(Actor *actor) {
     s32 v1;
-    e->flags |= 0x80;
-    e->field_0x255 = (u8)POP(e);
-    v1 = e->field_0x255;
+    actor->context.flags |= 0x80;
+    actor->field_0x255 = (u8)POP(&actor->context);
+    v1 = actor->field_0x255;
     if (v1 >= 3 && (v1 < 6 || v1 == 7)) {
-        e->flags |= 0x4000000;
+        actor->context.flags |= 0x4000000;
     }
-    if (g_gameState.battleParty[0] != e->field_0x255
-        && g_gameState.battleParty[1] != e->field_0x255
-        && g_gameState.battleParty[2] != e->field_0x255) {
-        e->flags &= ~2;
+    if (g_gameState.battleParty[0] != actor->field_0x255
+        && g_gameState.battleParty[1] != actor->field_0x255
+        && g_gameState.battleParty[2] != actor->field_0x255) {
+        actor->context.flags &= ~2;
     }
     return 2;
 }
@@ -1344,8 +1359,8 @@ s32 opHandler_SETPC(Eline *e) {
  *         findPartySlot return, matching how gcc allocates s-regs in
  *         the target.
  */
-s32 opHandler_ADDPARTY(Eline *e) {
-    s32 popped = POP(e);
+s32 opHandler_ADDPARTY(ScriptContext *context) {
+    s32 popped = POP(context);
     s32 first;
     s32 newSlot;
     s32 partySlot;
@@ -1387,8 +1402,8 @@ s32 opHandler_ADDPARTY(Eline *e) {
  *        call @c func_80036B90 on the active-party slot first.
  *        Recalc party stats & revive any downed actives.
  */
-s32 opHandler_SUBPARTY(Eline *e) {
-    s32 charId = POP(e);
+s32 opHandler_SUBPARTY(ScriptContext *context) {
+    s32 charId = POP(context);
     s32 slot;
     slot = findBattlePartySlot(charId);
     if (slot != PARTY_SLOT_EMPTY) {
@@ -1396,7 +1411,7 @@ s32 opHandler_SUBPARTY(Eline *e) {
     }
     slot = func_80037C6C(charId);
     if (slot != PARTY_SLOT_EMPTY) {
-        if (g_gameState.mainData.partyLockFlag & 1) {
+        if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
             func_80036B90(g_gameState.mainData.party.party[slot]);
         }
         g_gameState.mainData.party.party[slot] = PARTY_SLOT_EMPTY;
@@ -1422,9 +1437,9 @@ s32 opHandler_SUBPARTY(Eline *e) {
  *         - second call: `slot = (new_var = call);`
  *         - explicit `noneSlot = 0xFF` variable instead of literal
  */
-s32 opHandler_CHANGEPARTY(Eline *e) {
-    s32 popped1 = POP(e);
-    s32 popped2 = POP(e);
+s32 opHandler_CHANGEPARTY(ScriptContext *context) {
+    s32 popped1 = POP(context);
+    s32 popped2 = POP(context);
     s32 slot;
     s32 noneSlot;
     s32 new_var;
@@ -1467,12 +1482,12 @@ s32 opHandler_CHANGEPARTY(Eline *e) {
  *
  * Calls @c recalcPartyStats and @c func_800ADC04 at the end.
  */
-s32 opHandler_SETPARTY(Eline *e) {
-    s32 slot2 = POP(e);
-    s32 slot1 = POP(e);
-    s32 slot0 = POP(e);
+s32 opHandler_SETPARTY(ScriptContext *context) {
+    s32 slot2 = POP(context);
+    s32 slot1 = POP(context);
+    s32 slot0 = POP(context);
 
-    if (g_gameState.mainData.partyLockFlag & 1) {
+    if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
         if (slot0 == 0xFF) {
             func_80036B90(findCharacterSlot(g_gameState.battleParty[0]));
         }
@@ -1508,11 +1523,11 @@ s32 opHandler_SETPARTY(Eline *e) {
 /**
  * Calls func_800381BC and returns 2.
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 opHandler_REFRESHPARTY(Eline *e) {
-    func_800381BC(e);
+s32 opHandler_REFRESHPARTY(Actor *actor) {
+    func_800381BC(actor);
     return 2;
 }
 
@@ -1520,14 +1535,14 @@ s32 opHandler_REFRESHPARTY(Eline *e) {
  * Pops a value, calls findBattlePartySlot, stores result at 0x140
  * (or -1 if result is 0xFF).
  *
- * @param a0 Pointer to the script/object structure.
+ * @param actor Pointer to the script/object structure.
  * @return 2 (continue processing).
  */
-s32 opHandler_ISPARTY(Eline *e) {
-    s32 result = findBattlePartySlot(POP(e));
-    e->resultSlots[0] = result;
+s32 opHandler_ISPARTY(ScriptContext *context) {
+    s32 result = findBattlePartySlot(POP(context));
+    context->resultSlots[0] = result;
     if (result == 0xFF) {
-        e->resultSlots[0] = -1;
+        context->resultSlots[0] = -1;
     }
     return 2;
 }
@@ -1543,10 +1558,10 @@ s32 opHandler_ISPARTY(Eline *e) {
  *
  * @return 2 (VM continue).
  */
-s32 opHandler_GETPARTY(Eline *e) {
-    s32 a1 = POP(e);
+s32 opHandler_GETPARTY(ScriptContext *context) {
+    s32 a1 = POP(context);
     u8 *p = (u8 *)&g_gameState + a1;
-    e->resultSlots[0] = p[0xD38];
+    context->resultSlots[0] = p[0xD38];
     return 2;
 }
 
@@ -1561,8 +1576,8 @@ s32 opHandler_GETPARTY(Eline *e) {
  *
  * Symmetric with @c opHandler_SUBMEMBER.
  */
-s32 opHandler_ADDMEMBER(Eline *e) {
-    s32 popped = POP(e);
+s32 opHandler_ADDMEMBER(ScriptContext *context) {
+    s32 popped = POP(context);
     if ((u32)popped < 0xB) {
         switch (popped) {
         case 0:
@@ -1602,8 +1617,8 @@ s32 opHandler_ADDMEMBER(Eline *e) {
  * jump-table dispatch, B0444 compiles to an if-else chain because the
  * cases are sparse.
  */
-s32 opHandler_SUBMEMBER(Eline *e) {
-    s32 popped = POP(e);
+s32 opHandler_SUBMEMBER(ScriptContext *context) {
+    s32 popped = POP(context);
     func_80036B90(findCharacterSlot(popped));
 
     switch (popped) {
@@ -1633,20 +1648,20 @@ s32 opHandler_SUBMEMBER(Eline *e) {
  *        @c resultSlots[0]; else look up the character and return bit 0
  *        of @c chars[slot].exists (or 0 if no slot).
  */
-s32 opHandler_ISMEMBER(Eline *e) {
-    s32 a1 = POP(e);
+s32 opHandler_ISMEMBER(ScriptContext *context) {
+    s32 a1 = POP(context);
     s32 slot;
     if (a1 >= 8) {
         a1 -= 8;
-        e->resultSlots[0] = g_fieldVars->stateFlags & (1 << a1);
+        context->resultSlots[0] = g_fieldVars->stateFlags & (1 << a1);
         return 2;
     }
     slot = findCharacterSlot(a1);
     if (slot == PARTY_SLOT_EMPTY) {
-        e->resultSlots[0] = 0;
+        context->resultSlots[0] = 0;
         return 2;
     }
-    e->resultSlots[0] = g_gameState.chars[slot].exists & 1;
+    context->resultSlots[0] = g_gameState.chars[slot].exists & 1;
     return 2;
 }
 
@@ -1659,7 +1674,7 @@ s32 opHandler_ISMEMBER(Eline *e) {
  *
  * @return 2 (VM continue).
  */
-s32 opHandler_SETPARTY2(Eline *e, s32 a1) {
+s32 opHandler_SETPARTY2(ScriptContext *context, s32 a1) {
     s32 i, j;
     j = 0;
     for (i = 0; i < 6; i++) {
@@ -1684,7 +1699,7 @@ s32 opHandler_SETPARTY2(Eline *e, s32 a1) {
  *
  * Finishes with @c recalcPartyStats.
  */
-s32 opHandler_SWAP(Eline *e) {
+s32 opHandler_SWAP(ScriptContext *context) {
     u8 savedBattle[3], savedParty[3];
     s32 i;
     for (i = 0; i < 3; i++) {
@@ -1700,38 +1715,38 @@ s32 opHandler_SWAP(Eline *e) {
 }
 
 /**
- * @brief Set stateFlags bit 0x800, then if popped value is nonzero
+ * @brief Set @ref FIELD_STATE_PARTY_OVERRIDE, then if popped value is nonzero
  *        force fieldF3 to 0xFF; mirror fieldF3 into @c D_80082C10 and
- *        @c D_80077E5F, then tail into @c opHandler_SETPARTY2.
+ *        @c GameConfig.sealedFeatures, then tail into @c opHandler_SETPARTY2.
  *
  * @return 2 (VM continue).
  */
-s32 opHandler_LASTIN(Eline *e, s32 a1) {
-    g_fieldVars->stateFlags |= 0x800;
-    if (POP(e) != 0) {
+s32 opHandler_LASTIN(Actor *actor, s32 a1) {
+    g_fieldVars->stateFlags |= FIELD_STATE_PARTY_OVERRIDE;
+    if (POP(&actor->context) != 0) {
         g_fieldVars->fieldF3 = 0xFF;
     }
     D_80082C10 = g_fieldVars->fieldF3;
-    D_80077E5F = g_fieldVars->fieldF3;
-    opHandler_SETPARTY2(e, a1);
+    g_gameState.config.sealedFeatures = g_fieldVars->fieldF3;
+    opHandler_SETPARTY2(&actor->context, a1);
     return 2;
 }
 
 /**
  * Clears bit 0x800 in entity flags at g_fieldVars+0x68, clears
- * D_80082C10 and D_80077E5F, then calls recalcPartyStats.
+ * D_80082C10 and @c GameConfig.sealedFeatures, then calls recalcPartyStats.
  *
- * @param a0 Unused.
+ * @param actor Unused.
  * @return 2 (continue processing).
  */
-s32 opHandler_LASTOUT(Eline *e) {
+s32 opHandler_LASTOUT(ScriptContext *context) {
     /* Take the address of stateFlags so gcc materializes the read & write
      * through one register — keeps the seedState updates together
-     * (before D_80082C10/D_80077E5F + recalcPartyStats() in the schedule). */
+     * (before D_80082C10/sealedFeatures + recalcPartyStats() in the schedule). */
     s32 *p = &g_fieldVars->stateFlags;
     *p = *p & ~0x800;
     D_80082C10 = 0;
-    D_80077E5F = 0;
+    g_gameState.config.sealedFeatures = 0;
     recalcPartyStats();
     return 2;
 }

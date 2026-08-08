@@ -1409,3 +1409,4 @@ tripleTriadMainLoop = 0x80098304;
 g_meshRenderCtx = 0x801F0000;
 g_fieldVars = 0x800562C4;
 g_seedSalaryTable = 0x800C5F70;
+SmInitEventAll = 0x800C00C8; // type:func

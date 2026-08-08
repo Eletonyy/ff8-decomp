@@ -1739,7 +1739,7 @@ void func_8009F570(s32 arg0) {
 }
 
 void func_8009F5B4(s32 arg0) {
-    if (!(D_80077E5C & CTRL_FLAG_100) && (func_8009F52C(D_800ED148.entities[arg0].linkedIdx))) {
+    if (!(g_gameState.config.flags & CONFIG_SCAN) && (func_8009F52C(D_800ED148.entities[arg0].linkedIdx))) {
         D_800EE4C0.flags5 |= 2;
     }
 
