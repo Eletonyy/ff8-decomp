@@ -69,6 +69,9 @@ typedef struct {
 
 #define GF_COUNT 16
 
+/** @brief GfSaveData.exists bit 0: GF is unlocked/owned. */
+#define GF_EXISTS 0x01
+
 /** @brief GF IDs (index into GfSaveData array). */
 enum GfId {
     GF_QUEZACOTL = 0,

@@ -138,6 +138,8 @@ typedef struct {
     u8 separator;              /* 0x10: thousands separator character */
 } MsgFormatConfig;
 
+extern MsgFormatConfig D_80083858;
+
 /** @brief Message state struct passed to decode/advance functions.
  *
  * Accessed as s32[] array in some functions, with a u8 skip count at +0x22.
