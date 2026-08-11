@@ -293,9 +293,7 @@ typedef struct {
     u8 padBC[0x5];
     u8 unkC1;
     u8 padC2[0x6];
-    u8 unkC8;
-    u8 padC9;
-    u8 unkCA;
+    u8 unkC8[3];
     u8 linkedIdx;
     u8 unkCC;
     u8 fieldCD;        /* 0xCD: stat byte used in case-0 damage formula (squared). */
@@ -395,19 +393,18 @@ typedef struct {
 } BattleUnkDE8;    /* 12 bytes */
 
 typedef struct{
-    s16 unk0;
-    s8 unk2;
-    s8 unk3;
-    s8 unk4;
-    s8 unk5;
-    s8 unk6;
-    s8 unk7;
+    u16 unk0;
+    u8 unk2;
+    u8 unk3;
+    u8 unk4;
+    u8 unk5;
+    u8 unk6;
+    u8 unk7;
 } InternalStruct; /* 8 bytes */
 
 typedef struct{
     InternalStruct unk1[3];
 } Struct_1244;
-
 
 typedef struct {
     /* 0x0000 */ BattleEntity entities[7];      /**< 7 × 0xD0 = 0x5B0. Index 0 is also the header proxy. */
@@ -424,12 +421,9 @@ typedef struct {
     /* 0x0D14 */ u8 unkD14[0x8];                /**< Hit-type byte table (8 entries). */
     /* 0x0D1C */ u8 padD1C[0x40];               /**< Misc state. */
     /* 0x0D5C */ u8 unkD5C[0x8];                /**< Per-trigger flag array (8 entries). */
-    /* 0x0D64 */ TaskLink unkD64[23];
-    /* 0x0DC0 */ u8 padDC0[0x28];
+    /* 0x0D64 */ TaskLink unkD64[3][11];
     /* 0x0DE8 */ BattleUnkDE8 arrayDE8[3][11][2]; /**< D_800EDF30: (792 bytes: 0x318) size tied to func_800A5948 */
-    /* 0x1100 */ u8 unk1100;                    // indexes used for taskLink
-    /* 0x1101 */ u8 unk1101;                    // indexes used for taskLink
-    /* 0x1102 */ u8 unk1102;                    // indexes used for taskLink
+    /* 0x1100 */ u8 unk1100[3];                    // indexes used for taskLink
     /* 0x1103 */ TaskLink taskLinks[16];        /**< D_800EE24B: Task queue link table (16 × 4 bytes). */
     /* 0x1143 */ u8 pad1143[1];                 /**< Pad to taskData. */
     /* 0x1144 */ TaskEntry taskData[16];        /**< D_800EE28C: Task queue data slots (16 × 16 bytes). */
@@ -1141,6 +1135,7 @@ extern s32             D_800E19BC[];
 extern u16             D_800E3CA4[];
 extern BattlePosXZ     D_800E3CA8[];
 extern BattlePosXZ     D_800E3CB0[];
+extern u8              D_800E3CE8;
 extern BattleSystem    D_800ED148;
 extern u8              D_800ED157[];
 extern BattleSlotData  D_800ED158;

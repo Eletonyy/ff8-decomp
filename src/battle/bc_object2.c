@@ -2229,7 +2229,7 @@ void func_8009FE14(s32 arg0) {
         temp_v0_2 = &bs->entities[arg0]; // entity[1]
         D_800EEBB8 = temp_v0_2[1].state.bytes.b2;
         D_800EEBB9 = temp_v0_2[1].state.bytes.b1;
-        D_800EEBBA = temp_v0_2[0].unkCA;
+        D_800EEBBA = temp_v0_2[0].unkC8[2];
         D_800EEBC2 = temp_v0_2[0].unk96;
         D_800EEBC4 = temp_v0_2[0].unk30;
         D_800EEBBB = temp_v0_2[1].state.bytes.b0;
