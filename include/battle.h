@@ -275,7 +275,7 @@ typedef struct {
     volatile ControlFlags controlFlags;
     u16 status; /* D_800ED1D8 */
     u16 statusBackup;
-    u16 hpDisplay;     /* 0x94: HP value mirrored from BattleCharData.currentHp. */
+    s16 hpDisplay;     /* 0x94: HP value mirrored from BattleCharData.currentHp. */
     u16 unk96;
     u8 unk98;
     u8 unk99;

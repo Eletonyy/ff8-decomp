@@ -472,7 +472,131 @@ void func_800A26A0(s32 arg0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A2724);
+void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u16* arg6, s32* arg7, s32 arg8) {
+    s32 var_a0;
+    s32 var_s1;
+    
+    func_800A2638(arg1, (s32) *arg2, arg8, arg0);
+    if (D_800ED148.entities[arg0].flags & 0x800) {
+        func_800A2548(arg0);
+    } 
+    
+    else if (D_800ED148.entities[arg0].status & 4) {
+        func_800A2520(arg0);
+    } 
+    
+    else if (D_800ED148.entities[arg0].flags & 0x02000000) {
+        func_8009B924(arg0, 16, 0);
+    }
+
+    var_s1 = D_800ED148.entities[arg0].field28;
+    if ((arg0 < 3) && (D_800ED148.entities[arg0].hpDisplay != 0) && (D_800ED148.entities[arg0].flags < 0) && !(*arg3 & 1) && (g_battleChars.chars[arg0].field014 != 0) && !(*arg2 & 1)) {
+        var_a0 = D_800ED148.entities[arg0].hpDisplay - arg1;
+        if (var_a0 < 0) {
+            var_a0 = 0;
+        }
+        
+        D_800ED148.entities[arg0].hpDisplay = var_a0;
+        if (var_a0 == 0) {
+            g_gameState.gfs[g_battleChars.chars[arg0].field01D - 64].kos++;
+        }
+        
+        func_800A2480(arg0, D_800ED148.entities[arg0].field28, &D_800ED148.entities[arg0].status);
+        *arg2 |= 0x20;
+    } 
+    
+    else {
+        if (*arg2 & 1) {
+            var_s1 += arg1;
+            if (D_800ED148.entities[arg0].field2C < var_s1) {
+                var_s1 = D_800ED148.entities[arg0].field2C;
+            }
+        }
+        
+        else {
+            if ((arg4 >= 3) && (arg1 != 0) && (g_battleChars.chars[arg0].statusFlags & 8)) {
+                BattleSystem* bs = &D_800ED148;
+                BattleEntity* entity = &bs->entities[arg0];
+                (entity + 1)->timers.bigTimer += arg1;
+            }
+            
+            var_s1 -= arg1;
+            if (var_s1 < 0) {
+                var_s1 = 0;
+            }
+        }
+        
+        func_800A240C(arg0, var_s1, &D_800ED148.entities[arg0].status);
+    }
+    
+    func_800A26A0(arg0);
+
+    if ((var_s1 == 0) || (D_800ED148.entities[arg0].status & 1) || (D_800ED148.entities[arg0].flags & 0x10000)) {
+        BattleSystem* bs = &D_800ED148;
+        BattleEntity* entity = &bs->entities[arg0];
+        D_800ED148.entities[arg0].field28 = 0;
+        
+        if ((D_800ED148.unk1300 == 0) && ((entity + 1)->slot8.byteView.unk09 == 0)) {
+            D_800ED148.entities[arg0].status |= 1;
+            if (arg0 < 3) {
+                func_800A2570(arg0);
+                if (!(D_800ED148.entities[arg0].flags & 0x10000) && (func_800B1D4C(arg0, arg4) != 0)) {
+                    D_800ED148.unk12F9 = 1;
+                    func_800A2598(arg0, 3);
+                }
+                
+                *arg3 |= 0xC;
+                func_800A2008(arg4, arg0, D_800EE4C0.unk1);
+            } 
+            
+            else {
+                if (!(D_800ED148.entities[arg0].controlFlags & 0x40000)) {
+                    func_800AF068(arg0);
+                    func_800AEF34(arg0);
+                    func_800AFB5C(arg4, arg0, D_800EE4C0.unk1, D_800EE4C0.statusCode);
+                    func_800A2008(arg4, arg0, D_800EE4C0.unk1);
+                    D_800ED148.entities[arg0].controlFlags |= 0x40000;
+                }
+                
+                if (D_800ED148.entities[arg0].controlFlags & 0x20) {
+                    if (!(D_800ED148.entities[arg0].flags & 0x10000)) {
+                        func_800A2598(arg0, 3);
+                        func_800ACF84(arg0, 4);
+                        D_800ED148.entities[arg0].status &= 0xFFFE;
+                    }
+                }
+                
+                else {
+                    func_800A2570(arg0);
+                    *arg3 |= 8;
+                    *arg5 = 3;
+                }
+            }
+        }
+    } 
+    
+    else {
+        D_800ED148.entities[arg0].field28 = var_s1;
+        if ((arg8 == 0) && (D_800ED148.unk12F5 == 0)) {
+            if (arg0 < 3) {
+                func_800A2598(arg0, 2);
+            } 
+            
+            else if (D_800ED148.unk12F2 != 0) {
+                BattleSystem* bs = &D_800ED148;
+                BattleEntity* entity = &bs->entities[arg0];
+                func_800A2598(arg0, 2);
+                if ((D_800ED148.entities[arg0].controlFlags & 0x10) && (D_800ED148.unk1300 == 0) && ((entity + 1)->slot8.byteView.unk09 == 0)) {
+                    func_800ACF84(arg0, 4);
+                }
+            }
+        }
+    }
+    
+    func_8009AFF0(arg0);
+    *arg6 = D_800ED148.entities[arg0].statusBackup;
+    *arg7 = D_800ED148.entities[arg0].flagsBackup;
+}
 
 /**
  * @brief Check battle status flags and optionally store adjusted value.
