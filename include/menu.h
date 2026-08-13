@@ -233,6 +233,6 @@ s32 func_801F7BE4(s32);
 extern u8 D_801EF1A4;
 extern u8 D_801EF1A5;
 extern u8 D_801EF1B0[];
-extern u16 D_801FA3C8[];
+extern u16 D_801FA3C8[];  /**< 65-entry falloff table, built by menumain func_801EFF64. */
 
 #endif /* MENU_H */
