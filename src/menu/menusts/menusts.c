@@ -11,7 +11,6 @@ typedef struct {
 extern s32 D_801E961C[];
 extern StatusEntry D_801E95CC[];
 extern BattleCharData D_801E9EE4;
-extern u8 D_80083858;
 /** @brief Status table entry (8-byte stride) used by func_801E582C/48/6C. */
 typedef struct {
     u16 xOff; /**< Offset into D_801E99AC for x-position. */
@@ -183,7 +182,7 @@ s32 func_801E72D8(s32 displayList, s32 ot, s32 x, s32 y, s32 mode) {
     u8 strBuf[16];
     StatusEntry *entry = D_801E95CC;
     s32 i = 0;
-    s32 digitBase = D_80083858;
+    s32 digitBase = D_80083858.digitBase;
     s32 drawn;
     s32 yStep;
     MenuDisplayConfig *cfgPtr;
