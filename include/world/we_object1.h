@@ -6,6 +6,7 @@
 #include "gamestate.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
+#include "main.h"  /* g_activeDrawEnv */
 
 /* Projection scratch: worldPosToCell writes @c proj and returns @c angle. The
    trailing @c pad keeps the buffer 0x20 bytes (gcc reserves the full slot). */
@@ -86,7 +87,6 @@ extern s32       D_800C9FC8, D_800C9FB0, D_800C9FCC, D_800C9FB4, D_800C9FD0, D_8
 extern s32       D_800C9FD8, D_800C9FBC, D_800C9FDC, D_800C9FC0, D_800C9FE4, D_800C9FC4;
 extern DRAWENV   D_80082C30;      /* active draw environment */
 extern DISPENV   D_80082C18;      /* active display environment */
-extern DRAWENV  *g_activeDrawEnv;
 extern u32       D_800D2278[];
 extern VECTOR    D_800980DC;   /* constant view offset {0, 0, -0x1800, 0} */
 extern VECTOR    D_800C9748;   /* mirrored copy of the transformed position */
