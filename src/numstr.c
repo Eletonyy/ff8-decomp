@@ -339,22 +339,22 @@ u8 *func_8002F610(s32 index, u8 *dst) {
  *   0x0D + byte — GF/item stat name lookup via getStatName
  *   0x0E + byte — Character name table set 0 (idx * 224 + subByte)
  *   0x0F + byte — Character name table set 1 (idx * 224 + subByte)
- *   0x10-0x18   — Direct name lookup via getBattleCharNameWrapper (type 0)
+ *   0x10-0x1F   — Direct name lookup via getBattleCharNameWrapper (type 0)
  *   0xE8-0xFF   — Double-byte character from D_8008369C lookup table
  *
- * Types 3, 4, and 0x10-0x18 share a sub-command dispatch based on cmd >> 8:
+ * Types 3, 4, and 0x10-0x1F share a sub-command dispatch based on cmd >> 8:
  *   hiCmd 0: getBattleCharNameWrapper(cmd & 0x1F) — direct name pointer
  *   hiCmd 3: Name lookup switch (65-entry jump table, 0x20-0x60):
  *     0x20-0x22 → getCharNameWrapper2 (character name type A)
  *     0x30-0x3F → getCharNameWrapper (character name type B)
- *     0x40 → D_800773A8, 0x5C → D_80077E74, 0x60 → D_800773B4
+ *     0x40 → D_800773A8, 0x50 → D_80077E74, 0x60 → D_800773B4
  *     default  → D_80052A30
  *   hiCmd 4: SFX numeric format switch (40-entry jump table, 0x20-0x47):
  *     0x20-0x27 → Decimal with separator (intToDecString + F320 + F4B0)
  *     0x30-0x37 → Decimal plain (intToDecString + F320)
  *     0x40-0x47 → Hex with D_80083857 char remap (u32ToHexTiles)
  *
- * The dispatch is repeated 3 times (for types 3, 4, 0x10-0x18), producing
+ * The dispatch is repeated 3 times (for types 3, 4, 0x10-0x1F), producing
  * 6 separate jump tables. Handler code is shared across dispatches via
  * cross-jumping, except the hex remap handler (contains a loop, 3 copies).
  *

@@ -89,9 +89,6 @@ u16 func_80036EC0(void);
 /** @brief Copy GF @p gfIdx's runtime HP into its save-data entry. */
 void copyGfHpToSave(s32 gfIdx);
 
-/** @brief Enumerate GF @p gfIndex's available abilities into @p output. */
-s32 func_800369CC(s32 gfIndex, AbilityListEntry *output, s32 includeJunction);
-
 /** @brief Card / character refresh hook: invoked when a party member
  *         changes; refreshes derived character data. */
 void func_80036B90(s32 charIndex);

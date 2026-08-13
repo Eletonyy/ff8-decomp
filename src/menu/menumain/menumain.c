@@ -1,103 +1,94 @@
 #include "common.h"
 #include "battle.h"
 #include "menu.h"
+#include "menumain.h"
+#include "ability_list.h"
 #include "gamestate.h"
+#include "game.h"
+#include "gf.h"
+#include "btl_anim.h"
+#include "btl_color.h"
+#include "btl_sfx.h"
+#include "numstr.h"
 #include "psxsdk/libgpu.h"
+#include "psxsdk/libetc.h"
 
-extern u8 D_801FA278;
-extern u8 D_801FA279;
-extern u8 D_801FA27A;
-extern u8 D_801FA27B;
-extern u8 D_801FA27C;
-extern s8 D_801FAA11;
-extern u8 D_801FAA18[];
-extern s16 D_801FAAE0;
-extern u8 D_801FAB7A;
-extern u8 D_801FAB7B;
-extern s16 D_801FAB78;
+/* Main-executable symbols without an owner header yet. */
+extern s32 D_8008384C;
 extern u16 D_80083850;
-extern u8 D_801FAA10;
-extern u16 D_801FAA12;
-extern u16 D_801FAA14;
-extern s16 D_801FAB28;
-extern s16 D_801FAB2A;
-extern s32 D_801FAB2C;
-extern u8 D_801FAB30;
-extern u8 D_801FAB31;
-extern u8 D_801FAAF0;
-extern u8 D_801FAAF8;
-extern u16 g_menumain_partyMemberMask;
-extern s32 D_801FACE8;
-extern u16 D_801FACE2;
-extern u16 D_801FACE4;
-extern s32 D_801FAAE4;
-extern s32 D_801FAAE8;
-extern u16 D_801FAAF2;
 extern u16 g_configFlags;
-extern u8 D_801F889C[];
-extern u8 D_801F7F98[];
-extern u8 D_80077E6C[];
-extern u8 D_801FABC8[];
 extern u8 g_characterMagic[];
-extern u8 D_80077EBC[];
-extern u8 D_801FAB38[];
-extern u8 D_801F7F78[];
-/* g_menuDisplayCfg.animCounter is g_menuDisplayCfg.animCounter (offset +0x12) */
-extern s16 D_801FAA1E;
-extern u8 D_801FABC4[4];
-extern u8 D_801F8BB8[];
-extern u16 D_800780E8;
 extern u8 g_characterAbilities[];
+extern u8 D_80077E6C[];
+extern u8 D_80077EBC[];
+extern u16 D_800780E8;
 extern u8 D_80056290[];
-extern u8 D_801F7E6C[];
-extern u8 D_801FAB88[];
-extern s32 g_menuColor;
-extern MenuDisplayConfig g_menuDisplayCfg;
-extern u8 D_801F7FB0[];
-extern u8 D_801F7F74[];
-extern u8 D_80078D38[];
-extern u8 D_801FAB7C;
 extern u8 D_800562A4;
-extern u8 D_801F7DF4;
-extern u8 D_801F7E00;
-extern u8 D_801F7E0C;
-extern u8 D_801F87B8;
-
-u8 *func_801F08AC(u8 *, s32);
-s32 getGlyphWidthA(s32);
-s32 func_801F1A40(s32);
-s32 func_801F179C(void *, void *);
-s32 func_801F42A4();
-s32 func_801F3FE8();
-s32 func_801F4744();
-void func_801EF9AC(s32, s32, s32, s32);
-s32 func_801F6358(s32, s32, s32, s32, s32);
-s32 func_801F6AD0(s32);
-void func_801EFBB4(s32, s32, s32);
-s32 func_801F64A4(s32, s32, s32, s32, s32, s32, s32);
-s32 func_801F3DE4(s32, s32, s32, s32, s32, s32, s32);
-s32 func_801F6234(s32, s32, s32, s32, s32);
-s32 func_801F605C(s32, s32, s32, s32, s32);
-void setAnimEntityParams(s32, s32, s32);
-void func_801F2458(s32);
-void func_801F4A98();
-void func_801F5490(s32);
-void func_801F202C(void);
-void func_801F7B60(void);
-
-extern u8 D_801FA280[];
-extern s32 D_801FA3C0;
+extern u8 D_80078D38[];
+/* Divergent view: numstr.c/menusts.c extern the digitBase byte directly. */
+extern MsgFormatConfig D_80083858;
+/* Divergent view: main.h types this DRAWENV*; menumain reads it as a word. */
 extern s32 g_activeDrawEnv;
 extern s32 D_8005F138;
-void VSync(s32);
 
 /* ======================================================================== */
 /* Panel/Window Rendering                                                   */
 /* ======================================================================== */
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801EF800);
+/**
+ * @brief Build a draw-area primitive from a caller rectangle and link it.
+ *
+ * Copies the (possibly unaligned) RECT at @p src, offsets its origin by the
+ * active draw environment's clip origin, clamps width/height to at least 2,
+ * packs the @c SetDrawArea GP0 command into @p prim, links it via
+ * @c addPrimFast (hand-picked temp @c $s1), and returns the next packet slot.
+ *
+ * @note @p src is a byte pointer and the copy is a builtin memcpy — the
+ *       original's lwl/lwr pairs come from the unaligned 8-byte expansion.
+ *       The clip additions go through u16 views of the s16 fields.
+ *
+ * @param ot   Ordering-table slot to link the primitive into.
+ * @param prim Storage for the @c DR_AREA primitive.
+ * @param src  Source RECT (unaligned byte pointer).
+ * @return Cursor for the next primitive (@c prim + 1).
+ */
+DR_AREA *func_801EF800(P_TAG *ot, DR_AREA *prim, u8 *src) {
+    RECT r;
+    DRAWENV *env;
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801EF8D8);
+    memcpy(&r, src, sizeof(RECT));
+    env = (DRAWENV *)g_activeDrawEnv;
+    *(u16 *)&r.x += *(u16 *)&env->clip.x;
+    *(u16 *)&r.y += *(u16 *)&env->clip.y;
+    if (r.w < 2) {
+        r.w = 2;
+    }
+    if (r.h < 2) {
+        r.h = 2;
+    }
+    SetDrawArea(prim, &r);
+    addPrimFast(ot, prim, s1);
+    return ++prim;
+}
+
+/**
+ * @brief Build a draw-area primitive for the active draw environment's clip
+ *        and link it.
+ *
+ * Same as func_801F03E8 but keeps the draw environment's own clip rectangle
+ * (no size override): packs the @c SetDrawArea GP0 command for
+ * @c g_activeDrawEnv->clip into @p prim, links it via @c addPrimFast
+ * (hand-picked temp @c $s2), and returns the next packet slot.
+ *
+ * @param ot   Ordering-table slot to link the primitive into.
+ * @param prim Storage for the @c DR_AREA primitive.
+ * @return Cursor for the next primitive (@c prim + 1).
+ */
+DR_AREA *func_801EF8D8(P_TAG *ot, DR_AREA *prim) {
+    SetDrawArea(prim, &((DRAWENV *)g_activeDrawEnv)->clip);
+    addPrimFast(ot, prim, s2);
+    return ++prim;
+}
 
 /**
  * @brief Draw inner panel with 1px inset border.
@@ -113,7 +104,7 @@ void func_801EF934(s32 a0, s32 a1, s32 *a2) {
     rect[1] += 1;
     rect[2] -= 2;
     rect[3] -= 2;
-    func_801EF800(a0, a1);
+    ((DR_AREA *(*)())func_801EF800)(a0, a1);
     a2[0] = save0;
     a2[1] = save1;
 }
@@ -122,7 +113,30 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801EF9AC);
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801EFBB4);
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801EFF64);
+/**
+ * @brief Build the 65-entry falloff table in D_801FA3C8.
+ *
+ * Fills D_801FA3C8[0..64] back-to-front with a decay curve starting at
+ * 0x1000 (4096 = 1.0 fixed point) and multiplying by 9/10 per step toward
+ * index 0, then clears the halfword just before the table.
+ *
+ * @note Purpose uncertain — the 0x1000 top value and *0.9 steps suggest a
+ *       volume or fade lookup table.
+ */
+void func_801EFF64(void) {
+    u16 *p = D_801FA3C8;
+    s32 val = 0x1000;
+    s32 i;
+
+    p += 64;
+    *p = val;
+    for (i = 0; i < 64; i++) {
+        p--;
+        *p = val;
+        val = val * 9 / 10;
+    }
+    p[-1] = 0;
+}
 
 /* ======================================================================== */
 /* Menu State Getters/Setters                                               */
@@ -247,7 +261,33 @@ void func_801F0224(void) {
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F0274);
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F03E8);
+/**
+ * @brief Build a draw-area primitive for the active draw environment and link it.
+ *
+ * Copies the active draw environment's clip origin into a local RECT, forces
+ * the 384x216 menu draw size, packs the @c SetDrawArea GP0 command for it
+ * into the @c DR_AREA at @p prim, links @p prim into the ordering-table slot
+ * @p tag via @c addPrimFast (hand-picked temp @c $s2), and returns the next
+ * packet slot.
+ *
+ * @param ot   Ordering-table slot to link the primitive into.
+ * @param prim Storage for the @c DR_AREA primitive.
+ * @return Cursor for the next primitive (@c prim + 1).
+ *
+ * @note The clip reads go through a u16 view of the s16 RECT fields (lhu, not
+ *       lh) and w/h are filled by one word store — both match-required.
+ */
+DR_AREA *func_801F03E8(P_TAG *ot, DR_AREA *prim) {
+    RECT r;
+    DRAWENV *env = (DRAWENV *)g_activeDrawEnv;
+
+    r.x = *(u16 *)&env->clip.x;
+    r.y = *(u16 *)&env->clip.y;
+    *(u32 *)&r.w = (216 << 16) | 384;
+    SetDrawArea(prim, &r);
+    addPrimFast(ot, prim, s2);
+    return ++prim;
+}
 
 /**
  * @brief Upload two display regions to VRAM.
@@ -283,7 +323,28 @@ void func_801F0884(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4) {
     func_801F07D8(a0, a1, a2, a3, a4, 0);
 }
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F08AC);
+/**
+ * @brief Resolve an entry in a relative-offset table.
+ *
+ * The table is an array of u16 byte offsets (relative to @p base) with a
+ * 2-byte header word at +0; entry @p index lives at base + index * 2 + 2.
+ * An offset of 0 marks an empty slot.
+ *
+ * @param base Table base pointer.
+ * @param index Entry index.
+ * @return base + offset for the entry, or NULL if the slot is empty.
+ */
+u8 *func_801F08AC(u8 *base, s32 index) {
+    u16 *p = (u16 *)(base + index * 2);
+
+    /* Separate p++ and two *p reads (not p[1]): keeps the +2 as its own
+     * addiu instead of folding into the load offset. */
+    p++;
+    if (*p == 0) {
+        return 0;
+    }
+    return base + *p;
+}
 
 /**
  * @brief Look up a text string by category and ID.
@@ -315,7 +376,29 @@ void func_801F0948(s32 a0) {
     D_801FAAE0 = a0;
 }
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F0954);
+/**
+ * @brief Queue a text glyph for rendering.
+ *
+ * Appends a TextQueueEntry to D_801FAA20: position is anchored at
+ * (x - 26, y + 3), together with the glyph code and the current
+ * color/font parameter. D_801FAA1E is the queue count; the entry index
+ * reads it as s16 while the increment goes through a u16 view (both
+ * halves of the original's mixed-signedness access).
+ *
+ * @param code  Character/glyph code (stored as a byte).
+ * @param color Color/font parameter (usually D_801FAAE0).
+ * @param x     Screen X before the -26 anchor offset.
+ * @param y     Screen Y before the +3 anchor offset.
+ */
+void func_801F0954(s32 code, s32 color, s32 x, s32 y) {
+    TextQueueEntry *e = &D_801FAA20[D_801FAA1E];
+
+    e->code = code;
+    e->x = x - 26;
+    e->y = y + 3;
+    e->color = color;
+    *(u16 *)&D_801FAA1E += 1;
+}
 
 /** @brief Render text at stored Y with default color. */
 void func_801F0994(s32 a0, s32 a1, s32 a2) {
@@ -422,7 +505,45 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F0DC0);
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F0E5C);
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F0F20);
+/**
+ * @brief Build a 12x12 menu-font sprite primitive and prepend it to the OT chain.
+ *
+ * Fills the SPRT at @p spr: CLUT selected by the low 3 bits of
+ * @p clutFlags (base 0x3812), color from D_8008384C when any higher flag
+ * bit is set, else g_menuColor; UV computed from the glyph index in the
+ * 21-glyphs-per-row 12px font atlas. Links the sprite via addOtFast and
+ * returns the new chain head.
+ *
+ * @note @c clutFlags is reused for the color word after its flag bits are
+ *       consumed — the reuse gives color a3 (regalloc match).
+ *
+ * @param head      Current OT chain head (prim address image << 8).
+ * @param spr       Storage for the SPRT primitive.
+ * @param glyph     Glyph index into the font atlas.
+ * @param clutFlags Bits 0..2: CLUT row; bits 3+: use alternate color.
+ * @param xy        Packed x0 | y0 << 16 sprite position.
+ * @return New OT chain head (@p spr's address image).
+ */
+s32 func_801F0F20(s32 head, SPRT *spr, s32 glyph, u32 clutFlags, s32 xy) {
+    u32 hi;
+
+    setlen(spr, 4);
+    addOtFast(spr, head);
+    hi = clutFlags >> 3;
+    clutFlags &= 7;
+    spr->clut = (clutFlags << 6) + 0x3812;
+    if (hi != 0) {
+        clutFlags = D_8008384C;
+    } else {
+        clutFlags = g_menuColor;
+    }
+    /* Word stores: w/h pair (12x12) and the r0g0b0+code word. */
+    *(u32 *)&spr->w = 0xC000C;
+    *(u32 *)&spr->r0 = clutFlags;
+    *(u32 *)&spr->x0 = xy;
+    *(u16 *)&spr->u0 = (glyph % 21 | (glyph / 21) << 8) * 12;
+    return head;
+}
 
 /** @brief Set menu display dimensions (width defaults to 0x180). */
 void func_801F0FD0(s32 a0, s32 a1) {
@@ -469,11 +590,50 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F12FC);
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F1584);
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F16AC);
+/**
+ * @brief Per-frame menu render driver.
+ *
+ * Advances the menu animation counter, resets the color intensity, renders
+ * the base menu layer (func_801F0AC8), submits the frame GPU packet
+ * (func_801F2FAC over the current display-list head), then walks the
+ * MenuTask list at D_801FA450 calling each task's handler; every handler
+ * returns the advanced display-list cursor.
+ *
+ * @param ctx Render context.
+ * @param dl  Display-list cursor.
+ * @return Display-list cursor after all task handlers ran.
+ */
+s32 func_801F16AC(s32 ctx, s32 dl) {
+    MenuTask *t;
+    MenuTask *cur;
+    s32 (*drawCb)(MenuTask *, s32, s32);
 
-/** @brief Process all panel callbacks (wrapper for func_801F16AC). */
+    g_menuDisplayCfg.animCounter++;
+    setMenuColorIntensity(0x1000);
+    t = D_801FA450;
+    dl = func_801F0AC8(ctx, dl);
+    storeGpuPacket(func_801F2FAC(ctx, getDisplayListHead()));
+    while (1) {
+        if (t == 0) {
+            break;
+        }
+        cur = t;
+        drawCb = t->drawCb;
+        t = t->next;
+        if (drawCb != 0) {
+            dl = drawCb(cur, ctx, dl);
+        }
+    }
+    return dl;
+}
+
+/** @brief Process all panel callbacks (wrapper for func_801F16AC).
+ *
+ * @note Calls through an unspecified-args cast with no arguments — the
+ *       original passes whatever $a0/$a1 hold (the callee's ctx/dl inputs
+ *       are dead this frame); an ANSI call would emit argument setup. */
 void func_801F175C(void) {
-    func_801F16AC();
+    ((s32 (*)())func_801F16AC)();
 }
 
 /** @brief Clear 22 panel callback entries starting at a0[8]. */
@@ -485,9 +645,105 @@ void func_801F177C(s32 *a0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F179C);
+/**
+ * @brief Allocate a menu state task and link it at the head of the list.
+ *
+ * Claims the first free slot of the 10-entry pool D_801FA550, marks it in
+ * use, and inserts it at the front of the D_801FA450 list: the head pointer
+ * doubles as a sentinel node whose @c next field is the pointer itself, so
+ * the insert is the ordinary four-store list splice. Clears the task's
+ * callback table via func_801F177C, then stores @p tag, @p handler and a
+ * zeroed state.
+ *
+ * @param tickCb Update callback stored in the task (func_801F1584).
+ * @param drawCb Per-frame draw callback (func_801F16AC).
+ * @return The claimed task as an s32, or 0 when the pool is full.
+ */
+s32 func_801F179C(s32 tickCb, s32 drawCb) {
+    MenuTask *node;
+    MenuTask *n = D_801FA550;
+    MenuTask *first;
+    MenuTask *head;
+    s32 i;
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F1850);
+    i = 0;
+    while (1) {
+        if (n->inUse == 0) {
+            n->inUse = 1;
+            node = n;
+            break;
+        }
+        i++;
+        if (i >= 10) {
+            node = 0;
+            break;
+        }
+        n++;
+    }
+    if (node == 0) {
+        return 0;
+    }
+    head = (MenuTask *)&D_801FA450;
+    first = head->next;
+    node->prev = head;
+    node->next = first;
+    head->next = node;
+    first->prev = node;
+    func_801F177C((s32 *)node);
+    node->tickCb = tickCb;
+    node->drawCb = (s32 (*)(MenuTask *, s32, s32))drawCb;
+    node->state = 0;
+    return (s32)node;
+}
+
+/**
+ * @brief Allocate a menu task and link it after the list head.
+ *
+ * Claims the first free slot of the 10-entry pool D_801FA550, marks it in
+ * use, splices it in directly after D_801FA4D0 (the list head), clears its
+ * callback table via func_801F177C, and stores @p tag and @p handler.
+ *
+ * @note The explicit exhaust-break (rather than a for loop with node
+ *       pre-initialized) is what places the @c node @c = @c 0 on the
+ *       loop-exit path, as the original does.
+ *
+ * @param tickCb Update callback stored in the task (func_801F1584).
+ * @param drawCb Per-frame draw callback (func_801F16AC).
+ * @return The claimed task, or NULL when the pool is full.
+ */
+MenuTask *func_801F1850(s32 tickCb, s32 drawCb) {
+    MenuTask *node;
+    MenuTask *n = D_801FA550;
+    MenuTask *next;
+    s32 i;
+
+    i = 0;
+    while (1) {
+        if (n->inUse == 0) {
+            n->inUse = 1;
+            node = n;
+            break;
+        }
+        i++;
+        if (i >= 10) {
+            node = 0;
+            break;
+        }
+        n++;
+    }
+    if (node == 0) {
+        return 0;
+    }
+    next = node->next;
+    D_801FA4D0.prev = node;
+    D_801FA4D0.next = next;
+    node->next = &D_801FA4D0;
+    next->prev = &D_801FA4D0;
+    func_801F177C((s32 *)&D_801FA4D0);
+    node->tickCb = tickCb;
+    node->drawCb = (s32 (*)(MenuTask *, s32, s32))drawCb;
+    return node;
+}
 
 /**
  * @brief Remove a node from the panel doubly-linked list.
@@ -799,11 +1055,89 @@ void func_801F22A8(void) {
 /* Character Panel Rendering                                                */
 /* ======================================================================== */
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F22F4);
+/**
+ * @brief Build the bitmask of characters that are alive and available.
+ *
+ * Sets bit i for every character whose status does not include
+ * @c STATUS_KO, then intersects with the character availability mask
+ * from func_80036EC0.
+ *
+ * @return u16 bitmask of usable characters, bit index = character ID.
+ *
+ * @note func_80036EC0 (src/card.c) is deliberately called without a
+ *       prototype, as in the original build: card.h's u16 declaration must
+ *       not be visible here or the call gains a spurious @c andi truncation
+ *       (same ABI split as getGfAvailabilityMask — see card.h).
+ */
+u16 func_801F22F4(void) {
+    s32 avail = func_80036EC0();
+    u16 mask = 0;
+    s32 i;
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F2370);
+    for (i = 0; i < 8; i++) {
+        if (!(func_801F21D0(i) & STATUS_KO)) {
+            mask |= 1 << i;
+        }
+    }
+    mask &= avail;
+    return mask;
+}
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F23D0);
+/**
+ * @brief Build the bitmask of GFs that are alive and available.
+ *
+ * Sets bit i for every GF whose saved HP is nonzero, then intersects
+ * with getGfAvailabilityMask() (story/junction availability).
+ *
+ * @return u16 bitmask of usable GFs, bit index = GfId.
+ */
+u16 func_801F2370(void) {
+    s32 avail = getGfAvailabilityMask();
+    u16 mask = 0;
+    s32 i;
+
+    for (i = 0; i < GF_COUNT; i++) {
+        if (g_gameState.gfs[i].hp != 0) {
+            mask |= 1 << i;
+        }
+    }
+    mask &= avail;
+    return mask;
+}
+
+/**
+ * @brief Register a horizontally centered text region.
+ *
+ * Measures text @p textId via func_8002E680 (packed w | h << 16), maps
+ * both extents through func_801F738C/func_801F7394, then registers the
+ * RECT — x centered on the 384-wide menu screen at row @p y — with
+ * func_8002E064 under @p idx.
+ *
+ * @note @c w holds the packed measurement first and is then reassigned to
+ *       the mapped width — the reuse is what allocates s0/s1/s2 like the
+ *       original.
+ * @note func_8002E680 (src/btl_sfx.c) is called without a prototype here,
+ *       as in the original build; field.h/we_object1.h carry the u8*
+ *       declaration for their units until a btl_sfx.h consolidation pass.
+ *
+ * @param idx  Region slot index (passed to func_8002E064).
+ * @param y    Screen Y for the region.
+ * @param text Text to measure.
+ */
+void func_801F23D0(s32 idx, s32 y, u8 *text) {
+    RECT r;
+    s32 w = func_8002E680(text);
+    s32 upper = w >> 16;
+    s32 h;
+
+    w = func_801F738C(w & 0xFFFF);
+    h = func_801F7394(upper);
+    r.x = (0x180 - w) / 2;
+    r.y = y;
+    r.w = w;
+    r.h = h;
+    func_8002E064(idx, &r);
+}
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F2458);
 
@@ -843,7 +1177,38 @@ void func_801F3994(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
     func_801F0FEC(a1, a2, a3, a4, a0, a5);
 }
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F39D0);
+/**
+ * @brief Draw an icon glyph plus a two-digit zero-trimmed number.
+ *
+ * Renders glyph 0x145 via func_800300F8 with a (a5 << 6) + 2 selection
+ * parameter, then formats @p val as two digits (leading zeros replaced by
+ * the first char of menu string 0xB) and prints them 18 pixels below via
+ * func_8002C56C.
+ *
+ * @note getMenuString (main exe) is deliberately called without a prototype
+ *       here, as in the original build; bc_object2.h carries the battle-side
+ *       declaration and menumain must not include battle-overlay headers.
+ *
+ * @param val Number to render.
+ * @param ctx Render context.
+ * @param dl  Display-list cursor.
+ * @param y   Anchor Y for the glyph; digits render at y + 18.
+ * @param a4  X anchor (passed through to both renderers).
+ * @param a5  Color/selection index for the digit pass.
+ */
+void func_801F39D0(s32 val, s32 ctx, s32 dl, s32 y, s32 a4, s32 a5) {
+    u8 buf[16];
+    s32 digits = D_80083858.digitBase;
+    s32 cursor;
+    u8 *str;
+
+    cursor = func_800300F8(ctx, dl, 0x145, y, a4, g_menuColor, (a5 << 6) + 2);
+    y += 0x12;
+    intToDecStringShort(val, buf, digits);
+    str = (u8 *)getMenuString(0xB);
+    replaceLeadingZeros(buf + 2, 2, digits, str[0]);
+    func_8002C56C(ctx, cursor, y, a4, buf + 2, a5);
+}
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F3ABC);
 
@@ -1021,8 +1386,6 @@ void func_801F5340(void) {
     }
 }
 
-typedef struct { s32 w0, w1, w2, w3; } CopyBlock16;
-
 /** @brief Recalculate stats for a party slot and copy result table to dst. */
 void func_801F537C(s32 a0, CopyBlock16 *a1) {
     CopyBlock16 *src;
@@ -1157,7 +1520,7 @@ s32 func_801F5984(u16 *src, u16 *dst, s32 a2) {
         val = (s16)*src++;
         if (val == -1) break;
         ret = func_801F08D4(1, a2, val, 0);
-        ret = getGlyphWidthA(ret) + 12;
+        ret = getGlyphWidthA((u8 *)ret) + 12;
         accum += ret;
         *dst++ = accum;
         count++;
@@ -1171,13 +1534,168 @@ s32 func_801F5984(u16 *src, u16 *dst, s32 a2) {
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F5A38);
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F5B54);
+/**
+ * @brief Size and draw a text-list panel from a -1-terminated id list.
+ *
+ * Measures every entry of @p ids (looked up in text category @p textCat via
+ * func_801F08D4) to find the widest string, then sizes g_menuDisplayCfg to
+ * fit — width = 8 pixels per character + 16 padding, height = 12 per row
+ * plus 10 — and draws the panel frame with func_801EF9AC.
+ *
+ * @note Declaring @c count before @c maxWidth is load-bearing: the two have
+ *       identical allocator priority, so the tie breaks on declaration order.
+ *
+ * @param ctx     Render context.
+ * @param dl      Display-list cursor.
+ * @param x       Panel X.
+ * @param y       Panel Y.
+ * @param textCat Text category for func_801F08D4 lookups.
+ * @param ids     Entry ids, terminated by a negative value.
+ * @param param   Intensity/param passed to func_801EF9AC.
+ * @return Display-list cursor after the panel.
+ */
+s32 func_801F5B54(s32 ctx, s32 dl, s32 x, s32 y, s32 textCat, u16 *ids, s32 param) {
+    MenuDisplayConfig *cfg = &g_menuDisplayCfg;
+    s32 count;
+    s32 maxWidth;
+    s16 id;
+    u8 *str;
+    s32 len;
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F5C84);
+    maxWidth = 0;
+    count = maxWidth;
+    while (1) {
+        id = *ids++;
+        if (id < 0) {
+            break;
+        }
+        str = func_801F08D4(1, textCat, id, 0);
+        len = 0;
+        while (*str++ != 0) {
+            len++;
+        }
+        len *= 8;
+        if (maxWidth < len) {
+            maxWidth = len;
+        }
+        count++;
+    }
+    cfg->iconType = 0;
+    cfg->iconSubType = 0;
+    cfg->x = x;
+    cfg->y = y;
+    cfg->w = maxWidth + 0x10;
+    cfg->h = count * 12 + 0xA;
+    dl = func_801EF9AC(ctx, dl, param, g_menuColor);
+    return dl;
+}
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F5D5C);
+/**
+ * @brief Draw a text-list panel's entries, greying out disabled rows.
+ *
+ * Renders each entry of the -1-terminated @p ids list (looked up in text
+ * category @p textCat) down the panel at 12-pixel row pitch. Bit i of
+ * @p enableMask selects the colour of row i: 7 when set (enabled), 1 when
+ * clear (greyed out).
+ *
+ * @note @p enableMask must be unsigned so the per-row shift is a logical
+ *       one, and the @c tx / @c ty cursor copies (assigned in that order)
+ *       are what give x, textCat and ctx their saved registers.
+ *
+ * @param ctx        Render context.
+ * @param dl         Display-list cursor.
+ * @param x          Row X.
+ * @param y          Y of the first row.
+ * @param textCat    Text category for func_801F08D4 lookups.
+ * @param ids        Entry ids, terminated by a negative value.
+ * @param enableMask Per-row enabled bits, LSB = first row.
+ * @return Display-list cursor after the rows.
+ */
+s32 func_801F5C84(s32 ctx, s32 dl, s32 x, s32 y, s32 textCat, u16 *ids, u32 enableMask) {
+    s32 tx;
+    s32 ty;
+    s16 id;
+    u8 *str;
+    s32 color;
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F5E0C);
+    tx = x;
+    ty = y;
+    while (1) {
+        id = *ids++;
+        if (id < 0) {
+            break;
+        }
+        str = func_801F08D4(1, textCat, id, 0);
+        color = 1;
+        if (enableMask & 1) {
+            color = 7;
+        }
+        dl = func_8002C56C(ctx, dl, tx, ty, str, color);
+        ty += 0xC;
+        enableMask >>= 1;
+    }
+    return dl;
+}
+
+/**
+ * @brief Draw a complete menu panel: clip restore, border, then body.
+ *
+ * Chains three packet builders on the display list: func_801F03E8
+ * (draw-area restore), func_801F5C84 at (x+8, y+7) with @p a7, then
+ * func_801F5B54 at (x, y) with @p a6. Each call's return value is the
+ * next call's packet cursor.
+ *
+ * @param ctx        Render context (also the ordering-table slot).
+ * @param prim       Packet cursor.
+ * @param x          Panel X.
+ * @param y          Panel Y.
+ * @param textCat    Text category for both panel builders.
+ * @param ids        Entry ids for both panel builders.
+ * @param bodyParam  Intensity/param for the body pass (func_801F5B54).
+ * @param insetParam Intensity/param for the inset pass (func_801F5C84).
+ * @return Packet cursor after the body pass.
+ */
+s32 func_801F5D5C(s32 ctx, DR_AREA *prim, s32 x, s32 y, s32 textCat, u16 *ids, s32 bodyParam, s32 insetParam) {
+    s32 dl = (s32)func_801F03E8((P_TAG *)ctx, prim);
+
+    dl = func_801F5C84(ctx, dl, x + 8, y + 7, textCat, ids, insetParam);
+    return func_801F5B54(ctx, dl, x, y, textCat, ids, bodyParam);
+}
+
+/**
+ * @brief Draw a two-digit page/slot counter as glyphs.
+ *
+ * Renders the separator glyph 0x32, then the digits of @p val + 1: the tens
+ * digit only when @p flag is set, then the units digit. Each glyph advances
+ * the cursor.
+ *
+ * @note intToDecStringShort formats into five digit glyphs (its divisor table
+ *       runs 10000..1), so buf[3] is the tens place and buf[4] the units;
+ *       replaceLeadingZeros blanks the tens glyph when it would be a zero.
+ *
+ * @param ctx   Render context.
+ * @param dl    Display-list cursor.
+ * @param x     Start X (advances 9 then 6 pixels per drawn glyph).
+ * @param y     Screen Y.
+ * @param color Glyph color.
+ * @param val   Zero-based value; displayed as @p val + 1.
+ * @param flag  Nonzero to draw the tens digit.
+ * @return Display-list cursor after the glyphs.
+ */
+s32 func_801F5E0C(s32 ctx, s32 dl, s32 x, s32 y, s32 color, s32 val, s32 flag) {
+    u8 buf[16];
+
+    intToDecStringShort(val + 1, buf, 0x28);
+    replaceLeadingZeros(buf + 3, 1, 0x28, 7);
+    dl = func_8002FF34(ctx, dl, 0x32, x, y, color);
+    x += 9;
+    if (flag != 0) {
+        dl = func_8002FF34(ctx, dl, buf[3], x, y, color);
+        x += 6;
+    }
+    dl = func_8002FF34(ctx, dl, buf[4], x, y, color);
+    return dl;
+}
 
 /** @brief Render number right-aligned (last param = 1). */
 void func_801F5EFC(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
@@ -1189,11 +1707,76 @@ s32 func_801F5F30(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
     func_801F5E0C(a0, a1, a2, a3, a4, a5, 0);
 }
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F5F60);
+/**
+ * @brief Draw the scroll arrows along a panel's bottom edge.
+ *
+ * Renders the left arrow (glyph 0x5C) at the panel's bottom-left and the
+ * right arrow (0x5D) at its bottom-right, each gated by a bit of
+ * @p arrows. Both blink together: on alternate 8-frame phases of
+ * g_menuDisplayCfg.animCounter the selection parameter drops to 0.
+ *
+ * @note The shared @c bottom temp is what evaluates the y/h pair before
+ *       the x load (scheduling match); a per-branch local does not.
+ *
+ * @param ctx    Render context.
+ * @param dl     Display-list cursor.
+ * @param color  Color passed through to both glyphs.
+ * @param arrows Bit 0: draw left arrow. Bit 1: draw right arrow.
+ * @return Display-list cursor after the drawn arrows.
+ */
+s32 func_801F5F60(s32 ctx, s32 dl, s32 color, s32 arrows) {
+    MenuDisplayConfig *cfg = &g_menuDisplayCfg;
+    s32 blink = 0x140;
+    s32 bottom;
+
+    if ((cfg->animCounter >> 3) & 1) {
+        blink = 0;
+    }
+    if (arrows & 1) {
+        bottom = cfg->y + cfg->h - 10;
+        dl = func_800300F8(ctx, dl, 0x5C, g_menuDisplayCfg.x + 2, bottom, color, blink);
+    }
+    if (arrows & 2) {
+        bottom = cfg->y + cfg->h - 10;
+        dl = func_800300F8(ctx, dl, 0x5D, g_menuDisplayCfg.x + cfg->w - 9, bottom, color, blink);
+    }
+    return dl;
+}
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F605C);
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F6234);
+/**
+ * @brief Draw face glyphs for masked party members in a 3-column grid.
+ *
+ * For each set bit i in @p mask (restricted to bits 1..6), renders face
+ * glyph 0x110 + i at an 18x18 grid cell, filling left-to-right then
+ * top-to-bottom in draw order.
+ *
+ * @param ctx  Render context.
+ * @param dl   Display-list cursor (threaded through the glyph calls).
+ * @param x    Grid origin X.
+ * @param y    Grid origin Y.
+ * @param mask Bitmask of members to draw (FACE_GRID_MEMBERS honored).
+ * @return Display-list cursor after the drawn glyphs.
+ */
+s32 func_801F6234(s32 ctx, s32 dl, s32 x, s32 y, s32 mask) {
+    s32 drawn = 0;
+    s32 i;
+
+    mask &= FACE_GRID_MEMBERS;
+    for (i = 0; i < 8; i++) {
+        s32 bit = 1 << i;
+
+        if (mask & bit) {
+            s32 row = drawn / 3;
+            s32 col = drawn - row * 3;
+
+            dl = func_8002FF34(ctx, dl, i + 0x110, x + col * 18, y + row * 18, g_menuColor);
+            drawn++;
+        }
+    }
+    return dl;
+}
 
 /* ======================================================================== */
 /* String Resource Lookup                                                   */
@@ -1263,7 +1846,41 @@ s32 func_801F65F0(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
     return func_801F605C(a0, ret, a2 + 0x10E, a3 + 0x38, a5);
 }
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F66B0);
+/**
+ * @brief Draw a character's level number in its status panel slot.
+ *
+ * Anchors g_menuDisplayCfg at (x+200, y+121) with a 154x22 box and no
+ * icon, renders the level value from getLevelCurveData(charIdx) as a
+ * 7-glyph field at (x+209, y+128) via func_801F0FEC, then draws the
+ * panel frame with func_801EF9AC at full intensity.
+ *
+ * @note @p x and @p y are advanced in place — reassigning the parameters
+ *       restores their true live lengths so px/py keep s0/s1 (allocation
+ *       match).
+ *
+ * @param ctx     Render context.
+ * @param dl      Display-list cursor.
+ * @param x       Panel base X.
+ * @param y       Panel base Y.
+ * @param charIdx Level-curve entry to display.
+ */
+void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 charIdx) {
+    s32 lvl;
+
+    x += 0xC8;
+    y += 0x79;
+    g_menuDisplayCfg.x = x;
+    x += 9;
+    g_menuDisplayCfg.w = 0x9A;
+    g_menuDisplayCfg.iconType = 0;
+    g_menuDisplayCfg.iconSubType = 0;
+    g_menuDisplayCfg.y = y;
+    g_menuDisplayCfg.h = 0x16;
+    y += 7;
+    lvl = getLevelCurveData(charIdx);
+    dl = func_801F0FEC(ctx, dl, x, y, lvl, 7);
+    func_801EF9AC(ctx, dl, 0x1000, g_menuColor);
+}
 
 /**
  * @brief Adjust cursor position based on D-pad input with wrapping and guard.
@@ -1407,7 +2024,41 @@ s32 func_801F6B28(s32 a0) {
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F6B54);
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F6C9C);
+/**
+ * @brief Render a column of bitmask-selected entries inside a 168x120 panel.
+ *
+ * For each set bit i (0..7) of @p mask, renders entry i at (x+8, ty) via
+ * func_801F6B54, advancing ty by 13 per drawn row. Then anchors
+ * g_menuDisplayCfg at (x, y) with size 168x120 and icon 0x49 and draws the
+ * panel frame with func_801EF9AC.
+ *
+ * @param ctx  Render context.
+ * @param dl   Display-list cursor (threaded through the row calls).
+ * @param x    Panel X.
+ * @param y    Panel Y.
+ * @param a4   Passed to func_801EF9AC (intensity/param).
+ * @param mask Bitmask of rows to draw, bit index = entry index.
+ */
+void func_801F6C9C(s32 ctx, s32 dl, s32 x, s32 y, s32 a4, u16 mask) {
+    MenuDisplayConfig *cfg = &g_menuDisplayCfg;
+    s32 tx = x + 8;
+    s32 ty = y + 0xA;
+    s32 i;
+
+    for (i = 0; i < 8; i++) {
+        if ((mask >> i) & 1) {
+            dl = func_801F6B54(ctx, dl, tx, ty, i);
+            ty += 0xD;
+        }
+    }
+    cfg->iconType = 0x49;
+    cfg->w = 0xA8;
+    cfg->iconSubType = 0;
+    cfg->x = x;
+    cfg->y = y;
+    cfg->h = 0x78;
+    func_801EF9AC(ctx, dl, a4, g_menuColor);
+}
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F6D88);
 
@@ -1443,7 +2094,33 @@ s32 func_801F72B4(void) {
     return D_801FACE8;
 }
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F72C4);
+/**
+ * @brief Collect the party-wide junction-ability bitmask into D_801FACE8.
+ *
+ * For every owned GF (GF_EXISTS), enumerates its available abilities via
+ * func_800369CC and sets bit (slotIndex - 0x5C) in D_801FACE8 for each
+ * entry in the junction-ability slot range 0x5C..0x73.
+ */
+void func_801F72C4(void) {
+    AbilityListEntry list[22];
+    s32 i;
+
+    D_801FACE8 = 0;
+    for (i = 0; i < 16; i++) {
+        if (g_gameState.gfs[i].exists & GF_EXISTS) {
+            s32 n = func_800369CC(i, list, 0);
+            AbilityListEntry *p = list;
+
+            for (; n > 0; n--, p++) {
+                u32 c = p->slotIndex - 0x5C;
+
+                if (c < 0x18) {
+                    D_801FACE8 |= 1 << c;
+                }
+            }
+        }
+    }
+}
 
 /* ======================================================================== */
 /* Junction/Ability Management                                              */
@@ -1587,7 +2264,29 @@ void func_801F7954(void) {
     setAnimEntityOpacity(0, a1);
 }
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F798C);
+/**
+ * @brief Push the analog-volume and controller-mode config to the sound layer.
+ *
+ * Sends (analogVolume + 5) * 12 as the volume argument of func_80027C00,
+ * then tells func_80027C90 whether the analog flag is active — only
+ * honored when the controller is in customize mode (CONFIG_CONTROLLER).
+ *
+ * @note func_80027C00/func_80027C90 are main-executable sound-layer
+ *       routines that are not decompiled yet.
+ */
+void func_801F798C(void) {
+    s32 v;
+
+    v = g_gameState.config.analogVolume;
+    v += 5;
+    func_80027C00(0, v * 12);
+    v = g_gameState.config.flags & CONFIG_ANALOG;
+    v = v != 0;
+    if (!(g_gameState.config.flags & CONFIG_CONTROLLER)) {
+        v = 0;
+    }
+    func_80027C90(0, v);
+}
 
 /** @brief Test sealed-features bits (@c GameConfig.sealedFeatures & @p a0). */
 s32 func_801F79F8(s32 a0) {
@@ -1605,7 +2304,33 @@ void func_801F7A08(void) {
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F7A54);
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F7AD4);
+/**
+ * @brief Scale a value by 100 and store it clamped to [100, 3100] in D_800780E8.
+ *
+ * @note Purpose uncertain — appears to set a percentage-derived global
+ *       (e.g. a speed or magnification parameter).
+ *
+ * @param n Input value; stored as n*100 clamped to 100..3100.
+ */
+void func_801F7AD4(s32 n) {
+    s32 val = n * 100;
+    s32 clamped;
+
+    if (val >= 100) {
+        if (val <= 3100) {
+            clamped = val;
+        } else {
+            clamped = 3100;
+        }
+    } else {
+        clamped = 100;
+    }
+    /* Fold-away bump: raises clamped's allocno priority above val's so
+     * clamped takes v1 and val keeps a0 (allocation-order match). */
+    clamped++;
+    clamped--;
+    D_800780E8 = clamped;
+}
 
 /**
  * @brief Clear magic slots with zero quantity.

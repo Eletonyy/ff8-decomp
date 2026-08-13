@@ -60,7 +60,6 @@ extern s32        D_800D23D0;
 extern Prim36     D_800D4F10[4];
 extern DrSetMode8 D_800D4FA0[2];
 extern u8         D_800C5448[];
-extern u8         D_800DB0D0[];
 extern POLY_FT4   D_800D4EC0[2];
 extern CVECTOR    D_8009811C;
 extern VECTOR     D_800C9858;     /* live camera world position (VECTOR view)     */
@@ -69,7 +68,6 @@ extern VECTOR     D_800DD658;     /* source position for func_800BC51C          
 extern void func_800A84D0(void);
 extern s32  func_8003F9F4(CVECTOR *input, CVECTOR *cue, s32 w1, s32 w2, CVECTOR *out);
 extern s32  func_8009CC3C(void);
-extern void func_80048FBC(RECT *r, s32 src_x, s32 src_y);
 extern s32  func_80048C50(s32 arg);
 extern s32  func_8003F4A4(s32 a);
 extern s32  func_80041E84(s32 y, s32 x);

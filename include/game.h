@@ -10,6 +10,7 @@ void vsyncGameHandler(void);
 void gameStateLoop(void);
 
 u8 *getAbilityName(s32 abilityId);
+s32 getLevelCurveData(s32 curveId);
 u8 *getAbilityDesc(s32 abilityId);
 s32 getAbilityEntryDesc(s32 entryId);
 
