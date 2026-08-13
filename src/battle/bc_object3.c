@@ -192,7 +192,7 @@ void func_800A1DA0(s32 unused, s32 arg1, s32 arg2, BattleCharData* arg3, s32 unu
     
     else {
         arg3->field172 -= arg2;
-        if ((arg3->field172 * 65536) <= 0) {
+        if (arg3->field172 <= 0) {
             arg3->field172 = 0;
         }
     }
