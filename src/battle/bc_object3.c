@@ -175,11 +175,9 @@ void func_800A1CFC(s32 a0) {
 
 
 void func_800A1D78(s32 unused, s32 unused2, s32 arg2, BattleCharData* arg3, s32 unused3) {
-    u16 newHp;
-
-    newHp = arg3->currentHp - arg2;
-    arg3->currentHp = newHp;
-    if ((newHp * 65536) <= 0) {
+    arg3->currentHp -= arg2;
+    
+    if (arg3->currentHp <= 0) {
         arg3->currentHp = 0;
     }
 }
