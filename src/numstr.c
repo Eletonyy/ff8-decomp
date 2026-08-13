@@ -11,7 +11,6 @@ extern u8 D_800773A8[];
 extern u8 D_80077E74[];
 extern u8 D_800773B4[];
 extern u8 D_80083857[];
-extern u8 D_80083858;
 extern u8 D_80083868;
 extern u8 D_8008369C[];
 extern SfxSystem g_sfxEntries;

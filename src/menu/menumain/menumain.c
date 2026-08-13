@@ -12,23 +12,18 @@
 #include "numstr.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
+#include "main.h"
 
 /* Main-executable symbols without an owner header yet. */
 extern s32 D_8008384C;
 extern u16 D_80083850;
 extern u16 g_configFlags;
-extern u8 g_characterMagic[];
-extern u8 g_characterAbilities[];
 extern u8 D_80077E6C[];
 extern u8 D_80077EBC[];
 extern u16 D_800780E8;
 extern u8 D_80056290[];
 extern u8 D_800562A4;
 extern u8 D_80078D38[];
-/* Divergent view: numstr.c/menusts.c extern the digitBase byte directly. */
-extern MsgFormatConfig D_80083858;
-/* Divergent view: main.h types this DRAWENV*; menumain reads it as a word. */
-extern s32 g_activeDrawEnv;
 extern s32 D_8005F138;
 
 /* ======================================================================== */
@@ -57,7 +52,7 @@ DR_AREA *func_801EF800(P_TAG *ot, DR_AREA *prim, u8 *src) {
     DRAWENV *env;
 
     memcpy(&r, src, sizeof(RECT));
-    env = (DRAWENV *)g_activeDrawEnv;
+    env = g_activeDrawEnv;
     *(u16 *)&r.x += *(u16 *)&env->clip.x;
     *(u16 *)&r.y += *(u16 *)&env->clip.y;
     if (r.w < 2) {
@@ -85,7 +80,7 @@ DR_AREA *func_801EF800(P_TAG *ot, DR_AREA *prim, u8 *src) {
  * @return Cursor for the next primitive (@c prim + 1).
  */
 DR_AREA *func_801EF8D8(P_TAG *ot, DR_AREA *prim) {
-    SetDrawArea(prim, &((DRAWENV *)g_activeDrawEnv)->clip);
+    SetDrawArea(prim, &g_activeDrawEnv->clip);
     addPrimFast(ot, prim, s2);
     return ++prim;
 }
@@ -212,7 +207,7 @@ void func_801F0038(void)
     new_var = D_801FA3C0;
     temp = *((s32 *) (new_var + 0x98));
     *((s32 *) (new_var + 0x70)) = new_var + 0x74;
-    g_activeDrawEnv = new_var + 0x14;
+    g_activeDrawEnv = (DRAWENV *)(new_var + 0x14);
     *((s32 *) (new_var + 0x9C)) = temp;
 }
 
@@ -234,7 +229,7 @@ void func_801F00A0(void)
     val = D_801FA3C0;
     D_8005F138 = val;
     arg = *(s32 *)(val + 0x70);
-    g_activeDrawEnv = val + 0x14;
+    g_activeDrawEnv = (DRAWENV *)(val + 0x14);
     DrawOTag(arg);
 }
 
@@ -279,7 +274,7 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F0274);
  */
 DR_AREA *func_801F03E8(P_TAG *ot, DR_AREA *prim) {
     RECT r;
-    DRAWENV *env = (DRAWENV *)g_activeDrawEnv;
+    DRAWENV *env = g_activeDrawEnv;
 
     r.x = *(u16 *)&env->clip.x;
     r.y = *(u16 *)&env->clip.y;
