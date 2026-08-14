@@ -20,7 +20,6 @@
 #include "battle.h"
 #include "gf.h"
 
-
 /*
  * Re-declare @c D_800ED148 with @c volatile for this TU.
  *
@@ -104,8 +103,86 @@ s32  func_8009B74C(s32, s32); /* also in field_engine */
 
 extern void func_800D0F74(void); /* defined in another battle TU */
 extern SoundCmd *func_800B8564(s32, s32); /* defined in bc_object9.c */
+extern volatile s16 D_8005F146;
 
 
+void func_80099D30(void) {
+    s32 i;
+
+    func_80099FE8();
+    while (D_800ED148.entities[0].timers.SplitTimer.timer != 0) {
+        switch (D_800ED148.entities[0].state.word) {
+       
+        case 1:
+            func_8009A160();
+            break;
+        
+        case 0:
+        case 2:
+            func_8009A308();
+            break;
+            
+        case 3:
+            func_8009A1E0();
+            break;
+            
+        case 4:  
+            func_800DC664();
+            D_800ED148.unk5C3 = 1;
+            func_8009AB98();
+            func_8009AE9C();
+            for(i = 0; i < 3; i++) {
+                func_800A5C48(&D_800ED148.unk1244[i].unk1[0]);
+            }
+            
+            func_800A5BC4();
+            if (D_800ED148.unk12FE != 0) {
+                func_800A86F0(1);
+                func_800A86F0(2);
+                func_800A86F0(0);
+            }
+            
+            if (D_800ED148.unk12FD == 0) {
+                func_800AD9C0();
+                func_800A63DC();
+            }
+            
+            if ((D_800ED148.unk12EB != 0) && (D_800ED148.unk12FD == 0) && (D_800ED148.entities[0].stateMachine.unk0 == 0) && (D_80082C0F == 0)) {
+                func_800B0C08();
+                func_800B2038();
+            }
+            
+            func_8009B478();
+            func_8009B520();
+            D_800ED148.unk5C3 = 0;
+            func_8009A308();
+            func_80099F18();
+            func_80099F58();
+            break;
+        }
+    }
+    
+    func_800AF254();
+}
+
+void func_80099F18(void) {
+    if ((D_800ED148.entities[0].timers.SplitTimer.timer != 255) && (D_800ED148.entities[0].timers.SplitTimer.timer != 0)) {
+        D_800ED148.entities[0].timers.SplitTimer.timer--;
+    }
+}
+
+void func_80099F58(void) {
+    if (D_800ED148.entities[0].timers.SplitTimer.control != 0) {
+        func_8009AF3C(getMenuString(4), 1, 2, 0xF0, 0x56);
+    }
+}
+
+void func_80099FA0() {
+    while(D_8005F146 != 0);
+   
+    D_8005F146 = 3;
+    func_800D0FB0();
+}
 
 /**
  * @brief Battle initialization entry point.
