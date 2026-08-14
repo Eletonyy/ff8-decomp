@@ -4,6 +4,7 @@
 #include "battle.h"
 #include "btl_color.h"
 #include "gamestate.h"
+#include "numstr.h"
 
 /* --- Local type definitions --- */
 
@@ -36,6 +37,11 @@ typedef struct {
     u8 srcPalette;  /* 0x08 */
     u8 dstPalette;  /* 0x09 */
     u8 timer;       /* 0x0A */
+    u8 lineCount;   /* 0x0B */
+    u8 oldName[3];  /* 0x0C */
+    u8 newName[3];  /* 0x0F */
+    u8 oldName2[6]; /* 0x12 */
+    u8 newName2[6]; /* 0x18 */
 } PaletteTransition;
 
 /** @brief Battle HUD OT buffer (smaller display list for UI elements). */
@@ -61,6 +67,11 @@ extern BattleCameraState g_cameraShake; /* 0x800834D0 */
 extern s32 g_gpuColor;               /* 0x800834C8 — GPU color value */
 extern u16 g_cameraVibrateIntensity; /* 0x800834D4 — camera vibrate intensity */
 extern s32 g_battleTimer;               /* 0x80083750 — battle timer */
+extern u8 g_animCurveFadeOut[];         /* 0x800837B0 — 65-step fade curve */
+extern u8 D_80052A64[];
+extern s32 func_800432D8(void);
+extern void copyDisplayRect(RECT *dst);
+extern u8 *emitDrawEnvPackets(u8 *ot, u8 *pkt);
 
 /**
  * @brief Clear the RGB color fields of an SFX entry.
@@ -197,7 +208,79 @@ void updateCameraVibrate(void) {
  *
  * @see https://decomp.me/scratch/CEsOX
  */
-INCLUDE_ASM("asm/nonmatchings/btl_color", func_800302DC);
+s32 func_800302DC(s32 arg0, s32 arg1) {
+    u8 buf[24];
+    s32 out;
+    u32 color;
+    s32 timer;
+    BattleCameraState *shake;
+    s32 y;
+    s32 unk2;
+    s32 i;
+    s32 threshold;
+    s32 ret;
+    s32 c;
+
+    out = arg1;
+    ret = func_800432D8();
+
+    threshold = 0x1E;
+    if (ret == 1) {
+        threshold = 0x19;
+    }
+
+    shake = &g_cameraShake;
+    if ((u8)shake->enable == 0) {
+        return out;
+    }
+
+    color = (u16)shake->zoom;
+    y = (u16)g_cameraShake.intensity;
+    timer = g_gameState.mainData.countdownTimer;
+    unk2 = (u8)shake->direction;
+
+    color >>= 5;
+    color &= 0xFF;
+
+    {
+        u32 lo;
+        u32 hi;
+
+        lo = color | (color << 8);
+        hi = color << 16;
+        color = lo | hi;
+    }
+
+    color |= 0x64000000;
+    timer--;
+    timer = (timer < 0) ? 0 : ((timer >= 0x1798) ? 0x1797 : timer);
+
+    intToDecStringShort(timer / 60, buf, 0x70);
+
+    for (i = 3; i < 5; i++) {
+        c = buf[i];
+        if (i != 3 || c != 0x70) {
+            out = func_8002FF34(arg0, out, c, y, unk2, color);
+        }
+        y += 10;
+    }
+
+    y++;
+    if (shake->counter < threshold) {
+        out = func_8002FF34(arg0, out, 0x7A, y, unk2, color);
+    }
+
+    y += 7;
+    intToDecStringShort(timer % 60, buf, 0x70);
+
+    for (i = 3; i < 5; i++) {
+        c = buf[i];
+        out = func_8002FF34(arg0, out, c, y, unk2, color);
+        y += 10;
+    }
+
+    return (s32)emitDrawEnvPackets((u8 *)arg0, (u8 *)out);
+}
 
 
 INCLUDE_ASM("asm/nonmatchings/btl_color", func_80030518);
@@ -422,7 +505,93 @@ s32 loadBattleCmd(u8 *data, s32 idx, s32 priority) {
  * @return Interpolated value (0-255), or -1 if stream ended.
  * @see https://decomp.me/scratch/oOOHt
  */
-INCLUDE_ASM("asm/nonmatchings/btl_color", func_80030A54);
+s32 func_80030A54(CmdStream *stream) {
+    u8 duration;
+    u8 *ptr;
+    u8 *end;
+
+    s32 cursor;
+    u16 cursor_u;
+
+    s32 val1;
+    s32 val2;
+    s32 steps;
+    s32 v1;
+
+    s32 cond;
+
+    if (!stream->enabled) {
+        return -1;
+    }
+
+    ptr = stream->start;
+    end = stream->end;
+
+    cursor = stream->cursor;
+    cursor_u = stream->cursor;
+
+    if (!(ptr < end)) {
+        stream->enabled = 0;
+        return -1;
+    }
+
+    duration = ptr[1];
+
+    /*
+     * This must be the same variable that later becomes ptr[0],
+     * so GCC keeps it in a1:
+     *
+     *   andi a1, v1, 0xFF
+     *   beq  a1, v0, ...
+     *   slt  v0, a3, a1
+     */
+    val1 = (u8)duration;
+
+    if (val1 == 0xFF) {
+        return -1;
+    }
+
+    cond = cursor < val1;
+
+    val1 = ptr[0];
+    val2 = ptr[2];
+
+    cursor++;
+
+    if (cond) {
+        goto interpolate;
+    }
+
+    val1 = val2;
+    stream->start = ptr + 2;
+    stream->cursor = 0;
+
+    goto clamp;
+
+interpolate:
+    steps = (u8)(duration + 1);
+
+    val1 = val1 * (steps - cursor);
+    val1 += val2 * cursor;
+    val1 /= steps;
+
+    stream->cursor = cursor_u + 1;
+
+clamp:
+    val1 <<= 1;
+
+    if (val1 >= 0) {
+        if (val1 < 0x100) {
+            v1 = val1;
+        } else {
+            v1 = 0xFF;
+        }
+    } else {
+        v1 = 0;
+    }
+
+    return v1;
+}
 
 
 INCLUDE_ASM("asm/nonmatchings/btl_color", func_80030B2C);
@@ -673,7 +842,7 @@ void btlColorStub1044(void) {
  * State 7-8: fade in (ramp fade back down to 0 in steps of 0x100).
  * States 6, 9, 10: idle/complete.
  */
-void updatePaletteTransition(void) {
+void updatePaletteTransition(s32 arg0, s32 arg1) {
     u16 *state = &D_80083754.state;
     PaletteTransition *p = &D_80083754;
 
@@ -779,7 +948,165 @@ skip:
 INCLUDE_ASM("asm/nonmatchings/btl_color", func_80031224);
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_color", func_80031364);
+/* --- Palette-transition math helpers ---
+ * The -50x/59x curve scalings and the 12x palette-offset multiply are pure
+ * shift/add chains in the retail build; kept as macros so each site reads
+ * like the original arithmetic. */
+
+#define MUL50_1(x) ((x) << 1)
+#define MUL50_2(x) (MUL50_1(x) + (x))
+#define MUL50_3(x) (MUL50_2(x) << 3)
+#define MUL50_4(x) (MUL50_3(x) + (x))
+#define MUL50(x)   (MUL50_4(x) << 1)
+
+#define MUL59_1(x) ((x) << 4)
+#define MUL59_2(x) (MUL59_1(x) - (x))
+#define MUL59_3(x) (MUL59_2(x) << 2)
+#define MUL59(x)   (MUL59_3(x) - (x))
+
+#define MUL12(x) ((((x) << 1) + (x)) << 2)
+
+/* addPrim variant that takes the link temp as an ordinary "+r" operand.
+ * The retail site first reloads the spilled pkt pointer with
+ * `lw $t0, 0x28($sp)`; the "+r" operand forces that reload immediately
+ * before the asm (a bare-register addPrimFast cannot reproduce it).
+ *
+ * NOTE: this must be a plain compound statement, NOT `do { } while (0)`.
+ * gcc 2.7.2 leaves NOTE_INSN_LOOP_* notes from the do/while wrapper; the
+ * first insn after the LOOP_END note then gets reg_pending_sets_all in the
+ * scheduler, which fabricates a data dependency on the following
+ * `lbu p->lineCount` and pulls it ahead of the argument moves
+ * (yielding `lbu,a0,a1,...` instead of the retail `a0,a1,lbu,...`). */
+#define addPrimFastTmp(ot, p, tmp) {                    \
+    __asm__ __volatile__(                                \
+        ".set push\n"                                    \
+        ".set noat\n"                                    \
+        "sll $at, %1, 8\n"                               \
+        "lwl %0, 2(%2)\n"                                \
+        "swl $at, 2(%2)\n"                               \
+        "swl %0, 2(%1)\n"                                \
+        ".set pop\n"                                     \
+        : "+r" (tmp)                                     \
+        : "r"(p), "r"(ot)                                \
+        : "at", "memory");                               \
+}
+
+extern s32 func_80031224(u32 *ot, s32 pkt, s32 y, s32 height);
+
+
+/**
+ * Render the two-line palette-transition label.
+ *
+ * Byte-matches the retail build (gcc 2.7.2-970404, -O2 -G0, PsyQ 4.1) up
+ * to linker-resolved j/jal/lui-addiu constant fakes. The addPrim packet
+ * link uses the temp-operand idiom above, matching the retail
+ * `lw $t0, 0x28($sp)` reload before the lwl/swl splice.
+ */
+s32 func_80031364(u32 *ot, s32 pkt) {
+    RECT rect;
+    u8 *pkt_r;
+    PaletteTransition *p;
+    u32 color;
+    s32 xPos;
+    s32 curve;
+    s32 brightness;
+    s32 absDir;
+    s32 y;
+    s32 calc_val;
+    s32 yBotQuot;
+    s32 temp;
+    s32 yOff;
+    s32 pkt_tmp;
+    s32 next;
+    s32 s0;
+
+    pkt_r = (u8 *)pkt;
+    p = &D_80083754;
+
+    if (p->fade <= 0) {
+        return (s32)pkt_r;
+    }
+
+    copyDisplayRect(&rect);
+
+    {
+        color = *(u16 *)((u8 *)p - 0x280);
+        color >>= 5;
+        color &= 0xFF;
+        color = (color | (color << 8)) | (color << 16);
+        color |= 0x64000000;
+    }
+
+    curve = 0x1000 - p->fade;
+
+    curve = g_animCurveFadeOut[curve / 64];
+
+    brightness = p->brightness;
+
+    curve <<= 6;
+
+    if (p->srcPalette < p->dstPalette) {
+        absDir = -brightness;
+        yOff = 12;
+    } else {
+        absDir = brightness;
+        yOff = -12;
+    }
+
+    calc_val = -MUL50(curve);
+    xPos = 0xC4;
+
+    if (calc_val < 0) {
+        calc_val += 0xFFF;
+    }
+
+    s0 = calc_val >> 12;
+    temp = s0 + 0x10;
+
+    pkt_r = (u8 *)func_8002FF34((s32)ot, (s32)pkt_r, 0xB0, temp, xPos, color);
+
+    y = s0 + 0x30;
+
+    if (brightness == 0) {
+        pkt_r = (u8 *)renderBattleString((s32)ot, (s32)pkt_r, p->newName, y, xPos, color);
+    } else if (brightness == 0x1000) {
+        pkt_r = (u8 *)renderBattleString((s32)ot, (s32)pkt_r, p->oldName, y, xPos, color);
+    } else {
+        xPos = MUL12(absDir) / 4096 + 0xC4;
+
+        next = renderBattleString((s32)ot, (s32)pkt_r, p->newName, y, xPos, color);
+        pkt_r = (u8 *)renderBattleString((s32)ot, next, p->oldName, y, xPos + yOff, color);
+    }
+
+    xPos = 0xC4;
+
+    yBotQuot = MUL59(curve) / 4096;
+    y = yBotQuot + 0xF0;
+
+    pkt_r = (u8 *)func_8002FF34((s32)ot, (s32)pkt_r, 0xB1, yBotQuot + 0x11D, xPos, color);
+
+    if (brightness == 0) {
+        pkt_r = (u8 *)renderBattleString((s32)ot, (s32)pkt_r, p->newName2, y, xPos, color);
+    } else if (brightness == 0x1000) {
+        pkt_r = (u8 *)renderBattleString((s32)ot, (s32)pkt_r, p->oldName2, y, xPos, color);
+    } else {
+        xPos = MUL12(absDir) / 4096 + 0xC4;
+
+        next = renderBattleString((s32)ot, (s32)pkt_r, p->newName2, y, xPos, color);
+        pkt_r = (u8 *)renderBattleString((s32)ot, next, p->oldName2, y, xPos + yOff, color);
+    }
+
+    rect.h = 12;
+    rect.y += 0xC4;
+
+    SetDrawArea((DR_AREA *)pkt_r, &rect);
+
+    addPrimFastTmp(ot, pkt_r, pkt_tmp);
+
+    temp = func_80031224(ot, (s32)pkt_r + 0xC, temp, y + p->lineCount * 9);
+
+    return (s32)emitDrawEnvPackets((u8 *)ot, (u8 *)temp);
+}
 
 
 /** @brief Begin the fade-out phase of the palette transition. */
@@ -788,7 +1115,85 @@ void setTransitionPhase7(void) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_color", func_800316D4);
+void func_800316D4(s32 arg0, s32 arg1, s32 arg2, s32 arg3)
+{
+    u8 buf[16];
+    PaletteTransition *d;
+    s32 r_arg3;
+    u8 *buf5;
+    s32 limit;
+    s32 seven;
+    s32 i;
+
+    D_80083754.state = 0;
+    d = &D_80083754;
+    r_arg3 = arg3;
+    d->brightness = 0;
+    d->fade = 0;
+    d->timer = 0;
+    d->srcPalette = arg0;
+    d->dstPalette = arg1;
+
+    buf5 = &buf[5];
+
+    intToDecString(arg2, buf, 0x60);
+    copyString(d->newName2, buf5);
+    replaceLeadingZeros(d->newName2, 4, 0x60, 7);
+
+    intToDecString(r_arg3, buf, 0x60);
+    copyString(d->oldName2, buf5);
+    replaceLeadingZeros(d->oldName2, 4, 0x60, 7);
+
+    if (arg0 < 0x1F)
+    {
+        intToDecStringShort(arg0, buf, 0x60);
+        copyString(d->newName, &buf[3]);
+        replaceLeadingZeros(d->newName, 1, 0x60, 7);
+    }
+    else
+    {
+        copyString(d->newName, D_80052A64);
+    }
+
+    if (arg1 < 0x1F)
+    {
+        intToDecStringShort(arg1, buf, 0x60);
+        copyString(d->oldName, &buf[3]);
+        replaceLeadingZeros(d->oldName, 1, 0x60, 7);
+    }
+    else
+    {
+        copyString(d->oldName, D_80052A64);
+    }
+
+    i = 0;
+    limit = 5;
+    seven = 7;
+
+    for (; i < 5; i++)
+    {
+        if (d->oldName2[i] != seven && i < limit)
+        {
+            limit = i;
+            break;
+        }
+    }
+
+    i = 0;
+    seven = 7;
+
+    for (; i < 5; i++)
+    {
+        if (d->newName2[i] != seven && i < limit)
+        {
+            limit = i;
+            break;
+        }
+    }
+
+    d->lineCount = limit;
+    updatePaletteTransition(limit, seven);
+}
 
 
 /** @brief Set the palette transition flag. */
@@ -888,7 +1293,26 @@ INCLUDE_ASM("asm/nonmatchings/btl_color", func_80031A18);
  * @param pkt Packet buffer pointer.
  * @return Updated packet pointer.
  */
-INCLUDE_ASM("asm/nonmatchings/btl_color", renderAnimOverlay);
+s32 renderAnimOverlay(s32 arg0, s32 arg1)
+{
+    s32 overlay = arg0;
+    s32 ret = arg1;
+    s32 i = 0;
+    u32 packed = g_cameraVibrateIntensity;
+
+    u32 t = packed >> 5;
+    u32 hi = t << 16;
+    u32 lo = (t << 8) | 0x64000000;
+
+    packed = (hi | lo) | t;
+
+    do {
+        ret = func_80031A18(overlay, ret, i, packed);
+        i += 1;
+    } while (i < 2);
+
+    return ret;
+}
 
 
 /**
@@ -1076,5 +1500,4 @@ INCLUDE_ASM("asm/nonmatchings/btl_color", func_800320BC);
 
 
 INCLUDE_ASM("asm/nonmatchings/btl_color", renderBattleFrame);
-
 

@@ -30,7 +30,8 @@ extern u16  remapControllerInput(u16 bitmask);
 extern s32  remapButtonIndex(s32 index);
 extern s32  reverseButtonRemap(s32 index);
 extern void btlColorStub1044(void);
-extern void updatePaletteTransition(void);
+extern void func_800316D4(s32 arg0, s32 arg1, s32 arg2, s32 arg3);
+extern void updatePaletteTransition(s32 arg0, s32 arg1);
 extern s32  renderBattleString(s32 ot, s32 pkt, u8 *str, s32 y, s32 width, s32 color);
 extern void setTransitionPhase7(void);
 extern void setTransitionFlag(s32 val);
@@ -53,5 +54,9 @@ extern void flipBattleOtBuffer(void);
 
 s32 func_8002FF34(s32 renderCtx, s32 cursorY, s32 stringId, s32 x, s32 y, s32 color);
 s32 func_800300F8(s32 renderCtx, s32 x, s32 w, s32 y, s32 color, s32 menuColor, s32 selColor);
+s32 func_800302DC(s32 arg0, s32 arg1);
+s32 func_80031364(u32 *ot, s32 pkt);
+s32 func_80030A54(CmdStream *stream);
+s32 renderAnimOverlay(s32 arg0, s32 arg1);
 
 #endif

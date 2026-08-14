@@ -22,7 +22,38 @@ INCLUDE_ASM("asm/nonmatchings/snd_note", func_8001A674);
 
 INCLUDE_ASM("asm/nonmatchings/snd_note", func_8001AA28);
 
-INCLUDE_ASM("asm/nonmatchings/snd_note", func_8001ACCC);
+typedef struct {
+    s32 unk00;
+    s32 unk04;
+    s32 unk08;
+} UnkStruct80074F10;
+
+extern UnkStruct80074F10 D_80074F10;
+extern void func_80017D14(void *arg0, s32 arg1);
+
+void func_8001ACCC(void *arg0, s32 arg1) {
+    s32 savedUnk04;
+    s32 newVal;
+
+    if (D_80074F10.unk08 != 0) {
+        if (--D_80074F10.unk08 == 0) {
+            savedUnk04 = *(s32 *)((u8 *)arg0 + 0x04);
+            *(s16 *)((u8 *)arg0 + 0x5E) = 0;
+            *(s32 *)((u8 *)arg0 + 0x04) = 0;
+            *(s32 *)((u8 *)arg0 + 0x10) = 0;
+            *(s32 *)((u8 *)arg0 + 0x14) = 0;
+            *(s32 *)((u8 *)arg0 + 0x18) = savedUnk04;
+        } else {
+            newVal = D_80074F10.unk00 + D_80074F10.unk04;
+
+            if ((newVal & 0xFFFF0000) != (D_80074F10.unk00 & 0xFFFF0000)) {
+                func_80017D14(arg0, arg1);
+            }
+
+            D_80074F10.unk00 = newVal;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/snd_note", func_8001AD60);
 

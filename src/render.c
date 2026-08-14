@@ -126,10 +126,40 @@ s32 getBitRank(s32 a0, s32 a1) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/render", func_80035B28);
+s32 func_80035B28(s32 arg0, s32 arg1) {
+    s32 index = arg1;
+    s32 mask = 1;
+
+    do {
+        index++;
+        if (index >= 0x20) {
+            index = 0;
+        }
+        if (index == arg1) {
+            return arg1;
+        }
+    } while ((arg0 & (mask << index)) == 0);
+
+    return index;
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/render", func_80035B70);
+s32 func_80035B70(s32 arg0, s32 arg1) {
+    s32 index = arg1;
+    s32 mask = 1;
+
+    do {
+        index--;
+        if (index < 0) {
+            index = 0x1F;
+        }
+        if (index == arg1) {
+            return arg1;
+        }
+    } while ((arg0 & (mask << index)) == 0);
+
+    return index;
+}
 
 
 /** @brief Stores a word to global D_80083798. */

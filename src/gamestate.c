@@ -16,8 +16,56 @@ extern s32 D_80085220;
 extern u8 D_8005644B[];
 extern u16 D_800562C8[];
 extern s32 D_800562D4;
+extern u8 D_80077EBC;
+extern u16 D_80082C0A;
+extern u16 D_8005F11C;
+extern s32 findNthSetBit(s32, s32, u8 *, s32);
+extern s32 func_80021300(void);
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_800370AC);
+void func_800370AC(s32 arg0)
+{
+    u8 *ptr;
+    u8 *base;
+    s32 mask;
+    s32 i;
+    s32 val;
+    s32 found;
+    s32 one;
+    s32 zero;
+    zero = 0;
+    if (arg0 < 0x21) {
+        ptr = &D_80077EBC;
+        base = ptr - 0x20;
+        mask = 0;
+        i = 0;
+        one = 1;
+        do {
+            val = *ptr++;
+            if (*ptr++ == 0) {
+                val = 0;
+            }
+            if (val != 0 && val < 0x21) {
+                if (arg0 == val) {
+                    return;
+                }
+                mask |= (one << base[val - 1]);
+            }
+            i++;
+        } while (i < 0xC6);
+        found = findNthSetBit(~mask, zero, ptr, one);
+        arg0 -= 1;
+        i = 0;
+        do {
+            if (found == base[i]) {
+                u8 tmp = base[arg0];
+                base[arg0] = found;
+                base[i] = tmp;
+                return;
+            }
+            i++;
+        } while (i < 0x20);
+    }
+}
 
 
 /**
@@ -98,7 +146,185 @@ void enableChocoboWorld(void) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037308);
+extern u8 *getCharName(CharacterId charId);
+extern u8 g_characters[];
+
+void func_80037308(void *arg0, void *arg1)
+{
+    u8 buffer[0x490];
+
+    u8 *s6;
+    u8 *s4;
+    s32 s2;
+    s32 s3;
+    u8 *s5;
+    u8 *s1;
+    u8 *s0;
+    u8 *p;
+    u8 *gs_ptr;
+    s32 a2;
+    u8 *buf_ptr;
+    u8 *char_base;
+    u8 *name;
+    u32 c;
+    s32 w;
+    s32 y;
+    s32 x;
+    u8 *src;
+    u8 *dst_ptr;
+    s32 row;
+    s32 col;
+    u8 b;
+    u8 *sp;
+    u8 *new_var;
+    u8 *dp;
+    u8 high;
+    u8 low;
+
+    s6 = (u8 *)arg0;
+    s4 = (u8 *)arg1;
+    p = s4;
+
+    for (s3 = 0x8FF; s3 >= 0; s3--)
+    {
+        *(p++) = 0;
+    }
+
+    s3 = 0;
+
+    while (s3 < 3)
+    {
+        buf_ptr = (new_var = buffer);
+        s1 = new_var + 0xC;
+
+        gs_ptr = (u8 *)&g_gameState + s3;
+        a2 = gs_ptr[0xAF4];
+
+        if (a2 == 0xFF)
+        {
+            s3++;
+            s4 += 0x300;
+            continue;
+        }
+
+        s2 = 0;
+        s0 = s6;
+        s5 = s0 + (*((s32 *)s0));
+        s0 = s0 + (*((s32 *)(((u8 *)s0) + 4)));
+        s0 = s0 + 8;
+        s0 = s0 + (*((s32 *)s0));
+        s0 = s0 + 0xC;
+
+        col = 0x48B;
+        while (col >= 0)
+        {
+            *(buf_ptr++) = 0;
+            col--;
+        }
+
+        char_base = g_characters;
+        char_base += a2 * 152;
+
+        name = getCharName(char_base[8]);
+
+        while (1)
+        {
+            c = *(name++);
+
+            if (c == 0)
+            {
+                break;
+            }
+
+            if (c < 0x20)
+            {
+                c -= 0x19;
+                c = ((c << 3) - c) << 5;
+                c += *(name++);
+            }
+
+            c -= 0x20;
+
+            w = s5[c >> 1];
+
+            x++;
+            x--;
+
+            if (c & 1)
+            {
+                w >>= 4;
+            }
+
+            w &= 0xF;
+
+            if (w != 0)
+            {
+                w--;
+            }
+
+            dst_ptr = s1;
+            row = 12;
+
+            x = c / 21;
+            y = x;
+            x = c - (y * 21);
+
+            c = (y * 3) * 512;
+            y = x * 6;
+
+            src = (s0 + y) + c;
+
+            for (; row > 0; row--)
+            {
+                for (col = 6; col > 0; col--)
+                {
+                    b = *(src++);
+
+                    *dst_ptr |= b & 0xF;
+                    dst_ptr++;
+
+                    *dst_ptr |= b >> 4;
+                    dst_ptr++;
+                }
+
+                dst_ptr += 0x54;
+                src += 0x7A;
+            }
+
+            s1 += w;
+            s2 += w;
+        }
+
+        s0 = s4 + 0x30;
+        s1 += 1;
+        s2 = (s2 + 2) / 2;
+
+        for (row = 12; row > 0; row--)
+        {
+            sp = s1;
+            col = s2;
+            dp = s0;
+            s2 = col;
+
+            if (s2 > 0)
+            {
+                do
+                {
+                    high = *(--sp);
+                    low = *(--sp);
+                    *(--dp) = (low & 0xF) | (high << 4);
+                }
+                while ((--col) > 0);
+            }
+
+            s1 += 0x60;
+            s0 += 0x30;
+        }
+
+        s3++;
+        s4 += 0x300;
+    }
+}
 
 
 INCLUDE_ASM("asm/nonmatchings/gamestate", func_800375A0);
@@ -134,7 +360,40 @@ void drawSaveIconWithArgs(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4, s32 arg5) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_800377B4);
+u16 func_800377B4(s32 len, u8 *buf)
+{
+    u16 table[256];
+    u32 crc;
+    u32 i;
+    u32 val;
+    u32 j;
+    s32 ci;
+    ci = 0xFF;
+    do { table[ci] = 0; ci--; } while (ci >= 0);
+    crc = 0xFFFF;
+    i = 0;
+    do {
+        val = i << 8;
+        j = 0;
+        do {
+            if (val & 0x8000) val = (val << 1) ^ 0x1021;
+            else val <<= 1;
+            j++;
+            table[i] = val;
+        } while (j < 8);
+        i++;
+    } while (i < 0xFF);
+    if (len > 0) {
+        do {
+            u32 idx;
+            idx = *buf++;
+            len--;
+            idx ^= (crc & 0xFFFF) >> 8;
+            crc = table[idx] ^ (crc << 8);
+        } while (len > 0);
+    }
+    return ~crc & 0xFFFF;
+}
 
 
 /**
@@ -234,7 +493,33 @@ void mcFillFF(u8 *buf) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_800379AC);
+s32 func_800379AC(void *arg0)
+{
+    u8 buffer[0x80];
+    s32 i;
+    if (pollCardReady() != 2)
+        return 0;
+    mcFillFF(buffer);
+    if (!writeCardBlock(arg0, buffer, 0))
+        return 0;
+    mcInitDirUsed(buffer);
+    for (i = 0; i < 0xF; i++)
+        if (!writeCardBlock(arg0, buffer, i + 1))
+            return 0;
+    mcInitDirFree(buffer);
+    for (i = 0; i < 0x14; i++)
+        if (!writeCardBlock(arg0, buffer, i + 0x10))
+            return 0;
+    mcFillFF(buffer);
+    for (i = 0; i < 0x1C; i++)
+        if (!writeCardBlock(arg0, buffer, i + 0x24))
+            return 0;
+    mcInitHeader(buffer);
+    if (!writeCardBlock(arg0, buffer, 0))
+        return 0;
+    markCardBusy(arg0);
+    return 1;
+}
 
 
 /** @brief Sets global D_80085218 to 1. */
@@ -412,7 +697,47 @@ void loadSoundBankB(void) {
 INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037FB0);
 
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_80038030);
+void func_80038030(s32 arg0) {
+    u8 *ptr = D_800780D8;
+
+    if (!(D_80082C0A & 0x10)) {
+        while (sndGetStatus() == 2) {
+            func_800393C8();
+        }
+
+        if (*(s32 *)(ptr + 0x6C) == -1) {
+            sndCmd11(0);
+        }
+
+        sndCmd40();
+        D_80085220 = arg0;
+        func_80037FB0(0, *(s8 *)(ptr + 0xCB), arg0);
+
+        if (*(u8 *)(ptr + 0xD6) == 0) {
+            do {
+                func_800393C8();
+            } while (*(u8 *)(ptr + 0xD6) == 0);
+        }
+
+        D_8005F11C = sndCmd10(toggleSoundBank());
+        sndCmdC0(0, 0x7F);
+    }
+
+    D_80082C11 = *(u8 *)(ptr + 0xC9) ^ 1;
+    sndStopPlayback();
+    sndCmdF1();
+    sndSetMasterVolume(0x7F);
+
+    if (func_80021300() == 0) {
+        sndPlaySfx(0xA, 0, 0x80, 0x7F);
+        sndPlaySfx(0xB, 0, 0x80, 0x7F);
+        sndPlaySfx(0xC, 0, 0x80, 0x7F);
+    } else {
+        sndPlaySfx(0x84, 0, 0x80, 0x7F);
+        sndPlaySfx(0x85, 0, 0x80, 0x7F);
+        sndPlaySfx(0x86, 0, 0x80, 0x7F);
+    }
+}
 
 
 /**
@@ -530,6 +855,84 @@ s32 fieldRandom(void) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_80038490);
+extern u8 *D_80039418;
+#define D_80039440 (*(s32 *)((u8 *)&D_80039418 + 0x28))
+
+void func_80038490(u8 *src, u8 *dst)
+{
+  u8 *src_ptr;
+  u8 *dst_start;
+  s32 bit_cnt;
+  s32 flags;
+  u8 *src_end;
+  u8 *dst_end;
+  int new_var;
+  u8 *copy_src;
+  s32 offset;
+  u8 *new_var2;
+  s32 temp;
+  s32 v0;
+  src_ptr = src;
+  bit_cnt = 0;
+  flags = bit_cnt;
+  dst_start = dst;
+  D_80039440 = 0;
+  src_end = (src_ptr + (*((s32 *) src_ptr))) + 4;
+  src_ptr += 4;
+  new_var2 = dst_start;
+  while (1)
+  {
+    if (bit_cnt == 0)
+    {
+      if (src_ptr >= src_end)
+      {
+        return;
+      }
+      bit_cnt = 8;
+      flags = *(src_ptr++);
+    }
+    if (flags & 1)
+    {
+      if (src_ptr >= src_end)
+      {
+        return;
+      }
+      *(dst++) = *(src_ptr++);
+      D_80039440++;
+    }
+    else
+    {
+      if (src_ptr >= src_end)
+      {
+        return;
+      }
+      new_var = (dst - new_var2) + 0xFEE;
+      offset = *(src_ptr++);
+      temp = *(src_ptr++);
+      offset |= (temp & 0xF0) << 4;
+      v0 = (new_var - offset) & 0xFFF;
+      copy_src = dst - v0;
+      dst_end = (dst + (temp & 0x0F)) + 3;
+      if (copy_src < new_var2)
+      {
+        do
+        {
+          *(dst++) = 0;
+          copy_src++;
+        }
+        while (copy_src < new_var2);
+      }
+      while (dst < dst_end)
+      {
+        *(dst++) = *(copy_src++);
+        D_80039440++;
+      }
+
+    }
+    flags >>= 1;
+    bit_cnt--;
+  }
+
+}
 
 
