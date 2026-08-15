@@ -381,7 +381,23 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6C34);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6D30);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6DD8);
+s32 func_800A6DD8(void) {
+    s32 i;
+    s32 var_a2;
+    s32 var_v1;
+
+    var_a2 = 0;
+    var_v1 = 0;
+    
+    for (i = 0; i < 3; i++) {
+        if (D_800ED148.entities[i].linkedIdx != 255) {
+            var_a2++;
+            var_v1 += D_800ED148.entities[i].unkCC;
+        }
+    }
+    
+    return var_v1 / var_a2;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6E2C);
 
@@ -529,6 +545,9 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A71C0);
  *
  * @param idx Battle slot index (0..6 covers the 7 active slots).
  */
+
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7518); 
+/*
 void func_800A7518(s32 idx) {
     BattleCharData *charData = &g_battleChars.chars[idx];
     BattleEntity   *slot     = &D_800ED158.slots[idx];
@@ -567,14 +586,14 @@ void func_800A7518(s32 idx) {
         s32 fillVal;
         u8 *p;
 
-        /* The level-up sound test reads slot+0x80 as a 32-bit word (the write
-           above was 16-bit) — pick up the wider view via the same union. */
+         //  The level-up sound test reads slot+0x80 as a 32-bit word (the write
+         above was 16-bit) — pick up the wider view via the same union.  //
         if (!(slot->at0x80.word & 5)) {
             if (charData->statusFlags & 0x10000) {
-                /* The entity table at D_800ED148 starts 0x10 bytes before the
+                // The entity table at D_800ED148 starts 0x10 bytes before the
                    slot table at D_800ED158 — entity[idx] is computed from
                    the slot table base so gcc reuses the D_800ED158 saved-reg
-                   instead of re-emitting lui+addiu for D_800ED148. */
+                   instead of re-emitting lui+addiu for D_800ED148. //
                 volatile BattleEntity *entity =
                     (volatile BattleEntity *)((u8 *)&D_800ED158 - 0x10) + idx;
                 entity->field24 = entity->field20;
@@ -583,10 +602,10 @@ void func_800A7518(s32 idx) {
             }
         }
 
-        /* Fill 40 bytes of @c slot[status..pad96+0x21] with 100, walked in
+        // Fill 40 bytes of @c slot[status..pad96+0x21] with 100, walked in
            reverse so gcc 2.7.2 emits @c sb with an immediate displacement
            (the offset of @c slot->status) and the walker decrement falls
-           into the @c bgez delay slot. */
+           into the @c bgez delay slot. //
         fillVal = 100;
         i       = 0x27;
         p       = (u8 *)slot + 0x27;
@@ -596,6 +615,7 @@ void func_800A7518(s32 idx) {
         }
     }
 }
+*/
 
 /**
  * @brief Test a bit in the g_gameState bitfield at offset 0xD04.
