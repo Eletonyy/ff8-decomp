@@ -1,0 +1,679 @@
+# Not a splat config. This is the input to tools/gen_splat_config.py,
+# which expands it into one real splat config per binary under
+# build/splat/. Run via `make splat-config`; `make split` does it for you.
+
+# Written into every generated config. {name} is substituted with each
+# binary's own name; a binary's own `options` override these.
+
+defaults:
+  name: "{name}"
+  options:
+    basename: "{name}"
+    elf_path: build/ovl/{name}/{name}.elf
+    # resolved relative to the generated yaml's own location
+    base_path: ../..
+    platform: psx
+    compiler: PSYQ
+    # Directory layout
+    asm_path: asm/ovl/{name}
+    src_path: src/{name}
+    build_path: build/ovl/{name}
+    # Linker
+    ld_script_path: build/splat/{name}.ovl.ld
+    ld_dependencies: true
+    ld_align_section_vram_end: false
+    ld_align_segment_vram_end: false
+    # Symbols
+    symbol_addrs_path:
+    - config/symbols.shared.txt
+    - config/symbols.{name}.txt
+    undefined_funcs_auto_path: build/splat/undefined_funcs_auto.{name}.txt
+    undefined_syms_auto_path: build/splat/undefined_syms_auto.{name}.txt
+    # String detection
+    string_encoding: ASCII
+    data_string_encoding: ASCII
+    rodata_string_guesser_level: 2
+    data_string_guesser_level: 2
+    # Misc
+    section_order: [.text, .rodata, .data]
+    subalign: 2
+    o_as_suffix: true
+    generate_asm_macros_files: false
+
+binaries:
+- name: battle
+  sha1: fa3b045925c0cc8855b321f5dd22ff196f9d51b0
+  options:
+    target_path: original/battle.bin
+    section_order: [.rodata, .text, .data, .bss]
+  segments:
+  - name: battle
+    type: code
+    start: 0x0
+    vram: 0x80098000
+    subsegments:
+    # 0x0-0x1FE8 is one contiguous rodata block that precedes all text:
+    # bc_dispatch is a function-pointer table and bc_dispatch_obf is raw data,
+    # neither is code.
+    - [0x0, rodata, bc_dispatch]
+    - [0x18, .rodata, bc_object1]
+    - [0x30, rodata, bc_dispatch_obf]
+    - [0x130, .rodata, bc_object2]
+    - [0xA84, .rodata, bc_object3]
+    - [0xECC, .rodata, bc_object4]
+    - [0xF4C, .rodata, bc_object5]
+    - [0xF90, .rodata, bc_object6]
+    - [0x14C0, .rodata, bc_object7]
+    - [0x14E8, .rodata, bc_object8]
+    - [0x1520, rodata]
+    - [0x156C, .rodata, bc_object11]
+    - [0x15EC, .rodata, bc_object12]
+    - [0x1888, .rodata, bc_object13]
+    - [0x19C8, .rodata, bc_object14]
+    - [0x1A2C, .rodata, bc_object15]
+    - [0x1A4C, .rodata, bc_object17]
+    - [0x1A64, .rodata, bc_object18]
+    - [0x1B10, .rodata, bc_object19]
+    - [0x1BC0, .rodata, bc_object20]
+    - [0x1C4C, .rodata, bc_object21]
+    - [0x1CD4, .rodata, bc_object22]
+    - [0x1FA0, .rodata, bc_object9]
+    - [0x1FE8, c, bc_object1]
+    - [0x3AC4, c, bc_object2]
+    - [0x98E0, c, bc_object3]
+    - [0xE184, c, bc_object4]
+    - [0x10B7C, c, bc_object5]
+    - [0x134A8, c, bc_object6]
+    - [0x17358, c, bc_object7]
+    - [0x19624, c, bc_object8]
+    - [0x1C9D8, c, bc_object9]
+    - [0x2072C, c, bc_object10]
+    - [0x22EE8, c, bc_object11]
+    - [0x270E8, c, bc_object12]
+    - [0x2AB88, c, bc_object13]
+    - [0x2CA64, c, bc_object14]
+    - [0x2F294, c, bc_object15]
+    - [0x32078, c, bc_object16]
+    - [0x37F2C, c, bc_object17]
+    - [0x3B25C, c, bc_object18]
+    - [0x3EAF4, c, bc_object19]
+    - [0x40F90, c, bc_object20]
+    - [0x451B0, c, bc_object21]
+    - [0x4860C, c, bc_object22]
+    - [0x499B4, bin]
+  - [0x54C48]
+- name: battle_render
+  sha1: 035161ef7e9d3e7122649c3841f193e12c189589
+  options:
+    target_path: original/battle_render.bin
+    src_path: src/ovl/battle_render
+    section_order: [.rodata, .text, .data, .bss]
+  segments:
+  - name: battle_render
+    type: code
+    start: 0x0
+    vram: 0x80098000
+    subsegments:
+    - [0x0, rodata]
+    - [0x28, .rodata, battle_render]
+    - [0x238, c, battle_render]
+    - [0x353C, bin]
+  - [0x139F8]
+- name: field
+  sha1: 1787bc2d0ee08f2e0a29b78bd0f07a0bbcfe2bc8
+  options:
+    target_path: original/field.bin
+    elf_path: build/field/field.elf
+    asm_path: asm/field
+    build_path: build/field
+    section_order: [.rodata, .text, .data, .bss]
+  segments:
+  - name: field
+    type: code
+    start: 0x0
+    vram: 0x80098000
+    subsegments:
+    - [0x0, rodata]
+    - [0x8, .rodata, fe_object1]
+    - [0x3C, .rodata, fe_object1_2]
+    - [0x90, .rodata, fe_object1_3]
+    - [0xC0, .rodata, fe_object1b]
+    - [0x174, .rodata, fe_object4]
+    - [0x1C0, rodata]
+    - [0x1C4, .rodata, fe_object6]
+    - [0x218, rodata]
+    - [0x21C, .rodata, fe_object7]
+    - [0x23C, .rodata, fe_object12]
+    - [0x2F0, rodata]
+    - [0x314, c, fe_object1]
+    - [0x90F4, c, fe_object1_2]
+    - [0xDFA4, c, fe_object1_3]
+    - [0xE3AC, c, fe_object1b]
+    - [0x14B10, c, fe_object2]
+    - [0x157AC, c, fe_object3]
+    - [0x15B68, c, fe_object4]
+    - [0x1885C, c, fe_object5]
+    - [0x1A348, c, fe_object6]
+    - [0x1D42C, c, fe_object7]
+    - [0x21078, c, fe_object8]
+    - [0x232A4, c, fe_object9]
+    - [0x251F4, c, fe_object10]
+    - [0x27718, c, fe_object11]
+    - [0x280C8, c, fe_object12]
+    - [0x286A0, data, fe_object12_data]
+    - [0x2B898, bin]
+    - [0x2E760, c, opcodes]
+  - [0x2ED80]
+- name: field_init
+  sha1: 5329562ba441198c113c83946dac3da94d5506ee
+  options:
+    target_path: original/field_init.bin
+    src_path: src/ovl/field_init
+  segments:
+  - name: field_init
+    type: code
+    start: 0x0
+    vram: 0x80098000
+    subsegments:
+    - [0x0, c, field_init]
+    - [0x500, .data, field_init_tim]
+    - [0x960, .data, field_init_font]
+    - [0x990, bin]
+  - [0x992]
+- name: intro
+  sha1: f56613c381e68076b3da62c84574444c9d672a4e
+  options:
+    target_path: original/intro.bin
+    elf_path: build/intro/intro.elf
+    asm_path: asm/intro
+    src_path: src
+    build_path: build/intro
+    ld_bss_is_noload: true
+    section_order: [.text, .rodata, .data, .bss]
+  segments:
+  - name: intro
+    type: code
+    start: 0x0
+    vram: 0x80098000
+    # g_introVSyncBase (s32) lives at 0x800992B0, immediately past the loaded
+    # image. Modelling it as NOLOAD bss lets splat define it, instead of a
+    # hand-written linker assignment.
+    bss_size: 0x4
+    subsegments:
+    - [0x0, c, intro]
+    - [0x10B8, .data, intro_assets]
+    - [0x11D8, .data, intro_state]
+    - [0x12B0, bss, intro_bss]
+  - [0x12B0]
+- name: menuabl
+  sha1: 919eb2f43bb652fbb89dff205dd304194681977e
+  options:
+    target_path: original/menuabl.ovl
+    src_path: src/menu/menuabl
+  segments:
+  - name: menuabl
+    type: code
+    start: 0x0
+    vram: 0x801E2800
+    subsegments:
+    - [0x0, c, menuabl]
+    - [0x1570, .rodata, menuabl_data]
+  - [0x1584]
+- name: menucfg
+  sha1: 2a553ef68db3219eee28dfffef665909b8eeaf68
+  options:
+    target_path: original/menucfg.ovl
+    src_path: src/menu/menucfg
+  segments:
+  - name: menucfg
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    subsegments:
+    - [0x0, c, menucfg]
+    - [0x176C, .rodata, menucfg]
+    - [0x17D4, rodata]
+  - [0x18EC]
+- name: menucrd
+  sha1: e0dcfb6ced55dbeab770422f650dcf9f9103d661
+  options:
+    target_path: original/menucrd.ovl
+    src_path: src/menu/menucrd
+    disassemble_all: true
+  segments:
+  - name: menucrd
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    subsegments:
+    - [0x0, c, menucrd]
+    - [0x14A8, rodata]
+    - [0x2164, data]
+  - [0x2564]
+- name: menuext
+  sha1: 6f67e81fce1891f9b7d0db4dfd8c28bee155c7cb
+  options:
+    target_path: original/menuext.ovl
+    src_path: src/menu/menuext
+  segments:
+  - name: menuext
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    subsegments:
+    - [0x0, c, menuext]
+    - [0x3220, .rodata, menuext]
+  - [0x3410]
+- name: menugf
+  sha1: 811ffe461aa34a437a4c4f7b46af8fc0d57ab78c
+  options:
+    target_path: original/menugf.ovl
+    src_path: src/menu/menugf
+  segments:
+  - name: menugf
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    subsegments:
+    - [0x0, c, menugf]
+    - [0x2550, .rodata, menugf]
+    - [0x25D0, rodata]
+  - [0x25D4]
+- name: menuitem
+  sha1: a54f1c5ba8982d20e7a63287f632652a44a2a9b4
+  options:
+    target_path: original/menuitem.ovl
+    src_path: src/menu/menuitem
+    section_order: [.text, .rodata, .data, .bss]
+  segments:
+  - name: menuitem
+    type: code
+    start: 0x0
+    vram: 0x801E2800
+    subsegments:
+    - [0x0, c, menuitem]
+    - [0x7794, c, menuitem2]
+    - [0x8654, .rodata, menuitem]
+    - [0x897C, rodata]
+    - [0x89A0, .rodata, menuitem2]
+    - [0x89D8, rodata]
+    - [0x8B20, rodata]
+    - [0x9F1C, data]
+  - [0xA320]
+- name: menujnc2
+  sha1: 7f56b35f983faa8fa62d8003348913d74653ccd6
+  options:
+    target_path: original/menujnc2.ovl
+    src_path: src/menu/menujnc2
+    disassemble_all: true
+    symbol_addrs_path: [config/symbols.menujnc2.txt]
+    ld_bss_is_noload: true
+    section_order: [.text, .rodata, .data, .bss]
+  segments:
+  - name: menujnc2
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    bss_size: 0x560
+    # The junction working state lives in RAM past the loaded image (0x801EEC50)
+    # and ends with g_junctionPreview (BattleCharData, 0x1D0) at +0x390.
+    # Modelling it as NOLOAD bss lets splat define all of it; every symbol in the
+    # range is named in config/symbols.menujnc2.txt.
+    subsegments:
+    - [0x0, c, menujnc2]
+    - [0x9110, .rodata, menujnc2]
+    - [0x923C, rodata]
+    - [0x9450, bss, menujnc2_bss]
+  - [0x9450]
+- name: menumain
+  sha1: c5c81139efd5e629cf1b3f80f90e8eb012c4dafa
+  options:
+    target_path: original/menumain.ovl
+    src_path: src/menu/menumain
+  segments:
+  - name: menumain
+    type: code
+    start: 0x0
+    vram: 0x801EF800
+    subsegments:
+    - [0x0, c, menumain]
+    - [0x84E4, rodata]
+    - [0x8664, .rodata, menumain]
+    - [0x866C, rodata]
+    - [0x8BB8, data]
+  - [0xAA78]
+- name: menumgc
+  sha1: 967125cc95317880d0c2e0d0f61f66a62c21125f
+  options:
+    target_path: original/menumgc.ovl
+    src_path: src/menu/menumgc
+  segments:
+  - name: menumgc
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    subsegments:
+    - [0x0, c, menumgc]
+    - [0x6E28, .rodata, menumgc]
+    - [0x7014, rodata]
+  - [0x71F0]
+- name: menupty
+  sha1: 17736cb92c8cb34e651e01ba01285b7a1a895159
+  options:
+    target_path: original/menupty.ovl
+    src_path: src/menu/menupty
+  segments:
+  - name: menupty
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    subsegments:
+    - [0x0, c, menupty]
+    - [0x3C7C, rodata]
+    - [0x3D38, .rodata, menupty]
+  - [0x3D40]
+- name: menusav
+  sha1: 11db278b2b7d0bf82d49003a789c316c8db78517
+  options:
+    target_path: original/menusav.ovl
+    src_path: src/menu/menusav
+    disassemble_all: true
+  segments:
+  - name: menusav
+    type: code
+    start: 0x0
+    vram: 0x801E2800
+    subsegments:
+    - [0x0, c, menusav]
+    - [0x91E0, rodata]
+  - [0x9A90]
+- name: menushop
+  sha1: b968bdd8b9335ffa5e998ea8ef985cfc1863c2db
+  options:
+    target_path: original/menushop.ovl
+    src_path: src/menu/menushop
+  segments:
+  - name: menushop
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    subsegments:
+    - [0x0, c, menushop]
+    - [0x429C, .rodata, menushop]
+    - [0x4364, rodata]
+    - [0x4570, data]
+  - [0x5228]
+- name: menusts
+  sha1: 113a79248329389c58a8b9174cefe914ae198a57
+  options:
+    target_path: original/menusts.ovl
+    src_path: src/menu/menusts
+  segments:
+  - name: menusts
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    subsegments:
+    - [0x0, c, menusts]
+    - [0x3CC8, .rodata, menusts]
+    - [0x3D28, rodata]
+    - [0x42E4, data]
+  - [0x46E4]
+- name: menutest
+  sha1: 087297e7c974731951746bb2d4392472be3cab4e
+  options:
+    target_path: original/menutest.ovl
+    src_path: src/menu/menutest
+  segments:
+  - name: menutest
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    subsegments:
+    - [0x0, c, menutest]
+    - [0x1148, .rodata, menutest]
+    - [0x11B8, rodata]
+  - [0x11BC]
+- name: menutips
+  sha1: 0659afebe53fc060592eda101ec59bfac6997faa
+  options:
+    target_path: original/menutips.ovl
+    src_path: src/menu/menutips
+  segments:
+  - name: menutips
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    subsegments:
+    - [0x0, c, menutips]
+    - [0x1268, .rodata, menutips]
+    - [0x12C0, rodata]
+  - [0x1310]
+- name: menutmag
+  sha1: 9c3467b1cc10db163e33c7657bc7681850e9c243
+  options:
+    target_path: original/menutmag.ovl
+    src_path: src/menu/menutmag
+  segments:
+  - name: menutmag
+    type: code
+    start: 0x0
+    vram: 0x801E5800
+    subsegments:
+    - [0x0, c, menutmag]
+    - [0xBA8, .rodata, menutmag]
+    - [0xBEC, rodata]
+  - [0x1E4C]
+- name: menututo
+  sha1: b13208a2f10c733cdddd93aa056c82ca468bf7b3
+  options:
+    target_path: original/menututo.ovl
+    src_path: src/menu/menututo
+    subalign: null
+  segments:
+  - name: menututo
+    type: code
+    start: 0x0
+    vram: 0x801E2800
+    subsegments:
+    - [0x0, c, menututo]
+    - [0x2538, .rodata, menututo]
+    - [0x2618, rodata]
+  - [0x26C0]
+- name: tripletriad
+  sha1: accfe3831595f26c5d6de6f3891736521736f8ef
+  options:
+    target_path: original/tripletriad.bin
+    disassemble_all: true
+    section_order: [.rodata, .text, .data, .bss]
+    ld_bss_is_noload: true
+  segments:
+  - name: tripletriad
+    type: code
+    start: 0x0
+    vram: 0x80098000
+    # Work RAM past the loaded image (ends 0x801A2C40); 207 symbols live there.
+    bss_size: 0x31EF8
+    subsegments:
+    # 0x0-0x1BC is one contiguous rodata block (be_dispatch_mid is the
+    # g_cardScaleVec constant, not code); text starts at be_dispatch_post,
+    # which is a real function — be_object1.c calls it as func_800981BC.
+    - [0x0, .rodata, be_object1]
+    - [0xDC, .rodata, be_object1b]
+    - [0x104, .rodata, be_object2]
+    - [0x154, rodata, be_dispatch_mid]
+    - [0x164, .rodata, be_object3]
+    - [0x178, .rodata, be_object3b]
+    - [0x1A4, .rodata, be_object4]
+    - [0x1BC, asm, be_dispatch_post]
+    - [0x22C, c, be_object1]
+    - [0x1C78, c, be_object1b]
+    - [0x28CC, c, be_object2]
+    - [0x6248, c, be_object3]
+    - [0x95C8, c, be_object3b]
+    - [0x9BE0, c, be_object4]
+    - [0xC58C, asm, be_data]
+    - [0x10AC40, bss, tripletriad_bss]
+  - [0x10AC40]
+- name: world
+  sha1: b421bf83a307dcd41536b14dc81a3aa03f7c9ed0
+  options:
+    target_path: original/world.bin
+    section_order: [.rodata, .text, .data, .bss]
+    subalign: 1
+  segments:
+  - name: world
+    type: code
+    start: 0x0
+    vram: 0x80098000
+    subsegments:
+    - [0x0, rodata]
+    - [0xEC, .rodata, we_object3]
+    - [0x11C, rodata]
+    - [0x120, .rodata, we_object4]
+    - [0x15C, rodata]
+    - [0x3F0, .rodata, we_object6]
+    - [0x760, .rodata, we_object7]
+    - [0x770, .rodata, we_object9]
+    - [0x784, .rodata, we_object11]
+    - [0x7C0, rodata]
+    - [0x17E8, c, we_object1]
+    - [0x4CE8, c, we_object2]
+    - [0x81DC, c, we_object3]
+    - [0xE4DC, c, we_object4]
+    - [0x13540, c, we_object5]
+    - [0x14C68, c, we_object6]
+    - [0x1B10C, c, we_object7]
+    - [0x20C70, c, we_object8]
+    - [0x22870, c, we_object9]
+    - [0x256EC, c, we_object10]
+    - [0x2780C, c, we_object11]
+    - [0x2C0F8, c, we_object13]
+    - [0x2CCA4, bin]
+  - [0x30635]
+- name: SLUS_008.92
+  sha1: 40706b4e0553fc6cbeb044ca1e0e9004d5ac2561
+  options:
+    basename: slus_008.92
+    target_path: original/SLUS_008.92
+    elf_path: build/slus_008.92.elf
+    asm_path: asm
+    src_path: src
+    build_path: build
+    ld_script_path: build/splat/slus_008.92.ld
+    gp_value: 0x8005EC24
+    symbol_addrs_path: [config/symbols.main.txt]
+    reloc_addrs_path: [config/reloc_addrs.txt]
+    undefined_funcs_auto_path: build/splat/undefined_funcs_auto.txt
+    undefined_syms_auto_path: build/splat/undefined_syms_auto.txt
+    # Off is also splat's default; it is spelled out here as a guard, because
+    # turning it on silently breaks the rodata pairing below. With it ON, splat force-emits a
+    # standalone .s for every dot-prefixed .rodata *and* migrates the symbols
+    # into their functions (data.py should_self_split), which duplicates every
+    # migrated symbol at link time. The two data blobs that used to need this
+    # flag (func_8003F414, func_80047C34) are now declared type:func in
+    # config/symbols.main.txt, so splat emits them on their own.
+    disassemble_all: false
+    section_order: [.rodata, .text, .data, .bss]
+    subalign: 4
+  segments:
+  - name: header
+    type: header
+    start: 0x0
+  - name: main
+    type: code
+    start: 0x800
+    vram: 0x80010000
+    subsegments:
+    # Each rodata block is named after the C unit that owns it, which pairs it
+    # for migrate_rodata_to_functions. Undotted blocks hold data that does not
+    # migrate (no single owning function in nonmatchings/), so it stays
+    # standalone. This only works with disassemble_all off — see that option.
+    - [0x800, .rodata, main]
+    - [0x840, .rodata, snd_note]
+    - [0x918, .rodata, gf_curve]
+    - [0x950, .rodata, gf_anim]
+    - [0x988, .rodata, thread]
+    - [0x9C4, .rodata, btl_anim]
+    - [0x9FC, .rodata, btl_sfx]
+    - [0xA44, .rodata, numstr]
+    - [0xF54, .rodata, btl_color]
+    - [0xF80, .rodata, entity]
+    - [0x1008, .rodata, color]
+    - [0x1028, rodata]
+    - [0x112C, .rodata, cdrom]
+    - [0x116C, .rodata, snd_cd]
+    - [0x118C, rodata]
+    - [0x119C, .rodata, psxsdk/libspu]
+    - [0x120C, .rodata, psxsdk/libetc]
+    - [0x12BC, rodata]
+    - [0x14B0, .rodata, psxsdk/libcd]
+    - [0x179C, .rodata, psxsdk/libpress]
+    - [0x17EC, rodata]
+    - [0x1814, .rodata, psxsdk/libc]
+    - [0x18CC, rodata]
+    - [0x1A60, .rodata, psxsdk/libgpu]
+    - [0x1C2C, .rodata, psxsdk/libcard]
+    - [0x1C4C, .rodata, psxsdk/libsnd]
+    - [0x1D2C, c, psxsdk/crt0]
+    # crt0's own data (D_800115DC/D_800115E0, referenced by start.s), physically
+    # between crt0's text and main's text. It must stay a separate subsegment —
+    # folding it into the crt0 `c` segment sends it to asm/matchings/, which is
+    # not linked, and the build fails with `undefined reference to D_800115E0`.
+    # The override keeps it ordered with .text instead of the .data block.
+    - start: 0x1DDC
+      type: data
+      name: start_data
+      linker_section_order: .text
+    - [0x1DF0, c, main]
+    - [0x34C8, c, snd_init]
+    - [0x4EF0, c, snd_dma]
+    - [0x57FC, c, snd_voice]
+    - [0x75B4, c, snd_bank]
+    - [0xA118, c, snd_param]
+    - [0xAD5C, c, snd_note]
+    - [0xC9A8, c, snd_track]
+    - [0xFDC8, pad, game_pad]
+    - [0x10DC8, c, game]
+    - [0x11D3C, c, gf_curve]
+    - [0x12FF4, c, ability]
+    - [0x131FC, c, gf_anim]
+    - [0x14100, c, item]
+    - [0x16120, c, render3d]
+    - [0x16580, c, mesh3d]
+    - [0x172DC, c, thread]
+    - [0x186F8, c, btl_anim]
+    - [0x1B630, c, btl_display]
+    - [0x1BBA0, c, drawbar]
+    - [0x1C280, c, psxsdk/libgcc]
+    - [0x1C2A0, c, btl_entity]
+    - [0x1D0A4, c, btl_sfx]
+    - [0x1FA3C, c, numstr]
+    - [0x20724, c, btl_color]
+    - [0x22A8C, c, entity]
+    - [0x238F4, c, color]
+    - [0x25A94, c, render]
+    - [0x264C0, c, psxsdk/libsnd_reverb]
+    - [0x264E0, c, overlay]
+    - [0x26EE8, c, card]
+    - [0x278AC, c, gamestate]
+    - [0x28DB0, c, cdrom]
+    - [0x2953C, c, cdread]
+    - [0x29C18, pad, cdread_pad]
+    - [0x29C44, c, snd_cd]
+    - [0x2C378, c, snd_cmd]
+    - [0x2D004, c, psxsdk/softfloat]
+    - [0x2D954, c, psxsdk/libspu]
+    - [0x2F524, c, psxsdk/libgte]
+    - [0x32D94, c, psxsdk/libetc/pad_init]
+    - [0x32E34, c, psxsdk/libetc]
+    - [0x33AF4, c, psxsdk/libcd]
+    - [0x36E74, c, psxsdk/libpress]
+    - [0x37984, c, psxsdk/libapi]
+    - [0x37FE4, c, psxsdk/libetc/pad]
+    - [0x38454, c, psxsdk/libc]
+    - [0x38E34, c, psxsdk/libgpu]
+    - [0x3E024, c, psxsdk/libcard]
+    - [0x3E7F4, c, psxsdk/libsnd]
+    - [0x41EE8, data]
+  - [0x191000]

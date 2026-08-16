@@ -14,12 +14,30 @@ MASPSX     := python3 tools/maspsx/maspsx.py
 VENV       := .venv
 PYTHON     := $(VENV)/bin/python3
 SPLAT      := $(PYTHON) -m splat
-SPLAT_YAML := config/slus_008.92.yaml
 BUILD_DIR  := build
 ASM_DIR    := asm
 SRC_DIR    := src
-TARGET     := original/SLUS_008.92
-LD_SCRIPT  := config/slus_008.92.ld
+# The main executable's binary name; every path below derives from it.
+MAIN       := SLUS_008.92
+SPLAT_CONF := config/ff8.yaml
+SPLAT_GEN  := build/splat
+# Path template for the generated splat configs; {name} is the binary's name.
+SPLAT_YAML_TMPL := $(SPLAT_GEN)/{name}.yaml
+BINARIES_MK := $(SPLAT_GEN)/binaries.mk
+
+# Each binary's paths come from the binary map, so the Makefile and splat
+# always split and verify the same file. Make remakes this and restarts if
+# the config is newer.
+-include $(BINARIES_MK)
+$(BINARIES_MK): $(SPLAT_CONF) tools/gen_splat_config.py
+	@$(PYTHON) tools/gen_splat_config.py $(SPLAT_CONF) --out '$(SPLAT_YAML_TMPL)' --make $@
+
+# The main executable's paths, like every overlay's, come from the config.
+TARGET     := $($(MAIN)_TARGET)
+SPLAT_YAML := $($(MAIN)_YAML)
+LD_SCRIPT  := $($(MAIN)_LD)
+ELF        := $($(MAIN)_ELF)
+BUILT_EXE  := $(BUILD_DIR)/$(MAIN)
 
 ### Compiler flags ###
 CC_FLAGS := -O2 -G0
@@ -68,15 +86,12 @@ ASFLAGS := -march=r3000 -mabi=32 -EL -no-pad-sections -O0 -Iinclude
 # --no-check-sections : don't error on overlapping sections
 # -Map : generate a map file (shows where everything ended up)
 LDFLAGS := -T $(LD_SCRIPT) \
-           -T config/undefined_funcs.txt \
-           -T config/undefined_funcs_auto.txt \
-           -T config/undefined_syms_auto.txt \
+           -T $(SPLAT_GEN)/undefined_funcs_auto.txt \
+           -T $(SPLAT_GEN)/undefined_syms_auto.txt \
            --no-check-sections \
-           -Map $(BUILD_DIR)/slus_008.92.map
+           -Map $(ELF:.elf=.map)
 
 ### Output files ###
-ELF       := $(BUILD_DIR)/slus_008.92.elf
-BUILT_EXE := $(BUILD_DIR)/SLUS_008.92
 
 ### Collect source files ###
 # Assembly sources (header + data segments)
@@ -183,9 +198,9 @@ verify: $(BUILT_EXE) $(foreach ovl,$(OVERLAYS),build-$(ovl))
 	BUILT=$$(sha1sum $(BUILT_EXE) | cut -d' ' -f1); \
 	ORIG=$$(sha1sum $(TARGET) | cut -d' ' -f1); \
 	if [ "$$BUILT" = "$$ORIG" ]; then \
-		printf "%-20s  %s  \033[32m%s\033[0m  \033[32m%s\033[0m\n" "SLUS_008.92" "$$ORIG" "$$BUILT" "Match"; \
+		printf "%-20s  %s  \033[32m%s\033[0m  \033[32m%s\033[0m\n" "$(MAIN)" "$$ORIG" "$$BUILT" "Match"; \
 	else \
-		printf "%-20s  %s  \033[31m%s\033[0m  \033[31m%s\033[0m\n" "SLUS_008.92" "$$ORIG" "$$BUILT" "Mismatch"; \
+		printf "%-20s  %s  \033[31m%s\033[0m  \033[31m%s\033[0m\n" "$(MAIN)" "$$ORIG" "$$BUILT" "Mismatch"; \
 		FAIL=1; \
 	fi; \
 	$(foreach ovl,$(OVERLAYS), \
@@ -206,8 +221,12 @@ setup:
 	$(PYTHON) -m pip install -r requirements.txt
 	$(MAKE) split
 
+# Expand the compact binary map into full splat configs.
+splat-config:
+	$(PYTHON) tools/gen_splat_config.py $(SPLAT_CONF) --out '$(SPLAT_YAML_TMPL)' --make $(BINARIES_MK)
+
 # Re-run splat for main binary + all overlays
-split:
+split: splat-config
 	rm -rf asm
 	$(SPLAT) split $(SPLAT_YAML)
 	$(foreach ovl,$(OVERLAYS),$(SPLAT) split $($(ovl)_YAML);)
@@ -230,13 +249,9 @@ endif
 ### Overlays ###
 # Template for overlay build rules — $(1) = overlay name, $(2) = file extension
 define OVERLAY_TEMPLATE
-$(1)_YAML     := config/$(1).ovl.yaml
 $(1)_DIR      ?= build/ovl/$(1)
 $(1)_ASM_DIR  ?= asm/ovl/$(1)
-$(1)_LD       := config/$(1).ovl.ld
-$(1)_TARGET   := original/$(1).$(2)
-$(1)_ELF      := $$($(1)_DIR)/$(1).elf
-$(1)_BIN      := $$($(1)_DIR)/$(1).$(2)
+$(1)_BIN      := $$($(1)_DIR)/$$(notdir $$($(1)_TARGET))
 
 $(1)_ASM_SRCS := $$(wildcard $$($(1)_ASM_DIR)/*.s) $$(wildcard $$($(1)_ASM_DIR)/data/*.s)
 $(1)_ASM_OBJS := $$(patsubst $$($(1)_ASM_DIR)/%.s,$$($(1)_DIR)/$$($(1)_ASM_DIR)/%.o,$$($(1)_ASM_SRCS))
@@ -245,15 +260,14 @@ $(1)_BIN_SRCS := $$(wildcard assets/*.bin)
 $(1)_BIN_OBJS := $$(patsubst assets/%.bin,$$($(1)_DIR)/assets/%.o,$$($(1)_BIN_SRCS))
 $(1)_ALL_OBJS := $$($(1)_ASM_OBJS) $$($(1)_C_OBJS) $$($(1)_BIN_OBJS)
 
-$(1)_MANUAL_SYMS := $$(wildcard config/undefined_syms.$(1).txt)
 $(1)_LDFLAGS  := -T $$($(1)_LD) \
-                 -T config/undefined_funcs_auto.$(1).txt \
-                 -T config/undefined_syms_auto.$(1).txt \
-                 $$(foreach f,$$($(1)_MANUAL_SYMS),-T $$(f)) \
+                 -T $$(SPLAT_GEN)/undefined_funcs_auto.$(1).txt \
+                 -T $$(SPLAT_GEN)/undefined_syms_auto.$(1).txt \
+                 -T config/symbols.extern.txt \
                  --no-check-sections \
                  -Map $$($(1)_DIR)/$(1).map
 
-split-$(1):
+split-$(1): splat-config
 	$$(SPLAT) split $$($(1)_YAML)
 
 $$($(1)_DIR)/$$($(1)_ASM_DIR)/%.o: $$($(1)_ASM_DIR)/%.s
@@ -297,8 +311,7 @@ verify-$(1): $$($(1)_BIN)
 
 endef
 
-$(foreach ovl,$(MENU_OVERLAYS),$(eval $(call OVERLAY_TEMPLATE,$(ovl),ovl)))
-$(foreach ovl,$(CODE_OVERLAYS),$(eval $(call OVERLAY_TEMPLATE,$(ovl),bin)))
+$(foreach ovl,$(OVERLAYS),$(eval $(call OVERLAY_TEMPLATE,$(ovl))))
 
 # field_init: extract font TIM from overlay binary during split
 FIELD_INIT_TIM := assets/field_init_font.tim
@@ -331,6 +344,6 @@ report: objdiff-config
 	@$(OBJDIFF) report generate -p . -o $(BUILD_DIR)/report.json
 	@python3 tools/objdiff/progress_html.py $(BUILD_DIR)/report.json $(BUILD_DIR)/progress.html
 
-.PHONY: all full build verify check setup split clean permute build-overlays \
+.PHONY: all full build verify check setup split splat-config clean permute build-overlays \
         expected objdiff-config report \
         $(foreach ovl,$(OVERLAYS),split-$(ovl) build-$(ovl) verify-$(ovl))
