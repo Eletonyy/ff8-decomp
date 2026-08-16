@@ -161,9 +161,9 @@ s32 *func_800983F0(void) {
     }
 
     D_800C6D98[0] = buf;
-    buf = (u8 *)func_800A0640((TILE *)buf);
+    buf = (u8 *)func_800A0640((SPRT_16 *)buf);
     D_800C6D98[1] = buf;
-    buf = (u8 *)func_800A0640((TILE *)buf);
+    buf = (u8 *)func_800A0640((SPRT_16 *)buf);
 
     if (D_8005F0F8->unk0E == 1) {
         D_800D5EC8[0] = buf;
@@ -3454,35 +3454,31 @@ void func_8009FE18(s32 entIdx, Actor *actor, s32 flags) {
 
 /**
  * @brief Transcode the script entry list at @c D_800D5E90->entries into
- *        a buffer of @c TILE primitives.
+ *        a buffer of 16x16 sprite (@c SPRT_16) primitives.
  *
  * Walks the list of @ref ScriptEntry records (stride @c 0x10, terminated
- * by @c terminator == @c 0x7FFF) and writes one @c TILE per non-terminator
- * entry, returning the advanced @c prim pointer. Each tile is fixed at
- * @c count=3, gray @c 0x80 color, and base code @c 0x7C. The entry's
- * @c wLo/wHi bytes populate the two bytes of @c TILE::w, and @c h is
- * the @c TILE::h halfword. Bit 1 of @c code (semi-translucency) is
- * cleared when @c kind == @c 4 (opaque) and set otherwise.
+ * by @c terminator == @c 0x7FFF) and writes one @c SPRT_16 per entry,
+ * returning the advanced @c prim pointer. Each sprite gets the entry's
+ * @c u / @c v texture cell and @c clut, gray @c 0x80 colour, and is
+ * marked semi-translucent unless @c kind == @c 4 (opaque).
  *
  * Called by @c func_800983F0 as part of the chain that lays out
  * draw-prim regions back-to-back in one growing buffer.
  */
-TILE *func_800A0640(TILE *prim) {
+SPRT_16 *func_800A0640(SPRT_16 *prim) {
     ScriptEntry *e = D_800D5E90->entries;
     while (1) {
         if (e->terminator == 0x7FFF) break;
-        setlen(prim, 3);
-        prim->code = 0x7C;
-        ((u8 *)&prim->w)[0] = e->wLo;
-        ((u8 *)&prim->w)[1] = e->wHi;
-        prim->h = e->h;
-        prim->b0 = 0x80;
-        prim->g0 = 0x80;
-        prim->r0 = 0x80;
+        setSprt16(prim);
+        setUV0(prim, e->u, e->v);
+        prim->clut = e->clut;
+        /* Chain direction is load-bearing: b0 must store first (setRGB0 stores r0 first). */
+        prim->r0 = prim->g0 = prim->b0 = 0x80;
+        /* Hand-written toggle: setSemiTrans lays its arms out inverted. */
         if (e->kind == 4) {
-            prim->code &= ~0x02;
+            prim->code &= ~PRIM_CODE_SEMI_TRANS;
         } else {
-            prim->code |= 0x02;
+            prim->code |= PRIM_CODE_SEMI_TRANS;
         }
         prim++;
         e++;

@@ -408,7 +408,7 @@ typedef struct {
     /* 0xE60 */ u8            padE60[0x400];               /**< Field script vars, TT rules. */
     /* 0x1260 */ u8           pad1260[0x80];               /**< World map position/vehicles. */
     /* 0x12E0 */ TripleTriadData cards;                    /**< Triple Triad data (128 bytes). */
-    /* 0x1360 */ ChocoboWorldData chocobo;                 /**< Chocobo World data (64 bytes). */
+    /* 0x1360 */ ChocoboWorldData chocobo;                 /* D_800786D8 *< Chocobo World data (64 bytes). */
 } GameState; /* 0x13A0 = 5024 bytes */
 
 /* SaveMainData.partyLockFlag bits. Only bit 0 has a confirmed meaning; the
