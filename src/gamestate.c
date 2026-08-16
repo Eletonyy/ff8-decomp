@@ -5,6 +5,7 @@
 #include "character.h"
 #include "field.h"
 #include "card.h"
+#include "cdread.h"
 
 extern u8 D_8007809B[];
 extern u8 g_chocoboWorld;
@@ -698,32 +699,32 @@ INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037FB0);
 
 
 void func_80038030(s32 arg0) {
-    u8 *ptr = D_800780D8;
+    FieldVars *ptr = (FieldVars *)D_800780D8;
 
     if (!(D_80082C0A & 0x10)) {
         while (sndGetStatus() == 2) {
             func_800393C8();
         }
 
-        if (*(s32 *)(ptr + 0x6C) == -1) {
+        if (ptr->soundHandle0 == -1) {
             sndCmd11(0);
         }
 
         sndCmd40();
         D_80085220 = arg0;
-        func_80037FB0(0, *(s8 *)(ptr + 0xCB), arg0);
+        func_80037FB0(0, ptr->battleMusicId, arg0);
 
-        if (*(u8 *)(ptr + 0xD6) == 0) {
+        if (ptr->soundLoadComplete == 0) {
             do {
                 func_800393C8();
-            } while (*(u8 *)(ptr + 0xD6) == 0);
+            } while (ptr->soundLoadComplete == 0);
         }
 
         D_8005F11C = sndCmd10(toggleSoundBank());
         sndCmdC0(0, 0x7F);
     }
 
-    D_80082C11 = *(u8 *)(ptr + 0xC9) ^ 1;
+    D_80082C11 = (u8)ptr->soundBankSelector ^ 1;
     sndStopPlayback();
     sndCmdF1();
     sndSetMasterVolume(0x7F);
@@ -855,11 +856,19 @@ s32 fieldRandom(void) {
 }
 
 
-extern u8 *D_80039418;
-#define D_80039440 (*(s32 *)((u8 *)&D_80039418 + 0x28))
+typedef struct {
+    s32 payloadSize;
+    u8 payload[1];
+} LzssData;
+
+/* Taking the typed member address preserves the retail D_80039418+0x28
+ * relocation form with gcc 2.7.2; direct member access materializes the
+ * struct base and inserts an extra instruction. */
+#define LZSS_OUTPUT_SIZE (*(s32 *)&D_80039418.outputSize)
 
 void func_80038490(u8 *src, u8 *dst)
 {
+  LzssData *data;
   u8 *src_ptr;
   u8 *dst_start;
   s32 bit_cnt;
@@ -873,12 +882,13 @@ void func_80038490(u8 *src, u8 *dst)
   s32 temp;
   s32 v0;
   src_ptr = src;
+  data = (LzssData *)src;
   bit_cnt = 0;
   flags = bit_cnt;
   dst_start = dst;
-  D_80039440 = 0;
-  src_end = (src_ptr + (*((s32 *) src_ptr))) + 4;
-  src_ptr += 4;
+  LZSS_OUTPUT_SIZE = 0;
+  src_end = src_ptr + data->payloadSize + sizeof(data->payloadSize);
+  src_ptr += sizeof(data->payloadSize);
   new_var2 = dst_start;
   while (1)
   {
@@ -898,7 +908,7 @@ void func_80038490(u8 *src, u8 *dst)
         return;
       }
       *(dst++) = *(src_ptr++);
-      D_80039440++;
+      LZSS_OUTPUT_SIZE++;
     }
     else
     {
@@ -925,7 +935,7 @@ void func_80038490(u8 *src, u8 *dst)
       while (dst < dst_end)
       {
         *(dst++) = *(copy_src++);
-        D_80039440++;
+        LZSS_OUTPUT_SIZE++;
       }
 
     }
@@ -934,5 +944,3 @@ void func_80038490(u8 *src, u8 *dst)
   }
 
 }
-
-
