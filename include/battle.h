@@ -418,7 +418,10 @@ typedef struct {
     /* 0x05C4 */ BattleEntry entries[1];       /**< Action queue (stride 0x14)*/
     /* 0x05D8 */ u8 pad5D8[0x0844 - 0x05D8];
     /* 0x0844 */ Struct_func_800A5210 Array844[1];
-    /* 0x085C */ u8 pad85C[0x0CE4 - 0x085C];
+    /* 0x085C */ u8 pad85C[0xCDC - 0x085C];
+    /* 0x0CDC */ u8 unkCDC;
+    /* 0x0CDC */ u8 unkCDD;
+    /* 0x0CDE */ u8 padCDE[0x0CE4 - 0x0CDE];
     /* 0x0CE4 */ BattleVec3u unkCE4[8];         /**< 8-entry x/y/z position table (read by @c func_8009A528). */
     /* 0x0D14 */ u8 unkD14[0x8];                /**< Hit-type byte table (8 entries). */
     /* 0x0D1C */ u8 padD1C[0x40];               /**< Misc state. */
@@ -853,7 +856,8 @@ typedef struct {
     u8 unk48BE;
     u8 unk48BF;
     u8 unk48C0;
-    u8 pad2[2];
+    u8 pad2;
+    u8 unk48C2;
     u8 unk48C3;
     u8 pad3;
     u8 unk48C5;
@@ -1132,7 +1136,7 @@ extern u16             D_80082C0A;
 extern u8              D_80082C0F;
 extern u8              D_80098030[];
 extern BattleSceneCtx* D_800D244C;
-extern u8              D_800E19B4[];
+extern s32             D_800E19B4[];
 extern s32             D_800E19BC[];
 extern u16             D_800E3CA4[];
 extern BattlePosXZ     D_800E3CA8[];
@@ -1143,7 +1147,7 @@ extern u8              D_800ED157[];
 extern BattleSlotData  D_800ED158;
 extern u8              D_800ED1D8[];
 extern BattleEntry     D_800ED70C[];
-extern u8              D_800EDE24[];
+extern u8              D_800EDE24[]; // D_800ED148.unkCDC
 extern u8              D_800EE24B[];
 extern u8              D_800EE28C[];
 extern s16             D_800EE3DC;
