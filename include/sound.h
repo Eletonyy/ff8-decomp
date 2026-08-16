@@ -110,6 +110,8 @@ typedef struct {
 /** @brief 12-entry CD-audio track array (voices 12-23), stride 0x110. */
 extern SoundSeqTrack D_80072F70[];
 
+extern void func_8001ACCC(SoundSeqTrack *track, s32 *tracks);
+
 /**
  * @brief Instrument/sample descriptor (D_80073E68, stride 16 bytes).
  *
