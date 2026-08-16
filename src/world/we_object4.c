@@ -8,32 +8,57 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A64DC);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A688C);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A6A74);
+/**
+ * @brief Splice two of @p ctx's bone prims into the sub-OT records of
+ *        the @c D_800D3510 and @c D_800D3690 pools.
+ *
+ * Sibling of @ref func_800A735C: for the bone ids in @c D_800C53B8[1]
+ * and @c [2], point the record's last sub-slot ([3]) at the bone's prim
+ * (@c ctx->primList entry) and the bone's prim back at the record's
+ * first sub-slot ([0]), using the PsyQ @c setaddr / @c getaddr tag
+ * operations. The pool row is picked by whether @p ctx is the
+ * @c D_800CA040 sentinel.
+ *
+ * @param ctx Scene context whose @c primList holds the bone prims.
+ */
+void func_800A6A74(BattleSceneCtx *ctx) {
+    s32 cond;
+    s32 i;
+
+    cond = ctx == &D_800CA040;
+    for (i = 0; i < 2; i++) {
+        setaddr(&D_800D3510[cond][i][3], getaddr(&ctx->primList[D_800C53B8[i + 1]]));
+        setaddr(&ctx->primList[D_800C53B8[i + 1]], &D_800D3510[cond][i][0]);
+    }
+    for (i = 0; i < 2; i++) {
+        setaddr(&D_800D3690[cond][i][3], getaddr(&ctx->primList[D_800C53B8[i + 1]]));
+        setaddr(&ctx->primList[D_800C53B8[i + 1]], &D_800D3690[cond][i][0]);
+    }
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A6BE0);
 
 /**
- * @brief Splice three of @c a0's bone prims into two pairs of OT slots.
+ * @brief Splice three of @c a0's bone prims into the sub-OT records of
+ *        the @c D_800D3E50 and @c D_800D4090 pools.
  *
  * For each of the three bone ids in @c D_800C53B8[0], @c [3], @c [4],
- * link the entity's prim pointer between the slot-A and slot-B halves
- * of an OT pair, twice — once for the primary OT array at
- * @c D_800D3E98 and once for the secondary at @c D_800D40D8. The cond
- * bit picks the @c [0] or @c [1] row of the array, switching layout
- * for non-canonical entity models.
+ * link the entity's prim pointer between a record's first ([0]) and
+ * last ([3]) sub-slots, once per pool. The cond bit picks the @c [0]
+ * or @c [1] pool row, switching layout for non-canonical entity models.
  *
  * @param a0 Entity model whose @c primList holds the prims to splice.
  */
 void func_800A735C(BattleSceneCtx *a0) {
     s32 cond = (a0 != &D_800CA040) ? 1 : 0;
 
-    addPrims(&a0->primList[D_800C53B8[0]], &D_800D3E50[cond][0].link, &D_800D3E98[cond][0].link);
-    addPrims(&a0->primList[D_800C53B8[3]], &D_800D3E50[cond][1].link, &D_800D3E98[cond][1].link);
-    addPrims(&a0->primList[D_800C53B8[4]], &D_800D3E50[cond][2].link, &D_800D3E98[cond][2].link);
+    addPrims(&a0->primList[D_800C53B8[0]], &D_800D3E50[cond][0][0].link, &D_800D3E50[cond][0][3].link);
+    addPrims(&a0->primList[D_800C53B8[3]], &D_800D3E50[cond][1][0].link, &D_800D3E50[cond][1][3].link);
+    addPrims(&a0->primList[D_800C53B8[4]], &D_800D3E50[cond][2][0].link, &D_800D3E50[cond][2][3].link);
 
-    addPrims(&a0->primList[D_800C53B8[0]], &D_800D4090[cond][0].link, &D_800D40D8[cond][0].link);
-    addPrims(&a0->primList[D_800C53B8[3]], &D_800D4090[cond][1].link, &D_800D40D8[cond][1].link);
-    addPrims(&a0->primList[D_800C53B8[4]], &D_800D4090[cond][2].link, &D_800D40D8[cond][2].link);
+    addPrims(&a0->primList[D_800C53B8[0]], &D_800D4090[cond][0][0].link, &D_800D4090[cond][0][3].link);
+    addPrims(&a0->primList[D_800C53B8[3]], &D_800D4090[cond][1][0].link, &D_800D4090[cond][1][3].link);
+    addPrims(&a0->primList[D_800C53B8[4]], &D_800D4090[cond][2][0].link, &D_800D4090[cond][2][3].link);
 }
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A7590);
@@ -42,13 +67,100 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A7B38);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A7CD0);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A7E74);
+/**
+ * @brief Advance the four world-map VRAM row animations.
+ *
+ * Steps the shared animation counter @c D_800C547C by @c D_800D2264,
+ * wrapping modulo 384, then walks the four @c WorldTexAnim slots in
+ * @c D_800D4E80. Each enabled slot (frames != 0) derives its current
+ * frame from the counter: cyclic (`(counter + phase) / divisor % frames`),
+ * or reflected over the frame range with period `frames * 2 - 2` when
+ * @c pingpong is set (0,1,..,frames-1,frames-2,..,1,..). When the frame
+ * differs from the slot's last blitted one (@c D_800D4EB0), the 256x1
+ * source row at (u, v + frame) is copied to the slot's destination
+ * (x, y) via @c func_80048FBC and the new frame is cached.
+ */
+void func_800A7E74(void) {
+    WorldTexAnim *anim;
+    s32 i;
+    u32 n;
+    u32 over;
+    s32 frame;
+    RECT rect;
+
+    D_800C547C = (D_800C547C + D_800D2264) % 384;
+
+    i = 0;
+    for (anim = D_800D4E80; anim < &D_800D4E80[4]; anim++, i++) {
+        if (anim->frames == 0) {
+            continue;
+        }
+        if (anim->pingpong != 0) {
+            n = (u8)(((D_800C547C + anim->phase) / anim->divisor)
+                     % (u8)(anim->frames * 2 - 1));
+            if (n >= anim->frames) {
+                over = n - anim->frames + 2;
+                frame = anim->frames - over;
+            } else {
+                frame = n;
+            }
+        } else {
+            frame = ((D_800C547C + anim->phase) / anim->divisor) % anim->frames;
+        }
+        if (D_800D4EB0[i] != frame) {
+            rect.x = anim->u;
+            rect.y = anim->v + frame;
+            rect.w = 0x100;
+            rect.h = 1;
+            func_80048FBC(&rect, anim->x, anim->y);
+            D_800D4EB0[i] = frame;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A8024);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A8270);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A8400);
+/**
+ * @brief Lay out and draw the world-map HUD trio at slide coordinate
+ *        @c D_800D2452.
+ *
+ * Derives a wrap phase `0x100 - (u8)D_800D239A` from the low byte of the
+ * camera heading and passes it to @c func_800A8868 (drawn at
+ * `D_800D2452 - 0x30`). When @c D_800C5454 is set, also draws the centred
+ * element via @c func_800A8524 at `D_800D2452 - 0xA0`, with x offset
+ * `(0x300 - (b0 + b1 + b2 * 2) * 2) >> 1` clamped to [0, 0x200], where
+ * b0..b2 are the width bytes of @c D_800DB0D0. Always finishes with
+ * @c func_800A8A28 at the raw coordinate.
+ *
+ * @note Purpose uncertain — appears to drive the world-map map-view HUD:
+ *       a map panel that wraps with the camera heading (@c func_800A8868),
+ *       a location-name banner shown only while the map pointer highlights
+ *       a named point (@c func_800A8524, centred to its text width), and
+ *       the pointer/marker sprite (@c func_800A8A28).
+ */
+void func_800A8400(void) {
+    s32 phase;
+    s32 pos;
+    s32 x;
+
+    phase = 0x100 - (u8)D_800D239A;
+    func_800A8868(phase, D_800D2452 - 0x30);
+    if (D_800C5454 != 0) {
+        pos = (0x300 - (D_800DB0D0[0] + D_800DB0D0[1] + D_800DB0D0[2] * 2) * 2) >> 1;
+        if (pos >= 0) {
+            x = 0x200;
+            if (pos <= 0x200) {
+                x = pos;
+            }
+        } else {
+            x = 0;
+        }
+        func_800A8524(phase, D_800D2452 - 0xA0, x);
+    }
+    func_800A8A28(D_800D2452);
+}
 
 
 /**
@@ -112,39 +224,69 @@ void func_800A9254(void) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A9300);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A9CC0);
+/**
+ * @brief Step one world-map effect particle.
+ *
+ * Advances @p p by one tick: multiplies its 4.12 scale by @p q's
+ * @c scaleRate, integrates position from the 16-bit velocity, and then
+ * accelerates the velocity by @p q's velocity deltas and bumps @c age.
+ * From the second tick on, particles of kind 12 or 13 additionally drift
+ * with the camera: 5/6 of the per-frame camera deltas (@c D_800C9E38[0],
+ * @c D_800C9870 - @c D_800C974C, @c D_800C9E38[2]) is added to x/y/z so
+ * the effect roughly follows the view (weather-style particles).
+ *
+ * @param p Particle to update.
+ * @param q Delta source: velocity increments and scale multiplier.
+ *
+ * @note The position words are updated through the walking pointer @c w on
+ *       purpose: the multi-set pointer defeats gcc's alias base tracking,
+ *       which keeps the volatile camera reads ordered after each position
+ *       store, matching the original instruction schedule. The offsets
+ *       still fold to plain 0x0/0x4/0x8 accesses.
+ */
+void func_800A9CC0(WorldParticle *p, WorldParticle *q) {
+    s32 *w;
 
-/* Local byte-array view of the OT pools: world.h exposes D_800D3E50 /
- * D_800D4090 as OTSlot-array macros (used above), but the loop below walks
- * them as a flat u8[] at stride 0x18, so shadow the macros with the real
- * linker symbols here. This #undef + extern pair must stay file-scope. */
-#undef D_800D3E50
-#undef D_800D4090
-extern u8 D_800D3E50[];
-extern u8 D_800D4090[];
+    p->scale = p->scale * q->scaleRate / 4096;
+    p->x += p->vx;
+    p->y += p->vy;
+    p->z += p->vz;
+    if (p->age != 0) {
+        if (p->kind == 12 || p->kind == 13) {
+            w = &p->x;
+            *w += D_800C9E38[0] * 5 / 6;
+            w++;
+            *w += (D_800C9870 - D_800C974C) * 5 / 6;
+            w++;
+            *w += D_800C9E38[2] * 5 / 6;
+        }
+    }
+    p->vx += q->vx;
+    p->vy += q->vy;
+    p->vz += q->vz;
+    p->age++;
+}
 
 /**
- * @brief Initialise 8 sub-OT slots (4 from each of two pools) for the
- *        entity model in @p a0, biased by @c 0x120 for non-canonical models.
+ * @brief Initialise the first record's 4 sub-OT slots in each of two
+ *        pools for the entity model in @p a0.
  *
- * Each @c OTSlot in @c D_800D3E50/@c D_800D4090 holds 4 sub-OT slots at
- * stride @c 0x18. This call walks slot 0 of each pool (@c &D_800D3E50[cond][0]
- * and @c &D_800D4090[cond][0]) and runs @c func_800491E8 on each of the 4
- * sub-OTs, then dispatches @c func_80048C50(0). @c cond is the canonical
- * entity bit — @c 0 for @c &D_800CA040, @c 1 otherwise — which selects the
- * @c [0] or @c [1] row of the pool array via the @c 0x120-byte bias.
+ * Runs @c func_800491E8 on all four sub-slots of record 0 in the
+ * @c D_800D3E50 and @c D_800D4090 pools, then dispatches
+ * @c func_80048C50(0). @c cond is the canonical entity bit — @c 0 for
+ * @c &D_800CA040, @c 1 otherwise — selecting the pool row.
  */
 void func_800A9E24(BattleSceneCtx *a0) {
     s32 cond = (a0 != &D_800CA040) ? 1 : 0;
-    s32 bias = cond * 0x120;
-    func_800491E8(D_800D3E50 + bias);
-    func_800491E8(D_800D3E50 + bias + 0x18);
-    func_800491E8(D_800D3E50 + bias + 0x30);
-    func_800491E8(D_800D3E50 + bias + 0x48);
-    func_800491E8(D_800D4090 + bias);
-    func_800491E8(D_800D4090 + bias + 0x18);
-    func_800491E8(D_800D4090 + bias + 0x30);
-    func_800491E8(D_800D4090 + bias + 0x48);
+
+    func_800491E8(&D_800D3E50[cond][0][0]);
+    func_800491E8(&D_800D3E50[cond][0][1]);
+    func_800491E8(&D_800D3E50[cond][0][2]);
+    func_800491E8(&D_800D3E50[cond][0][3]);
+    func_800491E8(&D_800D4090[cond][0][0]);
+    func_800491E8(&D_800D4090[cond][0][1]);
+    func_800491E8(&D_800D4090[cond][0][2]);
+    func_800491E8(&D_800D4090[cond][0][3]);
     func_80048C50(0);
 }
 
@@ -186,44 +328,97 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A9F54);
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AA210);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AAD48);
-
-
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AAEAC);
-
-
+/**
+ * @brief Fill the current POLY_GT3 (@c D_800D8804) from a transformed
+ *        triangle and splice it onto the main OT chain.
+ *
+ * Writes a grayscale gouraud colour per vertex (@p shade byte copied to
+ * r=g=b), the three packed screen words and texture coordinates from
+ * @p vtx[0..2], a fixed CLUT id of @c 0x3A74 and texture page @c 0xC,
+ * then links the primitive to @c D_800D244C's main chain head with the
+ * PsyQ @c setaddr / @c getaddr tag operations (standard @c addPrim
+ * semantics).
+ *
+ * The prim pointer is re-read from @c D_800D8804 around every byte-wide
+ * store because gcc must assume those stores may alias the pointer
+ * global — the word/half stores between them reuse the cached value.
+ *
+ * @param vtx   Three transformed vertices (packed screen word + u/v).
+ * @param shade Per-vertex grayscale shade triple.
+ */
+void func_800AAD48(WorldVtx *vtx, TriShade *shade) {
+    D_800D8804->r0 = shade->c0;
+    D_800D8804->g0 = shade->c0;
+    D_800D8804->b0 = shade->c0;
+    D_800D8804->r1 = shade->c1;
+    D_800D8804->g1 = shade->c1;
+    D_800D8804->b1 = shade->c1;
+    D_800D8804->r2 = shade->c2;
+    D_800D8804->g2 = shade->c2;
+    D_800D8804->b2 = shade->c2;
+    D_800D8804->xy0 = vtx[0].xy;
+    D_800D8804->xy1 = vtx[1].xy;
+    D_800D8804->xy2 = vtx[2].xy;
+    D_800D8804->u0 = vtx[0].u;
+    D_800D8804->v0 = vtx[0].v;
+    D_800D8804->u1 = vtx[1].u;
+    D_800D8804->v1 = vtx[1].v;
+    D_800D8804->u2 = vtx[2].u;
+    D_800D8804->v2 = vtx[2].v;
+    D_800D8804->clut = 0x3A74;
+    D_800D8804->tpage = 0xC;
+    setaddr(D_800D8804, getaddr(&D_800D244C->primList[BSC_OTHEAD_IDX]));
+    setaddr(&D_800D244C->primList[BSC_OTHEAD_IDX], D_800D8804);
+}
 
 
 /**
- * @brief Set @p p's length to @c 0xC and splice it onto the
- *        @c D_800D244C->otHead chain using @p maskTake / @p maskKeep
- *        bit-merge masks.
+ * @brief Fill the current POLY_GT4 (@c D_800D8800) from a transformed
+ *        quad and splice it onto the main OT chain.
  *
- * The two masks select which bit-groups of the link words come from
- * the old chain vs the new node — calling with
- * @p maskTake = @c 0x00FFFFFF and @p maskKeep = @c 0xFF000000 yields
- * the standard PsyQ @c addPrim semantics (preserve the high tag byte,
- * overwrite the low-24 next pointer).
+ * Quad twin of @ref func_800AAD48: writes a grayscale gouraud colour per
+ * vertex (@p shade byte copied to r=g=b), the four packed screen words
+ * and texture coordinates from @p vtx[0..3], a fixed CLUT id of
+ * @c 0x3A74 and texture page @c 0xC, then links the primitive to
+ * @c D_800D244C's main chain head with the PsyQ @c setaddr / @c getaddr
+ * tag operations (standard @c addPrim semantics).
  *
- * @param p         New node to splice in. Its @c prim_len is reset to
- *                  @c 0xC and its @c link receives the previous
- *                  @c otHead bits selected by @p maskTake.
- * @param unused    Ignored.
- * @param maskTake  Bit-mask selecting the "new value" bits.
- * @param maskKeep  Bit-mask selecting the "old value" bits.
- * @return Updated @c otHead value (also written into the chain).
+ * @param vtx   Four transformed vertices (packed screen word + u/v).
+ * @param shade Per-vertex grayscale shade quad.
  */
-s32 func_800AB02C(PrimLink *p, s32 unused, s32 maskTake, s32 maskKeep) {
-    BattleSceneCtx *ctx;
-    s32 result;
-
-    p->prim_len = 0xC;
-    ctx = D_800D244C;
-    p->link = (p->link & maskKeep) | (ctx->primList[BSC_OTHEAD_IDX] & maskTake);
-    result = (ctx->primList[BSC_OTHEAD_IDX] & maskKeep) | ((s32)p & maskTake);
-    ctx->primList[BSC_OTHEAD_IDX] = result;
-    return result;
+void func_800AAEAC(WorldVtx *vtx, QuadShade *shade) {
+    D_800D8800->r0 = shade->c0;
+    D_800D8800->g0 = shade->c0;
+    D_800D8800->b0 = shade->c0;
+    D_800D8800->r1 = shade->c1;
+    D_800D8800->g1 = shade->c1;
+    D_800D8800->b1 = shade->c1;
+    D_800D8800->r2 = shade->c2;
+    D_800D8800->g2 = shade->c2;
+    D_800D8800->b2 = shade->c2;
+    D_800D8800->r3 = shade->c3;
+    D_800D8800->g3 = shade->c3;
+    D_800D8800->b3 = shade->c3;
+    D_800D8800->xy0 = vtx[0].xy;
+    D_800D8800->xy1 = vtx[1].xy;
+    D_800D8800->xy2 = vtx[2].xy;
+    D_800D8800->xy3 = vtx[3].xy;
+    D_800D8800->u0 = vtx[0].u;
+    D_800D8800->v0 = vtx[0].v;
+    D_800D8800->u1 = vtx[1].u;
+    D_800D8800->v1 = vtx[1].v;
+    D_800D8800->u2 = vtx[2].u;
+    D_800D8800->v2 = vtx[2].v;
+    D_800D8800->u3 = vtx[3].u;
+    D_800D8800->v3 = vtx[3].v;
+    D_800D8800->clut = 0x3A74;
+    D_800D8800->tpage = 0xC;
+    setaddr(D_800D8800, getaddr(&D_800D244C->primList[BSC_OTHEAD_IDX]));
+    setaddr(&D_800D244C->primList[BSC_OTHEAD_IDX], D_800D8800);
 }
+
+
+
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AB06C);
 

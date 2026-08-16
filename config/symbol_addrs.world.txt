@@ -590,7 +590,6 @@ func_800A9E24 = 0x800A9E24; // type:func
 func_800A9F54 = 0x800A9F54; // type:func
 func_800AA210 = 0x800AA210; // type:func
 func_800AAEAC = 0x800AAEAC; // type:func
-func_800AB02C = 0x800AB02C; // type:func
 func_800AB06C = 0x800AB06C; // type:func
 func_800AB2D4 = 0x800AB2D4; // type:func
 func_800AB540 = 0x800AB540; // type:func
