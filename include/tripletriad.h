@@ -4,6 +4,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"  /* TSPRT (drawCardOverlaySprite) */
 #include "psxsdk/libgte.h"  /* SVECTOR / MATRIX (CardRenderWork, CardAnimNode) */
+#include "main.h"          /* g_activeDrawEnv */
 
 /* Types, constants, and globals for the Triple Triad card mini-game. Its code
    is the `tripletriad` overlay, which loads at the same VRAM address
@@ -385,7 +386,6 @@ extern volatile s32  g_tripleTriadFrameCount;       /**< Free-running frame coun
 extern s32           g_tripleTriadInputFlags;       /**< Input-state flags (TT_INPUT_*). */
 extern u8            g_tripleTriadState;        /**< Current phase / next handler to dispatch (TripleTriadState). */
 extern u8            g_drawBufferIndex;        /**< Active double-buffer index. */
-extern DRAWENV      *g_activeDrawEnv;   /**< Draw env of the buffer currently being built. */
 extern ObjList            D_801D3028[];      /**< Per-frame update callback list header. */
 extern u8            D_801D3038[];      /**< Backing node pool for D_801D3028. */
 extern u8            D_801D30FC;        /**< Match winner (0/1, or 2 = draw); also the claim seat. */

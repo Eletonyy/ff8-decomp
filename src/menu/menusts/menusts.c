@@ -1,35 +1,16 @@
 #include "common.h"
 #include "battle.h"
 #include "menu.h"
+#include "menusts.h"
+#include "numstr.h"
+#include "gamestate.h"
+#include "btl_color.h"
+#include "btl_entity.h"
+#include "battle/bc_object2.h"
 
-/** @brief Status display table entry (used by func_801E72D8). */
-typedef struct {
-    u16 statusId;     /**< Status text ID (terminator: 0xFF). */
-    u16 padOrType;    /**< Type/position byte. */
-} StatusEntry;
-
-extern s32 D_801E961C[];
-extern StatusEntry D_801E95CC[];
-extern BattleCharData D_801E9EE4;
-/** @brief Status table entry (8-byte stride) used by func_801E582C/48/6C. */
-typedef struct {
-    u16 xOff; /**< Offset into D_801E99AC for x-position. */
-    u16 yOff; /**< Offset into D_801E99AC for y-position. */
-    u8  type; /**< Status display type byte. */
-    u8  pad;
-    u16 unk6;
-} MenustsStatusEntry;
-
-extern MenustsStatusEntry D_801E9964[]; /**< Status table (8-byte entries). */
-extern u8 D_801E99AC[]; /**< Coordinate/string base data. */
-
-extern s32 func_8002FF34(s32 displayList, s32 ot, s32 textId, s32 x, s32 y, s32 color);
-extern s32 func_8002C56C(s32 displayList, s32 ot, s32 x, s32 y, void *data, s32 size);
+/* menumain is called at a fixed overlay address, so its prototype stays
+ * file-local here (overlay-conflict rule, as in the other sub-overlays). */
 extern s32 func_801EF9AC(s32 displayList, s32 ot, s32 mode, s32 color);
-extern void intToDecStringShort(s32 num, u8 *buf, s32 digitBase);
-extern void replaceLeadingZeros(u8 *buf, s32 count, s32 digitBase, s32 replacement);
-extern u8 *getMenuString(s32 id);
-extern s32 isMcBusy(void);
 
 /** @brief Look up value from D_801FA3C8 table by dividing input by 64. */
 u16 func_801E5800(s32 a0) {

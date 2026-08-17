@@ -250,16 +250,16 @@ typedef struct {
 
 /**
  * @brief 16-byte script entry consumed by @c func_800A0640 to populate
- *        a TILE primitive.
+ *        an SPRT_16 primitive.
  *
  * The list is terminated by @c terminator == @c 0x7FFF.
  */
 typedef struct ScriptEntry {
     /* 0x00 */ s16 terminator;  /**< @c 0x7FFF marks end of list. */
     /* 0x02 */ u8  pad02[6];
-    /* 0x08 */ u16 h;           /**< Copied to @c TILE::h. */
-    /* 0x0A */ u8  wLo;         /**< Low byte of @c TILE::w. */
-    /* 0x0B */ u8  wHi;         /**< High byte of @c TILE::w. */
+    /* 0x08 */ u16 clut;        /**< Palette (CLUT) id for the sprite. */
+    /* 0x0A */ u8  u;           /**< Texture u of the 16x16 cell. */
+    /* 0x0B */ u8  v;           /**< Texture v of the 16x16 cell. */
     /* 0x0C */ u8  padC;
     /* 0x0D */ u8  kind;        /**< @c 4 = opaque, else semi-translucent. */
     /* 0x0E */ u8  padE[2];
@@ -374,7 +374,12 @@ extern void func_8009B4A8(s16 idx, u8 anim, s16 mode, s8 delta);
 extern void func_8009F8D0(s16 idx);
 extern void func_8009F990(s16 idx, s32 flags);
 extern void func_8009FE18(s32 entIdx, Actor *actor, s32 flags);
-extern TILE *func_800A0640(TILE *prim);
+/** @brief Semi-transparency bit of a primitive code byte — the bit
+ *         @c setSemiTrans toggles; func_800A0640 spells the toggle
+ *         manually because the macro's arm order does not match. */
+#define PRIM_CODE_SEMI_TRANS 0x02
+
+extern SPRT_16 *func_800A0640(SPRT_16 *prim);
 extern void func_800A06F0(s32 a, FieldFrameBuf *buf, u8 *b, u8 *c);
 extern void func_800A0D6C(u8 *buf);
 extern s32  func_800A0E54(s32 start, s32 end, s32 total, s32 progress);
