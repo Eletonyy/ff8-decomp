@@ -234,7 +234,9 @@ extern s16            D_800C977A;
 extern AngleSlot      D_800C97F4;        /**< Camera angle slot (word/half view). */
 extern MATRIX         D_800C9838;        /**< World-to-screen matrix loaded into the GTE. */
 extern WorldPos       D_800C9868;        /**< Source camera world position (cast to VECTOR* for GTE transform func_800BC544). */
+extern s16            D_800C9E38[3];     /**< Per-frame camera movement deltas ([0]=x, [2]=z); cleared on world init (we_object1), fed to the particle camera-follow drift (we_object4). */
 extern s16            D_800D239A;
+extern u8             D_800DB0D0[];     /**< 12-byte map-view HUD record (copied from D_800C5448 by func_800ABC98); bytes 0-2 are widths used to centre the location-name banner. */
 extern u8             D_800C5398[];      /**< 4-byte flag block. */
 extern s32            D_800C9718;
 extern s16            D_800C97E8;        /**< Worldmap screen height reference. */
@@ -281,6 +283,8 @@ extern s32  func_8009CA34(s32 *src, ImageDesc *desc);
 /* Blits @p data through scratch rect @p r (typically &D_800C8640). */
 extern void func_80048EFC(RECT *r, u32 *data);
 extern RECT D_800C8640;            /**< Scratch RECT used by func_80048EFC blits. */
+/* MoveImage-style VRAM copy: source rect @p r to destination (@p dstX, @p dstY). */
+extern void func_80048FBC(RECT *r, s32 dstX, s32 dstY);
 
 /**
  * @brief Two-halfword script opcode entry (4 bytes).
@@ -440,23 +444,22 @@ extern u8 *D_800D2288;
 extern Slot *D_800D226C;
 extern TransformEntry *D_800D2128;
 
-/** @brief One slot of a worldmap OT (ordering table), stride 0x60. */
+/** @brief One 0x18-byte worldmap sub-OT slot: link tag + prim payload. */
 typedef struct {
     P_TAG link;          /**< 0x00: P_TAG with low-24 next-prim addr. */
-    u8    pad[0x58];     /**< 0x08..0x5F: rest of the slot (stride 0x60). */
-} OTSlot;
+    u8    pad08[0x10];   /**< 0x08..0x17: slot payload (primed by func_800491E8). */
+} OTSubSlot;
 
 extern BattleSceneCtx D_800CA040;       /**< Worldmap "no-battle" sentinel — also functions as an empty BattleSceneCtx. */
 extern s16         D_800C53B8[];        /**< Bone-id table (used by we_object4). */
-extern OTSlot      D_800D3E98[2][3];    /**< Primary worldmap OT slot-B[cond][bone]. */
-extern OTSlot      D_800D40D8[2][3];    /**< Secondary worldmap OT slot-B[cond][bone]. */
-
-/* Slot-A arrays: each slot-B is paired with a slot-A 0x48 bytes earlier
- * in memory. The macros keep the toolchain emitting one named %hi/%lo
- * pair per primary symbol while call sites still read as struct array
- * accesses (e.g. @c &D_800D3E50[cond][i].link). */
-#define D_800D3E50  (*(OTSlot (*)[2][3])((u8 *)D_800D3E98 - 0x48))
-#define D_800D4090  (*(OTSlot (*)[2][3])((u8 *)D_800D40D8 - 0x48))
+/* Worldmap sub-OT pools: [row][record][subslot], where row is the
+ * canonical-entity bit (D_800CA040 vs active ctx), each 0x60 record is a
+ * mini ordering table of 4 sub-slots, and bone prims get spliced between
+ * a record's last sub-slot ([3]) and its first ([0]). */
+extern OTSubSlot   D_800D3E50[2][3][4]; /**< Primary worldmap sub-OT pool. */
+extern OTSubSlot   D_800D4090[2][3][4]; /**< Secondary worldmap sub-OT pool. */
+extern OTSubSlot   D_800D3510[2][2][4]; /**< Sub-OT pool spliced by func_800A6A74. */
+extern OTSubSlot   D_800D3690[2][2][4]; /**< Second sub-OT pool spliced by func_800A6A74. */
 
 extern ScriptOp *func_800AF004(u8 *base, s32 flag);
 extern s32 func_800AF28C(ScriptOp *p);
