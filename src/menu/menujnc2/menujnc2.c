@@ -3310,7 +3310,7 @@ void renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
  *
  * Shown when the user is navigating junction to EL-A/D > Elemental attack.
  * Iterates the D_801EEC10 table (8 rows). Each row compares the preview
- * element flags/value (D_801EF1A4/D_801EF1A5) against the current ones
+ * element flags/value (g_junctionPreview atkElem fields) against the current ones
  * (D_800788E4/D_800788E5) via a per-row bit test to pick the up/down change
  * indicator, then renders the label, indicator, and the numeric value.
  *
@@ -3335,7 +3335,7 @@ void renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
     u8 fmtParam;
     u8 buf[12];
 
-    baseFlags = D_801EF1A4;
+    baseFlags = g_junctionPreview.atkElemBase;
     currentFlags = D_800788E4;
 
     xBase += 0x88;
@@ -3358,7 +3358,7 @@ void renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
         y = tmp + yBase;
         bit = 1 << i;
         if (baseFlags & bit) {
-            baseVal = D_801EF1A5;
+            baseVal = g_junctionPreview.atkElemBonus;
             currentVal = baseVal;
         } else {
             baseVal = 0;
@@ -4643,7 +4643,7 @@ void renderMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 
  * @brief Render a single ability list entry with flag-based categorization.
  *
  * Reads ability data from g_menuDisplayCfg.dataPtr (a (id, iconId) byte-pair
- * array). Checks the D_801EEFC0 bitmap for an initial highlight (1 if set,
+ * array). Checks the g_assignedAbilities bitmap for an initial highlight (1 if set,
  * 7 otherwise), renders the icon if @c iconId != 0xFF, then checks 5 ability
  * category masks via func_801F79F8 (1=character, 2=cmd, 4=cmd, 8=cmd,
  * 0x10=GF/party/menu) — each mask sets highlight=1 when the ability matches
@@ -4683,7 +4683,7 @@ s32 renderAbilityListEntry(s32 ctx, s32 cursorY, s32 row, s32 col, s32 panelX) {
             textY = textY + colY;
             abilityId = data[idx * 2];
             iconId = data[(idx * 2) + 1];
-            if (D_801EEFC0[abilityId / 32] & (1 << (abilityId & 0x1F))) {
+            if (g_assignedAbilities[abilityId / 32] & (1 << (abilityId & 0x1F))) {
                 highlight = 1;
             } else {
                 highlight = 7;

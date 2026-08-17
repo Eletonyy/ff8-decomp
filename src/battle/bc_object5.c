@@ -6,8 +6,6 @@ extern u8 D_800E3CEC[];
 void func_800AB054(void);
 void func_800AB1AC(void);
 s32 func_800B0398(s32);
-s32 func_800B0F9C(s32);
-s32 func_800B0F7C(s32);
 s32 func_800AE730(void);
 void func_800AE6C0(void);
 void func_800A59AC(s32, s32, s32);
@@ -140,12 +138,8 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800A960C);
  * @param a0 Entity index (stride 20 in D_80078E00).
  * @return Combined result from both lookups, masked to u16.
  */
-s32 func_800A972C(s32 a0) {
-    s32 addr = (s32)&D_80078E00;
-    s32 base = addr + a0 * 20;
-    s32 result = func_800B0F9C(*(u8 *)(base + 0x3EE7));
-    result |= func_800B0F7C(*(u8 *)(base + 0x3EE7));
-    return (u16)result;
+s32 func_800A972C(s32 arg0) {
+    return func_800B0F9C(D_80078E00.entriesA0[arg0].unk7) | func_800B0F7C(D_80078E00.entriesA0[arg0].unk7);
 }
 
 /**
@@ -198,8 +192,8 @@ top:
  * @param bitPos Bit position (0-15).
  * @return 16-bit mask with bit at bitPos set.
  */
-u16 func_800A97FC(s32 bitPos) {
-    return (1 << bitPos) & 0xFFFF;
+u16 func_800A97FC(s32 arg0) {
+    return 1 << arg0;
 }
 
 /**

@@ -218,7 +218,7 @@ typedef struct {
     /* 0x00 */ u16 quistisLimits;      /**< Quistis Blue Magic learned bitfield. */
     /* 0x02 */ u16 zellLimits;         /**< Zell Duel combos learned bitfield. */
     /* 0x04 */ u8 irvineLimits;        /**< Irvine Shot ammo unlocked. */
-    /* 0x06 */ u8 selphieLimits;       /**< Selphie Slot config. */
+    /* 0x05 */ u8 selphieLimits;       /**< Selphie Slot config. */
     /* 0x06 */ u8 angeloCompleted;     /**< Angelo tricks completed bitfield. */
     /* 0x07 */ u8 angeloKnown;         /**< Angelo tricks known bitfield. */
     /* 0x08 */ u8 angeloPoints[8];     /**< Angelo trick learning points (8 tricks). */
@@ -420,7 +420,7 @@ typedef struct {
     /* 0xE60 */ u8            padE60[0x400];               /**< Field script vars, TT rules. */
     /* 0x1260 */ u8           pad1260[0x80];               /**< World map position/vehicles. */
     /* 0x12E0 */ TripleTriadData cards;                    /**< Triple Triad data (128 bytes). */
-    /* 0x1360 */ ChocoboWorldData chocobo;                 /**< Chocobo World data (64 bytes). */
+    /* 0x1360 */ ChocoboWorldData chocobo;                 /* D_800786D8 *< Chocobo World data (64 bytes). */
 } GameState; /* 0x13A0 = 5024 bytes */
 
 /* SaveMainData.partyLockFlag bits. Only bit 0 has a confirmed meaning; the

@@ -94,6 +94,9 @@ typedef struct {
 /* Initialise a textured 4-vertex polygon primitive (len=9 words, code=0x2C). */
 #define setPolyFT4(p)    setlen(p, 9),  setcode(p, 0x2c)
 
+/* Initialise a 16x16 sprite primitive (len=3 words, code=0x7C). */
+#define setSprt16(p)     setlen(p, 3),  setcode(p, 0x7c)
+
 /* Toggle semi-transparency / shading bits in the primitive's code byte. */
 #define setSemiTrans(p, abe) \
     ((abe) ? setcode(p, getcode(p) | 0x02) : setcode(p, getcode(p) & ~0x02))

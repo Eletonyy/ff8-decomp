@@ -100,21 +100,9 @@ void func_800B1828(s32 a0) {
  *
  * @param a0 Entity index (stride 0xD0 in D_800ED148).
  */
-void func_800B18A0(s32 a0) {
-    u8 *base = (u8 *)&D_800ED148;
-
-    if (base[0x130C] != 0) {
-        return;
-    }
-    if (*(u16 *)(base + a0 * 0xD0 + 0x90) & 1) {
-        return;
-    }
-    if (D_800EE4C1 != 0x1F) {
-        return;
-    }
-    {
-        s32 val = func_800A97FC();
-        func_800B0754(a0, 0, 7, (u16)val);
+void func_800B18A0(s32 arg0) {
+    if ((D_800ED148.unk130C == 0) && !(D_800ED148.entities[arg0].status & 1) && (D_800EE4C1 == 0x1F)) {
+        func_800B0754(arg0, 0, 7, func_800A97FC(arg0));
     }
 }
 

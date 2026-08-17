@@ -271,7 +271,6 @@ void loadOverlayDirect(s32 a0, s32 a1) {
 }
 
 
-extern u8 D_80035F70[];
 
 /**
  * @brief Enqueue a type-0x11 overlay load with a completion callback.
@@ -283,7 +282,7 @@ extern u8 D_80035F70[];
  * @param a1 Destination load address (also used as callback2).
  */
 void loadOverlayWithTimCallback(s32 a0, s32 a1) {
-    enqueueOverlayCmd(0, 0x11, a0, a1, (s32)D_80035F70, a1);
+    enqueueOverlayCmd(0, 0x11, a0, a1, (s32)loadTimImage, a1);
 }
 
 

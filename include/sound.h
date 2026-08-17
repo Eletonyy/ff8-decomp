@@ -335,4 +335,8 @@ extern u32 D_800772B8;
  *         @c fileLba = staging buffer / file address. */
 extern s32 func_80037FB0(s32 a0, s8 bank, s32 fileLba);
 
+
 #endif /* SOUND_H */
+
+/** @brief snd_note DMA-completion callback; its address is handed to OpenEvent by snd_dma.c. */
+void func_8001AD60(void);
