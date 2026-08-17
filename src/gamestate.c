@@ -152,6 +152,8 @@ extern u8 g_characters[];
 
 void func_80037308(void *arg0, void *arg1)
 {
+    FontArchive *font;
+    FontGlyphSection *glyphSection;
     u8 buffer[0x490];
 
     u8 *s6;
@@ -162,7 +164,6 @@ void func_80037308(void *arg0, void *arg1)
     u8 *s1;
     u8 *s0;
     u8 *p;
-    u8 *gs_ptr;
     s32 a2;
     u8 *buf_ptr;
     u8 *char_base;
@@ -182,8 +183,9 @@ void func_80037308(void *arg0, void *arg1)
     u8 high;
     u8 low;
 
-    s6 = (u8 *)arg0;
-    s4 = (u8 *)arg1;
+    font = arg0;
+    s6 = (u8 *)font;
+    s4 = arg1;
     p = s4;
 
     for (s3 = 0x8FF; s3 >= 0; s3--)
@@ -198,8 +200,7 @@ void func_80037308(void *arg0, void *arg1)
         buf_ptr = (new_var = buffer);
         s1 = new_var + 0xC;
 
-        gs_ptr = (u8 *)&g_gameState + s3;
-        a2 = gs_ptr[0xAF4];
+        a2 = g_gameState.mainData.party.party[s3];
 
         if (a2 == 0xFF)
         {
@@ -210,11 +211,9 @@ void func_80037308(void *arg0, void *arg1)
 
         s2 = 0;
         s0 = s6;
-        s5 = s0 + (*((s32 *)s0));
-        s0 = s0 + (*((s32 *)(((u8 *)s0) + 4)));
-        s0 = s0 + 8;
-        s0 = s0 + (*((s32 *)s0));
-        s0 = s0 + 0xC;
+        s5 = s0 + font->widthTableOffset;
+        glyphSection = (FontGlyphSection *)(s0 + font->glyphSectionOffset);
+        s0 = glyphSection->glyphData + glyphSection->glyphDataOffset;
 
         col = 0x48B;
         while (col >= 0)

@@ -55,7 +55,7 @@ extern void flipBattleOtBuffer(void);
 s32 func_8002FF34(s32 renderCtx, s32 cursorY, s32 stringId, s32 x, s32 y, s32 color);
 s32 func_800300F8(s32 renderCtx, s32 x, s32 w, s32 y, s32 color, s32 menuColor, s32 selColor);
 s32 func_800302DC(s32 arg0, s32 arg1);
-s32 func_80031364(u32 *ot, s32 pkt);
+s32 func_80031364(P_TAG *ot, u8 *pkt);
 s32 func_80030A54(CmdStream *stream);
 s32 renderAnimOverlay(s32 arg0, s32 arg1);
 

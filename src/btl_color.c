@@ -948,48 +948,13 @@ skip:
 INCLUDE_ASM("asm/nonmatchings/btl_color", func_80031224);
 
 
-/* --- Palette-transition math helpers ---
- * The -50x/59x curve scalings and the 12x palette-offset multiply are pure
- * shift/add chains in the retail build; kept as macros so each site reads
- * like the original arithmetic. */
+/* These scale factors are written as shift/add chains to preserve the
+ * retail arithmetic without introducing multiply instructions. */
+#define SCALE_BY_50(value) ((((((value) << 1) + (value)) << 3) + (value)) << 1)
+#define SCALE_BY_59(value) (((((value) << 4) - (value)) << 2) - (value))
+#define SCALE_BY_12(value) ((((value) << 1) + (value)) << 2)
 
-#define MUL50_1(x) ((x) << 1)
-#define MUL50_2(x) (MUL50_1(x) + (x))
-#define MUL50_3(x) (MUL50_2(x) << 3)
-#define MUL50_4(x) (MUL50_3(x) + (x))
-#define MUL50(x)   (MUL50_4(x) << 1)
 
-#define MUL59_1(x) ((x) << 4)
-#define MUL59_2(x) (MUL59_1(x) - (x))
-#define MUL59_3(x) (MUL59_2(x) << 2)
-#define MUL59(x)   (MUL59_3(x) - (x))
-
-#define MUL12(x) ((((x) << 1) + (x)) << 2)
-
-/* addPrim variant that takes the link temp as an ordinary "+r" operand.
- * The retail site first reloads the spilled pkt pointer with
- * `lw $t0, 0x28($sp)`; the "+r" operand forces that reload immediately
- * before the asm (a bare-register addPrimFast cannot reproduce it).
- *
- * NOTE: this must be a plain compound statement, NOT `do { } while (0)`.
- * gcc 2.7.2 leaves NOTE_INSN_LOOP_* notes from the do/while wrapper; the
- * first insn after the LOOP_END note then gets reg_pending_sets_all in the
- * scheduler, which fabricates a data dependency on the following
- * `lbu p->lineCount` and pulls it ahead of the argument moves
- * (yielding `lbu,a0,a1,...` instead of the retail `a0,a1,lbu,...`). */
-#define addPrimFastTmp(ot, p, tmp) {                    \
-    __asm__ __volatile__(                                \
-        ".set push\n"                                    \
-        ".set noat\n"                                    \
-        "sll $at, %1, 8\n"                               \
-        "lwl %0, 2(%2)\n"                                \
-        "swl $at, 2(%2)\n"                               \
-        "swl %0, 2(%1)\n"                                \
-        ".set pop\n"                                     \
-        : "+r" (tmp)                                     \
-        : "r"(p), "r"(ot)                                \
-        : "at", "memory");                               \
-}
 
 extern s32 func_80031224(u32 *ot, s32 pkt, s32 y, s32 height);
 
@@ -1002,7 +967,7 @@ extern s32 func_80031224(u32 *ot, s32 pkt, s32 y, s32 height);
  * link uses the temp-operand idiom above, matching the retail
  * `lw $t0, 0x28($sp)` reload before the lwl/swl splice.
  */
-s32 func_80031364(u32 *ot, s32 pkt) {
+s32 func_80031364(P_TAG *ot, u8 *pkt) {
     RECT rect;
     u8 *pkt_r;
     PaletteTransition *p;
@@ -1020,7 +985,7 @@ s32 func_80031364(u32 *ot, s32 pkt) {
     s32 next;
     s32 s0;
 
-    pkt_r = (u8 *)pkt;
+    pkt_r = pkt;
     p = &D_80083754;
 
     if (p->fade <= 0) {
@@ -1030,7 +995,7 @@ s32 func_80031364(u32 *ot, s32 pkt) {
     copyDisplayRect(&rect);
 
     {
-        color = *(u16 *)((u8 *)p - 0x280);
+        color = g_cameraVibrateIntensity;
         color >>= 5;
         color &= 0xFF;
         color = (color | (color << 8)) | (color << 16);
@@ -1053,7 +1018,7 @@ s32 func_80031364(u32 *ot, s32 pkt) {
         yOff = -12;
     }
 
-    calc_val = -MUL50(curve);
+    calc_val = -SCALE_BY_50(curve);
     xPos = 0xC4;
 
     if (calc_val < 0) {
@@ -1072,7 +1037,7 @@ s32 func_80031364(u32 *ot, s32 pkt) {
     } else if (brightness == 0x1000) {
         pkt_r = (u8 *)renderBattleString((s32)ot, (s32)pkt_r, p->oldName, y, xPos, color);
     } else {
-        xPos = MUL12(absDir) / 4096 + 0xC4;
+        xPos = SCALE_BY_12(absDir) / 4096 + 0xC4;
 
         next = renderBattleString((s32)ot, (s32)pkt_r, p->newName, y, xPos, color);
         pkt_r = (u8 *)renderBattleString((s32)ot, next, p->oldName, y, xPos + yOff, color);
@@ -1080,7 +1045,7 @@ s32 func_80031364(u32 *ot, s32 pkt) {
 
     xPos = 0xC4;
 
-    yBotQuot = MUL59(curve) / 4096;
+    yBotQuot = SCALE_BY_59(curve) / 4096;
     y = yBotQuot + 0xF0;
 
     pkt_r = (u8 *)func_8002FF34((s32)ot, (s32)pkt_r, 0xB1, yBotQuot + 0x11D, xPos, color);
@@ -1090,7 +1055,7 @@ s32 func_80031364(u32 *ot, s32 pkt) {
     } else if (brightness == 0x1000) {
         pkt_r = (u8 *)renderBattleString((s32)ot, (s32)pkt_r, p->oldName2, y, xPos, color);
     } else {
-        xPos = MUL12(absDir) / 4096 + 0xC4;
+        xPos = SCALE_BY_12(absDir) / 4096 + 0xC4;
 
         next = renderBattleString((s32)ot, (s32)pkt_r, p->newName2, y, xPos, color);
         pkt_r = (u8 *)renderBattleString((s32)ot, next, p->oldName2, y, xPos + yOff, color);
@@ -1101,9 +1066,9 @@ s32 func_80031364(u32 *ot, s32 pkt) {
 
     SetDrawArea((DR_AREA *)pkt_r, &rect);
 
-    addPrimFastTmp(ot, pkt_r, pkt_tmp);
+    addPrimFastWithTempOperand(ot, pkt_r, pkt_tmp);
 
-    temp = func_80031224(ot, (s32)pkt_r + 0xC, temp, y + p->lineCount * 9);
+    temp = func_80031224((u32 *)ot, (s32)pkt_r + 0xC, temp, y + p->lineCount * 9);
 
     return (s32)emitDrawEnvPackets((u8 *)ot, (u8 *)temp);
 }
