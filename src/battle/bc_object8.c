@@ -101,7 +101,7 @@ void func_800B1828(s32 a0) {
  * @param a0 Entity index (stride 0xD0 in D_800ED148).
  */
 void func_800B18A0(s32 arg0) {
-    if ((D_800ED148.unk130C == 0) && !(D_800ED148.entities[arg0].status & 1) && (D_800EE4C1 == 0x1F)) {
+    if ((D_800ED148.unk130C == 0) && !(D_800ED148.entities[arg0].status & 1) && (D_800EE4C0.unk1 == 0x1F)) {
         func_800B0754(arg0, 0, 7, func_800A97FC(arg0));
     }
 }

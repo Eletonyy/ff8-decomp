@@ -138,7 +138,7 @@ typedef struct {
     u8 separator;              /* 0x10: thousands separator character */
 } MsgFormatConfig;
 
-extern MsgFormatConfig D_80083858;
+
 
 /** @brief Message state struct passed to decode/advance functions.
  *
@@ -476,7 +476,7 @@ typedef struct {
     /* 0x1303 */ u8 unk1303;
     /* 0x1304 */ u8 unk1304;
     /* 0x1305 */ u8 unk1305;
-    /* 0x1306 */ u8 unk1306; // D_800EE44E
+    /* 0x1306 */ u8 unk1306;
     /* 0x1307 */ u8 unk1307;
     /* 0x1308 */ u8 unk1308;
     /* 0x1309 */ u8 unk1309;
@@ -1138,6 +1138,7 @@ extern BattleSceneData D_80078E00;
 extern u8              D_8007DADA;
 extern u16             D_80082C0A;
 extern u8              D_80082C0F;
+extern MsgFormatConfig D_80083858;
 extern u8              D_80098030[];
 extern BattleSceneCtx* D_800D244C;
 extern s32             D_800E19B4[];
@@ -1146,16 +1147,8 @@ extern u16             D_800E3CA4[];
 extern BattlePosXZ     D_800E3CA8[];
 extern BattlePosXZ     D_800E3CB0[];
 extern u8              D_800E3CE8;
-
 extern BattleSystem    D_800ED148;
-
 extern BattleCmdBuf    D_800EE4C0;
-extern u8              D_800EE4C1;
-extern u8              D_800EE4C4;
-extern u8              D_800EE4CB;
-extern s32             D_800EE4CC;
-extern u16             D_800EE4DC;
-
 extern BattleAnimTable D_800EE9E8;
 extern u8              D_800EEBA8[];
 extern u8              D_800EEBB0;

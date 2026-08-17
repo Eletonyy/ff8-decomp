@@ -750,13 +750,13 @@ s32 func_8009D228(s32 arg0, s32 arg1, s32 arg2) {
     
     if (D_800ED148.unk1292 != D_800ED148.unk1290) {
         D_800ED148.unk1300 = 1;
-        D_800EE4C4 = 255;
+        D_800EE4C0.unk4 = 255;
     }
     
     else if (D_800ED148.unk1303 != 0) {
         D_800ED148.unk1300 = 1;
         D_800ED148.unk1303 = 0;
-        D_800EE4C4 = 255;
+        D_800EE4C0.unk4 = 255;
     } 
     
     else {
@@ -1218,7 +1218,7 @@ s32 func_8009E418(s32 arg0, s32 arg1, s32 arg2) {
     
 
     var_a1 = D_800ED148.entities[arg1].field2C / 8;
-    if ((D_800EE4C1 == 4 || D_800EE4C1 == 13) && arg0 < 3 && g_battleChars.chars[arg0].statusFlags & 2) {
+    if ((D_800EE4C0.unk1 == 4 || D_800EE4C0.unk1 == 13) && arg0 < 3 && g_battleChars.chars[arg0].statusFlags & 2) {
         var_a1 = D_800ED148.entities[arg1].field2C / 4;
     }
     
@@ -1617,7 +1617,7 @@ s32 func_8009F350(s32 arg0) {
     s32 calc;
 
     val = func_8009B15C();
-    D_800EE4C4 = 5;
+    D_800EE4C0.unk4 = 5;
 
     val = (val % 5);
 
@@ -2052,7 +2052,7 @@ void func_8009FE14(s32 arg0) {
     D_800EEBBC = 0;
     D_800EEBB8 = 0;
 
-    switch (D_800EE4C1) {
+    switch (D_800EE4C0.unk1) {
     case 239:
         D_800EEBB8 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C6;
         D_800EEBB9 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C5;
@@ -2065,7 +2065,7 @@ void func_8009FE14(s32 arg0) {
     {
         s32 val_min = 65530;
         s32 val_max = 65532;
-        if ((D_800EE4DC <= val_max) && (D_800EE4DC >= val_min)) {
+        if ((D_800EE4C0.statusCode <= val_max) && (D_800EE4C0.statusCode >= val_min)) {
             D_800EEBB8 = 0;
             D_800EEBB9 = 0;
             D_800EEBBA = 0;
@@ -2192,7 +2192,7 @@ void func_8009FE14(s32 arg0) {
         break;
 
     case 0:
-        switch (D_800EE4DC) {
+        switch (D_800EE4C0.statusCode) {
         case 10:
             D_800EEBB9 = 0;    
             D_800EEBBA = 200;
@@ -2339,7 +2339,7 @@ void func_800A09D0(s32 arg0) {
     switch (D_800EE4C0.unk1) {
     case 0:        
         D_800ED148.unk12F5 = 1;
-        switch (D_800EE4DC) {
+        switch (D_800EE4C0.statusCode) {
         case 10:
             D_800EE4C0.unk0C = func_8009F23C(temp_s4, arg0);
             break;
@@ -2546,18 +2546,18 @@ void func_800A09D0(s32 arg0) {
 
     case 14:        
         D_800ED148.unk1300 = 1;
-        D_800EE4C4 = 0;
+        D_800EE4C0.unk4 = 0;
         D_800ED148.unk12F5 = 1;
         goto ohno_plz_halp;
 
     case 238:       
         D_800ED148.unk1300 = 0;
         if (D_800ED148.entities[arg0].status & 1) {
-            D_800EE4C4 = D_80078E00.array47FC[D_800ED148.unk1324].var2;
+            D_800EE4C0.unk4 = D_80078E00.array47FC[D_800ED148.unk1324].var2;
         } 
 
         else {
-            D_800EE4C4 = 0;
+            D_800EE4C0.unk4 = 0;
         }
 
         ohno_plz_halp:
