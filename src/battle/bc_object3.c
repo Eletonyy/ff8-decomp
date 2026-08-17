@@ -32,17 +32,10 @@ SoundCmd* func_8009B134(s16 arg0, u8 arg1, s32 unused);
  *
  * @param a0 Entity index (stride 0xD0).
  */
-void func_800A18E0(s32 a0) {
-    BattleSystem *entityBase;
-    s32 entity;
-    s32 mask;
-    entityBase = &D_800ED148;
-    entity = (s32)entityBase + a0 * 0xD0;
-    mask = ~0x8;
-    *(volatile s32 *)(entity + 0x8C) &= mask;
-    mask = ~0x4;
-    *(volatile s32 *)(entity + 0x8C) &= mask;
-    func_800A6288(a0);
+void func_800A18E0(s32 arg0) {
+    D_800ED148.entities[arg0].controlFlags &= ~8;
+    D_800ED148.entities[arg0].controlFlags &= ~4;
+    func_800A6288(arg0);
 }
 
 /**
@@ -54,21 +47,22 @@ void func_800A18E0(s32 a0) {
  *
  * @param a0 Entity index (stride 0xD0 for entity, 0x1D0 for display).
  */
-void func_800A1940(s32 a0) {
-    u8 *displayBase;
-    BattleSystem *entityBase;
-    s32 display;
-    s32 entity;
-    s32 offset = 0x24;
-    func_800A18E0(a0);
-    func_800A589C(a0);
-    displayBase = (u8 *)&g_battleChars;
-    entityBase = &D_800ED148;
-    entity = (s32)entityBase + a0 * 0xD0;
-    display = (s32)displayBase + a0 * 0x1D0;
-    *(volatile s32 *)(entity + offset) = 0;
-    *(s32 *)(display + 0x184) = *(volatile s32 *)(entity + 0x24);
+void func_800A1940(s32 arg0) {
+    func_800A18E0(arg0);
+    func_800A589C(arg0);
+
+    D_800ED148.entities[arg0].field24 = 0;
+    g_battleChars.chars[arg0].unk184 = D_800ED148.entities[arg0].field24;
 }
+/*
+void func_800A1940(s32 arg0) {
+    func_800A18E0(arg0);
+    func_800A589C(arg0);
+    
+    D_800ED148.entities[arg0].field24 = 0;
+    g_battleChars.chars[arg0].unk184  = D_800ED148.entities[arg0].field24;
+}
+*/
 
 void func_800A19BC(s32 arg0, u16 arg1, s32 arg2) {
     if (arg2 < 0) {
@@ -140,18 +134,11 @@ void func_800A1AB8(s32 arg0, u16 arg1, s32 arg2) {
  *
  * @param a0 Entity index (stride 0xD0).
  */
-void func_800A1C98(s32 a0) {
-    BattleSystem *entityBase;
-    s32 entity;
-    s32 mask;
-    entityBase = &D_800ED148;
-    entity = (s32)entityBase + a0 * 0xD0;
-    *(volatile s32 *)(entity + 0x24) = 0;
-    mask = ~0x8;
-    *(volatile s32 *)(entity + 0x8C) &= mask;
-    mask = ~0x4;
-    *(volatile s32 *)(entity + 0x8C) &= mask;
-    func_800A589C(a0);
+void func_800A1C98(s32 arg0) {
+    D_800ED148.entities[arg0].field24 = 0;
+    D_800ED148.entities[arg0].controlFlags &= ~8;
+    D_800ED148.entities[arg0].controlFlags &= ~4;
+    func_800A589C(arg0);
 }
 
 /**
@@ -163,13 +150,10 @@ void func_800A1C98(s32 a0) {
  *
  * @param a0 Entity index (stride 0xD0 in D_800ED148).
  */
-void func_800A1CFC(s32 a0) {
-    volatile u8 *base = (u8 *)&D_800ED148;
-    u8 *entity = (u8 *)base + a0 * 0xD0;
-    if ((*(s32 *)(entity + 0x18) & 0x10000) ||
-        (*(u16 *)(entity + 0x90) & 1)) {
-        func_800A1C98(a0);
-        func_800A84CC(a0);
+void func_800A1CFC(s32 arg0) {
+    if ((D_800ED148.entities[arg0].flags & 0x10000) || (D_800ED148.entities[arg0].status & 1)) {
+        func_800A1C98(arg0);
+        func_800A84CC(arg0);
     }
 }
 
@@ -238,6 +222,7 @@ void func_800A1F74(Struct_func_800A5210* arg0) {
     func_8009EAEC(arg0->unk0);
     func_8009CA14(arg0->unk0);
     func_800A1EC8(arg0->unk0, arg0->unk2, arg0->unk3, arg0->unk6, arg0->unk4, arg0->unk8);
+    
     if (arg0->unkC != 255) {
         func_800A1EC8(arg0->unkC, arg0->unkE, arg0->unkF, arg0->unk12, arg0->unk10, arg0->unk14);
     }
@@ -290,21 +275,16 @@ s32 func_800A20AC(s32 arg0) {
  * @return Number of active displayed party members (0-3).
  */
 s32 func_800A2150(void) {
-    s32 count = 0;
-    s32 i = 0;
-    u8 *display = (u8 *)&g_battleChars;
-    u8 *entity = (u8 *)&D_800ED148;
-
-    do {
-        if ((*(s32 *)(entity + 0x8C) & 1) && (*(u16 *)(display + 0x1B2) & 1)) {
-            count++;
+    s32 i;
+    s32 val;
+    
+    for (i = val = 0; i < 3; i++) {
+        if ((D_800ED148.entities[i].controlFlags & 1) && (g_battleChars.chars[i].displayStatus & 1)) {
+            val++;
         }
-        display += 0x1D0;
-        i++;
-        entity += 0xD0;
-    } while (i < 3);
-
-    return count;
+    }
+    
+    return val;
 }
 
 s32 func_800A21B0(s32 arg0) {
@@ -343,11 +323,12 @@ s32 func_800A21B0(s32 arg0) {
  * @param a0 Entity slot index.
  * @return 1 if ability slot is available, 0 otherwise.
  */
-s32 func_800A2310(s32 a0) {
-    u8 *base = (u8 *)&D_800ED148;
-    u8 *entity = base + a0 * 0xD0;
-    u8 val = entity[0xDA];
-    return func_8009B79C((s32)val * 60, 0xFF) != 0;
+
+s32 func_800A2310(s32 arg0) {
+    BattleSystem* bs = &D_800ED148;
+    BattleEntity* currentEntity = &bs->entities[arg0];
+    
+    return func_8009B79C((currentEntity + 1)->slot8.byteView.unkA * 60, 255) != 0? 1 : 0;
 }
 
 void func_800A2360(s32 arg0) {
@@ -375,8 +356,8 @@ void func_800A240C(s32 arg0, s32 arg1, u16* status) {
     BattleEntity* temp_v1;
     u16 temp_a3;
 
-    temp_a3 = *status & 0xFCFF;
-    *status &= 0xFCFF;
+    temp_a3 = *status & ~0x300;
+    *status &= ~0x300;
     
     if (arg1 != 0) {
         if (arg1 < (D_800ED148.entities[arg0].field2C >> 1)) {
@@ -412,7 +393,7 @@ void func_800A2480(s32 arg0, s32 arg1, u16* arg2) {
  * @param a0 First argument passed through.
  */
 void func_800A2520(s32 a0) {
-    func_8009B924(a0, 0x7A, 0x030E77FF);
+    func_8009B924(a0, 122, 0x030E77FF);
 }
 
 /**
@@ -421,7 +402,7 @@ void func_800A2520(s32 a0) {
  * @param a0 First argument passed through.
  */
 void func_800A2548(s32 a0) {
-    func_8009B924(a0, 0x7E, 0x0180560D);
+    func_8009B924(a0, 126, 0x0180560D);
 }
 
 /**
@@ -430,7 +411,7 @@ void func_800A2548(s32 a0) {
  * @param a0 First argument passed through.
  */
 void func_800A2570(s32 a0) {
-    func_8009B924(a0, 0x37E, 0x038E7FFF);
+    func_8009B924(a0, 894, 0x038E7FFF);
 }
 
 void func_800A2598(s32 arg0, s8 arg1) {
@@ -560,7 +541,7 @@ void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u
                     if (!(D_800ED148.entities[arg0].flags & 0x10000)) {
                         func_800A2598(arg0, 3);
                         func_800ACF84(arg0, 4);
-                        D_800ED148.entities[arg0].status &= 0xFFFE;
+                        D_800ED148.entities[arg0].status &= ~1;
                     }
                 }
                 
@@ -631,7 +612,7 @@ s32 func_800A2D24(void) {
     }
 
     if ((chocoboData->flags & 8) && (chocoboData->flags & 4) && !(chocoboData->flags & 2) && chocoboData->flags & 1) {
-        result = func_800A6DD8() * 0x64;
+        result = func_800A6DD8() * 100;
         if (g_gameState.mainData.partyLockFlag & 1) {
             if (g_gameState.mainData.party.dreamGil >= result) {
                 g_gameState.mainData.party.dreamGil -= result;
@@ -661,12 +642,13 @@ s32 func_800A2D24(void) {
  * @param a0 Entity index (stride 208).
  * @return Byte value from the second-level table.
  */
-s32 func_800A2E04(s32 a0) {
-    u8 *table = (u8 *)&D_80078E00;
-    u8 *base = (u8 *)&D_800ED148;
-    s32 val = *(u8 *)(base + a0 * 208 + 0xDA);
-    val = (val - 1) * 2;
-    return *(u8 *)(table + val + 0x4CFD);
+u8 func_800A2E04(s32 arg0) {
+    BattleSceneData* bsd = &D_80078E00;
+    BattleSystem* bs = &D_800ED148;
+    BattleEntity* currentEntity = &bs->entities[arg0];
+
+    
+    return bsd->unk4CFC[(currentEntity + 1)->slot8.byteView.unkA - 1].unk1;
 }
 
 /**
@@ -760,7 +742,7 @@ void func_800A2FC8(void) {
 
 
 void func_800A302C(void) {
-    func_800DEA58(*(u8 *)D_800EE462);
+    func_800DEA58(D_800ED148.unk131A);
 }
 
 /**
@@ -826,7 +808,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A30F8);
  * @param d Halfword pointer to set to 9.
  */
 void func_800A42B4(s8* arg0, s8* arg1, s16* arg2, s16* arg3) {
-    D_800EE43C = 1;
+    D_800ED148.unk12F4 = 1;
     *arg0 = 0;
     *arg3 = 9;
     *arg1 = 10;
@@ -856,7 +838,7 @@ void func_800A42DC(s32 a0, u8 *a1, u8 *a2, u16 *a3, u16 *stack0) {
  * @param value Value to store.
  */
 void func_800A4320(s32 value) {
-    *(s32 *)D_800EE424 = value;
+    D_800ED148.unk12DC = value;
 }
 
 /**
@@ -865,7 +847,7 @@ void func_800A4320(s32 value) {
  * @param a0 Argument passed to getMenuString.
  */
 void func_800A432C(s32 a0) {
-    *(s32 *)D_800EE424 = getMenuString(a0);
+    D_800ED148.unk12DC = getMenuString(a0);
 }
 
 void func_800A4350(s32 arg0, s32 arg1) {
@@ -1099,7 +1081,7 @@ u16 func_800A4A74(s32 arg0, u16 arg1) {
         }
     }
     
-    D_800EE461 = 255;
+    D_800ED148.unk1319 = 255;
     return arg1;
 }
 
@@ -1164,7 +1146,7 @@ void func_800A4B88(u16 arg0, s32 arg1) {
         D_800ED148.array12B8[i] = func_800A4A74(arg1, var_a1);
     }
     
-    D_800EE452 = var_s0;
+    D_800ED148.unk130A = var_s0;
     func_800A47E4(arg1);
 }
 
@@ -1214,7 +1196,7 @@ void func_800A4C84(u16 arg0) {
 
     end:
     var_a0 = 0;
-    if (D_800EE43C == 0) {
+    if (D_800ED148.unk12F4 == 0) {
         var_a0 = var_s5;
     }
     func_800A4DD4(var_a0);

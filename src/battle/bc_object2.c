@@ -26,7 +26,7 @@
 u16 func_8009BAC4(s32 arg0, u16 arg1) {
     s16 result;
     
-    D_800EE476 = arg0;
+    D_800ED148.unk132E = arg0;
     result = func_800B0F9C(D_80078E00.unk3738[arg0].val) 
            | func_800B0F7C(D_80078E00.unk3738[arg0].val);
     
@@ -76,13 +76,13 @@ s32 func_8009BB98(void) {
  * D_800ED70C (stride 20), copies entry[0] and D_800ED70C[0xD6A]
  * into D_800EE4C0 buffer with command byte 0xF9.
  */
-BattleEntry* func_8009BBD0(void) { 
+BattleEntry* func_8009BBD0(void) {
     BattleEntry* currentEntry;
 
-    currentEntry = &D_800ED70C[func_8009BB98()];
+    currentEntry = &D_800ED148.entries[func_8009BB98()];
     D_800EE4C0.unk0 = currentEntry->unk0;
     D_800EE4C0.unk1 = 249;
-    D_800EE4C0.unk3 = D_800ED70C[171].unkE; /* 0xD6A */
+    D_800EE4C0.unk3 = D_800ED148.unk132E;
 
     return currentEntry;
 }
@@ -219,7 +219,7 @@ void func_8009BF70(s32 newFlags, s32 *flagsPtr) {
 }
 
 s32 func_8009BFE0(s32 arg0, u16* arg1, s32* arg2, s32 arg3) {
-    if ((D_800EE471 == 0) && (*arg1 & CTRL_FLAG_40) && (arg3 & 1)) {
+    if ((D_800ED148.unk1329 == 0) && (*arg1 & CTRL_FLAG_40) && (arg3 & 1)) {
         return 0;
     }
         
@@ -598,7 +598,7 @@ void func_8009CAD8(s32 arg0, s32 arg1) { //entity[1]
  * @param a0 Entity slot index.
  */
 void func_8009CD10(s32 arg0) {
-    if (!(D_800EE456 & 3)) {
+    if (!(D_800ED148.unk130E & 3)) {
         func_8009B924(arg0, 0, (BATTLE_ENTITY_FLAG_BIT_14 | 1));
     }
 }
@@ -612,7 +612,7 @@ void func_8009CD10(s32 arg0) {
  * @param a0 Entity slot index.
  */
 void func_8009CD44(s32 arg0) {
-    if (!(D_800EE456 & 3)) {
+    if (!(D_800ED148.unk130E & 3)) {
         func_8009B924(arg0, 0, BATTLE_ENTITY_FLAG_BIT_23);
     }
 }
@@ -1159,7 +1159,7 @@ s32 func_8009E110(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
             break;
         }
 
-        if (((D_800EE456 & 3) == 2) && (arg0 < 3)) {
+        if (((D_800ED148.unk130E & 3) == 2) && (arg0 < 3)) {
             if (g_battleChars.chars[arg0].statusFlags & 2) {
                 var_s1 *= 2;
             }
@@ -1463,7 +1463,7 @@ s32 func_8009ED2C(s32 arg0) {
             D_800ED148.unk1315 = temp_s0->unkF9;
         }
 
-        if (markItemPresent(D_800EE45D) != 0) {
+        if (markItemPresent(D_800ED148.unk1315) != 0) {
             return 0;
         }
         
@@ -1511,7 +1511,7 @@ s32 func_8009EF64(s32 arg0, s32 unused, s32 unused2, s32 arg3) {
     }
     
     if (arg3 == 255) {
-       D_800EE46E = 0;
+        D_800ED148.unk1326 = 0;
         return 0; 
     }
     
@@ -1556,7 +1556,7 @@ s32 func_8009F040(s32 arg0, s32 arg1, s32 unused) {
         D_800EE4C0.flags6 |= 4;
     }
 
-    return D_800EE470;
+    return D_800ED148.unk1328;
 }
 
 void func_8009F168(s32 arg0, s32 arg1) {
@@ -2338,34 +2338,34 @@ void func_800A09D0(s32 arg0) {
 
     switch (D_800EE4C0.unk1) {
     case 0:        
-        D_800EE43D = 1;
+        D_800ED148.unk12F5 = 1;
         switch (D_800EE4DC) {
         case 10:
-            D_800EE4CC = func_8009F23C(temp_s4, arg0);
+            D_800EE4C0.unk0C = func_8009F23C(temp_s4, arg0);
             break;
 
         case 8:
-            D_800EE4CC = func_8009E418(temp_s4, arg0, 0);
+            D_800EE4C0.unk0C = func_8009E418(temp_s4, arg0, 0);
             break;
 
         case 4:
-            D_800EE4CC = func_8009F4BC(arg0);
+            D_800EE4C0.unk0C = func_8009F4BC(arg0);
             break;
 
         case 2:
-            D_800EE4CC = func_8009F350(arg0);
+            D_800EE4C0.unk0C = func_8009F350(arg0);
             break;
 
         case 5:
-            D_800EE4CC = func_8009F3F8(arg0);
+            D_800EE4C0.unk0C = func_8009F3F8(arg0);
             break;
 
         case 6:
-            D_800EE4CC = func_8009F428(arg0);
+            D_800EE4C0.unk0C = func_8009F428(arg0);
             break;
 
         case 7:
-            D_800EE4CC = func_8009F46C(arg0);
+            D_800EE4C0.unk0C = func_8009F46C(arg0);
             break;
 
         case 3:
@@ -2380,29 +2380,29 @@ void func_800A09D0(s32 arg0) {
     case 5:        
     case 11:        
     case 250:       
-        D_800EE448 = 1;
+        D_800ED148.unk1300 = 1;
         break;
 
     case 239:       
-        D_800EE448 = 0;
+        D_800ED148.unk1300 = 0;
         goto not_another_goto;
 
     case 241:       
         switch (D_800EE4C0.statusCode) {     
         case 65530:
-            D_800EE448 = 1;
+            D_800ED148.unk1300 = 1;
             D_800EE4C0.flags5 |= 1;
             break;
 
         case 65532:
             D_800EE4C0.unk7 = temp_s4;
-            D_800EE448 = 0;
+            D_800ED148.unk1300 = 0;
             D_800EE4C0.flags5 |= 1;
             D_800EE4C0.unk09 |= 1;
             break;
 
         default:    
-            D_800EE448 = 1;
+            D_800ED148.unk1300 = 1;
             goto not_another_goto;
         }       
         break;
@@ -2428,7 +2428,7 @@ void func_800A09D0(s32 arg0) {
         } 
 
         else {
-            D_800EE448 = 1;
+            D_800ED148.unk1300 = 1;
         }
 
         func_800A0978(temp_s4);
@@ -2456,7 +2456,7 @@ void func_800A09D0(s32 arg0) {
         break;
 
     case 244:       
-        if (D_800EE469 != 0) {
+        if (D_800ED148.unk1321 != 0) {
             D_800EEBBF = func_800A08C0();
         } 
 
@@ -2486,7 +2486,7 @@ void func_800A09D0(s32 arg0) {
     case 2:        
     case 16:       
     case 247:       
-        D_800EE4CC = func_8009FD28(arg0, temp_s4);
+        D_800EE4C0.unk0C = func_8009FD28(arg0, temp_s4);
         break;
 
     case 19:       
@@ -2588,7 +2588,7 @@ void func_800A09D0(s32 arg0) {
         break;
 
     case 254:       
-        if (D_800EE466 != 0) {
+        if (D_800ED148.unk131E != 0) {
             D_800EEBBD = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk83;
             D_800EEBBE = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk84;
             D_800EEBBF = g_battleChars.levelEntries[D_800EE4C0.statusCode - 64].level;
@@ -2602,7 +2602,7 @@ void func_800A09D0(s32 arg0) {
         break;
 
     case 249:       
-        D_800EE448 = 0;
+        D_800ED148.unk1300 = 0;
         func_8009FCF4(D_80078E00.unk3738[D_800EE4C0.unk3].unk18);
         var_s3 = D_80078E00.unk3738[D_800EE4C0.unk3].unk15;
         D_800EE4C0.unk4 = D_80078E00.unk3738[D_800EE4C0.unk3].unk16;
@@ -2621,7 +2621,7 @@ void func_800A09D0(s32 arg0) {
         wait_oh_god_make_it_stop:
         func_8009FCF4(0);
         D_800EE4C0.unk4 = 4;
-        if (func_8009FDD4(D_800EE3DC) != 0) {
+        if (func_8009FDD4(D_800ED148.unk1294) != 0) {
             D_800EE4C0.flags6 |= 2;
         }
 
@@ -2640,7 +2640,7 @@ void func_800A09D0(s32 arg0) {
         }
     }
 
-    if (D_800EE461 != 255) {
+    if (D_800ED148.unk1319 != 255) {
         D_800EE4C0.unk0C = D_800EE4C0.unk0C / 2;
     }
 
@@ -2697,6 +2697,7 @@ void func_800A1760(s32 arg0, BattleCharData* arg1) {
         }
     }
 }
+
 
 /**
  * @brief Set masked attribute values on a g_battleChars table entry (stride 0x1D0).

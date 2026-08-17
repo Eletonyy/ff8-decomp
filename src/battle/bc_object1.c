@@ -782,7 +782,7 @@ void func_8009ACEC(void) {
  */
 void func_8009AD7C(void) {
     s32 frames;
-    switch (D_800EE449) {
+    switch (D_800ED148.unk1301) {
         case 0:
             frames = 60;
             break;

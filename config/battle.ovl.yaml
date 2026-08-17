@@ -42,6 +42,9 @@ options:
   use_legacy_include_asm: False
   generate_asm_macros_files: False
 
+  global_vram_start: 0x80010000
+  global_vram_end  : 0x801A0800
+  
 segments:
   - name: battle
     type: code

@@ -237,14 +237,14 @@ typedef struct {
         } SplitTimer;
         u16 bigTimer;
     } timers;
-    u8 unk0E; /* D_800ED156 */
+    u8 unk0E;
     u8 entityRef;
-    BattleEntityData** entityData; /* D_800ED158 */
+    BattleEntityData** entityData;
     s32 pad14; // func_800A559C to fix
-    s32 flags; /* D_800ED160 */
+    s32 flags;
     s32 flagsBackup;
     s32 field20;
-    s32 field24;
+    s32 volatile field24;
     s32 field28;
     s32 field2C;
     s32 unk30;
@@ -275,7 +275,7 @@ typedef struct {
     u16 animParam3;
     u8 pad8A[0x2];
     volatile ControlFlags controlFlags;
-    u16 status; /* D_800ED1D8 */
+    u16 status;
     u16 statusBackup;
     s16 hpDisplay;     /* 0x94: HP value mirrored from BattleCharData.currentHp. */
     u16 unk96;
@@ -415,8 +415,7 @@ typedef struct {
     /* 0x05C1 */ u8 unk5C1;
     /* 0x05C2 */ u8 volatile unk5C2;                     /**< Misc state byte (init to 1 by func_8009A1E0/ACEC). */
     /* 0x05C3 */ u8 unk5C3;                     /**< Misc state byte (init to 1 by func_80099FE8). */
-    /* 0x05C4 */ BattleEntry entries[1];       /**< Action queue (stride 0x14)*/
-    /* 0x05D8 */ u8 pad5D8[0x0844 - 0x05D8];
+    /* 0x05C4 */ BattleEntry entries[32];       /**< Action queue (stride 0x14)*/
     /* 0x0844 */ Struct_func_800A5210 Array844[1];
     /* 0x085C */ u8 pad85C[0xCDC - 0x085C];
     /* 0x0CDC */ u8 unkCDC;
@@ -427,12 +426,12 @@ typedef struct {
     /* 0x0D1C */ u8 padD1C[0x40];               /**< Misc state. */
     /* 0x0D5C */ u8 unkD5C[0x8];                /**< Per-trigger flag array (8 entries). */
     /* 0x0D64 */ TaskLink unkD64[3][11];
-    /* 0x0DE8 */ BattleUnkDE8 arrayDE8[3][11][2]; /**< D_800EDF30: (792 bytes: 0x318) size tied to func_800A5948 */
+    /* 0x0DE8 */ BattleUnkDE8 arrayDE8[3][11][2]; /**< (792 bytes: 0x318) size tied to func_800A5948 */
     /* 0x1100 */ u8 unk1100[3];                    // indexes used for taskLink
-    /* 0x1103 */ TaskLink taskLinks[16];        /**< D_800EE24B: Task queue link table (16 × 4 bytes). */
+    /* 0x1103 */ TaskLink taskLinks[16];        /**< Task queue link table (16 × 4 bytes). */
     /* 0x1143 */ u8 pad1143[1];                 /**< Pad to taskData. */
-    /* 0x1144 */ TaskEntry taskData[16];        /**< D_800EE28C: Task queue data slots (16 × 16 bytes). */
-    /* 0x1244 */ Struct_1244 unk1244[1];         // D_800EE38C
+    /* 0x1144 */ TaskEntry taskData[16];        /**< Task queue data slots (16 × 16 bytes). */
+    /* 0x1244 */ Struct_1244 unk1244[1];         
     /* 0x125C  */ u8 pad125C[0x30];              /**< Pad to unk128C. */
     /* 0x128C */ s32 unk128C;                   /**< Cached userData for callback. */
     /* 0x1290 */ s16 unk1290;
@@ -444,9 +443,11 @@ typedef struct {
     /* 0x12CC */ Struct_12CC array12CC[1];        /* used in func_8009D594 */
     /* 0x12CF */ u8 pad12CF[0x9];
     /* 0x12D8 */ s32 unk12D8;                   /**< Cached length argument for callback. */
-    /* 0x12DC */ u8 pad12DC[0x4];               /**< Misc state. */
+    /* 0x12DC */ s32 unk12DC;
     /* 0x12E0 */ s16 unk12E0;                   /**< Low 13 bits of a packed s16 field. */
-    /* 0x12E2 */ u8 pad12E2[0x6];               /**< Misc state. */
+    /* 0x12E2 */ u8 pad12E2[2];                 /**< Misc state. */
+    /* 0x12E4 */ s16 unk12E4;               
+    /* 0x12E5 */ u8 pad12E5[2];                 /**< Misc state. */
     /* 0x12E8 */ u8 unk12E8;                    /**< Misc state byte. */
     /* 0x12E9 */ u8 volatile unk12E9;                    /**< Misc state byte (touched by 12EA-gated path). */
     /* 0x12EA */ u8 volatile unk12EA;                    /**< Misc state gate byte. */
@@ -459,7 +460,7 @@ typedef struct {
     /* 0x12EF */ u8 pad12F1;               /**< Misc state. */
     /* 0x12EF */ u8 unk12F2;
     /* 0x12F3 */ u8 unk12F3;                    /* used as index in func_8009F824 */
-    /* 0x12F4 */ u8 pad12F4;                    /**< Misc state. */
+    /* 0x12F4 */ u8 unk12F4;
     /* 0x12F5 */ u8 unk12F5;                    /**< Misc state. */
     /* 0x12F6 */ u8 taskHead;                   /**< Head index of the task queue linked list. */
     /* 0x12F7 */ u8 pad12F7[0x1];               /**< Pad. */
@@ -496,10 +497,13 @@ typedef struct {
     /* 0x1318 */ u8 unk1318;
     /* 0x1319 */ u8 unk1319;                    /**< Misc state byte (init to 0xFF). */
     /* 0x131A */ u8 unk131A;
-    /* 0x131B */ u8 pad131B[0x4];               /**< More misc state. */
+    /* 0x131B */ u8 pad131B;               /**< More misc state. */
+    /* 0x131C */ u8 unk131C;
+    /* 0x131D */ u8 unk131D;
+    /* 0x131E */ u8 unk131E;
     /* 0x131F */ u8 unk131F;
     /* 0x1320 */ u8 unk1320;
-    /* 0x1321 */ u8 pad1321;
+    /* 0x1321 */ u8 unk1321;
     /* 0x1322 */ u8 unk1322;
     /* 0x1323 */ u8 effectMult;                 /**< Damage/effect multiplier (percent). */
     /* 0x1324 */ u8 unk1324; 
@@ -1142,35 +1146,16 @@ extern u16             D_800E3CA4[];
 extern BattlePosXZ     D_800E3CA8[];
 extern BattlePosXZ     D_800E3CB0[];
 extern u8              D_800E3CE8;
+
 extern BattleSystem    D_800ED148;
-extern u8              D_800ED157[];
-extern BattleSlotData  D_800ED158;
-extern u8              D_800ED1D8[];
-extern BattleEntry     D_800ED70C[];
-extern u8              D_800EDE24[]; // D_800ED148.unkCDC
-extern u8              D_800EE24B[];
-extern u8              D_800EE28C[];
-extern s16             D_800EE3DC;
-extern u8              D_800EE43C;
-extern s8              D_800EE43D;
-extern s8              D_800EE448;
-extern u8              D_800EE449;
-extern u8              D_800EE452;
-extern u8              D_800EE456;
-extern u8              D_800EE45D;
-extern u8              D_800EE461;
-extern u8              D_800EE466;
-extern u8              D_800EE469;
-extern u8              D_800EE46E;
-extern u8              D_800EE470;
-extern u8              D_800EE471;
-extern u8              D_800EE476;
+
 extern BattleCmdBuf    D_800EE4C0;
 extern u8              D_800EE4C1;
 extern u8              D_800EE4C4;
 extern u8              D_800EE4CB;
 extern s32             D_800EE4CC;
 extern u16             D_800EE4DC;
+
 extern BattleAnimTable D_800EE9E8;
 extern u8              D_800EEBA8[];
 extern u8              D_800EEBB0;
