@@ -1,3 +1,0 @@
-/* PsyQ library aliases used by decomped C in the menutips overlay. */
-DrawSync = 0x80048C50;
-VSync    = 0x80042634;

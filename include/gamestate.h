@@ -206,7 +206,7 @@ typedef struct {
     /* 0x00 */ u16 quistisLimits;      /**< Quistis Blue Magic learned bitfield. */
     /* 0x02 */ u16 zellLimits;         /**< Zell Duel combos learned bitfield. */
     /* 0x04 */ u8 irvineLimits;        /**< Irvine Shot ammo unlocked. */
-    /* 0x06 */ u8 selphieLimits;       /**< Selphie Slot config. */
+    /* 0x05 */ u8 selphieLimits;       /**< Selphie Slot config. */
     /* 0x06 */ u8 angeloCompleted;     /**< Angelo tricks completed bitfield. */
     /* 0x07 */ u8 angeloKnown;         /**< Angelo tricks known bitfield. */
     /* 0x08 */ u8 angeloPoints[8];     /**< Angelo trick learning points (8 tricks). */

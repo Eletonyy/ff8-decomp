@@ -212,7 +212,7 @@ Current C coverage: **174 / 374 = 46.5 %**.
 | `asm/field/nonmatchings/fe_object10/func_800BD9C4.s`              | Main per-frame VM tick (4 dispatch loops)                     |
 | `asm/field/nonmatchings/fe_object10/func_800BEBD0.s`              | Camera dispatch loop (5th); contains the opcode-6/arg<9 skip  |
 | `asm/nonmatchings/gamestate/func_80037B7C.s`                      | Opcode/arg word splitter                                      |
-| `config/symbol_addrs.field.txt`                                   | Symbol map — `opHandler_MES = 0x800B68EC` lives here          |
+| `config/symbols.field.txt`                                   | Symbol map — `opHandler_MES = 0x800B68EC` lives here          |
 
 ## World Overlay (no VM)
 

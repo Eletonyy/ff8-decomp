@@ -6,11 +6,12 @@
 #include "cdrom.h"
 #include "snd_cd.h"
 
+
 /**
  * @brief Detect the disc number by searching for disc-specific files.
  *
- * Calls VSync(30), then tries CdSearchFile with four disc-identifier
- * filenames (D_8001092C–D_8001095C). Returns 1–4 for the first match,
+ * Calls VSync(30), then tries CdSearchFile with the four disc-identifier
+ * filenames. Returns 1–4 for the first match,
  * or -1 if none found.
  *
  * @return Disc number (1–4), or -1 on failure.
@@ -18,16 +19,16 @@
 s32 detectDiscNumber(void) {
     u8 buf[24];
     VSync(30);
-    if (CdSearchFile(buf, D_8001092C)) {
+    if (CdSearchFile(buf, "\\SLUS_008.92;1")) {
         return 1;
     }
-    if (CdSearchFile(buf, D_8001093C)) {
+    if (CdSearchFile(buf, "\\SLUS_009.08;1")) {
         return 2;
     }
-    if (CdSearchFile(buf, D_8001094C)) {
+    if (CdSearchFile(buf, "\\SLUS_009.09;1")) {
         return 3;
     }
-    if (CdSearchFile(buf, D_8001095C)) {
+    if (CdSearchFile(buf, "\\SLUS_009.10;1")) {
         return 4;
     }
     return -1;

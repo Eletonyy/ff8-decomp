@@ -1,6 +1,0 @@
-/* PsyQ library aliases used by decomped C in the battle_render overlay. */
-LoadImage    = 0x80048EFC;
-OpenTIM      = 0x8004B8F4;
-ReadTIM      = 0x8004B904;
-SetSemiTrans = 0x8004D604;
-SetShadeTex  = 0x8004D634;

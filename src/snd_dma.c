@@ -5,7 +5,6 @@
 extern volatile s32 D_80074ED4;
 extern s32 D_80074E88;
 extern u8 D_800516B8[];
-extern s32 D_8001AD60;
 extern s32 D_8005169C;
 
 void spuSetIrqAddr(u32 val);
@@ -129,7 +128,7 @@ void sndSpuInit(void) {
     } while (StartRCnt(0xF2000002) == 0);
 
     do {
-        D_8005169C = OpenEvent(0xF2000002, 2, 0x1000, (s32)&D_8001AD60);
+        D_8005169C = OpenEvent(0xF2000002, 2, 0x1000, (s32)func_8001AD60);
     } while (D_8005169C == -1);
 
     do {
