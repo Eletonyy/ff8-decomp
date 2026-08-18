@@ -3,19 +3,11 @@
 #include "psxsdk/libc.h"
 #include "battle.h"
 #include "btl_color.h"
+#include "btl_anim.h"
 #include "gamestate.h"
 #include "numstr.h"
 
 /* --- Local type definitions --- */
-
-typedef struct {
-    s16 intensity;      /* 0x00: shake intensity */
-    s8 direction;       /* 0x02: shake direction */
-    s8 enable;          /* 0x03: vibration enable flag */
-    s16 zoom;           /* 0x04: zoom/distance (default 0x1000) */
-    u8 counter;         /* 0x06: vibration timer (clamped to 0x40) */
-    u8 stateSnapshot;   /* 0x07: battle state byte for change detection */
-} BattleCameraState;
 
 typedef struct {
     u8 data[4];       /* 0x00 */
@@ -27,22 +19,6 @@ typedef struct {
     u8 flags;         /* 0x0E */
     u8 pad;           /* 0x0F */
 } AnimEntry; /* 0x10 */
-
-/** @brief Palette transition state machine (D_80083754). */
-typedef struct {
-    u16 state;      /* 0x00 */
-    u16 pad02;      /* 0x02 */
-    s16 brightness; /* 0x04 */
-    s16 fade;       /* 0x06 */
-    u8 srcPalette;  /* 0x08 */
-    u8 dstPalette;  /* 0x09 */
-    u8 timer;       /* 0x0A */
-    u8 lineCount;   /* 0x0B */
-    u8 oldName[3];  /* 0x0C */
-    u8 newName[3];  /* 0x0F */
-    u8 oldName2[6]; /* 0x12 */
-    u8 newName2[6]; /* 0x18 */
-} PaletteTransition;
 
 /** @brief Battle HUD OT buffer (smaller display list for UI elements). */
 typedef struct {
@@ -56,22 +32,18 @@ typedef struct {
 
 extern u8 g_battleSfxTable[];              /* 0x80052A34 — SPU command table */
 extern AnimEntry D_80083772[];       /* 0x80083772 — animation entry table */
-extern PaletteTransition D_80083754;     /* 0x80083754 — palette transition state */
 extern u8 D_80083756;                /* 0x80083756 — transition flag */
 extern BattleCmdEntry g_battleCmdTable[];   /* 0x80083878 — battle command entries (4 × 0x24) */
 extern HudDisplayBuf *D_80083918;    /* 0x80083918 — active HUD display buffer */
 extern HudDisplayBuf *D_80083920[];  /* 0x80083920 — HUD display buffer pair */
 extern u8 D_80083938[];              /* 0x80083938 — battle OT data */
 extern u8 D_80085134[];              /* 0x80085134 — battle display buffer */
-extern BattleCameraState g_cameraShake; /* 0x800834D0 */
 extern s32 g_gpuColor;               /* 0x800834C8 — GPU color value */
-extern u16 g_cameraVibrateIntensity; /* 0x800834D4 — camera vibrate intensity */
 extern s32 g_battleTimer;               /* 0x80083750 — battle timer */
 extern u8 g_animCurveFadeOut[];         /* 0x800837B0 — 65-step fade curve */
 extern u8 D_80052A64[];
 extern s32 func_800432D8(void);
 extern void copyDisplayRect(RECT *dst);
-extern u8 *emitDrawEnvPackets(u8 *ot, u8 *pkt);
 
 /**
  * @brief Clear the RGB color fields of an SFX entry.
@@ -279,7 +251,7 @@ s32 func_800302DC(s32 arg0, s32 arg1) {
         y += 10;
     }
 
-    return (s32)emitDrawEnvPackets((u8 *)arg0, (u8 *)out);
+    return (s32)emitDrawEnvPackets((P_TAG *)arg0, (u8 *)out);
 }
 
 
@@ -921,8 +893,8 @@ void updatePaletteTransition(s32 arg0, s32 arg1) {
  * @param color Color parameter (passed to func_8002FF34).
  * @return Updated packet buffer pointer after rendering.
  */
-s32 renderBattleString(s32 ot, s32 pkt, u8 *str, s32 y, s32 width, s32 color) {
-    s32 otBase = ot;
+u8 *renderBattleString(P_TAG *ot, u8 *pkt, u8 *str, s32 y, s32 width, s32 color) {
+    P_TAG *otBase = ot;
     u8 *ptr = str;
     s32 yPos = y;
     s32 w = width;
@@ -937,7 +909,9 @@ s32 renderBattleString(s32 ot, s32 pkt, u8 *str, s32 y, s32 width, s32 color) {
             return pkt;
         }
         if (ch == sep) goto skip;
-        pkt = func_8002FF34(otBase, pkt, ch, yPos, w, col);
+        /* func_8002FF34 follows the battle-display s32-cursor ABI, so the
+         * packet pointer crosses the boundary as s32. */
+        pkt = (u8 *)func_8002FF34((s32)otBase, (s32)pkt, ch, yPos, w, col);
     } while (0);
 skip:
     yPos = yPos + 9;
@@ -955,24 +929,12 @@ INCLUDE_ASM("asm/nonmatchings/btl_color", func_80031224);
 #define SCALE_BY_12(value) ((((value) << 1) + (value)) << 2)
 
 
-
-extern s32 func_80031224(u32 *ot, s32 pkt, s32 y, s32 height);
-
-
-/**
- * Render the two-line palette-transition label.
- *
- * Byte-matches the retail build (gcc 2.7.2-970404, -O2 -G0, PsyQ 4.1) up
- * to linker-resolved j/jal/lui-addiu constant fakes. The addPrim packet
- * link uses the temp-operand idiom above, matching the retail
- * `lw $t0, 0x28($sp)` reload before the lwl/swl splice.
- */
 s32 func_80031364(P_TAG *ot, u8 *pkt) {
     RECT rect;
     u8 *pkt_r;
     PaletteTransition *p;
     u32 color;
-    u16 *vibrateIntensity;
+    CameraTransitionScratch *scratch;
     s32 xPos;
     s32 curve;
     s32 brightness;
@@ -983,7 +945,8 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
     s32 temp;
     s32 yOff;
     s32 pkt_tmp;
-    s32 next;
+    u8 *next;
+    u8 *pktAfterLines;
     s32 s0;
 
     pkt_r = pkt;
@@ -996,10 +959,14 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
     copyDisplayRect(&rect);
 
     {
-        /* g_cameraVibrateIntensity (0x800834D4) sits 0x280 bytes before the
-           PaletteTransition data at D_80083754. */
-        vibrateIntensity = (u16 *)((u8 *)p - 0x280);
-        color = vibrateIntensity[0];
+        /* g_cameraVibrateIntensity (0x800834D4) is the first field of the
+           camera-transition scratch overlay whose transition member lands on
+           D_80083754 (0x80083754). The retail build reads it as a negative
+           offset from the transition base (lhu -640($s5)); deriving it from
+           p keeps that form instead of an absolute lui+lhu. */
+        scratch = (CameraTransitionScratch *)((u8 *)p -
+                                              CAMERA_TRANSITION_SCRATCH_TRANSITION_OFFSET);
+        color = scratch->vibrateIntensity;
         color >>= 5;
         color &= 0xFF;
         color = (color | (color << 8)) | (color << 16);
@@ -1007,11 +974,8 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
     }
 
     curve = 0x1000 - p->fade;
-
     curve = g_animCurveFadeOut[curve / 64];
-
     brightness = p->brightness;
-
     curve <<= 6;
 
     if (p->srcPalette < p->dstPalette) {
@@ -1033,48 +997,44 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
     temp = s0 + 0x10;
 
     pkt_r = (u8 *)func_8002FF34((s32)ot, (s32)pkt_r, 0xB0, temp, xPos, color);
-
     y = s0 + 0x30;
 
     if (brightness == 0) {
-        pkt_r = (u8 *)renderBattleString((s32)ot, (s32)pkt_r, p->newName, y, xPos, color);
+        pkt_r = renderBattleString(ot, pkt_r, p->newName, y, xPos, color);
     } else if (brightness == 0x1000) {
-        pkt_r = (u8 *)renderBattleString((s32)ot, (s32)pkt_r, p->oldName, y, xPos, color);
+        pkt_r = renderBattleString(ot, pkt_r, p->oldName, y, xPos, color);
     } else {
         xPos = SCALE_BY_12(absDir) / 4096 + 0xC4;
-
-        next = renderBattleString((s32)ot, (s32)pkt_r, p->newName, y, xPos, color);
-        pkt_r = (u8 *)renderBattleString((s32)ot, next, p->oldName, y, xPos + yOff, color);
+        next = renderBattleString(ot, pkt_r, p->newName, y, xPos, color);
+        pkt_r = renderBattleString(ot, next, p->oldName, y, xPos + yOff, color);
     }
 
     xPos = 0xC4;
-
     yBotQuot = SCALE_BY_59(curve) / 4096;
     y = yBotQuot + 0xF0;
 
     pkt_r = (u8 *)func_8002FF34((s32)ot, (s32)pkt_r, 0xB1, yBotQuot + 0x11D, xPos, color);
 
     if (brightness == 0) {
-        pkt_r = (u8 *)renderBattleString((s32)ot, (s32)pkt_r, p->newName2, y, xPos, color);
+        pkt_r = renderBattleString(ot, pkt_r, p->newName2, y, xPos, color);
     } else if (brightness == 0x1000) {
-        pkt_r = (u8 *)renderBattleString((s32)ot, (s32)pkt_r, p->oldName2, y, xPos, color);
+        pkt_r = renderBattleString(ot, pkt_r, p->oldName2, y, xPos, color);
     } else {
         xPos = SCALE_BY_12(absDir) / 4096 + 0xC4;
-
-        next = renderBattleString((s32)ot, (s32)pkt_r, p->newName2, y, xPos, color);
-        pkt_r = (u8 *)renderBattleString((s32)ot, next, p->oldName2, y, xPos + yOff, color);
+        next = renderBattleString(ot, pkt_r, p->newName2, y, xPos, color);
+        pkt_r = renderBattleString(ot, next, p->oldName2, y, xPos + yOff, color);
     }
 
     rect.h = 12;
     rect.y += 0xC4;
 
     SetDrawArea((DR_AREA *)pkt_r, &rect);
-
     addPrimFastWithTempOperand(ot, pkt_r, pkt_tmp);
 
-    temp = func_80031224((u32 *)ot, (s32)pkt_r + 0xC, temp, y + p->lineCount * 9);
+    pktAfterLines = func_80031224(ot, pkt_r + 0xC, temp,
+                            y + p->lineCount * 9);
 
-    return (s32)emitDrawEnvPackets((u8 *)ot, (u8 *)temp);
+    return (s32)emitDrawEnvPackets(ot, pktAfterLines);
 }
 
 
