@@ -152,105 +152,104 @@ extern u8 g_characters[];
 
 void func_80037308(void *arg0, void *arg1)
 {
-    FontArchive *font;
-    FontGlyphSection *glyphSection;
     u8 buffer[0x490];
 
-    u8 *s6;
-    u8 *s4;
-    s32 s2;
-    s32 s3;
-    u8 *s5;
-    u8 *s1;
-    u8 *s0;
-    u8 *p;
-    s32 a2;
-    u8 *buf_ptr;
-    u8 *char_base;
+    u8 *fontBase;
+    u8 *out;
+    s32 count;
+    s32 idx;
+    u8 *widthTable;
+    u8 *pkt;
+    u8 *data;
+    u8 *dst;
+    s32 charId;
+    u8 *cur;
+    u8 *charBase;
     u8 *name;
-    u32 c;
+    u32 ch;
     s32 w;
     s32 y;
     s32 x;
     u8 *src;
-    u8 *dst_ptr;
+    u8 *dstPtr;
     s32 row;
     s32 col;
-    u8 b;
+    u8 bit;
     u8 *sp;
-    u8 *new_var;
+    u8 *tmp;
     u8 *dp;
     u8 high;
     u8 low;
 
-    font = arg0;
-    s6 = (u8 *)font;
-    s4 = arg1;
-    p = s4;
+    fontBase = (u8 *)arg0;
+    out = (u8 *)arg1;
+    dst = out;
 
-    for (s3 = 0x8FF; s3 >= 0; s3--)
+    for (idx = 0x8FF; idx >= 0; idx--)
     {
-        *(p++) = 0;
+        *(dst++) = 0;
     }
 
-    s3 = 0;
+    idx = 0;
 
-    while (s3 < 3)
+    while (idx < 3)
     {
-        buf_ptr = (new_var = buffer);
-        s1 = new_var + 0xC;
+        cur = (tmp = buffer);
+        pkt = tmp + 0xC;
 
-        a2 = g_gameState.mainData.party.party[s3];
+        charId = g_gameState.mainData.party.party[idx];
 
-        if (a2 == 0xFF)
+        if (charId == 0xFF)
         {
-            s3++;
-            s4 += 0x300;
+            idx++;
+            out += 0x300;
             continue;
         }
 
-        s2 = 0;
-        s0 = s6;
-        s5 = s0 + font->widthTableOffset;
-        glyphSection = (FontGlyphSection *)(s0 + font->glyphSectionOffset);
-        s0 = glyphSection->glyphData + glyphSection->glyphDataOffset;
+        count = 0;
+        data = fontBase;
+        widthTable = data + *(s32 *)data;
+        data = data + *(s32 *)(data + 4);
+        data += 8;
+        data += *(s32 *)data;
+        data += 0xC;
 
         col = 0x48B;
         while (col >= 0)
         {
-            *(buf_ptr++) = 0;
+            *(cur++) = 0;
             col--;
         }
 
-        char_base = g_characters;
-        char_base += a2 * 152;
+        charBase = g_characters;
+        charBase += charId * 152;
 
-        name = getCharName(char_base[8]);
+        name = getCharName(charBase[8]);
 
         while (1)
         {
-            c = *(name++);
+            ch = *(name++);
 
-            if (c == 0)
+            if (ch == 0)
             {
                 break;
             }
 
-            if (c < 0x20)
+            if (ch < 0x20)
             {
-                c -= 0x19;
-                c = ((c << 3) - c) << 5;
-                c += *(name++);
+                ch -= 0x19;
+                ch = ((ch << 3) - ch) << 5;
+                ch += *(name++);
             }
 
-            c -= 0x20;
+            ch -= 0x20;
 
-            w = s5[c >> 1];
+            w = widthTable[ch >> 1];
 
             x++;
             x--;
 
-            if (c & 1)
+            if (ch & 1)
             {
                 w >>= 4;
             }
@@ -262,51 +261,51 @@ void func_80037308(void *arg0, void *arg1)
                 w--;
             }
 
-            dst_ptr = s1;
+            dstPtr = pkt;
             row = 12;
 
-            x = c / 21;
+            x = ch / 21;
             y = x;
-            x = c - (y * 21);
+            x = ch - (y * 21);
 
-            c = (y * 3) * 512;
+            ch = (y * 3) * 512;
             y = x * 6;
 
-            src = (s0 + y) + c;
+            src = (data + y) + ch;
 
             for (; row > 0; row--)
             {
                 for (col = 6; col > 0; col--)
                 {
-                    b = *(src++);
+                    bit = *(src++);
 
-                    *dst_ptr |= b & 0xF;
-                    dst_ptr++;
+                    *dstPtr |= bit & 0xF;
+                    dstPtr++;
 
-                    *dst_ptr |= b >> 4;
-                    dst_ptr++;
+                    *dstPtr |= bit >> 4;
+                    dstPtr++;
                 }
 
-                dst_ptr += 0x54;
+                dstPtr += 0x54;
                 src += 0x7A;
             }
 
-            s1 += w;
-            s2 += w;
+            pkt += w;
+            count += w;
         }
 
-        s0 = s4 + 0x30;
-        s1 += 1;
-        s2 = (s2 + 2) / 2;
+        data = out + 0x30;
+        pkt += 1;
+        count = (count + 2) / 2;
 
         for (row = 12; row > 0; row--)
         {
-            sp = s1;
-            col = s2;
-            dp = s0;
-            s2 = col;
+            sp = pkt;
+            col = count;
+            dp = data;
+            count = col;
 
-            if (s2 > 0)
+            if (count > 0)
             {
                 do
                 {
@@ -317,12 +316,12 @@ void func_80037308(void *arg0, void *arg1)
                 while ((--col) > 0);
             }
 
-            s1 += 0x60;
-            s0 += 0x30;
+            pkt += 0x60;
+            data += 0x30;
         }
 
-        s3++;
-        s4 += 0x300;
+        idx++;
+        out += 0x300;
     }
 }
 

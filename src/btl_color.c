@@ -972,6 +972,7 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
     u8 *pkt_r;
     PaletteTransition *p;
     u32 color;
+    u16 *vibrateIntensity;
     s32 xPos;
     s32 curve;
     s32 brightness;
@@ -995,7 +996,10 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
     copyDisplayRect(&rect);
 
     {
-        color = g_cameraVibrateIntensity;
+        /* g_cameraVibrateIntensity (0x800834D4) sits 0x280 bytes before the
+           PaletteTransition data at D_80083754. */
+        vibrateIntensity = (u16 *)((u8 *)p - 0x280);
+        color = vibrateIntensity[0];
         color >>= 5;
         color &= 0xFF;
         color = (color | (color << 8)) | (color << 16);
