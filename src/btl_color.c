@@ -928,10 +928,22 @@ INCLUDE_ASM("asm/nonmatchings/btl_color", func_80031224);
 #define SCALE_BY_12(value) ((((value) << 1) + (value)) << 2)
 
 
+/**
+ * @brief Render the palette-transition name sprites and link them into the OT.
+ *
+ * Reads the camera vibration intensity from the CameraTransitionScratch
+ * block right before the transition state (lhu -640($s5)), then renders the
+ * old/new palette name labels at positions scaled by the fade-out curve.
+ *
+ * @param ot  OT base pointer.
+ * @param pkt Current packet buffer pointer.
+ * @return Updated packet buffer pointer after rendering.
+ */
 s32 func_80031364(P_TAG *ot, u8 *pkt) {
     RECT rect;
     u8 *pkt_r;
     PaletteTransition *p;
+    CameraTransitionScratch *scratch;
     u32 color;
     s32 xPos;
     s32 curve;
@@ -956,15 +968,12 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
 
     copyDisplayRect(&rect);
 
-    {
-        /* g_cameraVibrateIntensity sits in the scratch block right before p;
-           stepping back one block keeps the retail lhu -640($s5) form. */
-        color = ((CameraTransitionScratch *)p)[-1].vibrateIntensity;
-        color >>= 5;
-        color &= 0xFF;
-        color = (color | (color << 8)) | (color << 16);
-        color |= 0x64000000;
-    }
+    scratch = &((CameraTransitionScratch *)p)[-1];
+    color = scratch->vibrateIntensity;
+    color >>= 5;
+    color &= 0xFF;
+    color = (color | (color << 8)) | (color << 16);
+    color |= 0x64000000;
 
     curve = 0x1000 - p->fade;
     curve = g_animCurveFadeOut[curve / 64];
