@@ -104,10 +104,10 @@ extern void flipBattleOtBuffer(void);
 
 void *func_8002FF34(void *ot, void *pkt, s32 stringId, s32 x, s32 y, s32 color);
 s32 func_800300F8(s32 renderCtx, s32 x, s32 w, s32 y, s32 color, s32 menuColor, s32 selColor);
-s32 func_800302DC(s32 arg0, s32 arg1);
+s32 func_800302DC(P_TAG *ot, u8 *pkt);
 s32 func_80030A54(CmdStream *stream);
 s32 func_80031364(P_TAG *ot, u8 *pkt);
 void func_800316D4(s32 arg0, s32 arg1, s32 arg2, s32 arg3);
-s32 renderAnimOverlay(s32 arg0, s32 arg1);
+s32 renderAnimOverlay(P_TAG *ot, u8 *pkt);
 
 #endif

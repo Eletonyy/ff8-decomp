@@ -180,9 +180,9 @@ void updateCameraVibrate(void) {
  *
  * @see https://decomp.me/scratch/CEsOX
  */
-s32 func_800302DC(s32 arg0, s32 arg1) {
+s32 func_800302DC(P_TAG *ot, u8 *pkt) {
     u8 buf[24];
-    s32 out;
+    u8 *out;
     u32 color;
     s32 timer;
     BattleCameraState *shake;
@@ -193,7 +193,7 @@ s32 func_800302DC(s32 arg0, s32 arg1) {
     s32 ret;
     s32 c;
 
-    out = arg1;
+    out = pkt;
     ret = func_800432D8();
 
     threshold = 0x1E;
@@ -232,14 +232,14 @@ s32 func_800302DC(s32 arg0, s32 arg1) {
     for (i = 3; i < 5; i++) {
         c = buf[i];
         if (i != 3 || c != 0x70) {
-            out = func_8002FF34(arg0, out, c, y, unk2, color);
+            out = func_8002FF34(ot, out, c, y, unk2, color);
         }
         y += 10;
     }
 
     y++;
     if (shake->counter < threshold) {
-        out = func_8002FF34(arg0, out, 0x7A, y, unk2, color);
+        out = func_8002FF34(ot, out, 0x7A, y, unk2, color);
     }
 
     y += 7;
@@ -247,11 +247,11 @@ s32 func_800302DC(s32 arg0, s32 arg1) {
 
     for (i = 3; i < 5; i++) {
         c = buf[i];
-        out = func_8002FF34(arg0, out, c, y, unk2, color);
+        out = func_8002FF34(ot, out, c, y, unk2, color);
         y += 10;
     }
 
-    return (s32)emitDrawEnvPackets((P_TAG *)arg0, (u8 *)out);
+    return (s32)emitDrawEnvPackets(ot, out);
 }
 
 
@@ -1224,10 +1224,10 @@ INCLUDE_ASM("asm/nonmatchings/btl_color", func_80031A18);
  * @param pkt Packet buffer pointer.
  * @return Updated packet pointer.
  */
-s32 renderAnimOverlay(s32 arg0, s32 arg1)
+s32 renderAnimOverlay(P_TAG *ot, u8 *pkt)
 {
-    s32 overlay = arg0;
-    s32 ret = arg1;
+    P_TAG *overlay = ot;
+    u8 *ret = pkt;
     s32 i = 0;
     u32 packed = g_cameraVibrateIntensity;
 
@@ -1242,7 +1242,7 @@ s32 renderAnimOverlay(s32 arg0, s32 arg1)
         i += 1;
     } while (i < 2);
 
-    return ret;
+    return (s32)ret;
 }
 
 

@@ -2259,10 +2259,10 @@ s32 renderBattleDisplayList(s32 *colorTag) {
     swapDisplayList();
     buf = g_battleAnims.active;
     head = getDisplayListHead();
-    head = func_800302DC((s32)&buf->ot[1], head);
+    head = func_800302DC(&buf->ot[1], (u8 *)head);
     head = func_80031364((s32)&buf->ot[14], head);
     head = transformValueIfActive((s32)&buf->ot[13], head);
-    head = renderAnimOverlay((s32)&buf->ot[13], head);
+    head = renderAnimOverlay(&buf->ot[13], (u8 *)head);
     ot = buf->ot;
     head = func_8002BF24((s32)ot, head);
     storeGpuPacket(head + sizeof(buf->ot));

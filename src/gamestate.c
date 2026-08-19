@@ -23,6 +23,13 @@ extern u16 D_8005F11C;
 extern s32 findNthSetBit(s32, s32, u8 *, s32);
 extern s32 func_80021300(void);
 
+/** @brief 0x20-byte free-id table immediately before the D_80077EBC pair list. */
+typedef struct {
+    /* 0x000 */ u8 freeIds[0x20];
+} FreeIdTable; /* sizeof == 0x20 */
+
+typedef char free_id_table_size_ok[(sizeof(FreeIdTable) == 0x20) ? 1 : -1];
+
 void func_800370AC(s32 arg0)
 {
     u8 *ptr;
@@ -36,7 +43,7 @@ void func_800370AC(s32 arg0)
     zero = 0;
     if (arg0 < 0x21) {
         ptr = &D_80077EBC;
-        base = ptr - 0x20;
+        base = ((FreeIdTable *)ptr)[-1].freeIds;
         mask = 0;
         i = 0;
         one = 1;
@@ -150,9 +157,38 @@ void enableChocoboWorld(void) {
 extern u8 *getCharName(CharacterId charId);
 extern u8 g_characters[];
 
+/** @brief Field font archive header (offsets from the archive base). */
+typedef struct {
+    s32 widthTableOffset;    /* +0x00 */
+    s32 glyphSectionOffset;  /* +0x04 */
+} FontArchive;
+
+/** @brief Glyph section reached via FontArchive.glyphSectionOffset. */
+typedef struct {
+    u8 pad00[8];             /* +0x00 */
+    s32 glyphDataOffset;     /* +0x08 */
+    u8 glyphData[1];         /* +0x0C */
+} FontGlyphSection;
+
+/** @brief Stack scratch buffer for building a character's bitmap packet. */
+typedef struct {
+    u8 pad0C[0xC];           /* +0x00: packet tag header */
+    u8 pkt[0x484];           /* +0x0C: packet body */
+} BattleNamePktBuffer;       /* sizeof == 0x490 */
+
+/** @brief Per-character output block (0x300 stride, see out += 0x300). */
+typedef struct {
+    u8 pad30[0x30];          /* +0x00 */
+    u8 rows[12][0x30];       /* +0x30: 12 bitmap rows of 0x30 bytes */
+    u8 pad90[0x90];          /* +0x270 */
+} BattleNameOutBlock;        /* sizeof == 0x300 */
+
+typedef char battle_name_pkt_buffer_size_ok[(sizeof(BattleNamePktBuffer) == 0x490) ? 1 : -1];
+typedef char battle_name_out_block_size_ok[(sizeof(BattleNameOutBlock) == 0x300) ? 1 : -1];
+
 void func_80037308(void *arg0, void *arg1)
 {
-    u8 buffer[0x490];
+    BattleNamePktBuffer buf;
 
     u8 *fontBase;
     u8 *out;
@@ -176,7 +212,6 @@ void func_80037308(void *arg0, void *arg1)
     s32 col;
     u8 bit;
     u8 *sp;
-    u8 *tmp;
     u8 *dp;
     u8 high;
     u8 low;
@@ -194,8 +229,8 @@ void func_80037308(void *arg0, void *arg1)
 
     while (idx < 3)
     {
-        cur = (tmp = buffer);
-        pkt = tmp + 0xC;
+        cur = (u8 *)&buf;
+        pkt = buf.pkt;
 
         charId = g_gameState.mainData.party.party[idx];
 
@@ -208,11 +243,11 @@ void func_80037308(void *arg0, void *arg1)
 
         count = 0;
         data = fontBase;
-        widthTable = data + *(s32 *)data;
-        data = data + *(s32 *)(data + 4);
-        data += 8;
+        widthTable = data + ((FontArchive *)data)->widthTableOffset;
+        data = data + ((FontArchive *)data)->glyphSectionOffset;
+        data = (u8 *)&((FontGlyphSection *)data)->glyphDataOffset;
         data += *(s32 *)data;
-        data += 0xC;
+        data = ((FontGlyphSection *)data)->glyphData;
 
         col = 0x48B;
         while (col >= 0)
@@ -294,7 +329,7 @@ void func_80037308(void *arg0, void *arg1)
             count += w;
         }
 
-        data = out + 0x30;
+        data = ((BattleNameOutBlock *)out)->rows[0];
         pkt += 1;
         count = (count + 2) / 2;
 
@@ -317,7 +352,7 @@ void func_80037308(void *arg0, void *arg1)
             }
 
             pkt += 0x60;
-            data += 0x30;
+            data += sizeof(((BattleNameOutBlock *)out)->rows[0]);
         }
 
         idx++;
