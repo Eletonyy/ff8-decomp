@@ -39,17 +39,6 @@ typedef struct {
     /* 0x03 */ s8 unk03;  /**< Marker byte - set to -1 on reset. */
 } SceneState;
 
-typedef struct {
-    s32 widthTableOffset;
-    s32 glyphSectionOffset;
-} FontArchive;
-
-typedef struct {
-    u8 pad00[8];
-    s32 glyphDataOffset;
-    u8 glyphData[1];
-} FontGlyphSection;
-
 extern SceneState D_80082C8C;   /**< Scene-state block (mode/cmd/markers). */
 
 /* ======================================================================== */
