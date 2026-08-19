@@ -74,7 +74,6 @@ extern volatile s32 D_800C974C;
 /* Main-binary helper: applies matrix @p m to @p in, writing @p out. */
 extern void func_800404D4(MATRIX *m, SVECTOR *in, SVECTOR *out);
 
-static void func_800A9CC0(WorldParticle *p, WorldParticle *q);
 
 /**
  * @brief POLY_GT3 view with packed 32-bit vertex words (0x28 bytes).
@@ -115,7 +114,6 @@ typedef struct {
 
 extern WorldPolyGT3 *D_800D8804;    /**< Current POLY_GT3 slot being filled. */
 
-static void func_800AAD48(WorldVtx *vtx, TriShade *shade);
 
 /**
  * @brief POLY_GT4 view with packed 32-bit vertex words (0x34 bytes).
@@ -151,8 +149,6 @@ typedef struct {
 
 extern WorldPolyGT4 *D_800D8800;    /**< Current POLY_GT4 slot being filled. */
 
-static void func_800AAEAC(WorldVtx *vtx, QuadShade *shade);
-static void func_800A6A74(BattleSceneCtx *ctx);
 
 extern s16 D_800C53B4[];            /**< Per-plane depth-cue weight fed to func_800ABDD8. */
 
@@ -169,13 +165,18 @@ extern WorldPolyGT3 D_800D7400[2][64];
 /* func_800491E8 is main-binary. */
 extern void func_800491E8(void *p);
 
-/* Private to this unit: no caller outside we_object4 references these. */
+/* Private to this unit: no caller outside we_object4 references these.
+ * The last four are reached only from this unit's own INCLUDE_ASM bodies. */
 static void func_800A688C(u16 *src, RECT *area, u16 *dst, s32 count);
 static void func_800A7CD0(s32 *block);
 static void func_800A8024(void);
-static void func_800A8A28(s16 y);
 static void func_800A8868(s32 phase, s16 y);
+static void func_800A8A28(s16 y);
 static void func_800A9F54(WorldPos *pos, s32 x, s32 y);
+static void func_800A6A74(BattleSceneCtx *ctx);
+static void func_800A9CC0(WorldParticle *p, WorldParticle *q);
+static void func_800AAD48(WorldVtx *vtx, TriShade *shade);
+static void func_800AAEAC(WorldVtx *vtx, QuadShade *shade);
 
 /**
  * @brief One vertex of the world-map inset mesh (@ref func_800A9F54).
