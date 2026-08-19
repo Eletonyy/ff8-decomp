@@ -32,33 +32,21 @@ typedef struct {
 } PaletteTransition;
 
 /**
- * @brief Overlay for the camera/transition scratch region.
- *
- * g_cameraVibrateIntensity (0x800834D4) is the first field; the
- * PaletteTransition state at D_80083754 (0x80083754) lands 0x280 bytes
- * later as @c transition. The retail build reads the intensity as a
- * negative offset from the transition base (lhu -640($s5)), so code
- * derives it from that base via CAMERA_TRANSITION_SCRATCH_TRANSITION_OFFSET
- * rather than loading the absolute address (which would emit a
- * non-matching lui+lhu).
+ * @brief 0x280-byte scratch region immediately before the PaletteTransition
+ * at D_80083754 (a separate global). vibrateIntensity is read as the block
+ * before the transition base to keep the retail lhu -640($s5) form.
  */
 typedef struct {
-    /* 0x000 */ u16 vibrateIntensity;         /* g_cameraVibrateIntensity */
-    /* 0x002 */ u8  pad[0x27E];               /* unmodeled region */
-    /* 0x280 */ PaletteTransition transition; /* D_80083754 */
-} CameraTransitionScratch;
+    /* 0x000 */ u16 vibrateIntensity; /* g_cameraVibrateIntensity */
+    /* 0x002 */ u8  pad[0x27E];       /* to D_80083754 */
+} CameraTransitionScratch;            /* sizeof == 0x280 */
 
-#define CAMERA_TRANSITION_SCRATCH_TRANSITION_OFFSET \
-    ((u32)&((CameraTransitionScratch *)0)->transition)
-
-/* Compile-time layout checks: these offsets are load-bearing, since the
- * retail code addresses vibrateIntensity via a negative offset from the
- * transition base (lhu -640($s5)). A typedef of a negative-sized array
- * fails compilation if the struct layout ever drifts. */
+/* Load-bearing layout: size must stay 0x280 (see lhu -640($s5) access).
+ * Negative-sized array typedefs fail compilation if it drifts. */
 typedef char camera_transition_scratch_vibrate_ok[
     (((u32)&((CameraTransitionScratch *)0)->vibrateIntensity) == 0x000) ? 1 : -1];
-typedef char camera_transition_scratch_transition_ok[
-    (((u32)&((CameraTransitionScratch *)0)->transition) == 0x280) ? 1 : -1];
+typedef char camera_transition_scratch_size_ok[
+    (sizeof(CameraTransitionScratch) == 0x280) ? 1 : -1];
 
 /* --- Data externs (sorted by address) --- */
 

@@ -933,7 +933,6 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
     u8 *pkt_r;
     PaletteTransition *p;
     u32 color;
-    CameraTransitionScratch *scratch;
     s32 xPos;
     s32 curve;
     s32 brightness;
@@ -958,15 +957,9 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
     copyDisplayRect(&rect);
 
     {
-        /* g_cameraVibrateIntensity (0x800834D4) is the first field of the
-           camera-transition scratch overlay whose transition member lands on
-           D_80083754 (0x80083754). The retail build reads it as a negative
-           offset from the transition base (lhu -640($s5)); deriving it from
-           p keeps that form instead of an absolute lui+lhu. */
-        u8 *scratchBase = (u8 *)p;
-        scratchBase -= CAMERA_TRANSITION_SCRATCH_TRANSITION_OFFSET;
-        scratch = (CameraTransitionScratch *)scratchBase;
-        color = scratch->vibrateIntensity;
+        /* g_cameraVibrateIntensity sits in the scratch block right before p;
+           stepping back one block keeps the retail lhu -640($s5) form. */
+        color = ((CameraTransitionScratch *)p)[-1].vibrateIntensity;
         color >>= 5;
         color &= 0xFF;
         color = (color | (color << 8)) | (color << 16);
