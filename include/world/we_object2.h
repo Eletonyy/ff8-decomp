@@ -73,8 +73,6 @@ extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
 extern s32  func_800BEDF0(u8 *output);
 
 /* Helpers used by setupWorldRender (world-map sound/display setup). */
-extern void func_80048C50(s32 a);
-extern void func_800488D4(s32 a);
 extern void func_800C3DB0(void (*cb)(void));
 extern void func_800A47A4(void);
 extern void sndEnableReverb(u32 a);

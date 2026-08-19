@@ -280,6 +280,12 @@ s32 rcos(s32 a);
     : "r"( r0 )                                          \
     : "memory" )
 
+#define gte_stsz( r0 ) __asm__ volatile (                \
+    "swc2   $19, 0( %0 )"                                \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "memory" )
+
 #define gte_stotz( r0 ) __asm__ volatile (               \
     "swc2   $7, 0( %0 )"                                 \
     :                                                    \
@@ -287,19 +293,19 @@ s32 rcos(s32 a);
     : "memory" )
 
 /* Bare GTE ops (each emits 2 nops + the encoded instruction word). */
-#define gte_RTPT() __asm__ volatile (                    \
+#define gte_rtpt() __asm__ volatile (                    \
     "nop;"                                               \
     "nop;"                                               \
     ".word  0x4A280030"                                  \
     : : )
 
-#define gte_RTPS() __asm__ volatile (                    \
+#define gte_rtps() __asm__ volatile (                    \
     "nop;"                                               \
     "nop;"                                               \
     ".word  0x4A180001"                                  \
     : : )
 
-#define gte_AVSZ4() __asm__ volatile (                   \
+#define gte_avsz4() __asm__ volatile (                   \
     "nop;"                                               \
     "nop;"                                               \
     ".word  0x4B68002E"                                  \
@@ -308,7 +314,7 @@ s32 rcos(s32 a);
 /* OP (sf = 0) — cross product of the vector loaded by @ref gte_ldopv1 with
  * the one loaded by @ref gte_ldopv2, full precision (no >>12), leaving the
  * result in MAC1..MAC3 for @ref gte_stlvnl. */
-#define gte_OP0() __asm__ volatile (                     \
+#define gte_op0() __asm__ volatile (                     \
     "nop;"                                               \
     "nop;"                                               \
     ".word  0x4B70000C"                                  \

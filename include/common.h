@@ -176,6 +176,18 @@ typedef union {
 #define getAddrNewFast(ot, dst) { u32 _pad; __asm__ __volatile__("lwl %0, 2(%2)" : "=r"(dst) : "0"(_pad), "r"(ot) : "memory"); }
 #define addOtFast(p, head) { u32 _tmp; __asm__ __volatile__("sll %1, %2, 8\n\tswl %0, 2(%2)\n\taddu %0, %1, $0" : "+r"(head) : "r"(_tmp), "r"(p) : "memory"); }
 
+/* Mark an uninitialised variable as deliberately carrying whatever garbage
+ * its register holds. The empty volatile asm is a definition the optimiser
+ * can neither delete nor propagate, and it emits no instructions — so the
+ * variable stops being live-in at function entry and the register allocator
+ * classifies it like any defined local. Needed to reproduce dead code that
+ * reads uninitialised locals (func_800A8024 multiplies two of these): with
+ * no definition at all, gcc treats the pseudo as global and every
+ * callee-saved register shifts by one. volatile is load-bearing — a
+ * non-volatile version gets scheduled past the next call, shrinking the
+ * live range into a caller-saved register. */
+#define uninitReg(var) __asm__ __volatile__("" : "=r"(var))
+
 /**
  * @brief Battle encounter setup parameters at @ref D_80082C90.
  *
@@ -202,5 +214,11 @@ extern EncounterParams D_80082C90;
 
 /** @brief Append string @p src onto @p dst (main-binary string concatenation). */
 extern void func_80047C74(u8 *dst, u8 *src);
+
+/** @brief Integer square root of @p a (main-binary helper). */
+extern s32 func_8003F4A4(s32 a);
+
+/** @brief Poll the GPU; returns non-zero while it is still busy.
+ *         Callers that only need the side effect ignore the result. */
 
 #endif /* COMMON_H */

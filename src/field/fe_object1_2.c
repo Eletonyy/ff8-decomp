@@ -6,6 +6,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
 #include "field/fe_object1.h"
+#include "field/fe_object1_2.h"
 #include "field/fe_object10.h"
 
 /**
@@ -339,7 +340,7 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1_2", func_800A19B8);
  * to VRAM at @c (0x100, 0x10) with a @c 256x16 RECT, and masks every
  * pixel's @c 0x8000 transparency bit to leave just the colour bits.
  *
- * The two @c func_80048C50(1) polls are GPU-busy waits sandwiching
+ * The two @c DrawSync(1) polls are GPU-busy waits sandwiching
  * the transfer so the buffer isn't read while another command is
  * still being issued.
  */
@@ -353,9 +354,9 @@ void func_800A1BB8(void) {
     rect.y = 0xF0;
     rect.w = 0x100;
     rect.h = 0x10;
-    while (func_80048C50(1) != 0) {}
+    while (DrawSync(1) != 0) {}
     func_80048F5C(&rect, D_800C71E4);
-    while (func_80048C50(1) != 0) {}
+    while (DrawSync(1) != 0) {}
     p = D_800C71E4;
     for (i = 0; i < 0x1000; i++) {
         *p &= 0x7FFF;
@@ -686,13 +687,13 @@ void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Actor *ents)
 
         otz = func_80040DE4(&pt[0], sxy, &p, &flag);
         gte_ldv3(&pt[0], &pt[1], &pt[2]);
-        gte_RTPT();
+        gte_rtpt();
         gte_stsxy3(&pt[0], &pt[1], &pt[2]);
         gte_ldv3(&pt[3], &pt[4], &pt[5]);
-        gte_RTPT();
+        gte_rtpt();
         gte_stsxy3(&pt[3], &pt[4], &pt[5]);
         gte_ldv3(&pt[6], &pt[7], &pt[8]);
-        gte_RTPT();
+        gte_rtpt();
         gte_stsxy3(&pt[6], &pt[7], &pt[8]);
 
         if (otz < 0xFFF) {
@@ -799,7 +800,7 @@ typedef union {
  *
  * @p buf begins with a halfword header: the split row (0x2020, ASCII
  * spaces, means "empty buffer, skip"). The upload sequence, each part
- * preceded by a busy-wait on @ref func_80048C50 and a @ref func_80042634
+ * preceded by a busy-wait on @ref DrawSync and a @ref func_80042634
  * reset:
  *  1. a 256x1 strip at (0, 0xE8) from @c buf+2 (the palette row),
  *  2. a 64-wide column at (slot*64, header+0x100) of height
@@ -822,21 +823,21 @@ void func_800A2D2C(s16 *buf, s32 slot) {
 
     hp = (func_800A2D2C_half *)buf;
     if (buf[0] != 0x2020) {
-        while (func_80048C50(1) != 0) {}
+        while (DrawSync(1) != 0) {}
         func_80042634(0);
         rect.x = 0;
         rect.y = 0xE8;
         rect.w = 0x100;
         rect.h = 1;
-        func_80048EFC(&rect, (u8 *)(buf + 2));
-        while (func_80048C50(1) != 0) {}
+        LoadImage(&rect, (u32 *)(buf + 2));
+        while (DrawSync(1) != 0) {}
         func_80042634(0);
         rect.x = slot << 6;
         rect.y = hp->u + 0x100;
         rect.w = 0x40;
         rect.h = (0x100 - hp->s) / 2;
-        func_80048EFC(&rect, (u8 *)(buf + 0x102));
-        while (func_80048C50(1) != 0) {}
+        LoadImage(&rect, (u32 *)(buf + 0x102));
+        while (DrawSync(1) != 0) {}
         func_80042634(0);
         rect.x = slot << 6;
         y0 = ((volatile func_800A2D2C_half *)hp)->u;
@@ -845,7 +846,7 @@ void func_800A2D2C(s16 *buf, s32 slot) {
         rect.y = h2 + y0;
         rect.w = 0x40;
         rect.h = (0x100 - hp->s) / 2;
-        func_80048EFC(&rect, (u8 *)(buf + ((((0x100 - hp->s) / 2) << 6) + 0x102)));
+        LoadImage(&rect, (u32 *)(buf + ((((0x100 - hp->s) / 2) << 6) + 0x102)));
     }
 }
 
@@ -1406,7 +1407,7 @@ void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldSubsceneBuffer *buf, u3
     }
 
     gte_ldv0(pos);
-    gte_RTPS();
+    gte_rtps();
     gte_stsxy(&buf->primCursor->x0);
     gte_stszotz(&otz);
 

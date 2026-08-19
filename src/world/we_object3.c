@@ -104,7 +104,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A246C);
  * @c D_800DA8B0 and loads it via @c SetColorMatrix.
  */
 void setupWorldRenderParams(void) {
-    func_800488D4(3);
+    ResetGraph(3);
     SetGeomOffset((s16)D_800C97EA / 2, (s16)D_800C97E8 / 2);
 
     D_800DB0E0.r = D_800C53F8.r;
@@ -416,8 +416,6 @@ s32 func_800A475C(s32 a, s32 b) {
 }
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A47A4);
-
-s32 func_800A5E40(s32 x, s32 y);
 
 /**
  * @brief Build a linked list of the world-map grid cells inside the camera

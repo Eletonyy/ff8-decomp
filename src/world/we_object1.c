@@ -22,12 +22,12 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_800997E8);
  * table: each non-zero entry is a byte-offset to a streaming-image record at
  * @c (u8 *)script + offset, which @c func_8009CA34 parses into an @ref ImageDesc.
  * @c rect1 / @c data1 are blitted through the scratch @c D_800C8640
- * (via @c func_80048EFC), and — when bit 3 of @c desc.flag is set —
+ * (via @c LoadImage), and — when bit 3 of @c desc.flag is set —
  * @c rect2 / @c data2 are blitted too.
  *
  * Afterwards, unconditionally: if the low 5 bits of @c D_800D2440 are neither 3
  * nor 4, the fixed VRAM rectangle @c {0x360,0x100,0x10,0x40} is refreshed via
- * @c func_80048DD4.
+ * @c ClearImage.
  *
  * @param entity Source entity; bit 0 of @c field46 gates the script walk.
  * @param script World-engine script — a 0-terminated table of byte-offsets,
@@ -46,13 +46,13 @@ void func_80099B48(Entity *entity, s32 *script) {
             D_800C8640.y = desc.rect1.y;
             D_800C8640.w = desc.rect1.w;
             D_800C8640.h = desc.rect1.h;
-            func_80048EFC(&D_800C8640, desc.data1);
+            LoadImage(&D_800C8640, desc.data1);
             if ((desc.flag >> 3) & 1) {
                 D_800C8640.x = desc.rect2.x;
                 D_800C8640.y = desc.rect2.y;
                 D_800C8640.w = desc.rect2.w;
                 D_800C8640.h = desc.rect2.h;
-                func_80048EFC(&D_800C8640, desc.data2);
+                LoadImage(&D_800C8640, desc.data2);
             }
             i++;
             off = script[i];
@@ -65,7 +65,7 @@ void func_80099B48(Entity *entity, s32 *script) {
         rect.y = 0x100;
         rect.w = 0x10;
         rect.h = 0x40;
-        func_80048DD4(&rect, 0, 0, 0);
+        ClearImage(&rect, 0, 0, 0);
     }
 }
 
@@ -325,11 +325,11 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009A954);
  *
  * Selects a load RECT from the active scene context @c D_800D244C — at @c +0x5C when it is
  * not the @c D_800CA040 sentinel, else at @c +0x40CC — and, if its width field is non-zero,
- * loads its image (@c func_80048FBC) after a @c func_80042634 prep. It then copies the
+ * loads its image (@c MoveImage) after a @c func_80042634 prep. It then copies the
  * sentinel's DRAWENV and DISPENV templates into the active @c D_80082C30 / @c D_80082C18 and
  * publishes them via @c g_activeDrawEnv / @c D_8005F138. Finally, when the scene mode
  * @c D_80082C8C is 5, it re-initialises both screen buffers (16 passes of
- * @c func_800A5D10 bracketed by @c func_800A5FD4) and flushes via @c func_80048BB8.
+ * @c func_800A5D10 bracketed by @c func_800A5FD4) and flushes via @c SetDispMask.
  */
 void func_8009AD3C(void) {
     RECT *r;
@@ -343,8 +343,8 @@ void func_8009AD3C(void) {
     }
     func_80042634(0);
     if (r->x != 0) {
-        func_80048FBC(r, 0, 0);
-        func_80048C50(0);
+        MoveImage(r, 0, 0);
+        DrawSync(0);
     }
     D_80082C30 = D_800CA040.drawEnv;
     D_80082C18 = ((CtxDispView *)&D_800CA040)->disp;
@@ -358,7 +358,7 @@ void func_8009AD3C(void) {
             func_800A5D10();
             func_800A5FD4(0);
         }
-        func_80048BB8(0);
+        SetDispMask(0);
     }
 }
 

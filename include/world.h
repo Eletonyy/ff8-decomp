@@ -206,7 +206,9 @@ typedef struct {
  * by field.h / gamestate.h respectively and are not redeclared here.) */
 extern s32            D_8005F138;        /**< Active display-env window (holds a DISPENV*). */
 extern s32            D_800C4D20;
-extern s32            D_800C4D30;        /**< World-map zoom/scale constant (set by setupWorldMapView). */
+extern s32            D_800C4D30;        /**< World-map zoom/scale constant (set by setupWorldMapView).
+                                               Stored as a word, but @ref func_800A8270 uses only its low
+                                               half — hence the @c (u16) cast at that one site. */
 extern s32            D_800C4D38;        /**< World dispatch code / map id. */
 extern s32            D_800C4D3C;
 extern s32            D_800C4D4C;
@@ -234,9 +236,19 @@ extern s16            D_800C977A;
 extern AngleSlot      D_800C97F4;        /**< Camera angle slot (word/half view). */
 extern MATRIX         D_800C9838;        /**< World-to-screen matrix loaded into the GTE. */
 extern WorldPos       D_800C9868;        /**< Source camera world position (cast to VECTOR* for GTE transform func_800BC544). */
+extern SVECTOR        D_800C9770[2];     /**< Camera scratch: [0] is a position offset, [1] a rotation. */
+extern s32           *D_800C9744;        /**< Texture-strip animation block: a NULL-terminated s32 offset
+                                              table; each offset, relative to this pointer, locates one
+                                              strip record (see func_800A7B38). */
 extern s16            D_800C9E38[3];     /**< Per-frame camera movement deltas ([0]=x, [2]=z); cleared on world init (we_object1), fed to the particle camera-follow drift (we_object4). */
 extern s16            D_800D239A;
-extern u8             D_800DB0D0[];     /**< 12-byte map-view HUD record (copied from D_800C5448 by func_800ABC98); bytes 0-2 are widths used to centre the location-name banner. */
+extern CVECTOR        D_800DB0D0[3];    /**< Map-view HUD palette (copied from D_800C5448 by
+                                               func_800ABC98): three RGB stops, dark to light.
+                                               func_800A8A28 spans them as the backdrop gradient
+                                               and func_800A8868 tints its panel with the last.
+                                               @note func_800A8400 also sums stop 0's channels to
+                                               centre the location-name banner; that use is not
+                                               understood. */
 extern u8             D_800C5398[];      /**< 4-byte flag block. */
 extern s32            D_800C9718;
 extern s16            D_800C97E8;        /**< Worldmap screen height reference. */
@@ -266,6 +278,30 @@ typedef struct {
 } WorldFlags;
 
 /**
+ * @brief @c CVECTOR::cd flag on the world depth-cue path: set means
+ *        "drop this pixel". func_800A688C marks fully black source
+ *        pixels with it; func_800ABDD8 skips those and also sets it on
+ *        the way out to veto a blended pixel.
+ */
+#define WORLD_CD_DROP 0x80
+
+/**
+ * @brief Streaming-image record as it appears in world data: a fixed
+ *        0x14-byte header followed by the pixel payload.
+ *
+ * This is the wire format @ref func_8009CA34 parses into an @ref ImageDesc;
+ * callers that already know a record is single-stage (such as the texture
+ * strip loader) skip the parse and blit @c data directly.
+ */
+typedef struct {
+    /* 0x00 */ u32 count;   /**< Leading count/magic word. */
+    /* 0x04 */ u32 flag;    /**< Low nibble gates the second stage. */
+    /* 0x08 */ u32 size;    /**< Payload size in bytes. */
+    /* 0x0C */ RECT rect;   /**< Destination rectangle. */
+    /* 0x14 */ u32 data[1]; /**< Pixel payload, as passed to @c LoadImage. */
+} StreamImage;
+
+/**
  * @brief Two-stage @c LoadImage descriptor — pair of @c RECT / @c data
  *        slots gated by the low nibble of @c flag. Shared between
  *        @c func_8009C478 and @c func_8009C5FC.
@@ -281,10 +317,8 @@ typedef struct {
 /* Parses a streaming-image record at @p src into @p desc. */
 extern s32  func_8009CA34(s32 *src, ImageDesc *desc);
 /* Blits @p data through scratch rect @p r (typically &D_800C8640). */
-extern void func_80048EFC(RECT *r, u32 *data);
-extern RECT D_800C8640;            /**< Scratch RECT used by func_80048EFC blits. */
+extern RECT D_800C8640;            /**< Scratch RECT used by the LoadImage blits. */
 /* MoveImage-style VRAM copy: source rect @p r to destination (@p dstX, @p dstY). */
-extern void func_80048FBC(RECT *r, s32 dstX, s32 dstY);
 
 /**
  * @brief Two-halfword script opcode entry (4 bytes).
@@ -384,6 +418,12 @@ typedef struct {
     /* 0x18 */ SVECTOR offset;          /**< Per-kind GTE-projected offset. */
     /* 0x20 */ u8      unk20[0x08];
 } KindParams;                          /* 0x28 bytes */
+
+/* Spawn-flag bits for the Slot30 pool spawners (func_800AC0A0 and the
+ * fixed-kind wrappers around it). */
+#define SLOT_FLAG_JITTER_LIMIT 1  /**< RNG-jitter Slot30::limit by [-4, +3]. */
+#define SLOT_FLAG_JITTER_LIFE  2  /**< RNG-jitter Slot30::life by [-0x80, +0x7F]. */
+#define SLOT_FLAG_UNUSED4      4  /**< Never set by any caller; meaning unknown. */
 
 extern Slot30     D_800D9CB0[64];
 extern MATRIX     D_800DA8B0;          /**< GTE lighting color matrix (sits at &D_800D9CB0[64]). */
