@@ -25,17 +25,19 @@ typedef struct {
 } WorldTexAnim; /* 0xC bytes */
 
 extern s32 D_800C547C;              /**< Shared animation counter, wraps mod 384. */
+extern s32 D_800C5478;              /**< Texture-strip animation counter, wraps mod 384 (func_800A7B38). */
 extern s32 D_800D2264;              /**< Counter increment per update. */
+extern s32 D_800C5458[];            /**< Last uploaded frame per texture strip (parallel to the offset table). */
 extern WorldTexAnim D_800D4E80[4];  /**< The four VRAM row animation slots. */
 extern s32 D_800D4EB0[4];           /**< Last blitted frame per slot. */
 
 extern u16 D_800D2452;              /**< Map-view HUD slide-in coordinate fed to the func_800A84xx drawers. */
 extern s32 D_800C5454;              /**< Likely nonzero while the map pointer highlights a named location — enables the name banner (func_800A8524). */
 
+extern void func_800A7B38(void);    /**< Step the texture-strip animations and upload changed frames. */
+
 /* Map-view HUD drawers of this unit (see func_800A8400 for the driving values). */
 extern void func_800A8524(s32 phase, s16 pos, s32 x);
-extern void func_800A8868(s32 phase, s16 pos);
-extern void func_800A8A28(s16 pos);
 
 /**
  * @brief World-map effect particle (covers offsets 0x00-0x2D; full stride unknown).
@@ -65,6 +67,9 @@ typedef struct {
  * particle position stores, matching the original schedule. */
 extern volatile s32 D_800C9870;
 extern volatile s32 D_800C974C;
+
+/* Main-binary helper: applies matrix @p m to @p in, writing @p out. */
+extern void func_800404D4(MATRIX *m, SVECTOR *in, SVECTOR *out);
 
 extern void func_800A9CC0(WorldParticle *p, WorldParticle *q);
 
@@ -146,16 +151,25 @@ extern WorldPolyGT4 *D_800D8800;    /**< Current POLY_GT4 slot being filled. */
 extern void func_800AAEAC(WorldVtx *vtx, QuadShade *shade);
 extern void func_800A6A74(BattleSceneCtx *ctx);
 
+/**
+ * Spawn a kind-0xE particle in the D_800D9CB0 pool at @p pos (rotation
+ * zeroed, life/limit RNG-jittered). Dead code in the retail build — the
+ * only caller is the unreferenced ambient spawner func_800B99A4.
+ */
+extern void func_800AB2D4(VECTOR *pos);
+
+extern s16 D_800C53B4[];            /**< Per-plane depth-cue weight fed to func_800ABDD8. */
+
 /* Per-pool GPU primitive template arrays (file-private to we_object4). */
+extern POLY_GT4 D_800D58C0[3];      /**< Map-panel quads for the active scene. */
+extern POLY_GT4 D_800D595C[3];      /**< Map-panel quads for the D_800CA040 sentinel scene. */
 extern DR_MODE  D_800D4FB0[2][96];
 extern POLY_FT4 D_800D88B0[2][64];
 extern TILE     D_800DA8D0[2][64];
 extern POLY_GT4 D_800D5A00[2][64];
 extern POLY_GT3 D_800D7400[2][64];
 
-/* func_800491E8 is main-binary; func_80048C50 is main-binary and needs the
- * void-returning view here for matching codegen. */
+/* func_800491E8 is main-binary. */
 extern void func_800491E8(void *p);
-extern void func_80048C50(s32 arg);
 
 #endif /* WORLD_WE_OBJECT4_H */

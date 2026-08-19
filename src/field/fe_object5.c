@@ -7,6 +7,7 @@
 #include "battle.h"
 #include "overlay.h"
 #include "field/fe_object1.h"
+#include "field/fe_object1_2.h"
 #include "field/fe_object5.h"
 
 /**

@@ -7,16 +7,6 @@
 #include "psxsdk/libgte.h"
 
 /**
- * @brief 36-byte prim slot used by @c D_800D4F10[4] — P_TAG header followed
- *        by a 28-byte payload. Seeded with @c len=8 (8-word body) and
- *        @c code=0x38 by @ref func_800ABC98.
- */
-typedef struct {
-    /* 0x00 */ P_TAG tag;
-    /* 0x08 */ u8 pad08[0x1C];
-} Prim36;
-
-/**
  * @brief 8-byte short DR_MODE-like used by @c D_800D4FA0[2] — a P_TAG word
  *        (containing @c len) followed by a single GPU command word.
  */
@@ -57,7 +47,11 @@ typedef struct {
 extern POLY_FT4   D_800D8810[2];
 extern POLY_FT4   D_800D8860[2];
 extern s32        D_800D23D0;
-extern Prim36     D_800D4F10[4];
+/* The four gouraud quads that back the map-view gradient: func_800ABC98
+   seeds all four, func_800A8A28 fills [0..1] for the active scene and
+   [2..3] (aliased as D_800D4F58) for the D_800CA040 sentinel. */
+extern POLY_G4    D_800D4F10[4];
+extern POLY_G4    D_800D4F58[2];
 extern DrSetMode8 D_800D4FA0[2];
 extern u8         D_800C5448[];
 extern POLY_FT4   D_800D4EC0[2];
@@ -68,8 +62,6 @@ extern VECTOR     D_800DD658;     /* source position for func_800BC51C          
 extern void func_800A84D0(void);
 extern s32  func_8003F9F4(CVECTOR *input, CVECTOR *cue, s32 w1, s32 w2, CVECTOR *out);
 extern s32  func_8009CC3C(void);
-extern s32  func_80048C50(s32 arg);
-extern s32  func_8003F4A4(s32 a);
 extern s32  func_80041E84(s32 y, s32 x);
 extern s32  worldPosToCell(VECTOR *pos, SVECTOR *out);
 extern s32  func_800A4700(s32 a, s32 b);
@@ -82,5 +74,9 @@ extern void func_800B5C60(s32 ctx, s16 count, MATRIX *outMat, SVECTOR *outAngles
                           SVECTOR *rotBuf, u8 *xform, ActorRecord *recs);
 extern void func_800BC51C(VECTOR *src, VECTOR *dst);
 extern void func_800BC544(VECTOR *src, VECTOR *dst);
+
+/* Depth-cue a CVECTOR run into BGR555 halfwords (see the definition for the
+   per-pixel blend and the STP-bit packing). */
+extern void func_800ABDD8(CVECTOR *input, u16 *output, s32 z, s16 count);
 
 #endif /* WORLD_WE_OBJECT5_H */

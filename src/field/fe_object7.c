@@ -5,6 +5,7 @@
 #include "sound.h"
 #include "psxsdk/libgte.h"
 #include "field/fe_object1.h"
+#include "field/fe_object1_2.h"
 #include "field/fe_object7.h"
 
 /**

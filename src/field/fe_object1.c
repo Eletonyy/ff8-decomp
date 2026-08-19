@@ -6,6 +6,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
 #include "field/fe_object1.h"
+#include "field/fe_object1_2.h"
 #include "field/fe_object10.h"
 
 /**
@@ -117,7 +118,7 @@ s32 *func_800983F0(void) {
     }
 
     func_800A0D6C((u8 *)FIELD_BUNDLE_STRIPS);
-    while (func_80048C50(1) != 0) {}
+    while (DrawSync(1) != 0) {}
 
     func_800A2D2C(*(s16 **)FIELD_BUNDLE_TIM, *(s32 *)FIELD_BUNDLE_SLOT);
 
@@ -200,10 +201,10 @@ s32 *func_800983F0(void) {
         while (D_8005F116 != 0) {}
     }
     while (D_8005F146 == 4) {}
-    while (func_80048C50(1) != 0) {}
+    while (DrawSync(1) != 0) {}
 
     if (D_8005F14C == 3 || D_8005F14C == 0) {
-        func_80048BB8(0);
+        SetDispMask(0);
     }
 
     ptr = buf;
@@ -243,7 +244,7 @@ void func_80098934(void) {
  *     16-byte script-VM scratch arrays at @c sys+0x122 and @c sys+0x130
  *     followed by @c func_800A44D8 + @c func_80098934.
  *   - For mode 0: re-init the two @c DRAWENVs and clear them via
- *     @c func_80048DD4.
+ *     @c ClearImage.
  *   - For modes 1/2 (with @c sys->unk1A5 == 0 for mode 1): kick a
  *     framebuffer copy and set the post-copy state flags.
  *   - For all modes except 6: snapshot 12 consecutive pointer-table fields
@@ -330,8 +331,8 @@ void func_8009895C(void) {
 
         if (D_8005F14C == 0) {
             func_80098314();
-            func_80048DD4(&D_80067388[0].clip, 0, 0, 0);
-            func_80048DD4(&D_80067388[1].clip, 0, 0, 0);
+            ClearImage(&D_80067388[0].clip, 0, 0, 0);
+            ClearImage(&D_80067388[1].clip, 0, 0, 0);
         }
 
         if (((s16)D_8005F14C == 1 && D_800704A8.unk1A5 == 0) || (s16)D_8005F14C == 2) {
@@ -428,7 +429,7 @@ void func_8009895C(void) {
 
         func_80099348();
         func_80048B58(0);
-        while (func_80048C50(1) != 0) {}
+        while (DrawSync(1) != 0) {}
         func_80042634(0);
         func_80098314();
 
@@ -442,7 +443,7 @@ void func_8009895C(void) {
 
         if (state == 4) {
             func_80042634(0);
-            func_80048BB8(0);
+            SetDispMask(0);
             D_8005F14A = 0;
             break;
         }
@@ -628,8 +629,8 @@ void func_80099348(void) {
     u8 *eq;
 
     if (D_800704A8.unk1A5 == 0) {
-        func_80048DD4(&D_80067388[0].clip, 0, 0, 0);
-        func_80048DD4(&D_80067388[1].clip, 0, 0, 0);
+        ClearImage(&D_80067388[0].clip, 0, 0, 0);
+        ClearImage(&D_80067388[1].clip, 0, 0, 0);
     } else {
         D_800704A8.unk1A5 = 0;
     }
@@ -662,7 +663,7 @@ void func_80099348(void) {
             sndStopAll();
             func_800A59D0();
             func_80042634(0);
-            func_80048BB8(0);
+            SetDispMask(0);
             break;
         }
 
@@ -827,7 +828,7 @@ void func_80099348(void) {
         }
         if (D_800704A8.mode == 1 || D_800704A8.mode == 7) {
             func_8009912C();
-            while (func_80048C50(1) != 0) {
+            while (DrawSync(1) != 0) {
             }
             break;
         }
@@ -842,7 +843,7 @@ void func_80099348(void) {
         func_800BE274();
         func_8002A150(0, 0x18, 0xBE);
         D_800D5EA0 = func_80042634(1);
-        while (func_80048C50(1) != 0) {
+        while (DrawSync(1) != 0) {
         }
         if (func_800BE274()) {
             func_80042634(D_800704A8.unk1AC);
@@ -850,7 +851,7 @@ void func_80099348(void) {
             func_80042634(2);
         }
         if (frames == 0) {
-            func_80048BB8(1);
+            SetDispMask(1);
         } else {
             frames--;
         }
@@ -864,7 +865,7 @@ void func_80099348(void) {
         }
 
         if (D_800704A8.unk1AA == 1) {
-            func_80048DD4(&D_80067388[(s16)g_bufferIndex].clip, 0, 0, 0);
+            ClearImage(&D_80067388[(s16)g_bufferIndex].clip, 0, 0, 0);
         }
         if (D_800704A8.unk1B1 == 1) {
             D_800704A8.unk1B1 = 2;
@@ -2461,7 +2462,7 @@ s32 func_8009D598(s16 index) {
 
     gte_ldopv1(sc);
     gte_ldopv2(getScratchAddr(20));
-    gte_OP0();
+    gte_op0();
     gte_stlvnl(getScratchAddr(24));
 
     sc->nx /= 256;
@@ -3499,7 +3500,7 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A06F0);
  *     @c (0, 256 + i*16), a stack of 16 strips of decoration / VRAM
  *     content.
  *
- * Each transfer is sandwiched by @c func_80048C50(1) polls (GPU-busy
+ * Each transfer is sandwiched by @c DrawSync(1) polls (GPU-busy
  * waits); @c func_80042634(0) is called once per strip to set up the
  * mode for the upcoming StoreImage.
  *
@@ -3512,9 +3513,9 @@ void func_800A0D6C(u8 *buf) {
     rect.y = 0xE8;
     rect.w = 0x100;
     rect.h = 0x18;
-    while (func_80048C50(1) != 0) {}
-    func_80048EFC(&rect, buf);
-    while (func_80048C50(1) != 0) {}
+    while (DrawSync(1) != 0) {}
+    LoadImage(&rect, (u32 *)buf);
+    while (DrawSync(1) != 0) {}
     buf += 0x3000;
     for (i = 0; i < 16; i++) {
         func_80042634(0);
@@ -3522,10 +3523,10 @@ void func_800A0D6C(u8 *buf) {
         rect.y = i * 16 + 0x100;
         rect.w = 0x340;
         rect.h = 0x10;
-        func_80048EFC(&rect, buf);
+        LoadImage(&rect, (u32 *)buf);
         buf += 0x6800;
     }
-    while (func_80048C50(1) != 0) {}
+    while (DrawSync(1) != 0) {}
 }
 
 /**
