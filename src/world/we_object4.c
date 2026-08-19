@@ -820,10 +820,8 @@ void func_800A9ED4(void) {
         for (i = 0; i < 64; i++) {
             p4 = &D_800D5A00[j][i];
             p3 = &D_800D7400[j][i];
-            setlen(&D_800D5A00[j][i], 0xC);
-            setcode(&D_800D5A00[j][i], 0x3C);
-            setlen(&D_800D7400[j][i], 0x9);
-            setcode(&D_800D7400[j][i], 0x34);
+            setPolyGT4(&D_800D5A00[j][i]);
+            setPolyGT3(&D_800D7400[j][i]);
         }
     }
 }
