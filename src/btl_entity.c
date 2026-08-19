@@ -15,7 +15,14 @@ extern s32 reverseButtonRemap(s32 index);
 INCLUDE_ASM("asm/nonmatchings/btl_entity", func_8002BAA0);
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_entity", func_8002BC10);
+u32 func_8002BC10(u32 arg0, u32 arg1, u32 arg2, u32 arg3)
+{
+    u32 hi;
+
+    hi = func_8002B3A0(arg0, arg1, arg2, arg3, 3);
+
+    return __udivdi3(arg0, hi, arg2, arg3);
+}
 
 
 INCLUDE_ASM("asm/nonmatchings/btl_entity", func_8002BC6C);
