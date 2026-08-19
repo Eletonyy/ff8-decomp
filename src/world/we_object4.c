@@ -74,7 +74,7 @@ extern volatile s32 D_800C974C;
 /* Main-binary helper: applies matrix @p m to @p in, writing @p out. */
 extern void func_800404D4(MATRIX *m, SVECTOR *in, SVECTOR *out);
 
-extern void func_800A9CC0(WorldParticle *p, WorldParticle *q);
+static void func_800A9CC0(WorldParticle *p, WorldParticle *q);
 
 /**
  * @brief POLY_GT3 view with packed 32-bit vertex words (0x28 bytes).
@@ -115,7 +115,7 @@ typedef struct {
 
 extern WorldPolyGT3 *D_800D8804;    /**< Current POLY_GT3 slot being filled. */
 
-extern void func_800AAD48(WorldVtx *vtx, TriShade *shade);
+static void func_800AAD48(WorldVtx *vtx, TriShade *shade);
 
 /**
  * @brief POLY_GT4 view with packed 32-bit vertex words (0x34 bytes).
@@ -151,8 +151,8 @@ typedef struct {
 
 extern WorldPolyGT4 *D_800D8800;    /**< Current POLY_GT4 slot being filled. */
 
-extern void func_800AAEAC(WorldVtx *vtx, QuadShade *shade);
-extern void func_800A6A74(BattleSceneCtx *ctx);
+static void func_800AAEAC(WorldVtx *vtx, QuadShade *shade);
+static void func_800A6A74(BattleSceneCtx *ctx);
 
 extern s16 D_800C53B4[];            /**< Per-plane depth-cue weight fed to func_800ABDD8. */
 
@@ -281,7 +281,7 @@ static void func_800A688C(u16 *src, RECT *area, u16 *dst, s32 count) {
  *
  * @param ctx Scene context whose @c primList holds the bone prims.
  */
-void func_800A6A74(BattleSceneCtx *ctx) {
+static void func_800A6A74(BattleSceneCtx *ctx) {
     s32 cond;
     s32 i;
 
@@ -909,7 +909,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A9300);
  *       store, matching the original instruction schedule. The offsets
  *       still fold to plain 0x0/0x4/0x8 accesses.
  */
-void func_800A9CC0(WorldParticle *p, WorldParticle *q) {
+static void func_800A9CC0(WorldParticle *p, WorldParticle *q) {
     s32 *w;
 
     p->scale = p->scale * q->scaleRate / 4096;
@@ -1094,7 +1094,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AA210);
  * @param vtx   Three transformed vertices (packed screen word + u/v).
  * @param shade Per-vertex grayscale shade triple.
  */
-void func_800AAD48(WorldVtx *vtx, TriShade *shade) {
+static void func_800AAD48(WorldVtx *vtx, TriShade *shade) {
     D_800D8804->r0 = shade->c0;
     D_800D8804->g0 = shade->c0;
     D_800D8804->b0 = shade->c0;
@@ -1134,7 +1134,7 @@ void func_800AAD48(WorldVtx *vtx, TriShade *shade) {
  * @param vtx   Four transformed vertices (packed screen word + u/v).
  * @param shade Per-vertex grayscale shade quad.
  */
-void func_800AAEAC(WorldVtx *vtx, QuadShade *shade) {
+static void func_800AAEAC(WorldVtx *vtx, QuadShade *shade) {
     D_800D8800->r0 = shade->c0;
     D_800D8800->g0 = shade->c0;
     D_800D8800->b0 = shade->c0;
