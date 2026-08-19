@@ -98,6 +98,9 @@ typedef struct {
 #define setPolyG4(p)     setlen(p, 8),  setcode(p, 0x38)
 
 /* Initialise a gouraud-shaded textured 3-vertex polygon (len=9 words, code=0x34). */
+/* Initialise a 1x1 tile primitive (len=2 words, code=0x68). */
+#define setTile1(p)      setlen(p, 2),  setcode(p, 0x68)
+
 #define setPolyGT3(p)    setlen(p, 9),  setcode(p, 0x34)
 
 /* Initialise a gouraud-shaded textured 4-vertex polygon (len=12 words, code=0x3C). */
@@ -150,6 +153,13 @@ typedef struct {
     s16 x0, y0;
     u16 w, h;
 } TILE;
+
+/** @brief 1x1 tile — fixed-size TILE with no w/h. Code 0x68. */
+typedef struct {
+    u32 tag;
+    u8 r0, g0, b0, code;
+    s16 x0, y0;
+} TILE_1;
 
 /**
  * @brief GPU draw environment command packet.

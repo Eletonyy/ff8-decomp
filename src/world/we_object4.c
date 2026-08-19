@@ -10,6 +10,9 @@
 
 /* ---- Private to this unit: nothing outside we_object4 references these. ---- */
 
+extern TILE_1   D_800D5430[96];      /**< Second half of the star pool (== &D_800D4FB0[1][0]). */
+extern DR_TPAGE D_800D58B0[2];      /**< Draw-mode packet closing the star layer, one per scene. */
+
 /**
  * @brief World-map VRAM row animation slot (12 bytes).
  *
@@ -41,7 +44,6 @@ extern s32 D_800C5454;              /**< Likely nonzero while the map pointer hi
 
 
 /* Map-view HUD drawers of this unit (see func_800A8400 for the driving values). */
-extern void func_800A8524(s32 phase, s16 pos, s32 x);
 
 /**
  * @brief World-map effect particle (covers offsets 0x00-0x2D; full stride unknown).
@@ -170,6 +172,7 @@ extern void func_800491E8(void *p);
 static void func_800A688C(u16 *src, RECT *area, u16 *dst, s32 count);
 static void func_800A7CD0(s32 *block);
 static void func_800A8024(void);
+static void func_800A8524(s32 scrollX, s16 topY, s32 brightness);
 static void func_800A8868(s32 phase, s16 y);
 static void func_800A8A28(s16 y);
 static void func_800A9F54(WorldPos *pos, s32 x, s32 y);
@@ -716,13 +719,125 @@ void func_800A84D0(void) {
     s32 s, i;
     for (s = 0; s < 2; s++) {
         for (i = 0; i < 96; i++) {
-            setlen(&D_800D4FB0[s][i], 2);
-            setcode(&D_800D4FB0[s][i], 0x6A);
+            setTile1(&D_800D4FB0[s][i]);
+            setSemiTrans(&D_800D4FB0[s][i], 1);
         }
     }
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A8524);
+/**
+ * @brief Scatter the world-map night sky over the visible columns.
+ *
+ * For each 256-pixel column band still on screen the RNG is reseeded and
+ * 32 stars are placed at random offsets within the band. A star's grey
+ * level rises with its index and with how far its twinkle phase sits from
+ * the midpoint of @c D_800D23D0; one of its three channels is then swapped
+ * for a flicker value so the field shimmers in colour rather than merely
+ * pulsing. Stars past index 15 use a plain ramp instead. Each visible star
+ * is emitted as a @c TILE_1 on the HUD layer, and a @c DR_TPAGE closes the
+ * layer.
+ *
+ * @note Four spellings here are matching devices for gcc 2.8.0 rather than
+ *       intent. The @c nextColX temp lets the column step fill the inner
+ *       loop's branch delay slot; repeating @c (clock >> 1) instead of
+ *       naming it keeps its hoist after the @p topY spill; and of the three
+ *       lines marked "Regalloc hack" the @c do/while(0) is the principled
+ *       one -- its loop-end note stops local-alloc's @c optimize_reg_copy_1
+ *       rewriting the loop test to read the copy's destination.
+ *
+ * @param scrollX    Map scroll offset; folded to the column left of screen.
+ * @param topY       Screen y of the band's top edge.
+ * @param brightness Scale applied to every star colour, 9-bit fixed point.
+ */
+static void func_800A8524(s32 scrollX, s16 topY, s32 brightness) {
+    TILE_1   *tile;
+    DR_TPAGE *tpage;
+    s32 clock;
+    s32 colX, nextColX;
+    s32 star;
+    s32 starX, starY;
+    s32 jitter;
+    s32 twinkle, dim, level, shade, flicker;
+
+    if (D_800D244C == &D_800CA040) {
+        tile = D_800D5430;
+    } else {
+        tile = D_800D4FB0[0];
+    }
+
+    tpage = D_800D58B0;
+    if (D_800D244C == &D_800CA040) {
+        tpage++;
+    }
+
+    clock = D_800D23D0;
+
+    if ((s16)scrollX == 0) {
+        colX = scrollX;
+    } else if ((u16)(scrollX - 1) < 0xFF) {
+        colX = scrollX - 0x100;
+    } else if ((u16)(scrollX - 0x100) < 0x41) {
+        colX = scrollX - 0x200;
+    }
+
+    if ((s16)colX < 0x140) {
+        do {
+            func_8009CCDC(0);
+            for (star = 0; star < 0x20; star++) {
+                starX = colX + (func_8009CC98() & 0xFF);
+                jitter = func_8009CC98();
+                if ((star & 1) == 0) {
+                    starY = topY + (jitter & 0x7F);
+                } else {
+                    starY = topY + (jitter & 0x3F);
+                }
+                if ((u16)starX < 0x140 && (s16)starY >= 0 && (s16)starY < 0xE0) {
+                    if (star < 0x10) {
+                        twinkle = (clock >> 1) % (star + 4);
+                        dim = twinkle - 10;
+                        if (dim <= 0) {
+                            dim = 10 - twinkle;
+                        }
+                        level = star * 4;
+                        level += dim << 4;
+                        shade = (level * brightness) >> 9;
+                        tile->b0 = shade;
+                        tile->g0 = shade;
+                        tile->r0 = shade;
+                        tile->b0 = shade; // Regalloc hack
+                        if ((star & 3) == 0) {
+                            flicker = (level + (clock >> 1)) & 7;
+                            tile->r0 = ((flicker & star) * brightness) >> 9;
+                        } else if ((star & 3) == 1) {
+                            flicker = (level + (clock >> 2)) & 5;
+                            tile->g0 = ((flicker & star) * brightness) >> 9;
+                        } else if ((star & 3) == 2) {
+                            flicker = (level + (clock >> 3)) & 3;
+                            tile->b0 = ((flicker & star) * brightness) >> 9;
+                        }
+                    } else {
+                        shade = ((star * 8 + 0x40) * brightness) >> 9;
+                        dim++; // Regalloc hack
+                        dim--; // Regalloc hack
+                        tile->b0 = shade;
+                        tile->g0 = shade;
+                        tile->r0 = shade;
+                    }
+                    tile->x0 = starX;
+                    tile->y0 = starY;
+                    addPrim(&D_800D244C->primList[BSC_HUD_IDX], tile);
+                    tile++;
+                }
+            }
+            nextColX = colX + 0x100;
+            do { colX = nextColX; } while (0); // Regalloc hack
+        } while ((s16)nextColX < 0x140);
+    }
+
+    setlen(tpage, 1);
+    tpage->code[0] = 0xE1000220;
+    addPrim(&D_800D244C->primList[BSC_HUD_IDX], tpage);
+}
 
 /**
  * @brief Draw the wrapping world-map panel as a row of textured quads.

@@ -25,6 +25,6 @@ extern volatile s32 D_800C9870;
  */
 extern void func_800AB2D4(VECTOR *pos);
 
-extern DR_MODE D_800D4FB0[2][96];   /**< Draw-mode templates, also primed by we_object5. */
+extern TILE_1 D_800D4FB0[2][96];    /**< Night-sky star pool, also primed by we_object5 (func_800A84D0). */
 
 #endif /* WORLD_WE_OBJECT4_H */
