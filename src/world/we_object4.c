@@ -725,6 +725,15 @@ void func_800A84D0(void) {
     }
 }
 
+/* The map view is 320x224, drawn in bands one texture page (256px) wide;
+ * each band gets 32 stars, of which the first 16 twinkle and the rest use
+ * a plain ramp. */
+#define STAR_SCREEN_W    320
+#define STAR_SCREEN_H    224
+#define STAR_BAND_W      256
+#define STARS_PER_BAND   32
+#define STARS_TWINKLING  16
+
 /**
  * @brief Scatter the world-map night sky over the visible columns.
  *
@@ -775,15 +784,15 @@ static void func_800A8524(s32 scrollX, s16 topY, s32 brightness) {
     if ((s16)scrollX == 0) {
         colX = scrollX;
     } else if ((u16)(scrollX - 1) < 0xFF) {
-        colX = scrollX - 0x100;
-    } else if ((u16)(scrollX - 0x100) < 0x41) {
-        colX = scrollX - 0x200;
+        colX = scrollX - STAR_BAND_W;
+    } else if ((u16)(scrollX - STAR_BAND_W) < 0x41) {
+        colX = scrollX - 2 * STAR_BAND_W;
     }
 
-    if ((s16)colX < 0x140) {
+    if ((s16)colX < STAR_SCREEN_W) {
         do {
             func_8009CCDC(0);
-            for (star = 0; star < 0x20; star++) {
+            for (star = 0; star < STARS_PER_BAND; star++) {
                 starX = colX + (func_8009CC98() & 0xFF);
                 jitter = func_8009CC98();
                 if ((star & 1) == 0) {
@@ -791,8 +800,8 @@ static void func_800A8524(s32 scrollX, s16 topY, s32 brightness) {
                 } else {
                     starY = topY + (jitter & 0x3F);
                 }
-                if ((u16)starX < 0x140 && (s16)starY >= 0 && (s16)starY < 0xE0) {
-                    if (star < 0x10) {
+                if ((u16)starX < STAR_SCREEN_W && (s16)starY >= 0 && (s16)starY < STAR_SCREEN_H) {
+                    if (star < STARS_TWINKLING) {
                         twinkle = (clock >> 1) % (star + 4);
                         dim = twinkle - 10;
                         if (dim <= 0) {
@@ -829,9 +838,9 @@ static void func_800A8524(s32 scrollX, s16 topY, s32 brightness) {
                     tile++;
                 }
             }
-            nextColX = colX + 0x100;
+            nextColX = colX + STAR_BAND_W;
             do { colX = nextColX; } while (0); // Regalloc hack
-        } while ((s16)nextColX < 0x140);
+        } while ((s16)nextColX < STAR_SCREEN_W);
     }
 
     setlen(tpage, 1);
