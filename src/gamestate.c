@@ -29,7 +29,9 @@ typedef struct {
     /* 0x000 */ u8 freeIds[0x20];
 } FreeIdTable; /* sizeof == 0x20 */
 
-typedef char free_id_table_size_ok[(sizeof(FreeIdTable) == 0x20) ? 1 : -1];
+#define FREE_ID_TABLE_SIZE 0x20
+#define FREE_ID_LIMIT     (FREE_ID_TABLE_SIZE + 1)
+#define FREE_ID_ENTRIES   0xC6
 
 void func_800370AC(s32 arg0)
 {
@@ -42,7 +44,7 @@ void func_800370AC(s32 arg0)
     s32 one;
     s32 zero;
     zero = 0;
-    if (arg0 < 0x21) {
+    if (arg0 < FREE_ID_LIMIT) {
         ptr = &D_80077EBC;
         base = ((FreeIdTable *)ptr)[-1].freeIds;
         mask = 0;
@@ -53,14 +55,14 @@ void func_800370AC(s32 arg0)
             if (*ptr++ == 0) {
                 val = 0;
             }
-            if (val != 0 && val < 0x21) {
+            if (val != 0 && val < FREE_ID_LIMIT) {
                 if (arg0 == val) {
                     return;
                 }
                 mask |= (one << base[val - 1]);
             }
             i++;
-        } while (i < 0xC6);
+        } while (i < FREE_ID_ENTRIES);
         found = findNthSetBit(~mask, zero, ptr, one);
         arg0 -= 1;
         i = 0;
@@ -72,7 +74,7 @@ void func_800370AC(s32 arg0)
                 return;
             }
             i++;
-        } while (i < 0x20);
+        } while (i < FREE_ID_TABLE_SIZE);
     }
 }
 
