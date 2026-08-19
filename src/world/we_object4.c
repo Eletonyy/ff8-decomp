@@ -813,8 +813,8 @@ void func_800A9E24(BattleSceneCtx *a0) {
  * @c 0xC constant outside the inner loop, which doesn't match).
  */
 void func_800A9ED4(void) {
-    POLY_GT4 *p4;
-    POLY_GT3 *p3;
+    WorldPolyGT4 *p4;
+    WorldPolyGT3 *p3;
     s32 j, i;
     for (j = 0; j < 2; j++) {
         for (i = 0; i < 64; i++) {
@@ -871,8 +871,8 @@ void func_800A9ED4(void) {
 static void func_800A9F54(WorldPos *pos, s32 x, s32 y) {
     WorldTessVert verts[4];
     BattleSceneCtx *ctx;
-    POLY_GT4 *gt4;
-    POLY_GT3 *gt3;
+    WorldPolyGT4 *gt4;
+    WorldPolyGT3 *gt3;
     s32 mapX, mapY;
     s32 i, c;
 
@@ -886,13 +886,13 @@ static void func_800A9F54(WorldPos *pos, s32 x, s32 y) {
     if (ctx == &D_800CA040) {
         gt4 = D_800D5A00[1];
     }
-    D_800D8800 = (WorldPolyGT4 *)gt4;
+    D_800D8800 = gt4;
 
     gt3 = D_800D7400[0];
     if (ctx == &D_800CA040) {
         gt3 = D_800D7400[1];
     }
-    D_800D8804 = (WorldPolyGT3 *)gt3;
+    D_800D8804 = gt3;
 
     for (i = 0; i < MESH_POLY_COUNT; i++) {
         if (i < MESH_QUAD_COUNT) {

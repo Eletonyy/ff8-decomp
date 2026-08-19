@@ -166,8 +166,8 @@ extern POLY_GT4 D_800D595C[3];      /**< Map-panel quads for the D_800CA040 sent
 extern DR_MODE  D_800D4FB0[2][96];
 extern POLY_FT4 D_800D88B0[2][64];
 extern TILE     D_800DA8D0[2][64];
-extern POLY_GT4 D_800D5A00[2][64];
-extern POLY_GT3 D_800D7400[2][64];
+extern WorldPolyGT4 D_800D5A00[2][64];
+extern WorldPolyGT3 D_800D7400[2][64];
 
 /* func_800491E8 is main-binary. */
 extern void func_800491E8(void *p);
