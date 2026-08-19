@@ -1,4 +1,5 @@
 #include "common.h"
+#include "sound.h"
 
 extern s16 D_8007507A;
 /**
@@ -22,7 +23,38 @@ INCLUDE_ASM("asm/nonmatchings/snd_note", func_8001A674);
 
 INCLUDE_ASM("asm/nonmatchings/snd_note", func_8001AA28);
 
-INCLUDE_ASM("asm/nonmatchings/snd_note", func_8001ACCC);
+typedef struct {
+    s32 unk00;
+    s32 unk04;
+    s32 unk08;
+} UnkStruct80074F10;
+
+extern UnkStruct80074F10 D_80074F10;
+extern void func_80017D14(SoundSeqTrack *seq, s32 *tracks);
+
+void func_8001ACCC(SoundSeqTrack *track, s32 *tracks) {
+    s32 savedUnk04;
+    s32 newVal;
+
+    if (D_80074F10.unk08 != 0) {
+        if (--D_80074F10.unk08 == 0) {
+            savedUnk04 = track->instParams;
+            track->field5E = 0;
+            track->instParams = 0;
+            track->voiceIdx = 0;
+            track->field14 = 0;
+            track->field18 = savedUnk04;
+        } else {
+            newVal = D_80074F10.unk00 + D_80074F10.unk04;
+
+            if ((newVal & 0xFFFF0000) != (D_80074F10.unk00 & 0xFFFF0000)) {
+                func_80017D14(track, tracks);
+            }
+
+            D_80074F10.unk00 = newVal;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/snd_note", func_8001AD60);
 
@@ -52,4 +84,3 @@ INCLUDE_ASM("asm/nonmatchings/snd_note", func_8001B690);
 INCLUDE_ASM("asm/nonmatchings/snd_note", func_8001B820);
 
 INCLUDE_ASM("asm/nonmatchings/snd_note", func_8001BAA8);
-

@@ -140,6 +140,23 @@ typedef union {
         : "memory", #treg);                               \
 } while (0)
 
+/* Variant used when the packet-link temporary must remain a read/write
+ * compiler operand. This reproduces the retail reload immediately before
+ * the link splice. */
+#define addPrimFastWithTempOperand(ot, p, tmp) {         \
+    __asm__ __volatile__(                                \
+        ".set push\n"                                    \
+        ".set noat\n"                                    \
+        "sll $at, %1, 8\n"                               \
+        "lwl %0, 2(%2)\n"                                \
+        "swl $at, 2(%2)\n"                               \
+        "swl %0, 2(%1)\n"                                \
+        ".set pop\n"                                     \
+        : "+r" (tmp)                                     \
+        : "r"(p), "r"(ot)                                \
+        : "at", "memory");                               \
+}
+
 /* Read / write just the 24-bit P_TAG.addr field (the OT-next pointer) at offset 2 —
  * the same lwl/swl idiom as addPrimFast, but split so a spread-out splice (read at the
  * top of a function, glyph chain in between, write at the end) can use it without raw

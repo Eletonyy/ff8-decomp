@@ -2,7 +2,48 @@
 #include "psxsdk/libgpu.h"
 #include "battle.h"
 
-INCLUDE_ASM("asm/nonmatchings/entity", func_8003228C);
+void func_8003228C(s32 arg0, u8 *arg1)
+{
+    u8 *src;
+    u8 *dst;
+    s32 cond;
+    u8 c;
+
+    dst = arg1;
+    cond = arg0 & 0x100;
+
+    if (cond) {
+        src = getMenuString(0x6E);
+
+        while (1) {
+            c = *src;
+            src++;
+
+            if (c == 0xA) {
+                src++;
+                {
+                    u8 *src2 = func_80023A54(arg0 & 0xFF);
+                    u8 c2;
+
+                    while (1) {
+                        c2 = *src2;
+                        src2++;
+                        if (c2 == 0) break;
+                        *dst = c2;
+                        dst++;
+                    }
+                }
+            } else {
+                *dst = c;
+                dst++;
+            }
+
+            if (c == 0) break;
+        }
+    } else {
+        copyString(dst, getStatName(arg0));
+    }
+}
 
 
 INCLUDE_ASM("asm/nonmatchings/entity", func_80032350);

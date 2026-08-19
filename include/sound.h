@@ -27,7 +27,8 @@ typedef struct {
     /* 0x0C */ u16 field0C;
     /* 0x0E */ u16 field0E;
     /* 0x10 */ s32 voiceIdx;
-    /* 0x14 */ u8 pad14[8];
+    /* 0x14 */ s32 field14;
+    /* 0x18 */ s32 field18;
     /* 0x1C */ s32 keyOnPending;
     /* 0x20 */ s32 tempoRaw;
     /* 0x24 */ s32 keyOnMask;
