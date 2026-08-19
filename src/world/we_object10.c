@@ -763,14 +763,14 @@ void func_800BE9F8(s32 arg) {
  * @brief Tear down the battle scene: clear state flag, fade SFX, render two frames.
  *
  * Typical end-of-battle / scene-transition cleanup sequence:
- *  1. @c func_80048C50(0) — system/display reset.
+ *  1. @c DrawSync(0) — system/display reset.
  *  2. Clear the @c D_800C5D54 flag.
  *  3. @c fadeOutSfxFast(0) — stop channel 0 SFX.
  *  4. @c renderAndUpdateDisplay(2) — push 2 frames.
  *  5. Flush the battle scene's colorTag into the display list.
  */
 void func_800BEA34(void) {
-    func_80048C50(0);
+    DrawSync(0);
     D_800C5D54 = 0;
     fadeOutSfxFast(0);
     renderAndUpdateDisplay(2);

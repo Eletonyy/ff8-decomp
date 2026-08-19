@@ -3,8 +3,10 @@
 #include "overlay.h"
 #include "gamestate.h"
 #include "character.h"
+#include "tim.h"
 #include "field.h"
 #include "card.h"
+#include "cdread.h"
 
 extern u8 D_8007809B[];
 extern u8 g_chocoboWorld;
@@ -16,8 +18,65 @@ extern s32 D_80085220;
 extern u8 D_8005644B[];
 extern u16 D_800562C8[];
 extern s32 D_800562D4;
+extern u8 D_80077EBC;
+extern u16 D_80082C0A;
+extern u16 D_8005F11C;
+extern s32 findNthSetBit(s32, s32, u8 *, s32);
+extern s32 func_80021300(void);
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_800370AC);
+/** @brief 0x20-byte free-id table immediately before the D_80077EBC pair list. */
+typedef struct {
+    /* 0x000 */ u8 freeIds[0x20];
+} FreeIdTable; /* sizeof == 0x20 */
+
+#define FREE_ID_TABLE_SIZE 0x20
+#define FREE_ID_LIMIT     (FREE_ID_TABLE_SIZE + 1)
+#define FREE_ID_ENTRIES   0xC6
+
+void func_800370AC(s32 arg0)
+{
+    u8 *ptr;
+    u8 *base;
+    s32 mask;
+    s32 i;
+    s32 val;
+    s32 found;
+    s32 one;
+    s32 zero;
+    zero = 0;
+    if (arg0 < FREE_ID_LIMIT) {
+        ptr = &D_80077EBC;
+        base = ((FreeIdTable *)ptr)[-1].freeIds;
+        mask = 0;
+        i = 0;
+        one = 1;
+        do {
+            val = *ptr++;
+            if (*ptr++ == 0) {
+                val = 0;
+            }
+            if (val != 0 && val < FREE_ID_LIMIT) {
+                if (arg0 == val) {
+                    return;
+                }
+                mask |= (one << base[val - 1]);
+            }
+            i++;
+        } while (i < FREE_ID_ENTRIES);
+        found = findNthSetBit(~mask, zero, ptr, one);
+        arg0 -= 1;
+        i = 0;
+        do {
+            if (found == base[i]) {
+                u8 tmp = base[arg0];
+                base[arg0] = found;
+                base[i] = tmp;
+                return;
+            }
+            i++;
+        } while (i < FREE_ID_TABLE_SIZE);
+    }
+}
 
 
 /**
@@ -98,7 +157,167 @@ void enableChocoboWorld(void) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037308);
+extern u8 *getCharName(CharacterId charId);
+extern CharacterData g_characters[];
+
+/** @brief Variable-width name font: width table + TIM glyph sheet. */
+typedef struct {
+    s32 widthTableOffset;    /* +0x00 */
+    s32 timOffset;           /* +0x04 */
+} NameFont;
+
+#define STRIP_STRIDE   0x300
+#define STRIP_ROWS     12
+#define STRIP_PITCH    0x30
+
+#define SCRATCH_PITCH  0x60
+#define SCRATCH_MARGIN 0x0C
+#define SCRATCH_USED   (SCRATCH_MARGIN + STRIP_ROWS * SCRATCH_PITCH)
+
+#define GLYPHS_PER_ROW 21
+#define GLYPH_WIDTH    6
+#define GLYPH_HEIGHT   12
+#define SHEET_PITCH    512
+
+void func_80037308(NameFont *font, u8 *out)
+{
+    u8 scratch[0x490];
+    u8 *widths;
+    u8 *pixels;
+    u8 *dstSlot;
+    u8 *pen;
+    u8 *scratchPtr;
+    u8 *clear;
+    u8 *name;
+    u8 *src;
+    u8 *dst;
+    u8 *packSrc;
+    CharacterData *ch;
+    s32 penX;
+    s32 slot;
+    s32 width;
+    s32 rowOffset;
+    s32 colOffset;
+    s32 rows;
+    s32 count;
+    s32 row;
+    s32 col;
+    u32 code;
+    s32 charId;
+    u8 b;
+    u8 hi;
+    u8 lo;
+
+    dstSlot = out;
+    clear = dstSlot;
+
+    for (slot = PARTY_SLOT_COUNT * STRIP_STRIDE - 1; slot >= 0; slot--) {
+        *clear++ = 0;
+    }
+
+    do {
+        for (slot = 0; slot < PARTY_SLOT_COUNT; slot++, dstSlot += STRIP_STRIDE) {
+            scratchPtr = scratch;
+            pen = scratch + SCRATCH_MARGIN;
+
+            charId = g_gameState.mainData.party.party[slot];
+
+            if (charId == PARTY_SLOT_EMPTY) {
+                continue;
+            }
+
+            penX = 0;
+
+            pixels = (u8 *)font;
+            widths = pixels + ((NameFont *)pixels)->widthTableOffset;
+            pixels += ((NameFont *)pixels)->timOffset;
+            pixels += 8;
+            pixels += ((TimSection *)pixels)->len;
+            pixels += 0xC;
+
+            for (col = SCRATCH_USED - 1; col >= 0; col--) {
+                *scratchPtr++ = 0;
+            }
+
+            ch = g_characters;
+            ch += charId;
+            name = getCharName(ch->characterId);
+
+            while (1) {
+                code = *name++;
+
+                if (code == 0) {
+                    break;
+                }
+
+                if (code < 0x20) {
+                    code -= 0x19;
+                    code = code * 224;
+                    code += *name++;
+                }
+
+                code -= 0x20;
+
+                width = widths[code >> 1];
+
+                if (code & 1) {
+                    width >>= 4;
+                }
+
+                width &= 0xF;
+
+                if (width != 0) {
+                    width--;
+                }
+
+                dst = pen;
+                rows = STRIP_ROWS;
+
+                row = code / GLYPHS_PER_ROW;
+                col = code % GLYPHS_PER_ROW;
+
+                code = row * GLYPH_HEIGHT * (SHEET_PITCH / 4);
+                colOffset = col * GLYPH_WIDTH;
+                src = (pixels + colOffset) + code;
+
+                for (; rows > 0; rows--) {
+                    for (col = GLYPH_WIDTH; col > 0; col--) {
+                        b = *src++;
+
+                        *dst++ |= b & 0xF;
+                        *dst++ |= b >> 4;
+                    }
+
+                    dst += SCRATCH_PITCH - GLYPH_WIDTH * 2;
+                    src += (SHEET_PITCH / 4) - GLYPH_WIDTH;
+                }
+
+                pen += width;
+                penX += width;
+            }
+
+            pixels = dstSlot + STRIP_PITCH;
+            pen++;
+            penX = (penX + 2) / 2;
+
+            for (rows = STRIP_ROWS; rows > 0; rows--) {
+                packSrc = pen;
+                count = penX;
+                dst = pixels;
+
+                while (count > 0) {
+                    hi = *--packSrc;
+                    lo = *--packSrc;
+                    *--dst = (lo & 0xF) | (hi << 4);
+                    count--;
+                }
+
+                pen += SCRATCH_PITCH;
+                pixels += STRIP_PITCH;
+            }
+        }
+    } while (0);
+}
 
 
 INCLUDE_ASM("asm/nonmatchings/gamestate", func_800375A0);
@@ -134,7 +353,40 @@ void drawSaveIconWithArgs(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4, s32 arg5) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_800377B4);
+u16 func_800377B4(s32 len, u8 *buf)
+{
+    u16 table[256];
+    u32 crc;
+    u32 i;
+    u32 val;
+    u32 j;
+    s32 ci;
+    ci = 0xFF;
+    do { table[ci] = 0; ci--; } while (ci >= 0);
+    crc = 0xFFFF;
+    i = 0;
+    do {
+        val = i << 8;
+        j = 0;
+        do {
+            if (val & 0x8000) val = (val << 1) ^ 0x1021;
+            else val <<= 1;
+            j++;
+            table[i] = val;
+        } while (j < 8);
+        i++;
+    } while (i < 0xFF);
+    if (len > 0) {
+        do {
+            u32 idx;
+            idx = *buf++;
+            len--;
+            idx ^= (crc & 0xFFFF) >> 8;
+            crc = table[idx] ^ (crc << 8);
+        } while (len > 0);
+    }
+    return ~crc & 0xFFFF;
+}
 
 
 /**
@@ -234,7 +486,33 @@ void mcFillFF(u8 *buf) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_800379AC);
+s32 func_800379AC(void *arg0)
+{
+    u8 buffer[0x80];
+    s32 i;
+    if (pollCardReady() != 2)
+        return 0;
+    mcFillFF(buffer);
+    if (!writeCardBlock(arg0, buffer, 0))
+        return 0;
+    mcInitDirUsed(buffer);
+    for (i = 0; i < 0xF; i++)
+        if (!writeCardBlock(arg0, buffer, i + 1))
+            return 0;
+    mcInitDirFree(buffer);
+    for (i = 0; i < 0x14; i++)
+        if (!writeCardBlock(arg0, buffer, i + 0x10))
+            return 0;
+    mcFillFF(buffer);
+    for (i = 0; i < 0x1C; i++)
+        if (!writeCardBlock(arg0, buffer, i + 0x24))
+            return 0;
+    mcInitHeader(buffer);
+    if (!writeCardBlock(arg0, buffer, 0))
+        return 0;
+    markCardBusy(arg0);
+    return 1;
+}
 
 
 /** @brief Sets global D_80085218 to 1. */
@@ -412,7 +690,47 @@ void loadSoundBankB(void) {
 INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037FB0);
 
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_80038030);
+void func_80038030(s32 arg0) {
+    FieldVars *ptr = (FieldVars *)D_800780D8;
+
+    if (!(D_80082C0A & 0x10)) {
+        while (sndGetStatus() == 2) {
+            func_800393C8();
+        }
+
+        if (ptr->soundHandle0 == -1) {
+            sndCmd11(0);
+        }
+
+        sndCmd40();
+        D_80085220 = arg0;
+        func_80037FB0(0, ptr->battleMusicId, arg0);
+
+        if (ptr->soundLoadComplete == 0) {
+            do {
+                func_800393C8();
+            } while (ptr->soundLoadComplete == 0);
+        }
+
+        D_8005F11C = sndCmd10(toggleSoundBank());
+        sndCmdC0(0, 0x7F);
+    }
+
+    D_80082C11 = (u8)ptr->soundBankSelector ^ 1;
+    sndStopPlayback();
+    sndCmdF1();
+    sndSetMasterVolume(0x7F);
+
+    if (func_80021300() == 0) {
+        sndPlaySfx(0xA, 0, 0x80, 0x7F);
+        sndPlaySfx(0xB, 0, 0x80, 0x7F);
+        sndPlaySfx(0xC, 0, 0x80, 0x7F);
+    } else {
+        sndPlaySfx(0x84, 0, 0x80, 0x7F);
+        sndPlaySfx(0x85, 0, 0x80, 0x7F);
+        sndPlaySfx(0x86, 0, 0x80, 0x7F);
+    }
+}
 
 
 /**
@@ -530,6 +848,91 @@ s32 fieldRandom(void) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_80038490);
+typedef struct {
+    s32 payloadSize;
+    u8 payload[1];
+} LzssData;
 
+/* Taking the typed member address preserves the retail D_80039418+0x28
+ * relocation form with gcc 2.7.2; direct member access materializes the
+ * struct base and inserts an extra instruction. */
+#define LZSS_OUTPUT_SIZE (*(s32 *)&D_80039418.outputSize)
 
+void func_80038490(u8 *src, u8 *dst)
+{
+  LzssData *data;
+  u8 *src_ptr;
+  u8 *dst_start;
+  s32 bit_cnt;
+  s32 flags;
+  u8 *src_end;
+  u8 *dst_end;
+  int new_var;
+  u8 *copy_src;
+  s32 offset;
+  u8 *new_var2;
+  s32 temp;
+  s32 v0;
+  src_ptr = src;
+  data = (LzssData *)src;
+  bit_cnt = 0;
+  flags = bit_cnt;
+  dst_start = dst;
+  LZSS_OUTPUT_SIZE = 0;
+  src_end = src_ptr + data->payloadSize + sizeof(data->payloadSize);
+  src_ptr += sizeof(data->payloadSize);
+  new_var2 = dst_start;
+  while (1)
+  {
+    if (bit_cnt == 0)
+    {
+      if (src_ptr >= src_end)
+      {
+        return;
+      }
+      bit_cnt = 8;
+      flags = *(src_ptr++);
+    }
+    if (flags & 1)
+    {
+      if (src_ptr >= src_end)
+      {
+        return;
+      }
+      *(dst++) = *(src_ptr++);
+      LZSS_OUTPUT_SIZE++;
+    }
+    else
+    {
+      if (src_ptr >= src_end)
+      {
+        return;
+      }
+      new_var = (dst - new_var2) + 0xFEE;
+      offset = *(src_ptr++);
+      temp = *(src_ptr++);
+      offset |= (temp & 0xF0) << 4;
+      v0 = (new_var - offset) & 0xFFF;
+      copy_src = dst - v0;
+      dst_end = (dst + (temp & 0x0F)) + 3;
+      if (copy_src < new_var2)
+      {
+        do
+        {
+          *(dst++) = 0;
+          copy_src++;
+        }
+        while (copy_src < new_var2);
+      }
+      while (dst < dst_end)
+      {
+        *(dst++) = *(copy_src++);
+        LZSS_OUTPUT_SIZE++;
+      }
+
+    }
+    flags >>= 1;
+    bit_cnt--;
+  }
+
+}

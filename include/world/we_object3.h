@@ -82,6 +82,8 @@ extern void func_800B5ADC(s32 ctx, SVECTOR *out, s32 c, s32 d);
 /* Returns a per-scene angle bias used to orient the placed sprites. */
 extern s32  func_800BC5E0(s32 ctx);
 
-extern void func_800488D4(s32 a);
+
+/* Compute a linear tile index from 2D world coordinates (32x24 grid). */
+extern s32 func_800A5E40(s32 x, s32 y);
 
 #endif /* WORLD_WE_OBJECT3_H */

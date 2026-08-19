@@ -14,7 +14,7 @@
  * non-zero entry points to a streaming-image record at @c (u8*)script+offset.
  * Each record is parsed by @c func_8009CA34 into an @ref ImageDesc, then
  * @c rect1 / @c data1 are blitted through the scratch rect @c D_800C8640 (via
- * @c func_80048EFC). When bit 3 of @c desc.flag is set, @c rect2 / @c data2
+ * @c LoadImage). When bit 3 of @c desc.flag is set, @c rect2 / @c data2
  * are blitted the same way.
  *
  * @param script World-engine image script (offset table + image records).
@@ -30,13 +30,13 @@ void loadImageScript(s32 *script) {
         D_800C8640.y = desc.rect1.y;
         D_800C8640.w = desc.rect1.w;
         D_800C8640.h = desc.rect1.h;
-        func_80048EFC(&D_800C8640, desc.data1);
+        LoadImage(&D_800C8640, desc.data1);
         if ((desc.flag >> 3) & 1) {
             D_800C8640.x = desc.rect2.x;
             D_800C8640.y = desc.rect2.y;
             D_800C8640.w = desc.rect2.w;
             D_800C8640.h = desc.rect2.h;
-            func_80048EFC(&D_800C8640, desc.data2);
+            LoadImage(&D_800C8640, desc.data2);
         }
         i++;
         off = script[i];
@@ -353,8 +353,8 @@ void func_8009D44C(s32 marker) {
  * @brief World-map sound/display setup: enable reverb, publish the active
  *        display environment, and register the world render callback.
  *
- * After the per-frame display reset (@c func_8009D630 / @c func_80048C50 /
- * @c func_800488D4) and enabling reverb, it copies the scene's disp-env
+ * After the per-frame display reset (@c func_8009D630 / @c DrawSync /
+ * @c ResetGraph) and enabling reverb, it copies the scene's disp-env
  * template into @c D_80082C18 and publishes its address via @c D_8005F138 —
  * taking the sentinel's secondary disp (@c CtxDispView at @c +0x40CC) when the
  * active context @c D_800D244C is the no-battle sentinel @c D_800CA040, else
@@ -363,8 +363,8 @@ void func_8009D44C(s32 marker) {
  */
 void setupWorldRender(void) {
     func_8009D630();
-    func_80048C50(0);
-    func_800488D4(3);
+    DrawSync(0);
+    ResetGraph(3);
     sndEnableReverb(0);
     if (D_800D244C == &D_800CA040) {
         D_80082C18 = ((CtxDispView *)&D_800CA040)->disp;

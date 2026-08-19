@@ -70,7 +70,6 @@ extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
 extern ScriptOp *func_800AF004(u8 *base, s32 flag);
 extern s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text);
 extern void func_8009D8A8(s32 a0);
-extern void func_80048C50(s32 a0);
 extern void fadeOutSfxFast(s32 idx);
 extern void renderAndUpdateDisplay(s32 frameCount);
 extern s32  renderBattleDisplayList(s32 *colorTag);

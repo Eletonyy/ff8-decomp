@@ -96,15 +96,12 @@ extern RECT      D_800C8698;
 extern u8        D_800980CC[]; /* "x:\USPC\WORLD" — dev-filesystem prefix (13 chars + NUL) */
 extern POLY_FT4  D_800C8648[2]; /* double-buffered worldmap quad primitive */
 
-extern void func_80048DD4(RECT *r, s32 a, s32 b, s32 c);
 extern void func_8009C528(s32 rc);
 extern void func_8009FEDC(u8 *work, u8 type);
 extern s32  func_80042634(s32 a);
-extern void func_80048C50(s32 a);
 extern void func_800A5F78(s32 screen);
 extern void func_800A5FD4(s32 screen);
 extern void func_800A5D10(void);
-extern void func_80048BB8(s32 a);
 extern s32  getCurrentFieldMusic(void); /* defined u16 in btl_sfx; used full-width here */
 extern void setSfxPitch(s32 idx, s32 val);
 extern void setSfxEntityType(s32 idx, s32 val);
@@ -127,6 +124,7 @@ extern s32 func_800ACD38(MATRIX *out);
 extern void func_8003FD84(MATRIX *xform, VECTOR *in, VECTOR *out);
 extern void func_800BC544(VECTOR *src, VECTOR *dst);
 extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
+extern void func_8009C478(s32 *src, s32 x, s32 y);
 extern CmdDesc *glyphAt(GlyphQuery *v, AngleSlot *out);
 extern s32 func_800BEC1C(s32 kind);
 extern s32 func_800A2D50(s32 a0, s32 a1, s32 *out, s32 a3, s32 a4, s32 a5);

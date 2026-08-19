@@ -134,7 +134,7 @@ void func_800AB540(s32 screenX, s32 screenY, s32 mode) {
 /**
  * @brief Spawn one of the 64 in-world icon slots (kind 0x10 / 0x11).
  *
- * Copies the per-call SVECTOR rotation from @c D_800C9770[+8..+0xF] into
+ * Copies the per-call SVECTOR rotation from @c D_800C9770[1] into
  * a local buffer, gets a world position via @ref func_800BC544, then —
  * based on @p kind — selects a per-kind parameter block at
  * @c D_800C5480 + 0x280 (kind < 10 || == 0x80) or @c +0x2A8 (== 0x31)
@@ -164,8 +164,9 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object5", func_800AB8C0);
  * @brief Seed three world-render prim pools and kick off the DR_MODE
  *        primer in @ref func_800A84D0.
  *
- *  1. Primes the four 36-byte slots at @c D_800D4F10 with @c len=8 and
- *     @c code=0x38 (likely a custom 8-word gouraud-textured prim).
+ *  1. Primes the four @c POLY_G4 slots at @c D_800D4F10 via
+ *     @c setPolyG4 — @ref func_800A8A28 fills them as the map-view
+ *     backdrop gradient.
  *  2. Primes the two 8-byte slots at @c D_800D4FA0 with @c len=1 and the
  *     GPU draw-mode command word @c 0xE1000220 (TPAGE with 50%% blend).
  *  3. Copies twelve bytes (three u32 entries) from @c D_800C5448 to
@@ -182,18 +183,16 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object5", func_800AB8C0);
  */
 void func_800ABC98(void) {
     s32 i;
-    Prim36     *p = D_800D4F10;
+    POLY_G4    *p = D_800D4F10;
     DrSetMode8 *m = D_800D4FA0;
     u8         *src;
     u8         *dst;
 
     i = 0;
     do {
-        setlen(p, 8);
-        setcode(p, 0x38);
+        setPolyG4(p);
         p++;
-        setlen(p, 8);
-        setcode(p, 0x38);
+        setPolyG4(p);
         p++;
         i++;
         setlen(m, 1);
@@ -202,7 +201,7 @@ void func_800ABC98(void) {
     } while (i < 2);
 
     i = 0;
-    dst = D_800DB0D0;
+    dst = (u8 *)D_800DB0D0;
     src = D_800C5448;
     do {
         memcpy(dst, src, 4);
@@ -305,11 +304,11 @@ void func_800ABDD8(CVECTOR *input, u16 *output, s32 z, s16 count) {
     memcpy(&cue, &D_8009811C, sizeof(cue));
 
     for (i = 0; i < count; i++) {
-        if (input[i].cd & 0x80) {
+        if (input[i].cd & WORLD_CD_DROP) {
             output[i] = 0;
         } else {
             func_8003F9F4(&input[i], &cue, 0x1000 - z, z, &rgb);
-            if (input[i].cd & 0x80) {
+            if (input[i].cd & WORLD_CD_DROP) {
                 input[i].cd = 0;
             } else {
                 output[i] = (rgb.r >> 3)
@@ -362,14 +361,14 @@ void func_800ABEF0(SVECTOR *src, SVECTOR *rot, SVECTOR *trans,
     gte_SetTransMatrix(&D_800C9838);
 
     gte_ldv3c(&transformed[0]);
-    gte_RTPT();
+    gte_rtpt();
     gte_stsxy3c(outSXY);
 
     gte_ldv0(&transformed[3]);
-    gte_RTPS();
+    gte_rtps();
     gte_stsxy(outSXY + 3);
 
-    gte_AVSZ4();
+    gte_avsz4();
     gte_stotz(outOTZ);
 }
 
@@ -394,8 +393,8 @@ void func_800ABEF0(SVECTOR *src, SVECTOR *rot, SVECTOR *trans,
  * @param type   Slot kind — also index into the @c D_800C5480 KindParams table.
  * @param pos    Source world position (12 bytes — only low s16 of each coord read).
  * @param vec    Source rotation vector (8 bytes, unaligned-tolerant copy).
- * @param flags  Bit 1 → RNG-jitter @c life by [-0x80, +0x7F].
- *               Bit 0 → RNG-jitter @c limit by [-4, +3].
+ * @param flags  @c SLOT_FLAG_JITTER_LIFE → RNG-jitter @c life by [-0x80, +0x7F].
+ *               @c SLOT_FLAG_JITTER_LIMIT → RNG-jitter @c limit by [-4, +3].
  */
 s32 func_800AC0A0(s32 type, VECTOR *pos, SVECTOR *vec, u16 flags) {
     Slot30     *slot;
@@ -427,10 +426,10 @@ s32 func_800AC0A0(s32 type, VECTOR *pos, SVECTOR *vec, u16 flags) {
     vcp2 = vcp;
     memcpy(vcp2, vec, 8);
 
-    if (flags & 2) {
+    if (flags & SLOT_FLAG_JITTER_LIFE) {
         slot->life += func_8009CC3C() - 0x80;
     }
-    if (flags & 1) {
+    if (flags & SLOT_FLAG_JITTER_LIMIT) {
         slot->limit += (func_8009CC3C() & 7) - 4;
     }
 
@@ -458,9 +457,9 @@ s32 func_800AC0A0(s32 type, VECTOR *pos, SVECTOR *vec, u16 flags) {
  *        through a 4-slot rotation keyed off @c D_800D23D0.
  *
  * Picks a starting slot from @c (D_800D23D0 >> 2) & 3, then issues two
- * back-to-back @c func_80048FBC blits (the LoadImage-style transfer) at
+ * back-to-back @c MoveImage blits (the LoadImage-style transfer) at
  * destination VRAM coords @c (0x358, 0x60) and @c (0x360, 0x60), each
- * sandwiched by a @c func_80048C50(0) sync. Source RECTs are
+ * sandwiched by a @c DrawSync(0) sync. Source RECTs are
  * @c (slot * 8 + 0x340, 0xA0, 8, 32) and @c (((slot + 1) & 3) * 8 +
  * 0x340, 0xA0, 8, 32) — adjacent 8-wide tiles wrapping every 4 slots.
  *
@@ -483,16 +482,16 @@ void func_800AC2B8(void) {
     r.y = 0xA0;
     r.w = 0x8;
     r.h = 0x20;
-    func_80048FBC(&r, 0x358, 0x60);
-    func_80048C50(0);
+    MoveImage(&r, 0x358, 0x60);
+    DrawSync(0);
 
     slot = (slot + 1) & 3;
     r.x = (*&slot) * 8 + 0x340;
     r.y = 0xA0;
     r.w = 0x8;
     r.h = 0x20;
-    func_80048FBC(&r, 0x360, 0x60);
-    func_80048C50(0);
+    MoveImage(&r, 0x360, 0x60);
+    DrawSync(0);
 }
 
 

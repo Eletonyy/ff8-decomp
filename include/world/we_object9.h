@@ -87,7 +87,6 @@ extern TemplateTable  *D_800C9FE8;
 extern ScatterEntry    D_800C5D70[];     /* scatter table, 32 entries */
 extern LookupBlob     *D_800C96F8;       /* pointer to lookup blob */
 extern u32             D_80077E84;
-extern u8              D_800C9770[0x10];
 extern VECTOR          D_800DD680;
 extern u8              D_800DD690[8];
 extern s32             D_800DD698;
