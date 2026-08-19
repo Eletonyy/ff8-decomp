@@ -909,9 +909,8 @@ u8 *renderBattleString(P_TAG *ot, u8 *pkt, u8 *str, s32 y, s32 width, s32 color)
             return pkt;
         }
         if (ch == sep) goto skip;
-        /* func_8002FF34 follows the battle-display s32-cursor ABI, so the
-         * packet pointer crosses the boundary as s32. */
-        pkt = (u8 *)func_8002FF34((s32)otBase, (s32)pkt, ch, yPos, w, col);
+        /* Emit one glyph packet and advance the cursor. */
+        pkt = func_8002FF34(otBase, pkt, ch, yPos, w, col);
     } while (0);
 skip:
     yPos = yPos + 9;
@@ -964,8 +963,9 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
            D_80083754 (0x80083754). The retail build reads it as a negative
            offset from the transition base (lhu -640($s5)); deriving it from
            p keeps that form instead of an absolute lui+lhu. */
-        scratch = (CameraTransitionScratch *)((u8 *)p -
-                                              CAMERA_TRANSITION_SCRATCH_TRANSITION_OFFSET);
+        u8 *scratchBase = (u8 *)p;
+        scratchBase -= CAMERA_TRANSITION_SCRATCH_TRANSITION_OFFSET;
+        scratch = (CameraTransitionScratch *)scratchBase;
         color = scratch->vibrateIntensity;
         color >>= 5;
         color &= 0xFF;
@@ -996,7 +996,7 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
     s0 = calc_val >> 12;
     temp = s0 + 0x10;
 
-    pkt_r = (u8 *)func_8002FF34((s32)ot, (s32)pkt_r, 0xB0, temp, xPos, color);
+    pkt_r = func_8002FF34(ot, pkt_r, 0xB0, temp, xPos, color);
     y = s0 + 0x30;
 
     if (brightness == 0) {
@@ -1013,7 +1013,7 @@ s32 func_80031364(P_TAG *ot, u8 *pkt) {
     yBotQuot = SCALE_BY_59(curve) / 4096;
     y = yBotQuot + 0xF0;
 
-    pkt_r = (u8 *)func_8002FF34((s32)ot, (s32)pkt_r, 0xB1, yBotQuot + 0x11D, xPos, color);
+    pkt_r = func_8002FF34(ot, pkt_r, 0xB1, yBotQuot + 0x11D, xPos, color);
 
     if (brightness == 0) {
         pkt_r = renderBattleString(ot, pkt_r, p->newName2, y, xPos, color);
