@@ -725,11 +725,12 @@ void func_800A84D0(void) {
     }
 }
 
-/* The map view is 320x224, drawn in bands one texture page (256px) wide;
- * each band gets 32 stars, of which the first 16 twinkle and the rest use
- * a plain ramp. */
+/* The map view the star field is drawn over. */
 #define STAR_SCREEN_W    320
 #define STAR_SCREEN_H    224
+
+/* It is filled one texture page at a time; each band gets 32 stars, of
+ * which the first 16 twinkle and the rest use a plain ramp. */
 #define STAR_BAND_W      256
 #define STARS_PER_BAND   32
 #define STARS_TWINKLING  16
