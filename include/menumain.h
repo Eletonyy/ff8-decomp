@@ -139,7 +139,12 @@ extern u8  D_801F7F78[];
 extern u8  D_801F7F98[];
 extern u8  D_801F7FB0[];        /**< String table base (two-level offset table). */
 extern u8  D_801F87B8;
-extern u8  D_801F889C[];
+/** @brief Item table entry: four bytes read individually by the item menu. */
+typedef struct {
+    u8 b0, b1, b2, b3;
+} ItemEntry4;
+
+extern ItemEntry4 D_801F889C[];
 extern u8  D_801F8BB8[];
 extern u8  D_801FA278;
 extern u8  D_801FA279;

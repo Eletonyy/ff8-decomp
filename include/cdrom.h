@@ -33,9 +33,5 @@ void stopCdDrive(void);
 
 // Private data
 
-extern u8 D_8001092C[]; /**< Disc-1 identifier filename. */
-extern u8 D_8001093C[]; /**< Disc-2 identifier filename. */
-extern u8 D_8001094C[]; /**< Disc-3 identifier filename. */
-extern u8 D_8001095C[]; /**< Disc-4 identifier filename. */
 
 #endif /* CDROM_H */
