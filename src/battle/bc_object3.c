@@ -17,7 +17,7 @@ void func_800A1AB8(s32, u16, s32);
 u16 func_800A475C(u16);                             /* extern */
 void func_800A47E4(s32);                               /* extern */
 u16 func_800A4A74(s32, u16);                        /* extern */
-void func_800A4B68(s32);                               /* extern */
+void func_800A4B68(u16);                               /* extern */
 u16 func_800A4E08(u16, u32);                         /* extern */
 u16 func_800A4EA0(u16, u32);                         /* extern */
 void func_800A5778(s32);
@@ -67,7 +67,7 @@ void func_800A1940(s32 arg0) {
 void func_800A19BC(s32 arg0, u16 arg1, s32 arg2) {
     if (arg2 < 0) {
         if ((g_battleChars.chars[arg0].currentHp == 0) || (arg1 & 0x35) || (arg2 & 0x14000)) {
-            D_800ED148.entities[arg0].flags &= 0x7FFFFFFF;
+            D_800ED148.entities[arg0].flags &= ~(1 << 31);
             D_800ED148.entities[arg0].controlFlags &= ~0x400;
             return;
         }
@@ -115,7 +115,9 @@ void func_800A1AB8(s32 arg0, u16 arg1, s32 arg2) {
         func_800AE6C0();
         func_800D0530();
         func_800B243C(arg0);
-    } else if (arg1 & 1) {
+    } 
+    
+    else if (arg1 & 1) {
         func_800A1940(arg0);
         func_800AE4A0(arg0);
     }
@@ -332,7 +334,7 @@ s32 func_800A2310(s32 arg0) {
 }
 
 void func_800A2360(s32 arg0) {
-    s8 temp_v0;
+    u8 temp_v0;
     BattleSystem* bs;
     BattleEntity* currentEntity;
     
@@ -343,9 +345,9 @@ void func_800A2360(s32 arg0) {
     currentEntity = &bs->entities[arg0];
     (currentEntity + 1)->slot8.byteView.unkA = temp_v0;
     
-    if (temp_v0 & 0xFF) {
+    if (temp_v0 != 0) {
         g_battleChars.chars[arg0].cmdSlots[0].field3 |= 4;
-    } 
+    }
     
     else {
         g_battleChars.chars[arg0].cmdSlots[0].field3 &= 0xFB;
@@ -663,16 +665,11 @@ u8 func_800A2E04(s32 arg0) {
  * @param a1 Entity index (stride 0xD0).
  * @return Halfword value from computed table location.
  */
-s32 func_800A2E48(s32 a0, s32 a1) {
-    s32 table = a0;
-    s32 idx = a1;
-    s32 val = func_8009B7BC(2);
-    u8 *base = (u8 *)&D_800ED148;
-    s32 ability = *(u8 *)(base + idx * 0xD0 + 0xDA);
-    ability += val;
-    ability <<= 1;
-    ability += table;
-    return *(u16 *)(ability + 0x150);
+u16 func_800A2E48(BattleEntityData* arg0, s32 index) {
+    s32 result = func_8009B7BC(2);
+    BattleEntity* entity = D_800ED148.entities;
+    
+    return arg0->unk150[entity[index+1].slot8.byteView.unkA + result];
 }
 
 s32 func_800A2EB8(s32 arg0, s32 arg1) {
@@ -686,7 +683,9 @@ s32 func_800A2EB8(s32 arg0, s32 arg1) {
     }
 
     do {
-        for (i = 0, mask = 1; i < var_a0; i++, mask *= 2);
+        for (i = 0, mask = 1; i < var_a0; i++) {
+            mask *= 2;
+        }
 
         var_a0--;
     } while (!(mask & arg1));
@@ -700,7 +699,6 @@ s32 func_800A2EF8(s32 arg0, s32 arg1) {
     if (arg0 > 2) {
         return 1;
     }
-    
 
     for (i = 0; i < 32; i++) {
         if (g_battleChars.chars[arg0].magicSlots[i].field0 == arg1) {
@@ -721,15 +719,10 @@ s32 func_800A2EF8(s32 arg0, s32 arg1) {
  * Calls func_800E1880 with inverted flag and the lookup result.
  */
 void func_800A2F54(void) {
-    u8 *table = (u8 *)&D_80078E00;
-    u8 *base = (u8 *)&D_800ED148;
-    u8 idx1 = base[0x1324];
-    u8 idx2 = base[0xF];
-    u8 *entry = table + (s32)idx1 * 24;
-    u8 *entity = base + (s32)idx2 * 0xD0;
-    s32 flag = entry[0x4802] & 0x10;
-    u8 val = entity[0xDA];
-    func_800E1880(flag == 0, (s32)table[val + 0x4D03]);
+    s32 result = D_80078E00.array47FC[D_800ED148.unk1324].unk6 & 0x10;
+    BattleEntity* entity = &D_800ED148.entities[D_800ED148.entities[0].entityRef];
+    
+    func_800E1880(!result, D_80078E00.unk4D03[(entity + 1)->slot8.byteView.unkA + 1]);
 }
 
 
@@ -757,30 +750,27 @@ void func_800A302C(void) {
  * @param a3 Third byte field (offset 2).
  * @param arg5 Halfword field (offset 6).
  */
-void func_800A3054(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg5) {
-    u8 *base = (u8 *)&D_800ED148;
-    s32 idx;
-    u8 *entry;
-    idx = base[0x1302];
-    base += 0xEFC;
-    entry = base + idx * 24;
-    entry[0] = a0;
-    entry[1] = a1;
-    *(u16 *)(entry + 4) = a2;
-    entry[2] = a3;
-    entry[3] = 0;
-    *(u16 *)(entry + 6) = arg5;
+void func_800A3054(s8 arg0, s8 arg1, s16 arg2, s8 arg3, s16 arg4) {
+    BattleUnkDE8* temp_v0;
+
+    temp_v0 = &D_800ED148.arrayDE8[1][D_800ED148.unk1302][1];
+    temp_v0->link.fwd  = arg0;
+    temp_v0->link.bwd  = arg1;
+    temp_v0->unk4      = arg2;
+    temp_v0->link.unk2 = arg3;
+    temp_v0->link.unk3 = 0;
+    temp_v0->unk6[0]   = arg4;
 }
 
 /**
 * enemyId is the id of the enemy you are using draw on (3-5) 
 */
 
-s32 func_800A3094(s32 targetId, s32 arg1) {
+s32 func_800A3094(s32 enemyId, s32 arg1) {
     s32 i;
 
     for (i = 0; i < 4; i++) {
-        if (D_800EE9E8.subEntries[targetId - 3].array0[i].unk0 == arg1) {
+        if (D_800EE9E8.subEntries[enemyId - 3].array0[i].unk0 == arg1) {
             return 1;
         }
     }
@@ -788,13 +778,9 @@ s32 func_800A3094(s32 targetId, s32 arg1) {
     return 0;
 }
 
-/**
- * @brief Clear two battle state bytes at D_800ED148 offsets 0x5C0 and 0x5C1.
- */
 void func_800A30E4(void) {
-    u8 *base = (u8 *)&D_800ED148;
-    base[0x5C1] = 0;
-    base[0x5C0] = 0;
+    D_800ED148.unk5C1 = 0;
+    D_800ED148.unk5C0 = 0;
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A30F8);
@@ -825,20 +811,20 @@ void func_800A42B4(s8* arg0, s8* arg1, s16* arg2, s16* arg3) {
  * @param a1 Byte pointer (becomes a0 for func_800A42B4).
  * @param a2 Byte pointer (becomes a1 for func_800A42B4).
  * @param a3 Halfword pointer (becomes a2 for func_800A42B4).
- * @param stack0 Halfword pointer (becomes a3 for func_800A42B4).
+ * @param a4 Halfword pointer (becomes a3 for func_800A42B4).
  */
-void func_800A42DC(s32 a0, u8 *a1, u8 *a2, u16 *a3, u16 *stack0) {
-    func_800A42B4(a1, a2, a3, stack0);
+void func_800A42DC(s32 a0, u8 *a1, u8 *a2, u16 *a3, u16 *a4) {
+    func_800A42B4(a1, a2, a3, a4);
     func_800A432C(a0);
 }
 
 /**
  * @brief Store a value to the global D_800EE424.
  *
- * @param value Value to store.
+ * @param arg0 Value to store.
  */
-void func_800A4320(s32 value) {
-    D_800ED148.unk12DC = value;
+void func_800A4320(s32 arg0) {
+    D_800ED148.unk12DC = arg0;
 }
 
 /**
@@ -886,7 +872,7 @@ void func_800A43C0(s32 arg0) {
 
 void func_800A4434(u32 arg0, s32 unused, TaskEntry* arg2, BattleCharData* arg3) {
     func_800A4350(arg0, g_battleChars.chars[arg0].field01D);
-    D_800ED148.entities[arg0].flags &= 0x7FFFFFFF; // ~(1 << BATTLE_ENTITY_FLAG_BIT_31)
+    D_800ED148.entities[arg0].flags &= ~(1 << 31);
     arg3->field01C &= 0xFE;
     D_800ED148.entities[arg0].controlFlags &= ~CTRL_FLAG_400;
     recalcAllGfStats();
@@ -956,13 +942,13 @@ void func_800A4618(s16 arg0, s32 arg1, u32 arg2, s32 arg3, s32 arg4) {
  * @return Result masked to 16 bits.
  */
 u16 func_800A475C(u16 count) {
-    s32 result;
-    if (count < 8) {
-        result = func_800A980C();
-    } else {
-        result = func_800A9888();
+    if (count > 7) {
+        return func_800A9888();
+    } 
+    
+    else {
+        return func_800A980C();
     }
-    return (u16)result;
 }
 
 s32 func_800A4798(u32 arg0, s32 arg1) { // arg0 is always 0-6
@@ -987,14 +973,14 @@ s32 func_800A4798(u32 arg0, s32 arg1) { // arg0 is always 0-6
  *
  * @param a0 Parameter passed through to func_800A4798.
  */
-void func_800A47E4(s32 a0) {
-    s32 i = 0;
-    u8 *base = (u8 *)&D_800ED148;
-    do {
-        base[0xD9] = func_800A4798(i, a0);
-        i++;
-        base += 0xD0;
-    } while (i < 7);
+void func_800A47E4(s32 arg0) {
+    s32 i;
+    BattleEntity* currentEntity;
+    
+    for (i = 0; i < 7; i++) {
+        currentEntity = &D_800ED148.entities[i];
+        currentEntity[1].slot8.byteView.unk09 = func_800A4798(i, arg0);
+    }
 }
 
 s32 func_800A4844(s32 arg0) {
@@ -1093,12 +1079,11 @@ u16 func_800A4A74(s32 arg0, u16 arg1) {
  *
  * @param arg0 Packed 16-bit value.
  */
-void func_800A4B68(s32 arg0) {
-    s16 tmp = arg0;
-    s32 tmp2 = arg0 & 0xE000;
-    D_800ED148.unk12E0 = (tmp &= 0x1FFF);
-    tmp = ((u32)tmp2) >> 0xD;
-    D_800ED148.unk130F = (s8)tmp;
+void func_800A4B68(u16 arg0) {
+    D_800ED148.unk12E0 = arg0 & 0x1FFF;
+    arg0 = (arg0 & 0xE000) >> 13;
+ 
+    D_800ED148.unk130F = arg0;
 }
 
 void func_800A4B88(u16 arg0, s32 arg1) {
@@ -1210,12 +1195,9 @@ void func_800A4C84(u16 arg0) {
  *
  * @param a0 Command value to store.
  */
-void func_800A4DD4(s32 a0) {
-    u8 *base = (u8 *)&D_800ED148;
-    u8 idx = base[0x5C0];
-    base[0x5C0] = idx + 1;
-    *(u8 *)(base + idx * 20 + 0x5D4) = a0;
-    base[0x1305] = a0;
+void func_800A4DD4(s32 arg0) {
+    D_800ED148.entries[D_800ED148.unk5C0++].unk10 = arg0;
+    D_800ED148.unk1305 = arg0;
 }
 
 u16 func_800A4E08(u16 arg0, u32 arg1) {
@@ -1321,19 +1303,19 @@ u16 func_800A4F28(u16 arg0, u16 arg1, u16 arg2) {
  * @param dst Destination buffer for bit positions.
  * @return Number of set bits found (0-16), masked to u8.
  */
-u8 func_800A4FC4(s32 mask, u8 *dst) {
-    s32 count = 0;
-    s32 bit = 1;
-    s32 pos = 0;
-    do {
-        if ((mask & bit) & 0xFFFF) {
-            *dst++ = pos;
+u8 func_800A4FC4(u16 mask, u8* arg1) {
+    s32 count;
+    u16 bit;
+    s32 pos;
+
+    for (count = 0, bit = 1, pos = 0; pos < 16; pos++, bit <<= 1) {
+        if (mask & bit) {
+            *arg1++ = pos;
             count++;
         }
-        pos++;
-        bit <<= 1;
-    } while (pos < 16);
-    return count & 0xFF;
+    }
+    
+    return count;
 }
 
 s32 func_800A5004(void) {
@@ -1526,12 +1508,8 @@ void func_800A559C(u32 arg0) {
  *
  * @param idx Entity index (stride 0xD0).
  */
-void func_800A565C(s32 idx) {
-    u8 *base = (u8 *)&D_800ED148;
-    u8 *entity;
-    asm("");
-    entity = base + idx * 0xD0;
-    *(volatile s32 *)(entity + 0x24) = 0;
+void func_800A565C(s32 arg0) {
+    D_800ED148.entities[arg0].field24 = 0;
 }
 
 s32 func_800A5688(s32 arg0) {
@@ -1554,7 +1532,7 @@ s32 func_800A5688(s32 arg0) {
         var_a0 = 5;
     }
     
-    currentEntityData->unk14 += ((currentEntityData->unkC1 + 30) * D_8007DADA * var_a0) / 100;
+    currentEntityData->unk14 += ((currentEntityData->unkC1 + 30) * D_80078E00.unk4CCC[14] * var_a0) / 100; // maybe D_80078E00.unk4CCC[14] isnt part of the array
     
     if (currentEntityData->unk10 <= currentEntityData->unk14) {
         currentEntityData->unk14 = currentEntityData->unk10;
@@ -1595,13 +1573,11 @@ void func_800A5778(s32 arg0) {
  *
  * @param a0 Battle action parameter.
  */
-void func_800A57E0(s32 a0) {
-    u8 *base = (u8 *)&D_800ED148;
-    u8 *entityBase = base + 0xD64;
-    s32 idx = base[0x12F2];
-    base += 0x1100;
-    func_8009B320(a0, entityBase + idx * 44, base + idx);
-    func_800A5948(a0, idx);
+void func_800A57E0(s32 arg0) {
+    u8 idx = D_800ED148.unk12F2;
+    
+    func_8009B320(arg0, D_800ED148.unkD64[idx], &D_800ED148.unk1100[idx]);
+    func_800A5948(arg0, idx);
 }
 
 s32 func_800A584C(s32 arg0) {

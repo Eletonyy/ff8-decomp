@@ -13,7 +13,7 @@
 #define BATTLE_RESULT_ESCAPED       2
 #define BATTLE_RESULT_WIN           4
 
-
+typedef void (*callback_t)(s32);
 
 /** @brief Battle command config (g_battleConfig). */
 typedef struct {
@@ -197,6 +197,7 @@ typedef struct {
     u8 unk104[1];       /* size unknown, probably struct, used in func_8009F65C */
     u8 pad105[0x4A];
     u8 unk14F;          /* 0x14F: byte read by func_800AF988. */
+    u16 unk150[1];
 } BattleEntityData;
 
 #define ENTITY_FLAG_1 1
@@ -334,9 +335,10 @@ typedef struct {
     SubEntry* subEntries;
     u8 padC[2];
     u8 unkE;           
-    u8 pad0F[2];
+    u8 pad0F;
     u8 unk10;
-    u8 pad11[2];
+    u8 unk11;
+    u8 pad12[2];
 } BattleEntry; /*  0x14 (20 byte) */
 
 /** @brief Linked-list node for the @c BattleSystem.taskLinks queue.
@@ -355,7 +357,7 @@ typedef struct {
 * Allocated/scheduled by @c func_8009B3D0, ticked by callbacks like
 * @c func_8009AAC4, finalized/freed by @c func_8009B520. */
 typedef struct {
-    s32 callback;   /* 0x00: function pointer (called by @c func_8009B478). */
+    callback_t callback;   /* 0x00: function pointer (called by @c func_8009B478). */
     u32 unk04;      /* 0x04 */
     u16 timer;      /* 0x08: countdown (ticked by callbacks). */
     u16 unkA;
@@ -391,7 +393,7 @@ typedef struct {
 typedef struct {
     TaskLink link;
     u16 unk4;
-    u16 unk6[3];
+    u16 unk6[3]; // func_800A5948
 } BattleUnkDE8;    /* 12 bytes */
 
 typedef struct{
@@ -433,7 +435,7 @@ typedef struct {
     /* 0x1144 */ TaskEntry taskData[16];        /**< Task queue data slots (16 × 16 bytes). */
     /* 0x1244 */ Struct_1244 unk1244[1];         
     /* 0x125C  */ u8 pad125C[0x30];              /**< Pad to unk128C. */
-    /* 0x128C */ s32 unk128C;                   /**< Cached userData for callback. */
+    /* 0x128C */ callback_t unk128C;                   /**< Cached userData for callback. */
     /* 0x1290 */ s16 unk1290;
     /* 0x1292 */ s16 unk1292;
     /* 0x1294 */ s16 unk1294;
@@ -912,21 +914,22 @@ typedef struct {
 } Struct_45F8;      /* 8 bytes */
 
 typedef struct {
-    u8 pad[2];
-    u8 var;
-    u8 var1;
-    u8 var2;
-    u8 pad1[2];
-    u8 var3;
-    u8 pad2;
-    u8 unk1;
+    u8 pad0[2];
     u8 unk2;
     u8 unk3;
-    u16 unk4;
+    u8 unk4;
+    u8 pad5;
     u8 unk6;
     u8 unk7;
-    u32 unk8;
-    u8 pad3[4];
+    u8 pad8;
+    u8 unk9;
+    u8 unkA;
+    u8 unkB;
+    u16 unkC;
+    u8 unkE;
+    u8 unkF;
+    u32 unk10;
+    u8 pad14[4];
 } Struct_446C; /* 24 bytes */
 
 
@@ -1017,10 +1020,11 @@ typedef struct {
     /* 0x4A84 */ u8 pad4A84[0x4C0C - 0x4A84];
     /* 0x4C0C */ Struct_4C0C unk4C0C[1];
     /* 0x4C18 */ u8 pad4C18[180];
-    /* 0x4CCC */ u8 unk_4CCC[16]; // confirmed to be atleast 14
+    /* 0x4CCC */ u8 unk4CCC[16]; // confirmed to be atleast 14
     /* 0x4CDC */ u8 unk4CDC[8];
     /* 0x4CE4 */ u8 unk4CE4[24];
-    /* 0x4CFC */ Struct4CFC unk4CFC[1];
+    /* 0x4CFC */ Struct4CFC unk4CFC[3];
+    /* 0x4D03 */ u8 unk4D03[2];
 } BattleSceneData;
 
 
@@ -1135,7 +1139,6 @@ extern u8              D_80077E58;
 extern u8              D_80077E92;
 extern u8              D_800786D9;
 extern BattleSceneData D_80078E00;
-extern u8              D_8007DADA;
 extern u16             D_80082C0A;
 extern u8              D_80082C0F;
 extern MsgFormatConfig D_80083858;
@@ -1268,7 +1271,7 @@ void func_8002A2C4(u8 *, s32);
 s32 func_80037ADC(void);
 void func_800A4DD4(s32);
 void func_800A240C(s32, s32, u16*);
-u8 func_800A4FC4(s32, u8*);
+u8 func_800A4FC4(u16, u8*);
 u16 func_800A97FC(s32 arg0);
 
 #endif /* BATTLE_H */

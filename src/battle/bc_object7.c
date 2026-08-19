@@ -288,21 +288,17 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0414);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B04A0);
 
-/**
- * @brief Find the bit position of the lowest set bit.
- *
- * @param a0 Value to scan (should have exactly one bit set).
- * @return Bit position (0-31), or 32 if no single bit found.
- */
-s32 func_800B054C(s32 a0) {
-    s32 i = 0;
-    do {
-        if (a0 == 1) {
+s32 func_800B054C(u32 arg0) {
+    s32 i;
+
+    for (i = 0; i < 32; i++) {
+        if (arg0 == 1) {
             return i;
         }
-        i++;
-        a0 = (u32)a0 >> 1;
-    } while (i < 0x20);
+
+        arg0 >>= 1;
+    }
+    
     return i;
 }
 
@@ -322,7 +318,7 @@ void func_800B0574(s32 arg0, u32 arg1) {
     
     temp_v0 = func_800B054C(arg1);
     if (temp_v0 < 14) {
-        u8 val = D_80078E00.unk_4CCC[temp_v0];
+        u8 val = D_80078E00.unk4CCC[temp_v0];
         s32 temp = ((g_gameState.config.battleSpeed + 1) * 4);
         D_800ED148.entities[arg0].field64.perBit[temp_v0] = val * temp;
     }
@@ -375,7 +371,7 @@ void func_800B06DC(u16 arg0) {
     if (D_800ED148.entities[0].unk0E == 0) {
         func_8009AE08(5);
         func_800AE524(D_800ED148.unk5C0 - 1);
-        D_800ED148.entries[D_800ED148.unk5C0 - 1].unk10 = 0;
+        D_800ED148.entries[D_800ED148.unk5C0 - 1].unk11 = 0;
         func_8009AE08(6);
     }
 }

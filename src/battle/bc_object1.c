@@ -1216,24 +1216,24 @@ void func_8009B428(void) {
  * @c taskHead is cleared (queue emptied by a callback).
  */
 void func_8009B478(void) {
-    BattleSystem *bs;
-    s32 i = 0;
-    void (*fn)(s32);
+    s32 i;
 
-    do {
-        if (D_800ED148.taskLinks[i].fwd == 0xFF) goto found;
-        i++;
-    } while (i < 16);
+    for (i = 0; i < 16; i++) {
+        if (D_800ED148.taskLinks[i].fwd == 255) {
+            goto found;
+        }
+    }
     return;
 
-loop:
-    i = bs->taskLinks[i].bwd;
-found:
-    bs = (BattleSystem *)&D_800ED148;
-    fn = (void (*)(s32))bs->taskData[i].callback;
-    fn(i);
-    if (bs->taskLinks[i].bwd == 0xFF) return;
-    if (bs->taskHead != 0xFF) goto loop;
+    do {
+        i = D_800ED148.taskLinks[i].bwd;  
+        
+        found:
+        (D_800ED148.taskData[i].callback)(i);
+        if (D_800ED148.taskLinks[i].bwd == 255) {
+            return;
+        }    
+    } while (D_800ED148.taskHead != 255); 
 }
 
 /**
@@ -1308,9 +1308,8 @@ void func_8009B5C4(s32 idx, s32 dst, s32 dir, s32 userData) {
  * pointer from D_800ED148+0x12D8.
  */
 void func_8009B654(void) {
-    s32 callback = D_800ED148.unk128C;
-    if (callback != 0) {
-        ((void (*)(s32))callback)(D_800ED148.unk12D8);
+    if (D_800ED148.unk128C != 0) {
+        (D_800ED148.unk128C)(D_800ED148.unk12D8);
     }
 }
 
