@@ -3,6 +3,7 @@
 #include "overlay.h"
 #include "gamestate.h"
 #include "character.h"
+#include "tim.h"
 #include "field.h"
 #include "card.h"
 #include "cdread.h"
@@ -155,209 +156,165 @@ void enableChocoboWorld(void) {
 
 
 extern u8 *getCharName(CharacterId charId);
-extern u8 g_characters[];
+extern CharacterData g_characters[];
 
-/** @brief Field font archive header (offsets from the archive base). */
+/** @brief Variable-width name font: width table + TIM glyph sheet. */
 typedef struct {
     s32 widthTableOffset;    /* +0x00 */
-    s32 glyphSectionOffset;  /* +0x04 */
-} FontArchive;
+    s32 timOffset;           /* +0x04 */
+} NameFont;
 
-/** @brief Glyph section reached via FontArchive.glyphSectionOffset. */
-typedef struct {
-    u8 pad00[8];             /* +0x00 */
-    s32 glyphDataOffset;     /* +0x08 */
-    u8 glyphData[1];         /* +0x0C */
-} FontGlyphSection;
+#define STRIP_STRIDE   0x300
+#define STRIP_ROWS     12
+#define STRIP_PITCH    0x30
 
-/** @brief Stack scratch buffer for building a character's bitmap packet. */
-typedef struct {
-    u8 pad0C[0xC];           /* +0x00: packet tag header */
-    u8 pkt[0x484];           /* +0x0C: packet body */
-} BattleNamePktBuffer;       /* sizeof == 0x490 */
+#define SCRATCH_PITCH  0x60
+#define SCRATCH_MARGIN 0x0C
+#define SCRATCH_USED   (SCRATCH_MARGIN + STRIP_ROWS * SCRATCH_PITCH)
 
-/** @brief Per-character output block (0x300 stride, see out += 0x300). */
-typedef struct {
-    u8 pad30[0x30];          /* +0x00 */
-    u8 rows[12][0x30];       /* +0x30: 12 bitmap rows of 0x30 bytes */
-    u8 pad90[0x90];          /* +0x270 */
-} BattleNameOutBlock;        /* sizeof == 0x300 */
+#define GLYPHS_PER_ROW 21
+#define GLYPH_WIDTH    6
+#define GLYPH_HEIGHT   12
+#define SHEET_PITCH    512
 
-typedef char battle_name_pkt_buffer_size_ok[(sizeof(BattleNamePktBuffer) == 0x490) ? 1 : -1];
-typedef char battle_name_out_block_size_ok[(sizeof(BattleNameOutBlock) == 0x300) ? 1 : -1];
-
-void func_80037308(void *arg0, void *arg1)
+void func_80037308(NameFont *font, u8 *out)
 {
-    BattleNamePktBuffer buf;
-
-    u8 *fontBase;
-    u8 *out;
-    s32 count;
-    s32 idx;
-    u8 *widthTable;
-    u8 *pkt;
-    u8 *data;
-    u8 *dst;
-    s32 charId;
-    u8 *cur;
-    u8 *charBase;
+    u8 scratch[0x490];
+    u8 *widths;
+    u8 *pixels;
+    u8 *dstSlot;
+    u8 *pen;
+    u8 *scratchPtr;
+    u8 *clear;
     u8 *name;
-    u32 ch;
-    s32 w;
-    s32 y;
-    s32 x;
     u8 *src;
-    u8 *dstPtr;
+    u8 *dst;
+    u8 *packSrc;
+    CharacterData *ch;
+    s32 penX;
+    s32 slot;
+    s32 width;
+    s32 rowOffset;
+    s32 colOffset;
+    s32 rows;
+    s32 count;
     s32 row;
     s32 col;
-    u8 bit;
-    u8 *sp;
-    u8 *dp;
-    u8 high;
-    u8 low;
+    u32 code;
+    s32 charId;
+    u8 b;
+    u8 hi;
+    u8 lo;
 
-    fontBase = (u8 *)arg0;
-    out = (u8 *)arg1;
-    dst = out;
+    dstSlot = out;
+    clear = dstSlot;
 
-    for (idx = 0x8FF; idx >= 0; idx--)
-    {
-        *(dst++) = 0;
+    for (slot = PARTY_SLOT_COUNT * STRIP_STRIDE - 1; slot >= 0; slot--) {
+        *clear++ = 0;
     }
 
-    idx = 0;
+    do {
+        for (slot = 0; slot < PARTY_SLOT_COUNT; slot++, dstSlot += STRIP_STRIDE) {
+            scratchPtr = scratch;
+            pen = scratch + SCRATCH_MARGIN;
 
-    while (idx < 3)
-    {
-        cur = (u8 *)&buf;
-        pkt = buf.pkt;
+            charId = g_gameState.mainData.party.party[slot];
 
-        charId = g_gameState.mainData.party.party[idx];
-
-        if (charId == 0xFF)
-        {
-            idx++;
-            out += 0x300;
-            continue;
-        }
-
-        count = 0;
-        data = fontBase;
-        widthTable = data + ((FontArchive *)data)->widthTableOffset;
-        data = data + ((FontArchive *)data)->glyphSectionOffset;
-        data = (u8 *)&((FontGlyphSection *)data)->glyphDataOffset;
-        data += *(s32 *)data;
-        data = ((FontGlyphSection *)data)->glyphData;
-
-        col = 0x48B;
-        while (col >= 0)
-        {
-            *(cur++) = 0;
-            col--;
-        }
-
-        charBase = g_characters;
-        charBase += charId * 152;
-
-        name = getCharName(charBase[8]);
-
-        while (1)
-        {
-            ch = *(name++);
-
-            if (ch == 0)
-            {
-                break;
+            if (charId == PARTY_SLOT_EMPTY) {
+                continue;
             }
 
-            if (ch < 0x20)
-            {
-                ch -= 0x19;
-                ch = ((ch << 3) - ch) << 5;
-                ch += *(name++);
+            penX = 0;
+
+            pixels = (u8 *)font;
+            widths = pixels + ((NameFont *)pixels)->widthTableOffset;
+            pixels += ((NameFont *)pixels)->timOffset;
+            pixels += 8;
+            pixels += ((TimSection *)pixels)->len;
+            pixels += 0xC;
+
+            for (col = SCRATCH_USED - 1; col >= 0; col--) {
+                *scratchPtr++ = 0;
             }
 
-            ch -= 0x20;
+            ch = g_characters;
+            ch += charId;
+            name = getCharName(ch->characterId);
 
-            w = widthTable[ch >> 1];
+            while (1) {
+                code = *name++;
 
-            x++;
-            x--;
-
-            if (ch & 1)
-            {
-                w >>= 4;
-            }
-
-            w &= 0xF;
-
-            if (w != 0)
-            {
-                w--;
-            }
-
-            dstPtr = pkt;
-            row = 12;
-
-            x = ch / 21;
-            y = x;
-            x = ch - (y * 21);
-
-            ch = (y * 3) * 512;
-            y = x * 6;
-
-            src = (data + y) + ch;
-
-            for (; row > 0; row--)
-            {
-                for (col = 6; col > 0; col--)
-                {
-                    bit = *(src++);
-
-                    *dstPtr |= bit & 0xF;
-                    dstPtr++;
-
-                    *dstPtr |= bit >> 4;
-                    dstPtr++;
+                if (code == 0) {
+                    break;
                 }
 
-                dstPtr += 0x54;
-                src += 0x7A;
-            }
-
-            pkt += w;
-            count += w;
-        }
-
-        data = ((BattleNameOutBlock *)out)->rows[0];
-        pkt += 1;
-        count = (count + 2) / 2;
-
-        for (row = 12; row > 0; row--)
-        {
-            sp = pkt;
-            col = count;
-            dp = data;
-            count = col;
-
-            if (count > 0)
-            {
-                do
-                {
-                    high = *(--sp);
-                    low = *(--sp);
-                    *(--dp) = (low & 0xF) | (high << 4);
+                if (code < 0x20) {
+                    code -= 0x19;
+                    code = code * 224;
+                    code += *name++;
                 }
-                while ((--col) > 0);
+
+                code -= 0x20;
+
+                width = widths[code >> 1];
+
+                if (code & 1) {
+                    width >>= 4;
+                }
+
+                width &= 0xF;
+
+                if (width != 0) {
+                    width--;
+                }
+
+                dst = pen;
+                rows = STRIP_ROWS;
+
+                row = code / GLYPHS_PER_ROW;
+                col = code % GLYPHS_PER_ROW;
+
+                code = row * GLYPH_HEIGHT * (SHEET_PITCH / 4);
+                colOffset = col * GLYPH_WIDTH;
+                src = (pixels + colOffset) + code;
+
+                for (; rows > 0; rows--) {
+                    for (col = GLYPH_WIDTH; col > 0; col--) {
+                        b = *src++;
+
+                        *dst++ |= b & 0xF;
+                        *dst++ |= b >> 4;
+                    }
+
+                    dst += SCRATCH_PITCH - GLYPH_WIDTH * 2;
+                    src += (SHEET_PITCH / 4) - GLYPH_WIDTH;
+                }
+
+                pen += width;
+                penX += width;
             }
 
-            pkt += 0x60;
-            data += sizeof(((BattleNameOutBlock *)out)->rows[0]);
-        }
+            pixels = dstSlot + STRIP_PITCH;
+            pen++;
+            penX = (penX + 2) / 2;
 
-        idx++;
-        out += 0x300;
-    }
+            for (rows = STRIP_ROWS; rows > 0; rows--) {
+                packSrc = pen;
+                count = penX;
+                dst = pixels;
+
+                while (count > 0) {
+                    hi = *--packSrc;
+                    lo = *--packSrc;
+                    *--dst = (lo & 0xF) | (hi << 4);
+                    count--;
+                }
+
+                pen += SCRATCH_PITCH;
+                pixels += STRIP_PITCH;
+            }
+        }
+    } while (0);
 }
 
 
