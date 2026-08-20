@@ -352,7 +352,7 @@ typedef struct {
     /* 0xC8 */ s8 audioChannel1State;   /**< Audio channel 1 state byte; -1 = reset/inactive. */
     /* 0xC9 */ s8 soundBankSelector;    /**< Sound bank toggle (0 or 1). */
     /* 0xCA */ s8 audioChannel2State;   /**< Audio channel 2 state byte; -1 = reset/inactive. */
-    /* 0xCB */ u8 battleMusicId;        /**< Set by @c opHandler_SETBATTLEMUSIC. */
+    /* 0xCB */ s8 battleMusicId;        /**< Set by @c opHandler_SETBATTLEMUSIC; read sign-extended by the sound-bank loader. */
     /* 0xCC */ u8 expectedDiscId;       /**< Currently inserted disc (1..4). The intro/disc-swap screen waits for @c getDiscId() to match. */
     /* 0xCD */ u8 cameraShakeX;         /**< Camera shake X intensity, popped from stack. */
     /* 0xCE */ u8 cameraShakeY;         /**< Camera shake Y intensity, popped from stack. */

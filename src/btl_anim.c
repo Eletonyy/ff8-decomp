@@ -6,7 +6,6 @@
 #include "btl_anim.h"
 
 
-u8 *emitDrawEnvPackets(u8 *ot, u8 *pkt);
 void callCdTick(void);
 void shutdownCardSubsystem(void);
 void initBattleSubsystems(void);
@@ -1876,7 +1875,7 @@ done:
 s32 transformValueIfActive(s32 ot, s32 pkt) {
     if (g_cardFileActive != 0) {
         s32 result = func_8002E8DC(ot, pkt, g_cardFileSlot, g_cardFileType, (u8 *)g_cardFilename, 7);
-        pkt = emitDrawEnvPackets(ot, result);
+        pkt = (s32)emitDrawEnvPackets((P_TAG *)ot, (u8 *)result);
     }
     return pkt;
 }
@@ -2021,7 +2020,7 @@ void copyDisplayCoords(DVECTOR *dst) {
  * @param pkt GPU packet allocation pointer.
  * @return Updated packet pointer (pkt + 24 bytes: two 12-byte packets).
  */
-u8 *emitDrawEnvPackets(u8 *ot, u8 *pkt) {
+u8 *emitDrawEnvPackets(P_TAG *ot, u8 *pkt) {
     RECT rect;
     DR_AREA *area;
     DR_OFFSET *offset;
@@ -2260,10 +2259,10 @@ s32 renderBattleDisplayList(s32 *colorTag) {
     swapDisplayList();
     buf = g_battleAnims.active;
     head = getDisplayListHead();
-    head = func_800302DC((s32)&buf->ot[1], head);
+    head = func_800302DC(&buf->ot[1], (u8 *)head);
     head = func_80031364((s32)&buf->ot[14], head);
     head = transformValueIfActive((s32)&buf->ot[13], head);
-    head = renderAnimOverlay((s32)&buf->ot[13], head);
+    head = renderAnimOverlay(&buf->ot[13], (u8 *)head);
     ot = buf->ot;
     head = func_8002BF24((s32)ot, head);
     storeGpuPacket(head + sizeof(buf->ot));

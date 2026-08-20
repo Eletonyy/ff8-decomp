@@ -1410,7 +1410,7 @@ void func_801E48C0(TutoState *self) {
     }
 
     case 8:
-        func_80048BB8(0);
+        SetDispMask(0);
         *state = 9;
         break;
 
@@ -1424,7 +1424,7 @@ void func_801E48C0(TutoState *self) {
         break;
 
     case 11:
-        func_80048BB8(1);
+        SetDispMask(1);
         loadOverlayWithTimCallback(9, (u8 *)0x801CD000);
         loadOverlayWithTimCallback(10, (u8 *)0x801D5000);
         *state = 12;

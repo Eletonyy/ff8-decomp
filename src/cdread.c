@@ -7,7 +7,6 @@
 #include "cdread.h"
 
 /* D_8008A3C8 / D_8008A3B8 / D_8008A3DC / D_800853B8 come from cd.h. */
-extern u8 *D_80039418;
 extern s32 D_80056558;
 
 typedef void (*CdHandler)(void);
@@ -257,7 +256,7 @@ void func_80039218(void) {
     switch (result) {
     case 0:
         D_8008A3C8.timeout = 0;
-        D_80039418 = D_800853B8;
+        D_80039418.src = D_800853B8;
         D_8008A3D8.sectorCount -= 10;
         D_8008A3B8 += 10;
 
@@ -327,5 +326,4 @@ s32 func_800393C8(void) {
     D_800562D8[D_8008A3D8.status]();
     return D_8008A3D8.status;
 }
-
 

@@ -1,15 +1,14 @@
 #include "common.h"
 #include "battle.h"
 #include "gamestate.h"
+#include "battle/bc_object5.h"
+#include "battle/bc_object6.h"
 
 extern u8 D_800E3CEC[];
 void func_800AB054(void);
 void func_800AB1AC(void);
 s32 func_800B0398(s32);
-s32 func_800AE730(void);
-void func_800AE6C0(void);
 void func_800A59AC(s32, s32, s32);
-s32 func_800AE788(void);
 s32 func_800A97A4(s32);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800A8B7C);

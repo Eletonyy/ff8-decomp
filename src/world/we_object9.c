@@ -1064,7 +1064,7 @@ s32 func_800BD09C(SlotEntry *slot, s32 arg1, CmdDesc *cmd, s32 worldAngle) {
  *   - @c D_800DD680.vx → @c D_800C9868.x
  *   - @c D_800DD680.vy → @c D_800C9868.z  (Y/Z swap for PS1 coord system)
  *   - -@c D_800DD680.vz → @c D_800C9868.y (Z negated)
- *   - @c D_800DD690[0..8] → @c D_800C9770[8..0xF] (unaligned 8 bytes)
+ *   - @c D_800DD690[0..8] → @c D_800C9770[1] (the rotation slot)
  *   - @c D_800DD69C → @c D_800C4D3C (secondary cmd byte)
  * and calls @c worldPosToCell with the source vector and @c D_800C9770 buffer.
  */
@@ -1075,7 +1075,7 @@ void func_800BD180(void) {
         D_800C9868.z = D_800DD680.vy;
         D_800C9868.y = -D_800DD680.vz;
         worldPosToCell(&D_800DD680, D_800C9770);
-        memcpy(&D_800C9770[0x8], D_800DD690, 8);
+        memcpy(&D_800C9770[1], D_800DD690, 8);
         D_800C4D3C = D_800DD69C;
     }
 }

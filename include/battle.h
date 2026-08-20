@@ -708,18 +708,21 @@ typedef struct {
  *  - @c primList[3] (+0x7C) is the main @c otHead chain head used by
  *    @c addPrim-style inserts.
  *
- * At least 0x4070 bytes based on observed accesses in world.
+ * The array runs the full remaining 0x4000 bytes of the struct, so the
+ * far end doubles as the HUD layer: the map-view drawers link into
+ * @c primList[0xFFF] and @c primList[0xFFE], the last two slots.
  */
 typedef struct {
     /* 0x0000 */ DRAWENV drawEnv;       /**< Draw-env template, copied to the active env. */
     /* 0x005C */ DISPENV disp;          /**< Display-env template; copied to D_80082C18 in setupWorldRender. */
-    /* 0x0070 */ s32 primList[4];
-    /* 0x0080 */ u8  pad0080[0x3FF0];
+    /* 0x0070 */ s32 primList[0x1000];   /**< Ordering table; see the depth aliases below. */
 } BattleSceneCtx;                       /* 0x4070 */
 
 /* Named aliases for the two specifically-purposed primList slots. */
 #define BSC_COLORTAG_IDX 1   /**< primList[1] @ +0x74 — renderBattleDisplayList color tag. */
 #define BSC_OTHEAD_IDX   3   /**< primList[3] @ +0x7C — main addPrim chain head. */
+#define BSC_HUD_IDX      0xFFF /**< primList[0xFFF] @ +0x406C — map-view HUD layer. */
+#define BSC_MARKER_IDX   0xFFE /**< primList[0xFFE] @ +0x4068 — map-view marker layer. */
 
 
 
@@ -1215,7 +1218,6 @@ u16 func_800B0F9C(s32 stat);
 void func_800A1760(s32 arg0, BattleCharData* arg1);
 
 /** @brief Apply a stat-effect probe; outputs (a1=stat, a2=count). */
-s32 func_800AF134(s32 entityIdx, u8 *outStat, u8 *outCount, s32 typeByte);
 
 /** @brief Format helper that writes into a caller-provided buffer. */
 u8 *func_800B04A0(s32 a0, u8 *buf);

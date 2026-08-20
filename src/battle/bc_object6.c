@@ -1,14 +1,11 @@
 #include "common.h"
 #include "battle.h"
 #include "gamestate.h"
+#include "battle/bc_object5.h"
+#include "battle/bc_object6.h"
 
 extern u8 D_800EE441[];
 extern u8 D_80077EBC[];
-s32 func_800A980C(void);
-s32 func_800A9888(void);
-void func_800AD4A4(s32);
-void func_800AE6C0(void);
-void func_80048BB8(s32);
 void sndStopAll(void);
 void resetCdDrive(void);
 
@@ -453,19 +450,19 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object6", func_800AED9C);
 /**
  * @brief Trigger battle end sequence.
  *
- * Calls func_80048BB8(0) to stop processing, sets D_80082C0F to 5,
+ * Calls SetDispMask(0) to stop processing, sets D_80082C0F to 5,
  * clears byte at D_800ED148 + 0xC, then calls sndStopAll and
  * resetCdDrive for cleanup.
  */
 /**
  * @brief Trigger battle end sequence.
  *
- * Calls func_80048BB8(0) to stop processing, sets D_80082C0F to 5,
+ * Calls SetDispMask(0) to stop processing, sets D_80082C0F to 5,
  * clears byte at D_800ED148 + 0xC, then calls sndStopAll and
  * resetCdDrive for cleanup.
  */
 void func_800AEE64(void) {
-    func_80048BB8(0);
+    SetDispMask(0);
     D_80082C0F = 5;
     {
         volatile u8 *base = (u8 *)&D_800ED148;
