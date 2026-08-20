@@ -524,15 +524,6 @@ typedef struct {
 
 extern BattleSceneCtx D_800CA040;       /**< Worldmap "no-battle" sentinel — also functions as an empty BattleSceneCtx. */
 extern s16         D_800C53B8[];        /**< Bone-id table (used by we_object4). */
-/* Worldmap sub-OT pools: [row][record][subslot], where row is the
- * canonical-entity bit (D_800CA040 vs active ctx), each 0x60 record is a
- * mini ordering table of 4 sub-slots, and bone prims get spliced between
- * a record's last sub-slot ([3]) and its first ([0]). */
-extern OTSubSlot   D_800D3E50[2][3][4]; /**< Primary worldmap sub-OT pool. */
-extern OTSubSlot   D_800D4090[2][3][4]; /**< Secondary worldmap sub-OT pool. */
-extern OTSubSlot   D_800D3510[2][2][4]; /**< Sub-OT pool spliced by func_800A6A74. */
-extern OTSubSlot   D_800D3690[2][2][4]; /**< Second sub-OT pool spliced by func_800A6A74. */
-
 extern ScriptOp *func_800AF004(u8 *base, s32 flag);
 extern s32 func_800AF28C(ScriptOp *p);
 extern s32 func_800BEFC4(void);

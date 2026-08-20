@@ -519,12 +519,16 @@ binaries:
   options:
     target_path: original/world.bin
     section_order: [.rodata, .text, .data, .bss]
+    ld_bss_is_noload: true
     subalign: 1
   segments:
   - name: world
     type: code
     start: 0x0
     vram: 0x80098000
+    # Work RAM past the loaded image (which ends 0x800C8635). we_object4 owns
+    # its own strip/backdrop pools at 0x800D3510; the rest is not yet split.
+    bss_size: 0x1FACB
     subsegments:
     - [0x0, rodata]
     - [0xEC, .rodata, we_object3]
@@ -549,7 +553,10 @@ binaries:
     - [0x2780C, c, we_object11]
     - [0x2C0F8, c, we_object13]
     - [0x2CCA4, bin]
-  - [0x30635]
+    - [0x30640, bss, world_bss]
+    - [0x3B510, .bss, we_object4]
+    - [0x3CE80, bss, world_bss2]
+  - [0x50100]
 - name: SLUS_008.92
   sha1: 40706b4e0553fc6cbeb044ca1e0e9004d5ac2561
   options:

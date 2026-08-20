@@ -154,18 +154,40 @@ extern POLY_GT4 D_800D595C[3];      /**< Map-panel quads for the D_800CA040 sent
 #define BAND1_SCRATCH_X 0x2C0
 
 /* Worldmap backdrop prims, one set per scene bank. Each pair is drawn against
- * two bone slots of the ordering table -- see func_800A7590. */
-extern DRAWENV      D_800D3930;      /**< Strip draw-env template, rebuilt per band. */
-extern DRAWENV      D_800D3990[2];   /**< Per-scene draw-env, copied from each context. */
-extern POLY_F4      D_800D3810[2][3];
-extern POLY_F4      D_800D38A0[2][3];
-extern DR_ENV       D_800D3A50[2][2];
-extern DR_ENV       D_800D3B50[2][2];
-extern DR_ENV       D_800D3C50[2][2];
-extern DR_ENV       D_800D3D50[2][2];
+ * two bone slots of the ordering table -- see func_800A7590.
+ *
+ * This unit owns the whole 0x800D3510..0x800D4E80 bss block (see the
+ * [0x3B510, .bss, we_object4] subsegment in config/ff8.yaml), so these are
+ * definitions, not externs. They are emitted in this order and their sizes
+ * are exact -- reordering them or resizing one shifts every object after it.
+ * gcc packs .bss with no alignment bump here, so the original's two gaps are
+ * declared explicitly as pad_* -- drop them and everything above the block
+ * shifts down 0xC.
+ *
+ * The sub-OT pools are [row][record][subslot], where row is the
+ * canonical-entity bit (D_800CA040 vs active ctx), each 0x60 record is a mini
+ * ordering table of 4 sub-slots, and bone prims get spliced between a
+ * record's last sub-slot ([3]) and its first ([0]). */
+static OTSubSlot   D_800D3510[2][2][4];  /**< Sub-OT pool spliced by func_800A6A74. */
+static OTSubSlot   D_800D3690[2][2][4];  /**< Second pool spliced by func_800A6A74. */
+static POLY_F4     D_800D3810[2][3];     /**< Band 0's three flat translucent quads,
+                                              per scene bank. */
+static POLY_F4     D_800D38A0[2][3];     /**< Band 1's, likewise. */
+static DRAWENV     D_800D3930;           /**< Strip draw-env template, rebuilt per band. */
+static u8          pad_800D398C[4];      /**< Unreferenced; preserves the original
+                                              spacing. Purpose unknown. */
+static DRAWENV     D_800D3990[2];        /**< Per-scene draw-env, copied from each context. */
+static u8          pad_800D3A48[8];      /**< Unreferenced; preserves the original
+                                              spacing. Purpose unknown. */
+static DR_ENV      D_800D3A50[2][2];
+static DR_ENV      D_800D3B50[2][2];
+static DR_ENV      D_800D3C50[2][2];
+static DR_ENV      D_800D3D50[2][2];
+static OTSubSlot   D_800D3E50[2][3][4];  /**< Primary worldmap sub-OT pool. */
+static OTSubSlot   D_800D4090[2][3][4];  /**< Secondary worldmap sub-OT pool. */
 /** One record per upload slot, per bank per bone slot; how many are live at
  *  run time comes from @c func_800BEF6C. */
-extern DR_LOAD      D_800D42D0[2][2][STRIP_LOAD_COUNT];
+static DR_LOAD     D_800D42D0[2][2][STRIP_LOAD_COUNT];
 
 extern POLY_FT4 D_800D88B0[2][64];
 extern TILE     D_800DA8D0[2][64];
