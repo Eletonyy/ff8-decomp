@@ -885,7 +885,7 @@ void func_80099348(void) {
  * @brief Angle (8-bit BAM) and distance between two 2D points.
  *
  * Computes @c dx / @c dy from the two points, stores the squared distance to
- * @c *outDist, replaces it with the true distance via @c func_8003F4A4 (isqrt),
+ * @c *outDist, replaces it with the true distance via @c SquareRoot0 (isqrt),
  * then normalizes the deltas to a fixed ~[-128,128] scale and resolves the
  * octant with a magnitude compare (@c |dx| vs @c |dy|) plus the two sign tests.
  * Each octant reads the arctangent table @c D_800C319C at @c 2*|minor| and adds
@@ -910,7 +910,7 @@ s32 func_8009A0E8(s32 *p0, s32 *p1, s32 *outDist) {
     s32 r;
 
     *outDist = d2;
-    dist = func_8003F4A4(d2);
+    dist = SquareRoot0(d2);
     *outDist = dist;
 
     dx = ((dx << 12) / dist) / 32;
@@ -2052,7 +2052,7 @@ void func_8009BEC8(Actor *ents, s32 flags) {
             a.vx = (ents[i].msgTextPtr - ents[i].moveStartX) / 1024;
             a.vy = (ents[i].msgPosX - ents[i].moveStartY) / 1024;
             a.vz = (ents[i].msgPosY - ents[i].moveStartZ) / 1024;
-            dist[0] = func_8003F4A4(a.vx * a.vx + a.vy * a.vy + a.vz * a.vz);
+            dist[0] = SquareRoot0(a.vx * a.vx + a.vy * a.vy + a.vz * a.vz);
             ents[i].field_0x1D8 = dist[0] / D_800704A8.unk1AE;
             ents[i].field_0x1DA = 0;
             ents[i].msgState = 1;
@@ -3364,7 +3364,7 @@ void func_8009FE18(s32 entIdx, Actor *actor, s32 flags) {
         d.vx = (actor->field_0x1C0 - actor->unk1A8) / 1024;
         d.vy = (actor->field_0x1C4 - actor->unk1AC) / 1024;
         d.vz = (actor->field_0x1C8 - actor->unk1B0) / 1024;
-        actor->field_0x1D8 = func_8003F4A4(d.vx * d.vx + d.vy * d.vy + d.vz * d.vz) / D_80070656;
+        actor->field_0x1D8 = SquareRoot0(d.vx * d.vx + d.vy * d.vy + d.vz * d.vz) / D_80070656;
         actor->field_0x1DA = 0;
         actor->msgState = 1;
         break;

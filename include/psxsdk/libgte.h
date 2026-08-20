@@ -78,6 +78,7 @@ s32 SquareRoot12(s32 a);   /**< Square root of a 20.12 fixed-point value. */
 s32 VectorNormal(VECTOR *v0, VECTOR *v1);   /**< Normalise @p v0 into @p v1; returns the squared length. */
 s32 rsin(s32 a);
 s32 rcos(s32 a);
+s32 ratan2(s32 y, s32 x);   /**< Angle of (x, y); 0x1000 = full circle. */
 
 /* --- Inline GTE (COP2) opcode macros ---
  *
@@ -114,6 +115,43 @@ s32 rcos(s32 a);
     :                                                    \
     : "r"( r0 )                                          \
     : "$12", "$13", "$14" )
+
+/* Read the rotation matrix back out of the GTE into the MATRIX @p r0 --
+ * the 3x3 at +0 and the translation vector at +20, so it is the inverse of
+ * gte_SetRotMatrix plus gte_SetTransMatrix in one go. */
+#define gte_ReadRotMatrix( r0 ) __asm__ volatile (       \
+    "cfc2   $12, $0;"                                    \
+    "cfc2   $13, $1;"                                    \
+    "sw     $12, 0( %0 );"                               \
+    "sw     $13, 4( %0 );"                               \
+    "cfc2   $12, $2;"                                    \
+    "cfc2   $13, $3;"                                    \
+    "cfc2   $14, $4;"                                    \
+    "sw     $12, 8( %0 );"                               \
+    "sw     $13, 12( %0 );"                              \
+    "sw     $14, 16( %0 );"                              \
+    "cfc2   $12, $5;"                                    \
+    "cfc2   $13, $6;"                                    \
+    "cfc2   $14, $7;"                                    \
+    "sw     $12, 20( %0 );"                              \
+    "sw     $13, 24( %0 );"                              \
+    "sw     $14, 28( %0 )"                               \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "$12", "$13", "$14", "memory" )
+
+/* Read the translation vector back out of the GTE into @p r0 (inverse of
+ * gte_SetTransVector). */
+#define gte_sttr( r0 ) __asm__ volatile (                \
+    "cfc2   $12, $5;"                                    \
+    "cfc2   $13, $6;"                                    \
+    "cfc2   $14, $7;"                                    \
+    "sw     $12, 0( %0 );"                               \
+    "sw     $13, 4( %0 );"                               \
+    "sw     $14, 8( %0 )"                                \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "$12", "$13", "$14", "memory" )
 
 #define gte_SetTransVector( r0 ) __asm__ volatile (      \
     "lw     $12, 0( %0 );"                               \
@@ -190,6 +228,53 @@ s32 rcos(s32 a);
     "swc2   $25, 0( %0 );"                               \
     "swc2   $26, 4( %0 );"                               \
     "swc2   $27, 8( %0 )"                                \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "memory" )
+
+/* Load IR1/IR2/IR3 from the three words of the VECTOR @p r0. */
+#define gte_ldlvl( r0 ) __asm__ volatile (               \
+    "lwc2   $9, 0( %0 );"                                \
+    "lwc2   $10, 4( %0 );"                               \
+    "lwc2   $11, 8( %0 )"                                \
+    :                                                    \
+    : "r"( r0 ) )
+
+/* Load the far colour (RFC/GFC/BFC) from the VECTOR @p r0 -- the colour
+ * INTPL fades towards. */
+#define gte_ldfc( r0 ) __asm__ volatile (                \
+    "lw     $12, 0( %0 );"                               \
+    "lw     $13, 4( %0 );"                               \
+    "lw     $14, 8( %0 );"                               \
+    "ctc2   $12, $21;"                                   \
+    "ctc2   $13, $22;"                                   \
+    "ctc2   $14, $23"                                    \
+    :                                                    \
+    : "r"( r0 )                                          \
+    : "$12", "$13", "$14" )
+
+/* Same, but from three 8-bit colour components, each scaled to the GTE's
+ * 4.12 fixed point. */
+#define gte_SetFarColor( r0, r1, r2 ) __asm__ volatile ( \
+    "sll    $12, %0, 4;"                                 \
+    "sll    $13, %1, 4;"                                 \
+    "sll    $14, %2, 4;"                                 \
+    "ctc2   $12, $21;"                                   \
+    "ctc2   $13, $22;"                                   \
+    "ctc2   $14, $23"                                    \
+    :                                                    \
+    : "r"( r0 ), "r"( r1 ), "r"( r2 )                    \
+    : "$12", "$13", "$14" )
+
+/* Load IR0, the interpolation fraction used by INTPL / DPCS. */
+#define gte_lddp( r0 ) __asm__ volatile (                \
+    "mtc2   %0, $8"                                      \
+    :                                                    \
+    : "r"( r0 ) )
+
+/* Store the packed RGB result (GTE data register 22). */
+#define gte_strgb( r0 ) __asm__ volatile (               \
+    "swc2   $22, 0( %0 )"                                \
     :                                                    \
     : "r"( r0 )                                          \
     : "memory" )
@@ -278,7 +363,7 @@ s32 rcos(s32 a);
     "sw     $12, 0( %0 )"                                \
     :                                                    \
     : "r"( r0 )                                          \
-    : "memory" )
+    : "$12", "memory" )
 
 #define gte_stsz( r0 ) __asm__ volatile (                \
     "swc2   $19, 0( %0 )"                                \
@@ -303,6 +388,14 @@ s32 rcos(s32 a);
     "nop;"                                               \
     "nop;"                                               \
     ".word  0x4A180001"                                  \
+    : : )
+
+/* INTPL -- fade IR1/IR2/IR3 towards the far colour by the fraction in IR0,
+ * leaving the packed result in RGB2. */
+#define gte_intpl() __asm__ volatile (                   \
+    "nop;"                                               \
+    "nop;"                                               \
+    ".word  0x4A980011"                                  \
     : : )
 
 #define gte_avsz4() __asm__ volatile (                   \

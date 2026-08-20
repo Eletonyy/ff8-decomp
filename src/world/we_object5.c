@@ -335,11 +335,11 @@ void func_800ABDD8(CVECTOR *input, u16 *output, s32 z, s16 count) {
  * @param src     4 input SVECTORs (stride 8 — packed array).
  * @param rot     Rotation angles for the inner matrix (passed to @c RotMatrix).
  * @param trans   Translation (s16 components sign-extended into @c matrix.t).
- * @param outSXY  4 packed s32 SXY outputs (16 bytes total).
- * @param outOTZ  s32 average-Z output.
+ * @param outSXY  The four projected screen points.
+ * @param outOTZ  Average-Z output, the ordering-table depth.
  */
 void func_800ABEF0(SVECTOR *src, SVECTOR *rot, SVECTOR *trans,
-                   s32 *outSXY, s32 *outOTZ) {
+                   DVECTOR *outSXY, u32 *outOTZ) {
     MATRIX  m;
     SVECTOR transformed[4];
     s32     i;
@@ -381,7 +381,7 @@ void func_800ABEF0(SVECTOR *src, SVECTOR *rot, SVECTOR *trans,
  * optionally jitters @c life and @c limit via the RNG @c func_8009CC3C,
  * builds a rotation matrix from @p vec via @c RotMatrix, pushes it to
  * the GTE (zero translation), then projects the kind's per-axis
- * @c offset through the matrix into the slot's @c proj_xyz.
+ * @c offset through the matrix into the slot's @c vel.
  *
  * @note The two sentinel checks (pre-loop and post-loop) use the same
  *       expression @c &D_800D9CB0[64] so gcc CSEs both branches into a
@@ -393,7 +393,7 @@ void func_800ABEF0(SVECTOR *src, SVECTOR *rot, SVECTOR *trans,
  * @param type   Slot kind — also index into the @c D_800C5480 KindParams table.
  * @param pos    Source world position (12 bytes — only low s16 of each coord read).
  * @param vec    Source rotation vector (8 bytes, unaligned-tolerant copy).
- * @param flags  @c SLOT_FLAG_JITTER_LIFE → RNG-jitter @c life by [-0x80, +0x7F].
+ * @param flags  @c SLOT_FLAG_JITTER_SCALE → RNG-jitter @c scale by [-0x80, +0x7F].
  *               @c SLOT_FLAG_JITTER_LIMIT → RNG-jitter @c limit by [-4, +3].
  */
 s32 func_800AC0A0(s32 type, VECTOR *pos, SVECTOR *vec, u16 flags) {
@@ -417,7 +417,7 @@ s32 func_800AC0A0(s32 type, VECTOR *pos, SVECTOR *vec, u16 flags) {
     slot->kind  = (u8)type;
     slot->count = 0;
     slot->limit = kp->limit;
-    slot->life  = 0x1000;
+    slot->scale  = 0x1000;
     slot->pos.vx = pos->vx;
     slot->pos.vy = pos->vy;
     slot->pos.vz = pos->vz;
@@ -426,8 +426,8 @@ s32 func_800AC0A0(s32 type, VECTOR *pos, SVECTOR *vec, u16 flags) {
     vcp2 = vcp;
     memcpy(vcp2, vec, 8);
 
-    if (flags & SLOT_FLAG_JITTER_LIFE) {
-        slot->life += func_8009CC3C() - 0x80;
+    if (flags & SLOT_FLAG_JITTER_SCALE) {
+        slot->scale += func_8009CC3C() - 0x80;
     }
     if (flags & SLOT_FLAG_JITTER_LIMIT) {
         slot->limit += (func_8009CC3C() & 7) - 4;
@@ -446,9 +446,9 @@ s32 func_800AC0A0(s32 type, VECTOR *pos, SVECTOR *vec, u16 flags) {
     gte_mvmva(1, 0, 0, 0, 0);
     gte_stlvnl(&projected);
 
-    slot->proj_x = (s16)projected.vx;
-    slot->proj_y = (s16)projected.vy;
-    slot->proj_z = (s16)projected.vz;
+    slot->vel.vx = (s16)projected.vx;
+    slot->vel.vy = (s16)projected.vy;
+    slot->vel.vz = (s16)projected.vz;
 }
 
 
@@ -657,9 +657,9 @@ void func_800AC468(void *unused_a0, WorldViewXform *oa, WorldViewXform *mh, s32 
  * Treating each @c VECTOR as low-s16 world coords, this:
  *  -# Computes the s16 component-wise delta and its squared distance via
  *     the GTE @c SQR instruction.
- *  -# Takes the 3D and horizontal sqrts (@c func_8003F4A4) for the slant
+ *  -# Takes the 3D and horizontal sqrts (@c SquareRoot0) for the slant
  *     and ground-plane distances.
- *  -# Resolves @c pitch and @c yaw via @c func_80041E84 (atan2-like).
+ *  -# Resolves @c pitch and @c yaw via @c ratan2 (atan2-like).
  *  -# Calls @c worldPosToCell (with @p posB) to seed @c rotBuf[0] with the
  *     view-yaw projection and returns the view-yaw.
  *  -# Wraps the view-yaw and @p angleArg into per-axis tile deltas
@@ -702,11 +702,11 @@ void func_800AC778(VECTOR *posA, VECTOR *posB, s16 angleArg,
     gte_SQR(0);
     gte_stlvnl(&sq);
 
-    distFull = func_8003F4A4(sq.vx + sq.vy + sq.vz);
-    distXZ   = func_8003F4A4(sq.vx + sq.vz);
+    distFull = SquareRoot0(sq.vx + sq.vy + sq.vz);
+    distXZ   = SquareRoot0(sq.vx + sq.vz);
 
-    angles.vx = func_80041E84(-delta.vy, distXZ);
-    angles.vy = func_80041E84(delta.vx, delta.vz);
+    angles.vx = ratan2(-delta.vy, distXZ);
+    angles.vy = ratan2(delta.vx, delta.vz);
     angles.vz = 0;
 
     offset.vx = 0;

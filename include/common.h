@@ -216,7 +216,6 @@ extern EncounterParams D_80082C90;
 extern void func_80047C74(u8 *dst, u8 *src);
 
 /** @brief Integer square root of @p a (main-binary helper). */
-extern s32 func_8003F4A4(s32 a);
 
 /** @brief Poll the GPU; returns non-zero while it is still busy.
  *         Callers that only need the side effect ignore the result. */

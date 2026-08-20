@@ -45,28 +45,6 @@ extern s32 D_800C5454;              /**< Likely nonzero while the map pointer hi
 
 /* Map-view HUD drawers of this unit (see func_800A8400 for the driving values). */
 
-/**
- * @brief World-map effect particle (covers offsets 0x00-0x2D; full stride unknown).
- *
- * func_800A9CC0 steps one of these against a second instance that supplies
- * the per-step deltas (velocity increments and the scale multiplier).
- */
-typedef struct {
-    /* 0x00 */ s32 x;          /**< Position x (fixed point). */
-    /* 0x04 */ s32 y;          /**< Position y (fixed point). */
-    /* 0x08 */ s32 z;          /**< Position z (fixed point). */
-    /* 0x0C */ u8 pad0C[4];
-    /* 0x10 */ u16 scaleRate;  /**< Per-step scale multiplier, 4.12 fixed (read from the delta-source instance). */
-    /* 0x12 */ u8 pad12[0xE];
-    /* 0x20 */ s16 vx;         /**< Velocity x. */
-    /* 0x22 */ s16 vy;         /**< Velocity y. */
-    /* 0x24 */ s16 vz;         /**< Velocity z. */
-    /* 0x26 */ u8 pad26[3];
-    /* 0x29 */ u8 age;         /**< Step counter, incremented every update. */
-    /* 0x2A */ u8 kind;        /**< Particle kind; 12 and 13 get the camera-follow drift. */
-    /* 0x2B */ u8 pad2B;
-    /* 0x2C */ u16 scale;      /**< Current scale, 4.12 fixed. */
-} WorldParticle;
 
 /* Camera-follow reference for the kind-12/13 drift in func_800A9CC0.
  * volatile is load-bearing: it keeps this read ordered against the
@@ -158,28 +136,63 @@ extern s16 D_800C53B4[];            /**< Per-plane depth-cue weight fed to func_
 extern POLY_GT4 D_800D58C0[3];      /**< Map-panel quads for the active scene. */
 extern POLY_GT4 D_800D595C[3];      /**< Map-panel quads for the D_800CA040 sentinel scene. */
 
+/** One VRAM strip: 64x16 texels of the worldmap band. */
+#define STRIP_W 0x40
+#define STRIP_H 0x10
+/** Strips per band, and depth planes produced from each. */
+#define STRIP_COUNT 4
+#define STRIP_PLANES 2
+/** Width of a whole band, i.e. its four strips laid side by side. */
+#define BAND_W (STRIP_W * STRIP_COUNT)
+/** Single-texel uploads primed per pool, one per entry of @c D_80098120. */
+#define STRIP_LOAD_COUNT 11
+/** VRAM row each band is read from -- and blitted back to. */
+#define BAND0_VRAM_Y 0xE0
+#define BAND1_VRAM_Y 0xF0
+/** Scratch VRAM column the expanded copies are staged in, per band. */
+#define BAND0_SCRATCH_X 0x140
+#define BAND1_SCRATCH_X 0x2C0
+
+/* Worldmap backdrop prims, one set per scene bank. Each pair is drawn against
+ * two bone slots of the ordering table -- see func_800A7590. */
+extern DRAWENV      D_800D3930;      /**< Strip draw-env template, rebuilt per band. */
+extern DRAWENV      D_800D3990[2];   /**< Per-scene draw-env, copied from each context. */
+extern POLY_F4      D_800D3810[2][3];
+extern POLY_F4      D_800D38A0[2][3];
+extern DR_ENV       D_800D3A50[2][2];
+extern DR_ENV       D_800D3B50[2][2];
+extern DR_ENV       D_800D3C50[2][2];
+extern DR_ENV       D_800D3D50[2][2];
+/** One record per upload slot, per bank per bone slot; how many are live at
+ *  run time comes from @c func_800BEF6C. */
+extern DR_LOAD      D_800D42D0[2][2][STRIP_LOAD_COUNT];
+
 extern POLY_FT4 D_800D88B0[2][64];
 extern TILE     D_800DA8D0[2][64];
+/* One-past-the-end of each pool's first bank; the particle renderer stops
+ * filling a bank when its cursor reaches these. */
+extern POLY_FT4 D_800D92B0[];       /**< == &D_800D88B0[1][0]. */
+extern TILE     D_800DACD0[];       /**< == &D_800DA8D0[1][0]. */
 extern WorldPolyGT4 D_800D5A00[2][64];
 extern WorldPolyGT3 D_800D7400[2][64];
 
 
-/* func_800491E8 is main-binary. */
-extern void func_800491E8(void *p);
 
-/* Private to this unit: no caller outside we_object4 references these.
- * The last four are reached only from this unit's own INCLUDE_ASM bodies. */
-static void func_800A688C(u16 *src, RECT *area, u16 *dst, s32 count);
-static void func_800A7CD0(s32 *block);
-static void func_800A8024(void);
-static void func_800A8524(s32 scrollX, s16 topY, s32 brightness);
-static void func_800A8868(s32 phase, s16 y);
-static void func_800A8A28(s16 y);
-static void func_800A9F54(WorldPos *pos, s32 x, s32 y);
-static void func_800A6A74(BattleSceneCtx *ctx);
-static void func_800A9CC0(WorldParticle *p, WorldParticle *q);
-static void func_800AAD48(WorldVtx *vtx, TriShade *shade);
-static void func_800AAEAC(WorldVtx *vtx, QuadShade *shade);
+/**
+ * @brief One world-map colour zone, reached through the @c D_800C9EE8 offset
+ *        table (entry 0 is the map-wide default).
+ *
+ * A zone paints the scene around a point: while the camera is inside
+ * @c radius, @ref func_800A8C1C fades the five palette stops and the GTE
+ * colour matrix from the default's values towards this zone's, by distance.
+ */
+typedef struct {
+    /* 0x00 */ s32     x;            /**< Zone centre, world x. */
+    /* 0x04 */ s32     y;            /**< Zone centre, world y. */
+    /* 0x08 */ s32     radius;       /**< Influence radius; also sets the fade rate. */
+    /* 0x0C */ CVECTOR colors[5];    /**< Palette stops: background, then the four HUD stops. */
+    /* 0x20 */ s16     matrix[3][3]; /**< Colour matrix rows fed to the GTE. */
+} WorldZone; /* 0x32 bytes */
 
 /**
  * @brief One vertex of the world-map inset mesh (@ref func_800A9F54).
@@ -195,6 +208,36 @@ typedef struct {
     /* 0x06 */ s16 my;  /**< Map-cell y. */
 } WorldTessVert; /* 0x8 bytes */
 
+/* Private to this unit: no caller outside we_object4 references these. Many are
+ * unreferenced entirely in the retail build; each such function says so in an
+ * @note on its own definition. */
+static void func_800A688C(u16 *src, RECT *area, u16 *dst, s32 count);
+static void func_800A7CD0(s32 *block);
+static void func_800A8024(void);
+static void func_800A8524(s32 scrollX, s16 topY, s32 brightness);
+static void func_800A8868(s32 phase, s16 y);
+static void func_800A8A28(s16 y);
+static void func_800A9F54(WorldPos *pos, s32 x, s32 y);
+static void func_800A6A74(BattleSceneCtx *ctx);
+static void func_800A9CC0(Slot30 *p, KindParams *q);
+static void func_800AAD48(WorldVtx *vtx, TriShade *shade);
+static void func_800AAEAC(WorldVtx *vtx, QuadShade *shade);
+/* Emits one mesh polygon from the assembled vertices into the current prim
+ * slot; @c isQuad selects four vertices over three. */
+static void func_800AA210(WorldTessVert *verts, s32 isQuad);
+/* Draws the D_800D9CB0 particle pool; defined further down. */
+static void func_800A9300(void);
+/* Re-blends the world palette for the camera's position; defined below. */
+static void func_800A8C1C(void);
+/* Links the worldmap backdrop prims into the scene's OT; defined below. */
+static void func_800A7590(BattleSceneCtx *ctx);
+/* Builds the two worldmap strip sub-OTs; defined below. */
+static void func_800A64DC(void);
+/* Primes every worldmap strip pool from VRAM; defined below. */
+static void func_800A6BE0(void);
+/* Spawns a kind-11 particle at a fixed world position; defined below. */
+static void func_800AB06C(void);
+
 /** Vertex index per mesh polygon; the first @c MESH_QUAD_COUNT rows are quads
  *  and use all four entries, the rest are triangles and use the first three. */
 extern s8 D_800C57F0[][4];
@@ -208,13 +251,118 @@ extern volatile u8 D_800C58D4[][2];
 extern s32 D_800D8808;  /**< Mesh centre screen x (corner + @c MESH_CENTRE_BIAS). */
 extern s32 D_800D880C;  /**< Mesh centre screen y (corner + @c MESH_CENTRE_BIAS). */
 
-/* Emits one mesh polygon from the assembled vertices into the current prim
- * slot; @c isQuad selects four vertices over three. Defined at the bottom of
- * this file and private to it like the statics above, but it is still
- * INCLUDE_ASM, so it cannot be declared static yet. */
-void func_800AA210(WorldTessVert *verts, s32 isQuad);
+/** Scratch VRAM rows for the two depth planes. */
+#define SCRATCH_NEAR_Y 0x40
+#define SCRATCH_FAR_Y  0x80
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A64DC);
+/**
+ * @brief Build the two worldmap strip sub-OTs.
+ *
+ * Each band is four 64x16 strips read back out of VRAM. @ref func_800A688C
+ * expands a strip into two depth-cued copies, which are uploaded side by side
+ * to scratch VRAM; a @c DR_MOVE is then packed into every sub-slot of both
+ * pool rows so that drawing the slot blits its copy to the band's position.
+ * Finally each record's four sub-slots are chained head to tail, turning the
+ * record into the mini ordering table the renderer splices bone prims into.
+ *
+ * The second band repeats the whole thing one VRAM row lower, into the second
+ * pool.
+ *
+ * @note Dead code in the retail build: nothing calls this and its address
+ *       appears nowhere in world.bin.
+ */
+static void func_800A64DC(void) {
+    RECT src;
+    RECT near;
+    RECT far;
+    u16  planes[STRIP_PLANES][STRIP_W * STRIP_H];
+    s32  k;
+    s32  rec;
+    s32  slot;
+    s32  i;
+    OTSubSlot *prev;
+    OTSubSlot *next;
+
+    src.x = 0;
+    src.y = BAND0_VRAM_Y;
+    src.w = STRIP_W;
+    src.h = STRIP_H;
+    near.x = BAND0_SCRATCH_X;
+    near.y = SCRATCH_NEAR_Y;
+    near.w = STRIP_W;
+    near.h = STRIP_H;
+    far.x = BAND0_SCRATCH_X;
+    far.y = SCRATCH_FAR_Y;
+    far.w = STRIP_W;
+    far.h = STRIP_H;
+
+    for (k = 0; k < STRIP_COUNT; k++) {
+        func_800A688C(NULL, &src, planes[0], STRIP_PLANES);
+        LoadImage(&near, (u32 *)planes[0]);
+        LoadImage(&far, (u32 *)planes[1]);
+        /* A sub-slot's 0x18-byte payload is exactly a DR_MOVE; the pool is
+         * typed OTSubSlot because the renderer walks it as an OT chain. */
+        for (i = 0; i < 2; i++) {
+            SetDrawMove((DR_MOVE *)&D_800D3510[i][0][k], &near, k * STRIP_W, BAND0_VRAM_Y);
+            SetDrawMove((DR_MOVE *)&D_800D3510[i][1][k], &far, k * STRIP_W, BAND0_VRAM_Y);
+        }
+        near.y += STRIP_H;
+        far.y += STRIP_H;
+        src.x += STRIP_W;
+    }
+
+    src.x = 0;
+    src.y = BAND1_VRAM_Y;
+    src.w = STRIP_W;
+    src.h = STRIP_H;
+    near.x = BAND1_SCRATCH_X;
+    near.y = SCRATCH_NEAR_Y;
+    near.w = STRIP_W;
+    near.h = STRIP_H;
+    far.x = BAND1_SCRATCH_X;
+    far.y = SCRATCH_FAR_Y;
+    far.w = STRIP_W;
+    far.h = STRIP_H;
+
+    for (k = 0; k < STRIP_COUNT; k++) {
+        func_800A688C(NULL, &src, planes[0], STRIP_PLANES);
+        LoadImage(&near, (u32 *)planes[0]);
+        LoadImage(&far, (u32 *)planes[1]);
+        for (i = 0; i < 2; i++) {
+            SetDrawMove((DR_MOVE *)&D_800D3690[i][0][k], &near, k * STRIP_W, BAND1_VRAM_Y);
+            SetDrawMove((DR_MOVE *)&D_800D3690[i][1][k], &far, k * STRIP_W, BAND1_VRAM_Y);
+        }
+        near.y += STRIP_H;
+        far.y += STRIP_H;
+        src.x += STRIP_W;
+    }
+
+    for (i = 0; i < 2; i++) {
+        for (rec = 0; rec < 2; rec++) {
+            next = D_800D3510[i][rec];
+            for (slot = 0, prev = next - 1; slot < 4; slot++) {
+                if (slot != 0) {
+                    addPrim(prev, next);
+                }
+                prev++;
+                next++;
+            }
+        }
+    }
+
+    for (i = 0; i < 2; i++) {
+        for (rec = 0; rec < 2; rec++) {
+            next = D_800D3690[i][rec];
+            for (slot = 0, prev = next - 1; slot < 4; slot++) {
+                if (slot != 0) {
+                    addPrim(prev, next);
+                }
+                prev++;
+                next++;
+            }
+        }
+    }
+}
 
 /**
  * @brief Expand a VRAM rectangle to depth-cued BGR555, one scanline at a time.
@@ -284,6 +432,9 @@ static void func_800A688C(u16 *src, RECT *area, u16 *dst, s32 count) {
  * @c D_800CA040 sentinel.
  *
  * @param ctx Scene context whose @c primList holds the bone prims.
+ *
+ * @note Dead code in the retail build: nothing calls this and its address
+ *       appears nowhere in world.bin.
  */
 static void func_800A6A74(BattleSceneCtx *ctx) {
     s32 cond;
@@ -300,7 +451,169 @@ static void func_800A6A74(BattleSceneCtx *ctx) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A6BE0);
+/** VRAM source point for one strip upload: x in the low half, y in the high. */
+typedef struct {
+    /* 0x00 */ u16 x;
+    /* 0x02 */ u16 y;
+} VramXY; /* 0x4 bytes */
+
+/** Where in VRAM each of the eleven uploads reads its 1x1 source pixel from. */
+static const VramXY D_80098120[STRIP_LOAD_COUNT] = {
+    { 0x000, 0x0F9 }, { 0x020, 0x0E5 }, { 0x0D0, 0x0EC }, { 0x0C0, 0x0E1 },
+    { 0x000, 0x0E2 }, { 0x0B0, 0x0E4 }, { 0x0B0, 0x0E5 }, { 0x0E0, 0x0E6 },
+    { 0x000, 0x0EE }, { 0x080, 0x0EF }, { 0x000, 0x0FD },
+};
+
+/**
+ * @brief Prime every worldmap strip pool from VRAM.
+ *
+ * Run once at world setup, for each of the two bands in turn. A band's four
+ * 64x16 strips are copied out of the map texture into scratch VRAM, and each
+ * sub-OT record gets a @c DR_MOVE per slot that blits one strip back, with the
+ * record's four slots chained into a mini ordering table. The band's draw
+ * environments are then packed: one from a default env covering the band, one
+ * from each scene context's own template. Each band also gets three flat
+ * semi-transparent quads spanning the strip.
+ *
+ * Finally every @c DR_LOAD in the @c D_800D42D0 pool is pointed at its 1x1
+ * source pixel, so drawing one uploads a single texel.
+ *
+ * @note Dead code in the retail build: nothing calls this and its address
+ *       appears nowhere in world.bin. It is the filler for the pools that
+ *       @ref func_800A7590 links and @ref func_800A64DC chains, both equally
+ *       unreferenced.
+ */
+static void func_800A6BE0(void) {
+    RECT          rect;
+    VramXY        coords[STRIP_LOAD_COUNT];
+    s32           i, j, k;
+    const VramXY *src;
+
+    /* Taking the address through a pointer is load-bearing: copying straight
+     * out of the array lets the compiler assume 4-byte alignment and emit only
+     * the aligned path, where the original tests alignment at run time. */
+    src = D_80098120;
+    memcpy(coords, src, sizeof(coords));
+
+    rect.x = 0;
+    rect.y = BAND0_VRAM_Y;
+    rect.w = STRIP_W;
+    rect.h = STRIP_H;
+    for (i = 0; i < STRIP_COUNT; i++) {
+        MoveImage(&rect, BAND0_SCRATCH_X, i * STRIP_H);
+        DrawSync(0);
+        rect.x += STRIP_W;
+    }
+
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 3; j++) {
+            rect.x = BAND0_SCRATCH_X;
+            rect.y = 0;
+            rect.w = STRIP_W;
+            rect.h = STRIP_H;
+            /* A sub-slot's 0x18-byte payload is exactly a DR_MOVE; the pool is
+             * typed OTSubSlot because the renderer walks it as an OT chain. */
+            for (k = 0; k < 4; k++) {
+                SetDrawMove((DR_MOVE *)&D_800D3E50[i][j][k], &rect,
+                            k * STRIP_W, BAND0_VRAM_Y);
+                rect.y += STRIP_H;
+                if (k != 0) {
+                    addPrim(&D_800D3E50[i][j][k - 1], &D_800D3E50[i][j][k]);
+                }
+            }
+        }
+    }
+
+    SetDefDrawEnv(&D_800D3930, 0, BAND0_VRAM_Y, BAND_W, STRIP_H);
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 2; j++) {
+            SetDrawEnv(&D_800D3A50[i][j], &D_800D3930);
+        }
+    }
+
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 3; j++) {
+            setPolyF4(&D_800D3810[i][j]);
+            setSemiTrans(&D_800D3810[i][j], 1);
+            setXY4(&D_800D3810[i][j], 0, 0, BAND_W, 0, 0, STRIP_H, BAND_W, STRIP_H);
+            setRGB0(&D_800D3810[i][j], 0x80, 0x80, 0x80);
+        }
+    }
+
+    for (i = 0; i < 2; i++) {
+        /* The two scene contexts sit back to back with the sentinel first;
+         * we_object1 spells the same pair as +0x5C and +0x40CC. */
+        D_800D3990[i] = (&D_800CA040)[i].drawEnv;
+    }
+
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 2; j++) {
+            SetDrawEnv(&D_800D3C50[i][j], &D_800D3990[i]);
+        }
+    }
+
+    rect.x = 0;
+    rect.y = BAND1_VRAM_Y;
+    rect.w = STRIP_W;
+    rect.h = STRIP_H;
+    for (i = 0; i < STRIP_COUNT; i++) {
+        MoveImage(&rect, BAND1_SCRATCH_X, i * STRIP_H);
+        DrawSync(0);
+        rect.x += STRIP_W;
+    }
+
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 3; j++) {
+            rect.x = BAND1_SCRATCH_X;
+            rect.y = 0;
+            rect.w = STRIP_W;
+            rect.h = STRIP_H;
+            for (k = 0; k < 4; k++) {
+                SetDrawMove((DR_MOVE *)&D_800D4090[i][j][k], &rect,
+                            k * STRIP_W, BAND1_VRAM_Y);
+                rect.y += STRIP_H;
+                if (k != 0) {
+                    addPrim(&D_800D4090[i][j][k - 1], &D_800D4090[i][j][k]);
+                }
+            }
+        }
+    }
+
+    SetDefDrawEnv(&D_800D3930, 0, BAND1_VRAM_Y, BAND_W, STRIP_H);
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 2; j++) {
+            SetDrawEnv(&D_800D3B50[i][j], &D_800D3930);
+        }
+    }
+
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 3; j++) {
+            setPolyF4(&D_800D38A0[i][j]);
+            setSemiTrans(&D_800D38A0[i][j], 1);
+            setXY4(&D_800D38A0[i][j], 0, 0, BAND_W, 0, 0, STRIP_H, BAND_W, STRIP_H);
+            setRGB0(&D_800D38A0[i][j], 0x80, 0x80, 0x80);
+        }
+    }
+
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 2; j++) {
+            SetDrawEnv(&D_800D3D50[i][j], &D_800D3990[i]);
+        }
+    }
+
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 2; j++) {
+            for (k = 0; k < STRIP_LOAD_COUNT; k++) {
+                rect.x = coords[k].x;
+                rect.y = coords[k].y;
+                rect.w = 1;
+                rect.h = 1;
+                D_800D42D0[i][j][k].p[0] = 0;
+                SetDrawLoad(&D_800D42D0[i][j][k], &rect);
+            }
+        }
+    }
+}
 
 /**
  * @brief Splice three of @c a0's bone prims into the sub-OT records of
@@ -325,7 +638,64 @@ void func_800A735C(BattleSceneCtx *a0) {
     addPrims(&a0->primList[D_800C53B8[4]], &D_800D4090[cond][2][0].link, &D_800D4090[cond][2][3].link);
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A7590);
+/** Bone slots of the ordering table the worldmap backdrop is drawn against. */
+#define BACKDROP_OT_FAR  3
+#define BACKDROP_OT_NEAR 4
+/** Records always emitted per bone slot, before the marker adds one more. */
+#define BACKDROP_BASE_RECORDS 10
+
+/**
+ * @brief Link this frame's worldmap backdrop into the scene's ordering table.
+ *
+ * Everything here goes onto two of the ordering table's bone slots, whose
+ * indices come from the bone-id table @c D_800C53B8: a far slot that takes the
+ * layer drawn behind, and a near slot for the layer in front. The bulk is the
+ * @c D_800D42D0 record pool -- ten per slot, eleven when @c func_800BEF6C
+ * reports a marked slot is active -- followed by the fixed prims: a draw
+ * environment, a flat quad and a second draw environment per group, twice over.
+ *
+ * Since @c addPrim pushes onto the head of a chain, the calls read back to
+ * front: the last one linked is the first one drawn.
+ *
+ * @param ctx Scene to link into; the @c D_800CA040 sentinel selects bank 0 and
+ *            any live scene selects bank 1.
+ *
+ * @note Dead code in the retail build: nothing calls this and its address
+ *       appears nowhere in world.bin. The pools it links are filled by
+ *       func_800A6BE0, which is equally unreferenced.
+ */
+static void func_800A7590(BattleSceneCtx *ctx) {
+    s32 bank;
+    s32 extra;
+    s32 group;
+    s32 i;
+
+    bank = (ctx != &D_800CA040);
+    extra = func_800BEF6C();
+
+    for (group = 0; group < 2; group++) {
+        for (i = 0; i < extra + BACKDROP_BASE_RECORDS; i++) {
+            addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_FAR + group]],
+                    &D_800D42D0[bank][group][i]);
+        }
+    }
+
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_FAR]],  &D_800D3C50[bank][0]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_FAR]],  &D_800D3810[bank][0]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_FAR]],  &D_800D3A50[bank][0]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_NEAR]], &D_800D3C50[bank][1]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_NEAR]], &D_800D3810[bank][1]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_NEAR]], &D_800D3810[bank][2]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_NEAR]], &D_800D3A50[bank][1]);
+
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_FAR]],  &D_800D3D50[bank][0]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_FAR]],  &D_800D38A0[bank][0]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_FAR]],  &D_800D3B50[bank][0]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_NEAR]], &D_800D3D50[bank][1]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_NEAR]], &D_800D38A0[bank][1]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_NEAR]], &D_800D38A0[bank][2]);
+    addPrim(&ctx->primList[D_800C53B8[BACKDROP_OT_NEAR]], &D_800D3B50[bank][1]);
+}
 
 /**
  * @brief Step the world texture-strip animations and upload changed frames.
@@ -417,6 +787,9 @@ void func_800A7B38(void) {
  *
  * @param block Animation block (offset table at its start), or a table
  *              whose first entry is 0 to just disable all slots.
+ *
+ * @note Dead code in the retail build: nothing calls this and its address
+ *       appears nowhere in world.bin.
  */
 static void func_800A7CD0(s32 *block) {
     WorldTexAnim *anim;
@@ -540,6 +913,9 @@ void func_800A7E74(void) {
  *
  * The unused @c d vector and the discarded @c func_800A5E40 result are
  * kept as the original left them.
+ *
+ * @note Dead code in the retail build: nothing calls this and its address
+ *       appears nowhere in world.bin.
  */
 static void func_800A8024(void) {
     VECTOR   ofs;
@@ -678,6 +1054,11 @@ void func_800A8270(SVECTOR *out) {
  * b0..b2 are the width bytes of @c D_800DB0D0. Always finishes with
  * @c func_800A8A28 at the raw coordinate.
  *
+ * @note Dead code in the retail build: nothing calls this, and its address
+ *       appears in no pointer table, so the three drawers below it — the
+ *       map panel, the star field and the backdrop gradient — never run
+ *       either. They have no other caller.
+ *
  * @note Purpose uncertain — appears to drive the world-map map-view HUD:
  *       a map panel that wraps with the camera heading (@c func_800A8868),
  *       a location-name banner shown only while the map pointer highlights
@@ -746,6 +1127,8 @@ void func_800A84D0(void) {
  * pulsing. Stars past index 15 use a plain ramp instead. Each visible star
  * is emitted as a @c TILE_1 on the HUD layer, and a @c DR_TPAGE closes the
  * layer.
+ *
+ * @note Dead code: reached only from the unreferenced @ref func_800A8400.
  *
  * @note Four spellings here are matching devices for gcc 2.8.0 rather than
  *       intent. The @c nextColX temp lets the column step fill the inner
@@ -867,6 +1250,8 @@ static void func_800A8524(s32 scrollX, s16 topY, s32 brightness) {
  * the page at VRAM x 0x380 with the CLUT at (0x340, 0xE0), and linked
  * into the HUD layer @c BSC_HUD_IDX of the active scene.
  *
+ * @note Dead code: reached only from the unreferenced @ref func_800A8400.
+ *
  * @param phase Wrap offset from the camera heading (see above).
  * @param y     Top edge of the panel row, in screen coordinates.
  */
@@ -943,6 +1328,8 @@ static void func_800A8868(s32 phase, s16 y) {
  * The quads come from the pool @ref func_800ABC98 primed, picking the
  * @c D_800CA040 sentinel's pair when no battle scene is active.
  *
+ * @note Dead code: reached only from the unreferenced @ref func_800A8400.
+ *
  * @param y Baseline of the gradient, in screen coordinates.
  */
 static void func_800A8A28(s16 y) {
@@ -978,7 +1365,161 @@ static void func_800A8A28(s16 y) {
     setaddr(&D_800D244C->primList[BSC_HUD_IDX], prim);
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A8C1C);
+/** Bits of @c D_800D2440 that select which zone list to walk. */
+#define WORLD_SCATTER_KEY_MASK 0x1F
+/** Walking this far into the list means the zone is a named area, which is
+ *  what @c D_800C5454 gates the location banner on. */
+#define ZONE_LIST_NAMED_AREA 3
+/** World distances are halved five times before the GTE squares them, so the
+ *  squared sum stays inside the GTE's 32-bit accumulators. */
+#define ZONE_DIST_SHIFT 5
+
+/**
+ * Blend one palette stop between the default zone's colour and this zone's,
+ * by the fraction already loaded into IR0. The near colour is shifted up by
+ * four to reach the GTE's 4.12 fixed point -- the same scaling
+ * @c gte_SetFarColor applies to the far end for us.
+ */
+#define ZONE_BLEND(dst, k)                                                  \
+    gte_SetFarColor(def->colors[k].r, def->colors[k].g, def->colors[k].b);  \
+    work.vx = zone->colors[k].r << 4;                                       \
+    work.vy = zone->colors[k].g << 4;                                       \
+    work.vz = zone->colors[k].b << 4;                                       \
+    gte_ldlvl(wp);                                                          \
+    gte_lddp(dist);                                                         \
+    gte_intpl();                                                            \
+    gte_strgb(dst)
+
+/**
+ * @brief Fade the world palette towards whichever colour zone the camera is in.
+ *
+ * The world carries a list of colour zones (the @c D_800C9EE8 offset table,
+ * whose entry 0 is the map-wide default). This walks the list from the entry
+ * the current scatter key selects, and stops at the first zone whose centre is
+ * within @c radius of the camera -- distance measured with the GTE's @c SQR on
+ * the halved x/y delta.
+ *
+ * That zone then decides the scene's colour. Its five palette stops and its
+ * 3x3 colour matrix are blended against the default's with the GTE's @c INTPL,
+ * weighted by how far into the zone the camera has travelled, so the world
+ * tints smoothly as you cross the boundary. With no zone in range the default's
+ * values are installed unblended. Either way the result is programmed into the
+ * GTE as the background colour and colour matrix.
+ *
+ * @note The @c goto is load-bearing: it is how the matched build skips the
+ *       default-install block. Rewriting it as a "matched" flag costs three
+ *       instructions and no longer matches.
+ * @note Dead code in the retail build: nothing calls this, and its address
+ *       appears nowhere in world.bin, so the @c D_800C4D24 early-out never
+ *       gets the chance to matter.
+ */
+static void func_800A8C1C(void) {
+    SVECTOR     near;
+    VECTOR      work;
+    WorldZone  *def;
+    WorldZone  *zone;
+    s32        *slot;
+    s32         camX, camY;
+    s32         dist;
+    s32         radius;
+    s32         idx;
+    s32         j;
+    s16        *matRows;
+    SVECTOR    *np;
+    VECTOR     *wp;
+
+    camX = D_800C9868.x;
+    camY = D_800C9868.y;
+    /* The block is s32 offsets up front and WorldZone records behind them, so
+     * reaching a record means stepping the base by a byte count and retyping. */
+    def = (WorldZone *)((u8 *)D_800C9EE8 + D_800C9EE8[0]);
+
+    if (D_800C4D24 != 0) {
+        return;
+    }
+
+    D_800C5454 = 0;
+    idx = 1;
+    if ((D_800D2440 & WORLD_SCATTER_KEY_MASK) != 4) {
+        idx = 2;
+    }
+
+    if (D_800C9EE8[idx] != 0) {
+        /* Caching these keeps the scratch addresses and the matrix base in
+         * saved registers for the whole walk, as the original does. */
+        np = &near;
+        wp = &work;
+        matRows = D_800DA8B0.m[0];
+        slot = &D_800C9EE8[idx];
+        do {
+            zone = (WorldZone *)((u8 *)D_800C9EE8 + *slot);
+            near.vx = (zone->x - camX) >> ZONE_DIST_SHIFT;
+            near.vy = (zone->y - camY) >> ZONE_DIST_SHIFT;
+            near.vz = 0;
+            gte_ldsv(np);
+            gte_SQR(0);
+            gte_stlvnl(wp);
+            dist = SquareRoot0(work.vx + work.vy + work.vz);
+            radius = zone->radius >> ZONE_DIST_SHIFT;
+            if (dist < radius) {
+                if (idx == ZONE_LIST_NAMED_AREA) {
+                    D_800C5454 = 1;
+                }
+                /* How far in we are, as a 4.12 fraction for INTPL. The
+                 * shift is spelled out again rather than reusing radius --
+                 * the original reloads it here, and sharing the local costs
+                 * the match. */
+                dist *= ONE / (zone->radius >> ZONE_DIST_SHIFT);
+
+                ZONE_BLEND(&D_800DB0E0, 0);
+                ZONE_BLEND(&D_800DB0DC, 1);
+
+                for (j = 0; j < 3; j++) {
+                    work.vx = def->matrix[j][0];
+                    work.vy = def->matrix[j][1];
+                    work.vz = def->matrix[j][2];
+                    gte_ldfc(wp);
+                    gte_lddp(dist);
+                    near.vx = zone->matrix[j][0];
+                    near.vy = zone->matrix[j][1];
+                    near.vz = zone->matrix[j][2];
+                    gte_ldsv(np);
+                    gte_intpl();
+                    gte_stsv(&matRows[j * 3]);
+                }
+
+                ZONE_BLEND(&D_800DB0D0[0], 2);
+                ZONE_BLEND(&D_800DB0D0[1], 3);
+                ZONE_BLEND(&D_800DB0D0[2], 4);
+
+                goto apply;
+            }
+            slot++;
+            idx++;
+        } while (*slot != 0);
+    }
+
+    /* No zone in range: install the default's colours unblended. */
+    D_800DB0E0.r = def->colors[0].r;
+    D_800DB0E0.g = def->colors[0].g;
+    D_800DB0E0.b = def->colors[0].b;
+    D_800DB0DC.r = def->colors[1].r;
+    D_800DB0DC.g = def->colors[1].g;
+    D_800DB0DC.b = def->colors[1].b;
+    D_800DA8B0 = D_800C5428;
+    for (idx = 0; idx < 3; idx++) {
+        for (j = 0; j < 3; j++) {
+            D_800DA8B0.m[idx][j] = def->matrix[idx][j];
+        }
+    }
+    D_800DB0D0[0] = def->colors[2];
+    D_800DB0D0[1] = def->colors[3];
+    D_800DB0D0[2] = def->colors[4];
+
+apply:
+    SetBackColor(D_800DB0E0.r, D_800DB0E0.g, D_800DB0E0.b);
+    SetColorMatrix(&D_800DA8B0);
+}
 
 
 /**
@@ -1013,21 +1554,260 @@ void func_800A9254(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A9300);
+/* Projects a slot into camera space. Declared here rather than pulled in from
+ * we_object7.h: that unit prototypes it over its own TrackEntry view of the
+ * same memory, which conflicts with Slot30. */
+extern s32 func_800B01A0(s16 headingA, s16 headingB, Slot30 *slot,
+                        SVECTOR *viewOut, s32 unused4, s32 unused5);
+
+/** Depth past which a particle is dropped rather than linked into the OT. */
+#define PARTICLE_MAX_OTZ 0x2000
+/** Ordering-table slot for a projected depth. */
+#define PARTICLE_OT_INDEX(otz) ((otz) >> 1)
+
+/**
+ * @brief Draw every live particle in the @c D_800D9CB0 pool.
+ *
+ * Walks all 64 slots; a slot is live while its @c count is still below its
+ * @c limit. Each live slot is stepped by @ref func_800A9CC0, projected into
+ * camera space, and then turned into one primitive whose size follows the
+ * slot's own 4.12 @c scale times the kind's @c size.
+ *
+ * The kind's @c shape decides how the sprite sits in the world: the two
+ * screen-aligned shapes project the centre point and lay a square around it
+ * (@c PARTICLE_SHAPE_ROTATED first measuring the square by projecting a second
+ * point one half-width away, so the sprite shrinks with distance), while the
+ * three world-aligned shapes hand four corner offsets to @ref func_800ABEF0
+ * and use the quad it projects.
+ *
+ * The finished sprite goes out as a flat @c TILE or, when the kind is
+ * animated, a textured @c POLY_FT4 whose u/v pick the current frame out of a
+ * 64-texel-wide strip. Both are linked into the scene's ordering table at the
+ * projected depth. Each pool holds 64 prims per scene bank and simply stops
+ * emitting when full.
+ *
+ * The GTE rotation matrix and translation vector are saved on entry and put
+ * back on exit, so callers see the transform they set up.
+ *
+ * @note Dead code in the retail build: nothing calls this and its address
+ *       appears nowhere in world.bin -- the whole particle/backdrop layer
+ *       (this, @ref func_800A7590 and the pool filler func_800A6BE0) is
+ *       unreachable, like the map-view HUD layer above.
+ */
+static void func_800A9300(void) {
+    DVECTOR     quad[4];
+    DVECTOR     centre;
+    SVECTOR     corners[4];
+    VECTOR      savedTrans;
+    MATRIX      savedMat;
+    SVECTOR     span[3];
+    SVECTOR     noRotation;
+    MATRIX      spanMat;
+    DVECTOR     spanScr[3];
+    s32         bank;
+    Slot30     *slot;
+    KindParams *kp;
+    POLY_FT4   *ft4;
+    TILE       *tile;
+    u32         otz;
+    s32         half;
+    s32         wide;
+    s16         frame;
+    s16         cell;
+    s16         tex;
+    s16         row;
+    s16         headingB, headingA;
+
+    bank = (D_800D244C == &D_800CA040);
+    ft4 = &D_800D88B0[bank][0];
+    tile = &D_800DA8D0[bank][0];
+
+    headingA = func_800A5DC8(D_800D23C0.x, D_800D23C0.y);
+    headingB = func_800A5DC8(D_800C9868.x, D_800C9868.y);
+
+    gte_sttr(&savedTrans);
+    gte_ReadRotMatrix(&savedMat);
+
+    for (slot = D_800D9CB0; slot < &D_800D9CB0[64]; slot++) {
+        if (slot->count >= slot->limit) {
+            continue;
+        }
+        kp = &D_800C5480[slot->kind];
+        func_800A9CC0(slot, kp);
+
+        gte_SetRotMatrix(&D_800C9838);
+        gte_SetTransVector(D_800C9838.t);
+        if (!func_800B01A0(headingB, headingA, slot, &slot->view, 0, 0)) {
+            continue;
+        }
+
+        half = slot->scale * kp->size / 4096 >> 1;
+
+        if (kp->shape == PARTICLE_SHAPE_SCREEN) {
+            gte_ldv0(&slot->view);
+            gte_rtps();
+            gte_stsxy(&centre);
+            gte_stszotz(&otz);
+            quad[3].vx = centre.vx - half;
+            quad[0].vx = centre.vx - half;
+            quad[2].vx = centre.vx + half;
+            quad[1].vx = centre.vx + half;
+            quad[1].vy = centre.vy - half;
+            quad[0].vy = centre.vy - half;
+            quad[3].vy = centre.vy + half;
+            quad[2].vy = centre.vy + half;
+        } else if (kp->shape == PARTICLE_SHAPE_ROTATED) {
+            /* Measure the sprite on screen: project the centre and a point one
+             * half-width to its side, and take the gap between them. */
+            func_80047CE4(&noRotation, 0, sizeof(SVECTOR));
+            span[2] = slot->view;
+            span[1] = span[2];
+            span[0] = span[1];
+            span[1].vx += half;
+            RotMatrix(&noRotation, &spanMat);
+            gte_SetRotMatrix(&spanMat);
+            gte_SetTransVector(D_800C9838.t);
+            gte_ldv3c(span);
+            gte_rtpt();
+            gte_stsxy3c(spanScr);
+            /* Read unsigned: the original takes the raw gap between the two
+             * projected x's without sign-extending either. */
+            wide = (u16)spanScr[1].vx - (u16)spanScr[0].vx;
+
+            gte_SetRotMatrix(&D_800C9838);
+            gte_ldv0(&slot->view);
+            gte_rtps();
+            gte_stsxy(&centre);
+            gte_stszotz(&otz);
+            quad[3].vx = centre.vx - wide;
+            quad[0].vx = centre.vx - wide;
+            quad[2].vx = centre.vx + wide;
+            quad[1].vx = centre.vx + wide;
+            quad[1].vy = centre.vy - wide;
+            quad[0].vy = centre.vy - wide;
+            quad[3].vy = centre.vy + wide;
+            quad[2].vy = centre.vy + wide;
+        } else if (kp->shape == PARTICLE_SHAPE_GROUND) {
+            corners[3].vy = 0;
+            corners[2].vy = 0;
+            corners[1].vy = 0;
+            corners[0].vy = 0;
+            corners[3].vx = -half;
+            corners[0].vx = -half;
+            corners[2].vx = half;
+            corners[1].vx = half;
+            corners[1].vz = half;
+            corners[0].vz = half;
+            corners[3].vz = -half;
+            corners[2].vz = -half;
+            func_800ABEF0(corners, &slot->rot, &slot->view, quad, &otz);
+            otz -= 4;
+        } else if (kp->shape == PARTICLE_SHAPE_GROUND_2X) {
+            corners[3].vx = -half;
+            corners[0].vx = -half;
+            corners[3].vy = 0;
+            corners[2].vy = 0;
+            corners[1].vy = 0;
+            corners[0].vy = 0;
+            corners[2].vx = half;
+            corners[1].vx = half;
+            corners[1].vz = half * 2;
+            corners[0].vz = half * 2;
+            corners[3].vz = -half * 2;
+            corners[2].vz = -half * 2;
+            func_800ABEF0(corners, &slot->rot, &slot->view, quad, &otz);
+        } else if (kp->shape == PARTICLE_SHAPE_UPRIGHT) {
+            corners[3].vz = 0;
+            corners[2].vz = 0;
+            corners[1].vz = 0;
+            corners[0].vz = 0;
+            corners[3].vx = -half;
+            corners[0].vx = -half;
+            corners[2].vx = half;
+            corners[1].vx = half;
+            corners[1].vy = -half;
+            corners[0].vy = -half;
+            corners[3].vy = half;
+            corners[2].vy = half;
+            func_800ABEF0(corners, &slot->rot, &slot->view, quad, &otz);
+        }
+
+        if (otz >= PARTICLE_MAX_OTZ) {
+            continue;
+        }
+
+        if (kp->prim == 0 && tile < &D_800DACD0[bank * 64]) {
+            setSemiTrans(tile, 0);
+            tile->r0 = kp->r;
+            tile->g0 = kp->g;
+            tile->b0 = kp->b;
+            tile->x0 = quad[0].vx;
+            tile->y0 = quad[0].vy;
+            tile->w = quad[1].vx - quad[0].vx;
+            tile->h = quad[1].vx - quad[0].vx;
+            tile->w += (tile->w == 0);
+            tile->h += (tile->h == 0);
+            addPrim(&D_800D244C->primList[PARTICLE_OT_INDEX(otz)], tile);
+            tile++;
+        } else if (kp->prim == 1 && ft4 < &D_800D92B0[bank * 64]) {
+            frame = slot->count / kp->frameDiv & 0xFF;
+            cell = frame;
+            if (frame >= 0) {
+                if (frame > kp->frameCount - 1) {
+                    cell = kp->frameCount - 1;
+                }
+            } else {
+                cell = 0;
+            }
+            setSemiTrans(ft4, 1);
+            ft4->r0 = kp->r;
+            ft4->g0 = kp->g;
+            ft4->b0 = kp->b;
+            tex = (kp->u + cell * (kp->w >> 2)) % 64 * 4;
+            ft4->u2 = tex;
+            ft4->u0 = tex;
+            tex = kp->w + (kp->u + cell * (kp->w >> 2)) % 64 * 4 - 1;
+            ft4->u3 = tex;
+            ft4->u1 = tex;
+            tex = kp->v % 256;
+            ft4->v1 = tex;
+            ft4->v0 = tex;
+            row = kp->v % 256;
+            tex = row + kp->h - 1;
+            ft4->v3 = tex;
+            ft4->v2 = tex;
+            /* The projected points are already packed x,y pairs, so they go
+             * across a word at a time; vertices 2 and 3 swap to give the
+             * quad's triangle-strip winding. */
+            *(u32 *)&ft4->x0 = *(u32 *)&quad[0];
+            *(u32 *)&ft4->x1 = *(u32 *)&quad[1];
+            *(u32 *)&ft4->x2 = *(u32 *)&quad[3];
+            *(u32 *)&ft4->x3 = *(u32 *)&quad[2];
+            ft4->tpage = getTPage(0, kp->tpageBits, kp->u + cell, kp->v);
+            ft4->clut = getClut(kp->clutX, kp->clutY);
+            addPrim(&D_800D244C->primList[PARTICLE_OT_INDEX(otz)], ft4);
+            ft4++;
+        }
+    }
+
+    gte_SetRotMatrix(&savedMat);
+    gte_SetTransVector(&savedTrans);
+}
 
 /**
  * @brief Step one world-map effect particle.
  *
- * Advances @p p by one tick: multiplies its 4.12 scale by @p q's
- * @c scaleRate, integrates position from the 16-bit velocity, and then
- * accelerates the velocity by @p q's velocity deltas and bumps @c age.
+ * Advances @p p by one tick: multiplies its 4.12 @c scale by the kind's
+ * @c scaleRate, integrates @c pos from the 16-bit @c vel, and then
+ * accelerates @c vel by the kind's own @c vel and bumps @c count.
  * From the second tick on, particles of kind 12 or 13 additionally drift
  * with the camera: 5/6 of the per-frame camera deltas (@c D_800C9E38[0],
- * @c D_800C9870 - @c D_800C974C, @c D_800C9E38[2]) is added to x/y/z so
- * the effect roughly follows the view (weather-style particles).
+ * @c D_800C9870 - @c D_800C974C, @c D_800C9E38[2]) is added to the position
+ * so the effect roughly follows the view (weather-style particles).
  *
- * @param p Particle to update.
- * @param q Delta source: velocity increments and scale multiplier.
+ * @param p Particle slot to update.
+ * @param q The kind's parameters, supplying the per-tick scale and velocity
+ *          increments.
  *
  * @note The position words are updated through the walking pointer @c w on
  *       purpose: the multi-set pointer defeats gcc's alias base tracking,
@@ -1035,16 +1815,16 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800A9300);
  *       store, matching the original instruction schedule. The offsets
  *       still fold to plain 0x0/0x4/0x8 accesses.
  */
-static void func_800A9CC0(WorldParticle *p, WorldParticle *q) {
+static void func_800A9CC0(Slot30 *p, KindParams *q) {
     s32 *w;
 
     p->scale = p->scale * q->scaleRate / 4096;
-    p->x += p->vx;
-    p->y += p->vy;
-    p->z += p->vz;
-    if (p->age != 0) {
+    p->pos.vx += p->vel.vx;
+    p->pos.vy += p->vel.vy;
+    p->pos.vz += p->vel.vz;
+    if (p->count != 0) {
         if (p->kind == 12 || p->kind == 13) {
-            w = &p->x;
+            w = &p->pos.vx;
             *w += D_800C9E38[0] * 5 / 6;
             w++;
             *w += (D_800C9870 - D_800C974C) * 5 / 6;
@@ -1052,17 +1832,17 @@ static void func_800A9CC0(WorldParticle *p, WorldParticle *q) {
             *w += D_800C9E38[2] * 5 / 6;
         }
     }
-    p->vx += q->vx;
-    p->vy += q->vy;
-    p->vz += q->vz;
-    p->age++;
+    p->vel.vx += q->vel.vx;
+    p->vel.vy += q->vel.vy;
+    p->vel.vz += q->vel.vz;
+    p->count++;
 }
 
 /**
  * @brief Initialise the first record's 4 sub-OT slots in each of two
  *        pools for the entity model in @p a0.
  *
- * Runs @c func_800491E8 on all four sub-slots of record 0 in the
+ * Runs @c DrawPrim on all four sub-slots of record 0 in the
  * @c D_800D3E50 and @c D_800D4090 pools, then dispatches
  * @c DrawSync(0). @c cond is the canonical entity bit — @c 0 for
  * @c &D_800CA040, @c 1 otherwise — selecting the pool row.
@@ -1070,14 +1850,14 @@ static void func_800A9CC0(WorldParticle *p, WorldParticle *q) {
 void func_800A9E24(BattleSceneCtx *a0) {
     s32 cond = (a0 != &D_800CA040) ? 1 : 0;
 
-    func_800491E8(&D_800D3E50[cond][0][0]);
-    func_800491E8(&D_800D3E50[cond][0][1]);
-    func_800491E8(&D_800D3E50[cond][0][2]);
-    func_800491E8(&D_800D3E50[cond][0][3]);
-    func_800491E8(&D_800D4090[cond][0][0]);
-    func_800491E8(&D_800D4090[cond][0][1]);
-    func_800491E8(&D_800D4090[cond][0][2]);
-    func_800491E8(&D_800D4090[cond][0][3]);
+    DrawPrim(&D_800D3E50[cond][0][0]);
+    DrawPrim(&D_800D3E50[cond][0][1]);
+    DrawPrim(&D_800D3E50[cond][0][2]);
+    DrawPrim(&D_800D3E50[cond][0][3]);
+    DrawPrim(&D_800D4090[cond][0][0]);
+    DrawPrim(&D_800D4090[cond][0][1]);
+    DrawPrim(&D_800D4090[cond][0][2]);
+    DrawPrim(&D_800D4090[cond][0][3]);
     DrawSync(0);
 }
 
@@ -1200,7 +1980,253 @@ static void func_800A9F54(WorldPos *pos, s32 x, s32 y) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AA210);
+/** Width of the world map in cells; map x wraps modulo this. */
+#define MAP_CELLS_X 256
+/** Height of the world map in cells; map y wraps modulo this. */
+#define MAP_CELLS_Y 192
+
+/**
+ * @brief Emit one mesh polygon, splitting it first if it straddles a map seam.
+ *
+ * The world map is a @c MAP_CELLS_X x @c MAP_CELLS_Y torus, so a polygon near
+ * an edge can have vertices on both sides of the wrap. This first slides the
+ * whole polygon back into range (if every vertex is off the same side), then
+ * re-measures its bounding box. With no seam crossing left it shades and emits
+ * directly; otherwise a quad is cut along the seam and each half is re-emitted
+ * through a recursive call, once per axis. Triangles are never split — they
+ * fall through to the emit path with their map coordinates zeroed.
+ *
+ * Shading is per vertex: the squared distance from the mesh centre
+ * (@c D_800D8808 / @c D_800D880C) goes through the GTE's @c SQR, and the
+ * resulting length is inverted into a grey level, so the inset fades out
+ * towards its edges.
+ *
+ * @param verts  Polygon vertices, three for a triangle and four for a quad.
+ *               Wrapped in place, and the triangle path clears the map
+ *               coordinates before emitting.
+ * @param isQuad Nonzero to treat @p verts as a quad (four vertices).
+ *
+ * @note @c loHalf and @c hiHalf are never read; they only reserve the frame
+ *       space the retail build allocates.
+ * @note The four seam interpolations read the base screen coordinate as
+ *       @c u16 on purpose -- the original loads it unsigned and only the
+ *       interpolated term is signed.
+ * @note Dead code in the retail build: the only caller is
+ *       @ref func_800A9F54, which is itself unreachable.
+ */
+static void func_800AA210(WorldTessVert *verts, s32 isQuad) {
+    WorldTessVert loHalf[4];
+    WorldTessVert hiHalf[4];
+    SVECTOR dist;
+    /* Scratch for the two halves of a split: the y split fills part[1..4] and
+     * the x split part[0..3], so each recursive call gets four contiguous
+     * vertices. On the emit paths the split is over and the same storage
+     * carries the shade bytes instead. */
+    WorldTessVert part[5];
+    s16 minX, minY, maxX, maxY;
+    s32 spanX, spanY;
+    s32 i;
+    s32 seam;
+
+    spanY = spanX = 0;
+
+    minY = 0x7FFF;
+    maxY = -0x8000;
+    minX = minY;
+    maxX = maxY;
+    for (i = 0; i < isQuad + 3; i++) {
+        if (verts[i].mx < minX) minX = verts[i].mx;
+        if (verts[i].my < minY) minY = verts[i].my;
+        if (maxX < verts[i].mx) maxX = verts[i].mx;
+        if (maxY < verts[i].my) maxY = verts[i].my;
+    }
+
+    /* Wholly off one edge: slide the polygon back onto the map. */
+    if (maxX < 0) {
+        for (i = 0; i < isQuad + 3; i++) verts[i].mx += MAP_CELLS_X;
+    }
+    if (minX >= MAP_CELLS_X) {
+        for (i = 0; i < isQuad + 3; i++) verts[i].mx -= MAP_CELLS_X;
+    }
+    if (maxY < 0) {
+        for (i = 0; i < isQuad + 3; i++) verts[i].my += MAP_CELLS_Y;
+    }
+    if (minY >= MAP_CELLS_Y) {
+        for (i = 0; i < isQuad + 3; i++) verts[i].my -= MAP_CELLS_Y;
+    }
+
+    minY = minX = 0x7FFF;
+    maxY = maxX = -0x8000;
+    for (i = 0; i < isQuad + 3; i++) {
+        if (verts[i].mx < minX) minX = verts[i].mx;
+        if (verts[i].my < minY) minY = verts[i].my;
+        if (maxX < verts[i].mx) maxX = verts[i].mx;
+        if (maxY < verts[i].my) maxY = verts[i].my;
+    }
+
+    if (minX < 0 || maxX >= MAP_CELLS_X) spanX = 1;
+    if (minY < 0 || maxY >= MAP_CELLS_Y) spanY = 1;
+
+    if (!spanX && !spanY) {
+        /* The mesh centre is published as a word but only ever holds a screen
+         * coordinate, so the distance is taken from its low halfword. */
+        for (i = 0; i < isQuad + 3; i++) {
+            dist.vx = (u16)D_800D8808 - verts[i].sx;
+            dist.vy = (u16)D_800D880C - verts[i].sy;
+            dist.vz = 0;
+            gte_ldsv(&dist);
+            gte_SQR(0);
+            gte_stsv(&dist);
+            ((u8 *)part)[i] =
+                ~(SquareRoot0(dist.vx + dist.vy + dist.vz) << 2);
+        }
+        if (isQuad) {
+            func_800AAEAC((WorldVtx *)verts, (QuadShade *)part);
+            D_800D8800++;
+            return;
+        }
+        func_800AAD48((WorldVtx *)verts, (TriShade *)part);
+        D_800D8804++;
+        return;
+    }
+
+    if (isQuad) {
+        if (spanY) {
+            /* Cut along the horizontal seam: part[1..2] is the half that wraps
+             * round to the far edge, part[3..4] the half that stays put, and
+             * the shared edge sits on the last row. Its screen y is the linear
+             * interpolation of the polygon's leading edge at that row. */
+            if (verts[0].my < 0) {
+                part[3] = verts[0];
+                part[1] = part[3];
+                part[4] = verts[1];
+                part[2] = part[4];
+                part[3].my = MAP_CELLS_Y - 1;
+                part[4].my = MAP_CELLS_Y - 1;
+                part[1].my += MAP_CELLS_Y;
+                part[2].my += MAP_CELLS_Y;
+                seam = (u16)part[1].sy
+                     + (verts[2].sy - verts[0].sy) * (part[3].my - part[1].my)
+                     / (verts[2].my - verts[0].my);
+                part[4].sy = seam;
+                part[3].sy = seam;
+                func_800AA210(&part[1], isQuad);
+
+                part[1] = part[3];
+                part[2] = part[4];
+                part[2].my = 0;
+                part[1].my = 0;
+                part[3] = verts[2];
+                part[4] = verts[3];
+                func_800AA210(&part[1], isQuad);
+                return;
+            }
+            part[3] = verts[0];
+            part[1] = part[3];
+            part[4] = verts[1];
+            part[2] = part[4];
+            part[3].my = MAP_CELLS_Y - 1;
+            part[4].my = MAP_CELLS_Y - 1;
+            seam = (u16)part[1].sy
+                 + (verts[2].sy - verts[0].sy) * (part[3].my - part[1].my)
+                 / (verts[2].my - verts[0].my);
+            part[4].sy = seam;
+            part[3].sy = seam;
+            func_800AA210(&part[1], isQuad);
+
+            part[1] = part[3];
+            part[2] = part[4];
+            part[2].my = 0;
+            part[1].my = 0;
+            part[3] = verts[2];
+            part[4] = verts[3];
+            part[3].my -= MAP_CELLS_Y;
+            part[4].my -= MAP_CELLS_Y;
+            func_800AA210(&part[1], isQuad);
+            return;
+        }
+        if (!spanX) {
+            return;
+        }
+        /* Same cut along the vertical seam, on the last column. */
+        if (verts[0].mx < 0) {
+            part[1] = verts[0];
+            part[0] = part[1];
+            part[3] = verts[2];
+            part[2] = part[3];
+            part[1].mx = MAP_CELLS_X - 1;
+            part[3].mx = MAP_CELLS_X - 1;
+            part[0].mx += MAP_CELLS_X;
+            part[2].mx += MAP_CELLS_X;
+            seam = (u16)part[0].sx
+                 + (verts[1].sx - verts[0].sx) * (part[1].mx - part[0].mx)
+                 / (verts[1].mx - verts[0].mx);
+            part[3].sx = seam;
+            part[1].sx = seam;
+            func_800AA210(part, isQuad);
+
+            part[0] = part[1];
+            part[2] = part[3];
+            part[2].mx = 0;
+            part[0].mx = 0;
+            part[1] = verts[1];
+            part[3] = verts[3];
+            func_800AA210(part, isQuad);
+            return;
+        }
+        part[1] = verts[0];
+        part[0] = part[1];
+        part[3] = verts[2];
+        part[2] = part[3];
+        part[1].mx = MAP_CELLS_X - 1;
+        part[3].mx = MAP_CELLS_X - 1;
+        seam = (u16)part[0].sx
+             + (verts[1].sx - verts[0].sx) * (part[1].mx - part[0].mx)
+             / (verts[1].mx - verts[0].mx);
+        part[3].sx = seam;
+        part[1].sx = seam;
+        func_800AA210(part, isQuad);
+
+        part[0] = part[1];
+        part[2] = part[3];
+        part[2].mx = 0;
+        part[0].mx = 0;
+        part[1] = verts[1];
+        part[3] = verts[3];
+        part[1].mx -= MAP_CELLS_X;
+        part[3].mx -= MAP_CELLS_X;
+        func_800AA210(part, isQuad);
+        return;
+    }
+
+    /* Triangle straddling a seam: it is emitted whole, with the split scratch
+     * doing double duty -- part[0] as the GTE distance vector and part[1]
+     * onward as the shade bytes.
+     *
+     * Addressing the shade through &part[1] is load-bearing, not laziness: an
+     * overlay struct with a shade field at +8 lets gcc fold the displacement
+     * into the store, whereas the original computes the shade base once and
+     * reuses it for both the loop store and the call below. */
+    for (i = 0; i < isQuad + 3; i++) {
+        ((SVECTOR *)part)->vx = (u16)D_800D8808 - verts[i].sx;
+        ((SVECTOR *)part)->vy = (u16)D_800D880C - verts[i].sy;
+        ((SVECTOR *)part)->vz = 0;
+        gte_ldsv((SVECTOR *)part);
+        gte_SQR(0);
+        gte_stsv((SVECTOR *)part);
+        ((u8 *)&part[1])[i] = ~(SquareRoot0(((SVECTOR *)part)->vx
+                                            + ((SVECTOR *)part)->vy
+                                            + ((SVECTOR *)part)->vz) << 2);
+    }
+    verts[0].my = 0;
+    verts[0].mx = 0;
+    verts[1].my = 0;
+    verts[1].mx = 0;
+    verts[2].my = 0;
+    verts[2].mx = 0;
+    func_800AAD48((WorldVtx *)verts, (TriShade *)&part[1]);
+    D_800D8804++;
+}
 
 /**
  * @brief Fill the current POLY_GT3 (@c D_800D8804) from a transformed
@@ -1294,19 +2320,136 @@ static void func_800AAEAC(WorldVtx *vtx, QuadShade *shade) {
 
 
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object4", func_800AB06C);
+/** Fixed world position the kind-11 particle is spawned at, a shade over six
+ *  tiles east and thirteen south of the map origin. */
+static const VECTOR D_8009814C = { 6 * WORLD_TILE_SIZE + 29, -800,
+                                   13 * WORLD_TILE_SIZE + 50, 0 };
+
+/**
+ * @brief Spawn a kind-11 particle at the fixed world position @c D_8009814C.
+ *
+ * Claims the first inactive slot in the @c D_800D9CB0 pool (count >= limit),
+ * seeds it with kind 11, a zeroed rotation, @c scale = @c PARTICLE_SCALE_ONE and the kind's
+ * @c limit from @c D_800C5480[11], jitters scale by [-0x80, +0x7F] and limit
+ * by [-4, +3] (both jitter flags are set here), then projects the kind's
+ * @c offset vector through a rotation matrix built from the zeroed angles and
+ * stores the result as the slot's per-tick velocity. Always restores
+ * @c D_800C9838 as the GTE rotation and translation matrix on exit.
+ *
+ * This is @ref func_800AB2D4 with the caller-supplied position replaced by a
+ * constant and the one-in-256 spawn gate dropped, so it fires on every call.
+ *
+ * @note Dead code in the retail build: nothing calls it, and its address
+ *       appears nowhere in world.bin.
+ *
+ * @note The spellings below are load-bearing for the byte-exact match
+ *       (gcc 2.8.0 register allocation), not behavior. Each was confirmed by
+ *       removing it on its own; the percentage is what the match drops to:
+ *       - @c pp carries @c &local_pos into the loop, which is where the
+ *         original reads the position from; reading @c local_pos directly
+ *         addresses it off @c sp and loses the pointer.
+ *       - @c rp is assigned inside the claimed-slot block, after the scan
+ *         loop. Assigning it up front lets cse share one register with the
+ *         @c memset argument, which then costs a fifth saved register.
+ *       - the @c do / @c while(0) around the @c rot_in read (97.14) gives cse
+ *         a block boundary so that copy's address temp is not reused as the
+ *         @c RotMatrix first argument, which must rematerialize.
+ *       - @c t holding @c flags & @c SLOT_FLAG_JITTER_SCALE across that copy
+ *         (98.60), and @c proj_p holding @c &projected (96.83).
+ *       - @c kind as a variable rather than a literal subscript (99.08).
+ *       - the dead @c mp += flags & SLOT_FLAG_UNUSED4 (never set, so it folds
+ *         to nothing) invalidates cse's record of @c &m so the
+ *         @c gte_SetRotMatrix / @c gte_SetTransMatrix operands rematerialize
+ *         @c &m after the @c RotMatrix call instead of holding it across it
+ *         (96.98).
+ */
+static void func_800AB06C(void) {
+    VECTOR      local_pos;
+    SVECTOR     rot_in;
+    VECTOR      projected;
+    SVECTOR     vec_copy;
+    MATRIX      m;
+    Slot30     *slot;
+    KindParams *kp;
+    SVECTOR    *rp;
+    VECTOR     *proj_p;
+    VECTOR     *pp;
+    s32         flags;
+    s32         kind;
+    s32         t;
+    MATRIX     *mp;
+
+    local_pos = D_8009814C;
+    func_80047CE4(&rot_in, 0, sizeof(SVECTOR));
+
+    slot = D_800D9CB0;
+    proj_p = &projected;
+    pp = &local_pos;
+    kind = 11;
+    kp = &D_800C5480[kind];
+    flags = SLOT_FLAG_JITTER_SCALE | SLOT_FLAG_JITTER_LIMIT;
+
+    while (slot < &D_800D9CB0[64]) {
+        if (slot->count >= slot->limit) break;
+        slot++;
+    }
+    if (slot < &D_800D9CB0[64]) {
+        slot->kind  = 11;
+        slot->count = 0;
+        slot->limit = kp->limit;
+        slot->scale = PARTICLE_SCALE_ONE;
+        slot->pos.vx = pp->vx;
+        slot->pos.vy = pp->vy;
+        slot->pos.vz = pp->vz;
+
+        rp = &rot_in;
+        t = flags & SLOT_FLAG_JITTER_SCALE;
+        do {
+            vec_copy = *rp;
+        } while (0);
+
+        if (t) {
+            slot->scale += func_8009CC3C() - 0x80;
+        }
+        if (flags & SLOT_FLAG_JITTER_LIMIT) {
+            slot->limit += (func_8009CC3C() & 7) - 4;
+        }
+
+        slot->rot = vec_copy;
+
+        mp = &m;
+        RotMatrix(&vec_copy, mp);
+        mp += flags & SLOT_FLAG_UNUSED4;
+        gte_SetRotMatrix(&m);
+        m.t[2] = 0;
+        m.t[1] = 0;
+        m.t[0] = 0;
+        gte_SetTransMatrix(&m);
+
+        gte_ldv0(&kp->offset);
+        gte_mvmva(1, 0, 0, 0, 0);
+        gte_stlvnl(proj_p);
+
+        slot->vel.vx = projected.vx;
+        slot->vel.vy = projected.vy;
+        slot->vel.vz = projected.vz;
+    }
+
+    SetRotMatrix(&D_800C9838);
+    SetTransMatrix(&D_800C9838);
+}
 
 /**
  * @brief Spawn a kind-0xE particle in the @c D_800D9CB0 pool at @p pos.
  *
  * Gated to fire on roughly 1 in 256 calls (@c func_8009CC3C returns
  * 0..0x7FFF). Claims the first inactive slot (count >= limit), seeds it
- * with kind 0xE, a zeroed rotation, @c life = 0x1000 and the kind's
- * @c limit from @c D_800C5480[14], jitters life by [-0x80, +0x7F] and
+ * with kind 0xE, a zeroed rotation, @c scale = @c PARTICLE_SCALE_ONE and the
+ * kind's @c limit from @c D_800C5480[14], jitters scale by [-0x80, +0x7F] and
  * limit by [-4, +3] (both jitter flags always set here), then
  * projects the kind's @c offset vector through a rotation matrix built
- * from the zeroed angles and stores the result as the slot's projected
- * screen XYZ. Always restores @c D_800C9838 as the GTE rotation and
+ * from the zeroed angles and stores the result as the slot's per-tick
+ * velocity. Always restores @c D_800C9838 as the GTE rotation and
  * translation matrix on exit.
  *
  * @note Dead code in the retail build: the only caller, func_800B99A4
@@ -1343,7 +2486,7 @@ void func_800AB2D4(VECTOR *pos) {
     MATRIX     *mp;
     s32         t;
 
-    func_80047CE4(&rot_in, 0, 8);
+    func_80047CE4(&rot_in, 0, sizeof(SVECTOR));
     local_pos = *pos;
 
     if (func_8009CC3C() < 0x80) {
@@ -1352,7 +2495,7 @@ void func_800AB2D4(VECTOR *pos) {
         rp = &rot_in;
         kind = 0xE;
         kp = &D_800C5480[kind];
-        flags = SLOT_FLAG_JITTER_LIFE | SLOT_FLAG_JITTER_LIMIT;
+        flags = SLOT_FLAG_JITTER_SCALE | SLOT_FLAG_JITTER_LIMIT;
 
         while (slot < &D_800D9CB0[64]) {
             if (slot->count >= slot->limit) break;
@@ -1362,18 +2505,18 @@ void func_800AB2D4(VECTOR *pos) {
             slot->kind  = 0xE;
             slot->count = 0;
             slot->limit = kp->limit;
-            slot->life  = 0x1000;
+            slot->scale  = PARTICLE_SCALE_ONE;
             slot->pos.vx = local_pos.vx;
             slot->pos.vy = local_pos.vy;
             slot->pos.vz = local_pos.vz;
 
-            t = flags & SLOT_FLAG_JITTER_LIFE;
+            t = flags & SLOT_FLAG_JITTER_SCALE;
             do {
                 vec_copy = *rp;
             } while (0);
 
             if (t) {
-                slot->life += func_8009CC3C() - 0x80;
+                slot->scale += func_8009CC3C() - 0x80;
             }
             if (flags & SLOT_FLAG_JITTER_LIMIT) {
                 slot->limit += (func_8009CC3C() & 7) - 4;
@@ -1394,9 +2537,9 @@ void func_800AB2D4(VECTOR *pos) {
             gte_mvmva(1, 0, 0, 0, 0);
             gte_stlvnl(proj_p);
 
-            slot->proj_x = (s16)projected.vx;
-            slot->proj_y = (s16)projected.vy;
-            slot->proj_z = (s16)projected.vz;
+            slot->vel.vx = projected.vx;
+            slot->vel.vy = projected.vy;
+            slot->vel.vz = projected.vz;
         }
     }
 

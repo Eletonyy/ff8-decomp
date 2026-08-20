@@ -62,12 +62,15 @@ extern VECTOR     D_800DD658;     /* source position for func_800BC51C          
 extern void func_800A84D0(void);
 extern s32  func_8003F9F4(CVECTOR *input, CVECTOR *cue, s32 w1, s32 w2, CVECTOR *out);
 extern s32  func_8009CC3C(void);
-extern s32  func_80041E84(s32 y, s32 x);
 extern s32  worldPosToCell(VECTOR *pos, SVECTOR *out);
 extern s32  func_800A4700(s32 a, s32 b);
 extern s32  func_800A475C(s32 a, s32 b);
 extern s32  func_800A5DC8(s32 x, s32 y);
 extern void func_800423DC(VECTOR *a, s32 *b_pos, VECTOR *out);
+/* Rotates four corner offsets into place and projects them; @c outSXY takes
+ * the four packed screen points and @c outOTZ their average depth. */
+extern void func_800ABEF0(SVECTOR *src, SVECTOR *rot, SVECTOR *trans,
+                          DVECTOR *outSXY, u32 *outOTZ);
 extern void func_800ACC68(MATRIX *out_mat, SVECTOR *angles,
                           SVECTOR *rotBuf, SVECTOR *offset);
 extern void func_800B5C60(s32 ctx, s16 count, MATRIX *outMat, SVECTOR *outAngles,
