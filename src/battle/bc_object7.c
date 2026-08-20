@@ -368,7 +368,7 @@ s32 func_800B0668(s32 a0, s32 a1) {
  */
 void func_800B06DC(u16 arg0) {
     func_800A4C84(arg0);
-    if (D_800ED148.entities[0].unk0E == 0) {
+    if (D_800ED148.entities[0].unkE == 0) {
         func_8009AE08(5);
         func_800AE524(D_800ED148.unk5C0 - 1);
         D_800ED148.entries[D_800ED148.unk5C0 - 1].unk11 = 0;

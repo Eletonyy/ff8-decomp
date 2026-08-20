@@ -15,11 +15,11 @@ void func_800A8578(void);
 
 
 void func_800A6184(s32 arg0, s32 arg1, s32 arg2, u16 arg3) {
-    func_800A5A7C(arg0, arg1, arg2, 0, arg3, 0, &D_800ED148.unk1244[arg0].unk1);
+    func_800A5A7C(arg0, arg1, arg2, 0, arg3, 0, &D_800ED148.unk1244[arg0].unk0);
 }
 
 void func_800A61CC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, u16 arg5) {
-    func_800A5A7C(arg0, arg1, arg2, arg4, arg5, arg3, &D_800ED148.unk1244[arg0].unk1);
+    func_800A5A7C(arg0, arg1, arg2, arg4, arg5, arg3, &D_800ED148.unk1244[arg0].unk0);
 }
 
 /**

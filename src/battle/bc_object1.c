@@ -132,7 +132,7 @@ void func_80099D30(void) {
             func_8009AB98();
             func_8009AE9C();
             for(i = 0; i < 3; i++) {
-                func_800A5C48(&D_800ED148.unk1244[i].unk1[0]);
+                func_800A5C48(&D_800ED148.unk1244[i].unk0[0]);
             }
             
             func_800A5BC4();
@@ -465,7 +465,7 @@ void func_8009A638(void) {
  * @brief Queue a return-to-position animation for an entity.
  *
  * Snapshots animation state via @c func_800A240C / @c func_8009AFF0 /
- * @c func_800A1AB8 with the entity's @c status / @c flags / @c field28,
+ * @c func_800A1AB8 with the entity's @c status / @c flags / @c unk28,
  * then plays sound @c 0x67 with both parameter bytes cleared.
  *
  * @note The @c (s32)&D_800ED148.entities[idx].linkedPtr expression is
@@ -483,7 +483,7 @@ void func_8009A638(void) {
 void func_8009A6A8(s32 idx) {
     SoundCmd *cmd;
 
-    func_800A240C(idx, D_800ED148.entities[idx].field28, &D_800ED148.entities[idx].status);
+    func_800A240C(idx, D_800ED148.entities[idx].unk28, &D_800ED148.entities[idx].status);
     func_8009AFF0(idx);
     func_800A1AB8(idx, D_800ED148.entities[idx].status, D_800ED148.entities[idx].flags);
     cmd = func_8009B134(0x67, 0x80, &D_800ED148.entities[idx].entityData);
@@ -1409,7 +1409,7 @@ s32 func_8009B7BC(s32 a0) {
 s32 func_8009B7F4(s32 arg0, s32 arg1) {
     s32 max;
 
-    if ((D_800EE4C0.unk1 == 237) && (D_800ED148.entities[arg1].field28 == 0)) {
+    if ((D_800EE4C0.unk1 == 237) && (D_800ED148.entities[arg1].unk28 == 0)) {
         return 0;
     }
 

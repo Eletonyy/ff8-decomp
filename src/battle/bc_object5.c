@@ -595,7 +595,7 @@ void func_800AAFB8(s32 arg0) {
     TaskEntry* data;
 
     data = &D_800ED148.taskData[arg0];
-    func_8009AF3C(data->unk04, 30, 3, 128, 0);
+    func_8009AF3C(data->unk4, 30, 3, 128, 0);
     data->done = 1;
 }
 
@@ -621,7 +621,7 @@ void func_800AB0C0(s32 arg0, u16 arg1) {
     TaskEntry* currentEntry;
 
     currentEntry = &D_800ED148.taskData[func_8009B3D0(func_800AB054)];
-    currentEntry->unk04 = func_800B0398(arg0);
+    currentEntry->unk4 = func_800B0398(arg0);
     currentEntry->timer = arg1;
 }
 
