@@ -54,15 +54,7 @@ void func_800A1940(s32 arg0) {
     D_800ED148.entities[arg0].unk24 = 0;
     g_battleChars.chars[arg0].unk184 = D_800ED148.entities[arg0].unk24;
 }
-/*
-void func_800A1940(s32 arg0) {
-    func_800A18E0(arg0);
-    func_800A589C(arg0);
-    
-    D_800ED148.entities[arg0].unk24 = 0;
-    g_battleChars.chars[arg0].unk184  = D_800ED148.entities[arg0].unk24;
-}
-*/
+
 
 void func_800A19BC(s32 arg0, u16 arg1, s32 arg2) {
     if (arg2 < 0) {

@@ -330,7 +330,7 @@ typedef struct {
 typedef struct {
     u8 unk0;
     u8 unk1;       
-    u8 pad3[6];
+    u8 pad2[6];
     SubEntry* subEntries;
     u8 padC[2];
     u8 unkE;           
@@ -633,7 +633,7 @@ typedef struct {
 
 /** @brief Battle character render data (g_battleChars, stride 0x1D0 = 464 bytes). */
 typedef struct {
-    /* 0x000 */ u8 pad0[14];
+    /* 0x000 */ u8 pad0[0x14];
     /* 0x014 */ u16 unk14;
     /* 0x016 */ u16 unk16;
     /* 0x018 */ s16 currentHp;          /**< Current HP in battle. */
