@@ -742,7 +742,7 @@ void func_800A302C(void) {
  * @param a3 Third byte field (offset 2).
  * @param arg5 Halfword field (offset 6).
  */
-void func_800A3054(s8 arg0, s8 arg1, s16 arg2, s8 arg3, s16 arg4) {
+void func_800A3054(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     BattleUnkDE8* temp_v0;
 
     temp_v0 = &D_800ED148.arrayDE8[1][D_800ED148.unk1302][1];
@@ -1787,7 +1787,7 @@ void func_800A5F24(s32 arg0, s32 arg1, s32 arg2, s32 arg3, u16 arg4) {
             D_800ED148.unk132C = func_800A2EB8((entity + 1)->slot8.byteView.unkA, D_80077E92 / 16);
             
         
-            func_800A5A7C(arg1, arg2, arg3, D_800ED148.unk132C, func_800B0F9C(D_80078E00.array4A70[D_800ED148.unk132C].unk4) | func_800B0F7C(D_80078E00.array4A70[D_800ED148.unk132C].unk4), 0, &D_800ED148.unk1244[arg1].unk0[arg0]);
+            func_800A5A7C(arg1, arg2, arg3, D_800ED148.unk132C, func_800B0F9C(D_80078E00.array4A6C[D_800ED148.unk132C].unk4A74) | func_800B0F7C(D_80078E00.array4A6C[D_800ED148.unk132C].unk4A74), 0, &D_800ED148.unk1244[arg1].unk0[arg0]);
             return;
     }
 

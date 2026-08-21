@@ -137,7 +137,7 @@ s32 func_8009ED2C(s32 arg0);
 
 void func_8009EE44(s32 unused, s32 arg1);
 
-s32 func_8009EF64(s32 arg0, s32 unused, s32 unused2, s32 arg3);
+s32 func_8009EF64(s32 arg0);
 
 s32 func_8009F040(s32 arg0, s32 arg1, s32 unused);
 

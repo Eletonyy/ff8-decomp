@@ -1493,31 +1493,32 @@ void func_8009EE44(s32 unused, s32 arg1) {
     func_800A4320(func_800B02AC(func_800B0248(temp_s1_2, *getMenuString(0xB), getMenuString(0x10))));
 }
 
-s32 func_8009EF64(s32 arg0, s32 unused, s32 unused2, s32 arg3) {
+s32 func_8009EF64(s32 arg0) {
+    s32 result;
     BattleEntityData* curr;
 
     curr = *D_800ED148.entities[arg0].entityData;
     switch (D_800EE9E8.subEntries[arg0 - 3].unk46) {
     case 0:
-        arg3 = curr->unkFB;
+        result = curr->unkFB;
         break;
 
     case 1:
-        arg3 = curr->unkFC;
+        result = curr->unkFC;
         break;
 
     case 2:
-        arg3 = curr->unkFD;
+        result = curr->unkFD;
         break;
     }
     
-    if (arg3 == 255) {
+    if (result == 255) {
         D_800ED148.unk1326 = 0;
         return 0; 
     }
     
     D_800ED148.unk1326 = 1;
-    D_800ED148.unk1327 = arg3;
+    D_800ED148.unk1327 = result;
     D_800ED148.unk1328 = curr->unkFF;
     return 1; 
 }
@@ -2116,10 +2117,10 @@ void func_8009FE14(s32 arg0) {
     case 33: 
     case 34: 
     case 38: 
-        D_800EEBB9 = D_80078E00.array4020[D_800EE4C0.statusCode].unk0;
-        D_800EEBBA = D_80078E00.array4020[D_800EE4C0.statusCode].unk1;
-        D_800EEBC2 = D_80078E00.array4020[D_800EE4C0.statusCode].unk2;
-        D_800EEBC4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk4;
+        D_800EEBB9 = D_80078E00.array4020[D_800EE4C0.statusCode].unk8;
+        D_800EEBBA = D_80078E00.array4020[D_800EE4C0.statusCode].unk9;
+        D_800EEBC2 = D_80078E00.array4020[D_800EE4C0.statusCode].unkA;
+        D_800EEBC4 = D_80078E00.array4020[D_800EE4C0.statusCode].unkC;
         break;
 
     case 2:
@@ -2133,11 +2134,11 @@ void func_8009FE14(s32 arg0) {
         break;
 
     case 19:
-        D_800EEBB8 = D_80078E00.array4A70[D_800EE4C0.unk3].unk8;
-        D_800EEBB9 = D_80078E00.array4A70[D_800EE4C0.unk3].unk7;
-        D_800EEBBA = D_80078E00.array4A70[D_800EE4C0.unk3].unk9;
-        D_800EEBC2 = D_80078E00.array4A70[D_800EE4C0.unk3].unkA;
-        D_800EEBC4 = D_80078E00.array4A70[D_800EE4C0.unk3].unkC;
+        D_800EEBB8 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A78;
+        D_800EEBB9 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A77;
+        D_800EEBBA = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A79;
+        D_800EEBC2 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A7A;
+        D_800EEBC4 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A7C;
         break;
 
     case 17:
@@ -2153,13 +2154,13 @@ void func_8009FE14(s32 arg0) {
         break;
 
     case 15:
-        D_800EEBB9 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk0;
-        D_800EEBBA = D_80078E00.array44FC[D_800EE4C0.statusCode].unk1;
+        D_800EEBB9 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk8;
+        D_800EEBBA = D_80078E00.array44FC[D_800EE4C0.statusCode].unk9;
         index = func_8009FDE0(arg0, D_800EE4C0.statusCode);
         D_800EEBC2 = D_80078E00.array45F8[index].unk4;
         D_800EEBC4 = D_80078E00.array45F8[index].unk0;
         D_800EEBBB = D_80078E00.array45F8[index].unk7;
-        D_800EEBBC = D_80078E00.array44FC[D_800EE4C0.statusCode].unk2;
+        D_800EEBBC = D_80078E00.array44FC[D_800EE4C0.statusCode].unkA;
         break;
 
     case 14:
@@ -2436,10 +2437,10 @@ void func_800A09D0(s32 arg0) {
         break;
 
     case 29:       
-        func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk13);
-        var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk12;
-        D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk10;
-        var_a0 = D_80078E00.array4020[D_800EE4C0.statusCode].unk11;
+        func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk5);
+        var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk4;
+        D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk2;
+        var_a0 = D_80078E00.array4020[D_800EE4C0.statusCode].unk3;
         D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 
@@ -2491,10 +2492,10 @@ void func_800A09D0(s32 arg0) {
         break;
 
     case 19:       
-        func_8009FCF4(D_80078E00.array4A70[D_800EE4C0.unk3].unk5);
-        var_s3 = D_80078E00.array4A70[D_800EE4C0.unk3].unk1;
-        D_800EE4C0.unk4 = D_80078E00.array4A70[D_800EE4C0.unk3].unk2;
-        var_a0 = D_80078E00.array4A70[D_800EE4C0.unk3].unk0;
+        func_8009FCF4(D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A75);
+        var_s3 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A71;
+        D_800EE4C0.unk4 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A72;
+        var_a0 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A70;
         D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 
@@ -2511,10 +2512,10 @@ void func_800A09D0(s32 arg0) {
         break;
 
     case 15:        
-        func_8009FCF4(D_80078E00.array44FC[D_800EE4C0.statusCode].unk13);
+        func_8009FCF4(D_80078E00.array44FC[D_800EE4C0.statusCode].unk5);
         var_s3 = D_80078E00.array45F8[func_8009FDE0(temp_s4, D_800EE4C0.statusCode)].unk6;
-        D_800EE4C0.unk4 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk09;
-        var_a0 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk10;
+        D_800EE4C0.unk4 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk1;
+        var_a0 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk2;
         D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 
@@ -2538,10 +2539,10 @@ void func_800A09D0(s32 arg0) {
     case 32:       
     case 33:       
     case 34:       
-        func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk13);
-        var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk12;
-        D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk10;
-        var_a0 = D_80078E00.array4020[D_800EE4C0.statusCode].unk11;
+        func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk5);
+        var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk4;
+        D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk2;
+        var_a0 = D_80078E00.array4020[D_800EE4C0.statusCode].unk3;
         D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
         break;
 

@@ -732,7 +732,7 @@ typedef struct {
  * Only byte 0 (magicId) is read by the known callers.
  */
 typedef struct {
-    u8 pad0[2];
+    u16 unk0;
     u8 unk2;
     u8 unk3;
     u8 unk4;
@@ -740,13 +740,15 @@ typedef struct {
     u8 magicId; /**< Magic/spell ID byte (input to ability flag funcs) */
     u8 unk7;
     u8 unk8;
-    u8 pad9;
+    u8 unk9;
     u8 unkA;
     u8 padB;
     u32 unkC;
     u16 unk10;
     u8 unk12;
-    u8 pad13[41];
+    u8 pad13[18];
+    s16 unk26;
+    u8 pad6[20];
 } BattleSpellRow; /* 60 bytes */
 
 /**
@@ -797,14 +799,14 @@ typedef struct {
 
 typedef struct {
     u16 lookupId;    /**< u16 passed to resolveKernelPtr. */    
-    u8 pad2[2];
+    u16 unk2;
     u8 unk4;
     u8 unk5;
     u8 unk6;
     u8 unk7;
     u8 unk8;
     u8 unk9;
-    u8 padA;
+    u8 unkA;
     u8 unkB;
     u32 unkC;
     u16 unk10;
@@ -818,20 +820,23 @@ typedef struct {
  */
 typedef struct {
     u16 lookupId;       /**< u16 passed to resolveKernelPtr. */
-    u8 pad2[4];
+    u8 pad2[2];
+    u16 unk4;
     u8 unk6;
     u8 unk7;
     u8 pad8;
     u8 unk9;
     u8 unkA;
     u8 unkB;
-    u8 padC;
+    u8 unkC;
     u8 unkD;
     u16 unkE;
     u32 unk10;
     u8 pad14[7];
     u8 unk1B;
-    u8 pad1C[102];
+    u8 pad1C[0x70 - 0x1C];
+    u8 unk70;
+    u8 pad71[0x82 - 0x71];
     u8 unk83;
     u8 unk84;
 } BattleSceneRow;       /* 132 bytes */
@@ -855,14 +860,14 @@ typedef struct {
 } Struct_4C0C;       /* 0xC: 12 bytes */
 
 typedef struct {
-    u8 pad48BC[2];
+    u16 unk48BC;
     u8 unk48BE;
     u8 unk48BF;
     u8 unk48C0;
     u8 pad48C1;
     u8 unk48C2;
     u8 unk48C3;
-    u8 pad48C4;
+    u8 unk48C4;
     u8 unk48C5;
     u8 unk48C6;
     u8 unk48C7;
@@ -873,34 +878,35 @@ typedef struct {
 } Struct_48BC;    /* 32 bytes */
 
 typedef struct {
-    u8 pad[2];
-    u8 unk09;
-    u8 unk10;
-    u8 unk11;
-    u8 unk12;
-    u8 unk13;
-    u8 unk14;
-    u8 unk0;
-    u8 unk1;
-    u16 unk2;
-    u32 unk4;
-} Struct_4020;    /* 16 bytes */
-
-typedef struct {
-    u8 unk0;
+    u16 unk0;
     u8 unk1;
     u8 unk2;
-    u8 pad3;
+    u8 unk3;
     u8 unk4;
     u8 unk5;
-    u8 pad6;
-    u8 unk7;
+    u8 unk6;
     u8 unk8;
     u8 unk9;
     u16 unkA;
     u32 unkC;
-    u8 pad10[4];
-} Struct_4A70;    /* 20 bytes */
+} Struct_4020;    /* 16 bytes */
+
+typedef struct {
+    u8 pad4A6C[2];
+    u16 unk4A6E;
+    u8 unk4A70;
+    u8 unk4A71;
+    u8 unk4A72;
+    u8 pad4A73;
+    u8 unk4A74;
+    u8 unk4A75;
+    u8 pad4A76;
+    u8 unk4A77;
+    u8 unk4A78;
+    u8 unk4A79;
+    u16 unk4A7A;
+    u32 unk4A7C;
+} Struct_4A6C;    /* 20 bytes */
 
 
 typedef struct {
@@ -911,14 +917,14 @@ typedef struct {
 } Struct_45F8;      /* 8 bytes */
 
 typedef struct {
-    u8 pad0[2];
+    u16 unk0;
     u8 unk2;
     u8 unk3;
     u8 unk4;
     u8 pad5;
     u8 unk6;
     u8 unk7;
-    u8 pad8;
+    u8 unk8;
     u8 unk9;
     u8 unkA;
     u8 unkB;
@@ -938,7 +944,8 @@ typedef struct {
     u16 unk4;
     u16 unk6;
     u32 unk8;
-    u8 padC[10];
+    u8 padC[7];
+    u16 unk14;
     u8 unk16;
     u8 unk17;
 } Struct_3750; /* 24 bytes */
@@ -948,7 +955,9 @@ typedef struct {
     u8 unk1;
     u8 pad2[3];
     u8 unk5;
-    u8 pad6[6];    
+    u8 pad6[3];
+    u8 unk9;
+    u8 padA[2]; 
 } Struct_35BD; /* 12 bytes */
 
 
@@ -963,6 +972,12 @@ typedef struct {
     u8 unk0;
     u8 unk1;    
 } Struct4CFC; /* 2 bytes */
+
+
+typedef struct {
+    s32 unk0;
+    s32 unk1;
+} structE8;
 
 /**
  * @brief Battle scene data buffer at D_80078E00 (loaded from disc, ~0x9E08 bytes).
@@ -980,15 +995,18 @@ typedef struct {
     /* 0x00D4 */ s32 rows8Arg;                  /**< resolveKernelPtr arg paired with rows8[]. */
     /* 0x00D8 */ u8 pad00D8[0x00DC - 0x00D8];                
     /* 0x00DC */ s32 unk4C0CArg;                /**< resolveKernelPtr arg paired with unk4C0C[]. */
-    /* 0x00E0 */ u8 pad00E0[0x0220 - 0x00E0]; 
+    /* 0x00E0 */ u8 pad00E0[0x00E8 - 0x00E0];
+    /* 0x00E8 */ structE8 unkE8[1];
+    /* 0x00F0 */ u8 pad00F0[0x0220 - 0x00F0];
     /* 0x0220 */ BattleSpellRow spells[1];      /**< 60-byte stride (size unknown, index past). */
     /* 0x025C */ u8 pad025C[0x0F78 - 0x025C];
     /* 0x0F78 */ BattleSceneRow rows132[1];     /**< 132-byte stride (size unknown, index past). */
     /* 0x0FFC */ u8 pad0FFC[0x17B8 - 0xFFC];
     /* 0x17B8 */ BattleSceneEntry entries17[1]; /**< stride 20 (size unknown, index past). */
-    /* 0x17CC */ u8 pad17CC[0x35BD - 0x17CC];
+    /* 0x17CC */ u8 pad17CC[0x35B1 - 0x17CC];
+    /* 0x35B1 */ Struct_35BD array35B1[1];
     /* 0x35BD */ Struct_35BD array35BD[1];
-    /* 0x35C9 */ u8 pad35C9[0x3738 - 0x35C9];
+    /* 0x35CC */ u8 pad35C9[0x3738 - 0x35CC];
     /* 0x3738 */ BattleAbilityRow unk3738[1];
     /* 0x3750 */ Struct_3750 array3750[1];
     /* 0x3768 */ u8 pad3768[0x37A6 - 0x3768];
@@ -998,7 +1016,11 @@ typedef struct {
     /* 0x3938 */ BattleAbilityRow abilities[1]; /**< 24-byte stride (size unknown, index past). */
     /* 0x3950 */ u8 pad3950[0x3EE0 - 0x3950];
     /* 0x3EE0 */ BattleSceneEntry2 entriesA0[1]; /**< stride 20 (size unknown, index past). */
-    /* 0x3EF4 */ u8 pad3EF4[0x4020 - 0x3EF4];
+    /* 0x3EF4 */ u8 pad3EF4[0x3F5A - 0x3EF4];
+    /* 0x3F5A */ u16 unk3F5A;
+    /* 0x3F5C */ u8 pad3F5C[0x3F62 - 0x3F5C];
+    /* 0x3F62 */ u8 unk3F62;
+    /* 0x3F63 */ u8 pad3F63[0x4020 - 0x3F63];
     /* 0x4020 */ Struct_4020 array4020[1];
     /* 0x4030 */ u8 pad4034[0x4484 - 0x4030];
     /* 0x4484 */ Struct_446C array4484[1];
@@ -1010,11 +1032,13 @@ typedef struct {
     /* 0x47FC */ Struct_446C array47FC[1];
     /* 0x4814 */ u8 pad4814[0x48BC - 0x4814];
     /* 0x48BC */ Struct_48BC array48BC[1];
-    /* 0x48DC */ u8 pad48DC[0x4A5E - 0x48DC];
+    /* 0x48DC */ u8 pad48DC[0x49F8 - 0x48DC];
+    /* 0x49F8 */ s32 unk49F8[1];
+    /* 0x49FC */ u8 pad49FC[0x4A5E - 0x49FC];
     /* 0x4A5E */ BattleSceneRow8 rows8[1];      /**< stride 8 (size unknown, index past). */
-    /* 0x4A66 */ u8 pad4A66[0x4A70 - 0x4A66];
-    /* 0x4A70 */ Struct_4A70 array4A70[1];
-    /* 0x4A84 */ u8 pad4A84[0x4C0C - 0x4A84];
+    /* 0x4A66 */ u8 pad4A66[0x4A6C - 0x4A66];
+    /* 0x4A6C */ Struct_4A6C array4A6C[1];
+    /* 0x4A80 */ u8 pad4A80[0x4C0C - 0x4A80];
     /* 0x4C0C */ Struct_4C0C unk4C0C[1];
     /* 0x4C18 */ u8 pad4C18[0x4CCC - 0x4C18];
     /* 0x4CCC */ u8 unk4CCC[16]; // confirmed to be atleast 14
@@ -1137,6 +1161,9 @@ extern s32             D_800E19BC[];
 extern u16             D_800E3CA4[];
 extern BattlePosXZ     D_800E3CA8[];
 extern BattlePosXZ     D_800E3CB0[];
+extern u8              D_800E3CC5;
+extern u8              D_800E3CC6;
+extern u8              D_800E3CBC[];
 extern u8              D_800E3CE8;
 extern BattleSystem    D_800ED148;
 extern BattleCmdBuf    D_800EE4C0;
@@ -1155,7 +1182,7 @@ extern u8              D_800EEBC0;
 extern u16             D_800EEBC2;
 extern s32             D_800EEBC4;
 extern u8              D_800EEBC8;
-
+extern u8              D_800EEBD0;
 
 /* ---------------------------------------------------------------- *
  *  Battle-overlay function prototypes (battle internals).

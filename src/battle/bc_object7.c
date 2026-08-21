@@ -125,10 +125,10 @@ void func_800AFF30(s32 a0) {
  *
  * @param a0 Index into @c D_80078E00.rows132, offset by @c 0x40.
  */
-void func_800AFF70(s32 a0) {
+u8* func_800AFF70(s32 a0) {
     BattleSceneData *scene = &D_80078E00;
     a0 -= 0x40;
-    resolveKernelPtr(scene->rows132[a0].lookupId, scene->rows132Arg);
+    return resolveKernelPtr(scene->rows132[a0].lookupId, scene->rows132Arg);
 }
 
 /**
