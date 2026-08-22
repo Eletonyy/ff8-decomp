@@ -3,6 +3,7 @@
 #include "gamestate.h"
 #include "battle/bc_object5.h"
 #include "battle/bc_object6.h"
+#include "battle/bc_object7.h"
 
 extern u8 D_800E3CEC[];
 void func_800AB054(void);

@@ -6,6 +6,10 @@ extern u8 D_800EE464[];
 extern u8 D_800EE38C[];
 extern u8 D_800EE9B3[];
 extern u8 g_gameState[];
+/* bc_object7 defines this with a u16 fourth parameter, but declaring it that
+   way here makes gcc convert the argument at the second call site and the
+   overlay stops matching -- the original TU evidently saw a wider prototype.
+   Kept local, and deliberately not taken from battle/bc_object7.h. */
 void func_800B0754(s32, s32, s32, s32);
 void decrementItemByType(s32);
 s32 func_800AA4E8(void);

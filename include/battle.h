@@ -1188,15 +1188,12 @@ extern u8              D_800EEBD0;
  * ---------------------------------------------------------------- */
 
 /** @brief Apply a status flag, ORing it into the flag word. */
-void func_800B0574(s32 arg0, u32 arg1);
 
 /** @brief Set @c field64[lowest-bit-of-a1] = -0x457 on entity @p a0. */
-void func_800B0600(s32 a0, s32 a1);
 
 u16 func_800B1050(s32 stat);
 
 /** @brief Look up auxiliary ability flags by stat byte (low bits). */
-u16 func_800B0F7C(s32 stat);
 
 void func_800B3128(u8 *a0);
 
@@ -1212,7 +1209,6 @@ void func_800A1760(s32 arg0, BattleCharData* arg1);
 u8 *func_800B04A0(s32 a0, u8 *buf);
 
 /** @brief Concatenate two parts into the @c D_800EEBE8 message buffer. */
-u8* func_800B0248(u8* arg0, u8 arg1, u8* arg2);
 
 /** @brief Finalize the @c D_800EEBE8 message buffer. */
 u8 *func_800B02AC(u8 *buf);

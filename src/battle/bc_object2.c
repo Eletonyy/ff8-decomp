@@ -10,6 +10,7 @@
 #include "gamestate.h"
 #include "battle/bc_object2.h"
 #include "battle/bc_object6.h"
+#include "battle/bc_object7.h"
 
 
 

@@ -3,6 +3,7 @@
 #include "battle.h"
 #include "battle/bc_object2.h"
 #include "battle/bc_object3.h"
+#include "battle/bc_object7.h"
 
 SoundCmd* func_8009B134(s16 arg0, u8 arg1, s32 unused);
 
