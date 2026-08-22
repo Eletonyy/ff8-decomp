@@ -2,7 +2,6 @@
 #define BC_OBJECT2_H
 
 
-
 #define BATTLE_ENTITY_FLAG_BIT_0   (1 << 0)  /* 0x00000000 */
 #define BATTLE_ENTITY_FLAG_BIT_10  (1 << 10) /* 0x00000400 */
 #define BATTLE_ENTITY_FLAG_BIT_11  (1 << 11) /* 0x00000800 */
@@ -21,7 +20,6 @@
 #define BATTLE_ENTITY_FLAG_BIT_25  (1 << 25) /* 0x02000000 */
 #define BATTLE_ENTITY_FLAG_BIT_26  (1 << 26) /* 0x04000000 */
                                                 
-
 
 extern u8 *getMenuString(s32 id);
 extern u8 *getStatName(s32 statId);
@@ -137,7 +135,7 @@ s32 func_8009ED2C(s32 arg0);
 
 void func_8009EE44(s32 unused, s32 arg1);
 
-s32 func_8009EF64(s32 arg0, s32 unused, s32 unused2, s32 arg3);
+s32 func_8009EF64(s32 arg0);
 
 s32 func_8009F040(s32 arg0, s32 arg1, s32 unused);
 

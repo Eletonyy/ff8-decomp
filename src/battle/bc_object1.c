@@ -1,3 +1,8 @@
+#include "common.h"
+#include "battle.h"
+#include "gf.h"
+#include "battle/bc_object1.h"
+
 /**
  * @file bc_object1.c
  * @brief Battle scene orchestration and entity management.
@@ -16,25 +21,6 @@
  * state (0x4), flags (0x18), animation params (0x84-0x92), linked index
  * (0xCB), and various control bytes at large offsets (0x5C2, 0x12E8-0x1319).
  */
-#include "common.h"
-#include "battle.h"
-#include "gf.h"
-
-/*
- * Re-declare @c D_800ED148 with @c volatile for this TU.
- *
- * @c battle.h declares the symbol non-volatile (the common case across
- * battle/tripletriad TUs). bc_object1, however, contains
- * state-machine and accessor functions whose original codegen depends
- * on @c volatile semantics — without it gcc 2.7.2 folds
- * @c lui+addiu+lbu into @c lui+lbu, dropping an instruction per
- * accessor and shifting the downstream functions out of alignment.
- *
- * Under C89's qualifier-merging rule a second @c extern declaration
- * with added @c volatile is compatible with the unqualified header
- * declaration, so this TU's accesses get the @c volatile codegen while
- * other TUs that only see @c battle.h's view remain non-volatile.
- */
 
 /* FIXME: D_800E19BC is conceptually an array of (s32 sector, s32 length)
    pairs (8-byte stride, two s32s per entry) used as CdRead arguments by
@@ -47,64 +33,10 @@
    away if/when a struct-typed access form that produces the same
    codegen is found. */
 
-/* Forward declarations for file-private functions (defined later in
-   this TU). Cross-TU "public" functions live in battle.h. */
-void func_8009A254(void);
-void func_8009A308(void);
-void func_8009A38C(void);
-void func_8009A3BC(void);
-void func_8009A42C(s32, s32);
-void func_8009A4A4(void);
-void func_8009A528(s32, s32);
-void func_8009A6A8(s32);
-void func_8009A74C(void);
-void func_8009A928(void);
-void func_8009A990(s32);
-void func_8009AA2C(void);
-void func_8009AAC4(s32);
-void func_8009AB54(s32);
-void func_8009AB98(void);
-void func_8009ABE4(void);
-void func_8009ABFC(void);
-void func_8009AC14(void);
-void func_8009AC34(void);
-void func_8009AC68(void);
-void func_8009ACB4(void);
-void func_8009ACEC(void);
-void func_8009AE9C(void);
-void func_8009AF98(s32);
-void func_8009AFF0(s32);
-void func_8009B088(s32, s32, s32, s32);
-void func_8009B0F8(s32);
-void func_8009B198(s32);
-void func_8009B208(TaskLink *, u8 *, s32);
-s32  func_8009B238(u8 *, s32);
-s32  func_8009B270(u8 *, s32);
-u32  func_8009B2A4(TaskLink*, u8*, s32);
-u8   func_8009B390(TaskLink*, s32);
-void func_8009B428(void);
-void func_8009B478(void);
-void func_8009B520(void);
-void func_8009B59C(s32, s32 *, s32 *);
-void func_8009B654(void);
-void func_8009B6D0(s32, s32);
-s32  func_8009B7F4(s32, s32);
-void func_8009B878(s32, u16 *, s32 *, s32);
-s32  func_8009BA5C(s32, s32);
-//s32  func_8009B3D0(void*); this function prototype most likely has been forgotten originally too
-void func_8009B320(u8 arg0, TaskLink* arg1, u8* arg2); // outside of bc_object1 this prototype has been forgotten to be included (i.e func_800A589C in bc_object3)
+extern void func_800D0F74(void);
+extern SoundCmd* func_800B8564(s16, u8); /* bc_object9.c */
 
-/* Overlay-conflict externs: same MIPS address holds different functions
-   in other overlays, so these cannot be hoisted into a shared header. */
-void func_8009A638(void);     /* also in world */
-void func_8009A8B4(s32);      /* also in battle_render */
-void func_8009B690(void);     /* also in tripletriad */
-s32  func_8009B74C(s32, s32); /* also in field_engine */
-
-extern void func_800D0F74(void); /* defined in another battle TU */
-extern SoundCmd *func_800B8564(s32, s32); /* defined in bc_object9.c */
 extern volatile s16 D_8005F146;
-
 
 void func_80099D30(void) {
     s32 i;
@@ -132,7 +64,7 @@ void func_80099D30(void) {
             func_8009AB98();
             func_8009AE9C();
             for(i = 0; i < 3; i++) {
-                func_800A5C48(&D_800ED148.unk1244[i].unk1[0]);
+                func_800A5C48(&D_800ED148.unk1244[i].unk0[0]);
             }
             
             func_800A5BC4();
@@ -200,27 +132,28 @@ void func_80099FE8(void) {
 
     D_800ED148.unk5C3 = 1;
     D_800ED148.entities[0].state.word = 0;
-    D_800ED148.unk12EC = 0xFF;
-    D_800ED148.entities[0].timers.SplitTimer.timer = 0xFF;
+    D_800ED148.unk12EC = 255;
+    D_800ED148.entities[0].timers.SplitTimer.timer = 255;
     g_battleConfig.result = BATTLE_RESULT_UNDETERMINED;
-    D_800ED148.unk1319 = 0xFF;
+    D_800ED148.unk1319 = 255;
 
     for (i = 0; i < 3; i++) {
-        g_battleConfig.unk4[i] = 0xFF;
+        g_battleConfig.unk4[i] = 255;
     }
 
     func_8009B198(func_80042634(-1));
     func_800B25E4();
-    func_8009B6D0(g_battleConfig.battleSceneId, (s32)D_800EDE24);
-    {
-        u8 *base = (u8 *)(D_800EDE24 - 0xCDC);
-        if ((base[0xCDD] & 0xE0) == 0) {
-            g_battleConfig.unk2 |= base[0xCDD] & (~0x10);
-        } else {
-            g_battleConfig.unk2 &= 0xFF1F;
-            g_battleConfig.unk2 |= base[0xCDD] & (~0x10);
-        }
+    func_8009B6D0(g_battleConfig.battleSceneId, &D_800ED148.unkCDC);
+    
+    if (!(D_800ED148.unkCDD & 0xE0)) {
+        g_battleConfig.unk2 |= D_800ED148.unkCDD & (~0x10);
+    } 
+    
+    else {
+        g_battleConfig.unk2 &= 0xFF1F;
+        g_battleConfig.unk2 |= D_800ED148.unkCDD & (~0x10);
     }
+    
     func_800A94E0();
     func_800A86F0(1);
     func_800A86F0(2);
@@ -232,7 +165,7 @@ void func_80099FE8(void) {
     func_800A30E4();
     func_8009A38C();
     func_8009A3BC();
-    func_8009B134(9, 0x80, 0);
+    func_8009B134(9, 128, 0);
     func_8009A4A4();
     func_8009AF14(func_8009ABFC);
 }
@@ -244,7 +177,6 @@ void func_80099FE8(void) {
  * sound/SFX commands. Sets entity state to 2 (active).
  */
 void func_8009A160(void) {
-    volatile BattleSystem *state;
     func_800A7B48();
     func_800A6D30();
     func_8009A638();
@@ -252,10 +184,9 @@ void func_8009A160(void) {
     func_8009A74C();
     func_8009AF14(func_800D0F74);
     func_800A69BC();
-    func_8009B134(0x70, 0x80, 0);
+    func_8009B134(112, 128, 0);
     func_8009AF14(func_8009ABE4);
-    state = &D_800ED148;
-    state->entities[0].state.word = 2;
+    D_800ED148.entities[0].state.word = 2;
 }
 
 /**
@@ -286,15 +217,11 @@ void func_8009A1E0(void) {
  * func_800A59AC.
  */
 void func_8009A254(void) {
-    volatile BattleEntity *units = (volatile BattleEntity *)&D_800ED148;
     s32 i;
+
     for (i = 0; i < 7; i++) {
-        if (units[i].controlFlags & 1) {
-            if (units[i].controlFlags & 0x10) {
-                if (!(units[i].controlFlags & 0x80)) {
-                    func_800A59AC(i, 0, 0);
-                }
-            }
+        if ((D_800ED148.entities[i].controlFlags & 1) && (D_800ED148.entities[i].controlFlags & 0x10) && !(D_800ED148.entities[i].controlFlags & 0x80)) {
+            func_800A59AC(i, 0, 0);
         }
     }
 }
@@ -330,6 +257,7 @@ void func_8009A308(void) {
             func_8009B690();
         }
     }
+
     D_800ED148.unk12E9 = 0;
     func_8009B690();
     func_800B26B8();
@@ -343,7 +271,7 @@ void func_8009A308(void) {
  */
 void func_8009A38C(void) {
     SoundCmd *cmd = func_8009B134(0x3EA, 0x80, 0);
-    cmd->unk0 = D_800EDE24[0];
+    cmd->unk0 = D_800ED148.unkCDC;
 }
 
 /**
@@ -403,16 +331,10 @@ void func_8009A4A4(void) {
     }
 }
 
-/**
- * @brief Test if a specific bit is set in a bitmask.
- * @param a0 The bitmask value.
- * @param a1 The bit position to test.
- * @return 1 if the bit is set, 0 otherwise.
- */
-s32 func_8009A514(s32 a0, s32 a1) {
-    s32 mask = 1 << a1;
-    s32 val = a0 & mask;
-    return val != 0;
+s32 func_8009A514(s32 arg0, s32 arg1) {
+    s32 result = arg0 & 1 << arg1;
+    
+    return result != 0? 1 : 0;
 }
 
 /**
@@ -475,7 +397,7 @@ void func_8009A638(void) {
  * @brief Queue a return-to-position animation for an entity.
  *
  * Snapshots animation state via @c func_800A240C / @c func_8009AFF0 /
- * @c func_800A1AB8 with the entity's @c status / @c flags / @c field28,
+ * @c func_800A1AB8 with the entity's @c status / @c flags / @c unk28,
  * then plays sound @c 0x67 with both parameter bytes cleared.
  *
  * @note The @c (s32)&D_800ED148.entities[idx].linkedPtr expression is
@@ -492,14 +414,11 @@ void func_8009A638(void) {
  */
 void func_8009A6A8(s32 idx) {
     SoundCmd *cmd;
-    BattleEntity *entities;
 
-    func_800A240C(idx, D_800ED148.entities[idx].field28,
-                  (s32)&D_800ED148.entities[idx].status);
+    func_800A240C(idx, D_800ED148.entities[idx].unk28, &D_800ED148.entities[idx].status);
     func_8009AFF0(idx);
-    entities = (BattleEntity *)D_800ED148.entities;
-    func_800A1AB8(idx, entities[idx].status, entities[idx].flags);
-    cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED148.entities[idx].entityData);
+    func_800A1AB8(idx, D_800ED148.entities[idx].status, D_800ED148.entities[idx].flags);
+    cmd = func_8009B134(0x67, 0x80, &D_800ED148.entities[idx].entityData);
     cmd->unk0 = idx;
     cmd->unk2.b.lo = 0;
     cmd->unk2.b.hi = 0;
@@ -527,7 +446,7 @@ void func_8009A74C(void) {
 
     activeCount = 0;
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].linkedIdx != 0xFF) {
+        if (D_800ED148.entities[i].linkedIdx != 255) {
             activeCount++;
         }
     }
@@ -580,11 +499,10 @@ void func_8009A8B4(s32 idx) {
  * func_8009A8B4 to queue the damage sound.
  */
 void func_8009A928(void) {
-    volatile BattleEntity *units = (volatile BattleEntity *)&D_800ED148;
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        if (units[i].linkedIdx != 0xFF) {
+        if (D_800ED148.entities[i].linkedIdx != 255) {
             func_8009A8B4(i);
         }
     }
@@ -600,30 +518,30 @@ void func_8009A928(void) {
  * and exits. Slot 0 is the "self" slot and is never matched against.
  * @param target Trigger key to find and clear.
  */
-void func_8009A990(s32 target) {
+void func_8009A990(s32 arg0) {  
     s32 i;
-    BattleEntity *p;
 
-    i = 0;
-    p = (BattleEntity *)&D_800ED148;
-top:
-    if (p[1].slot8.byteView.trigKey == target) {
-        if (p[1].state.bytes.trigType != 0) {
-            if (p[1].state.bytes.trigType == 2) {
-                if (!(p[0].status & 1)) {
-                    func_800A59AC(i, p[1].state.bytes.trigType, 0);
+    for (i = 0; i < 7; i++) {
+        BattleEntity* entity = &D_800ED148.entities[i];
+        
+        if ((entity + 1)->slot8.byteView.trigKey == arg0) {
+            if ((entity + 1)->state.bytes.trigType != 0) {
+                if ((entity + 1)->state.bytes.trigType == 2) {
+                    if (!(entity->status & 1)) {
+                        func_800A59AC(i, (entity + 1)->state.bytes.trigType, 0);
+                    }
+                } 
+                
+                else {
+                    func_800A59AC(i, (entity + 1)->state.bytes.trigType, 0);
                 }
-            } else {
-                func_800A59AC(i, p[1].state.bytes.trigType, 0);
+                
+                (entity + 1)->slot8.byteView.trigKey = 0;
+                (entity + 1)->state.bytes.trigType = 0;
+                return;
             }
-            p[1].slot8.byteView.trigKey = 0;
-            p[1].state.bytes.trigType = 0;
-            return;
         }
     }
-    p++;
-    i++;
-    if (i < 7) goto top;
 }
 
 /**
@@ -633,31 +551,11 @@ top:
  * pending trigger type via func_8009A990.
  */
 void func_8009AA2C(void) {
-    s32 sentinel;
     s32 i;
 
-    if (D_80082C0F != 0) {
-        return;
-    }
-
-    if (D_800ED148.unk12F9 != 1) {
-        sentinel = 0xFF;
-        if (func_800AE730() == sentinel) {
-            return;
-        }
-        if (func_800AE788() == sentinel) {
-            return;
-        }
-    }
-    {
-        s32 count = D_800ED148.unk12F8;
-        if (count != 0) {
-            i = 0;
-            do {
-                func_8009A990(i);
-                count = D_800ED148.unk12F8;
-                i++;
-            } while (i < count);
+    if ((D_80082C0F == 0) && ((D_800ED148.unk12F9 == 1) || ((func_800AE730() != 255) && (func_800AE788() != 255)))) {
+        for (i = 0; i < D_800ED148.unk12F8; i++) {
+            func_8009A990(i);
         }
     }
 }
@@ -670,19 +568,19 @@ void func_8009AA2C(void) {
  * plays a timed sound via sndCmdC1 if condition 0x1BD == 3.
  * @param a0 Task queue slot index (multiplied by 0x10).
  */
-void func_8009AAC4(s32 a0) {
-    s32 off = a0 << 4;
-    s32 base = (s32)D_800EE28C;
-    u8 *entry = (u8 *)(off + base);
+void func_8009AAC4(s32 arg0) {
+    TaskEntry* data = &D_800ED148.taskData[arg0];
 
-    if (*(u16 *)(entry + 0x8) == 0) {
-        func_8009B134(4, 0xF0, 0);
-        if (*(u8 *)(base + 0x1BD) == 3) {
-            sndCmdC1(D_8005F11C, 0x3C, 0);
+    if (data->timer == 0) {
+        func_8009B134(4, 240, 0);
+        if (D_800ED148.unk1301 == 3) {
+            sndCmdC1(D_8005F11C, 60, 0);
         }
-        *(u8 *)(entry + 0xF) = 1;
+
+        data->done = 1;
     }
-    *(u16 *)(entry + 0x8) = *(u16 *)(entry + 0x8) - 1;
+
+    data->timer--;
 }
 
 /**
@@ -692,13 +590,9 @@ void func_8009AAC4(s32 a0) {
  * stores the given duration into the task's timer field.
  * @param a0 Duration in frames for the timer.
  */
-void func_8009AB54(s32 a0) {
-    s32 dur = a0;
-    s32 off;
-    s32 base;
-    off = func_8009B3D0(func_8009AAC4) << 4;
-    base = (s32)D_800EE28C;
-    *(u16 *)(off + base + 0x8) = dur;
+void func_8009AB54(s32 arg0) {
+    TaskEntry* data = &D_800ED148.taskData[func_8009B3D0(&func_8009AAC4)];
+    data->timer = arg0;
 }
 
 /**
@@ -753,7 +647,7 @@ void func_8009AC14(void) {
  * func_800A30E4 (animation), and func_800A79A0 (state reset).
  */
 void func_8009AC34(void) {
-    *(s32 *)&D_800ED148.entities[0].stateMachine.unk0 = 0;
+    D_800ED148.entities[0].stateMachine.unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
@@ -781,8 +675,7 @@ void func_8009AC68(void) {
  * If inactive, calls func_8009AC68 for full reset.
  */
 void func_8009ACB4(void) {
-    s32 a0 = D_800ED157[0];
-    if (func_800B1930(a0) == 0) {
+    if (func_800B1930(D_800ED148.entities[0].entityRef) == 0) {
         func_8009AC68();
     }
 }
@@ -808,6 +701,7 @@ void func_8009ACEC(void) {
         func_800A6288(i);
         D_800ED148.entities[i].flags &= ~(1 << 31);
     }
+
     func_800A62B0();
 }
 
@@ -820,7 +714,7 @@ void func_8009ACEC(void) {
  */
 void func_8009AD7C(void) {
     s32 frames;
-    switch (D_800EE449) {
+    switch (D_800ED148.unk1301) {
         case 0:
             frames = 60;
             break;
@@ -834,6 +728,7 @@ void func_8009AD7C(void) {
             frames = 60;
             break;
     }
+
     func_8009AB54(frames - 15);
     D_800ED148.entities[0].timers.SplitTimer.timer = frames;
 }
@@ -851,7 +746,7 @@ void func_8009AD7C(void) {
 void func_8009AE08(s32 cmd) {
     switch (cmd) {
         case 5:
-            *(s32 *)&D_800ED148.entities[0].stateMachine.unk0 = 1;
+            D_800ED148.entities[0].stateMachine.unk0 = 1;
             break;
         case 6:
             func_8009AF14(func_8009AC14);
@@ -900,8 +795,8 @@ void func_8009AE9C(void) {
  * by calling func_8009B134, effectively queueing it for execution.
  * @param a0 Function pointer to schedule as a task callback.
  */
-void func_8009AF14(void *callback) {
-    func_8009B134(0xA, 0x80, (s32)callback);
+void func_8009AF14(void* callback) {
+    func_8009B134(10, 128, callback);
 }
 
 /**
@@ -935,7 +830,7 @@ void func_8009AF3C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
 void func_8009AF98(s32 idx) {
     SoundCmd *cmd;
     func_8009AFF0(idx);
-    cmd = func_8009B134(0x75, 0x80, &D_800ED148.entities[idx].entityData);
+    cmd = func_8009B134(117, 128, &D_800ED148.entities[idx].entityData);
     cmd->unk0 = idx;
 }
 
@@ -948,21 +843,21 @@ void func_8009AF98(s32 idx) {
  * and conditionally clears @c 0x40 from the backed-up status / @c 0x2000
  * from the backed-up flags.
  */
-void func_8009AFF0(s32 idx) {
-    BattleSystem *bs = (BattleSystem *)&D_800ED148;
-    BattleEntity *e = &bs->entities[idx];
-    BattleEntityData *linked;
+void func_8009AFF0(s32 arg0) {
+    BattleEntityData* entityData;
 
-    e->statusBackup = e->status;
-    e->flagsBackup = e->flags;
-
-    if (idx >= 3) {
-        linked = *e->entityData;
-        if (linked->immunityFlags & 1) {
-            e->statusBackup &= 0xFFBF;
+    D_800ED148.entities[arg0].statusBackup = D_800ED148.entities[arg0].status;
+    D_800ED148.entities[arg0].flagsBackup = D_800ED148.entities[arg0].flags;
+    
+    if (arg0 > 2) {
+        entityData = *D_800ED148.entities[arg0].entityData;
+        
+        if (entityData->immunityFlags & 1) {
+            D_800ED148.entities[arg0].statusBackup &= 0xFFBF;
         }
-        if (linked->immunityFlags & 2) {
-            e->flagsBackup &= ~0x2000;
+
+        if (entityData->immunityFlags & 2) {
+            D_800ED148.entities[arg0].flagsBackup &= ~0x2000;
         }
     }
 }
@@ -977,23 +872,20 @@ void func_8009AFF0(s32 idx) {
  * @param a2 Flag byte 1.
  * @param a3 Flag byte 2.
  */
-void func_8009B088(s32 a0, s32 a1, s32 a2, s32 a3) {
-    s32 idx = a0;
-    s32 dir = a1;
-    s32 flag1 = a2;
-    s32 flag2 = a3;
+void func_8009B088(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     s32 snd;
-    SoundCmd *cmd;
+    SoundCmd* cmd;
 
-    func_8009AFF0(idx);
-    snd = 0x77;
-    if (dir == 0) {
-        snd = 0x76;
+    func_8009AFF0(arg0);
+    snd = 119;
+    if (arg1 == 0) {
+        snd = 118;
     }
-    cmd = func_8009B134(snd, 0xF0, 0);
-    cmd->unk0 = idx;
-    cmd->unk2.b.lo = flag1;
-    cmd->unk2.b.hi = flag2;
+
+    cmd = func_8009B134(snd, 240, 0);
+    cmd->unk0 = arg0;
+    cmd->unk2.b.lo = arg2;
+    cmd->unk2.b.hi = arg3;
 }
 
 /**
@@ -1024,7 +916,7 @@ void func_8009B0F8(s32 a0) {
  */
  
  // some functions want arg1 to be s32, probably forgot to include the prototype
-SoundCmd* func_8009B134(s16 arg0, u8 arg1, s32 unused) {
+SoundCmd* func_8009B134(s32 arg0, s32 arg1, void* unused) {
     return func_800B8564(arg0, arg1);
 }
 
@@ -1036,7 +928,7 @@ SoundCmd* func_8009B134(s16 arg0, u8 arg1, s32 unused) {
  * the corresponding byte from D_80098030.
  * @return Random byte value from the lookup table.
  */
-s32 func_8009B15C(void) {
+s32 func_8009B15C(void) { // returns u8
     u8 index;
 
     index = D_800EEBA8[D_800EEBB0]++;
@@ -1051,21 +943,16 @@ s32 func_8009B15C(void) {
  * to the final value & 7.
  * @param a0 Initial seed value stored into each buffer entry.
  */
-void func_8009B198(s32 a0) {
-    s32 buf;
+void func_8009B198(s32 arg0) {
     s32 i;
 
     D_800EEBB0 = 0;
-    i = 0;
-    buf = (s32)D_800EEBA8;
-
-    do {
-        *(u8 *)(i + buf) = a0;
-        a0 = func_8009B15C() & 0xFF;
-        i++;
-    } while (i < 8);
-
-    D_800EEBB0 = func_8009B15C() & 7;
+    for (i = 0; i < 8; i++) {
+        D_800EEBA8[i] = arg0;
+        arg0 = func_8009B15C() & 0xFF;
+    }
+    
+    D_800EEBB0 = func_8009B15C() & 7;  
 }
 
 /**
@@ -1082,12 +969,14 @@ void func_8009B198(s32 a0) {
  */
 void func_8009B208(TaskLink *links, u8 *head, s32 count) {
     s32 i;
+    
     for (i = 0; i < count; i++) {
         links[i].unk2 = 0;
         links[i].bwd = 0;
         links[i].fwd = 0;
     }
-    *head = 0xFF;
+
+    *head = 255;
 }
 
 /**
@@ -1099,14 +988,16 @@ void func_8009B208(TaskLink *links, u8 *head, s32 count) {
  * @param a1 Maximum number of entries to scan.
  * @return Index of the first 0xFF entry, or 0 if not found.
  */
-s32 func_8009B238(u8 *a0, s32 a1) {
+// TaskLink type is used as a generic 4 fields struct. This function seems to never be called
+u8 func_8009B238(TaskLink* arg0, s32 arg1) { 
     s32 i;
-    for (i = 0; i < a1; i++) {
-        if (a0[0] == 0xFF) {
-            return (u8)i;
+
+    for (i = 0; i < arg1; i++) {
+        if (arg0[i].fwd == 255) {        
+            return i;
         }
-        a0 += 4;
     }
+    
     return 0;
 }
 
@@ -1124,13 +1015,14 @@ s32 func_8009B238(u8 *a0, s32 a1) {
  * @param a1 Maximum number of entries to scan.
  * @return Index of the tail entry.
  */
-s32 func_8009B270(u8 *a0, s32 a1) {
+// TaskLink type is used as a generic 4 fields struct. This function seems to never be called
+s32 func_8009B270(TaskLink* arg0, s32 arg1) { 
     s32 i;
-    for (i = 0; i < a1; i++) {
-        if (a0[1] == 0xFF) {
+
+    for (i = 0; i < arg1; i++) {
+        if (arg0[i].bwd == 255) {        
             return i;
         }
-        a0 += 4;
     }
 }
 
@@ -1145,7 +1037,7 @@ s32 func_8009B270(u8 *a0, s32 a1) {
  * @return Allocated slot index (as u8).
  */
 u32 func_8009B2A4(TaskLink* arg0, u8* taskHead, s32 arg2) {
-    u32 index;
+    s32 index;
 
     index = func_8009B390(arg0, arg2);
     arg0[index].fwd = *taskHead;
@@ -1239,8 +1131,9 @@ s16 func_8009B3D0(void* arg0) {
  */
 void func_8009B428(void) {
     s32 i;
-    func_8009B208((TaskLink *)D_800ED148.taskLinks, (u8 *)&D_800ED148.taskHead, 16);
-    for (i = 15; i >= 0; i--) {
+    
+    func_8009B208(D_800ED148.taskLinks, &D_800ED148.taskHead, 16);
+    for (i = 0; i < 16; i++) {
         D_800ED148.taskData[i].done = 0;
     }
 }
@@ -1255,24 +1148,24 @@ void func_8009B428(void) {
  * @c taskHead is cleared (queue emptied by a callback).
  */
 void func_8009B478(void) {
-    BattleSystem *bs;
-    s32 i = 0;
-    void (*fn)(s32);
+    s32 i;
 
-    do {
-        if (D_800ED148.taskLinks[i].fwd == 0xFF) goto found;
-        i++;
-    } while (i < 16);
+    for (i = 0; i < 16; i++) {
+        if (D_800ED148.taskLinks[i].fwd == 255) {
+            goto found;
+        }
+    }
     return;
 
-loop:
-    i = bs->taskLinks[i].bwd;
-found:
-    bs = (BattleSystem *)&D_800ED148;
-    fn = (void (*)(s32))bs->taskData[i].callback;
-    fn(i);
-    if (bs->taskLinks[i].bwd == 0xFF) return;
-    if (bs->taskHead != 0xFF) goto loop;
+    do {
+        i = D_800ED148.taskLinks[i].bwd;  
+        
+        found:
+        (D_800ED148.taskData[i].callback)(i);
+        if (D_800ED148.taskLinks[i].bwd == 255) {
+            return;
+        }    
+    } while (D_800ED148.taskHead != 255); 
 }
 
 /**
@@ -1331,9 +1224,9 @@ void func_8009B5C4(s32 idx, s32 dst, s32 dir, s32 userData) {
     s32 sector = D_800E19BC[idx * 2];
     s32 length = D_800E19BC[idx * 2 + 1];
     if (dir == 0) {
-        cdRead(sector, length, dst, (s32)func_8009B654);
+        cdRead(sector, length, dst, &func_8009B654);
     } else {
-        func_80038868(sector, length, dst, (s32)func_8009B654);
+        func_80038868(sector, length, dst, &func_8009B654);
     }
     D_800ED148.unk128C = userData;
     D_800ED148.unk12D8 = length;
@@ -1347,9 +1240,8 @@ void func_8009B5C4(s32 idx, s32 dst, s32 dir, s32 userData) {
  * pointer from D_800ED148+0x12D8.
  */
 void func_8009B654(void) {
-    s32 callback = D_800ED148.unk128C;
-    if (callback != 0) {
-        ((void (*)(s32))callback)(D_800ED148.unk12D8);
+    if (D_800ED148.unk128C != 0) {
+        (D_800ED148.unk128C)(D_800ED148.unk12D8);
     }
 }
 
@@ -1383,17 +1275,12 @@ void func_8009B6B0(void) {
  * @param a0 Sound bank index (u16).
  * @param a1 Playback parameters pointer.
  */
-void func_8009B6D0(s32 a0, s32 a1) {
-    s32 temp;
-    s32 new_var;
-    a0 = (a0 & 0xFFFF) << 7;
-    new_var = a0;
-    temp = new_var;
-    if (new_var < 0) {
-        temp = new_var + 0x7FF;
-    }
-    cdReadSync(*(s32 *)D_800E19B4 + (temp >> 11), 0x800, 0x801C0000, 0);
-    memcopy((new_var & 0x7FF) | 0x801C0000, a1, 0x80);
+void func_8009B6D0(u16 arg0, u8* arg1) {
+    s32 tmp;
+
+    tmp = arg0 * 128;
+    cdReadSync(*D_800E19B4 + (tmp / 2048), 0x800, 0x801C0000, 0);
+    memcopy((tmp & 0x7FF) | 0x801C0000, arg1, 0x80);
 }
 
 /**
@@ -1406,12 +1293,14 @@ void func_8009B6D0(s32 a0, s32 a1) {
  * @param a1 Denominator for probability.
  * @return 1 if random check passes, 0 otherwise.
  */
-s32 func_8009B74C(s32 a0, s32 a1) {
-    s32 threshold = (a0 * 255) / a1;
-    s32 rnd = func_8009B15C();
-    if (threshold != 0 && (u32)threshold >= (u32)rnd) {
+s32 func_8009B74C(s32 arg0, s32 arg1) {
+    u32 threshold = (arg0 * 255) / arg1;
+    u32 result = func_8009B15C();
+    
+    if (threshold != 0 && threshold >= result) {
         return 1;
     }
+    
     return 0;
 }
 
@@ -1449,25 +1338,23 @@ s32 func_8009B7BC(s32 a0) {
  * @param a1 Entity slot index.
  * @return Clamped damage value.
  */
-s32 func_8009B7F4(s32 a0, s32 a1) {
+s32 func_8009B7F4(s32 arg0, s32 arg1) {
     s32 max;
 
-    if (D_800EE4C1 == 0xED) {
-        if (D_800ED148.entities[a1].field28 == 0) {
-            return 0;
-        }
-    }
-    max = 9999;
-    if (D_800EE456 & 8) {
-        max = 60000;
-    }
-    if (a0 > max) {
-        return max;
-    }
-    if (a0 < 0) {
+    if ((D_800EE4C0.unk1 == 237) && (D_800ED148.entities[arg1].unk28 == 0)) {
         return 0;
     }
-    return a0;
+
+    max = (D_800ED148.unk130E & 8)? 60000 : 9999;
+    if (arg0 > max) {
+        return max;
+    }
+    
+    if (arg0 < 0) {
+        return 0;
+    }
+    
+    return arg0;
 }
 
 /**
@@ -1483,32 +1370,35 @@ s32 func_8009B7F4(s32 a0, s32 a1) {
  * @param a2 Pointer to entity ability flags s32.
  * @param a3 Mode: 0 = clear flags, nonzero = set flags.
  */
-void func_8009B878(s32 a0, u16 *a1, s32 *a2, s32 a3) {
-    BattleEntityData *linked;
-    s32 status;
-    s32 flags;
+void func_8009B878(s32 arg0, u16* status, s32* flags, s32 arg3) {
+    BattleEntityData* entityData;
 
-    if (a0 < 3) {
+    if (arg0 < 3) {
         return;
     }
-    linked = *D_800ED148.entities[a0].entityData;
-    status = *a1;
-    if (status & 0x40) {
-        if (linked->immunityFlags & 1) {
-            if (a3 != 0) {
-                *a1 = status | 0x40;
-            } else {
-                *a1 = status & 0xFFBF;
+    
+    entityData = *D_800ED148.entities[arg0].entityData;
+    
+    if (*status & 0x40) {
+        if (entityData->immunityFlags & 1) {
+            if (arg3 == 0) {
+                 *status &= ~0x40;
+            } 
+            
+            else {
+                *status |= 0x40;
             }
         }
     }
-    flags = *a2;
-    if (flags & 0x2000) {
-        if (linked->immunityFlags & 2) {
-            if (a3 == 0) {
-                *a2 = flags & ~0x2000;
-            } else {
-                *a2 = flags | 0x2000;
+    
+    if (*flags & 0x2000) {
+        if (entityData->immunityFlags & 2) {
+            if (arg3 == 0) {
+                *flags &= ~0x2000;
+            }
+            
+            else {
+                *flags |= 0x2000;
             }
         }
     }
@@ -1534,21 +1424,21 @@ void func_8009B924(s32 slot, s32 clearMask, s32 applyMask) {
 
     for (bit = 1, i = 0; i < 14; i++, bit <<= 1) {
         if (applyMask & bit) {
-            if (func_800B0668(slot, bit))
+            if (func_800B0668(slot, bit)) {
                 applyMask &= ~bit;
+            }
         }
     }
 
     D_800ED148.entities[slot].flags &= ~applyMask;
 
     for (bit = 1, i = 0; i < 14; i++, bit <<= 1) {
-        if (applyMask & bit)
+        if (applyMask & bit) {
             func_800B0600(slot, bit);
+        }
     }
 
-    func_8009B878(slot,
-        (u16 *)&D_800ED148.entities[slot].status,
-        (s32 *)&D_800ED148.entities[slot].flags, 1);
+    func_8009B878(slot, &D_800ED148.entities[slot].status, &D_800ED148.entities[slot].flags, 1);
 }
 
 /**
@@ -1562,12 +1452,10 @@ void func_8009B924(s32 slot, s32 clearMask, s32 applyMask) {
  * @param defaultStatus Default status value if no ability flags apply.
  * @return Combined or default status flags (u16).
  */
-s32 func_8009BA5C(s32 slot, s32 defaultStatus) {
-    unsigned short result;
+u16 func_8009BA5C(s32 arg0, u16 arg1) {
+    u16 result;
+    
+    result = func_800B0F9C(D_80078E00.array48BC[arg0].unk48C2) | func_800B0F7C(D_80078E00.array48BC[arg0].unk48C2);
 
-    result = func_800B0F9C(g_gfData.subTableS[slot].abilityFlags) | func_800B0F7C(g_gfData.subTableS[slot].abilityFlags);
-
-    if (result & 0x8000)
-        return (u16)result;
-    return (u16)defaultStatus;
+    return (result & 0x8000)? result : arg1;
 }

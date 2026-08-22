@@ -42,7 +42,7 @@ void setBattleEntityField00(s32 idx, s32 val) {
  */
 void setBattleEntityField04(s32 idx, s32 val) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
-    entity->field04 = val;
+    entity->unk4 = val;
 }
 
 
@@ -53,7 +53,7 @@ void setBattleEntityField04(s32 idx, s32 val) {
  */
 void setBattleEntityField36(s32 idx, s32 val) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
-    entity->field36 = val;
+    entity->unk36 = val;
 }
 
 
@@ -64,7 +64,7 @@ void setBattleEntityField36(s32 idx, s32 val) {
  */
 u32 getBattleEntityField36(s32 idx) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
-    return entity->field36;
+    return entity->unk36;
 }
 
 
@@ -75,7 +75,7 @@ u32 getBattleEntityField36(s32 idx) {
  */
 void setBattleEntityField35(s32 idx, s32 val) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
-    entity->field35 = val;
+    entity->unk35 = val;
 }
 
 
@@ -86,7 +86,7 @@ void setBattleEntityField35(s32 idx, s32 val) {
  */
 u32 getBattleEntityField35(s32 idx) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
-    return entity->field35;
+    return entity->unk35;
 }
 
 

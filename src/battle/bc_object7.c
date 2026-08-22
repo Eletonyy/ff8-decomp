@@ -116,8 +116,8 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AFD0C);
  *
  * @param a0 Index into @c D_80078E00.entriesA0.
  */
-void func_800AFF30(s32 a0) {
-    resolveKernelPtr(D_80078E00.entriesA0[a0].lookupId, D_80078E00.entriesA0Arg);
+u8* func_800AFF30(s32 a0) {
+  return resolveKernelPtr(D_80078E00.entriesA0[a0].lookupId, D_80078E00.entriesA0Arg);
 }
 
 /**
@@ -125,10 +125,10 @@ void func_800AFF30(s32 a0) {
  *
  * @param a0 Index into @c D_80078E00.rows132, offset by @c 0x40.
  */
-void func_800AFF70(s32 a0) {
+u8* func_800AFF70(s32 a0) {
     BattleSceneData *scene = &D_80078E00;
     a0 -= 0x40;
-    resolveKernelPtr(scene->rows132[a0].lookupId, scene->rows132Arg);
+    return resolveKernelPtr(scene->rows132[a0].lookupId, scene->rows132Arg);
 }
 
 /**
@@ -136,8 +136,8 @@ void func_800AFF70(s32 a0) {
  *
  * @param a0 Index into @c D_80078E00.entries17.
  */
-void func_800AFFB4(s32 a0) {
-    resolveKernelPtr(D_80078E00.entries17[a0].lookupId, D_80078E00.entries17Arg);
+u8* func_800AFFB4(s32 a0) {
+    return resolveKernelPtr(D_80078E00.entries17[a0].lookupId, D_80078E00.entries17Arg);
 }
 
 /**
@@ -278,8 +278,8 @@ u8 *func_800B0328(u8 *src) {
  *
  * @param a0 Index into @c D_80078E00.rows8.
  */
-void func_800B0360(s32 a0) {
-    resolveKernelPtr(D_80078E00.rows8[a0].lookupId, D_80078E00.rows8Arg);
+u8* func_800B0360(s32 a0) {
+    return resolveKernelPtr(D_80078E00.rows8[a0].lookupId, D_80078E00.rows8Arg);
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0398);
@@ -288,21 +288,17 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0414);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B04A0);
 
-/**
- * @brief Find the bit position of the lowest set bit.
- *
- * @param a0 Value to scan (should have exactly one bit set).
- * @return Bit position (0-31), or 32 if no single bit found.
- */
-s32 func_800B054C(s32 a0) {
-    s32 i = 0;
-    do {
-        if (a0 == 1) {
+s32 func_800B054C(u32 arg0) {
+    s32 i;
+
+    for (i = 0; i < 32; i++) {
+        if (arg0 == 1) {
             return i;
         }
-        i++;
-        a0 = (u32)a0 >> 1;
-    } while (i < 0x20);
+
+        arg0 >>= 1;
+    }
+    
     return i;
 }
 
@@ -322,7 +318,7 @@ void func_800B0574(s32 arg0, u32 arg1) {
     
     temp_v0 = func_800B054C(arg1);
     if (temp_v0 < 14) {
-        u8 val = D_80078E00.unk_4CCC[temp_v0];
+        u8 val = D_80078E00.unk4CCC[temp_v0];
         s32 temp = ((g_gameState.config.battleSpeed + 1) * 4);
         D_800ED148.entities[arg0].field64.perBit[temp_v0] = val * temp;
     }
@@ -372,10 +368,10 @@ s32 func_800B0668(s32 a0, s32 a1) {
  */
 void func_800B06DC(u16 arg0) {
     func_800A4C84(arg0);
-    if (D_800ED148.entities[0].unk0E == 0) {
+    if (D_800ED148.entities[0].unkE == 0) {
         func_8009AE08(5);
         func_800AE524(D_800ED148.unk5C0 - 1);
-        D_800ED148.entries[D_800ED148.unk5C0 - 1].unk10 = 0;
+        D_800ED148.entries[D_800ED148.unk5C0 - 1].unk11 = 0;
         func_8009AE08(6);
     }
 }

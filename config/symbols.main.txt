@@ -1,3 +1,5 @@
+D_800EE4C0 = 0x800EE4C0; // size:0x64
+D_800ED148 = 0x800ED148; // size:0x133C
 jtbl_80010018 = 0x80010018; // type:jtbl function_owner:main size:40
 jtbl_8001025C = 0x8001025C; // type:jtbl function_owner:decodeMessage size:264
 jtbl_80010364 = 0x80010364; // type:jtbl function_owner:decodeMessage size:160

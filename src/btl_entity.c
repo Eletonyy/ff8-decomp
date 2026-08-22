@@ -69,7 +69,7 @@ s32 func_8002BF24(s32 ot, s32 head) {
     for (; i < 8; i++) {
         BattleDisplayEntity *e = &g_battleEntities[i];
         hit = 0;
-        if (e->activeFlag != 0 && e->field36 == 0 && e->field35 != 0) {
+        if (e->activeFlag != 0 && e->unk36 == 0 && e->unk35 != 0) {
             hit = (clipBlitRects((BlitParams *)e) != 0);
         }
         if (hit) {
