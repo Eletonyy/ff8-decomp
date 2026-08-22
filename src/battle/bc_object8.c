@@ -72,7 +72,7 @@ void func_800B17B8(s32 a0) {
  * @param a0 Entity index.
  */
 void func_800B1828(s32 a0) {
-    if (*(u8 *)D_800EE454 != 0) {
+    if (D_800ED148.unk130C != 0) {
         return;
     }
     {
@@ -101,7 +101,7 @@ void func_800B1828(s32 a0) {
  * @param a0 Entity index (stride 0xD0 in D_800ED148).
  */
 void func_800B18A0(s32 arg0) {
-    if ((D_800ED148.unk130C == 0) && !(D_800ED148.entities[arg0].status & 1) && (D_800EE4C1 == 0x1F)) {
+    if ((D_800ED148.unk130C == 0) && !(D_800ED148.entities[arg0].status & 1) && (D_800EE4C0.unk1 == 0x1F)) {
         func_800B0754(arg0, 0, 7, func_800A97FC(arg0));
     }
 }
@@ -154,7 +154,7 @@ void func_800B1ACC(void) {
     if (func_8009B79C(0x20, 0xFF) == 0) {
         return;
     }
-    *(u8 *)D_800EE45C = 0;
+    D_800ED148.unk1314 = 0;
     func_800B1A48();
 }
 
@@ -250,7 +250,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B1DFC);
  * @brief Copy a byte from D_8007DADB to D_800EE42C as a halfword.
  */
 void func_800B2024(void) {
-    *(u16 *)D_800EE42C = *(u8 *)D_8007DADB;
+    D_800ED148.unk12E4 = *(u8 *)D_8007DADB;
 }
 
 /**
@@ -284,7 +284,7 @@ void func_800B2084(void) {
             return;
         }
     }
-    *(u8 *)D_800EE465 = 0;
+    D_800ED148.unk131D = 0;
 }
 
 /**
@@ -328,7 +328,7 @@ s32 func_800B2128(void) {
     if (*(u8 *)D_8007809A & 4) {
         if (*(u16 *)&g_battleConfig != 0x13D) {
             if (func_8009B79C(0x40, 0xFF) != 0) {
-                *(u8 *)D_800EE45C = 1;
+                D_800ED148.unk1314 = 1;
                 func_800B1A48();
                 return 1;
             }

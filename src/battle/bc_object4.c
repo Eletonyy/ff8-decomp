@@ -13,39 +13,13 @@ void func_800E1850(void);
 s32 func_8009B74C(s32, s32); /* overlay-conflict: also in field_engine */
 void func_800A8578(void);
 
-/**
- * @brief Compute table entry and forward call to func_800A5A7C.
- *
- * Computes D_800EE38C + a0 * 24 as a pointer, then calls
- * func_800A5A7C with original args plus the computed pointer.
- *
- * @param a0 Table index and first argument.
- * @param a1 Second argument (passed through).
- * @param a2 Third argument (passed through).
- * @param a3 Fourth argument (masked to u16, passed as 5th stack arg).
- */
-void func_800A6184(s32 a0, s32 a1, s32 a2, u16 a3) {
-    s32 ptr = (s32)D_800EE38C + a0 * 24;
-    func_800A5A7C(a0, a1, a2, 0, (s32)a3, 0, ptr);
+
+void func_800A6184(s32 arg0, s32 arg1, s32 arg2, u16 arg3) {
+    func_800A5A7C(arg0, arg1, arg2, 0, arg3, 0, &D_800ED148.unk1244[arg0].unk0);
 }
 
-/**
- * @brief Compute table entry and forward call to func_800A5A7C with 6 args.
- *
- * Similar to func_800A6184 but accepts two additional stack arguments.
- * Computes D_800EE38C + a0 * 24 as a pointer, then calls func_800A5A7C
- * with rearranged arguments.
- *
- * @param a0 Table index and first argument.
- * @param a1 Second argument (passed through).
- * @param a2 Third argument (passed through).
- * @param a3 Fourth argument (passed as 6th callee arg).
- * @param arg5 Fifth argument (passed as 4th callee arg).
- * @param arg6 Sixth argument (masked to u16, passed as 5th callee arg).
- */
-void func_800A61CC(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg5, u16 arg6) {
-    s32 ptr = (s32)D_800EE38C + a0 * 24;
-    func_800A5A7C(a0, a1, a2, arg5, (s32)arg6, a3, ptr);
+void func_800A61CC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, u16 arg5) {
+    func_800A5A7C(arg0, arg1, arg2, arg4, arg5, arg3, &D_800ED148.unk1244[arg0].unk0);
 }
 
 /**
@@ -198,11 +172,8 @@ void func_800A6574(s32 value) {
     base[0x12EF] = value;
 }
 
-/**
- * @brief Clear D_800EE464 flag and call func_8009AE08 with mode 8.
- */
 void func_800A6588(void) {
-    *(u8 *)D_800EE464 = 0;
+    D_800ED148.unk131C = 0;
     func_8009AE08(8);
 }
 

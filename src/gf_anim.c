@@ -145,31 +145,31 @@ void clearCharSlotData(BattleCharData *charData) {
     s32 i;
 
     for (i = 0; i < 0x20; i++) {
-        charData->magicSlots[i].field2 = 0;
-        charData->magicSlots[i].field3 = 0;
-        charData->magicSlots[i].field4 = 0;
-        charData->magicSlots[i].field1 = 0;
-        charData->magicSlots[i].field0 = 0;
+        charData->magicSlots[i].unk2 = 0;
+        charData->magicSlots[i].unk3 = 0;
+        charData->magicSlots[i].unk4 = 0;
+        charData->magicSlots[i].unk1 = 0;
+        charData->magicSlots[i].unk0 = 0;
     }
 
     for (i = 0; i < 0x10; i++) {
-        charData->itemSlots[i].field2 = 0;
-        charData->itemSlots[i].field3 = 0;
-        charData->itemSlots[i].field4 = 0;
-        charData->itemSlots[i].field1 = 0;
-        charData->itemSlots[i].field0 = 0;
+        charData->itemSlots[i].unk2 = 0;
+        charData->itemSlots[i].unk3 = 0;
+        charData->itemSlots[i].unk4 = 0;
+        charData->itemSlots[i].unk1 = 0;
+        charData->itemSlots[i].unk0 = 0;
     }
 
     for (i = 0; i < 4; i++) {
-        charData->cmdSlots[i].field2 = 0;
-        charData->cmdSlots[i].field3 = 0;
-        charData->cmdSlots[i].field1 = 0;
+        charData->cmdSlots[i].unk2 = 0;
+        charData->cmdSlots[i].unk3 = 0;
+        charData->cmdSlots[i].unk1 = 0;
         charData->cmdSlots[i].cmdType = 0;
     }
 
-    charData->field01C = 0;
-    charData->field01D = 0;
-    charData->field014 = 0;
+    charData->unk1C = 0;
+    charData->unk1D = 0;
+    charData->unk14 = 0;
 }
 
 
@@ -241,8 +241,8 @@ void func_800231E0(s32 charIdx, s32 battleSlot)
     if (charIdx == 0xFF) return;
 
     for (i = 0; i < 32; i++) {
-        bc->magicSlots[i].field0 = cd->magic[i].magicId;
-        bc->magicSlots[i].field1 = cd->magic[i].quantity;
+        bc->magicSlots[i].unk0 = cd->magic[i].magicId;
+        bc->magicSlots[i].unk1 = cd->magic[i].quantity;
     }
 
     func_800229FC(battleSlot);
@@ -254,7 +254,7 @@ void func_800231E0(s32 charIdx, s32 battleSlot)
     bc->hpRegenCap = hp;
     if ((s16)hp < (s32)cd->currentHp) {
         cd->currentHp = hp;
-        bc->field172 = hp;
+        bc->unk172 = hp;
     }
 
     bc->stats[0] = clampToByte(bc->statCoefs[1] * func_80021C10(bc->level, charIdx, 1) / 100);
@@ -281,16 +281,16 @@ void func_800231E0(s32 charIdx, s32 battleSlot)
         bc->statusResistances[i] = getStatusResistance(charIdx, i);
     }
 
-    if (bc->field188 & 0x60000) {
+    if (bc->unk188 & 0x60000) {
         s32 idx;
         if (findCommandSlot((u8 *)bc, 2) == 0xFF) return;
         idx = findCommandSlot((u8 *)bc, 2);
-        bc->cmdSlots[idx].field3 |= 0x10;
+        bc->cmdSlots[idx].unk3 |= 0x10;
     } else {
         s32 idx;
         if (findCommandSlot((u8 *)bc, 2) == 0xFF) return;
         idx = findCommandSlot((u8 *)bc, 2);
-        bc->cmdSlots[idx].field3 &= ~0x10;
+        bc->cmdSlots[idx].unk3 &= ~0x10;
     }
 }
 

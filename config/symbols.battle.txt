@@ -1,3 +1,5 @@
+D_800EE4C0 = 0x800EE4C0; // size:0x64
+D_800ED148 = 0x800ED148; // size:0x133C
 sndGatherKeyOnMask = 0x800131A8;
 sndUploadBank = 0x80013F38;
 sndUploadSampleBank = 0x80014400;

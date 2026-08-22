@@ -3,7 +3,7 @@
 #include "gamestate.h"
 #include "battle/bc_object5.h"
 #include "battle/bc_object6.h"
-
+#include "battle/bc_object1.h"
 extern u8 D_800EE441[];
 extern u8 D_80077EBC[];
 void sndStopAll(void);
@@ -241,17 +241,8 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object6", func_800AE414);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object6", func_800AE4A0);
 
-/**
- * @brief Compute entity pointer from index and call init functions.
- *
- * Computes D_800ED70C + a0 * 20 to get entity pointer, then calls
- * func_8009B134 with constants 0x68 and 0x80, followed by func_800AD960.
- *
- * @param a0 Entity index (stride 20).
- */
-void func_800AE524(s32 a0) {
-    u8 *entry = (u8 *)((s32)D_800ED70C + a0 * 20);
-    func_8009B134(0x68, 0x80, entry);
+void func_800AE524(s32 arg0) {
+    func_8009B134(104, 128, &D_800ED148.entries[arg0]);
     func_800AD960();
 }
 
@@ -344,15 +335,13 @@ s32 getMenuString(s32);
  *
  * @param a0 Character index, or -1 to skip animation setup.
  */
-void func_800AEACC(s32 a0) {
-    s32 saved = a0;
-    *(u8 *)D_800EE446 = 1;
-    func_8009B134(0x70, 0x80, 0);
-    func_8009AE08(0xA);
-    if (saved != -1) {
-        s32 result = getMenuString(saved);
-        s32 idx = g_gameState.config.battleMsgSpeed;
-        func_8009AF3C(result, idx * 8 + 8, 3, 0x80, 0x56);
+void func_800AEACC(s32 arg0) {
+    D_800ED148.unk12FE = 1;
+    func_8009B134(112, 128, 0);
+    func_8009AE08(10);
+    
+    if (arg0 != -1) {
+        func_8009AF3C(getMenuString(arg0), g_gameState.config.battleMsgSpeed * 8 + 8, 3, 128, 86);
     }
 }
 
@@ -388,7 +377,7 @@ void func_800AEC04(void) {
     }
     func_800AEACC(-1);
     base[7] = 3;
-    D_800EE449 = 3;
+    D_800ED148.unk1301 = 3;
     func_8009AF14(func_8009AD7C);
 }
 
@@ -400,7 +389,7 @@ void func_800AEC04(void) {
  */
 void func_800AEC98(void) {
     D_80082C0F = 1;
-    D_800EE449 = 3;
+    D_800ED148.unk1301 = 3;
     func_8009AF14(func_8009AD7C);
 }
 
@@ -439,15 +428,19 @@ void func_800AED30(void) {
     if (D_80082C0F != 0) {
         return;
     }
-    if (*(u8 *)D_800EE441 == 1) {
+
+    if (D_800ED148.unk12F9 == 1) {
         return;
     }
-    if (func_800AE730() != 0xFF) {
+
+    if (func_800AE730() != 255) {
         return;
     }
+
     if (func_800B2128() != 0) {
         return;
     }
+
     func_800AEACC(0);
     func_800AEC98();
 }

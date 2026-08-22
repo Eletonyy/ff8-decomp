@@ -590,10 +590,12 @@ void func_800AAF70(s32 a0, s32 a1) {
  *
  * @param a0 Entity index (stride 16).
  */
-void func_800AAFB8(s32 a0) {
-    u8 *entry = (u8 *)((s32)D_800EE28C + a0 * 16);
-    func_8009AF3C(*(s32 *)(entry + 4), 0x1E, 3, 0x80, 0);
-    entry[0xF] = 1;
+void func_800AAFB8(s32 arg0) {
+    TaskEntry* data;
+
+    data = &D_800ED148.taskData[arg0];
+    func_8009AF3C(data->unk4, 30, 3, 128, 0);
+    data->done = 1;
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AB008);
@@ -618,7 +620,7 @@ void func_800AB0C0(s32 arg0, u16 arg1) {
     TaskEntry* currentEntry;
 
     currentEntry = &D_800ED148.taskData[func_8009B3D0(func_800AB054)];
-    currentEntry->unk04 = func_800B0398(arg0);
+    currentEntry->unk4 = func_800B0398(arg0);
     currentEntry->timer = arg1;
 }
 
