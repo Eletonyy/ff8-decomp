@@ -2,6 +2,8 @@
 #include "battle.h"
 #include "gamestate.h"
 
+static s32 func_800B054C(u32 arg0);
+
 extern u8 D_800EE490[];
 extern u8 D_80077EBC[];
 extern u8 D_800EEBE8[];
@@ -288,7 +290,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0414);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B04A0);
 
-s32 func_800B054C(u32 arg0) {
+static s32 func_800B054C(u32 arg0) {
     s32 i;
 
     for (i = 0; i < 32; i++) {
