@@ -1,6 +1,7 @@
 #include "common.h"
 #include "battle.h"
 #include "gamestate.h"
+#include "battle/bc_object7.h"
 
 static s32 func_800B054C(u32 arg0);
 
