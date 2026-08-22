@@ -1,6 +1,7 @@
 #include "common.h"
 #include "battle.h"
 #include "gf.h"
+#include "battle/bc_object4.h"
 
 extern u8 D_800EE464[];
 extern u8 D_800EE38C[];

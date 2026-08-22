@@ -526,8 +526,6 @@ binaries:
     type: code
     start: 0x0
     vram: 0x80098000
-    # Work RAM past the loaded image (which ends 0x800C8635). we_object4 owns
-    # its own strip/backdrop pools at 0x800D3510; the rest is not yet split.
     bss_size: 0x1FACB
     subsegments:
     - [0x0, rodata]
