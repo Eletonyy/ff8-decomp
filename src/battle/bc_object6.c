@@ -3,7 +3,7 @@
 #include "gamestate.h"
 #include "battle/bc_object5.h"
 #include "battle/bc_object6.h"
-
+#include "battle/bc_object1.h"
 extern u8 D_800EE441[];
 extern u8 D_80077EBC[];
 void sndStopAll(void);

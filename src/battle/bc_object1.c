@@ -1,3 +1,8 @@
+#include "common.h"
+#include "battle.h"
+#include "gf.h"
+#include "battle/bc_object1.h"
+
 /**
  * @file bc_object1.c
  * @brief Battle scene orchestration and entity management.
@@ -16,25 +21,6 @@
  * state (0x4), flags (0x18), animation params (0x84-0x92), linked index
  * (0xCB), and various control bytes at large offsets (0x5C2, 0x12E8-0x1319).
  */
-#include "common.h"
-#include "battle.h"
-#include "gf.h"
-
-/*
- * Re-declare @c D_800ED148 with @c volatile for this TU.
- *
- * @c battle.h declares the symbol non-volatile (the common case across
- * battle/tripletriad TUs). bc_object1, however, contains
- * state-machine and accessor functions whose original codegen depends
- * on @c volatile semantics — without it gcc 2.7.2 folds
- * @c lui+addiu+lbu into @c lui+lbu, dropping an instruction per
- * accessor and shifting the downstream functions out of alignment.
- *
- * Under C89's qualifier-merging rule a second @c extern declaration
- * with added @c volatile is compatible with the unqualified header
- * declaration, so this TU's accesses get the @c volatile codegen while
- * other TUs that only see @c battle.h's view remain non-volatile.
- */
 
 /* FIXME: D_800E19BC is conceptually an array of (s32 sector, s32 length)
    pairs (8-byte stride, two s32s per entry) used as CdRead arguments by
@@ -47,64 +33,10 @@
    away if/when a struct-typed access form that produces the same
    codegen is found. */
 
-/* Forward declarations for file-private functions (defined later in
-   this TU). Cross-TU "public" functions live in battle.h. */
-void func_8009A254(void);
-void func_8009A308(void);
-void func_8009A38C(void);
-void func_8009A3BC(void);
-void func_8009A42C(s32, s32);
-void func_8009A4A4(void);
-void func_8009A528(s32, s32);
-void func_8009A6A8(s32);
-void func_8009A74C(void);
-void func_8009A928(void);
-void func_8009A990(s32);
-void func_8009AA2C(void);
-void func_8009AAC4(s32);
-void func_8009AB54(s32);
-void func_8009AB98(void);
-void func_8009ABE4(void);
-void func_8009ABFC(void);
-void func_8009AC14(void);
-void func_8009AC34(void);
-void func_8009AC68(void);
-void func_8009ACB4(void);
-void func_8009ACEC(void);
-void func_8009AE9C(void);
-void func_8009AF98(s32);
-void func_8009AFF0(s32);
-void func_8009B088(s32, s32, s32, s32);
-void func_8009B0F8(s32);
-void func_8009B198(s32);
-void func_8009B208(TaskLink*, u8*, s32);
-u8 func_8009B238(TaskLink*, s32);
-s32 func_8009B270(TaskLink*, s32);
-u32  func_8009B2A4(TaskLink*, u8*, s32);
-u8   func_8009B390(TaskLink*, s32);
-void func_8009B428(void);
-void func_8009B478(void);
-void func_8009B520(void);
-void func_8009B59C(s32, s32 *, s32 *);
-void func_8009B654(void);
-void func_8009B6D0(u16, u8*);
-s32  func_8009B7F4(s32, s32);
-void func_8009B878(s32, u16 *, s32 *, s32);
-u16 func_8009BA5C(s32, u16);
-//s32  func_8009B3D0(void*); this function prototype most likely has been forgotten originally too
-void func_8009B320(u8 arg0, TaskLink* arg1, u8* arg2); // outside of bc_object1 this prototype has been forgotten to be included (i.e func_800A589C in bc_object3)
+extern void func_800D0F74(void);
+extern SoundCmd* func_800B8564(s16, u8); /* bc_object9.c */
 
-/* Overlay-conflict externs: same MIPS address holds different functions
-   in other overlays, so these cannot be hoisted into a shared header. */
-void func_8009A638(void);     /* also in world */
-void func_8009A8B4(s32);      /* also in battle_render */
-void func_8009B690(void);     /* also in tripletriad */
-s32  func_8009B74C(s32, s32); /* also in field_engine */
-
-extern void func_800D0F74(void); /* defined in another battle TU */
-extern SoundCmd *func_800B8564(s32, s32); /* defined in bc_object9.c */
 extern volatile s16 D_8005F146;
-
 
 void func_80099D30(void) {
     s32 i;
@@ -984,7 +916,7 @@ void func_8009B0F8(s32 a0) {
  */
  
  // some functions want arg1 to be s32, probably forgot to include the prototype
-SoundCmd* func_8009B134(s16 arg0, u8 arg1, void* unused) {
+SoundCmd* func_8009B134(s32 arg0, s32 arg1, void* unused) {
     return func_800B8564(arg0, arg1);
 }
 

@@ -96,12 +96,12 @@ void func_8009BC28(void) {
     
     count = D_80078E00.array3750[D_800ED148.unk132E].unk0;
     subs = func_8009BBD0()->subEntries;
-    slot = &D_800ED148.entities[subs->entityIdx]; // entity[1]
+    slot = &D_800ED148.entities[subs->unk0]; // entity[1]
     slot[1].slot8.byteView.unk9 = count;
     
     for (i = 0; i < count; i++) {
-        func_800A09D0(subs->entityIdx);
-        func_800A5210(subs->entityIdx);
+        func_800A09D0(subs->unk0);
+        func_800A5210(subs->unk0);
         subs++;
     }
 }
@@ -115,8 +115,8 @@ void func_8009BCE4(void) { // might be related to renzokuken finishing blow
     if (D_800ED148.unk1305 != 0) {
         i = 0;
         do {
-            func_800A09D0(var_s0->entityIdx); 
-            func_800A5210(var_s0->entityIdx);
+            func_800A09D0(var_s0->unk0); 
+            func_800A5210(var_s0->unk0);
             var_s0++;
             i++;
         } while (i < D_800ED148.unk1305);

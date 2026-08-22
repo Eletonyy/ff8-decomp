@@ -322,19 +322,32 @@ typedef struct {
 } BattleVec3u;
 
 typedef struct {
-    u8 entityIdx;
-    u8 pad[0x17];
-} SubEntry;
+    u8 unk0;
+    u8 unk1;
+    u8 unk2;
+    u8 unk3;
+    u16 unk4;
+    u16 unk6;
+    u32 unk8;
+    u8 unkC;
+    u8 unkD;
+    u8 unkE;
+    u8 unkF;
+    u16 unk10;
+    u16 unk12;
+    s32 unk14;
+} SubEntry; // 24 bytes
 
 /** @brief 20-byte action-queue entry in @c BattleSystem.entries. */
 typedef struct {
     u8 unk0;
-    u8 unk1;       
-    u8 pad2[6];
+    u8 unk1;
+    u8 unk2;
+    u8 unk3;
+    s16 unk4;
+    s16 unk6;
     SubEntry* subEntries;
-    u8 padC[2];
-    u8 unkE;           
-    u8 padF;
+    u8* unkC;
     u8 unk10;
     u8 unk11;
     u8 pad12[2];
@@ -375,23 +388,6 @@ typedef struct {
 } Struct_12CC; /* used in func_8009D594 */
 
 typedef struct {
-    u8 unk0;
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-    u16 unk4;
-    u16 unk6;
-    u32 unk8;
-    u8 unkC;
-    u8 unkD;
-    u8 unkE;
-    u8 unkF;
-    u16 unk10;
-    u16 unk12;
-    s32 unk14;
-} Struct_func_800A5210; // 24 bytes
-
-typedef struct {
     TaskLink link;
     u16 unk4;
     u16 unk6[3]; // func_800A5948
@@ -419,7 +415,7 @@ typedef struct {
     /* 0x05C2 */ u8 volatile unk5C2;                /**< Misc state byte (init to 1 by func_8009A1E0/ACEC). */
     /* 0x05C3 */ u8 unk5C3;                         /**< Misc state byte (init to 1 by func_80099FE8). */
     /* 0x05C4 */ BattleEntry entries[32];           /**< Action queue (stride 0x14)*/
-    /* 0x0844 */ Struct_func_800A5210 Array844[1];
+    /* 0x0844 */ SubEntry Array844[1];
     /* 0x085C */ u8 pad85C[0x0CDC - 0x085C];
     /* 0x0CDC */ u8 unkCDC;
     /* 0x0CDC */ u8 unkCDD;
@@ -446,9 +442,9 @@ typedef struct {
     /* 0x12CC */ Struct_12CC array12CC[1];          /* used in func_8009D594 */
     /* 0x12CF */ u8 pad12CF[0x12D8 - 0x12CF];
     /* 0x12D8 */ s32 unk12D8;                       /**< Cached length argument for callback. */
-    /* 0x12DC */ s32 unk12DC;
+    /* 0x12DC */ u8* unk12DC;
     /* 0x12E0 */ s16 unk12E0;                       /**< Low 13 bits of a packed s16 field. */
-    /* 0x12E2 */ u8 pad12E2[2];                     /**< Misc state. */
+    /* 0x12E2 */ u16 unk12E2;
     /* 0x12E4 */ s16 unk12E4;               
     /* 0x12E5 */ u8 pad12E5[2];                     /**< Misc state. */
     /* 0x12E8 */ u8 unk12E8;                        /**< Misc state byte. */
@@ -458,7 +454,7 @@ typedef struct {
     /* 0x12EC */ u8 unk12EC;                        /**< Misc state byte (init to 0xFF). */
     /* 0x12ED */ u8 volatile unk12ED;               /**< Misc state byte. */
     /* 0x12EE */ u8 volatile unk12EE;               /**< Misc state byte. */
-    /* 0x12EF */ u8 pad12EF;
+    /* 0x12EF */ u8 unk12EF;
     /* 0x12EF */ u8 unk12F0;
     /* 0x12EF */ u8 pad12F1;
     /* 0x12EF */ u8 unk12F2;
@@ -466,7 +462,7 @@ typedef struct {
     /* 0x12F4 */ u8 unk12F4;
     /* 0x12F5 */ u8 unk12F5;
     /* 0x12F6 */ u8 taskHead;                       /**< Head index of the task queue linked list. */
-    /* 0x12F7 */ u8 pad12F7;
+    /* 0x12F7 */ u8 unk12F7;
     /* 0x12F8 */ u8 unk12F8;
     /* 0x12F9 */ u8 unk12F9;
     /* 0x12FA */ u8 pad12FA[3];
@@ -500,7 +496,7 @@ typedef struct {
     /* 0x1318 */ u8 unk1318;
     /* 0x1319 */ u8 unk1319;                       /**< Misc state byte (init to 0xFF). */
     /* 0x131A */ u8 unk131A;
-    /* 0x131B */ u8 pad131B;                       /**< More misc state. */
+    /* 0x131B */ u8 unk131B;                       /**< More misc state. */
     /* 0x131C */ u8 unk131C;
     /* 0x131D */ u8 unk131D;
     /* 0x131E */ u8 unk131E;
@@ -515,7 +511,7 @@ typedef struct {
     /* 0x1327 */ u8 unk1327;
     /* 0x1328 */ u8 unk1328;
     /* 0x1329 */ u8 unk1329;
-    /* 0x132A */ u8 pad132A;
+    /* 0x132A */ u8 unk132A;
     /* 0x132B */ u8 unk132B;
     /* 0x132C */ u8 unk132C;
     /* 0x132D */ u8 pad132D;
@@ -681,7 +677,8 @@ typedef struct {
 typedef struct {
     u8 level;
     u8 unk1;
-    u8 pad2[2];
+    u8 pad2;
+    u8 unk3;
     u8 abilityFlags;    /* party ability flags (used in entry 15). */
     u8 pad5[7];
 } BattleLevelEntry;
@@ -757,24 +754,25 @@ typedef struct {
  * Only byte 0 (abilityId) is read by the known callers.
  */
 typedef struct {    
-    u8 pad0;
-    u8 abilityId;        /**< Ability ID byte (input to ability flag funcs) */
-    u8 unk2;
-    u8 unk3;
-    u8 pad4;
-    u8 unk5;
-    u16 unk6;
-    u32 unk8;
-    u8 unkC;
-    u8 padD[2];
-    u8 unkF;
-    u8 pad10[2];
-    u8 unk12;
-    u8 pad13;
-    u8 unk14;
-    u8 unk15;
-    u8 val;              /**< used in func_8009BAC4 */
-    u8 unk17;
+    u8 pad0;             /* 0x3938 */
+    u8 abilityId;        /**< 0x3939: Ability ID byte (input to ability flag funcs) */
+    u8 unk2;             /* 0x393A */
+    u8 unk3;             /* 0x393B */
+    u8 pad4;             /* 0x393C */
+    u8 unk5;             /* 0x393D */
+    u16 unk6;            /* 0x393E */
+    u32 unk8;            /* 0x3940 */
+    u8 unkC;             /* 0x3944 */
+    u8 unkD;             /* 0x3945 */
+    u8 unkE;             /* 0x3946 */
+    u8 unkF;             /* 0x3947 */
+    u16 unk10;           /* 0x3948 */
+    u8 unk12;            /* 0x394A */
+    u8 pad13;            /* 0x394B */
+    u8 unk14;            /* 0x394C */
+    u8 unk15;            /* 0x394D */
+    u8 val;              /* 0x394E: used in func_8009BAC4 */
+    u8 unk17;            /* 0x394F */
 } BattleAbilityRow; /* 24 bytes */
 
 /**
@@ -783,12 +781,13 @@ typedef struct {
  */
 typedef struct {
     u16 lookupId;       /**< u16 passed to resolveKernelPtr. */
-    u8 pad2[3];
+    u16 unk2;
+    u8 unk4;
     u8 unk5;
     u8 unk6;
     u8 unk7;
     u8 unk8;
-    u8 pad9;
+    u8 unk9;
     u8 unkA;
     u8 unkB;
     u8 unkC;
@@ -900,7 +899,7 @@ typedef struct {
     u8 pad4A73;
     u8 unk4A74;
     u8 unk4A75;
-    u8 pad4A76;
+    u8 unk4A76;
     u8 unk4A77;
     u8 unk4A78;
     u8 unk4A79;
@@ -975,8 +974,8 @@ typedef struct {
 
 
 typedef struct {
-    s32 unk0;
-    s32 unk1;
+    u8 unk0;
+    u8 pad[7];
 } structE8;
 
 /**
@@ -1188,43 +1187,6 @@ extern u8              D_800EEBD0;
  *  Battle-overlay function prototypes (battle internals).
  * ---------------------------------------------------------------- */
 
-/** @brief Test if bit @p a1 is set in mask @p a0. */
-s32 func_8009A514(s32 a0, s32 a1);
-
-/** @brief Set the battle round timer based on the speed setting. */
-void func_8009AD7C(void);
-
-/** @brief Dispatch a battle transition command (codes 5..10). */
-void func_8009AE08(s32 cmd);
-
-/** @brief Schedule a callback function as a battle task (sound id @c 0xA). */
-void func_8009AF14(void *callback);
-
-/** @brief Queue a custom sound command (id @c 8) with entity / flag params. */
-void func_8009AF3C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4);
-
-/** @brief Get the next random value from the shuffle buffer. */
-s32 func_8009B15C(void);
-
-/** @brief Issue a CD or memory read for a sound bank entry, arming the completion callback. */
-void func_8009B5C4(s32 idx, s32 dst, s32 dir, s32 userData);
-
-/** @brief Yield execution (second wrapper for @c func_800393C8). */
-void func_8009B6B0(void);
-
-/** @brief Conditional add with overflow flag (clamped sum + carry). */
-s32 func_8009B79C(s32 a0, s32 a1);
-
-/** @brief Look up cached entity status byte. */
-s32 func_8009B7BC(s32 entityIdx);
-
-/** @brief Apply masked status update to an entity slot. */
-void func_8009B924(s32 a0, s32 a1, s32 a2);
-
-
-/** @brief Process a queued damage event for the entity. */
-void func_800A5210(s32 entityIdx);
-
 /** @brief Apply a status flag, ORing it into the flag word. */
 void func_800B0574(s32 arg0, u32 arg1);
 
@@ -1255,19 +1217,6 @@ u8* func_800B0248(u8* arg0, u8 arg1, u8* arg2);
 /** @brief Finalize the @c D_800EEBE8 message buffer. */
 u8 *func_800B02AC(u8 *buf);
 
-/** @brief Store a u32 value to @c D_800EE424. */
-void func_800A4320(s32 value);
-
-/** @brief Store @c getMenuString(id) result into @c D_800EE424. */
-void func_800A432C(s32 stringId);
-
-/** @brief Battle slot stat/AI hook called by @c func_800A7518. */
-void func_800A554C(s32 idx);
-
-/** @brief Battle slot fallback handler called by @c func_800A7518 when
- *         @c charData->statusFlags bit @c 0x10000 is not set. */
-void func_800A559C(u32 arg0);
-
 /* --- Battle animation lifecycle --- */
 void activateBattleAnim(s32 idx);
 
@@ -1283,9 +1232,6 @@ void func_800D0608(void); /* bc_object17: overlay VSync handler (RENDER_OVERLAY)
 
 void func_8002A2C4(u8 *, s32);
 s32 func_80037ADC(void);
-void func_800A4DD4(s32);
-void func_800A240C(s32, s32, u16*);
-u8 func_800A4FC4(u16, u8*);
 u16 func_800A97FC(s32 arg0);
 
 #endif /* BATTLE_H */

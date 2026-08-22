@@ -116,8 +116,8 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AFD0C);
  *
  * @param a0 Index into @c D_80078E00.entriesA0.
  */
-void func_800AFF30(s32 a0) {
-    resolveKernelPtr(D_80078E00.entriesA0[a0].lookupId, D_80078E00.entriesA0Arg);
+u8* func_800AFF30(s32 a0) {
+  return resolveKernelPtr(D_80078E00.entriesA0[a0].lookupId, D_80078E00.entriesA0Arg);
 }
 
 /**
@@ -136,8 +136,8 @@ u8* func_800AFF70(s32 a0) {
  *
  * @param a0 Index into @c D_80078E00.entries17.
  */
-void func_800AFFB4(s32 a0) {
-    resolveKernelPtr(D_80078E00.entries17[a0].lookupId, D_80078E00.entries17Arg);
+u8* func_800AFFB4(s32 a0) {
+    return resolveKernelPtr(D_80078E00.entries17[a0].lookupId, D_80078E00.entries17Arg);
 }
 
 /**
@@ -278,8 +278,8 @@ u8 *func_800B0328(u8 *src) {
  *
  * @param a0 Index into @c D_80078E00.rows8.
  */
-void func_800B0360(s32 a0) {
-    resolveKernelPtr(D_80078E00.rows8[a0].lookupId, D_80078E00.rows8Arg);
+u8* func_800B0360(s32 a0) {
+    return resolveKernelPtr(D_80078E00.rows8[a0].lookupId, D_80078E00.rows8Arg);
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0398);

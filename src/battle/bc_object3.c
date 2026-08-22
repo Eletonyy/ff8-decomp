@@ -1,28 +1,11 @@
 #include "common.h"
 #include "gamestate.h"
 #include "battle.h"
+#include "battle/bc_object2.h"
+#include "battle/bc_object3.h"
 
-extern u8 D_800786D8[];
-extern u8 D_800EE424[];
-extern u8 D_800EE462[];
-void func_800A5948(s32, s32);
-void func_800A18E0(s32);
-void func_800A589C(s32);
-void func_800A6288(s32);
-void func_800DEAA4(s32, s32);
-void func_800E1880(s32, s32);
-void func_800AF8A4(s32);
-u16 func_800A4F28(u16, u16, u16);
-void func_800A1AB8(s32, u16, s32);
-u16 func_800A475C(u16);
-void func_800A47E4(s32);
-u16 func_800A4A74(s32, u16);
-void func_800A4B68(u16);
-u16 func_800A4E08(u16, u32);
-u16 func_800A4EA0(u16, u32);
-void func_800A5778(s32);
-void func_800A6184(s32 a0, s32 a1, s32 a2, u16 a3); // bc obj4
 SoundCmd* func_8009B134(s16 arg0, u8 arg1, s32 unused);
+
 
 /**
  * @brief Clear entity status bits 3 and 2 at offset 0x8C, then call cleanup.
@@ -54,7 +37,6 @@ void func_800A1940(s32 arg0) {
     D_800ED148.entities[arg0].unk24 = 0;
     g_battleChars.chars[arg0].unk184 = D_800ED148.entities[arg0].unk24;
 }
-
 
 void func_800A19BC(s32 arg0, u16 arg1, s32 arg2) {
     if (arg2 < 0) {
@@ -212,7 +194,7 @@ void func_800A1EC8(s32 arg0, s32 arg1, s32 arg2, u16 arg3, s32 arg4, s32 arg5) {
     func_8009AFF0(arg0);
 }
 
-void func_800A1F74(Struct_func_800A5210* arg0) {
+void func_800A1F74(SubEntry* arg0) {
     func_8009EAEC(arg0->unk0);
     func_8009CA14(arg0->unk0);
     func_800A1EC8(arg0->unk0, arg0->unk2, arg0->unk3, arg0->unk6, arg0->unk4, arg0->unk8);
@@ -775,7 +757,575 @@ void func_800A30E4(void) {
     D_800ED148.unk5C0 = 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object3", func_800A30F8);
+s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 arg6) {
+    s32 sp30;
+    u16 sp2E;
+    u8 sp2A;
+    u8 pad[2];
+    u8 sp20[2];
+    BattleEntry* temp_s6;
+    s32 temp_v0_5;
+    s32 i;
+    s32 var_s3;
+    u8* var_s2;
+    
+    sp30 = 255;
+    var_s3 = 1;
+    D_800ED148.unk1300 = 0;
+    temp_s6 = &D_800ED148.entries[D_800ED148.unk5C0];
+    
+    if (arg0 < 3) {
+        arg6 = 0;
+        if ((arg1 == 4 || arg1 == 13) && D_80078E00.array3920[arg2].unk16 == 14) {
+            arg1 = 244;
+            arg3 = arg2;
+            if (arg2 == 30) {
+                D_800ED148.unk1321 = 1;
+                
+                switch (func_800A2CE4(&arg2)) {
+                    case 0:
+                        arg2 = 65528;
+                        break;
+                    
+                    case 1:
+                        arg2 = 65529;
+                        break;
+                    
+                    case 2:
+                        break;
+                }
+            } 
+            
+            else {
+                if (arg2 == 31) {
+                    g_gameState.mainData.partyLockFlag |= 4;
+                }
+                
+                D_800ED148.unk1321 = 0;
+                arg2 = D_80078E00.array3920[arg2].unk14;
+            }
+        }
+        
+        if (arg1 < 39) {
+            arg6 = D_800E3CBC[arg1];
+        } 
+        
+        else {
+            switch (arg1) {                             
+            default:                                    
+                break;
+                
+            case 236:                                  
+            case 240:                                  
+            case 245:                                  
+                arg6 = 0;
+                break;
+                
+            case 244:                                  
+            case 254:                                  
+                arg6 = 14;
+                break;
+                
+            case 247:                                  
+                arg6 = 11;
+                break;
+                
+            case 239:                                  
+                arg6 = 28;
+                break;
+            }
+        }
+    }
+    
+    D_800ED148.unk12F4 = 0;
+    D_800ED148.unk12F5 = 0;
+    
+    switch (arg1) {                                
+        case 29:                                     
+            var_s2 = getAbilityEntryName(arg1);
+            func_800A4FC4(func_800A4EA0(arg5, 0), &sp2A);
+            if (func_8009ED2C(sp2A) == 0) {
+                func_800A42DC(50, &arg1, &arg6, &sp2E, &arg2);
+            }
+            
+            else {
+                arg2 = D_80078E00.unkE8[arg1].unk0;
+                var_s3 = D_80078E00.array4020[arg2].unk6;
+                sp2E = D_80078E00.array4020[arg2].unk0;
+                break;
+            }
+            
+            break;
+            
+        case 6:                                      
+            if ((func_800A3094(arg4, arg2) != 0) && !(D_800ED148.entities[arg4].status & 1) && ((D_800ED148.entities[arg0].status & 0x10) == 0)) {
+                switch (arg3) {
+                case 9:
+                    if (func_8009F718(arg0, arg4, arg2) != 0) {
+                        func_800A779C(arg2);
+                        arg6 = D_800E3CC5;
+                        var_s3 = D_80078E00.spells[arg2].unk9;
+                        sp2E = D_80078E00.spells[arg2].unk0;
+                        var_s2 = func_800B02AC(func_800B0248(getAbilityEntryName(9), *getMenuString(0xB), getMagicNamePtr(arg2)));
+                        // @HACK ?
+                        D_800ED148.entities[0].slot8.initFlags = (int) &D_80078E00.spells[arg2].unk26;
+                    } 
+                    
+                    else {
+                        var_s2 = getAbilityEntryName(arg1);
+                        func_800A42DC(5, &arg1, &arg6, &sp2E, &arg2);
+                    }
+                    
+                    break;
+                    
+                case 10:                                
+                    if (arg2 < 64) {
+                        sp2A = func_8009F718(arg0, arg4, arg2);
+                        if (sp2A != 0) {
+                            for (i = 0; i < sp2A; i++) {
+                                if (func_800AF358(arg0, arg2, 0) != 0) {
+                                    break;
+                                }
+                            }
+                            
+                            arg6 = D_800E3CBC[arg3];
+                            sp2E = 15;
+                            var_s2 = getAbilityEntryName(arg1);
+                            
+                            if (i == 1) {
+                                func_800A4320(
+                                    func_800B02AC(
+                                        func_800B0248(
+                                            func_800B0248(
+                                                func_800B0248(
+                                                    getMenuString(9),
+                                                    *getMenuString(0xB),
+                                                    func_800B04A0(1, sp20)
+                                                ),
+                                                *getMenuString(0xB),
+                                                getMagicNamePtr(arg2)
+                                            ),
+                                            7,
+                                            getMenuString(0x76)
+                                        )
+                                    )
+                                );
+                            } 
+                            
+                            else {
+                                func_800A4320(
+                                    func_800B02AC(
+                                        func_800B0248(
+                                            func_800B0248(
+                                                func_800B0248(
+                                                    getMenuString(9),
+                                                    *getMenuString(0xB),
+                                                    func_800B04A0(i, sp20)
+                                                ),
+                                                *getMenuString(0xB),
+                                                getMagicNamePtr(arg2)
+                                            ),
+                                            7,
+                                            getMenuString(8)
+                                        )
+                                    )
+                                );
+                            }
+                            
+                            break;
+                        }
+                        
+                        var_s2 = getAbilityEntryName(arg1);
+                        func_800A42DC(5, &arg1, &arg6, &sp2E, &arg2);
+                        break;
+                    }
+                    sp2A = arg2 - 64;
+                    if (!(g_gameState.gfs[sp2A].exists & 1)) {
+                        setGfExists(sp2A);
+                        g_battleConfig.unk4[D_800ED148.unk1317++] = sp2A;
+                        D_800ED148.unk1318 = 1;
+                        sp2E = 15;
+                        arg6 = D_800E3CC6;
+                        var_s2 = getAbilityEntryName(arg1);
+                        func_800A4320(
+                            func_800B02AC(
+                                func_800B0248(
+                                    func_800B0248(
+                                        getMenuString(0x33),
+                                        *getMenuString(0xB),
+                                        getMagicNamePtr(arg2)
+                                    ),
+                                    7,
+                                    getMenuString(0x76)
+                                )
+                            )
+                        );
+                    } 
+                    
+                    else {
+                        var_s2 = getAbilityEntryName(arg1);
+                        func_800A42DC(5, &arg1, &arg6, &sp2E, &arg2);
+                    }
+                    
+                    break;
+                    
+                default:
+                    var_s2 = getAbilityEntryName(arg1);
+                    func_800A42DC(5, &arg1, &arg6, &sp2E, &arg2);
+                    break;
+                }
+            }
+            
+            else {
+                var_s2 = getAbilityEntryName(arg1);
+                func_800A42DC(5, &arg1, &arg6, &sp2E, &arg2);
+            }
+            break;
+            
+        case 246:                                     
+            var_s2 = 0;
+            arg6 = 0;
+            sp2E = 9;
+            break;
+            
+        case 247:                                     
+            var_s2 = 0;
+            func_800A779C(arg2);
+            var_s3 = D_80078E00.spells[arg2].unk9;
+            sp2E = D_80078E00.spells[arg2].unk0;
+            break;
+            
+        case 2:                                      
+            var_s2 = getMagicNamePtr(arg2);
+            if (func_800A2EF8(arg0, arg2) != 0) {
+                if (D_800ED148.entities[arg0].status & 0x10) {
+                    func_800A42DC(100, &arg1, &arg6, &sp2E, &arg2);
+                    break;
+                }
+                
+                func_800A779C(arg2);
+                var_s3 = D_80078E00.spells[arg2].unk9;
+                sp2E = D_80078E00.spells[arg2].unk0;
+                // @HACK ?
+                D_800ED148.entities[0].slot8.initFlags = (int) &D_80078E00.spells[arg2].unk26;
+                D_800ED148.unk132A = arg2;
+            }
+            
+            else {
+                func_800A42B4(&arg1, &arg6, &sp2E, &arg2);
+            }
+            break;
+            
+        case 3:                                      
+            var_s2 = 0;
+            if (!(D_800ED148.entities[arg0].status & 0x10)) {
+                func_800A4618(
+                    ((g_gameState.chars[g_gameState.mainData.party.party[arg0]].gfCompatibility[arg2 - 64] * (g_gameState.config.battleSpeed + 1)) / 35),
+                    arg0,
+                    254,
+                    arg2,
+                    arg5
+                );
+                return 1;
+            }
+            
+            func_800A42B4(&arg1, &arg6, &sp2E, &arg2);
+            break;
+            
+        case 254:
+            var_s2 = 0;
+            if (D_800ED148.entities[arg0].status & 0x10) {
+                func_800A42B4(&arg1, &arg6, &sp2E, &arg2);
+                break;
+            }
+            
+            if (g_battleChars.levelEntries[arg2 - 64].unk3 & 1) {
+                D_800ED148.unk12F7 = 1;
+            }
+    
+            else {
+                D_800ED148.unk12F7 = 0;
+            }
+            
+            D_800EEBC8 = 0;
+            D_800ED148.unk1300 = 1;
+            var_s3 = D_80078E00.rows132[arg2 - 64].unkC;
+            sp2E = D_80078E00.rows132[arg2 - 64].unk4;
+            var_s2 = func_800AFF70(arg2);
+            D_800ED148.unk131E = 0;
+            // @HACK ?
+            D_800ED148.entities[0].slot8.initFlags = (int) &D_80078E00.rows132[arg2 - 64].unk70;
+            break;
+            
+        case 244:                                     
+            var_s2 = getStatName(arg3);
+            switch (arg2) {                            
+            case 65528:                                
+                func_800A42DC(55, &arg1, &arg6, &sp2E, &arg2);
+                break;
+                
+            case 65529:                                
+                func_800A42B4(&arg1, &arg6, &sp2E, &arg2);
+                func_800A4320(func_800B02AC(func_800B0248(getBokoName(), *getMenuString(0xB), getMenuString(0x38))));
+                break;
+                
+            default:
+                var_s3 = D_80078E00.entriesA0[arg2].unkA;
+                sp2E = D_80078E00.entriesA0[arg2].unk2;
+                var_s2 = func_800AFF30(arg2);
+                break;
+            }
+            break;
+            
+        case 240:
+        case 245:
+            var_s3 = D_80078E00.entriesA0[arg2].unkA;
+            sp2E = D_80078E00.entriesA0[arg2].unk2;
+            var_s2 = func_800AFF30(arg2);
+            break;
+            
+        case 4:                                      
+        case 13:                                      
+            var_s3 = D_80078E00.abilities[arg2].unkE;
+            sp2E = D_80078E00.array3920[arg2].unk14;
+            var_s2 = getStatName(arg2);
+            break;
+            
+        case 250:                                     
+            var_s3 = D_80078E00.array3750[arg3].unk0;
+            sp2E = D_80078E00.unk3738[arg3].unk10;
+            var_s2 = getElementName(arg3);
+            break;
+            
+        case 16:                                     
+            var_s2 = getMagicNamePtr(arg2);
+            var_s3 = D_80078E00.spells[arg2].unk9;
+            sp2E = D_80078E00.spells[arg2].unk0;
+            if (arg2 >= 51) {
+                g_gameState.mainData.limitBreaks.selphieLimits |= 1 << (arg2 - 51);
+            }
+            break;
+            
+        case 14:                                      
+            D_800ED148.unk1325 = 1;
+            D_800EEBD0 = func_800A9240(arg2);
+            D_800ED148.unk1324 = arg2 - 101;
+            var_s2 = getStatusEffectName(D_800ED148.unk1324);
+            goto dummy;
+            break;
+            
+        case 237:                                     
+            var_s2 = 0;
+            g_gameState.mainData.limitBreaks.irvineLimits |= 1 << D_800ED148.unk1324;
+            D_800ED148.unk1325++;
+            goto dummy;
+            break;
+        case 238:                                     
+            D_800ED148.unk1325 = 0;
+            var_s2 = 0;
+            dummy:
+            var_s3 = D_80078E00.array47FC[D_800ED148.unk1324].unk8;
+            sp2E = D_80078E00.array47FC[D_800ED148.unk1324].unk0;
+            break;
+            
+        case 19:                                     
+            var_s3 = D_80078E00.array4A6C[arg3].unk4A76;
+            sp2E = D_80078E00.array4A6C[arg3].unk4A6E;
+            var_s2 = getGfSummonData(arg3);
+            break;
+            
+        case 17:                                     
+        case 18:                                     
+        case 20:                                     
+        case 21:                                     
+        case 22:                                     
+            var_s3 = D_80078E00.array4484[arg2].unk8;
+            sp2E = D_80078E00.array4484[arg2].unk0;
+            var_s2 = getJuncCategoryName(arg2);
+            break;
+            
+        case 15:                                      
+            var_s3 = D_80078E00.array44FC[arg2].unk6;
+            sp2E = D_80078E00.array44FC[arg2].unk0;
+            var_s2 = getJuncEffectName(arg2);
+            break;
+            
+        case 5:                                      
+            arg5 = func_800A4EA0(arg5, 0);
+            func_800A4FC4(arg5, &sp2A);
+            sp2E = func_800A2E48(*D_800ED148.entities[sp2A].entityData, arg0);
+            var_s2 = getAbilityEntryName(arg1);
+            if (func_800A2310(arg0) == 0) {
+                D_800ED148.unk1303 = 0;
+                arg2 = 65533;
+            } 
+            
+            else {
+                D_800ED148.unk1303 = 1;
+                D_800ED148.unk1304 = 1;
+                arg2 = 65534;
+                temp_v0_5 = func_800A2EB8(func_8009B7BC(4), D_80078E00.array35B1[g_battleChars.chars[arg0].classId].unk9);
+                func_800A3054(arg0, 250, 65535, temp_v0_5, func_8009BAC4(temp_v0_5, arg5));
+            }
+            break;
+            
+        case 11:                                      
+            D_800ED148.unk131A = func_800A2E04(arg0);
+            var_s2 = 0;
+            D_800ED148.unk131B = D_80078E00.unk49F8[D_800ED148.unk131A];
+            arg2 = 65531;
+            sp2E = D_80078E00.array48BC[D_800ED148.unk131B].unk48BC;
+            func_800A3054(arg0, 241, D_800ED148.unk131B, 0, arg5);
+            D_800ED148.unk12E2 = arg5;
+            D_800ED148.unk131C = 0;
+            break;
+            
+        case 241:                                     
+            if (D_800ED148.unk131C == 0) {
+                D_800ED148.unk12EF = 254;
+                func_8009AF14(&func_800A2FC8);
+            } 
+            
+            else if ((arg2 != 65530) && (arg2 != 65532)) {
+                func_8009AF14(&func_800A302C);
+            }
+            
+            switch (arg2) {
+                case 65532:
+                    sp2E = 0;
+                    var_s2 = 0;
+                    break;
+                
+                case 65530:
+                    sp2E = arg3;
+                    var_s2 = 0;
+                    break;
+                
+                default:
+                    var_s3 = D_80078E00.array48BC[arg2].unk48C4;
+                    sp2E = D_80078E00.array48BC[arg2].unk48BC;
+                    var_s2 = getMagicEffectName(arg2);
+                    D_800ED148.unk131C++;
+                    break;
+            }
+            break;
+            
+        case 239:                                     
+            var_s3 = D_80078E00.array48BC[arg2].unk48C4;
+            sp2E = D_80078E00.array48BC[arg2].unk48BC;
+            var_s2 = getMagicEffectName(arg2);
+            break;
+            
+        case 8:                                      
+        case 236:                                     
+            if (D_80078E00.entries17[arg2].unk9 & 0x80) {
+                var_s2 = func_800AFFB4(arg2);
+            } 
+            
+            else {
+                var_s2 = 0;
+            }
+            
+            var_s3 = D_80078E00.entries17[arg2].unk9 & 0x7F;
+            sp2E = D_80078E00.entries17[arg2].unk2;
+            sp30 = D_80078E00.entries17[arg2].unk4;
+            break;
+            
+        case 38:                                     
+            var_s2 = getAbilityEntryName(arg1);
+            switch (func_800A2D24()) {                    
+            case 0:                                     
+                func_800A42DC(72, &arg1, &arg6, &sp2E, &arg2);
+                break;
+                
+            case 1:                                     
+                func_800A42DC(53, &arg1, &arg6, &sp2E, &arg2);
+                break;
+                
+            case 2:                                     
+                var_s3 = D_80078E00.unk3F62;
+                arg2 = 6;
+                sp2E = D_80078E00.unk3F5A;
+                var_s2 = func_800AFF30(6);
+                D_800ED148.unk1322 = 0;
+                break;
+            }
+            break;
+        
+        case 7:                                      
+            var_s2 = getAbilityEntryName(arg1);
+            D_800ED148.unk1326 = 0;
+            func_800A4FC4(func_800A4EA0(arg5, 0), &sp2A);
+            
+            if (!(D_800ED148.entities[sp2A].status & 4)) {
+                if (func_8009EF64(sp2A) != 0) {
+                    arg2 = D_80078E00.unkE8[arg1].unk0;
+                    var_s3 = D_80078E00.array4020[arg2].unk6;
+                    sp2E = D_80078E00.array4020[arg2].unk0;
+                    break;
+                }
+            }
+            
+            func_800A42DC(112, &arg1, &arg6, &sp2E, &arg2);
+            break;
+            
+        case 23:                                     
+        case 24:                                     
+        case 25:                                     
+        case 26:                                     
+        case 27:                                     
+        case 30:                                     
+        case 31:                                     
+        case 32:                                     
+        case 33:                                     
+        case 34:                                     
+            arg2 = D_80078E00.unkE8[arg1].unk0;
+            var_s3 = D_80078E00.array4020[arg2].unk6;
+            sp2E = D_80078E00.array4020[arg2].unk0;
+            var_s2 = getAbilityEntryName(arg1);
+            break;
+            
+        case 252:                                     
+            var_s2 = 0;
+            sp2E = arg4;
+            break;
+            
+        case 28:                                     
+            var_s2 = getAbilityEntryName(arg1);
+            sp2E = 0;
+            break;
+            
+        case 1:
+        default:                                       
+            var_s2 = 0;
+            sp2E = 0;
+            break; 
+    }
+    
+    D_800EE4C0.unk0 = arg0;
+    D_800EE4C0.unk3 = arg3;
+    D_800EE4C0.unk2 = arg4;
+    D_800EE4C0.unkB = var_s3;
+    D_800EE4C0.unk1 = arg1;
+    D_800EE4C0.statusCode = arg2;
+    temp_s6->unk2 = arg6;
+    temp_s6->unk1 = arg1;
+    temp_s6->unk4 = arg2;
+    temp_s6->unk3 = sp30;
+    temp_s6->unk6 = sp2E;
+    temp_s6->subEntries = &D_800ED148.Array844[D_800ED148.unk5C1];
+    temp_s6->unkC = var_s2;
+    
+    if (D_800ED148.unk130C == 0) {
+        temp_s6->unk0 = arg0;
+    } 
+    
+    else {
+        temp_s6->unk0 = D_800ED148.array12CC[D_800ED148.unk130D++].unk2;
+    }
+    
+    return 0;
+}
 
 /**
  * @brief Initialize battle state: set flag, clear params, and store constants.
@@ -815,7 +1365,7 @@ void func_800A42DC(s32 a0, u8 *a1, u8 *a2, u16 *a3, u16 *a4) {
  *
  * @param arg0 Value to store.
  */
-void func_800A4320(s32 arg0) {
+void func_800A4320(u8* arg0) {
     D_800ED148.unk12DC = arg0;
 }
 
@@ -898,7 +1448,7 @@ void func_800A44FC(s32 arg0) {
     func_800A4434(temp_s0->unkC, temp_s1->unk1D, temp_s0, temp_s1);
 }
 
-void func_800A4618(s16 arg0, s32 arg1, u32 arg2, s32 arg3, s32 arg4) {
+void func_800A4618(s16 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     BattleCharData* temp_s0;
     TaskEntry* temp_v0;
     BattleEntity* temp_v1;
@@ -1363,7 +1913,7 @@ s32 func_800A517C(s32 arg0, s32 arg1) {
 }
 
 void func_800A5210(s32 arg0) {
-    Struct_func_800A5210* temp_v1;
+    SubEntry* temp_v1;
 
     temp_v1 = &D_800ED148.Array844[D_800ED148.unk5C1++];
     temp_v1->unk0 = arg0;
@@ -1383,7 +1933,7 @@ void func_800A5210(s32 arg0) {
 }
 
 void func_800A52E4(s32 arg0) {
-    if (func_800A5688() != 0) {
+    if (func_800A5688(arg0) != 0) {
         if (!((D_800ED148.entities[arg0].status & 4) 
             || (D_800ED148.entities[arg0].flags & 9) 
             || (D_800ED148.entities[arg0].controlFlags & 0xC))) 
