@@ -298,10 +298,7 @@ INCLUDE_ASM("asm/ovl/menupty/nonmatchings/menupty", func_801E7A6C);
 
 INCLUDE_ASM("asm/ovl/menupty/nonmatchings/menupty", func_801E7B9C);
 
-/* Party-slot coordinate tables, walked until the -1 terminator. Defined here
-   rather than at the top of the file so they land between the jump table
-   func_801E7B9C owns and the one func_801E92FC owns, which is where the
-   original build put them. */
+/* Party slot coordinate tables */
 static const s16 D_801E9528[4] = {2, 3, -1, 0};
 static const s16 D_801E9530[4] = {1, 3, -1, 0};
 

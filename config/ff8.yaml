@@ -29,9 +29,6 @@ defaults:
     - config/symbols.{name}.txt
     undefined_funcs_auto_path: build/splat/undefined_funcs_auto.{name}.txt
     undefined_syms_auto_path: build/splat/undefined_syms_auto.{name}.txt
-    # Also dump already-matched functions (<asm_path>/matchings) and the rodata
-    # migrated into the C files (<asm_path>/data), as reference disassembly.
-    # None of it is linked: the object list comes from splat's own .d file.
     disassemble_all: true
     # String detection
     string_encoding: ASCII
