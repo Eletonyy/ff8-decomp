@@ -391,45 +391,77 @@ extern ActorRecord D_800DD6A8[];
  */
 typedef struct {
     /* 0x00 */ VECTOR  pos;             /**< World position (12 bytes used + pad). */
-    /* 0x10 */ u8      pad10[0x08];
+    /* 0x10 */ SVECTOR view;            /**< Camera-relative position, refreshed every
+                                             frame by @c func_800B01A0 and fed to the
+                                             GTE by the renderer (@c func_800A9300). */
     /* 0x18 */ SVECTOR rot;             /**< Rotation vector (8 bytes). */
-    /* 0x20 */ s16     proj_x;          /**< Projected screen X. */
-    /* 0x22 */ s16     proj_y;          /**< Projected screen Y. */
-    /* 0x24 */ s16     proj_z;          /**< Projected depth. */
-    /* 0x26 */ u8      pad26[0x02];
+    /* 0x20 */ SVECTOR vel;             /**< Per-tick position delta, seeded by the
+                                             spawner from the kind's GTE-projected
+                                             offset and added to @c pos each step. */
     /* 0x28 */ u8      limit;           /**< Active-slot kill threshold for @c count. */
-    /* 0x29 */ u8      count;           /**< Lifecycle tick counter. */
+    /* 0x29 */ u8      count;           /**< Lifecycle tick counter (the particle's age). */
     /* 0x2A */ u8      kind;            /**< Slot kind (= index into @c D_800C5480). */
     /* 0x2B */ u8      pad2B;
-    /* 0x2C */ u16     life;            /**< Per-frame life decrement. */
+    /* 0x2C */ u16     scale;           /**< Current size, 4.12 fixed (spawns at 0x1000
+                                             = 1.0 and is scaled every tick). */
     /* 0x2E */ u8      pad2E[0x02];
 } Slot30;                              /* 0x30 bytes */
 
 /**
- * @brief Per-kind spawn parameters at @c D_800C5480.
+ * @brief Per-kind particle description at @c D_800C5480.
  *
- * Stride 0x28. Indexed by @c Slot30::kind. Most fields are still
- * opaque; only @c limit (0x12) and @c offset (0x18) are known.
+ * Stride 0x28, indexed by @c Slot30::kind. Carries everything the
+ * renderer (@ref func_800A9300) needs to draw one slot: where its sprite
+ * lives in VRAM, how it is oriented, and how it animates.
  */
 typedef struct {
-    /* 0x00 */ u8      unk00[0x12];
+    /* 0x00 */ s16     u;               /**< Texture u of frame 0, in 4-pixel units. */
+    /* 0x02 */ s16     v;               /**< Texture v; bits 8 and 9 also carry tpage flags. */
+    /* 0x04 */ u16     clutX;           /**< CLUT VRAM x. */
+    /* 0x06 */ u16     clutY;           /**< CLUT VRAM y. */
+    /* 0x08 */ u8      w;               /**< Sprite width in texels. */
+    /* 0x09 */ u8      h;               /**< Sprite height in texels. */
+    /* 0x0A */ u8      prim;            /**< Primitive to emit: 0 = TILE, 1 = POLY_FT4. */
+    /* 0x0B */ u8      unk0B;
+    /* 0x0C */ u8      r, g, b;         /**< Flat colour applied to the primitive. */
+    /* 0x0F */ u8      frameCount;      /**< Number of animation frames. */
+    /* 0x10 */ u16     scaleRate;       /**< Per-tick scale multiplier, 4.12 fixed. */
     /* 0x12 */ u8      limit;           /**< Initial @c Slot30::limit value. */
-    /* 0x13 */ u8      unk13[0x05];
+    /* 0x13 */ u8      frameDiv;        /**< Ticks per animation frame. */
+    /* 0x14 */ u8      shape;           /**< Billboard shape, see @c PARTICLE_SHAPE_*. */
+    /* 0x15 */ u8      tpageBits;       /**< Low 2 bits select the texture page's colour mode. */
+    /* 0x16 */ s16     size;            /**< Size multiplier against @c Slot30::scale. */
     /* 0x18 */ SVECTOR offset;          /**< Per-kind GTE-projected offset. */
-    /* 0x20 */ u8      unk20[0x08];
+    /* 0x20 */ SVECTOR vel;             /**< Per-tick velocity increment added to @c Slot30::vel. */
 } KindParams;                          /* 0x28 bytes */
+
+/* KindParams::shape — how the sprite is oriented in the world. */
+#define PARTICLE_SHAPE_GROUND    0  /**< Flat on the ground plane, w x w. */
+#define PARTICLE_SHAPE_SCREEN    1  /**< Screen-aligned square around the projected point. */
+#define PARTICLE_SHAPE_ROTATED   2  /**< Screen-aligned, sized by a second projection. */
+#define PARTICLE_SHAPE_GROUND_2X 3  /**< Flat on the ground plane, stretched 2x in z. */
+#define PARTICLE_SHAPE_UPRIGHT   4  /**< Standing in the x/y plane. */
+
+/** @brief 1.0 in @c Slot30::scale's 4.12 fixed-point format; every spawner
+ *         seeds a slot at full size. */
+#define PARTICLE_SCALE_ONE 0x1000
 
 /* Spawn-flag bits for the Slot30 pool spawners (func_800AC0A0 and the
  * fixed-kind wrappers around it). */
 #define SLOT_FLAG_JITTER_LIMIT 1  /**< RNG-jitter Slot30::limit by [-4, +3]. */
-#define SLOT_FLAG_JITTER_LIFE  2  /**< RNG-jitter Slot30::life by [-0x80, +0x7F]. */
+#define SLOT_FLAG_JITTER_SCALE 2  /**< RNG-jitter Slot30::scale by [-0x80, +0x7F]. */
 #define SLOT_FLAG_UNUSED4      4  /**< Never set by any caller; meaning unknown. */
 
 extern Slot30     D_800D9CB0[64];
 extern MATRIX     D_800DA8B0;          /**< GTE lighting color matrix (sits at &D_800D9CB0[64]). */
 extern MATRIX     D_800C5428;          /**< Source color matrix copied into D_800DA8B0. */
 extern CVECTOR    D_800C53F8;          /**< Background (ambient) color source. */
+extern CVECTOR    D_800DB0DC;          /**< Fourth palette stop; the world-zone blender fills it
+                                            alongside D_800DB0D0[0..2] and D_800DB0E0. */
 extern CVECTOR    D_800DB0E0;          /**< Active background-color cache (programmed via SetBackColor). */
+/** Base of the world zone block: a table of s32 offsets, each relative to
+ *  this pointer, locating one record. Entry 0 is the map-wide default. */
+extern s32       *D_800C9EE8;
 extern VECTOR     D_800DB0E8;          /**< World camera-base translation (GTE TR bias; used by setWorldMapTransVector and func_800423DC). */
 extern KindParams D_800C5480[];
 
@@ -487,20 +519,11 @@ extern TransformEntry *D_800D2128;
 /** @brief One 0x18-byte worldmap sub-OT slot: link tag + prim payload. */
 typedef struct {
     P_TAG link;          /**< 0x00: P_TAG with low-24 next-prim addr. */
-    u8    pad08[0x10];   /**< 0x08..0x17: slot payload (primed by func_800491E8). */
+    u8    pad08[0x10];   /**< 0x08..0x17: slot payload (primed by DrawPrim). */
 } OTSubSlot;
 
 extern BattleSceneCtx D_800CA040;       /**< Worldmap "no-battle" sentinel — also functions as an empty BattleSceneCtx. */
 extern s16         D_800C53B8[];        /**< Bone-id table (used by we_object4). */
-/* Worldmap sub-OT pools: [row][record][subslot], where row is the
- * canonical-entity bit (D_800CA040 vs active ctx), each 0x60 record is a
- * mini ordering table of 4 sub-slots, and bone prims get spliced between
- * a record's last sub-slot ([3]) and its first ([0]). */
-extern OTSubSlot   D_800D3E50[2][3][4]; /**< Primary worldmap sub-OT pool. */
-extern OTSubSlot   D_800D4090[2][3][4]; /**< Secondary worldmap sub-OT pool. */
-extern OTSubSlot   D_800D3510[2][2][4]; /**< Sub-OT pool spliced by func_800A6A74. */
-extern OTSubSlot   D_800D3690[2][2][4]; /**< Second sub-OT pool spliced by func_800A6A74. */
-
 extern ScriptOp *func_800AF004(u8 *base, s32 flag);
 extern s32 func_800AF28C(ScriptOp *p);
 extern s32 func_800BEFC4(void);

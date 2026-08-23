@@ -1,12 +1,13 @@
 #include "common.h"
 #include "battle.h"
 #include "gf.h"
+#include "gamestate.h"
+#include "battle/bc_object4.h"
 
 extern u8 D_800EE464[];
 extern u8 D_800EE38C[];
 extern u8 D_800EE9B3[];
-extern u8 g_gameState[];
-void func_800B0754(s32, s32, s32, s32);
+
 void decrementItemByType(s32);
 s32 func_800AA4E8(void);
 void func_800E1850(void);
@@ -614,7 +615,7 @@ void func_800A779C(s32 a0) {
         s32 val = a0 - 1;
         s32 q = val / 32;
         s32 r = val - q * 32;
-        s32 base = (s32)g_gameState;
+        s32 base = (s32)&g_gameState;
         *(s32 *)(base + q * 4 + 0xD04) |= (1 << r);
     }
 }

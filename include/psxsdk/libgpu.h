@@ -91,6 +91,9 @@ typedef struct {
      (p)->u2 = (_u0),       (p)->v2 = (_v0) + (_h), \
      (p)->u3 = (_u0) + (_w), (p)->v3 = (_v0) + (_h))
 
+/* Initialise a flat-shaded 4-vertex polygon (len=5 words, code=0x28). */
+#define setPolyF4(p)     setlen(p, 5),  setcode(p, 0x28)
+
 /* Initialise a textured 4-vertex polygon primitive (len=9 words, code=0x2C). */
 #define setPolyFT4(p)    setlen(p, 9),  setcode(p, 0x2c)
 
@@ -151,7 +154,7 @@ typedef struct {
     u32 tag;
     u8 r0, g0, b0, code;
     s16 x0, y0;
-    u16 w, h;
+    s16 w, h;
 } TILE;
 
 /** @brief 1x1 tile — fixed-size TILE with no w/h. Code 0x68. */
@@ -242,6 +245,19 @@ typedef struct {
     u32 tag;
     u32 code[1];
 } DR_TPAGE;
+
+/** @brief Packed VRAM-to-VRAM move command, built by @ref SetDrawMove. */
+typedef struct {
+    u32 tag;
+    u32 code[5];
+} DR_MOVE;
+
+/** @brief Packed VRAM upload command, built by @ref SetDrawLoad. */
+typedef struct {
+    u32 tag;
+    u32 code[3];
+    u32 p[13];
+} DR_LOAD;
 
 /** @brief Flat-shaded triangle. Code 0x20. */
 typedef struct {
@@ -379,7 +395,7 @@ typedef struct {
     u8 r0, g0, b0, code;
     s16 x0, y0;
     u8 u0, v0; u16 clut;
-    u16 w, h;
+    s16 w, h;
 } SPRT;
 
 /** @brief 16x16 sprite. Code 0x7C. */
@@ -420,6 +436,13 @@ void ClearOTagR(u32 *ot, s32 n);
 void DrawOTag(void *p);
 void DrawPrim(void *p);
 void LoadImage(RECT *rect, u32 *data);
+void StoreImage(RECT *rect, u32 *data);
+/* Pack a VRAM-to-VRAM move of @p rect to (@p x, @p y) into the primitive @p p. */
+void SetDrawMove(DR_MOVE *p, RECT *rect, s32 x, s32 y);
+/* Pack an upload of @p rect's pixels into the primitive @p p. */
+void SetDrawLoad(DR_LOAD *p, RECT *rect);
+/* Pack the drawing environment @p env into the primitive @p dr_env. */
+void SetDrawEnv(DR_ENV *dr_env, DRAWENV *env);
 DRAWENV *SetDefDrawEnv(DRAWENV *env, s32 x, s32 y, s32 w, s32 h);
 DISPENV *SetDefDispEnv(DISPENV *env, s32 x, s32 y, s32 w, s32 h);
 void PutDrawEnv(void *env);

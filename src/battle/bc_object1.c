@@ -2,6 +2,7 @@
 #include "battle.h"
 #include "gf.h"
 #include "battle/bc_object1.h"
+#include "battle/bc_object7.h"
 
 /**
  * @file bc_object1.c
