@@ -20,6 +20,7 @@ VectorNormal  = 0x8003F5D4;
 SquareRoot12  = 0x8003FA74;
 CompMatrix     = 0x8003FC24;
 ApplyMatrixLV  = 0x8003FD84;
+ApplyMatrixSV  = 0x800404D4;
 MulMatrix      = 0x80040264;
 ScaleMatrix    = 0x80040564;
 SetRotMatrix   = 0x800406A4;

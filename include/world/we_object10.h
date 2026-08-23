@@ -60,7 +60,6 @@ extern s32  func_800BA870(u8 *p);
 extern s32  func_800B0010(void);
 extern void func_800AC0A0(s32 marker, VECTOR *position, SVECTOR *vec, s32 zero);
 extern void *func_80047CE4(void *dst, s32 c, u32 n);
-/* Nonzero when any active slot carries the 0x4F marker. */
 extern s32 func_800BEF6C(void);
 extern s32  func_8009CC3C(void);
 extern void func_800AEB58(XformEntry *entry, XformGroup *group);

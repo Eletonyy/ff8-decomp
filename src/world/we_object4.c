@@ -8,8 +8,6 @@
 #include "world/we_object10.h"
 #include "world/we_object4.h"
 
-/* ---- Private to this unit: nothing outside we_object4 references these. ---- */
-
 extern TILE_1   D_800D5430[96];      /**< Second half of the star pool (== &D_800D4FB0[1][0]). */
 extern DR_TPAGE D_800D58B0[2];      /**< Draw-mode packet closing the star layer, one per scene. */
 
@@ -42,18 +40,12 @@ extern s32 D_800D4EB0[4];           /**< Last blitted frame per slot. */
 extern u16 D_800D2452;              /**< Map-view HUD slide-in coordinate fed to the func_800A84xx drawers. */
 extern s32 D_800C5454;              /**< Likely nonzero while the map pointer highlights a named location — enables the name banner (func_800A8524). */
 
-
-/* Map-view HUD drawers of this unit (see func_800A8400 for the driving values). */
-
-
 /* Camera-follow reference for the kind-12/13 drift in func_800A9CC0.
  * volatile is load-bearing: it keeps this read ordered against the
  * particle position stores, matching the original schedule. */
 extern volatile s32 D_800C974C;
 
 /* Main-binary helper: applies matrix @p m to @p in, writing @p out. */
-extern void func_800404D4(MATRIX *m, SVECTOR *in, SVECTOR *out);
-
 
 /**
  * @brief POLY_GT3 view with packed 32-bit vertex words (0x28 bytes).
@@ -93,7 +85,6 @@ typedef struct {
 } TriShade;
 
 extern WorldPolyGT3 *D_800D8804;    /**< Current POLY_GT3 slot being filled. */
-
 
 /**
  * @brief POLY_GT4 view with packed 32-bit vertex words (0x34 bytes).
@@ -154,20 +145,7 @@ extern POLY_GT4 D_800D595C[3];      /**< Map-panel quads for the D_800CA040 sent
 #define BAND1_SCRATCH_X 0x2C0
 
 /* Worldmap backdrop prims, one set per scene bank. Each pair is drawn against
- * two bone slots of the ordering table -- see func_800A7590.
- *
- * This unit owns the whole 0x800D3510..0x800D4E80 bss block (see the
- * [0x3B510, .bss, we_object4] subsegment in config/ff8.yaml), so these are
- * definitions, not externs. They are emitted in this order and their sizes
- * are exact -- reordering them or resizing one shifts every object after it.
- * gcc packs .bss with no alignment bump here, so the original's two gaps are
- * declared explicitly as pad_* -- drop them and everything above the block
- * shifts down 0xC.
- *
- * The sub-OT pools are [row][record][subslot], where row is the
- * canonical-entity bit (D_800CA040 vs active ctx), each 0x60 record is a mini
- * ordering table of 4 sub-slots, and bone prims get spliced between a
- * record's last sub-slot ([3]) and its first ([0]). */
+ * two bone slots of the ordering table */
 static OTSubSlot   D_800D3510[2][2][4];  /**< Sub-OT pool spliced by func_800A6A74. */
 static OTSubSlot   D_800D3690[2][2][4];  /**< Second pool spliced by func_800A6A74. */
 static POLY_F4     D_800D3810[2][3];     /**< Band 0's three flat translucent quads,
@@ -1017,7 +995,7 @@ static void func_800A8024(void) {
  * Builds a rotation matrix from the world transform's tail angle
  * (@c D_800D2390.tail.angle) with no translation, turns the map's zoom
  * distance (@c D_800C4D30 * 4, biased by the transform's head field) into
- * a view-space offset through @c func_800404D4, shifts it by the camera
+ * a view-space offset through @c ApplyMatrixSV, shifts it by the camera
  * offset in @c D_800C9770, and runs the result through the GTE with the
  * world-to-screen matrix @c D_800C9838. The projected y is pulled up by
  * one unit per 300 units of head angle, tilting the marker with the map.
@@ -1044,7 +1022,7 @@ void func_800A8270(SVECTOR *out) {
     rot.vy = 0;
     rot.vz = (u16)D_800C4D30 * 4;
     rot.vz = rot.vz + D_800D2390.head.unk4;
-    func_800404D4(&m, &rot, &rot);
+    ApplyMatrixSV(&m, &rot, &rot);
 
     rot.vx += D_800C9770[0].vx;
     rot.vz += D_800C9770[0].vz;

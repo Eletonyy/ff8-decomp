@@ -3,9 +3,6 @@
 
 #include "common.h"
 
-/* bc_object7's public surface: the functions other units call. Names are still
- * the raw addresses; the unit is only partly decompiled. */
-
 extern void func_800AF654(void);
 extern void func_800AF740(void);
 extern void func_800AF8A4(s32 a0);
