@@ -91,12 +91,13 @@ LDFLAGS := -T $(LD_SCRIPT) \
            --no-check-sections \
            -Map $(ELF:.elf=.map)
 
-### Output files ###
-
-### Collect source files ###
-# Assembly sources (header + data segments)
-ASM_SRCS := $(wildcard $(ASM_DIR)/*.s) $(wildcard $(ASM_DIR)/data/*.s)
-ASM_OBJS := $(patsubst $(ASM_DIR)/%.s,$(BUILD_DIR)/$(ASM_DIR)/%.o,$(ASM_SRCS))
+### Object lists ###
+# The object list is splat's, not ours: `ld_dependencies` makes it write a make
+# rule naming every object in the link. Including that rule gives the ELF its
+# prerequisites directly, so nothing here has to know which objects exist or
+# what kind each one is -- only how to build one, via the pattern rules below.
+MAIN_DEP := $(basename $(LD_SCRIPT)).d
+-include $(MAIN_DEP)
 
 # Overlay binaries (.ovl menu overlays + .bin code overlays).
 MENU_OVERLAYS := menumain menucfg menupty menusts menuabl menushop menuext \
@@ -105,48 +106,6 @@ MENU_OVERLAYS := menumain menucfg menupty menusts menuabl menushop menuext \
 CODE_OVERLAYS := field_init intro field \
                  tripletriad battle_render battle world
 OVERLAYS      := $(MENU_OVERLAYS) $(CODE_OVERLAYS)
-
-# Per-overlay C source files. Each overlay points to its own source location.
-menumain_C_SRCS      := $(wildcard src/menu/menumain/*.c)
-menucfg_C_SRCS       := $(wildcard src/menu/menucfg/*.c)
-menupty_C_SRCS       := $(wildcard src/menu/menupty/*.c)
-menusts_C_SRCS       := $(wildcard src/menu/menusts/*.c)
-menuabl_C_SRCS       := $(wildcard src/menu/menuabl/*.c)
-menushop_C_SRCS      := $(wildcard src/menu/menushop/*.c)
-menuext_C_SRCS       := $(wildcard src/menu/menuext/*.c)
-menuitem_C_SRCS      := $(wildcard src/menu/menuitem/*.c)
-menumgc_C_SRCS       := $(wildcard src/menu/menumgc/*.c)
-menugf_C_SRCS        := $(wildcard src/menu/menugf/*.c)
-menujnc2_C_SRCS      := $(wildcard src/menu/menujnc2/*.c)
-menusav_C_SRCS       := $(wildcard src/menu/menusav/*.c)
-menucrd_C_SRCS       := $(wildcard src/menu/menucrd/*.c)
-menututo_C_SRCS      := $(wildcard src/menu/menututo/*.c)
-menutmag_C_SRCS      := $(wildcard src/menu/menutmag/*.c)
-menutips_C_SRCS      := $(wildcard src/menu/menutips/*.c)
-menutest_C_SRCS      := $(wildcard src/menu/menutest/*.c)
-field_init_C_SRCS    := $(wildcard src/ovl/field_init/*.c)
-intro_C_SRCS         := src/intro.c src/intro_assets.c src/intro_state.c
-intro_DIR            := build/intro
-intro_ASM_DIR        := asm/intro
-field_C_SRCS         := $(wildcard src/field/*.c)
-field_DIR            := build/field
-field_ASM_DIR        := asm/field
-tripletriad_C_SRCS   := $(wildcard src/tripletriad/*.c)
-battle_render_C_SRCS := $(wildcard src/ovl/battle_render/*.c)
-battle_C_SRCS        := $(wildcard src/battle/*.c)
-world_C_SRCS         := $(wildcard src/world/*.c)
-
-# C sources (compiled via cpp → cc1 → maspsx → GAS).
-# Main-binary sources = everything under src/ except files claimed by an overlay.
-ALL_OVERLAY_C_SRCS := $(foreach ovl,$(OVERLAYS),$($(ovl)_C_SRCS))
-C_SRCS := $(filter-out $(ALL_OVERLAY_C_SRCS), \
-            $(wildcard $(SRC_DIR)/*.c) \
-            $(wildcard $(SRC_DIR)/psxsdk/*.c) \
-            $(wildcard $(SRC_DIR)/psxsdk/*/*.c))
-C_OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/$(SRC_DIR)/%.o,$(C_SRCS))
-
-# All objects for linking
-ALL_OBJS := $(ASM_OBJS) $(C_OBJS)
 
 ### Targets ###
 
@@ -161,14 +120,14 @@ full:
 	$(MAKE) verify
 
 # Assemble: .s -> .o
-$(BUILD_DIR)/$(ASM_DIR)/%.o: $(ASM_DIR)/%.s
+$(BUILD_DIR)/%.o: %.s
 	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) -o $@ $<
 
 # Compile C: cpp → cc1 → maspsx → GAS → .o
 # PsyQ 4.1 uses gcc-2.7.2-cdk (cygnus-2.7.2-970404 SN32.3.7)
 # PsyQ 4.3 uses gcc-2.8.0-psx (gcc 2.8.0)
-$(BUILD_DIR)/$(SRC_DIR)/%.o: $(SRC_DIR)/%.c
+$(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CPP) -E -lang-c -nostdinc -Iinclude $(NON_MATCHING_FLAGS) $< -o $(BUILD_DIR)/$(*F).i && \
 	$(if $(filter $<,$(PSYQ43_SRCS)), \
@@ -178,9 +137,9 @@ $(BUILD_DIR)/$(SRC_DIR)/%.o: $(SRC_DIR)/%.c
 		cat $(BUILD_DIR)/$(*F).s | $(MASPSX) $(if $(filter $<,$(O0_EXPAND_LI_SRCS)),,$(if $(filter $<,$(O0_SRCS)),$(PSYQ40_MASPSXFLAGS),$(PSYQ41_MASPSXFLAGS))) --run-assembler $(ASFLAGS) -o $@)
 
 # Link: all .o files -> ELF
-$(ELF): $(ALL_OBJS) $(LD_SCRIPT)
+$(ELF): $(LD_SCRIPT)
 	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) -o $@ $(ALL_OBJS)
+	$(LD) $(LDFLAGS) -o $@ $(filter %.o,$^)
 
 # Convert: ELF -> raw binary (the PS-EXE)
 $(BUILT_EXE): $(ELF)
@@ -247,18 +206,14 @@ endif
 	./permute.sh $(FUNC)
 
 ### Overlays ###
-# Template for overlay build rules — $(1) = overlay name, $(2) = file extension
+# Template for overlay build rules — $(1) = overlay name
 define OVERLAY_TEMPLATE
-$(1)_DIR      ?= build/ovl/$(1)
-$(1)_ASM_DIR  ?= asm/ovl/$(1)
-$(1)_BIN      := $$($(1)_DIR)/$$(notdir $$($(1)_TARGET))
+# $(1)_DIR is splat's build_path, from binaries.mk.
+$(1)_BIN := $$($(1)_DIR)/$$(notdir $$($(1)_TARGET))
 
-$(1)_ASM_SRCS := $$(wildcard $$($(1)_ASM_DIR)/*.s) $$(wildcard $$($(1)_ASM_DIR)/data/*.s)
-$(1)_ASM_OBJS := $$(patsubst $$($(1)_ASM_DIR)/%.s,$$($(1)_DIR)/$$($(1)_ASM_DIR)/%.o,$$($(1)_ASM_SRCS))
-$(1)_C_OBJS   := $$(foreach src,$$($(1)_C_SRCS),$$($(1)_DIR)/$$(src:.c=.o))
-$(1)_BIN_SRCS := $$(wildcard assets/*.bin)
-$(1)_BIN_OBJS := $$(patsubst assets/%.bin,$$($(1)_DIR)/assets/%.o,$$($(1)_BIN_SRCS))
-$(1)_ALL_OBJS := $$($(1)_ASM_OBJS) $$($(1)_C_OBJS) $$($(1)_BIN_OBJS)
+# Same as the main binary: take the object list from splat's dependency file.
+$(1)_DEP := $$(basename $$($(1)_LD)).d
+-include $$($(1)_DEP)
 
 $(1)_LDFLAGS  := -T $$($(1)_LD) \
                  -T $$(SPLAT_GEN)/undefined_funcs_auto.$(1).txt \
@@ -270,7 +225,9 @@ $(1)_LDFLAGS  := -T $$($(1)_LD) \
 split-$(1): splat-config
 	$$(SPLAT) split $$($(1)_YAML)
 
-$$($(1)_DIR)/$$($(1)_ASM_DIR)/%.o: $$($(1)_ASM_DIR)/%.s
+# An object's path is the binary's build_path plus the source path, whatever
+# directory that source lives in -- so these two rules need no per-overlay paths.
+$$($(1)_DIR)/%.o: %.s
 	@mkdir -p $$(dir $$@)
 	$$(AS) $$(ASFLAGS) -o $$@ $$<
 
@@ -287,9 +244,9 @@ $$($(1)_DIR)/assets/%.o: assets/%.bin
 	@mkdir -p $$(dir $$@)
 	$$(OBJCOPY) -I binary -O elf32-tradlittlemips -B mips --rename-section .data=.data $$< $$@
 
-$$($(1)_ELF): $$($(1)_ALL_OBJS) $$($(1)_LD)
+$$($(1)_ELF): $$($(1)_LD)
 	@mkdir -p $$(dir $$@)
-	$$(LD) $$($(1)_LDFLAGS) -o $$@ $$($(1)_ALL_OBJS)
+	$$(LD) $$($(1)_LDFLAGS) -o $$@ $$(filter %.o,$$^)
 
 $$($(1)_BIN): $$($(1)_ELF)
 	$$(OBJCOPY) -O binary $$< $$@
@@ -311,7 +268,13 @@ verify-$(1): $$($(1)_BIN)
 
 endef
 
+# binaries.mk supplies every <ovl>_DIR/_LD/_ELF, so there is nothing to build
+# rules from until it has been read -- on the first parse after a clean the
+# template would expand its paths to bare "/". Make regenerates binaries.mk
+# above and re-executes, and the rules get defined on that second pass.
+ifneq ($(wildcard $(BINARIES_MK)),)
 $(foreach ovl,$(OVERLAYS),$(eval $(call OVERLAY_TEMPLATE,$(ovl))))
+endif
 
 # field_init: extract font TIM from overlay binary during split
 FIELD_INIT_TIM := assets/field_init_font.tim

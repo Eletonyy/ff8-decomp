@@ -28,8 +28,9 @@ Usage: gen_splat_config.py CONFIG --out TEMPLATE [--make FILE] [--check]
   --out    where to write each generated config, as a path template containing
            {name}, for example build/splat/{name}.yaml
   --make   also write a make fragment defining <name>_TARGET, <name>_YAML,
-           <name>_LD and <name>_ELF for each binary, so a Makefile can use the
-           same paths this config gives splat instead of deriving its own
+           <name>_LD, <name>_ELF and <name>_DIR for each binary, so a Makefile
+           can use the same paths this config gives splat instead of deriving
+           its own
   --check  regenerate and exit non-zero if any output file would change
 """
 import argparse
@@ -92,6 +93,7 @@ def main():
             f"{entry['name']}_YAML := {args.out.format(name=entry['name'])}",
             f"{entry['name']}_LD := {opts['ld_script_path']}",
             f"{entry['name']}_ELF := {opts['elf_path']}",
+            f"{entry['name']}_DIR := {opts['build_path']}",
         ]
         out_path = args.out.format(name=entry["name"])
         os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
