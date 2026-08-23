@@ -69,7 +69,7 @@ binaries:
     - [0xF90, .rodata, bc_object6]
     - [0x14C0, .rodata, bc_object7]
     - [0x14E8, .rodata, bc_object8]
-    - [0x1520, rodata]
+    - [0x1520, .rodata, bc_object9]
     - [0x156C, .rodata, bc_object11]
     - [0x15EC, .rodata, bc_object12]
     - [0x1888, .rodata, bc_object13]
@@ -249,7 +249,8 @@ binaries:
     vram: 0x801E5800
     subsegments:
     - [0x0, c, menucrd]
-    - [0x14A8, rodata]
+    - [0x14A8, .rodata, menucrd]
+    - [0x14F8, rodata]
     - [0x2164, data]
   - [0x2564]
 - name: menuext
@@ -323,7 +324,7 @@ binaries:
     subsegments:
     - [0x0, c, menujnc2]
     - [0x9110, .rodata, menujnc2]
-    - [0x923C, rodata]
+    - [0x9284, rodata]
     - [0x9450, bss, menujnc2_bss]
   - [0x9450]
 - name: menumain
@@ -370,8 +371,7 @@ binaries:
     vram: 0x801E5800
     subsegments:
     - [0x0, c, menupty]
-    - [0x3C7C, rodata]
-    - [0x3D38, .rodata, menupty]
+    - [0x3C7C, .rodata, menupty]
   - [0x3D40]
 - name: menusav
   sha1: 11db278b2b7d0bf82d49003a789c316c8db78517
@@ -531,7 +531,7 @@ binaries:
     - [0x11C, rodata]
     - [0x120, .rodata, we_object4]
     - [0x15C, rodata]
-    - [0x3F0, .rodata, we_object6]
+    - [0x178, .rodata, we_object6]
     - [0x760, .rodata, we_object7]
     - [0x770, .rodata, we_object9]
     - [0x784, .rodata, we_object11]
@@ -594,7 +594,7 @@ binaries:
     - [0x119C, .rodata, psxsdk/libspu]
     - [0x120C, .rodata, psxsdk/libetc]
     - [0x12BC, rodata]
-    - [0x14B0, .rodata, psxsdk/libcd]
+    - [0x149C, .rodata, psxsdk/libcd]
     - [0x179C, .rodata, psxsdk/libpress]
     - [0x17EC, rodata]
     - [0x1814, .rodata, psxsdk/libc]
