@@ -29,6 +29,7 @@ defaults:
     - config/symbols.{name}.txt
     undefined_funcs_auto_path: build/splat/undefined_funcs_auto.{name}.txt
     undefined_syms_auto_path: build/splat/undefined_syms_auto.{name}.txt
+    disassemble_all: true
     # String detection
     string_encoding: ASCII
     data_string_encoding: ASCII
@@ -65,7 +66,7 @@ binaries:
     - [0xF90, .rodata, bc_object6]
     - [0x14C0, .rodata, bc_object7]
     - [0x14E8, .rodata, bc_object8]
-    - [0x1520, rodata]
+    - [0x1520, .rodata, bc_object9]
     - [0x156C, .rodata, bc_object11]
     - [0x15EC, .rodata, bc_object12]
     - [0x1888, .rodata, bc_object13]
@@ -238,7 +239,6 @@ binaries:
   options:
     target_path: original/menucrd.ovl
     src_path: src/menu/menucrd
-    disassemble_all: true
   segments:
   - name: menucrd
     type: code
@@ -246,7 +246,8 @@ binaries:
     vram: 0x801E5800
     subsegments:
     - [0x0, c, menucrd]
-    - [0x14A8, rodata]
+    - [0x14A8, .rodata, menucrd]
+    - [0x14F8, rodata]
     - [0x2164, data]
   - [0x2564]
 - name: menuext
@@ -304,7 +305,6 @@ binaries:
   options:
     target_path: original/menujnc2.ovl
     src_path: src/menu/menujnc2
-    disassemble_all: true
     symbol_addrs_path: [config/symbols.menujnc2.txt]
     ld_bss_is_noload: true
     section_order: [.text, .rodata, .data, .bss]
@@ -321,7 +321,7 @@ binaries:
     subsegments:
     - [0x0, c, menujnc2]
     - [0x9110, .rodata, menujnc2]
-    - [0x923C, rodata]
+    - [0x9284, rodata]
     - [0x9450, bss, menujnc2_bss]
   - [0x9450]
 - name: menumain
@@ -368,15 +368,13 @@ binaries:
     vram: 0x801E5800
     subsegments:
     - [0x0, c, menupty]
-    - [0x3C7C, rodata]
-    - [0x3D38, .rodata, menupty]
+    - [0x3C7C, .rodata, menupty]
   - [0x3D40]
 - name: menusav
   sha1: 11db278b2b7d0bf82d49003a789c316c8db78517
   options:
     target_path: original/menusav.ovl
     src_path: src/menu/menusav
-    disassemble_all: true
   segments:
   - name: menusav
     type: code
@@ -483,7 +481,6 @@ binaries:
   sha1: accfe3831595f26c5d6de6f3891736521736f8ef
   options:
     target_path: original/tripletriad.bin
-    disassemble_all: true
     section_order: [.rodata, .text, .data, .bss]
     ld_bss_is_noload: true
   segments:
@@ -533,7 +530,7 @@ binaries:
     - [0x11C, rodata]
     - [0x120, .rodata, we_object4]
     - [0x15C, rodata]
-    - [0x3F0, .rodata, we_object6]
+    - [0x178, .rodata, we_object6]
     - [0x760, .rodata, we_object7]
     - [0x770, .rodata, we_object9]
     - [0x784, .rodata, we_object11]
@@ -570,14 +567,6 @@ binaries:
     reloc_addrs_path: [config/reloc_addrs.txt]
     undefined_funcs_auto_path: build/splat/undefined_funcs_auto.txt
     undefined_syms_auto_path: build/splat/undefined_syms_auto.txt
-    # Off is also splat's default; it is spelled out here as a guard, because
-    # turning it on silently breaks the rodata pairing below. With it ON, splat force-emits a
-    # standalone .s for every dot-prefixed .rodata *and* migrates the symbols
-    # into their functions (data.py should_self_split), which duplicates every
-    # migrated symbol at link time. The two data blobs that used to need this
-    # flag (func_8003F414, func_80047C34) are now declared type:func in
-    # config/symbols.main.txt, so splat emits them on their own.
-    disassemble_all: false
     section_order: [.rodata, .text, .data, .bss]
     subalign: 4
   segments:
@@ -589,10 +578,6 @@ binaries:
     start: 0x800
     vram: 0x80010000
     subsegments:
-    # Each rodata block is named after the C unit that owns it, which pairs it
-    # for migrate_rodata_to_functions. Undotted blocks hold data that does not
-    # migrate (no single owning function in nonmatchings/), so it stays
-    # standalone. This only works with disassemble_all off — see that option.
     - [0x800, .rodata, main]
     - [0x840, .rodata, snd_note]
     - [0x918, .rodata, gf_curve]
@@ -611,7 +596,7 @@ binaries:
     - [0x119C, .rodata, psxsdk/libspu]
     - [0x120C, .rodata, psxsdk/libetc]
     - [0x12BC, rodata]
-    - [0x14B0, .rodata, psxsdk/libcd]
+    - [0x149C, .rodata, psxsdk/libcd]
     - [0x179C, .rodata, psxsdk/libpress]
     - [0x17EC, rodata]
     - [0x1814, .rodata, psxsdk/libc]

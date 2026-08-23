@@ -1,7 +1,8 @@
 #include "common.h"
+#include "menupty.h"
 
-extern u8 D_801E9528[];
-extern u8 D_801E9530[];
+static const s16 D_801E9528[4];
+static const s16 D_801E9530[4];
 extern u8 D_801E9540;
 extern u8 D_80077808[];
 
@@ -296,6 +297,10 @@ void func_801E7A1C(u8 *a0) {
 INCLUDE_ASM("asm/ovl/menupty/nonmatchings/menupty", func_801E7A6C);
 
 INCLUDE_ASM("asm/ovl/menupty/nonmatchings/menupty", func_801E7B9C);
+
+/* Party slot coordinate tables */
+static const s16 D_801E9528[4] = {2, 3, -1, 0};
+static const s16 D_801E9530[4] = {1, 3, -1, 0};
 
 INCLUDE_ASM("asm/ovl/menupty/nonmatchings/menupty", func_801E88B4);
 
