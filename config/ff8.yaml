@@ -29,6 +29,10 @@ defaults:
     - config/symbols.{name}.txt
     undefined_funcs_auto_path: build/splat/undefined_funcs_auto.{name}.txt
     undefined_syms_auto_path: build/splat/undefined_syms_auto.{name}.txt
+    # Also dump already-matched functions (<asm_path>/matchings) and the rodata
+    # migrated into the C files (<asm_path>/data), as reference disassembly.
+    # None of it is linked: the object list comes from splat's own .d file.
+    disassemble_all: true
     # String detection
     string_encoding: ASCII
     data_string_encoding: ASCII
@@ -238,7 +242,6 @@ binaries:
   options:
     target_path: original/menucrd.ovl
     src_path: src/menu/menucrd
-    disassemble_all: true
   segments:
   - name: menucrd
     type: code
@@ -304,7 +307,6 @@ binaries:
   options:
     target_path: original/menujnc2.ovl
     src_path: src/menu/menujnc2
-    disassemble_all: true
     symbol_addrs_path: [config/symbols.menujnc2.txt]
     ld_bss_is_noload: true
     section_order: [.text, .rodata, .data, .bss]
@@ -376,7 +378,6 @@ binaries:
   options:
     target_path: original/menusav.ovl
     src_path: src/menu/menusav
-    disassemble_all: true
   segments:
   - name: menusav
     type: code
@@ -483,7 +484,6 @@ binaries:
   sha1: accfe3831595f26c5d6de6f3891736521736f8ef
   options:
     target_path: original/tripletriad.bin
-    disassemble_all: true
     section_order: [.rodata, .text, .data, .bss]
     ld_bss_is_noload: true
   segments:
@@ -565,14 +565,6 @@ binaries:
     reloc_addrs_path: [config/reloc_addrs.txt]
     undefined_funcs_auto_path: build/splat/undefined_funcs_auto.txt
     undefined_syms_auto_path: build/splat/undefined_syms_auto.txt
-    # Off is also splat's default; it is spelled out here as a guard, because
-    # turning it on silently breaks the rodata pairing below. With it ON, splat force-emits a
-    # standalone .s for every dot-prefixed .rodata *and* migrates the symbols
-    # into their functions (data.py should_self_split), which duplicates every
-    # migrated symbol at link time. The two data blobs that used to need this
-    # flag (func_8003F414, func_80047C34) are now declared type:func in
-    # config/symbols.main.txt, so splat emits them on their own.
-    disassemble_all: false
     section_order: [.rodata, .text, .data, .bss]
     subalign: 4
   segments:
@@ -584,10 +576,6 @@ binaries:
     start: 0x800
     vram: 0x80010000
     subsegments:
-    # Each rodata block is named after the C unit that owns it, which pairs it
-    # for migrate_rodata_to_functions. Undotted blocks hold data that does not
-    # migrate (no single owning function in nonmatchings/), so it stays
-    # standalone. This only works with disassemble_all off — see that option.
     - [0x800, .rodata, main]
     - [0x840, .rodata, snd_note]
     - [0x918, .rodata, gf_curve]
