@@ -8,7 +8,7 @@ extern void func_800A61CC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, u16 
 extern void func_800A6218(s32 a0);
 extern void func_800A6288(s32 a0, s32 a1, s32 a2, s32 a3);
 extern void func_800A62B0(void);
-extern void func_800A6310(s32 a0);
+extern void func_800A6310(u8 a0);
 extern void func_800A63C0(s16 a, s16 b, s16 c, s16 d);
 extern void func_800A64E4(s32 a0, s32 a1);
 extern void func_800A6574(s32 value);

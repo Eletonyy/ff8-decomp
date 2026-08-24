@@ -197,6 +197,8 @@ typedef struct {
     u8 pad105[0x4A];
     u8 unk14F;          /* byte read by func_800AF988. */
     u16 unk150[1];
+    u8 pad152[0xE];
+    u8 unk160[1];
 } BattleEntityData;
 
 #define ENTITY_FLAG_1 1

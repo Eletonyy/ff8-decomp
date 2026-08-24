@@ -4,8 +4,7 @@
 #include "gamestate.h"
 #include "battle/bc_object4.h"
 
-extern u8 D_800EE464[];
-extern u8 D_800EE38C[];
+
 extern u8 D_800EE9B3[];
 
 void decrementItemByType(s32);
@@ -32,13 +31,13 @@ void func_800A61CC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, u16 arg5) {
  *
  * @param a0 Entity index.
  */
-void func_800A6218(s32 a0) {
-    u8 *base = (u8 *)&D_800ED148;
-    u8 *entity = base + a0 * 0xD0;
-    if (*(volatile s32 *)(entity + 0x8C) & 0x10) {
-        *(volatile s32 *)(entity + 0x8C) |= 0x200;
-    } else {
-        func_800A62DC(a0, 0x11, 0x80, 0);
+void func_800A6218(s32 arg0) {
+    if ((D_800ED148.entities[arg0].controlFlags & CTRL_FLAG_10)) {
+        D_800ED148.entities[arg0].controlFlags |= 0x200;
+    }
+    
+    else {
+        func_800A62DC(arg0, 17, 128, 0);
     }
 }
 
@@ -51,7 +50,7 @@ void func_800A6218(s32 a0) {
  * @param a3 Grid configuration.
  */
 void func_800A6288(s32 a0, s32 a1, s32 a2, s32 a3) {
-    func_800A62DC(a0, 0x12, 0x80, 0);
+    func_800A62DC(a0, 18, 128, 0);
 }
 
 /**
@@ -60,29 +59,15 @@ void func_800A6288(s32 a0, s32 a1, s32 a2, s32 a3) {
  * Calls func_800A62DC with a0=0, a1=0x41, a2=0x80, a3=0.
  */
 void func_800A62B0(void) {
-    func_800A62DC(0, 0x41, 0x80, 0);
+    func_800A62DC(0, 65, 128, 0);
 }
 
-/**
- * @brief Forward display parameters to func_800D15B4.
- *
- * @param a0 First parameter passed through.
- * @param a1 Second parameter passed through.
- * @param a2 Third parameter passed through.
- * @param a3 Fourth parameter passed through.
- */
 void func_800A62DC(s32 a0, s32 a1, s32 a2, s32 a3) {
     func_800D15B4(a0, a1, a2, a3);
 }
 
-/**
- * @brief Read a battle state byte from D_800ED148 offset 0x12EB.
- *
- * @return The byte value at D_800ED148[0x12EB].
- */
 s32 func_800A62FC(void) {
-    volatile u8 *base = (u8 *)&D_800ED148;
-    return base[0x12EB];
+    return D_800ED148.unk12EB;
 }
 
 /**
@@ -94,30 +79,24 @@ s32 func_800A62FC(void) {
  *
  * @param a0 Value to store at D_800EEBC8.
  */
-void func_800A6310(s32 a0) {
-    s32 i = 0;
-    u8 *base = (u8 *)&D_800ED148;
-    u8 *status;
-    u8 *buf;
-    u8 *entry;
+void func_800A6310(u8 arg0) {
+    s32 i;
+    BattleEntry* entry;
+    SubEntry* subEntry;
 
-    base[0x131E] = 1;
-    D_800EEBC8 = a0;
-    status = base + 0x5C4;
-    base[0x1300] = 0;
-    base[0x5C1] = 0;
-    buf = (u8 *)&D_800EE4C0;
-    buf[0] = status[0];
-    buf[1] = status[1];
-    *(u16 *)(buf + 0x1C) = *(u16 *)(status + 4);
-    if (status[0x10] != 0) {
-        entry = base + 0x844;
-        do {
-            func_800A09D0(entry[0]);
-            i++;
-            func_800A5210(entry[0]);
-            entry += 0x18;
-        } while (i < status[0x10]);
+    D_800ED148.unk131E = 1;
+    D_800EEBC8 = arg0;
+    D_800ED148.unk1300 = 0;
+    D_800ED148.unk5C1 = 0;
+    entry = D_800ED148.entries;
+    D_800EE4C0.unk0 = entry->unk0;
+    D_800EE4C0.unk1 = entry->unk1;
+    D_800EE4C0.statusCode = entry->unk4;
+
+    for (i = 0; i < entry->unk10; i++) {
+        subEntry = &D_800ED148.Array844[i];
+        func_800A09D0(subEntry->unk0);
+        func_800A5210(subEntry->unk0);
     }
 }
 
@@ -716,8 +695,9 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7EE0);
  * @param a1 Offset to add to base.
  * @return Byte at (a0 + a1 + 0x160) multiplied by 10.
  */
-s32 func_800A7FB4(s32 a0, s32 a1) {
-    return *(u8 *)(a0 + a1 + 0x160) * 10;
+ 
+s32 func_800A7FB4(BattleEntityData* arg0, s32 arg1) {
+    return arg0->unk160[arg1] * 10;
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7FD0);
@@ -734,11 +714,11 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A84CC);
  * @brief Call func_800A84CC for each of 7 battle entities.
  */
 void func_800A853C(void) {
-    s32 i = 0;
-    do {
+    s32 i;
+    
+    for (i = 0; i < 7; i++) {
         func_800A84CC(i);
-        i++;
-    } while (i < 7);
+    }
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8578);
