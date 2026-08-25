@@ -180,9 +180,19 @@ typedef struct {
     u8 padC[4];
     volatile s32 unk10;  // volatile because func_800A5688, func_800A559C
     volatile s32 unk14;  // volatile because func_800A5688, func_800A559C
-    u8 pad18[0xA9]; 
-    u8 unkC1; 
-    u8 padC2[0x35];
+    u8 pad18[10];
+    s32 unk24[7];
+    u8 pad40[0x48];
+    u8 unk88;
+    u8 unk89;
+    u8 unk8A;
+    u8 pad8B[0x36];
+    u8 unkC1;
+    u8 padC2[5];
+    u8 unkC7;
+    u8 unkC8;
+    u8 padC9[0x2D];
+    u8 unkF6;
     u8 immunityFlags;   /* bit 0 forces status bit 0x40 clear, bit 1 forces flags bit 0x2000 clear (read by @c func_8009AFF0). */
     u8 unkF8;
     u8 unkF9;
@@ -242,7 +252,7 @@ typedef struct {
     u8 unkE;
     u8 entityRef;
     BattleEntityData** entityData;
-    s32 pad14; // func_800A559C to fix
+    s32 pad14;
     s32 flags;
     s32 flagsBackup;
     s32 unk20;
@@ -421,7 +431,8 @@ typedef struct {
     /* 0x085C */ u8 pad85C[0x0CDC - 0x085C];
     /* 0x0CDC */ u8 unkCDC;
     /* 0x0CDC */ u8 unkCDD;
-    /* 0x0CDE */ u8 padCDE[0x0CE4 - 0x0CDE];
+    /* 0x0CDE */ u8 padCDE[0x0CE3 - 0x0CDE];
+    /* 0x0CE3 */ u8 unkCE3;
     /* 0x0CE4 */ BattleVec3u unkCE4[8];             /**< 8-entry x/y/z position table (read by @c func_8009A528). */
     /* 0x0D14 */ u8 unkD14[8];                      /**< Hit-type byte table (8 entries). */
     /* 0x0D1C */ u8 padD1C[0x0D5C - 0x0D1C];
@@ -438,7 +449,8 @@ typedef struct {
     /* 0x1290 */ s16 unk1290;
     /* 0x1292 */ s16 unk1292;
     /* 0x1294 */ s16 unk1294;
-    /* 0x1296 */ u8 pad1296[0x12B8 - 0x1296];
+    /* 0x1296 */ s16 unk1296;
+    /* 0x1298 */ u8 pad1298[0x12B8 - 0x1298];
     /* 0x12B8 */ u16 array12B8[7];
     /* 0x12C6 */ u8 pad12C7[0x12CC - 0x12C6];
     /* 0x12CC */ Struct_12CC array12CC[1];          /* used in func_8009D594 */
@@ -456,7 +468,7 @@ typedef struct {
     /* 0x12EC */ u8 unk12EC;                        /**< Misc state byte (init to 0xFF). */
     /* 0x12ED */ u8 volatile unk12ED;               /**< Misc state byte. */
     /* 0x12EE */ u8 volatile unk12EE;               /**< Misc state byte. */
-    /* 0x12EF */ u8 unk12EF;
+    /* 0x12EF */ u8 volatile unk12EF;
     /* 0x12EF */ u8 unk12F0;
     /* 0x12EF */ u8 pad12F1;
     /* 0x12EF */ u8 unk12F2;
@@ -658,7 +670,7 @@ typedef struct {
     /* 0x1B4 */ u16 abilityValue;
     /* 0x1B6 */ u16 atkStatusHit;      /**< Attack status hit chance. */
     /* 0x1B8 */ u8 level;              /**< Battle level (from findCharXpLevel). */
-    /* 0x1B9 */ u8 pad1B9;
+    /* 0x1B9 */ u8 unk1B9;
     /* 0x1BA */ u8 classId;            /**< Entity-class index into the @c D_80078E00 ability tables (stride 12 at @c 0x35C1). */
     /* 0x1BB */ u8 stats[8];           /**< Battle stats: STR, VIT, MAG, SPR, SPD, ?, hit (0x1C0), eva (0x1C1). 0x1C2 = ? */
     /* 0x1C3 */ u8 characterId;
@@ -954,7 +966,8 @@ typedef struct {
 typedef struct {
     u8 unk0;
     u8 unk1;
-    u8 pad2[3];
+    u8 pad2[2];
+    u8 unk4;
     u8 unk5;
     u8 pad6[3];
     u8 unk9;
@@ -1168,6 +1181,7 @@ extern u8              D_800E3CBC[];
 extern u8              D_800E3CE8;
 extern BattleSystem    D_800ED148;
 extern BattleCmdBuf    D_800EE4C0;
+extern u8              D_800EE9B3[];
 extern BattleAnimTable D_800EE9E8;
 extern u8              D_800EEBA8[];
 extern u8              D_800EEBB0;

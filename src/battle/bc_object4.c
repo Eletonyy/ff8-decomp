@@ -4,14 +4,8 @@
 #include "gamestate.h"
 #include "battle/bc_object4.h"
 
+extern void func_800E1850(void);
 
-extern u8 D_800EE9B3[];
-
-void decrementItemByType(s32);
-s32 func_800AA4E8(void);
-void func_800E1850(void);
-s32 func_8009B74C(s32, s32); /* overlay-conflict: also in field_engine */
-void func_800A8578(void);
 
 
 void func_800A6184(s32 arg0, s32 arg1, s32 arg2, u16 arg3) {
@@ -100,20 +94,11 @@ void func_800A6310(u8 arg0) {
     }
 }
 
-/**
- * @brief Store four halfword values to D_800ED148 at offsets 0x1290-0x1296.
- *
- * @param a First halfword (offset 0x1290).
- * @param b Second halfword (offset 0x1292).
- * @param c Third halfword (offset 0x1294).
- * @param d Fourth halfword (offset 0x1296).
- */
-void func_800A63C0(s16 a, s16 b, s16 c, s16 d) {
-    u8 *base = (u8 *)&D_800ED148;
-    *(s16 *)(base + 0x1290) = a;
-    *(s16 *)(base + 0x1292) = b;
-    *(s16 *)(base + 0x1296) = d;
-    *(s16 *)(base + 0x1294) = c;
+void func_800A63C0(s16 arg0, s16 arg1, s16 arg2, s16 arg3) {
+    D_800ED148.unk1290 = arg0;
+    D_800ED148.unk1292 = arg1;
+    D_800ED148.unk1296 = arg3;
+    D_800ED148.unk1294 = arg2;
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A63DC);
@@ -128,18 +113,16 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A63DC);
  * @param a0 Mode flag (0 = player-initiated, non-zero = triggered).
  * @param a1 Sound parameter (masked to u16 in mode 0).
  */
-void func_800A64E4(s32 a0, s32 a1) {
-    if (a0 == 0) {
-        u8 *base = (u8 *)&D_800ED148;
-        func_800B0754(base[0xF], 0xED, base[0x1324], (u16)a1);
-        decrementItemByType(base[0x1324] + 0x65);
-        func_8009AF14((s32)func_800E1850);
-    } else {
-        s32 result = func_800AA4E8();
-        u8 *base = (u8 *)&D_800ED148;
-        func_800B0754(base[0xF], 0xEE, base[0x1324], result);
-        func_8009AE08(8);
+void func_800A64E4(s32 arg0, u16 arg1) {
+    if (arg0 == 0) {
+        func_800B0754(D_800ED148.entities[0].entityRef, 237, D_800ED148.unk1324, arg1);
+        decrementItemByType(D_800ED148.unk1324 + 0x65);
+        func_8009AF14(func_800E1850);
+        return;
     }
+    
+    func_800B0754(D_800ED148.entities[0].entityRef, 238, D_800ED148.unk1324, func_800AA4E8());
+    func_8009AE08(8);
 }
 
 /**
@@ -147,9 +130,8 @@ void func_800A64E4(s32 a0, s32 a1) {
  *
  * @param value Byte value to store.
  */
-void func_800A6574(s32 value) {
-    volatile u8 *base = (u8 *)&D_800ED148;
-    base[0x12EF] = value;
+void func_800A6574(u8 arg0) {
+    D_800ED148.unk12EF = arg0;
 }
 
 void func_800A6588(void) {
@@ -159,20 +141,9 @@ void func_800A6588(void) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A65B0);
 
-s32 func_8009A514(s32, s32);
-
-/**
- * @brief Check entity availability and mark as active.
- *
- * Calls func_8009A514 with D_800ED148[0xCE3] and (7 - a0).
- * If the result is non-zero, sets D_800ED148[a0 + 0xD5C] to 1.
- *
- * @param a0 Entity slot index.
- */
-void func_800A66D0(s32 a0) {
-    u8 *base = (u8 *)&D_800ED148;
-    if (func_8009A514(base[0xCE3], 7 - a0) != 0) {
-        base[a0 + 0xD5C] = 1;
+void func_800A66D0(s32 arg0) {
+    if (func_8009A514(D_800ED148.unkCE3, 7 - arg0) != 0) {
+        D_800ED148.unkD5C[arg0] = 1;
     }
 }
 
@@ -184,20 +155,16 @@ void func_800A66D0(s32 a0) {
  * and set active status.
  */
 void func_800A6724(void) {
-    s32 i = 7;
-    s32 base = (s32)&D_800ED148;
-    base += 7;
-top:
-    *(u8 *)(base + 0xD5C) = 0;
-    i--;
-    base--;
-    if (i >= 0) goto top;
+    s32 i;
+    
+   for (i = 0; i < 8; i++) {
+        D_800ED148.unkD5C[i] = 0;
+    }
 
-    i = 0;
-    do {
+
+    for (i = 0; i < 8; i++) {
         func_800A66D0(i);
-        i++;
-    } while (i < 8);
+    }
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6780);
@@ -253,21 +220,14 @@ void func_800A6AE0(void) {
  * @return 1 if any qualifying entity has the flag set, 0 otherwise.
  */
 s32 func_800A6B08(void) {
-    s32 i = 3;
-    volatile u8 *base = (volatile u8 *)&D_800ED148;
-    u8 *entry = (u8 *)base + 3 * 0xD0;
+    s32 i;
 
-top:
-    if (!(*(u16 *)(entry + 0x90) & 1)) {
-        u8 *ptr = *(u8 **)(entry + 0x10);
-        ptr = *(u8 **)ptr;
-        if (*(u8 *)(ptr + 0xFE) & 4) {
+    for (i = 3; i < 7; i++) {
+        if (!(D_800ED148.entities[i].status & 1) && (*D_800ED148.entities[i].entityData)->unkFE & 4) {
             return 1;
         }
     }
-    i++;
-    entry += 0xD0;
-    if (i < 7) goto top;
+    
     return 0;
 }
 
@@ -283,23 +243,16 @@ top:
  * @param a1 Value to return if all entities pass the check.
  * @return 0 if any qualifying entity lacks the flag, a1 if all pass.
  */
-s32 func_800A6B6C(s32 a0, s32 a1) {
-    s32 i = 3;
-    volatile u8 *base = (volatile u8 *)&D_800ED148;
-    u8 *entry = (u8 *)base + 3 * 0xD0;
+s32 func_800A6B6C(s32 arg0, s32 arg1) {
+    s32 i;
 
-top:
-    if (!(*(u16 *)(entry + 0x90) & 1)) {
-        u8 *ptr = *(u8 **)(entry + 0x10);
-        ptr = *(u8 **)ptr;
-        if (!(*(u8 *)(ptr + 0xFE) & a0)) {
+    for (i = 3; i < 7; i++) {
+        if (!(D_800ED148.entities[i].status & 1) && !((*D_800ED148.entities[i].entityData)->unkFE & arg0)) {
             return 0;
         }
     }
-    i++;
-    entry += 0xD0;
-    if (i < 7) goto top;
-    return a1;
+    
+    return arg1;
 }
 
 /**
@@ -316,15 +269,19 @@ s32 func_800A6BD0(s32 a0) {
     if (a0 == 1) {
         return 0;
     }
+
     if (a0 == 0) {
-        if (func_8009B74C(0x80, 0xFF) != 0) {
+        if (func_8009B74C(128, 255)) {
             return 3;
         }
+
         return 4;
     }
-    if (func_8009B74C(0x80, 0xFF) != 0) {
+
+    if (func_8009B74C(128, 255)) {
         return 1;
     }
+
     return 2;
 }
 
@@ -377,16 +334,8 @@ s32 func_800A6FB8(void) {
     return func_8009B15C() % 100 + 1;
 }
 
-/**
- * @brief Add func_800A6E2C() result minus 200 to input.
- *
- * @param a0 Input value to add to.
- * @return a0 + func_800A6E2C() - 0xC8.
- */
-s32 func_800A700C(s32 a0) {
-    s32 result = func_800A6E2C();
-    result -= 0xC8;
-    return result + a0;
+s32 func_800A700C(s32 arg0) {
+    return func_800A6E2C() - (200 - arg0);
 }
 
 /**
@@ -421,9 +370,10 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7080);
  */
 s32 func_800A7154(void) {
     s32 val = func_800A7080();
-    if (val >= 101) {
+    if (val > 100) {
         return 100;
     }
+    
     return val;
 }
 
@@ -436,13 +386,12 @@ s32 func_800A7154(void) {
  *
  * @param slot Battle slot to clear.
  */
-void func_800A7188(BattleEntity *slot) {
-    u8 *p = (u8 *)slot;
-    p[0x8A] = 0;
-    p[0x89] = 0;
-    p[0x88] = 0;
-    p[0xC7] = 0;
-    p[0xC8] = 0;
+void func_800A7188(BattleEntityData* arg0) {
+    arg0->unk8A = 0;
+    arg0->unk89 = 0;
+    arg0->unk88 = 0;
+    arg0->unkC7 = 0;
+    arg0->unkC8 = 0;
 }
 
 /**
@@ -454,14 +403,12 @@ void func_800A7188(BattleEntity *slot) {
  *
  * @param slot Battle slot whose mid-region words are zeroed.
  */
-void func_800A71A0(BattleEntity *slot) {
-    s32 i = 7;
-    u8 *base = (u8 *)slot + 0x1C;
-    top:
-        *(s32 *)(base + 0x24) = 0;
-        i--;
-        base -= 4;
-    if (i >= 0) goto top;
+void func_800A71A0(BattleEntityData* arg0) {
+    s32 i;
+
+    for (i = 0; i < 8; i++) {
+        arg0->unk24[i] = 0;
+    }
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A71C0);
@@ -589,13 +536,17 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A774C);
  *
  * @param a0 1-based bit position to set. If 0, does nothing.
  */
-void func_800A779C(s32 a0) {
-    if (a0 != 0) {
-        s32 val = a0 - 1;
-        s32 q = val / 32;
-        s32 r = val - q * 32;
-        s32 base = (s32)&g_gameState;
-        *(s32 *)(base + q * 4 + 0xD04) |= (1 << r);
+void func_800A779C(s32 arg0) {
+    s32 idx;
+    s32 bit;
+    s32 temp_v0;
+    
+    temp_v0 = arg0 - 1;
+    if (arg0 != 0) {
+        idx = temp_v0 / 32;
+        bit = temp_v0 - (idx * 32);
+
+        g_gameState.mainData.array210[idx] |= 1 << bit;
     }
 }
 
@@ -617,11 +568,8 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A79A0);
  * @param a0 Entity index (stride 0x1D0 in @c g_battleChars).
  * @return The @c field09 byte for that entity's class.
  */
-s32 func_800A7A44(s32 a0) {
-    u8 *table = (u8 *)&g_gfData;
-    u8 *base = (u8 *)&g_battleChars;
-    s32 val = *(u8 *)(base + a0 * 464 + 0x1BA);
-    return *(u8 *)(table + val * 12 + 0x35C1);
+u8 func_800A7A44(s32 arg0) {
+    return D_80078E00.array35BD[g_battleChars.chars[arg0].classId].unk4;
 }
 
 /**
@@ -630,12 +578,8 @@ s32 func_800A7A44(s32 a0) {
  * @param idx Entity index.
  * @return Byte at offset 0x1B9 within the entity entry.
  */
-s32 func_800A7A8C(s32 idx) {
-    u8 *base = (u8 *)&g_battleChars;
-    u8 *entry;
-    asm("");
-    entry = base + idx * 0x1D0;
-    return entry[0x1B9];
+u8 func_800A7A8C(s32 arg0) {
+    return g_battleChars.chars[arg0].unk1B9;
 }
 
 /**
@@ -647,12 +591,8 @@ s32 func_800A7A8C(s32 idx) {
  * @param a0 Entity index.
  * @return Byte value at the end of the pointer chain.
  */
-s32 func_800A7AB8(s32 a0) {
-    s32 base = (s32)&D_800ED148;
-    s32 entry = base + a0 * 208;
-    s32 ptr = *(s32 *)(entry + 0x10);
-    ptr = *(s32 *)ptr;
-    return *(u8 *)(ptr + 0xF6);
+u8 func_800A7AB8(s32 arg0) {
+    return (*D_800ED148.entities[arg0].entityData)->unkF6;
 }
 
 /**
@@ -687,14 +627,6 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7CEC);
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7D8C);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7EE0);
-
-/**
- * @brief Look up a byte and multiply by 10.
- *
- * @param a0 Base pointer.
- * @param a1 Offset to add to base.
- * @return Byte at (a0 + a1 + 0x160) multiplied by 10.
- */
  
 s32 func_800A7FB4(BattleEntityData* arg0, s32 arg1) {
     return arg0->unk160[arg1] * 10;
@@ -762,20 +694,12 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A89B8);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8A48);
 
-/**
- * @brief Initialize 3 animation entries for an entity in g_battleChars.
- *
- * Computes the entity base at g_battleChars + a0 * 0x1D0, then calls
- * func_800A8A48 three times to set up entries 0 (id=0x23), 1 (id=0x24),
- * and 2 (id=0).
- *
- * @param a0 Entity index (stride 0x1D0 in g_battleChars).
- * @return Always 2.
- */
-s32 func_800A8AFC(s32 a0) {
-    u8 *entry = (u8 *)&g_battleChars + a0 * 0x1D0;
-    func_800A8A48(entry, 0, 0x23, 0);
-    func_800A8A48(entry, 1, 0x24, 0);
-    func_800A8A48(entry, 2, 0, 0);
+s32 func_800A8AFC(s32 arg0) {
+    BattleCharData* ptr = &g_battleChars.chars[arg0];
+
+    func_800A8A48(ptr, 0, 35, 0);
+    func_800A8A48(ptr, 1, 36, 0);
+    func_800A8A48(ptr, 2, 0, 0);
+    
     return 2;
 }
