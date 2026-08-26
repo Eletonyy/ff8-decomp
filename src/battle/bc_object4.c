@@ -311,16 +311,22 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6E2C);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6EBC);
 
-/**
- * @brief Compute random percentage clamped to [1, 100].
- *
- * Gets a random number from func_8009B15C, divides by func_800A6E2C
- * result, takes the remainder. Clamps: 0 becomes 1, values above
- * 100 become 100.
- *
- * @return Clamped remainder in range [1, 100].
- */
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6F64);
+s32 func_800A6F64(void) {
+    s32 result;
+  
+    result = func_8009B15C() % func_800A6E2C();
+    if (result == 0) {
+        return 1;
+    }
+        
+    else {
+        if (result > 100) {
+            return 100;
+        }
+        
+        return result;
+    }
+}
 
 /**
  * @brief Generate random value in range [1, 100].
@@ -755,14 +761,15 @@ void func_800A890C(s32 a0) {
     } while (i >= 0);
 }
 
-/**
- * @brief Check bit 0 of flags for entities 3-6 and call handler.
- *
- * Iterates over entities at indices 3 through 6 in the D_800ED148 table
- * (stride 0xD0). For each entity whose flags word at offset 0x8C has
- * bit 0 set, calls func_800A890C with the entity index.
- */
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8948);
+void func_800A8948(void) {
+    s32 i;
+
+    for (i = 0; i < 4; i++) {
+        if (D_800ED148.entities[i+3].controlFlags & 1) {
+            func_800A890C(i + 3);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A89B8);
 
