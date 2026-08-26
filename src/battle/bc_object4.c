@@ -368,8 +368,8 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7080);
  *
  * @return The result of func_800A7080, capped at 100.
  */
-s32 func_800A7154(void) {
-    s32 val = func_800A7080();
+s32 func_800A7154(s32 arg0) {
+    s32 val = func_800A7080(arg0);
     if (val > 100) {
         return 100;
     }
@@ -632,7 +632,81 @@ s32 func_800A7FB4(BattleEntityData* arg0, s32 arg1) {
     return arg0->unk160[arg1] * 10;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7FD0);
+void func_800A7FD0(s32 arg0, s32 arg1, s32 arg2) {
+    s32 temp_v0;
+    s32 i;
+    BattleEntityData* temp_s1;
+    BattleEntityData* temp_s3;
+
+
+    temp_s3 = *D_800ED148.entities[arg0].entityData;
+    D_800EE9E8.subEntries[arg0 - 3].unk10 = 0;
+    temp_s1 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    temp_s1->unkBC = func_800A7154(arg1);
+    temp_s1->unk7C = 17;
+    if (temp_s3->immunityFlags & 0x10) {
+        temp_s1->unk7C |= 0x2000;
+    }
+    
+    if (temp_s3->immunityFlags & 8) {
+        temp_s1->unk7C |= 0x8000;
+    }
+    
+    if (temp_s3->unkFE & 0x40) {
+        temp_s1->unk7C |= 0x10000;
+    }
+    
+    if (func_800A7AF4(arg0) != 0) {
+        temp_s1->unk7C |= 0x20;
+    }
+    
+    temp_s1->unkBB = arg2;
+    temp_v0 = func_800A7CEC(temp_s1->unkBC, temp_s3);
+    temp_s1->unk18 = temp_v0;
+    temp_s1->unk1C = temp_v0;
+    temp_s1->unkC4 = 0;
+    temp_s1->unkC2 = 0;
+    temp_s1->unk80 = 0;
+    temp_s1->unk8 = 0;
+    temp_s1->unkC6 = 100;
+    for (i = 0; i < 8; i++) {
+        temp_s1->unk44[i] = func_800A7FB4(temp_s3, i);
+    }
+    
+    for (i = 0; i < 40; i++) {
+        temp_s1->unk90[i] = func_800A7EE0(temp_s3, i);
+    }
+    
+    if (temp_s3->immunityFlags & 1) {
+        temp_s1->unk90[6] = 255;
+        temp_s1->unk80 |= 0x40;
+    }
+    
+    if (temp_s3->immunityFlags & 2) {
+        temp_s1->unk8 |= 0x2000;
+    }
+    
+    if (temp_s3->immunityFlags & 0x20) {
+        temp_s1->unk8 |= 0x80;
+    }
+    
+    if (temp_s3->immunityFlags & 0x80) {
+        temp_s1->unk8 |= 0x20;
+    }
+    
+    if (temp_s3->immunityFlags & 0x40) {
+        temp_s1->unk8 |= 0x40;
+    }
+    
+    for (i = 0; i < 6; i++) {
+        D_800EE9E8.subEntries[arg0 - 3].unk40[i] = 10;
+    }
+    
+    func_800A7188(temp_s1);
+    func_800A71A0(temp_s1);
+    func_800A554C(arg0);
+    func_800A559C(arg0);
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A82A0);
 

@@ -180,15 +180,31 @@ typedef struct {
     u8 padC[4];
     volatile s32 unk10;  // volatile because func_800A5688, func_800A559C
     volatile s32 unk14;  // volatile because func_800A5688, func_800A559C
-    u8 pad18[10];
+    s32 unk18;
+    s32 unk1C;
+    u8 pad20[4];
     s32 unk24[7];
-    u8 pad40[0x48];
+    u8 pad40[4];
+    u16 unk44[8];
+    u8 pad54[0x7C - 0x54];
+    volatile s32 unk7C;
+    u16 unk80;
+    u8 pad82[6];
     u8 unk88;
     u8 unk89;
     u8 unk8A;
-    u8 pad8B[0x36];
-    u8 unkC1;
-    u8 padC2[5];
+    u8 pad8B[5];
+    u8 unk90[40];
+    u8 padB8[0xBB - 0xB8];
+    u8 unkBB;
+    u8 unkBC;
+    u8 padBD[0xC1 - 0xBD];
+    u8 unkC1; 
+    u8 unkC2;
+    u8 padC3;
+    u8 unkC4;
+    u8 padC5;
+    u8 unkC6;
     u8 unkC7;
     u8 unkC8;
     u8 padC9[0x2D];
@@ -552,7 +568,9 @@ typedef struct {
 /** @brief 0x47-byte sub-entry in @c BattleAnimTable.subEntries. */
 typedef struct {
     drawSlot array0[4]; /* size related to the index used in func_800A3094 */
-    u8 pad10[0x36];
+    u8 unk10;
+    u8 pad11[0x2F];
+    u8 unk40[6];
     u8 unk46;
 } BattleAnimSubEntry;   /* 0x47 */
 
