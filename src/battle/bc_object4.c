@@ -167,7 +167,15 @@ void func_800A6724(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6780);
+void func_800A6780(s32 arg0) {
+  
+    if (!(D_800ED148.entities[arg0].status & 1) && !(D_800ED148.entities[arg0].status & 4)) {
+        D_800ED148.entities[arg0].unk24 = D_800ED148.entities[arg0].unk20;
+        return;
+    }
+    
+    D_800ED148.entities[arg0].unk24 = 0;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A67FC);
 
