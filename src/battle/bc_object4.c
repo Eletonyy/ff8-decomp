@@ -568,7 +568,17 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A77E8);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7884);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7934);
+void func_800A7934(void) {
+    s32 i;
+    
+    for (i = 0; i < 3; i++) {
+        GameState* gs = &g_gameState;
+        if (D_800ED148.entities[i].linkedIdx != 255) {
+            CharacterData* character = gs->chars;
+            character[g_gameState.mainData.party.party[i]].currentHp = D_800ED148.entities[i].unk28;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A79A0);
 
