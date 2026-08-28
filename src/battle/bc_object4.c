@@ -116,7 +116,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A63DC);
 void func_800A64E4(s32 arg0, u16 arg1) {
     if (arg0 == 0) {
         func_800B0754(D_800ED148.entities[0].entityRef, 237, D_800ED148.unk1324, arg1);
-        decrementItemByType(D_800ED148.unk1324 + 0x65);
+        decrementItemByType(D_800ED148.unk1324 + 101);
         func_8009AF14(func_800E1850);
         return;
     }
@@ -203,19 +203,19 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A68AC);
 void func_800A69BC(void) {
     switch (D_800ED148.unk1308) {
         case 1:
-            func_8009AF3C(getMenuString(0x2E), (D_80077E59 * 8) + 8, 3, 0x80, 0x56);
+            func_8009AF3C(getMenuString(0x2E), (D_80077E59 * 8) + 8, 3, 128, 86);
             break;
         
         case 2:
-            func_8009AF3C(getMenuString(0x2D), (D_80077E59 * 8) + 8, 3, 0x80, 0x56);
+            func_8009AF3C(getMenuString(0x2D), (D_80077E59 * 8) + 8, 3, 128, 86);
             break;
         
         case 3:
-            func_8009AF3C(getMenuString(0x2C), (D_80077E59 * 8) + 8, 3, 0x80, 0x56);
+            func_8009AF3C(getMenuString(0x2C), (D_80077E59 * 8) + 8, 3, 128, 86);
             break;
         
         case 4:
-            func_8009AF3C(getMenuString(0x2F), (D_80077E59 * 8) + 8, 3, 0x80, 0x56);
+            func_8009AF3C(getMenuString(0x2F), (D_80077E59 * 8) + 8, 3, 128, 86);
             break;
         
         default:
@@ -1117,8 +1117,8 @@ void func_800A8A48(BattleCharData* arg0, s32 arg1, u8 arg2, s32 arg3) {
     arg0->unkSlots[arg1].unk2 = D_80078E00.unkE8[arg0->unkSlots[arg1].unk0].unk2;
     
     if (arg3 == 0) {
-        arg0->unkSlots[arg1].unk1 = arg0->cmdSlots[findCommandSlot(arg0, 0xD)].unk1;
-        arg0->unkSlots[arg1].unk3 = arg0->cmdSlots[findCommandSlot(arg0, 0xD)].unk3;
+        arg0->unkSlots[arg1].unk1 = arg0->cmdSlots[findCommandSlot(arg0, 13)].unk1;
+        arg0->unkSlots[arg1].unk3 = arg0->cmdSlots[findCommandSlot(arg0, 13)].unk3;
     }
     
     else {
