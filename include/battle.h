@@ -198,10 +198,13 @@ typedef struct {
     u8 padB8[0xBB - 0xB8];
     u8 unkBB;
     u8 unkBC;
-    u8 padBD[0xC1 - 0xBD];
+    u8 unkBD;
+    u8 unkBE;
+    u8 unkBF;
+    u8 unkC0;
     u8 unkC1; 
     u8 unkC2;
-    u8 padC3;
+    u8 unkC3;
     u8 unkC4;
     u8 padC5;
     u8 unkC6;

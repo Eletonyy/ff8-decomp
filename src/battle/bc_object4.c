@@ -1016,7 +1016,22 @@ void func_800A7FD0(s32 arg0, s32 arg1, s32 arg2) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A82A0);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8320);
+void func_800A8320(s32 arg0) {
+    BattleEntityData* temp_s2;
+    BattleEntityData* temp_s0;
+    drawSlot* temp_s1;
+
+    temp_s1 = D_800EE9E8.subEntries[arg0 - 3].array0;
+    temp_s2 = *D_800ED148.entities[arg0].entityData;
+    temp_s0 =  (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    
+    temp_s0->unkBD = func_800A82A0(temp_s1, temp_s2, temp_s0, 0);
+    temp_s0->unkBE = func_800A82A0(temp_s1, temp_s2, temp_s0, 1);
+    temp_s0->unkBF = func_800A82A0(temp_s1, temp_s2, temp_s0, 2);
+    temp_s0->unkC0 = func_800A82A0(temp_s1, temp_s2, temp_s0, 3);
+    temp_s0->unkC1 = func_800A82A0(temp_s1, temp_s2, temp_s0, 4);
+    temp_s0->unkC3 = func_800A82A0(temp_s1, temp_s2, temp_s0, 5);
+}
 
 void func_800A8430(s32 arg0) {
     BattleEntityData* temp_s0;
