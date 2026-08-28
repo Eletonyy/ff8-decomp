@@ -101,7 +101,45 @@ void func_800A63C0(s16 arg0, s16 arg1, s16 arg2, s16 arg3) {
     D_800ED148.unk1294 = arg2;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A63DC);
+void func_800A63DC(void) {
+    BattleEntry* entry;
+    SubEntry* subEntry;
+    
+    if (D_800ED148.unk1290 != 0) {
+        entry = &D_800ED148.entries[0];
+        D_800EE4C0.unk1 = entry->unk1;
+        
+        if (D_800ED148.unk1292 == 1) {
+            if (entry->unk1 == 12) {
+                D_800EE4C0.unk1 = 248;
+            } 
+            
+            else if (entry->unk1 == 28) {
+                D_800EE4C0.unk1 = 243;
+            }
+            
+            else {
+                D_800EE4C0.unk1 = 253;
+            }
+        }
+            
+        else {
+            D_800EE4C0.unk1 = 251;
+        }
+        
+        D_800EE4C0.unk0 = entry->unk0;
+        subEntry = &D_800ED148.Array844[0];
+        
+        if ((D_800ED148.unk1292 == 1) && (D_800ED148.entities[D_800EE4C0.unk0].status & 8)) {
+            D_800ED148.unk1294 = 1;
+        }
+        
+        D_800ED148.unk5C1 = 0;
+        func_800A09D0(subEntry->unk0);
+        func_800A5210(subEntry->unk0);
+        D_800ED148.unk1290 = 0;
+    }
+}
 
 /**
  * @brief Initiate battle sequence based on mode flag.
