@@ -743,7 +743,20 @@ void func_800A779C(s32 arg0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A77E8);
+void func_800A77E8(void) {
+    s32 j;
+    s32 i;
+    u8 idx;
+    
+    for (i = 0; i < 3; i++) {
+        idx = g_gameState.mainData.party.party[i]; // uses party.party as the index for chars
+        if (idx != 255) { // not party member 3
+            for (j = 0; j < 32; j++) {
+                func_800A779C(g_gameState.chars[idx].magic[j].magicId);
+            }
+        }
+    }
+}
 
 void func_800A7884(void) {
     s32 i;
