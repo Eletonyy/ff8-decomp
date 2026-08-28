@@ -177,11 +177,51 @@ void func_800A6780(s32 arg0) {
     D_800ED148.entities[arg0].unk24 = 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A67FC);
+void func_800A67FC(s32 arg0) {
+    s32 i;
+
+    if (arg0 == 0) {
+        for (i = 0; i < 3; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                D_800ED148.entities[i].flags |= 0x800000;
+                g_battleChars.chars[i].unk188 = D_800ED148.entities[i].flags;
+            }
+        }
+    }
+        
+    else {
+        for (i = 3; i < 7; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                D_800ED148.entities[i].flags |= 0x800000;
+            }
+        }
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A68AC);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A69BC);
+void func_800A69BC(void) {
+    switch (D_800ED148.unk1308) {
+        case 1:
+            func_8009AF3C(getMenuString(0x2E), (D_80077E59 * 8) + 8, 3, 0x80, 0x56);
+            break;
+        
+        case 2:
+            func_8009AF3C(getMenuString(0x2D), (D_80077E59 * 8) + 8, 3, 0x80, 0x56);
+            break;
+        
+        case 3:
+            func_8009AF3C(getMenuString(0x2C), (D_80077E59 * 8) + 8, 3, 0x80, 0x56);
+            break;
+        
+        case 4:
+            func_8009AF3C(getMenuString(0x2F), (D_80077E59 * 8) + 8, 3, 0x80, 0x56);
+            break;
+        
+        default:
+            return;
+    }
+}
 
 /**
  * @brief Process entities 1 and 2, then call func_800A67FC with 0.
@@ -293,9 +333,70 @@ s32 func_800A6BD0(s32 a0) {
     return 2;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6C34);
+s32 func_800A6C34(void) {
+    s32 var_s0;
+    s32 var_s1;
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6D30);
+
+    if (D_80082C0A & 0x80) {
+        return 0;
+    }
+      
+    if (D_80082C0A & 0x20) {
+        return 1;
+    }
+    
+    if (D_80082C0A & 0x40) {
+        return 2;
+    }
+    
+    var_s0 = func_800A6B6C(1, 20);
+    var_s0 += func_800A6B6C(2, -20);
+    var_s0 += func_8009B15C();
+    
+    if (D_80078DF8 & 1) {
+        var_s0 -= 20;
+    }
+    
+    var_s1 = 0;
+    if (var_s0 > 19) {
+        var_s1 = 2;
+        if (var_s0 < 236) {
+            var_s1 = 1;
+        }
+    }
+    
+    if ((D_80078DF8 & 1) && (var_s1 == 2)) {
+        var_s1 = 1;
+    }
+    
+    if ((func_800A6B08() != 0) && (var_s1 == 0)) {
+        var_s1 = 1;
+    }
+    
+    return func_800A6BD0(var_s1);
+}
+
+void func_800A6D30(void) {
+    D_800ED148.unk1308 = func_800A6C34();
+    switch (D_800ED148.unk1308) {
+        case 1:
+            func_800A6A88();
+            return;
+
+        case 2:
+            func_800A6A58();
+            return;
+
+        case 3:
+            func_800A6AE0();
+            return;
+
+        case 4:
+            func_800A6AB0();
+            return;
+    }
+}
 
 s32 func_800A6DD8(void) {
     s32 i;
@@ -315,9 +416,56 @@ s32 func_800A6DD8(void) {
     return var_v1 / var_a2;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6E2C);
+s32 func_800A6E2C(void) {
+    s32 result;
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A6EBC);
+    result = func_800A6DD8();
+    
+    if (func_8009B15C() & 1) {
+        result += (result / 5);
+    }
+    
+    else {
+        result -= (result / 5);
+    }
+    
+    if (result < 1) {
+        return 1;
+    }
+        
+    if (result > 100) {
+        return 100;
+    }
+
+    return result;
+}
+
+s32 func_800A6EBC(void) {
+    s32 result;
+    s32 temp_v0;
+
+    result = func_800A6DD8();
+    
+    if (func_8009B15C() & 1) {
+        temp_v0 = func_8009B15C();
+        result += (temp_v0 - (temp_v0 / 4 * 4));
+    } 
+    
+    else {
+        temp_v0 = func_8009B15C();
+        result -= (temp_v0 - (temp_v0 / 4 * 4));
+    }
+   
+    if (result < 1) {
+        return 1;
+    }
+        
+    if (result > 65) {
+        return 65;
+    }
+
+    return result;
+}
 
 s32 func_800A6F64(void) {
     s32 result;
@@ -370,18 +518,41 @@ s32 func_800A703C(s32 a0) {
     return limit;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7080);
+s32 func_800A7080(s32 arg0) {
+    if (arg0 < 101) {
+        return arg0;
+    }
+    
+    if(arg0 == 255) {
+        return func_800A6E2C();
+    }
+    
+    if(arg0 == 254) {
+        return func_800A6DD8();
+    }
+    
+    if(arg0 == 253) {
+        return func_800A6F64();
+    }
+    
+    if(arg0 == 252) {
+        return func_800A6FB8();
+    }
+    
+    if(arg0 == 251) {
+        return func_800A6EBC();
+    }
 
-/**
- * @brief Clamp func_800A7080 result to maximum 100.
- *
- * @return min(func_800A7080(), 100).
- */
-/**
- * @brief Compute a value and clamp to maximum of 100.
- *
- * @return The result of func_800A7080, capped at 100.
- */
+    if (arg0 > 200 && arg0 < 251) {
+        return func_800A700C(arg0);
+    }
+    
+
+    if (arg0 > 100 && arg0 < 201) {
+        return func_800A703C(arg0);
+    }
+}
+
 s32 func_800A7154(s32 arg0) {
     s32 val = func_800A7080(arg0);
     if (val > 100) {
@@ -539,7 +710,15 @@ void func_800A7518(s32 idx) {
  * @param a0 1-based bit position to test. If 0, returns undefined.
  * @return 1 if the bit is set, 0 if clear.
  */
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A774C);
+s32 func_800A774C(s32 idx) {
+    if (idx != 0) {
+        s32 val = idx - 1;
+        s32 idx = val / 32;
+        s32 bit = val - idx * 32;
+        
+        return (g_gameState.mainData.array210[idx] & (1 << bit))? 1 : 0;
+    }
+}
 
 /**
  * @brief Set a bit in the g_gameState bitfield at offset 0xD04.
@@ -566,7 +745,26 @@ void func_800A779C(s32 arg0) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A77E8);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7884);
+void func_800A7884(void) {
+    s32 i;
+
+    for (i = 0; i < 3; i++) {
+        g_battleChars.chars[i].unk180 = 0;
+        g_battleChars.chars[i].unk184 = 0;
+    }
+
+    func_800A77E8();
+    D_80078DF8 = 0;
+
+    for (i = 0; i < 3; i++) {
+        func_80022E08(g_gameState.mainData.party.party[i], i);
+        func_800231E0(g_gameState.mainData.party.party[i], i);
+        func_800A7518(i);
+        func_800A71C0(i);
+    }
+    
+    recalcAllGfStats();
+}
 
 void func_800A7934(void) {
     s32 i;
@@ -580,7 +778,25 @@ void func_800A7934(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A79A0);
+void func_800A79A0(void) {
+    s32 i;
+
+    func_800A7934();
+    func_800AF7C4();
+    func_800A77E8();
+    func_800A8794();
+    func_800D8A94();
+    
+    if (D_800ED148.unk1318 != 0) {
+        func_800D8A78();
+        D_800ED148.unk1318 = 0;
+    }
+
+    for (i = 0; i < 3; i++) {
+        func_800231E0(g_gameState.mainData.party.party[i], i);
+        func_800A71C0(i);
+    }
+}
 
 /**
  * @brief Look up the per-class @c field09 byte for the entity at @p a0.
@@ -644,7 +860,22 @@ s32 func_800A7AF4(s32 a0) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7B48);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7C64);
+void func_800A7C64(s32 arg0, s32 arg1) {
+    BattleEntityData* temp_v1;
+    u8 result;
+
+    temp_v1 = *D_800ED148.entities[arg0].entityData;
+    result = 0;
+    
+    if (arg1 >= temp_v1->unkF4) {
+        result = 2;
+        if (arg1 < temp_v1->unkF5) {
+            result = 1;
+        }
+    }
+    
+    D_800EE9E8.subEntries[arg0 - 3].unk46 = result;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7CEC);
 
@@ -736,7 +967,24 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A82A0);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8320);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8430);
+void func_800A8430(s32 arg0) {
+    BattleEntityData* temp_s0;
+    BattleEntityData* temp_s1;
+    s32 result;
+    
+    temp_s0 = *D_800ED148.entities[arg0].entityData;
+    temp_s1 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    
+    func_800A7C64(arg0, temp_s1->unkBC);
+    result = func_800A7CEC(temp_s1->unkBC, temp_s0);
+    temp_s1->unk1C = result;
+    
+    if (result < temp_s1->unk18) {
+        temp_s1->unk18 = result;
+    }
+
+    func_800A8320(arg0);
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A84CC);
 
@@ -751,32 +999,73 @@ void func_800A853C(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8578);
+void func_800A8578(void) {
+    s32 i;
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A864C);
+    for (i = 0; i < 32; i++) {
+        D_800EE9E8.animSlots[i].unk4 = 0;
+        
+        if (D_80078E00.abilities[D_800EE9E8.animSlots[i].id].unk2 & 0x80) {
+            D_800EE9E8.animSlots[i].unk4 = 1;
+        }
+        
+        if (!(D_80078E00.abilities[D_800EE9E8.animSlots[i].id].unk2 & 0x20)) {
+            D_800EE9E8.animSlots[i].unk4 |= 2;
+        }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A86F0);
+        D_800EE9E8.animSlots[i].unk3 = D_80078E00.abilities[D_800EE9E8.animSlots[i].id].abilityId;
+        D_800EE9E8.animSlots[i].unk2 = D_80078E00.abilities[D_800EE9E8.animSlots[i].id].unk0;
+    }
+}
+
+void func_800A864C(void) {
+    BattleAnimSlot* temp_v0;
+    s32 i;
+    s32 idx;
+
+    for (i = 0; i < 32; i++) {
+        D_800EE9E8.animSlots[i].value = 0;
+        D_800EE9E8.animSlots[i].id    = 0;
+    }
+
+    for (i = 0; i < 198; i++) {
+        idx = g_gameState.mainData.itemSlots[i].id;
+        
+        if ((idx != 0) && (idx < 33)) {
+            temp_v0 = &D_800EE9E8.animSlots[g_gameState.mainData.limitBreaks.angeloPoints[idx+7]]; // not much sense, size 8
+            temp_v0->value = g_gameState.mainData.itemSlots[i].count;
+            temp_v0->id = idx;
+        }
+    }
+    
+    func_800A8578();
+}
+
+void func_800A86F0(s32 arg0) {
+    s32 i;
+
+    func_8009B208(&D_800ED148.unkD64[arg0][0], &D_800ED148.unk1100[arg0], 11);
+    
+    for (i = 0; i < 11; i++) {
+        func_800A5948(i, arg0);
+    }
+
+    for (i = 0; i < 3; i++) {
+        D_800ED148.unk1244[i].unk0[2].unk7 = 0;
+        D_800ED148.unk1244[i].unk0[1].unk7 = 0;
+        D_800ED148.unk1244[i].unk0[0].unk7 = 0;
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8794);
 
-/**
- * @brief Clear 4 status bytes in an entity's sub-table.
- *
- * Computes D_800EE9B3 + a0 * 71 as base, then clears bytes
- * at offsets 0xD, 0x9, 0x5, and 0x1 (stride -4, 4 iterations).
- *
- * @param a0 Entity index (stride 71).
- */
-void func_800A890C(s32 a0) {
-    s32 i = 3;
-    s32 offset = a0 * 71;
-    s32 base = (s32)D_800EE9B3;
-    u8 *ptr = (u8 *)(offset + base + 0xC);
-    do {
-        *(u8 *)(ptr + 1) = 0;
-        i--;
-        ptr -= 4;
-    } while (i >= 0);
+void func_800A890C(s32 arg0) {
+    s32 i;
+    drawSlot* var_v0 = D_800EE9E8.subEntries[arg0 - 3].array0;
+
+    for (i = 0; i < 4; i++) {
+        var_v0[i].unk1 = 0;
+    }
 }
 
 void func_800A8948(void) {
@@ -789,9 +1078,41 @@ void func_800A8948(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A89B8);
+s32 func_800A89B8(s32 arg0, s32 arg1) {
+    BattleCharData* temp_a0;
+    s32 i;
+    
+    temp_a0 = &g_battleChars.chars[arg0];
+  
+    for (i = 0; i < 32; i++) {
+        if (temp_a0->magicSlots[i].unk0 == arg1) {
+            return temp_a0->magicSlots[i].unk1 == 100;
+        }
+    }
+  
+    for (i = 0; i < 32; i++) {
+        if (temp_a0->magicSlots[i].unk0 == 0) {
+            return 0;
+        }
+    }
+    
+    return 1;
+}
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8A48);
+void func_800A8A48(BattleCharData* arg0, s32 arg1, u8 arg2, s32 arg3) {
+    arg0->unkSlots[arg1].unk0 = arg2;
+    arg0->unkSlots[arg1].unk2 = D_80078E00.unkE8[arg0->unkSlots[arg1].unk0].unk2;
+    
+    if (arg3 == 0) {
+        arg0->unkSlots[arg1].unk1 = arg0->cmdSlots[findCommandSlot(arg0, 0xD)].unk1;
+        arg0->unkSlots[arg1].unk3 = arg0->cmdSlots[findCommandSlot(arg0, 0xD)].unk3;
+    }
+    
+    else {
+        arg0->unkSlots[arg1].unk1 = arg0->cmdSlots[findCommandSlot(arg0, 2)].unk1;
+        arg0->unkSlots[arg1].unk3 = arg0->cmdSlots[findCommandSlot(arg0, 2)].unk3;
+    }
+}
 
 s32 func_800A8AFC(s32 arg0) {
     BattleCharData* ptr = &g_battleChars.chars[arg0];

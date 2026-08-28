@@ -207,7 +207,9 @@ typedef struct {
     u8 unkC6;
     u8 unkC7;
     u8 unkC8;
-    u8 padC9[0x2D];
+    u8 padC9[0x2B];
+    u8 unkF4;
+    u8 unkF5;
     u8 unkF6;
     u8 immunityFlags;   /* bit 0 forces status bit 0x40 clear, bit 1 forces flags bit 0x2000 clear (read by @c func_8009AFF0). */
     u8 unkF8;
@@ -459,8 +461,7 @@ typedef struct {
     /* 0x1103 */ TaskLink taskLinks[16];            /**< Task queue link table (16 × 4 bytes). */
     /* 0x1143 */ u8 pad1143;
     /* 0x1144 */ TaskEntry taskData[16];            /**< Task queue data slots (16 × 16 bytes). */
-    /* 0x1244 */ Struct_1244 unk1244[1];
-    /* 0x125C  */ u8 pad125C[0x128C - 0x125C];
+    /* 0x1244 */ Struct_1244 unk1244[3];
     /* 0x128C */ callback_t unk128C;                /**< Cached userData for callback. */
     /* 0x1290 */ s16 unk1290;
     /* 0x1292 */ s16 unk1292;
@@ -555,15 +556,19 @@ typedef struct {
 typedef struct {
     u8 id;          /* lookup key / command byte. */
     s8 value;       /* signed value byte. */
-    u8 pad2[3];
+    u8 unk2;
+    u8 unk3;
+    u8 unk4;
 } BattleAnimSlot;
 
 
 /** this struct might be related to draw function. Unk0 accessed in func_800A3094 */
 typedef struct {
     u8 unk0;
-    u8 pad[3];
+    u8 unk1;
+    u8 pad2[2];
 } drawSlot;
+
 
 /** @brief 0x47-byte sub-entry in @c BattleAnimTable.subEntries. */
 typedef struct {
@@ -585,7 +590,7 @@ typedef struct {
 /** @brief Battle magic slot entry (5 bytes). */
 typedef struct {
     u8 unk0;
-    u8 unk1;
+    s8 unk1;
     u8 unk2;
     u8 unk3;
     u8 unk4;
@@ -659,9 +664,17 @@ typedef struct {
     u8 freeSpace[4];
 } BattleOtBuf;
 
+typedef struct {
+    u8 unk0;
+    u8 unk1;
+    u8 unk2;
+    u8 unk3;
+} BattleUnkSlot;
+
 /** @brief Battle character render data (g_battleChars, stride 0x1D0 = 464 bytes). */
 typedef struct {
-    /* 0x000 */ u8 pad0[0x14];
+    /* 0x000 */ u8 pad0[0x008 - 0x000];
+    /* 0x008 */ BattleUnkSlot unkSlots[3];
     /* 0x014 */ u16 unk14;
     /* 0x016 */ u16 unk16;
     /* 0x018 */ s16 currentHp;          /**< Current HP in battle. */
@@ -786,7 +799,7 @@ typedef struct {
  * Only byte 0 (abilityId) is read by the known callers.
  */
 typedef struct {    
-    u8 pad0;             /* 0x3938 */
+    u8 unk0;             /* 0x3938 */
     u8 abilityId;        /**< 0x3939: Ability ID byte (input to ability flag funcs) */
     u8 unk2;             /* 0x393A */
     u8 unk3;             /* 0x393B */
@@ -1008,7 +1021,9 @@ typedef struct {
 
 typedef struct {
     u8 unk0;
-    u8 pad[7];
+    u8 pad1;
+    u8 unk2;
+    u8 pad3[5];
 } structE8;
 
 /**
@@ -1028,8 +1043,8 @@ typedef struct {
     /* 0x00D8 */ u8 pad00D8[0x00DC - 0x00D8];                
     /* 0x00DC */ s32 unk4C0CArg;                /**< resolveKernelPtr arg paired with unk4C0C[]. */
     /* 0x00E0 */ u8 pad00E0[0x00E8 - 0x00E0];
-    /* 0x00E8 */ structE8 unkE8[1];
-    /* 0x00F0 */ u8 pad00F0[0x0220 - 0x00F0];
+    /* 0x00E8 */ structE8 unkE8[36];
+    /* 0x0208 */ u8 pad0208[0x0220 - 0x0208];
     /* 0x0220 */ BattleSpellRow spells[1];      /**< 60-byte stride (size unknown, index past). */
     /* 0x025C */ u8 pad025C[0x0F78 - 0x025C];
     /* 0x0F78 */ BattleSceneRow rows132[1];     /**< 132-byte stride (size unknown, index past). */
@@ -1181,7 +1196,9 @@ extern BattleConfig    g_battleConfig;
 extern s16             D_8005F11C;
 extern u8              D_80077E58;
 extern u8              D_80077E92;
+extern u8              D_80077E59;
 extern u8              D_800786D9;
+extern u8              D_80078DF8;
 extern BattleSceneData D_80078E00;
 extern u16             D_80082C0A;
 extern u8              D_80082C0F;
@@ -1199,7 +1216,6 @@ extern u8              D_800E3CBC[];
 extern u8              D_800E3CE8;
 extern BattleSystem    D_800ED148;
 extern BattleCmdBuf    D_800EE4C0;
-extern u8              D_800EE9B3[];
 extern BattleAnimTable D_800EE9E8;
 extern u8              D_800EEBA8[];
 extern u8              D_800EEBB0;
