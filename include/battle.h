@@ -452,11 +452,15 @@ typedef struct {
     /* 0x085C */ u8 pad85C[0x0CDC - 0x085C];
     /* 0x0CDC */ u8 unkCDC;
     /* 0x0CDC */ u8 unkCDD;
-    /* 0x0CDE */ u8 padCDE[0x0CE3 - 0x0CDE];
+    /* 0x0CDE */ u8 padCDE[0x0CE0 - 0x0CDE];
+    /* 0x0CE0 */ u8 unkCE0;
+    /* 0x0CE1 */ u8 unkCE1;
+    /* 0x0CE2 */ u8 unkCE2;
     /* 0x0CE3 */ u8 unkCE3;
     /* 0x0CE4 */ BattleVec3u unkCE4[8];             /**< 8-entry x/y/z position table (read by @c func_8009A528). */
     /* 0x0D14 */ u8 unkD14[8];                      /**< Hit-type byte table (8 entries). */
-    /* 0x0D1C */ u8 padD1C[0x0D5C - 0x0D1C];
+    /* 0x0D1C */ u8 padD1C[0x0D54 - 0x0D1C];
+    /* 0x0D54 */ u8 unkD54[8];
     /* 0x0D5C */ u8 unkD5C[8];                      /**< Per-trigger flag array (8 entries). */
     /* 0x0D64 */ TaskLink unkD64[3][11];
     /* 0x0DE8 */ BattleUnkDE8 arrayDE8[3][11][2];   /**< (792 bytes: 0x318) size tied to func_800A5948 */

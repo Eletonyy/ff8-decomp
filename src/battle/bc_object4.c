@@ -236,7 +236,40 @@ void func_800A67FC(s32 arg0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A68AC);
+void func_800A68AC(s32 arg0) {
+    s32 i;
+
+    switch (arg0) {
+        case 0:
+            for (i = 0; i < 3; i++) {
+                func_800A6780(i);
+            }
+            break;
+
+        case 1:
+            for (i = 0; i < 3; i++) {
+                if (!(g_battleChars.chars[i].statusFlags & 0x10000)) {
+                    D_800ED148.entities[i].unk24 = 0;
+                }
+            }
+            break;
+
+        case 2:
+            for (i = 3; i < 7; i++) {
+                func_800A6780(i);
+            }
+            break;
+
+        case 3:
+            for (i = 3; i < 7; i++) {
+                D_800ED148.entities[i].unk24 = 0;
+            }
+            break;
+
+        default:
+            break;
+    }
+}
 
 void func_800A69BC(void) {
     switch (D_800ED148.unk1308) {
@@ -909,7 +942,37 @@ s32 func_800A7AF4(s32 a0) {
     return *(u8 *)ptr;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7B48);
+void func_800A7B48(void) {
+    s32 temp_s1;
+    s32 i;
+    s32 j;
+
+    for (j = 3, i = 0; i < 8; i++) {
+        if (D_800ED148.unkD5C[i] != 0) {
+            func_800A7FD0(j, D_800ED148.unkD54[i], D_800ED148.unkD14[i]);
+            func_800A8430(j);
+            
+            temp_s1 = 7 - i;
+            if (func_8009A514(D_800ED148.unkCE0, temp_s1) != 0) {
+                D_800ED148.entities[j].controlFlags |= 2;
+            }
+            
+            if (func_8009A514(D_800ED148.unkCE2, temp_s1) != 0) {
+                D_800ED148.entities[j].controlFlags |= 0x40;
+            }
+            
+            if (func_8009A514(D_800ED148.unkCE1, temp_s1) != 0) {
+                D_800ED148.entities[j].controlFlags |= 0x80;
+            }
+            
+        
+            j++;
+        }
+    }
+    
+    func_800A8948();
+    func_800A8794();
+}
 
 void func_800A7C64(s32 arg0, s32 arg1) {
     BattleEntityData* temp_v1;
