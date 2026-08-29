@@ -163,11 +163,6 @@ void func_800A64E4(s32 arg0, u16 arg1) {
     func_8009AE08(8);
 }
 
-/**
- * @brief Store a byte to D_800ED148 offset 0x12EF.
- *
- * @param value Byte value to store.
- */
 void func_800A6574(u8 arg0) {
     D_800ED148.unk12EF = arg0;
 }
@@ -177,7 +172,38 @@ void func_800A6588(void) {
     func_8009AE08(8);
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A65B0);
+void func_800A65B0(void) {
+    u8 val;
+
+    val = D_800ED148.unk12EF;
+    if (val == 255) {
+        D_800ED148.unk12EF = 254;
+        func_800B0754(D_800ED148.entities[0].entityRef, 241, 65532, D_800ED148.unk12E2);
+        func_800A6588();
+        return;
+    }
+    
+    if (val == 254) {
+       func_8009AF14(func_800A65B0);
+        return;
+    }
+
+    D_800ED148.unk131A = D_800ED148.unk12EF;
+    val = D_80078E00.unk49F8[D_800ED148.unk131A];
+    D_800ED148.unk12EF = 254;
+    D_800ED148.unk131B = val;
+    
+    if (val < 6) {
+        func_800B0754(D_800ED148.entities[0].entityRef, 241, D_800ED148.unk131B, D_800ED148.unk12E2);
+        func_8009AF14(func_800A65B0);
+        return;
+    }
+    
+    func_800A30F8(D_800ED148.entities[0].entityRef, 241, 65530, D_800ED148.unk131B, D_800ED148.entities[0].entityRef, D_800ED148.unk12E2, 0);
+    func_800B06DC(D_800ED148.unk12E2);
+    func_800B0754(D_800ED148.entities[0].entityRef, 239, D_800ED148.unk131B, func_8009BA5C(D_800ED148.unk131B, D_800ED148.unk12E2));
+    func_800A6588();
+}
 
 void func_800A66D0(s32 arg0) {
     if (func_8009A514(D_800ED148.unkCE3, 7 - arg0) != 0) {
@@ -294,35 +320,23 @@ void func_800A69BC(void) {
     }
 }
 
-/**
- * @brief Process entities 1 and 2, then call func_800A67FC with 0.
- */
 void func_800A6A58(void) {
     func_800A68AC(1);
     func_800A68AC(2);
     func_800A67FC(0);
 }
 
-/**
- * @brief Process battle entities 1 and 2 via func_800A68AC.
- */
 void func_800A6A88(void) {
     func_800A68AC(1);
     func_800A68AC(2);
 }
 
-/**
- * @brief Process entities 0 and 3, then call func_800A67FC with 1.
- */
 void func_800A6AB0(void) {
     func_800A68AC(0);
     func_800A68AC(3);
     func_800A67FC(1);
 }
 
-/**
- * @brief Process battle entities 0 and 3 via func_800A68AC.
- */
 void func_800A6AE0(void) {
     func_800A68AC(0);
     func_800A68AC(3);
@@ -1117,9 +1131,6 @@ void func_800A8430(s32 arg0) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A84CC);
 
-/**
- * @brief Call func_800A84CC for each of 7 battle entities.
- */
 void func_800A853C(void) {
     s32 i;
     
@@ -1186,7 +1197,47 @@ void func_800A86F0(s32 arg0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8794);
+void func_800A8794(void) {
+    BattleEntityData* temp_s2;
+    s32 j;
+    s32 i;
+    s32 idx; 
+    drawSlot* arr0;
+    
+    for (i = 0; i < 4; i++) {   
+        if (D_800ED148.entities[i + 3].controlFlags & 1) {
+            temp_s2 = *D_800ED148.entities[i + 3].entityData;
+            arr0 = D_800EE9E8.subEntries[i].array0;
+
+            for (j = 0; j < 4; j++) {
+                idx = temp_s2->unk104[D_800EE9E8.subEntries[i].unk46].unk0[j].unk0;
+                if (idx < 64) {
+                    arr0[j].unk0 = idx;
+                    arr0[j].unk2 = 0;
+                    
+                    if (func_800A774C(arr0[j].unk0) == 0) {
+                        arr0[j].unk1 |= 8;
+                    }
+                        
+                    else {
+                        arr0[j].unk1 &= 0xF7;
+                    }
+                }
+                    
+                else {
+                    arr0[j].unk2 = 0;
+                    if (!(g_gameState.gfs[idx - 64].exists & 1)) {
+                        arr0[j].unk0 = idx;
+                    }
+                        
+                    else {
+                        arr0[j].unk0 = 0;
+                    }
+                }  
+            }
+        }
+    }
+}
 
 void func_800A890C(s32 arg0) {
     s32 i;

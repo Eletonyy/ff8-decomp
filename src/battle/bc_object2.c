@@ -1750,16 +1750,15 @@ void func_8009F5B4(s32 arg0) {
 }
 
 s32 func_8009F65C(s32 arg0, s32 arg1) {
-    s32 offset;
     s32 i;
     BattleEntityData* data;
     
     data = *D_800ED148.entities[arg0].entityData;
-    offset = D_800EE9E8.subEntries[arg0 - 3].unk46 * 8;
 
-    for (i = 0; i < 4; i++, offset += 2) {
-        if (arg1 == data->unk104[offset]) {
-            return data->unk104[offset + 1];
+
+    for (i = 0; i < 4; i++) {
+        if (arg1 == data->unk104[D_800EE9E8.subEntries[arg0 - 3].unk46].unk0[i].unk0) {
+            return data->unk104[D_800EE9E8.subEntries[arg0 - 3].unk46].unk0[i].unk1;
         }
     }
     

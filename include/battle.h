@@ -167,6 +167,16 @@ typedef enum {
     CTRL_FLAG_400   = 0x400
 } ControlFlags;
 
+
+typedef struct {
+    u8 unk0;
+    u8 unk1; 
+} subStruct;
+
+typedef struct {
+    subStruct unk0[4];
+} Struct_func_800A8794;
+
 /**
 * @brief Data block reached two indirections away through
 *        @c BattleEntity.linkedPtr->data.
@@ -224,12 +234,13 @@ typedef struct {
     u8 unkFE;
     u8 unkFF;
     u8 pad100[4];
-    u8 unk104[1];       /* size unknown, probably struct, used in func_8009F65C */
-    u8 pad105[0x4A];
+    Struct_func_800A8794 unk104[1];       /* size unknown, probably struct, used in func_8009F65C */
+    u8 pad10C[0x14F - 0x10C];
     u8 unk14F;          /* byte read by func_800AF988. */
     u16 unk150[1];
     u8 pad152[0xE];
-    u8 unk160[1];
+    u8 unk160[8]; 
+    u8 unk168[40];// possibly size taken from func_800A7FD0 while calling func_800A7EE0
 } BattleEntityData;
 
 #define ENTITY_FLAG_1 1
@@ -573,7 +584,8 @@ typedef struct {
 typedef struct {
     u8 unk0;
     u8 unk1;
-    u8 pad2[2];
+    u8 unk2;
+    u8 pad3;
 } drawSlot;
 
 
