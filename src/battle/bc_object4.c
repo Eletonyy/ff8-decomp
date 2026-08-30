@@ -1084,7 +1084,23 @@ void func_800A8430(s32 arg0) {
     func_800A8320(arg0);
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A84CC);
+void func_800A84CC(s32 arg0) {
+    s32 i;
+    BattleEntityData* temp_v0 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    
+    temp_v0->unkBB  = 255;
+    temp_v0->unk7C  = 0;
+    temp_v0->unkB9  = 0;
+    temp_v0->unkB8  = 0;
+    temp_v0->unk84  = 0;
+    temp_v0->unkCA  = 0;
+    temp_v0->unkCC  = 0;
+    temp_v0->unk80 |= 1;
+    
+    for (i = 0; i < 16; i++) {
+        temp_v0->unk54[i] = -1111;
+    }
+}
 
 void func_800A853C(void) {
     s32 i;

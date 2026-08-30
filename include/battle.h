@@ -196,16 +196,21 @@ typedef struct {
     s32 unk24[7];
     u8 pad40[4];
     u16 unk44[8];
-    u8 pad54[0x7C - 0x54];
+    s16 unk54[16];
+    u8 pad74[0x7C - 0x74];
     volatile s32 unk7C;
     u16 unk80;
-    u8 pad82[6];
+    u8 pad82[2];
+    u16 unk84;
+    u8 pad86[2];
     u8 unk88;
     u8 unk89;
     u8 unk8A;
     u8 pad8B[5];
     u8 unk90[40];
-    u8 padB8[0xBB - 0xB8];
+    u8 unkB8;
+    u8 unkB9;
+    u8 padBA;
     u8 unkBB;
     u8 unkBC;
     u8 unkBD;
@@ -220,7 +225,11 @@ typedef struct {
     u8 unkC6;
     u8 unkC7;
     u8 unkC8;
-    u8 padC9[0x2B];
+    u8 padC9;
+    u8 unkCA;
+    u8 padCB;
+    u16 unkCC;
+    u8 padCE[0x26];
     u8 unkF4;
     u8 unkF5;
     u8 unkF6;
@@ -292,7 +301,7 @@ typedef struct {
     s32 unk28;
     s32 unk2C;
     s32 unk30;
-    u8 pad34[32];     
+    u8 pad34[0x20];     
     u16 unk54[1];  /* used in  func_8009C598 */
     u8 unk56;
     u8 unk57;
