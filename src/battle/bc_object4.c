@@ -700,22 +700,28 @@ void func_800A7518(s32 arg0) {
     temp_s0->unkBB = temp_s1->characterId;
     temp_s0->unk80 = temp_s1->displayStatus;
     temp_s0->unk7C = 34817;
+
     if (D_80078E00.array35BD[temp_s1->classId].unk6 & 1) {
         temp_s0->unk7C |= 0x1000;
     }
+
     if (D_80078E00.array37A6[temp_s0->unkBB].unk1 & 1) {
         temp_s0->unk7C |= 0x100;
     }
+
     temp_s0->unk8 = 0;
     if (temp_s1->statusFlags & 0x1000) {
         temp_s0->unk8 = 0x80;
     }
+
     if (temp_s1->statusFlags & 0x4000) {
         temp_s0->unk8 |= 0x20;
     }
+
     if (temp_s1->statusFlags & 0x2000) {
         temp_s0->unk8 |= 0x40;
     }
+
     if (temp_s1->statusFlags & 0x8000) {
         temp_s0->unk8 |= 2;
     }
@@ -1046,14 +1052,24 @@ void func_800A7FD0(s32 arg0, s32 arg1, s32 arg2) {
     func_800A559C(arg0);
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A82A0);
+s32 func_800A82A0(BattleAnimSubEntry* arg0, BattleEntityData* arg1, BattleEntityData* arg2, s32 arg3) {
+    s32 result;
+
+    result = (arg0->unk40[arg3] * func_800A7D8C(arg2->unkBC, arg1, arg3)) / 10;
+
+    if (result > 255) {
+        result = 255;
+    }
+    
+    return result;
+}
 
 void func_800A8320(s32 arg0) {
     BattleEntityData* temp_s2;
     BattleEntityData* temp_s0;
-    drawSlot* temp_s1;
+    BattleAnimSubEntry* temp_s1;
 
-    temp_s1 = D_800EE9E8.subEntries[arg0 - 3].array0;
+    temp_s1 = &D_800EE9E8.subEntries[arg0 - 3];
     temp_s2 = *D_800ED148.entities[arg0].entityData;
     temp_s0 =  (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
     
