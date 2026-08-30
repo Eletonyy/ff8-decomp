@@ -683,107 +683,62 @@ void func_800A71A0(BattleEntityData* arg0) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A71C0);
 
-/**
- * @brief Initialize a battle slot from its corresponding @c BattleCharData.
- *
- * Looks up @c g_battleChars[idx] and @c D_800ED158.slots[idx], then:
- *  - If the source's @c characterId byte (offset @c 0x1C3) is @c 0xFF
- *    (slot empty), zeroes the slot's flags word at @c 0x7C, sets
- *    @c linkedIdx2 to @c 0xFF and returns.
- *  - Otherwise copies @c characterId into the slot's @c linkedIdx2,
- *    seeds the flags word at @c 0x7C with @c 0x8801, and mirrors
- *    @c displayStatus from the char data into the slot's halfword at
- *    @c 0x80.
- *  - Tests two ability/effect tables in @c D_80078E00 (at offsets
- *    @c 0x35C3 stride 12 keyed by @c charData[0x1BA], and @c 0x37A7
- *    stride 36 keyed by @c characterId); each set bit ORs an extra
- *    flag (@c 0x1000 / @c 0x100) into @c slot+0x7C.
- *  - Translates four bits of @c charData->statusFlags (@c 0x190) into
- *    flags in @c slot+0x8: @c 0x1000 → @c 0x80 (overwrites), then
- *    @c 0x4000 → @c |= @c 0x20, @c 0x2000 → @c |= @c 0x40,
- *    @c 0x8000 → @c |= @c 0x2.
- *  - Calls @c func_800A7188 (clears 5 bytes), @c func_800A71A0
- *    (zeroes 8 words), and @c func_800A554C(idx) (a stat/AI hook).
- *  - If neither @c slot+0x80 bit @c 0x1 nor @c 0x4 is set: when
- *    @c charData->statusFlags has bit @c 0x10000, copies word at
- *    @c D_800ED148.entities[idx]+0x20 into @c +0x24; otherwise calls
- *    @c func_800A559C(idx).
- *  - Finally fills the 40-byte @c slot+0x90..0xB7 region with @c 100
- *    (probably an HP-percent / stat init).
- *
- * @param idx Battle slot index (0..6 covers the 7 active slots).
- */
+void func_800A7518(s32 arg0) {
+    BattleCharData* temp_s1;
+    BattleEntityData* temp_s0;
+    s32 i;
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7518); 
-/*
-void func_800A7518(s32 idx) {
-    BattleCharData *charData = &g_battleChars.chars[idx];
-    BattleEntity   *slot     = &D_800ED158.slots[idx];
-    u8              charId;
-    s32             i;
-
-    charId = charData->characterId;
-    if (charId == 0xFF) {
-        slot->field64.slotInit.slotFlags = 0;
-        slot->linkedIdx2                 = 0xFF;
+    temp_s1 = &g_battleChars.chars[arg0];
+    temp_s0 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    
+    if (temp_s1->characterId == 255) {
+        temp_s0->unk7C = 0;
+        temp_s0->unkBB = 255;
         return;
     }
-
-    {
-        u16 dispStatus;
-        slot->linkedIdx2                 = charId;
-        dispStatus                       = charData->displayStatus;
-        slot->field64.slotInit.slotFlags = 0x8801;
-        slot->at0x80.slotDisplay         = dispStatus;
+    
+    temp_s0->unkBB = temp_s1->characterId;
+    temp_s0->unk80 = temp_s1->displayStatus;
+    temp_s0->unk7C = 34817;
+    if (D_80078E00.array35BD[temp_s1->classId].unk6 & 1) {
+        temp_s0->unk7C |= 0x1000;
     }
+    if (D_80078E00.array37A6[temp_s0->unkBB].unk1 & 1) {
+        temp_s0->unk7C |= 0x100;
+    }
+    temp_s0->unk8 = 0;
+    if (temp_s1->statusFlags & 0x1000) {
+        temp_s0->unk8 = 0x80;
+    }
+    if (temp_s1->statusFlags & 0x4000) {
+        temp_s0->unk8 |= 0x20;
+    }
+    if (temp_s1->statusFlags & 0x2000) {
+        temp_s0->unk8 |= 0x40;
+    }
+    if (temp_s1->statusFlags & 0x8000) {
+        temp_s0->unk8 |= 2;
+    }
+    
+    func_800A7188(temp_s0);
+    func_800A71A0(temp_s0);
+    func_800A554C(arg0);
 
-    if (g_gfData.levelCurve12[charData->classId].field0B & 1) slot->field64.slotInit.slotFlags |= 0x1000;
-    if (g_gfData.xpCurves36[slot->linkedIdx2].field03    & 1) slot->field64.slotInit.slotFlags |= 0x100;
-
-    slot->slot8.initFlags = 0;
-    if (charData->statusFlags & 0x1000) slot->slot8.initFlags  = 0x80;
-    if (charData->statusFlags & 0x4000) slot->slot8.initFlags |= 0x20;
-    if (charData->statusFlags & 0x2000) slot->slot8.initFlags |= 0x40;
-    if (charData->statusFlags & 0x8000) slot->slot8.initFlags |= 0x02;
-
-    func_800A7188(slot);
-    func_800A71A0(slot);
-    func_800A554C(idx);
-
-    {
-        s32 fillVal;
-        u8 *p;
-
-         //  The level-up sound test reads slot+0x80 as a 32-bit word (the write
-         above was 16-bit) — pick up the wider view via the same union.  //
-        if (!(slot->at0x80.word & 5)) {
-            if (charData->statusFlags & 0x10000) {
-                // The entity table at D_800ED148 starts 0x10 bytes before the
-                   slot table at D_800ED158 — entity[idx] is computed from
-                   the slot table base so gcc reuses the D_800ED158 saved-reg
-                   instead of re-emitting lui+addiu for D_800ED148. //
-                volatile BattleEntity *entity =
-                    (volatile BattleEntity *)((u8 *)&D_800ED158 - 0x10) + idx;
-                entity->field24 = entity->field20;
-            } else {
-                func_800A559C(idx);
-            }
+    if (!(temp_s0->unk80 & 4) && !(temp_s0->unk80 & 1)) {
+        if (temp_s1->statusFlags & 0x10000) {
+            D_800ED148.entities[arg0].unk24 = D_800ED148.entities[arg0].unk20;
         }
-
-        // Fill 40 bytes of @c slot[status..pad96+0x21] with 100, walked in
-           reverse so gcc 2.7.2 emits @c sb with an immediate displacement
-           (the offset of @c slot->status) and the walker decrement falls
-           into the @c bgez delay slot. //
-        fillVal = 100;
-        i       = 0x27;
-        p       = (u8 *)slot + 0x27;
-        for (; i >= 0; i--) {
-            p[(s32)&((BattleEntity *)0)->status] = fillVal;
-            p--;
+        
+        else {
+            func_800A559C(arg0);
         }
     }
-}
-*/
+
+
+    for (i = 0; i < 40; i++) {
+        temp_s0->unk90[i] = 100;
+    }
+} 
 
 /**
  * @brief Test a bit in the g_gameState bitfield at offset 0xD04.

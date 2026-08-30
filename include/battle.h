@@ -1019,7 +1019,8 @@ typedef struct {
     u8 pad2[2];
     u8 unk4;
     u8 unk5;
-    u8 pad6[3];
+    u8 unk6;
+    u8 pad7[2];
     u8 unk9;
     u8 padA[2]; 
 } Struct_35BD; /* 12 bytes */
@@ -1027,7 +1028,8 @@ typedef struct {
 
 typedef struct {
     u8 unk0;
-    u8 pad1[2];
+    u8 unk1;
+    u8 pad2;
     u8 unk3;
     u8 pad4[32];
 } Struct_37A6; /* 36 bytes */
