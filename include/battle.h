@@ -613,34 +613,6 @@ typedef struct {
     /* 0x0A3 */ BattleAnimSubEntry subEntries[3];  /**< 3 × 0x47 = 0xD5 bytes. */
 } BattleAnimTable;
 
-
-
-/** @brief Battle magic slot entry (5 bytes). */
-typedef struct {
-    u8 unk0;
-    s8 unk1;
-    u8 unk2;
-    u8 unk3;
-    u8 unk4;
-} BattleMagicSlot;
-
-/** @brief Battle item slot entry (5 bytes). */
-typedef struct {
-    u8 unk0;
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-    u8 unk4;
-} BattleItemSlot;
-
-/** @brief Battle command slot entry (4 bytes). */
-typedef struct {
-    u8 cmdType;
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-} BattleCmdSlot;
-
 /** @brief Data stream within a battle command (two per entry). */
 typedef struct {
     u8 *start;       /* +0x00: pointer to stream data start */
@@ -691,6 +663,32 @@ typedef struct {
     s32 pktPtr;
     u8 freeSpace[4];
 } BattleOtBuf;
+
+/** @brief Battle magic slot entry (5 bytes). */
+typedef struct {
+    u8 unk0;
+    s8 unk1;
+    u8 unk2;
+    u8 unk3;
+    u8 unk4;
+} BattleMagicSlot;
+
+/** @brief Battle item slot entry (5 bytes). */
+typedef struct {
+    u8 unk0;
+    u8 unk1;
+    u8 unk2;
+    u8 unk3;
+    u8 unk4;
+} BattleItemSlot;
+
+/** @brief Battle command slot entry (4 bytes). */
+typedef struct {
+    u8 cmdType;
+    u8 unk1;
+    u8 unk2;
+    u8 unk3;
+} BattleCmdSlot;
 
 typedef struct {
     u8 unk0;

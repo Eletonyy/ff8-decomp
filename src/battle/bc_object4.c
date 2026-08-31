@@ -970,7 +970,57 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7CEC);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7D8C);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7EE0);
+u8 func_800A7EE0(BattleEntityData* arg0, s32 arg1) {
+    switch (arg1) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+            return arg0->unk168[arg1];
+
+        case 8:
+            return arg0->unk168[7];
+
+        case 9:
+            return arg0->unk168[8];
+
+        case 10:
+            return arg0->unk168[9];
+
+        case 11:
+            return arg0->unk168[10];
+
+        case 12:
+            return arg0->unk168[11];
+
+        case 15:
+            return arg0->unk168[12];
+
+        case 18:
+            return arg0->unk168[13];
+
+        case 20:
+            return arg0->unk168[14];
+            
+        case 21:
+            return arg0->unk168[15];
+            
+        case 22:
+            return arg0->unk168[16];
+            
+        case 23:
+            return arg0->unk168[17];
+            
+        case 24:
+            return arg0->unk168[18];
+            
+        default:
+            return 100;
+    }
+}
  
 s32 func_800A7FB4(BattleEntityData* arg0, s32 arg1) {
     return arg0->unk160[arg1] * 10;

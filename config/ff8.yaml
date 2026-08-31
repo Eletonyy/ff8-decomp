@@ -62,6 +62,7 @@ binaries:
     - [0x130, .rodata, bc_object2]
     - [0xA84, .rodata, bc_object3]
     - [0xECC, .rodata, bc_object4]
+    - [0xF48, pad]
     - [0xF4C, .rodata, bc_object5]
     - [0xF90, .rodata, bc_object6]
     - [0x14C0, .rodata, bc_object7]
