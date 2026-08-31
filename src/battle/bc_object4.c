@@ -681,7 +681,107 @@ void func_800A71A0(BattleEntityData* arg0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A71C0);
+void func_800A71C0(s32 idx) {
+    BattleCharData* temp_a3;
+    BattleEntityData* temp_a0;
+    s32 i;
+
+    
+    temp_a3 = &g_battleChars.chars[idx];
+    temp_a0 = (BattleEntityData*)&D_800ED148.entities[idx].entityData;
+    
+    if (temp_a3->characterId == 255) {
+        return;
+    }
+    
+    temp_a0->unk1C = temp_a3->hpRegenCap;
+    temp_a0->unk18 = temp_a3->unk172;
+    temp_a0->unkBC = temp_a3->level;
+    temp_a0->unkBD = temp_a3->stats[0];
+    temp_a0->unkBE = temp_a3->stats[1];
+    temp_a0->unkBF = temp_a3->stats[2];
+    temp_a0->unkC0 = temp_a3->stats[3];
+    temp_a0->unkC1 = temp_a3->stats[4];
+    temp_a0->unkC2 = temp_a3->stats[5];
+    temp_a0->unkC4 = temp_a3->stats[7];
+    temp_a0->unkC3 = temp_a3->stats[6];
+    
+    for (i = 0; i < 32; i++) {
+        if (temp_a3->magicSlots[i].unk0 != 0) {
+            temp_a0->unk8 |= 0x40000000;
+            goto found;
+        }
+    }
+    
+    temp_a0->unk8 &= ~0x40000000;
+
+    found:
+    for (i = 0; i < 8; i++) {
+        temp_a0->unk44[i] = temp_a3->elemResistances[i];
+    }
+    
+    
+    for (i = 0; i < 40; i++) {
+        temp_a0->unk90[i] = 100;
+    }
+
+    
+
+    temp_a0->unk90[2] = temp_a0->unk90[20] = temp_a3->statusResistances[2];
+    temp_a0->unk90[0] = temp_a3->statusResistances[0];
+    temp_a0->unk90[1] = temp_a3->statusResistances[1];
+    temp_a0->unk90[3] = temp_a3->statusResistances[3];
+    temp_a0->unk90[4] = temp_a3->statusResistances[4];
+    temp_a0->unk90[5] = temp_a3->statusResistances[5];
+    temp_a0->unk90[6] = temp_a3->statusResistances[6];
+    temp_a0->unk90[22] = temp_a3->statusResistances[11];
+    temp_a0->unk90[8] = temp_a3->statusResistances[7];
+    temp_a0->unk90[10] = temp_a3->statusResistances[8];
+    temp_a0->unk90[11] = temp_a3->statusResistances[9];
+    temp_a0->unk90[17] = temp_a3->statusResistances[10];
+    temp_a0->unk90[23] = temp_a3->statusResistances[12];
+    temp_a0->unk20 = temp_a3->abilityFlags;
+    temp_a0->unk86 = temp_a3->abilityValue;
+    temp_a0->unkBA = temp_a3->atkStatusHit;
+    temp_a0->unkC5 = temp_a3->atkElemBase;
+    temp_a0->unkC6 = temp_a3->atkElemBonus;
+    
+    if (temp_a3->statusFlags & 0x8000) {
+        temp_a0->unk90[11] = 200;
+        temp_a0->unk90[10] = 200;
+    }
+    
+    if (temp_a3->statusFlags & 0x80000) {
+        temp_a0->unk90[24] = 200;
+        temp_a0->unk90[32] = 200;
+        temp_a0->unk90[23] = 200;
+        temp_a0->unk90[22] = 200;
+        temp_a0->unk90[20] = 200;
+        temp_a0->unk90[18] = 200;
+        temp_a0->unk90[17] = 200;
+        temp_a0->unk90[11] = 200;
+        temp_a0->unk90[10] = 200;
+        temp_a0->unk90[8] = 200;
+        temp_a0->unk90[6] = 200;
+        temp_a0->unk90[5] = 200;
+        temp_a0->unk90[4] = 200;
+        temp_a0->unk90[3] = 200;
+        temp_a0->unk90[2] = 200;
+        temp_a0->unk90[1] = 200;
+        temp_a0->unk90[0] = 200;
+    }
+    
+    func_800A240C(idx, D_800ED148.entities[idx].unk28, &D_800ED148.entities[idx].status);
+    if (D_800ED148.entities[0].state.word == 4) {
+        if (D_800ED148.entities[idx].status & 0x100) {
+            func_8009B088(idx, 0, 8, 1);
+        }
+        
+        else {
+            func_8009B088(idx, 0, 8, 0);
+        }
+    }
+}
 
 void func_800A7518(s32 arg0) {
     BattleCharData* temp_s1;

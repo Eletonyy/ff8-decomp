@@ -192,7 +192,7 @@ typedef struct {
     volatile s32 unk14;  // volatile because func_800A5688, func_800A559C
     s32 unk18;
     s32 unk1C;
-    u8 pad20[4];
+    s32 unk20;
     s32 unk24[7];
     u8 pad40[4];
     u16 unk44[8];
@@ -202,7 +202,7 @@ typedef struct {
     u16 unk80;
     u8 pad82[2];
     u16 unk84;
-    u8 pad86[2];
+    u16 unk86;
     u8 unk88;
     u8 unk89;
     u8 unk8A;
@@ -210,7 +210,7 @@ typedef struct {
     u8 unk90[40];
     u8 unkB8;
     u8 unkB9;
-    u8 padBA;
+    u8 unkBA;
     u8 unkBB;
     u8 unkBC;
     u8 unkBD;
@@ -221,7 +221,7 @@ typedef struct {
     u8 unkC2;
     u8 unkC3;
     u8 unkC4;
-    u8 padC5;
+    u8 unkC5;
     u8 unkC6;
     u8 unkC7;
     u8 unkC8;
