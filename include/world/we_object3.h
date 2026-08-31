@@ -102,4 +102,31 @@ extern s32 func_800A358C(s32 kind, SlotEntry *slot, SVECTOR *angles, s32 flag);
    code @p b (only b's low 16 bits are examined; D_800C4D20 == 0 force-passes). */
 extern s32 func_800A45D8(u32 a, s32 b);
 
+/* The seven entry points below are called from the world entry loop
+ * func_800987D8 (we_object0), which is still assembly: it reaches them
+ * through the linker rather than this header. */
+
+/* Per-frame world setup: advance the frame clock, run the renderers and flip
+   the scene context. */
+extern void func_800A01DC(s32 skipPresent);
+
+/* Lay out the primitive pools over work RAM and pre-tag every packet. */
+extern void func_800A246C(void);
+
+/* Initialise the world-engine subsystem's object pools and free lists. */
+extern void func_800A581C(void);
+
+/* Free the WorldObject list at D_800D34E4 back to the free pool. */
+extern void func_800A6358(void);
+
+/* Gated table swap: copy one of two source halfword tables by map id. */
+extern void func_800A63F0(void);
+
+/* Initialize the world's two double-buffered graphics contexts. */
+extern void initWorldDoubleBuffer(void);
+
+/* Program the GTE for world-map rendering: screen offset, back color,
+   color matrix. */
+extern void setupWorldRenderParams(void);
+
 #endif /* WORLD_WE_OBJECT3_H */

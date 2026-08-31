@@ -538,6 +538,7 @@ binaries:
     - [0x770, .rodata, we_object9]
     - [0x784, .rodata, we_object11]
     - [0x7C0, rodata]
+    - [0x7D8, c, we_object0]
     - [0x17E8, c, we_object1]
     - [0x4CE8, c, we_object2]
     - [0x81DC, c, we_object3]

@@ -177,6 +177,85 @@ typedef struct {
 extern WorldRegion      D_800C59A0[WORLD_REGIONS];
 extern WorldZone        D_800C59BC[];
 
+/* ---- private to func_800A246C -------------------------------------------
+ * The GPU primitive pools. This unit is the only one that lays them out, so
+ * they stay here rather than in we_object3.h. The glyph renderers do allocate
+ * from a bank, but they are still asm and reach it through the file-local
+ * prototypes below; once we_object6/10/11 are decompiled these types will have
+ * to move to a shared header.
+ */
+
+/** A primitive pool is a bump allocator over a run of work RAM holding packets
+    of one kind. @c cur is the next free packet — @c func_800BF80C loads and
+    stores it, so that is the field the renderers bump — and @c end is one past
+    the last. @c base is written here and read by nothing yet decompiled; it
+    holds the same address @c cur starts at, so rewinding is the obvious use.
+    The packets are tagged once at start-up, so allocating one is a pointer bump
+    and the renderers need only fill in vertices. One struct per kind, because
+    the packet type is what gives each pool its stride. */
+typedef struct {
+    POLY_GT3 *cur;       /* 0x00 */
+    POLY_GT3 *base;      /* 0x04 */
+    POLY_GT3 *end;       /* 0x08 */
+} Gt3Pool;               /* 0x0C */
+
+typedef struct {
+    POLY_FT3 *cur;       /* 0x00 */
+    POLY_FT3 *base;      /* 0x04 */
+    POLY_FT3 *end;       /* 0x08 */
+} Ft3Pool;               /* 0x0C */
+
+typedef struct {
+    POLY_FT4 *cur;       /* 0x00 */
+    POLY_FT4 *base;      /* 0x04 */
+    POLY_FT4 *end;       /* 0x08 */
+} Ft4Pool;               /* 0x0C */
+
+/** The three pools of one bank, one per primitive kind. Both banks are laid out
+    at start-up and @c D_800C9720 is pointed at the table; picking a bank out of
+    it is left to the glyph renderers, which are still asm, so what drives that
+    choice is not yet known. (Not @c D_800C53A4 — that one indexes the sprite
+    record banks @c D_800D2508.) */
+typedef struct {
+    Gt3Pool gt3;         /* 0x00 */
+    Ft3Pool ft3;         /* 0x0C */
+    Ft4Pool ft4;         /* 0x18 */
+} WorldPrimBank;         /* 0x24 */
+
+extern WorldPrimBank    D_800C9E88[2]; /**< The two banks. No other code in the
+                                            tree names this array; everything
+                                            reaches it through @c D_800C9720. */
+
+/** Work RAM the pools are carved from: one contiguous run per primitive kind,
+    each split between the two banks — @c BASE starts bank 0, @c MID is bank 0's
+    end and bank 1's base, @c TOP ends bank 1. The runs sit back to back, so
+    @c FT3_TOP and @c FT4_BASE are the one boundary spelled from either side, as
+    are @c FT4_TOP and @c GT3_BASE; the last run stops where the streamed-record
+    staging buffer starts.
+
+    Addresses rather than declared arrays, for two reasons. The runs sit in
+    time-shared RAM (see docs/memory-map.md): from 0x801B0000 it is the CD-read
+    staging buffer — SPU sample uploads, TIM images, field script copy-in, and
+    the framebuffer snapshot during transitions — and the long GT3 run carries
+    on up through the fixed menu sub-overlays and the per-screen menu overlay
+    slots, all of which are free while the world map is the resident mode. RAM
+    that several subsystems take turns owning belongs to none of them and
+    carries no symbol, the same reason @c WORLD_STAGE_ADDR above is spelled out.
+    And the runs are not whole numbers of packets: only the FT3 runs divide
+    evenly (128 each), while GT3 gets 2457.6 and FT4 204.8, so those two end
+    mid-packet and the fill just stops once the cursor is no longer below
+    @c end, leaving the tail unused. An array declaration would have to round,
+    which would move the boundaries. */
+#define WORLD_PRIM_FT3_BASE  ((POLY_FT3 *)0x801B2000)
+#define WORLD_PRIM_FT3_MID   ((POLY_FT3 *)0x801B3000)
+#define WORLD_PRIM_FT3_TOP   ((POLY_FT3 *)0x801B4000)
+#define WORLD_PRIM_FT4_BASE  ((POLY_FT4 *)0x801B4000)
+#define WORLD_PRIM_FT4_MID   ((POLY_FT4 *)0x801B6000)
+#define WORLD_PRIM_FT4_TOP   ((POLY_FT4 *)0x801B8000)
+#define WORLD_PRIM_GT3_BASE  ((POLY_GT3 *)0x801B8000)
+#define WORLD_PRIM_GT3_MID   ((POLY_GT3 *)0x801D0000)
+#define WORLD_PRIM_GT3_TOP   ((POLY_GT3 *)WORLD_STAGE_ADDR)
+
 /** Sprites in one pool record: an anchor plus the four spread around it. */
 #define WORLD_FAN_SPRITES 5
 
@@ -209,8 +288,11 @@ extern GlyphHeader     *D_800C9740;   /**< Glyph used when worldObjectById finds
 extern s32              D_800C53A4;   /**< Active pool bank (0 or 1). */
 extern s32              D_800C53A8;   /**< Cleared when a record is placed, bumped by the
                                            fallback; the pass loop stops below 4. */
-extern s32              D_800C9720;   /**< Third argument to the glyph renderers, which
-                                           are still asm. */
+extern WorldPrimBank   *D_800C9720;   /**< Primitive banks the glyph renderers
+                                           allocate from. @c func_800A246C is the
+                                           only writer in the tree and points it at
+                                           the table once; the readers (we_object6,
+                                           we_object7) are still asm. */
 extern s32              D_800C972C;   /**< Accumulated glyph-entry count. */
 extern s32              D_800C96D8[WORLD_PAD_AXES]; /**< Analog axes sampled this frame;
                                            element 0 is pad 0's X, compared against 0x7F
@@ -255,7 +337,7 @@ extern void             func_800A4420(WorldSpriteRec *rec, SVECTOR *ref, SVECTOR
 /* Overlay entry point -- nothing in this tree calls it, so its caller is
    outside the decompiled sources. static anyway: gcc 2.8 has no unit-at-a-time
    pass, so it still emits the definition and the overlay matches. */
-static void             func_800A01DC(s32 skipPresent);
+void                    func_800A01DC(s32 skipPresent);
 extern u8               D_800C53F4[3];  /* Three colour bytes handed to func_80048DD4;
                                            only this function reads them. */
 extern s32              D_800C9738;     /* Previous frame's D_800D23D0 timestamp. */
@@ -287,16 +369,11 @@ static void             func_800A0388(void);
 static void             func_800A39BC(WorldSprite *out, s16 h);
 static void             placeWorldSpriteFan(WorldSprite *out, VECTOR *v, SVECTOR *angles,
                                             s32 arg3, s32 arg4, VECTOR *origin);
-static void             func_800A581C(void);
 static s32              func_800A6254(WorldObject *head);
 static void             func_800A62E0(s16 val, u16 *coarse, u16 *fine);
-static void             func_800A6358(void);
-static void             func_800A63F0(void);
-static void             initWorldDoubleBuffer(void);
-static void             setupWorldRenderParams(void);
-extern void             func_800ACDC4(GlyphHeader *p, BattleSceneCtx *ctx, s32 arg);
-extern void             func_800BF80C(GlyphHeader *p, s32 *ot, s32 arg);
-extern void             func_800BF2E8(GlyphHeader *p, s32 *ot, s32 arg);
+extern void             func_800ACDC4(GlyphHeader *p, BattleSceneCtx *ctx, WorldPrimBank *pools);
+extern void             func_800BF80C(GlyphHeader *p, s32 *ot, WorldPrimBank *pools);
+extern void             func_800BF2E8(GlyphHeader *p, s32 *ot, WorldPrimBank *pools);
 extern void             func_800BF20C(CmdDesc *p, s32 kind, s32 arg);
 extern void             func_800BFBFC(s32 kind);
 
@@ -327,7 +404,7 @@ extern void             func_800BFBFC(s32 kind);
  *
  * @param skipPresent Non-zero to skip the clear, HUD submit and context flip.
  */
-static void func_800A01DC(s32 skipPresent) {
+void func_800A01DC(s32 skipPresent) {
     func_800A0388();
     D_800C4DBC = 0;
     D_800D2264 = (D_800C4D38 != 0x32 || D_800D23D8[0] == 0xC) ? 2 : 3;
@@ -1263,7 +1340,7 @@ static void func_800A1F10(void)
  * NTSC active area (@c y=8, @c h=224), and enables dithering. Finally installs
  * the first buffer as the active scene context (@c D_800D244C).
  */
-static void initWorldDoubleBuffer(void) {
+void initWorldDoubleBuffer(void) {
     s32 i;
 
     SetDefDrawEnv(&(&D_800CA040)[1].drawEnv, 0, 0, D_800C97EA, D_800C97E8);
@@ -1281,7 +1358,79 @@ static void initWorldDoubleBuffer(void) {
     D_800D244C = &D_800CA040;
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A246C);
+/**
+ * @brief Lay out the primitive pools over work RAM and pre-tag every packet.
+ *
+ * Carves @c WORLD_PRIM_FT3_BASE .. @c WORLD_PRIM_GT3_TOP into three pools per
+ * bank — one each for @c POLY_GT3, @c POLY_FT3 and @c POLY_FT4 — then walks
+ * every pool writing the packet length and command code into each slot.
+ * Because those tags never change, a renderer allocates a primitive by bumping
+ * the pool's @c cur and only fills in vertices. The table is published in
+ * @c D_800C9720 last, which is the only write to it anywhere.
+ *
+ * A pool whose @c cur already meets its @c end contributes nothing, hence the
+ * guard in front of each fill loop.
+ */
+void func_800A246C(void) {
+    WorldPrimBank *bank;
+    WorldPrimBank *pools;
+    s32 i;
+    POLY_GT3 *pg;
+    POLY_FT3 *pf3;
+    POLY_FT4 *pf4;
+
+    D_800C9E88[0].gt3.base = WORLD_PRIM_GT3_BASE;
+    D_800C9E88[0].gt3.cur  = WORLD_PRIM_GT3_BASE;
+    D_800C9E88[1].gt3.base = WORLD_PRIM_GT3_MID;
+    D_800C9E88[1].gt3.cur  = WORLD_PRIM_GT3_MID;
+    D_800C9E88[0].gt3.end  = WORLD_PRIM_GT3_MID;
+    D_800C9E88[1].gt3.end  = WORLD_PRIM_GT3_TOP;
+    D_800C9E88[0].ft3.base = WORLD_PRIM_FT3_BASE;
+    D_800C9E88[0].ft3.cur  = WORLD_PRIM_FT3_BASE;
+    D_800C9E88[1].ft3.base = WORLD_PRIM_FT3_MID;
+    D_800C9E88[1].ft3.cur  = WORLD_PRIM_FT3_MID;
+    D_800C9E88[0].ft3.end  = WORLD_PRIM_FT3_MID;
+    D_800C9E88[1].ft3.end  = WORLD_PRIM_FT3_TOP;
+    D_800C9E88[0].ft4.base = WORLD_PRIM_FT4_BASE;
+    D_800C9E88[0].ft4.cur  = WORLD_PRIM_FT4_BASE;
+    D_800C9E88[1].ft4.base = WORLD_PRIM_FT4_MID;
+    D_800C9E88[1].ft4.cur  = WORLD_PRIM_FT4_MID;
+    D_800C9E88[0].ft4.end  = WORLD_PRIM_FT4_MID;
+    D_800C9E88[1].ft4.end  = WORLD_PRIM_FT4_TOP;
+
+    for (i = 0; i < 2; i++) {
+        bank = &D_800C9E88[i];
+
+        /* Each bound is read back through the table rather than through
+           @c bank, so the table address is rematerialised at every loop instead
+           of being hoisted into one register — hoisting it costs the match.
+           @c pools only exists to force that; its value is never read, and
+           publishing through it below costs the match too. */
+        pg = bank->gt3.cur;
+        if (pg < bank->gt3.end) {
+            do {
+                setPolyGT3(pg);
+                pg++;
+            } while (pg < (pools = D_800C9E88)[i].gt3.end);
+        }
+        pf3 = bank->ft3.cur;
+        if (pf3 < bank->ft3.end) {
+            do {
+                setPolyFT3(pf3);
+                pf3++;
+            } while (pf3 < (pools = D_800C9E88)[i].ft3.end);
+        }
+        pf4 = bank->ft4.cur;
+        if (pf4 < bank->ft4.end) {
+            do {
+                setPolyFT4(pf4);
+                pf4++;
+            } while (pf4 < (pools = D_800C9E88)[i].ft4.end);
+        }
+    }
+
+    D_800C9720 = D_800C9E88;
+}
 
 /**
  * @brief Program the GTE for world-map rendering: screen offset, back color, color matrix.
@@ -1292,7 +1441,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A246C);
  * via @c SetBackColor, then copies the lighting color matrix @c D_800C5428 into
  * @c D_800DA8B0 and loads it via @c SetColorMatrix.
  */
-static void setupWorldRenderParams(void) {
+void setupWorldRenderParams(void) {
     ResetGraph(3);
     SetGeomOffset((s16)D_800C97EA / 2, (s16)D_800C97E8 / 2);
 
@@ -1576,12 +1725,9 @@ static s32 func_800A2920(GlyphHeader *glyph, WorldSprite *st, s16 key, CmdDesc *
  * returns 1. Otherwise the accept code is written to @p hitCell and the next
  * pass runs.
  *
- * @note Dead code as far as static analysis shows: the only callers are
- * @c func_8009C294 and the asm @c func_800B4AA0, and neither is referenced by
- * any jal, address word, or C call site in the executable or any overlay.
- * Together with @c D_800C9778 and several functions only @c func_800B4AA0
- * calls, they form an unreferenced island — likely a feature dropped before
- * ship. Dispatch from runtime-loaded data cannot be fully ruled out.
+ * @note Reached through @c func_8009C294 and the asm @c func_800B4AA0, both
+ * called from the world entry loop @c func_800987D8 (we_object0) — the old
+ * "unreferenced island" reading predated that function's split.
  *
  * @param code    Command/dispatch code being placed (same domain as
  *                @c D_800C4D38).
@@ -2983,7 +3129,7 @@ static void func_800A568C(void) {
  * @c { .next = NULL, .id = -1 }. Finally sets @c D_800C4D60 to its
  * sentinel value 0xFFFF and zeros @c D_800D34F0.
  */
-static void func_800A581C(void) {
+void func_800A581C(void) {
     s32 i;
 
     for (i = 14; i >= 0; i--) {
@@ -3643,7 +3789,7 @@ static void func_800A62E0(s16 val, u16 *coarse, u16 *fine) {
  * @note Purpose uncertain — looks like a subsystem-reset that releases all
  *       active world objects into a reusable pool.
  */
-static void func_800A6358(void) {
+void func_800A6358(void) {
     WorldObject *head;
     D_800C4D60 = 0xFFFF;
     head = D_800D34E4;
@@ -3676,7 +3822,7 @@ static void func_800A6358(void) {
  * For any other map id, copies from @c D_800C53D0 and @c D_800C53E4
  * respectively.
  */
-static void func_800A63F0(void) {
+void func_800A63F0(void) {
     s32 i;
     if (D_800C4D2C != 0) return;
     if (D_800C4D38 == 0x32) {
