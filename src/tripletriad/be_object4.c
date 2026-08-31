@@ -715,9 +715,9 @@ void readPads(void)
 
     padRaw = func_80030F10(getAnimFrameParam(0, 0));
     oldPad = D_801D4B20[0];
-    held = func_80027DB4(0, 2, 0);
+    held = func_80027DB4(0, PAD_AXIS_X, 0);
     if (!(padRaw & 0xF000) && held >= 0) {
-        padRaw |= func_80027CF8(0, held - 0x80, func_80027DB4(0, 3, 0) - 0x80);
+        padRaw |= func_80027CF8(0, held - 0x80, func_80027DB4(0, PAD_AXIS_Y, 0) - 0x80);
     }
     D_801D4B20[0] = padRaw;
     D_801D4B30[0] = (padRaw ^ oldPad) & padRaw;
@@ -726,9 +726,9 @@ void readPads(void)
 
     padRaw = func_80030F10(getAnimFrameParam(1, 0));
     oldPad = D_801D4B20[1];
-    held = func_80027DB4(1, 2, 0);
+    held = func_80027DB4(1, PAD_AXIS_X, 0);
     if (!(padRaw & 0xF000) && held >= 0) {
-        padRaw |= func_80027CF8(0, held - 0x80, func_80027DB4(1, 3, 0) - 0x80);
+        padRaw |= func_80027CF8(0, held - 0x80, func_80027DB4(1, PAD_AXIS_Y, 0) - 0x80);
     }
     D_801D4B24 = padRaw;
     D_801D4B34 = (padRaw ^ oldPad) & padRaw;

@@ -55,6 +55,7 @@ PSYQ43_MASPSXFLAGS := --aspsx-version=2.77  # used by PSYQ43_SRCS
 
 # Source files compiled with PsyQ 4.3 (default is PsyQ 4.1)
 PSYQ43_SRCS := src/snd_init.c src/snd_dma.c src/snd_voice.c src/snd_bank.c src/snd_param.c src/snd_note.c src/snd_track.c src/snd_cmd.c \
+               src/world/we_object0.c \
                src/world/we_object1.c src/world/we_object2.c src/world/we_object3.c \
                src/world/we_object4.c src/world/we_object5.c src/world/we_object6.c \
                src/world/we_object7.c src/world/we_object8.c src/world/we_object9.c \

@@ -212,29 +212,16 @@ typedef struct {
  * unreferenced entirely in the retail build; each such function says so in an
  * @note on its own definition. */
 static void func_800A688C(u16 *src, RECT *area, u16 *dst, s32 count);
-static void func_800A7CD0(s32 *block);
 static void func_800A8024(void);
 static void func_800A8524(s32 scrollX, s16 topY, s32 brightness);
 static void func_800A8868(s32 phase, s16 y);
 static void func_800A8A28(s16 y);
-static void func_800A9F54(WorldPos *pos, s32 x, s32 y);
-static void func_800A6A74(BattleSceneCtx *ctx);
 static void func_800A9CC0(Slot30 *p, KindParams *q);
 static void func_800AAD48(WorldVtx *vtx, TriShade *shade);
 static void func_800AAEAC(WorldVtx *vtx, QuadShade *shade);
 /* Emits one mesh polygon from the assembled vertices into the current prim
  * slot; @c isQuad selects four vertices over three. */
 static void func_800AA210(WorldTessVert *verts, s32 isQuad);
-/* Draws the D_800D9CB0 particle pool; defined further down. */
-static void func_800A9300(void);
-/* Re-blends the world palette for the camera's position; defined below. */
-static void func_800A8C1C(void);
-/* Links the worldmap backdrop prims into the scene's OT; defined below. */
-static void func_800A7590(BattleSceneCtx *ctx);
-/* Builds the two worldmap strip sub-OTs; defined below. */
-static void func_800A64DC(void);
-/* Primes every worldmap strip pool from VRAM; defined below. */
-static void func_800A6BE0(void);
 /* Spawns a kind-11 particle at a fixed world position; defined below. */
 static void func_800AB06C(void);
 
@@ -268,10 +255,9 @@ extern s32 D_800D880C;  /**< Mesh centre screen y (corner + @c MESH_CENTRE_BIAS)
  * The second band repeats the whole thing one VRAM row lower, into the second
  * pool.
  *
- * @note Dead code in the retail build: nothing calls this and its address
- *       appears nowhere in world.bin.
+ * @note Called from the world entry loop @c func_800987D8 (we_object0).
  */
-static void func_800A64DC(void) {
+void func_800A64DC(void) {
     RECT src;
     RECT near;
     RECT far;
@@ -433,10 +419,9 @@ static void func_800A688C(u16 *src, RECT *area, u16 *dst, s32 count) {
  *
  * @param ctx Scene context whose @c primList holds the bone prims.
  *
- * @note Dead code in the retail build: nothing calls this and its address
- *       appears nowhere in world.bin.
+ * @note Called from the world entry loop @c func_800987D8 (we_object0).
  */
-static void func_800A6A74(BattleSceneCtx *ctx) {
+void func_800A6A74(BattleSceneCtx *ctx) {
     s32 cond;
     s32 i;
 
@@ -478,12 +463,11 @@ static const VramXY D_80098120[STRIP_LOAD_COUNT] = {
  * Finally every @c DR_LOAD in the @c D_800D42D0 pool is pointed at its 1x1
  * source pixel, so drawing one uploads a single texel.
  *
- * @note Dead code in the retail build: nothing calls this and its address
- *       appears nowhere in world.bin. It is the filler for the pools that
- *       @ref func_800A7590 links and @ref func_800A64DC chains, both equally
- *       unreferenced.
+ * @note Called from the world entry loop @c func_800987D8 (we_object0). It
+ *       is the filler for the pools that @ref func_800A7590 links and
+ *       @ref func_800A64DC chains.
  */
-static void func_800A6BE0(void) {
+void func_800A6BE0(void) {
     RECT          rect;
     VramXY        coords[STRIP_LOAD_COUNT];
     s32           i, j, k;
@@ -660,11 +644,10 @@ void func_800A735C(BattleSceneCtx *a0) {
  * @param ctx Scene to link into; the @c D_800CA040 sentinel selects bank 0 and
  *            any live scene selects bank 1.
  *
- * @note Dead code in the retail build: nothing calls this and its address
- *       appears nowhere in world.bin. The pools it links are filled by
- *       func_800A6BE0, which is equally unreferenced.
+ * @note Called from the world entry loop @c func_800987D8 (we_object0).
+ *       The pools it links are filled by func_800A6BE0.
  */
-static void func_800A7590(BattleSceneCtx *ctx) {
+void func_800A7590(BattleSceneCtx *ctx) {
     s32 bank;
     s32 extra;
     s32 group;
@@ -788,10 +771,9 @@ void func_800A7B38(void) {
  * @param block Animation block (offset table at its start), or a table
  *              whose first entry is 0 to just disable all slots.
  *
- * @note Dead code in the retail build: nothing calls this and its address
- *       appears nowhere in world.bin.
+ * @note Called from the world entry loop @c func_800987D8 (we_object0).
  */
-static void func_800A7CD0(s32 *block) {
+void func_800A7CD0(s32 *block) {
     WorldTexAnim *anim;
     s32 count;
     u16 *p;
@@ -1054,10 +1036,9 @@ void func_800A8270(SVECTOR *out) {
  * b0..b2 are the width bytes of @c D_800DB0D0. Always finishes with
  * @c func_800A8A28 at the raw coordinate.
  *
- * @note Dead code in the retail build: nothing calls this, and its address
- *       appears in no pointer table, so the three drawers below it — the
- *       map panel, the star field and the backdrop gradient — never run
- *       either. They have no other caller.
+ * @note Called from the world entry loop @c func_800987D8 (we_object0);
+ *       the three drawers below it — the map panel, the star field and the
+ *       backdrop gradient — run only through it.
  *
  * @note Purpose uncertain — appears to drive the world-map map-view HUD:
  *       a map panel that wraps with the camera heading (@c func_800A8868),
@@ -1128,7 +1109,7 @@ void func_800A84D0(void) {
  * is emitted as a @c TILE_1 on the HUD layer, and a @c DR_TPAGE closes the
  * layer.
  *
- * @note Dead code: reached only from the unreferenced @ref func_800A8400.
+ * @note Reached only through @ref func_800A8400.
  *
  * @note Four spellings here are matching devices for gcc 2.8.0 rather than
  *       intent. The @c nextColX temp lets the column step fill the inner
@@ -1250,7 +1231,7 @@ static void func_800A8524(s32 scrollX, s16 topY, s32 brightness) {
  * the page at VRAM x 0x380 with the CLUT at (0x340, 0xE0), and linked
  * into the HUD layer @c BSC_HUD_IDX of the active scene.
  *
- * @note Dead code: reached only from the unreferenced @ref func_800A8400.
+ * @note Reached only through @ref func_800A8400.
  *
  * @param phase Wrap offset from the camera heading (see above).
  * @param y     Top edge of the panel row, in screen coordinates.
@@ -1328,7 +1309,7 @@ static void func_800A8868(s32 phase, s16 y) {
  * The quads come from the pool @ref func_800ABC98 primed, picking the
  * @c D_800CA040 sentinel's pair when no battle scene is active.
  *
- * @note Dead code: reached only from the unreferenced @ref func_800A8400.
+ * @note Reached only through @ref func_800A8400.
  *
  * @param y Baseline of the gradient, in screen coordinates.
  */
@@ -1409,11 +1390,10 @@ static void func_800A8A28(s16 y) {
  * @note The @c goto is load-bearing: it is how the matched build skips the
  *       default-install block. Rewriting it as a "matched" flag costs three
  *       instructions and no longer matches.
- * @note Dead code in the retail build: nothing calls this, and its address
- *       appears nowhere in world.bin, so the @c D_800C4D24 early-out never
- *       gets the chance to matter.
+ * @note Called from the world entry loop @c func_800987D8 (we_object0),
+ *       gated by the @c D_800C4D24 early-out.
  */
-static void func_800A8C1C(void) {
+void func_800A8C1C(void) {
     SVECTOR     near;
     VECTOR      work;
     WorldZone  *def;
@@ -1589,12 +1569,11 @@ extern s32 func_800B01A0(s16 headingA, s16 headingB, Slot30 *slot,
  * The GTE rotation matrix and translation vector are saved on entry and put
  * back on exit, so callers see the transform they set up.
  *
- * @note Dead code in the retail build: nothing calls this and its address
- *       appears nowhere in world.bin -- the whole particle/backdrop layer
- *       (this, @ref func_800A7590 and the pool filler func_800A6BE0) is
- *       unreachable, like the map-view HUD layer above.
+ * @note Called from the world entry loop @c func_800987D8 (we_object0),
+ *       alongside the rest of the particle/backdrop layer
+ *       (@ref func_800A7590 and the pool filler func_800A6BE0).
  */
-static void func_800A9300(void) {
+void func_800A9300(void) {
     DVECTOR     quad[4];
     DVECTOR     centre;
     SVECTOR     corners[4];
@@ -1801,8 +1780,8 @@ static void func_800A9300(void) {
  * @c scaleRate, integrates @c pos from the 16-bit @c vel, and then
  * accelerates @c vel by the kind's own @c vel and bumps @c count.
  * From the second tick on, particles of kind 12 or 13 additionally drift
- * with the camera: 5/6 of the per-frame camera deltas (@c D_800C9E38[0],
- * @c D_800C9870 - @c D_800C974C, @c D_800C9E38[2]) is added to the position
+ * with the camera: 5/6 of the per-frame camera deltas (@c D_800C9E38.vx,
+ * @c D_800C9870.word - @c D_800C974C, @c D_800C9E38.vz) is added to the position
  * so the effect roughly follows the view (weather-style particles).
  *
  * @param p Particle slot to update.
@@ -1825,11 +1804,11 @@ static void func_800A9CC0(Slot30 *p, KindParams *q) {
     if (p->count != 0) {
         if (p->kind == 12 || p->kind == 13) {
             w = &p->pos.vx;
-            *w += D_800C9E38[0] * 5 / 6;
+            *w += D_800C9E38.vx * 5 / 6;
             w++;
-            *w += (D_800C9870 - D_800C974C) * 5 / 6;
+            *w += (D_800C9870.word - D_800C974C) * 5 / 6;
             w++;
-            *w += D_800C9E38[2] * 5 / 6;
+            *w += D_800C9E38.vz * 5 / 6;
         }
     }
     p->vel.vx += q->vel.vx;
@@ -1925,15 +1904,14 @@ void func_800A9ED4(void) {
  * assembled vertices go to @ref func_800AA210 — a quad for the first
  * @c MESH_QUAD_COUNT rows, a triangle for the rest.
  *
- * @note Dead code in the retail build: nothing calls this and its address
- *       appears in no pointer table, so the mesh -- and @ref func_800AA210
- *       below it, which only this reaches -- never runs.
+ * @note Called from the world entry loop @c func_800987D8 (we_object0);
+ *       @ref func_800AA210 below is reached only through this.
  *
  * @param pos World position the mesh is centred on.
  * @param x   Screen x of the mesh's top-left corner.
  * @param y   Screen y of the mesh's top-left corner.
  */
-static void func_800A9F54(WorldPos *pos, s32 x, s32 y) {
+void func_800A9F54(WorldPos *pos, s32 x, s32 y) {
     WorldTessVert verts[4];
     BattleSceneCtx *ctx;
     WorldPolyGT4 *gt4;
@@ -2011,8 +1989,7 @@ static void func_800A9F54(WorldPos *pos, s32 x, s32 y) {
  * @note The four seam interpolations read the base screen coordinate as
  *       @c u16 on purpose -- the original loads it unsigned and only the
  *       interpolated term is signed.
- * @note Dead code in the retail build: the only caller is
- *       @ref func_800A9F54, which is itself unreachable.
+ * @note Reached only through @ref func_800A9F54.
  */
 static void func_800AA210(WorldTessVert *verts, s32 isQuad) {
     WorldTessVert loHalf[4];
@@ -2452,9 +2429,9 @@ static void func_800AB06C(void) {
  * velocity. Always restores @c D_800C9838 as the GTE rotation and
  * translation matrix on exit.
  *
- * @note Dead code in the retail build: the only caller, func_800B99A4
- *       (we_object8, an ambient spawner that picks a random world cell
- *       and checks its terrain glyph), is itself never referenced.
+ * @note The only caller is func_800B99A4 (we_object8, an ambient spawner
+ *       that picks a random world cell and checks its terrain glyph), which
+ *       the world entry loop @c func_800987D8 calls.
  *
  * @note Three spellings below are load-bearing for the byte-exact match
  *       (gcc 2.8.0 register allocation), not behavior:

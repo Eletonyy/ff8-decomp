@@ -1,11 +1,9 @@
 #include "common.h"
 #include "menu.h"
+#include "menucfg.h"
+#include "thread.h"
 
-/** @brief Config menu entry point — delegates to func_801F798C. */
-void func_801E5800(s32 a0) {
-    func_801F798C(a0);
-}
-
+/** One row of the config table @c D_801E7094: an option id and its state. */
 typedef struct {
     u8 id;
     u8 state;
@@ -17,47 +15,73 @@ typedef struct {
     u8 unk07;
 } CfgEntry;
 
+/** The config screen's context block. The two trailing bytes gate whether an
+    option is offered: @c flag_2D is cleared when no battle animation is running,
+    @c flag_2E when the analog-axis probe reports no pad. */
 typedef struct {
-    u8 unk00[0x2E];
+    u8 unk00[0x2D];
+    u8 flag_2D;
     u8 flag_2E;
 } CfgContext;
 
+/** Terminator id closing the config option table. */
+#define CFG_ENTRY_END 0xFF
+
+/** The config option table, CFG_ENTRY_END-terminated. */
 extern CfgEntry D_801E7094[];
+
+/* All file-local; the overlay is a single translation unit and only
+   func_801E5800 is reached from outside it. */
+static s32  func_801E5820(CfgContext *arg0);
+static void func_801E587C(CfgContext *cfg);
+static void func_801E58EC(s32 a0, s32 a1);
+static void func_801E5918(s32 a0, s32 a1, s32 a2);
+static s32  func_801E59A0(s32 a0);
+static s32  func_801E59CC(s32 a0);
+static void func_801E61A0(s32 flags, void *data, s32 value, s32 x, s32 y);
+static s32  func_801E67A8(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4);
+
+/** @brief Config menu entry point — delegates to func_801F798C. */
+void func_801E5800(s32 a0) {
+    func_801F798C(a0);
+}
 
 /**
  * @brief Count available config menu entries.
  *
- * Iterates through the D_801E7094 config entry table (8-byte stride,
- * 0xFF-terminated). Counts entries where either flag_2E is set or the
- * entry's state is not 1.
+ * Walks the @c D_801E7094 table to its @c CFG_ENTRY_END terminator, counting
+ * entries that are offered: every one of them when @c flag_2E is set, otherwise
+ * only those whose state is not 1.
  *
- * @param arg0 Pointer to config menu context (byte 0x2E is availability flag).
+ * @param arg0 Config menu context.
  * @return Number of available config entries.
  */
-s32 func_801E5820(CfgContext *arg0)
+static s32 func_801E5820(CfgContext *arg0)
 {
-    int count;
-    int new_var;
+    s32 count;
+    s32 endId;
     CfgEntry *entry;
     s32 flag;
-    s32 one;
+    s32 stateOn;
     count = 0;
-    if (D_801E7094[0].id != 0xFF)
+    if (D_801E7094[0].id != CFG_ENTRY_END)
     {
         flag = arg0->flag_2E;
-        one = 1;
-        new_var = 0xFF;
+        stateOn = 1;
+        endId = CFG_ENTRY_END;
+        /* The cached endId/stateOn and this empty statement are load-bearing:
+           spelling the loop with plain literals costs the match. */
         do { } while (0);
         entry = D_801E7094;
         do
         {
-            if ((flag != 0) || (entry->state != one))
+            if ((flag != 0) || (entry->state != stateOn))
             {
                 count++;
             }
             entry++;
         }
-        while (entry->id != new_var);
+        while (entry->id != endId);
     }
     return count;
 }
@@ -65,23 +89,22 @@ s32 func_801E5820(CfgContext *arg0)
 /**
  * @brief Initialize config menu availability flags.
  *
- * Sets both config availability flags at @p a0[0x2D] and @p a0[0x2E]
- * to 1, then validates them. Calls func_80027DB4(0,0,0) to check
- * memory card status; if negative, clears a0[0x2E]. Then calls
- * isAnimActive(); if it returns 0, clears a0[0x2D]. If nonzero,
- * calls getBattleAnimField0B(0) and clears a0[0x2D] if that returns 0.
+ * Sets both availability flags, then clears whichever the hardware does not
+ * support. @c func_80027DB4 reads an analog axis, so a negative result means no
+ * analog pad answered and @c flag_2E is cleared. @c flag_2D is cleared unless a
+ * battle animation is both active and reports a nonzero field 0x0B.
  *
- * @param a0 Pointer to config menu context.
+ * @param cfg Config menu context.
  */
-void func_801E587C(u8 *a0) {
+static void func_801E587C(CfgContext *cfg) {
     s32 val = 1;
-    a0[0x2E] = val;
-    a0[0x2D] = val;
-    if (func_80027DB4(0, 0, 0) < 0) {
-        a0[0x2E] = 0;
+    cfg->flag_2E = val;
+    cfg->flag_2D = val;
+    if (func_80027DB4(0, PAD_AXIS_X2, 0) < 0) {
+        cfg->flag_2E = 0;
     }
     if (isAnimActive() == 0 || getBattleAnimField0B(0) == 0) {
-        a0[0x2D] = 0;
+        cfg->flag_2D = 0;
     }
 }
 
@@ -94,7 +117,7 @@ void func_801E587C(u8 *a0) {
  * @param a0 Render context pointer.
  * @param a1 Row index (0-based).
  */
-void func_801E58EC(s32 a0, s32 a1) {
+static void func_801E58EC(s32 a0, s32 a1) {
     func_801F0A34(a0, 0, 0x30, a1 * 16 + 0x24);
 }
 
@@ -111,19 +134,19 @@ void func_801E58EC(s32 a0, s32 a1) {
  * @param a1 Config entry index.
  * @param a2 Raw value (divided by 64 to index the table).
  */
-void func_801E5918(s32 a0, s32 a1, s32 a2) {
+static void func_801E5918(s32 a0, s32 a1, s32 a2) {
     a2 = D_801FA3C8[a2 / 64];
     a2 = a2 * 150 / 4096;
     func_801F0A34(a0, 0, a2 + 0x5A, D_801E7094[a1].unk03 + 0x2F);
 }
 
 /** @brief Draw inner panel with section id 0x2 and clear flag. */
-s32 func_801E59A0(s32 a0) {
+static s32 func_801E59A0(s32 a0) {
     return func_801F08D4(1, 2, a0, 0);
 }
 
 /** @brief Draw inner panel with section id 0x2 and set flag. */
-s32 func_801E59CC(s32 a0) {
+static s32 func_801E59CC(s32 a0) {
     return func_801F08D4(1, 2, a0, 1);
 }
 
@@ -147,7 +170,7 @@ extern MenuDisplayConfig g_menuDisplayCfg;
  * @param x      X position of the panel.
  * @param y      Y position of the panel.
  */
-void func_801E61A0(s32 flags, void *data, s32 value, s32 x, s32 y)
+static void func_801E61A0(s32 flags, void *data, s32 value, s32 x, s32 y)
 {
     MenuDisplayConfig *s = &g_menuDisplayCfg;
     s32 xoff = x + 10;
@@ -187,7 +210,7 @@ INCLUDE_ASM("asm/ovl/menucfg/nonmatchings/menucfg", func_801E6538);
  * @param a3 X position for the display panel.
  * @param arg4 Y position for the display panel.
  */
-s32 func_801E67A8(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
+static s32 func_801E67A8(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
     s32 cfg = (s32)&g_menuDisplayCfg;
 
     *(u8 *)(cfg + 0x10) = 0;

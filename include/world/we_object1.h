@@ -9,9 +9,14 @@
 #include "main.h"  /* g_activeDrawEnv */
 
 /* Projection scratch: worldPosToCell writes @c proj and returns @c angle. The
-   trailing @c pad keeps the buffer 0x20 bytes (gcc reserves the full slot). */
+   trailing @c pad keeps the buffer 0x20 bytes (gcc reserves the full slot).
+
+   @c proj is an SVECTOR in a VECTOR-sized slot: worldPosToCell declares its
+   out parameter SVECTOR*, and func_800A3EE4 -- which inlines that projection
+   -- writes the three components as halfwords. */
 typedef struct {
-    VECTOR proj;
+    SVECTOR proj;
+    u8      pad08[8];
     s16 angle;
     s16 pad[7];
 } ProjBuf;
@@ -75,7 +80,7 @@ extern s32       D_800C4D90;
 extern s32       D_800C4D94;
 extern s32       D_800C9714;
 extern u8        D_800C9758[];        /* 15-byte light-matrix work buffer */
-extern s32       D_800C97A0;
+extern u32      *D_800C97A0;
 extern s32       D_800D212C;
 extern s32       D_800D2458;
 extern s32       D_800C4CA4[];   /* source config table */
@@ -91,7 +96,7 @@ extern u32       D_800D2278[];
 extern VECTOR    D_800980DC;   /* constant view offset {0, 0, -0x1800, 0} */
 extern VECTOR    D_800C9748;   /* mirrored copy of the transformed position */
 extern CmdDesc  *D_800C4D6C;
-extern s32       D_800C9778[];     /* scratch buffer passed to the visibility check */
+extern SVECTOR   D_800C9778[];     /* base angles passed to the fan-placement probe */
 extern RECT      D_800C8698;
 extern u8        D_800980CC[]; /* "x:\USPC\WORLD" — dev-filesystem prefix (13 chars + NUL) */
 extern POLY_FT4  D_800C8648[2]; /* double-buffered worldmap quad primitive */
@@ -123,11 +128,9 @@ extern s32  func_8009D7D8(s32 a);
 extern s32 func_800ACD38(MATRIX *out);
 extern void func_8003FD84(MATRIX *xform, VECTOR *in, VECTOR *out);
 extern void func_800BC544(VECTOR *src, VECTOR *dst);
-extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
 extern void func_8009C478(s32 *src, s32 x, s32 y);
 extern CmdDesc *glyphAt(GlyphQuery *v, AngleSlot *out);
 extern s32 func_800BEC1C(s32 kind);
-extern s32 func_800A2D50(s32 a0, s32 a1, s32 *out, s32 a3, s32 a4, s32 a5);
 extern void func_8009D630(void);
 extern void func_800B3FD4(Slot *slot, s32 arg);
 extern void fadeOutSfxFast(s32 idx);

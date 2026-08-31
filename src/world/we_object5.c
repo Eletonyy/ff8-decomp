@@ -1,6 +1,7 @@
 #include "common.h"
 #include "world.h"
 #include "world/we_object5.h"
+#include "world/we_object3.h"   /* worldPosToCell */
 #include "battle.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"

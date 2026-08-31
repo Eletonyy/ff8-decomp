@@ -6,6 +6,8 @@
 #include "btl_sfx.h"
 #include "world.h"
 #include "world/we_object2.h"
+#include "world/we_object3.h"
+#include "world/we_object13.h"
 
 /**
  * @brief Walk a world-engine image script and blit each record to VRAM.
@@ -754,7 +756,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009F594);
  *  - @c 0x4:  set @c D_800C4D40 / @c D_800C4D44 from the map id (immediate, no step).
  *  - @c 0x8:  yaw @c D_800D2390.tail.angle — shortest-arc angle step (±0x20).
  *  - @c 0x10: pitch @c D_800D2390.tail.unk0 (±0x10); for map 0x32 the target is
- *             @c -D_800C97F4.word / 24 - 0x100.
+ *             @c -D_800C97F4 / 24 - 0x100.
  *  - @c 0x20: per-map scroll triple element [2] → @c D_800D2390.head.unk4 (±0x200).
  *  - @c 0x80: per-map scroll triple element [1] → @c D_800D2390.head.angle (±0x200).
  *
@@ -871,7 +873,7 @@ void func_8009F6EC(void) {
     if (D_800C4D2C & 0x10) {
         s32 mode = D_800C4D38;
         s32 d3c = D_800C4D3C;
-        s32 t = D_800C97F4.word;
+        s32 t = D_800C97F4;
         s32 target;
         u16 cur;
         s32 d;

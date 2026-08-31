@@ -3,8 +3,10 @@
 #include "gamestate.h"
 #include "world.h"
 #include "world/we_object10.h"
+#include "world/we_object3.h"   /* worldPosToCell */
 
-
+/* Defined below; the reset path above is its only caller. */
+static void func_800BEFEC(u8 *base);
 
 
 /**
@@ -1052,8 +1054,19 @@ s32 func_800BEFC4(void) {
     return result;
 }
 
-/** Initializes nested array with ramp values. */
-void func_800BEFEC(u8 *base) {
+/**
+ * @brief Seed the eight records at @p base with a descending ramp.
+ *
+ * Each record is @c 0x4C bytes and carries five @c s32 at offsets @c 0x38
+ * through @c 0x48. They are written back to front, @c 0x48 first, starting at
+ * @c -0x1000 and rising by @c 0x400 a step, so in address order the five read
+ * @c 0, @c -0x400, @c -0x800, @c -0xC00, @c -0x1000.
+ *
+ * @param base First record; the reset path passes @c D_800DCE78.
+ * @note The record is still reached by raw offset rather than a struct, so the
+ *       0x4C stride and the 0x38..0x48 field range are not yet named.
+ */
+static void func_800BEFEC(u8 *base) {
     s32 outer = 7;
     s32 inner;
     s32 val;

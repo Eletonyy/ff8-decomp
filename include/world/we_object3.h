@@ -5,17 +5,20 @@
 #include "psxsdk/libgpu.h"
 #include "world.h"
 
+/** One entry of the @c D_800D24A8 descriptor cache: a command descriptor and
+    the cell key it was resolved for, kept in most-recently-used order. */
 typedef struct {
-    s32 val;    /* +0x00 */
-    s16 hval;   /* +0x04 */
-    s16 pad;    /* +0x06 */
+    CmdDesc *val;   /* +0x00 */
+    s16 hval;       /* +0x04 — cell key the descriptor was resolved for */
+    s16 pad;        /* +0x06 */
 } FeaEntry40C0; /* size 0x08 */
 
 /* Object glyph header returned by func_800A5EC4: a count byte followed by an
    array of @c CmdDesc entries (16-byte stride). */
 typedef struct {
     u8      count;        /* 0x00 */
-    u8      pad01[3];
+    u8      id;           /* 0x01 — glyph kind, dispatched on by func_800BF20C/func_800BFBFC */
+    u8      pad02[2];
     CmdDesc entries[1];   /* 0x04 — [count] entries, stride 0x10 */
 } GlyphHeader;
 
@@ -32,9 +35,13 @@ extern WorldObject   D_800D3320[16];
 extern WorldObject  *D_800D3318;
 extern WorldObject  *D_800D34E0;
 extern WorldObject  *D_800D34E4;
-extern u32           D_800D2284;
-extern u32           D_800D34A0[16];
-extern u32           D_800D34F0;
+extern WorldObject  *D_800D2284;     /**< Head of the active world-object list. */
+extern WorldObject   D_800C9888[];   /**< Pool the visible-cell list is built in. */
+/** Section slots the world can hold live at once; @c D_800D34A0 marks each
+    one busy, and @c WorldObject.sectionIdx indexes it. */
+#define WORLD_SECTION_SLOTS 16
+extern u32           D_800D34A0[WORLD_SECTION_SLOTS];
+extern u32           D_800D34F0[];  /**< Streamed-record staging buffer. */
 extern WorldObject   D_800D33E0[16];
 extern WorldObject   D_800C9EF0[16];
 extern WorldObject  *D_800CA030;
@@ -50,10 +57,12 @@ extern u32 *func_800A5EC4(s16 id);
 
 /* Point-in-descriptor hit test: returns nonzero and writes a result word to
    @p out when @p point falls inside the region of command descriptor @p cand. */
-extern s32 func_800BF024(CmdDesc *cand, VECTOR *point, AngleSlot *out, CmdDesc *end);
+extern s32 func_800BF024(CmdDesc *cand, SVECTOR *point, AngleSlot *out, CmdDesc *end);
 
 /* Project a world position to a grid-cell index; optionally emit its angle triple. */
 extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
+/** Called from we_object7; see the definition for what the result means. */
+extern s32 func_800A3EE4(VECTOR *tr, s16 ang, s16 z);
 
 /* Program the GTE translation vector for world-map rendering from two packed coords. */
 extern void setWorldMapTransVector(s16 coord0, s16 coord1);
@@ -61,29 +70,63 @@ extern void setWorldMapTransVector(s16 coord0, s16 coord1);
 /* Register master-list objects not yet present in any tracking list onto the active list. */
 extern void registerNewWorldObjects(void);
 
-/**
- * @brief One placed world-map sprite produced by @c placeWorldSpriteFan (0x2C stride).
- *
- * @c pos is the final world position; @c cell receives the @c worldPosToCell
- * projection; @c cellId/flag are the projected grid-cell id and a fixed marker.
- * @note Field purpose partly uncertain — named from the access pattern.
- */
-typedef struct {
-    VECTOR  pos;        /* 0x00 */
-    SVECTOR cell;       /* 0x10 — worldPosToCell output */
-    u8      pad18[0x8]; /* 0x18 */
-    s16     cellId;     /* 0x20 — worldPosToCell return */
-    s16     flag;       /* 0x22 */
-    u8      pad24[0x8]; /* 0x24 */
-} WorldSprite;          /* 0x2C */
-
 /* Generate up to 5 spread-positioned SVECTOR offsets for the scene @p ctx. */
 extern void func_800B5ADC(s32 ctx, SVECTOR *out, s32 c, s32 d);
-/* Returns a per-scene angle bias used to orient the placed sprites. */
-extern s32  func_800BC5E0(s32 ctx);
 
 
 /* Compute a linear tile index from 2D world coordinates (32x24 grid). */
 extern s32 func_800A5E40(s32 x, s32 y);
+
+/* Visibility gate keyed on a packed command code; sibling of func_800A45D8. */
+extern s32 func_800A4670(u32 a, s32 b);
+
+/* Linear tile index from 2D world coordinates; sibling of func_800A5E40. */
+extern s32 func_800A5DC8(s32 x, s32 y);
+
+/* Rebuild the world-map sprite pool and draw every pending world object. */
+extern void renderWorldMapFrame(void);
+
+/* World render callback: advances the streamer and the object lists once per
+   frame. Registered with func_800C3DB0; returns 2 busy / 1 armed / 0 idle. */
+extern s32 func_800A47A4(void);
+
+/* Probe up to 8 rotations for a free 5-sprite fan placement around the camera;
+   returns 1 and writes sprite 0's position to hitPos when one is accepted. */
+extern s32 func_800A2D50(s32 code, s32 angZ, SVECTOR *angles, VECTOR *hitPos, s32 arg4, s32 *hitCell);
+
+/* Place a five-sprite fan around a slot and emit it; returns func_800B21EC's
+   result (negative when the fan was rejected). */
+extern s32 func_800A358C(s32 kind, SlotEntry *slot, SVECTOR *angles, s32 flag);
+
+/* Visibility gate: picks a CMDPAR_VIS_* bit of packed code @p a by dispatch
+   code @p b (only b's low 16 bits are examined; D_800C4D20 == 0 force-passes). */
+extern s32 func_800A45D8(u32 a, s32 b);
+
+/* The seven entry points below are called from the world entry loop
+ * func_800987D8 (we_object0), which is still assembly: it reaches them
+ * through the linker rather than this header. */
+
+/* Per-frame world setup: advance the frame clock, run the renderers and flip
+   the scene context. */
+extern void func_800A01DC(s32 skipPresent);
+
+/* Lay out the primitive pools over work RAM and pre-tag every packet. */
+extern void func_800A246C(void);
+
+/* Initialise the world-engine subsystem's object pools and free lists. */
+extern void func_800A581C(void);
+
+/* Free the WorldObject list at D_800D34E4 back to the free pool. */
+extern void func_800A6358(void);
+
+/* Gated table swap: copy one of two source halfword tables by map id. */
+extern void func_800A63F0(void);
+
+/* Initialize the world's two double-buffered graphics contexts. */
+extern void initWorldDoubleBuffer(void);
+
+/* Program the GTE for world-map rendering: screen offset, back color,
+   color matrix. */
+extern void setupWorldRenderParams(void);
 
 #endif /* WORLD_WE_OBJECT3_H */
