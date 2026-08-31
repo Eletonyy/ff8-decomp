@@ -4,6 +4,7 @@
 #include "world/we_object1.h"
 #include "world/we_object3.h"
 #include "world/we_object4.h"
+#include "world/we_object5.h"   /* D_800D23D0 */
 #include "world/we_object9.h"   /* func_800BC5E0 */
 #include "thread.h"
 
@@ -54,8 +55,13 @@
     reinterpretation of that buffer, not a type fix. */
 #define WORLD_STAGE_ADDR    0x801E8000
 /** GTE-scratchpad slot where the caller stages the projected probe point for
-    the descriptor hit tests (scratchpad RAM has no symbol in the map). */
-#define WORLD_PROBE_POINT   ((VECTOR *)0x1F8002D0)
+    the descriptor hit tests (scratchpad RAM has no symbol in the map). It is an
+    SVECTOR: func_800A26E8 stages it in halfwords, and it reaches func_800BF024
+    as the same type ProjBuf.proj does. */
+#define WORLD_PROBE_POINT   ((SVECTOR *)0x1F8002D0)
+/** Descriptor-list bound handed to the hit test while the active header's
+    entries are staged in scratchpad by func_800BF20C. */
+#define WORLD_STAGED_ENTRIES ((CmdDesc *)0x1F800000)
 
 /** Countdown to the next stream retry; @c D_800C53AC caches the last tick. */
 extern s32 D_800C53AC;
@@ -89,6 +95,7 @@ typedef struct {
 
 /** @c WorldSprite::flag states. */
 #define WORLD_SPRITE_FREE    0  /**< Slot unused. */
+#define WORLD_SPRITE_PENDING 1  /**< Re-probed this pass but matched no descriptor. */
 #define WORLD_SPRITE_PLACED  2  /**< Given a position this pass. */
 #define WORLD_SPRITE_CLAIMED 3  /**< Matched a glyph this frame. */
 
@@ -124,6 +131,52 @@ typedef struct {
     u16 sx, sy;
 } ScreenXY;              /* 0x04 */
 
+/** World cell grid: cells are 0x800 units square, 128 columns by 96 rows. The
+    projection biases each axis by one and a half spans so the wrap modulo of a
+    negative coordinate still lands inside the grid. */
+#define WORLD_CELL_SIZE  0x800
+#define WORLD_CELL_MASK  (WORLD_CELL_SIZE - 1)
+#define WORLD_GRID_COLS  128
+#define WORLD_GRID_ROWS  96
+#define WORLD_SPAN_X     (WORLD_CELL_SIZE * WORLD_GRID_COLS)
+#define WORLD_SPAN_Z     (WORLD_CELL_SIZE * WORLD_GRID_ROWS)
+
+/** Object tile grid: @c WorldObject::id is a linear tile index,
+    @c row*WORLD_TILE_COLS+col. Coarser than the projection grid above and
+    unrelated to it — this is the grid the object lists, @c func_800A5E40 and
+    the zone table are keyed on. */
+#define WORLD_TILE_COLS  32
+#define WORLD_TILE_ROWS  24
+
+/* ---- private to func_800A568C -------------------------------------------
+ * The region and zone tables. Only this unit reads them, so they stay here
+ * rather than in we_object3.h.
+ */
+
+/** Regions the zone lookup tests, enabled individually by the bits of
+    @c WorldFlags::regionMask. Seven both because that is the loop bound and
+    because @c D_800C59BC starts 0x1C bytes on, with no symbol between. */
+#define WORLD_REGIONS 7
+
+/** Rectangular area of the object tile grid, given as two tile indices. A tile
+    is inside when its column and its row both fall between the corners. */
+typedef struct {
+    s16 lo;              /* 0x00 — low corner, packed row*WORLD_TILE_COLS+col */
+    s16 hi;              /* 0x02 — high corner, packed the same way */
+} WorldRegion;           /* 0x04 */
+
+/** One zone-table entry: the key/row pair written onto a @c WorldObject whose
+    @c id matches. Searched linearly with no terminator, so every id that can
+    reach the search must be present. */
+typedef struct {
+    s16 id;              /* 0x00 — WorldObject::id this entry answers for */
+    u16 key;             /* 0x02 — written to WorldObject::key */
+    u16 row;             /* 0x04 — written to WorldObject::slot.row */
+} WorldZone;             /* 0x06 */
+
+extern WorldRegion      D_800C59A0[WORLD_REGIONS];
+extern WorldZone        D_800C59BC[];
+
 /** Sprites in one pool record: an anchor plus the four spread around it. */
 #define WORLD_FAN_SPRITES 5
 
@@ -132,9 +185,12 @@ typedef struct {
     WorldSprite sprite[WORLD_FAN_SPRITES];
 } WorldSpriteRec;        /* 0xDC */
 
-/** One of the two alternating pool banks of eight records. */
+/** Records in one pool bank. */
+#define WORLD_BANK_RECORDS 8
+
+/** One of the two alternating pool banks. */
 typedef struct {
-    WorldSpriteRec rec[8];
+    WorldSpriteRec rec[WORLD_BANK_RECORDS];
 } WorldSpriteBank;       /* 0x6E0 */
 
 extern SVECTOR          D_800CA038;   /**< Reference offset fed to the pool placer. */
@@ -179,7 +235,6 @@ extern s16              D_800C9772;   /**< Receives the low half of the camera-f
    takes no parameters (it reads D_800D23C0), so keep the unprototyped form
    for the call-site ABI. */
 static void             func_800A1F10();
-extern s32              func_800A4420(WorldSpriteRec *rec, SVECTOR *ref, SVECTOR *out, s32 size);
 static WorldObject     *worldObjectById(s16 id, WorldObject *head);
 /* All defined below; the render callback is the first caller in the file. */
 static void             buildViewportCellList(WorldPos *cam, WorldObject *out, MATRIX *m);
@@ -188,9 +243,38 @@ static WorldObject    *func_800A60B4(s32 key, WorldObject *head);
 static void            func_800A6188(Tim *tim, u8 tableIdx);
 static void            drainPendingObjects(void);
 static s32              func_800A2920(GlyphHeader *glyph, WorldSprite *st, s16 key, CmdDesc *end);
-extern WorldSpriteRec  *func_800A26E8(GlyphHeader *p, WorldSpriteRec *rec, s32 v);
-extern s32              func_800A3C9C(WorldSpriteRec *rec, s32 mode);
-extern s32              func_800A5B48(void);
+static WorldSpriteRec  *func_800A26E8(GlyphHeader *p, WorldSpriteRec *rec, s32 v);
+/* mode is unsigned: the dispatch does unsigned range tests on it. */
+static s32              func_800A3C9C(WorldSpriteRec *rec, u32 mode);
+/* Not static, and not in we_object3.h either. func_800B3AB8 in we_object7
+   calls it -- that unit is still INCLUDE_ASM, so the caller shows up only in
+   asm/, and `static` fails the link. The prototype stays file-local because
+   its signature needs WorldSpriteRec, which is private to this unit; moving
+   it to the header is a parse error until that type is made public. */
+extern void             func_800A4420(WorldSpriteRec *rec, SVECTOR *ref, SVECTOR *ang, s32 size);
+/* Overlay entry point -- nothing in this tree calls it, so its caller is
+   outside the decompiled sources. static anyway: gcc 2.8 has no unit-at-a-time
+   pass, so it still emits the definition and the overlay matches. */
+static void             func_800A01DC(s32 skipPresent);
+extern u8               D_800C53F4[3];  /* Three colour bytes handed to func_80048DD4;
+                                           only this function reads them. */
+extern s32              D_800C9738;     /* Previous frame's D_800D23D0 timestamp. */
+extern void             func_800488D4(s32 a);
+extern void             func_80048C50(s32 a);
+extern void             func_80048DD4(BattleSceneCtx *ctx, s32 r, s32 g, s32 b);
+extern void             func_80049244(s32 *tag);
+extern void             func_800492B4(BattleSceneCtx *ctx);
+extern void             func_80049480(void *disp);
+extern void             func_800A7E74(BattleSceneCtx *ctx);
+extern void             func_800AC2B8(void);
+static s32              func_800A5B48(void);
+/* Writes exactly one word through its out-parameter. */
+extern s32              func_800A50A0(s32 *runs);
+static void             func_800A568C(void);
+/* func_800A5B48 is the only reference in the tree: when non-zero it skips the
+   func_800A50A0 scan, admits a single node and zeroes the out-word. What sets
+   it, and what it means, is unknown. */
+extern s32              D_800D2238;
 extern s32              func_800B21EC(WorldSpriteRec *rec, s32 mode, s32 c, s32 d);
 /* Both below are declared in we_object10.h, which this unit cannot include:
  * its func_800B0010 prototype is (void) to serve a no-argument caller there,
@@ -217,7 +301,66 @@ extern void             func_800BF20C(CmdDesc *p, s32 kind, s32 arg);
 extern void             func_800BFBFC(s32 kind);
 
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A01DC);
+/**
+ * @brief Per-frame world setup: advance the frame clock, run the renderers, and
+ *        flip the scene context.
+ *
+ * Polls the pad, picks the counter increment for @c D_800D2264 -- 3 only while
+ * the dispatch code @c D_800C4D38 is 0x32 and world-state flag 0 is not 0xC,
+ * otherwise 2 -- and feeds it to @c func_80042634. The frame clock is then stepped: the previous
+ * @c D_800D23D0 is kept in @c D_800C9738, a fresh one is taken, and the delta
+ * lands in @c D_800C9724, which drives the pad repeat timers.
+ *
+ * @c func_800A7B38 steps the texture-strip animations when @c D_800D2458 is
+ * set, @c func_800A7E74 runs on the scene context when @c D_800C9714 is (what
+ * it does is not yet known), and the context is then prepared for drawing. Unless @p skipPresent is set the frame
+ * is also cleared -- to black while world-state flag 0 is 0xC, otherwise to
+ * @c D_800C53F4's three bytes -- its HUD tag is submitted, and @c D_800D244C flips to the
+ * other @c D_800CA040 context. Either way the new context's ordering table is
+ * reset.
+ *
+ * @note The increment must be spelled as one short-circuit test
+ *       (@c a != 0x32 @c || @c b == 0xC) rather than nested conditionals. With
+ *       nesting, gcc hoists the else-constant above the inner compare as a
+ *       default; it is then live across the compare's v0/v1 and cannot use v0,
+ *       which shifts the value and the destination address up one register each.
+ *
+ * @param skipPresent Non-zero to skip the clear, HUD submit and context flip.
+ */
+static void func_800A01DC(s32 skipPresent) {
+    func_800A0388();
+    D_800C4DBC = 0;
+    D_800D2264 = (D_800C4D38 != 0x32 || D_800D23D8[0] == 0xC) ? 2 : 3;
+    func_80048C50(0);
+    func_80042634(D_800D2264);
+    D_800C9738 = D_800D23D0;
+    D_800D23D0 = func_80042634(-1);
+    D_800C9724 = D_800D23D0 - D_800C9738;
+    func_800488D4(1);
+
+    if (D_800D2458 != 0) {
+        func_800A7B38();
+    }
+    if (D_800C9714 != 0) {
+        func_800A7E74(D_800D244C);
+    }
+    func_800AC2B8();
+    func_800492B4(D_800D244C);
+    func_80049480(&D_800D244C->disp);
+
+    if (skipPresent == 0) {
+        if (D_800D23D8[0] == 0xC) {
+            func_80048DD4(D_800D244C, 0, 0, 0);
+        } else {
+            func_80048DD4(D_800D244C, D_800C53F4[0], D_800C53F4[1], D_800C53F4[2]);
+        }
+        if (skipPresent == 0) {
+            func_80049244(&D_800D244C->primList[BSC_HUD_IDX]);
+            D_800D244C = (D_800D244C == &D_800CA040) ? (&D_800CA040) + 1 : &D_800CA040;
+        }
+    }
+    ClearOTagR((u32 *)D_800D244C->primList, 0x1000);
+}
 
 /**
  * @brief Sample both controllers for the frame and derive the newly-pressed mask.
@@ -507,9 +650,9 @@ void renderWorldMapFrame(void) {
 
             gte_SetRotMatrix(&D_800C9838);
             rec = D_800D2508[0].rec;
-            /* 16 records = both banks, the same address as D_800D32C8 below; the
-               loop needs it spelled this way (D_800D32C8 here moves 717). */
-            if (rec < (D_800D2508[0].rec + 16)) {
+            /* Both banks, the same address as D_800D32C8 below; the loop needs
+               it spelled off D_800D2508 (D_800D32C8 here moves 717). */
+            if (rec < (D_800D2508[0].rec + 2 * WORLD_BANK_RECORDS)) {
                 do {
                     for (sprite = rec->sprite; sprite < rec[1].sprite; sprite++) {
                         if ((sprite->cellId == key) && (sprite->flag == WORLD_SPRITE_PLACED)) {
@@ -1162,7 +1305,90 @@ static void setupWorldRenderParams(void) {
     SetColorMatrix(&D_800DA8B0);
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A26E8);
+/**
+ * @brief Finds the sprite a glyph header should claim, and re-probes the ones
+ *        already keyed to it.
+ *
+ * Walks up to eight consecutive records, five sprites each, stopping early at
+ * the first record whose five sprites are all free. For every placed sprite:
+ *
+ *  - if its cell key matches @p v, the sprite is re-probed. Its angle is reset
+ *    from the source camera position, less 0x140 when the @em active
+ *    descriptor @c D_800C4D64 -- not the sprite's own @c cmd -- has a type
+ *    below 6. Its cell is staged into the scratchpad probe slot and, when this
+ *    header is the active one, biased by the GTE translation vector so the
+ *    test runs in the space the caller just set up. func_800A2920 then re-runs
+ *    the descriptor hit test: a hit frees the sprite for re-placement, a miss
+ *    leaves it pending. Neither outcome marks it placed;
+ *  - otherwise the first such sprite is remembered as the fallback result.
+ *
+ * @param p   Glyph header being placed.
+ * @param rec First of the eight records to scan.
+ * @param v   Cell key to match, truncated to 16 bits.
+ * @return The first placed sprite that did @em not match @p v, or NULL. The
+ *         caller keys on @c sprite[0], which is offset 0, so the matched
+ *         sprite doubles as a record handle -- hence the cast on the way out.
+ */
+static WorldSpriteRec *func_800A26E8(GlyphHeader *p, WorldSpriteRec *rec, s32 v) {
+    s32 tr[3];
+    WorldSprite *found;
+    WorldSprite *sp;
+    SVECTOR *probe;
+    CmdDesc *end;
+    s16 angle;
+    s16 key;
+    s32 empty;
+    s32 i;
+
+    i = 0;
+    found = NULL;
+    key = v;
+    for (; i < WORLD_BANK_RECORDS; i++) {
+        for (sp = rec[i].sprite; sp < rec[i].sprite + WORLD_FAN_SPRITES; sp++) {
+            if (sp->flag != WORLD_SPRITE_PLACED) {
+                continue;
+            }
+            if (sp->cellId == key) {
+                angle = D_800C9868.z;
+                sp->angle = angle;
+                if (D_800C4D64->type < 6) {
+                    sp->angle = angle - 0x140;
+                }
+                probe = WORLD_PROBE_POINT;
+                *probe = sp->cell;
+                if (D_800D24A0 == p) {
+                    /* Assigning the staged bound here rather than as a default
+                       before the test keeps it in its own basic block: shared
+                       with the probe address it would cse into one `lui`, and
+                       the original materialises the two separately. */
+                    end = WORLD_STAGED_ENTRIES;
+                    gte_sttr(tr);
+                    probe->vx += tr[0];
+                    probe->vy += tr[1];
+                    probe->vz += tr[2];
+                } else {
+                    end = &p->entries[p->count];
+                }
+                if (func_800A2920(p, sp, key, end)) {
+                    sp->flag = WORLD_SPRITE_FREE;
+                } else {
+                    sp->flag = WORLD_SPRITE_PENDING;
+                }
+            } else if (found == NULL) {
+                found = sp;
+            }
+        }
+        empty = rec[i].sprite[0].flag == WORLD_SPRITE_FREE &&
+                rec[i].sprite[1].flag == WORLD_SPRITE_FREE &&
+                rec[i].sprite[2].flag == WORLD_SPRITE_FREE &&
+                rec[i].sprite[3].flag == WORLD_SPRITE_FREE &&
+                rec[i].sprite[4].flag == WORLD_SPRITE_FREE;
+        if (empty) {
+            break;
+        }
+    }
+    return (WorldSpriteRec *) found;
+}
 
 /**
  * @brief Pick the best command descriptor for a sprite and install it.
@@ -1212,7 +1438,7 @@ static s32 func_800A2920(GlyphHeader *glyph, WorldSprite *st, s16 key, CmdDesc *
     s32 metric;
     AngleSlot res1;
     AngleSlot res2;
-    VECTOR *point;
+    SVECTOR *point;
 
     point = WORLD_PROBE_POINT;
     found = 0;
@@ -1854,9 +2080,209 @@ static void func_800A39BC(WorldSprite *out, s16 h) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A3C9C);
+/**
+ * @brief Picks the world-map yaw a sprite record should be drawn at.
+ *
+ * Four groups of modes want different things from the same record. Only mode
+ * 0x32 writes anything back; the other three just compute a value.
+ *
+ *  - the plain modes (below 0xA, 0x20..0x28, 0x80, 0x84) return the sprite's
+ *    own angle, plus 0x140 when the command type is below 6;
+ *  - mode 0x32, while @c D_800D23D8[0] is 0 or 0xD, clamps the camera scratch
+ *    vector's @c vy to at least -0xE00 and to at most 0xC8 below the sprite's
+ *    angle, writes it back and returns it;
+ *  - mode 0x30 clamps the camera-follow reference into a window around the
+ *    sprite -- @c angle+0x40..angle+0xC0 for types below 6, otherwise
+ *    @c angle-0x100..angle-0x80 -- and for those higher types then takes the
+ *    sprite's angle instead if it sits below the clamped value;
+ *  - mode 0x31 returns @c angle+0x140 for types below 6 and the bare angle for
+ *    most others, but for types 0x1E..0x22 it steps the follow reference four
+ *    units towards @c angle..angle+0x80 (@c D_800C4D4C picks the direction)
+ *    and clamps it there.
+ *
+ * Falling off the end of the chain returns an uninitialised value, exactly as
+ * the original does; the callers only use the result for the modes above.
+ *
+ * @param rec  Sprite record whose first sprite supplies the angle and command.
+ * @param mode Draw mode selecting one of the four groups above.
+ * @return The yaw to store into every sprite of the record.
+ */
+static s32 func_800A3C9C(WorldSpriteRec *rec, u32 mode) {
+    /* Never read: the original reserves 0x40 of frame it does not touch, and the
+       reservation is load-bearing -- dropping it costs four instructions. */
+    MATRIX unused[2];
+    s16 yaw;
+    /* The 0x31 path needs its own local: it uses the value twice, and folding it
+       into `type` costs the match (98.25%). The other paths share one. */
+    s32 type;
+    s32 spinType;
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A3EE4);
+    if (mode < 0xA || mode == 0x80 || mode - 0x20 < 9 || mode == 0x84) {
+        s16 angle;
+
+        type = rec->sprite[0].cmd->type;
+        angle = rec->sprite[0].angle;
+        yaw = angle;
+        if (type < 6) {
+            yaw = angle + 0x140;
+        }
+    } else if (mode == 0x32 && (D_800D23D8[0] == 0 || D_800D23D8[0] == 0xD)) {
+        SVECTOR *cam;
+        s16 v;
+
+        cam = D_800C9770;
+        if (cam->vy < -0xE00) {
+            v = -0xE00;
+        } else {
+            if (rec->sprite[0].angle - 0xC8 < cam->vy) {
+                v = rec->sprite[0].angle - 0xC8;
+            } else {
+                v = cam->vy;
+            }
+        }
+        cam->vy = v;
+        /* Read back through the array, not the D_800C9772 alias: naming the alias
+           hides the store from cse, which then hoists this load above it. */
+        yaw = D_800C9770[0].vy;
+    } else if (mode == 0x30) {
+        s16 angle;
+        s16 camYaw;
+        s16 clamped;
+        s16 lo;
+        s16 hi;
+
+        camYaw = D_800C9870.half;
+        angle = rec->sprite[0].angle;
+        type = rec->sprite[0].cmd->type;
+        hi = angle - 0x80;
+        lo = angle - 0x100;
+        if (type < 6) {
+            hi = angle + 0xC0;
+            lo = angle + 0x40;
+        }
+        if (camYaw < lo) {
+            clamped = lo;
+        } else if (hi < camYaw) {
+            clamped = hi;
+        } else {
+            clamped = camYaw;
+        }
+        /* Clamp into a temp and assign back, so camYaw carries the result too. */
+        camYaw = clamped;
+
+        type = rec->sprite[0].cmd->type;
+        if (type >= 6 && rec->sprite[0].angle < camYaw) {
+            camYaw = rec->sprite[0].angle;
+        }
+        yaw = camYaw;
+    } else if (mode == 0x31) {
+        s16 camYaw;
+        s16 clamped;
+        s16 lo;
+        s16 hi;
+
+        spinType = rec->sprite[0].cmd->type;
+        camYaw = D_800C9870.half;
+        /* The second arm range-tests 0x1E..0x22 in one sltiu. spinType itself stays
+           signed: typing it u32 would make the < 6 test below sltiu as well. */
+        if (spinType < 6) {
+            camYaw = rec->sprite[0].angle + 0x140;
+        } else if ((u32)(spinType - 0x1E) < 5) {
+            lo = rec->sprite[0].angle;
+            hi = rec->sprite[0].angle + 0x80;
+            if (D_800C4D4C != 0) {
+                if (camYaw > lo) {
+                    camYaw -= 4;
+                }
+            } else {
+                if (camYaw < hi) {
+                    camYaw += 4;
+                }
+            }
+            if (camYaw < lo) {
+                clamped = lo;
+            } else if (hi < camYaw) {
+                clamped = hi;
+            } else {
+                clamped = camYaw;
+            }
+            camYaw = clamped;
+        } else {
+            camYaw = rec->sprite[0].angle;
+        }
+        yaw = camYaw;
+    }
+    return yaw;
+}
+
+/**
+ * @brief Asks whether the glyph under a probed world point wants the 0x31 draw
+ *        mode.
+ *
+ * Builds a rotation of @p ang less 0x400 -- a quarter turn, in the 0x1000 =
+ * 360 degree convention the world code uses -- about Y, points a vector
+ * @p z units down Z through it with @p tr as the GTE translation, and projects
+ * the result. The projected point is turned into a grid cell -- components
+ * wrapped into one cell, and a cell index of column plus row times the grid
+ * width -- and handed to @c glyphAt, whose descriptor supplies the answer.
+ *
+ * The cell arithmetic is @c worldPosToCell written out in line; the function
+ * fills a @c GlyphQuery directly rather than calling it.
+ *
+ * @param tr  GTE translation vector for the projection.
+ * @param ang Yaw of the probe direction.
+ * @param z   Distance to probe along the rotated Z axis.
+ * @return 1 when @c D_800C4D20 is clear, otherwise the descriptor's
+ *         @c CMDPAR_MODE_31 bit.
+ */
+s32 func_800A3EE4(VECTOR *tr, s16 ang, s16 z) {
+    SVECTOR rot;
+    SVECTOR v;
+    MATRIX m;
+    GlyphQuery q;
+    CmdDesc *g;
+    /* Unsigned: the result is extracted with a logical shift, and a signed
+       code makes it arithmetic (99.50%). */
+    u32 code;
+    s32 col;
+    s32 row;
+
+    /* Each vector is cleared and filled before the next one is touched: letting
+       the two clears run back to back keeps `ang` alive past the point where
+       the original has already reused its register for &m. */
+    func_80047CE4(&rot, 0, sizeof(rot));
+    rot.vy = ang - 0x400;
+    func_80047CE4(&v, 0, sizeof(v));
+    v.vz = z;
+    RotMatrix(&rot, &m);
+    SetRotMatrix(&m);
+    gte_SetTransVector(tr);
+    gte_ldv0(&v);
+    gte_mvmva(1, 0, 0, 0, 0);
+    gte_stlvnl(&q.pos);
+
+    q.buf.proj.vx = q.pos.vx & WORLD_CELL_MASK;
+    q.buf.proj.vy = q.pos.vy;
+    q.buf.proj.vz = q.pos.vz & WORLD_CELL_MASK;
+    if (q.buf.proj.vz != 0) {
+        q.buf.proj.vz -= WORLD_CELL_SIZE;
+    }
+    if (q.buf.proj.vz < -WORLD_CELL_MASK) {
+        q.buf.proj.vz += WORLD_CELL_SIZE;
+    }
+
+    col = ((q.pos.vx + WORLD_SPAN_X + WORLD_SPAN_X / 2) % WORLD_SPAN_X) / WORLD_CELL_SIZE;
+    row = ((WORLD_SPAN_Z + WORLD_SPAN_Z / 2 - q.pos.vz) % WORLD_SPAN_Z) / WORLD_CELL_SIZE;
+    q.buf.angle = col + row * WORLD_GRID_COLS;
+
+    g = glyphAt(&q, NULL);
+    code = g->type | g->flag << 8 | g->param << 16;
+    if (D_800C4D20 == 0) {
+        /* Sets every bit above the type byte, so the tested bit reads back 1. */
+        code |= ~0xFF;
+    }
+    return (code >> 16) & CMDPAR_MODE_31;
+}
 
 
 /** Clears an array of 12 entries. */
@@ -1986,7 +2412,69 @@ static void placeWorldSpriteFan(WorldSprite *out, VECTOR *v, SVECTOR *angles, s3
     }
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A4420);
+/**
+ * @brief Lay a record's five sprites out as a cross around one projected point.
+ *
+ * Builds a rotation from @p ang, runs @p ref through it with a zero translation,
+ * and turns the result into a world position relative to the source camera
+ * @c D_800C9868 -- @c x and @c z feed @c pos.vx / @c pos.vy, while @c pos.vz is
+ * the transformed depth less the camera's @c y. Sprite 0 sits on that point and
+ * the other four are pushed @p size away along the two horizontal axes, giving
+ * the anchor-plus-four fan that @c WORLD_FAN_SPRITES names. Every sprite gets
+ * its grid cell from @c worldPosToCell, is marked placed, and carries @p ang's
+ * heading in @c unk28.
+ *
+ * @note Two shapes are load-bearing, both taken from the fan idiom in
+ *       @c placeWorldSpriteFan and @c func_800A358C: the cursor is set up
+ *       between @c gte_SetTransMatrix and @c gte_ldv0 -- after the transform it
+ *       costs the two parameter registers -- and the camera @c y is read into a
+ *       local before the subtraction, which orders that load ahead of the
+ *       transformed depth.
+ *
+ * @param rec  Record whose five sprites are placed.
+ * @param ref  Offset run through the rotation to give the anchor point.
+ * @param ang  Rotation applied to @p ref; its @c vy is stored in every sprite.
+ * @param size Distance the four outer sprites sit from the anchor.
+ */
+void func_800A4420(WorldSpriteRec *rec, SVECTOR *ref, SVECTOR *ang, s32 size) {
+    MATRIX m;
+    VECTOR xf;
+    WorldSprite *e;
+    s32 depth;
+    s32 i;
+
+    RotMatrix(ang, &m);
+    gte_SetRotMatrix(&m);
+    m.t[2] = 0;
+    m.t[1] = 0;
+    m.t[0] = 0;
+    gte_SetTransMatrix(&m);
+    e = rec->sprite;
+    gte_ldv0(ref);
+    gte_mvmva(1, 0, 0, 0, 0);
+    gte_stlvnl(&xf);
+
+    for (i = 0; i < WORLD_FAN_SPRITES; i++, e++) {
+        e->pos.vx = D_800C9868.x + xf.vx;
+        e->pos.vy = D_800C9868.z + xf.vy;
+        depth = D_800C9868.y;
+        e->pos.vz = xf.vz - depth;
+        if (i != 0) {
+            if (i == 1) {
+                e->pos.vx -= size;
+            } else if (i == 2) {
+                e->pos.vz += size;
+            } else if (i == 3) {
+                e->pos.vx += size;
+            } else {
+                e->pos.vz -= size;
+            }
+        }
+        e->cellId = worldPosToCell(&e->pos, &e->cell);
+        e->flag = WORLD_SPRITE_PLACED;
+        e->unk28 = ang->vy;
+    }
+}
 
 /**
  * @brief Tag-based flag lookup — larger sibling of @c func_800A4670.
@@ -2404,7 +2892,84 @@ static void buildViewportCellList(WorldPos *cam, WorldObject *out, MATRIX *m) {
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A50A0);
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A568C);
+/**
+ * @brief Give each pending world object its render key and grid row, taking
+ *        both from the zone table when the object's tile sits inside an
+ *        enabled region.
+ *
+ * Walks the pending list at @c D_800D34E0. A node's @c id is an object-grid
+ * tile index — @c row*WORLD_TILE_COLS+col, the same packing
+ * @ref buildViewportCellList writes. By default a node keeps its own id as
+ * its key and gets the transposed index @c row+col*WORLD_TILE_ROWS as its
+ * grid row.
+ *
+ * The @c WORLD_REGIONS entries at @c D_800C59A0 are then tested in order,
+ * skipping any whose bit is clear in @c WorldFlags::regionMask. A region
+ * matches when the node's column and row both fall between its two packed
+ * corners. On the first match the node's id is looked up in the
+ * @c D_800C59BC zone table and that entry's key/row replace the defaults.
+ *
+ * @note The zone search is unbounded — an id that reaches it without being
+ *       present in the table would run off the end.
+ */
+static void func_800A568C(void) {
+    WorldObject *node;
+
+    node = D_800D34E0;
+    if (node == NULL) {
+        return;
+    }
+
+    /* Both table pointers live in this inner scope, set up after the
+       empty-list test rather than with @c node, because that is where the
+       original computes them. */
+    {
+        WorldFlags *flags = (WorldFlags *)D_800D23D8;
+        WorldRegion *regions = &D_800C59A0[0];
+
+        do {
+            s32 id = node->id;
+            s16 col = id - id / WORLD_TILE_COLS * WORLD_TILE_COLS;
+            s16 row = id / WORLD_TILE_COLS;
+            s32 i;
+
+            node->key = node->id;
+            node->slot.row = row + col * WORLD_TILE_ROWS;
+
+            for (i = 0; i < WORLD_REGIONS; i++) {
+                /* Declared here but assigned at the point of use below:
+                   taking the table's address any earlier lets gcc hoist and
+                   share the %hi, which costs the match. */
+                WorldZone *zones;
+
+                if ((flags->regionMask >> i) & 1) {
+                    s32 lo = regions[i].lo;
+                    s16 loCol = lo - lo / WORLD_TILE_COLS * WORLD_TILE_COLS;
+
+                    if (col >= loCol) {
+                        s32 hi = regions[i].hi;
+                        s16 hiCol = hi - hi / WORLD_TILE_COLS * WORLD_TILE_COLS;
+
+                        if (hiCol >= col && row >= lo / WORLD_TILE_COLS &&
+                            hi / WORLD_TILE_COLS >= row) {
+                            s32 z = 0;
+
+                            while (node->id != D_800C59BC[z].id) {
+                                z++;
+                            }
+                            zones = &D_800C59BC[0];
+                            node->key = zones[z].key;
+                            node->slot.row = zones[z].row;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            node = node->next;
+        } while (node != NULL);
+    }
+}
 
 
 /**
@@ -2567,7 +3132,105 @@ static void drainPendingObjects(void) {
     } while (node != 0);
 }
 
-INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object3", func_800A5B48);
+/**
+ * @brief Give each newly visible object a section slot, evicting one if the
+ *        table is full.
+ *
+ * Runs the zone lookup @c func_800A568C, then asks @c func_800A50A0 how many
+ * nodes to admit -- unless @c D_800D2238 is set, in which case exactly one is
+ * admitted and the out-word is zeroed. That many nodes are moved from the head
+ * of the active list @c D_800D34E0 onto the pending list @c D_800D34E4, each
+ * taking the first free entry of the @c D_800D34A0 table.
+ *
+ * When every slot is taken, a victim is found on the @c D_800CA030 active list:
+ * the first node whose @c id is @em not present in the @c D_800C9EF0 id list.
+ * The new node inherits that victim's section, and the rest of the active list
+ * shifts down over it, unlinking the last entry. If the walk reaches the end of
+ * the list without a victim, @c func_8009C528(0x6F) raises the error and the
+ * search restarts.
+ *
+ * @note Like @c drainPendingObjects, the match needs the id search to leave its
+ *       result in a @c found flag set only at the two loop exits — 1 on a hit,
+ *       0 on exhaustion — which needs the @c goto to skip the @c found=0. A
+ *       plain @c break sets the flag one instruction too early and costs the
+ *       delay slot of the slot-table test.
+ *
+ * @return The word @c func_800A50A0 wrote, or 0 when it was skipped.
+ */
+static s32 func_800A5B48(void) {
+    s32 runs;
+    WorldObject *node;
+    WorldObject *p;
+    WorldObject *q;
+    s32 found;
+    s32 n;
+    s32 i;
+    s32 k;
+
+    func_800A568C();
+    n = 1;
+    if (D_800D2238 == 0) {
+        n = func_800A50A0(&runs);
+    } else {
+        runs = 0;
+    }
+
+    node = D_800D34E0;
+    for (i = 0; i < n; i++) {
+        D_800D34E0 = node->next;
+
+        for (k = 0; k < WORLD_SECTION_SLOTS; k++) {
+            if (D_800D34A0[k] == 0) {
+                break;
+            }
+        }
+
+        if (k < WORLD_SECTION_SLOTS) {
+            D_800D34A0[k] = 1;
+            node->sectionIdx = k;
+        } else {
+            p = D_800CA030;
+            for (;;) {
+                q = &D_800C9EF0[0];
+                while (q != NULL) {
+                    if (p->id == q->id) {
+                        found = 1;
+                        goto matched;
+                    }
+                    q = q->next;
+                }
+                found = 0;
+            matched:
+                if (!found) {
+                    node->sectionIdx = p->sectionIdx;
+                    while (p->next != NULL) {
+                        p->sectionIdx = p->next->sectionIdx;
+                        p->id = p->next->id;
+                        p = p->next;
+                    }
+                    /* drainPendingObjects grows this list in place through
+                       D_800D33E0 with `entry->next = entry + 1`, so its nodes
+                       are adjacent and the one before the tail is what has to
+                       be unlinked. (D_800C9EF0 is the id list the search above
+                       walks -- a different array.) */
+                    p[-1].next = NULL;
+                    break;
+                }
+                if (p->next != NULL) {
+                    p = p->next;
+                } else {
+                    func_8009C528(0x6F);
+                }
+            }
+        }
+
+        node->next = D_800D34E4;
+        D_800D34E4 = node;
+        node = D_800D34E0;
+    }
+
+    return runs;
+}
 
 
 /**

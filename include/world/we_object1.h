@@ -9,9 +9,14 @@
 #include "main.h"  /* g_activeDrawEnv */
 
 /* Projection scratch: worldPosToCell writes @c proj and returns @c angle. The
-   trailing @c pad keeps the buffer 0x20 bytes (gcc reserves the full slot). */
+   trailing @c pad keeps the buffer 0x20 bytes (gcc reserves the full slot).
+
+   @c proj is an SVECTOR in a VECTOR-sized slot: worldPosToCell declares its
+   out parameter SVECTOR*, and func_800A3EE4 -- which inlines that projection
+   -- writes the three components as halfwords. */
 typedef struct {
-    VECTOR proj;
+    SVECTOR proj;
+    u8      pad08[8];
     s16 angle;
     s16 pad[7];
 } ProjBuf;

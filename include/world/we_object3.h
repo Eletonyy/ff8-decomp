@@ -37,7 +37,10 @@ extern WorldObject  *D_800D34E0;
 extern WorldObject  *D_800D34E4;
 extern WorldObject  *D_800D2284;     /**< Head of the active world-object list. */
 extern WorldObject   D_800C9888[];   /**< Pool the visible-cell list is built in. */
-extern u32           D_800D34A0[16];
+/** Section slots the world can hold live at once; @c D_800D34A0 marks each
+    one busy, and @c WorldObject.sectionIdx indexes it. */
+#define WORLD_SECTION_SLOTS 16
+extern u32           D_800D34A0[WORLD_SECTION_SLOTS];
 extern u32           D_800D34F0[];  /**< Streamed-record staging buffer. */
 extern WorldObject   D_800D33E0[16];
 extern WorldObject   D_800C9EF0[16];
@@ -54,10 +57,12 @@ extern u32 *func_800A5EC4(s16 id);
 
 /* Point-in-descriptor hit test: returns nonzero and writes a result word to
    @p out when @p point falls inside the region of command descriptor @p cand. */
-extern s32 func_800BF024(CmdDesc *cand, VECTOR *point, AngleSlot *out, CmdDesc *end);
+extern s32 func_800BF024(CmdDesc *cand, SVECTOR *point, AngleSlot *out, CmdDesc *end);
 
 /* Project a world position to a grid-cell index; optionally emit its angle triple. */
 extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
+/** Called from we_object7; see the definition for what the result means. */
+extern s32 func_800A3EE4(VECTOR *tr, s16 ang, s16 z);
 
 /* Program the GTE translation vector for world-map rendering from two packed coords. */
 extern void setWorldMapTransVector(s16 coord0, s16 coord1);

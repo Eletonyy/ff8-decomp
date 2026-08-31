@@ -295,17 +295,24 @@ extern SlotEntry      D_800DBFB8[];       /**< Battle/world slot table (stride 0
  *
  * Documents the per-byte layout observed in callers: an opcode-param
  * byte at offset 0, a per-actor mode byte array starting at offset 2,
- * and a bit-flag byte at offset 0x66.  Use via
- * @c ((WorldFlags *)D_800D23D8)->field — the global itself stays
+ * a region-enable halfword at 0x46 and a bit-flag byte at offset 0x66.
+ * Use via @c ((WorldFlags *)D_800D23D8)->field — the global itself stays
  * declared as @c u8[] so older callers that still index it as a byte
  * array keep working.
+ *
+ * @note @c actorMode was previously written as running all the way to
+ *       0x65; @ref func_800A568C reads a signed halfword at 0x46, so the
+ *       array is capped there. Where it really ends is still unknown —
+ *       nothing indexes it yet.
  */
 typedef struct {
-    /* 0x00 */ u8 opParam;            /**< Set from script opcode @c param. */
-    /* 0x01 */ u8 pad01;
-    /* 0x02 */ u8 actorMode[0x64];    /**< Per-actor mode byte. */
-    /* 0x66 */ u8 flags;              /**< Bit flags (bits 0x20, 0x40 used). */
-    /* 0x67 */ u8 pad67;
+    /* 0x00 */ u8  opParam;           /**< Set from script opcode @c param. */
+    /* 0x01 */ u8  pad01;
+    /* 0x02 */ u8  actorMode[0x46 - 0x02]; /**< Per-actor mode byte. */
+    /* 0x46 */ s16 regionMask;        /**< Bit @c i enables world region @c i. */
+    /* 0x48 */ u8  pad48[0x66 - 0x48];
+    /* 0x66 */ u8  flags;             /**< Bit flags (bits 0x20, 0x40 used). */
+    /* 0x67 */ u8  pad67;
 } WorldFlags;
 
 /**
