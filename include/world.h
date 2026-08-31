@@ -27,9 +27,10 @@ typedef struct {
     s32 z;             /* 0x08 */
 } WorldPos;
 
-/** 4-byte slot read as either a full word or just the low halfword. */
+/** 4-byte slot read as either a full signed word (angle compares and deltas
+    are signed) or just the low halfword. */
 typedef union {
-    u32 word;
+    s32 word;
     u16 half;
 } AngleSlot;
 
@@ -42,7 +43,16 @@ typedef union {
 typedef struct WorldObject {
     struct WorldObject *next;   /**< 0x00: Next node. */
     s16 id;                     /**< 0x04: s16 id used by search. */
-    u8 pad06[4];
+    s16 key;                    /**< 0x06: Search key passed to worldObjectById. */
+    /** 0x08: read both ways — as the byte index into the section's offsets[]
+        table, and as a halfword row key by the world render callback. */
+    union {
+        struct {
+            u8 idx;             /**< 0x08 */
+            u8 pad09;           /**< 0x09 */
+        } b;
+        s16 row;                /**< 0x08 */
+    } slot;
     u8 sectionIdx;              /**< 0x0A: Section index into the D_800C4D5C region table. */
 } WorldObject;
 
@@ -78,6 +88,20 @@ typedef struct {
     u8 flag;        /**< 0x0E: Command flag byte. */
     u8 param;       /**< 0x0F: Command parameter byte. */
 } CmdDesc;
+
+/* Per-code visibility bits of CmdDesc.param, tested by the world placement
+ * gates (func_800A45D8 / func_800A4670 / func_800A2D50) after packing the
+ * descriptor as type | flag << 8 | param << 16. Meanings unknown beyond the
+ * code range each bit answers for -- placeholder names. */
+#define CMDPAR_VIS_00_09   0x80  /**< codes 0x00..0x09 and 0x80 */
+#define CMDPAR_VIS_20_28   0x40  /**< codes 0x20..0x28 and 0x84 (kind gate) */
+#define CMDPAR_VIS_30      0x20  /**< code 0x30 (kind gate) */
+#define CMDPAR_VIS_31      0x10  /**< code 0x31 (kind gate) */
+#define CMDPAR_MODE_20_28  0x04  /**< codes 0x20..0x28 and 0x84 (mode gate) */
+#define CMDPAR_MODE_30     0x02  /**< code 0x30 (mode gate) */
+#define CMDPAR_MODE_31     0x01  /**< code 0x31 (mode gate) */
+/** Mode-gate bit for code 0x32, in CmdDesc.flag. */
+#define CMDFLAG_MODE_32    0x80
 
 /**
  * @brief Slot entry in the D_800DBFB8 table (stride 40 bytes).
@@ -233,14 +257,16 @@ extern s16            D_800C53EC[];
 extern u8            *D_800C96D0;
 extern s32            D_800C9710;
 extern s16            D_800C977A;
-extern AngleSlot      D_800C97F4;        /**< Camera angle slot (word/half view). */
+extern s32            D_800C97F4;        /**< World camera angle. Stored as a word; the
+                                              angular-delta helpers in we_object9 read only its
+                                              low half — hence the (u16) cast at those sites. */
 extern MATRIX         D_800C9838;        /**< World-to-screen matrix loaded into the GTE. */
 extern WorldPos       D_800C9868;        /**< Source camera world position (cast to VECTOR* for GTE transform func_800BC544). */
 extern SVECTOR        D_800C9770[2];     /**< Camera scratch: [0] is a position offset, [1] a rotation. */
 extern s32           *D_800C9744;        /**< Texture-strip animation block: a NULL-terminated s32 offset
                                               table; each offset, relative to this pointer, locates one
                                               strip record (see func_800A7B38). */
-extern s16            D_800C9E38[3];     /**< Per-frame camera movement deltas ([0]=x, [2]=z); cleared on world init (we_object1), fed to the particle camera-follow drift (we_object4). */
+extern SVECTOR        D_800C9E38;     /**< Per-frame camera movement deltas ([0]=x, [2]=z); cleared on world init (we_object1), fed to the particle camera-follow drift (we_object4). */
 extern s16            D_800D239A;
 extern CVECTOR        D_800DB0D0[3];    /**< Map-view HUD palette (copied from D_800C5448 by
                                                func_800ABC98): three RGB stops, dark to light.
@@ -249,7 +275,12 @@ extern CVECTOR        D_800DB0D0[3];    /**< Map-view HUD palette (copied from D
                                                @note func_800A8400 also sums stop 0's channels to
                                                centre the location-name banner; that use is not
                                                understood. */
-extern u8             D_800C5398[];      /**< 4-byte flag block. */
+/** Per-slot message/section key block. A slot holds @c WORLD_SLOT_NONE when
+    it is unclaimed; @c func_800A610C also returns that when no section
+    qualifies. */
+extern u8             D_800C5398[];
+#define WORLD_SLOT_NONE   0xFF   /**< Unclaimed slot / no section found. */
+#define WORLD_SLOT_COUNT  4      /**< Slots in @c D_800C5398. */
 extern s32            D_800C9718;
 extern s16            D_800C97E8;        /**< Worldmap screen height reference. */
 extern s16            D_800C97EA;        /**< Worldmap screen width reference. */
@@ -490,12 +521,15 @@ typedef struct {
     /* 0x00 */ u8 pad00[0x18];
     /* 0x18 */ Track tracks[2];   /**< Track A at 0x18, Track B at 0x24. */
     /* 0x30 */ u8 pad30[0x3C];
-    /* 0x6C */ s32 unk6C;         /**< Flags word; bit 0x100 mirrors a CmdDesc flag. */
+    /* 0x6C */ s32 unk6C;         /**< Flags word; see SLOT_FLAG_CMD_MIRROR. */
     /* 0x70 */ u8 pad70[0x4];
     /* 0x74 */ u32 flags[2];      /**< 64-bit flag set (low/high). */
     /* 0x7C */ u8 bytes[2];       /**< Action bytes selectable by 0xFF2E. */
     /* 0x7E */ u8 pad7E[2];
 } Slot;
+
+/** @c Slot.unk6C bit mirroring @c CmdDesc.flag bit 0x08 (hence the shift by 5). */
+#define SLOT_FLAG_CMD_MIRROR 0x100
 
 /**
  * @brief 16-byte transform entry from @c *D_800D2128 — VECTOR translation

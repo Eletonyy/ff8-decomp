@@ -1801,8 +1801,8 @@ static void func_800A9300(void) {
  * @c scaleRate, integrates @c pos from the 16-bit @c vel, and then
  * accelerates @c vel by the kind's own @c vel and bumps @c count.
  * From the second tick on, particles of kind 12 or 13 additionally drift
- * with the camera: 5/6 of the per-frame camera deltas (@c D_800C9E38[0],
- * @c D_800C9870 - @c D_800C974C, @c D_800C9E38[2]) is added to the position
+ * with the camera: 5/6 of the per-frame camera deltas (@c D_800C9E38.vx,
+ * @c D_800C9870.word - @c D_800C974C, @c D_800C9E38.vz) is added to the position
  * so the effect roughly follows the view (weather-style particles).
  *
  * @param p Particle slot to update.
@@ -1825,11 +1825,11 @@ static void func_800A9CC0(Slot30 *p, KindParams *q) {
     if (p->count != 0) {
         if (p->kind == 12 || p->kind == 13) {
             w = &p->pos.vx;
-            *w += D_800C9E38[0] * 5 / 6;
+            *w += D_800C9E38.vx * 5 / 6;
             w++;
-            *w += (D_800C9870 - D_800C974C) * 5 / 6;
+            *w += (D_800C9870.word - D_800C974C) * 5 / 6;
             w++;
-            *w += D_800C9E38[2] * 5 / 6;
+            *w += D_800C9E38.vz * 5 / 6;
         }
     }
     p->vel.vx += q->vel.vx;

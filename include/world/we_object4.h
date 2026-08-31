@@ -13,10 +13,17 @@ extern s32 D_800D2264;              /**< Counter increment per update (read by w
 
 extern void func_800A7B38(void);    /**< Step the texture-strip animations and upload changed frames. */
 
+/** The camera-follow reference is written as a word but published as its low
+ *  half by we_object3, so both views need a name. */
+typedef union {
+    s32 word;
+    u16 half;
+} CameraRef;
+
 /* Camera-follow reference read by we_object1, we_object3 and we_object7.
  * volatile is load-bearing: it keeps the read ordered against the particle
  * position stores, matching the original schedule. */
-extern volatile s32 D_800C9870;
+extern volatile CameraRef D_800C9870;
 
 /**
  * Spawn a kind-0xE particle in the D_800D9CB0 pool at @p pos (rotation

@@ -3,6 +3,7 @@
 #include "gamestate.h"
 #include "world.h"
 #include "world/we_object9.h"
+#include "world/we_object3.h"   /* worldPosToCell */
 
 #define SPAWN_FLAG_LIFETIME_JITTER 1
 #define SPAWN_FLAG_SIZE_JITTER     2
@@ -142,9 +143,9 @@ void func_800BBD74(ParticleSource *src, s32 visRange) {
     s16      dx;
     u32      worldCam;
 
-    worldCam = D_800C97F4.word;
+    worldCam = D_800C97F4;
     localPos = src->pos;
-    dx       = D_800C97F4.half - src->pos.pos.half;
+    dx       = ((u16) D_800C97F4) - src->pos.pos.half;
     localPos.pos.word = worldCam;
     if ((func_8009CC3C() + (dx >> 2)) >= visRange) return;
     absdx = (dx >= 0) ? dx : -dx;
@@ -196,9 +197,9 @@ void func_800BBD74(ParticleSource *src, s32 visRange) {
  *       s16      dx;
  *       u32      worldCam;
  *
- *       worldCam = D_800C97F4.word;
+ *       worldCam = D_800C97F4;
  *       localPos = src->pos;
- *       dx       = D_800C97F4.half - src->pos.pos.half;
+ *       dx       = ((u16) D_800C97F4) - src->pos.pos.half;
  *       localPos.pos.word = worldCam;
  *       if (D_800C4D4C <= (func_8009CC3C() + (dx >> 2))) return;
  *       absdx = (dx >= 0) ? dx : -dx;
@@ -225,7 +226,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object9", func_800BBF0C);
  * @brief Spawn a mirrored particle pair (type 0x14) gated on a word-angle delta.
  *
  * Sibling of @c func_800BBD74 but with word-scale angle math instead of
- * halfword: computes @c (D_800C97F4.word - src->pos.pos.word) >> 4 and
+ * halfword: computes @c (D_800C97F4 - src->pos.pos.word) >> 4 and
  * rejects the spawn when @c (rnd + delta) >= @c (D_800C4D4C / 2). When
  * the visibility gate opens, emits two particles via @c func_800AC0A0
  * with symmetric ±0x320 angle offsets and RNG jitter on angle/height.
@@ -244,11 +245,11 @@ void func_800BC09C(ParticleSource *src) {
     s32      threshold;
     u32      worldCam;
 
-    worldCam = D_800C97F4.word;
+    worldCam = D_800C97F4;
     localPos = src->pos;
     threshold = D_800C4D4C >> 1;
     localPos.pos.word = worldCam;
-    if ((func_8009CC3C() + ((s32)(D_800C97F4.word - src->pos.pos.word) >> 4)) >= threshold) return;
+    if ((func_8009CC3C() + ((s32)(D_800C97F4 - src->pos.pos.word) >> 4)) >= threshold) return;
 
     /* Left-side spawn: +0x320 angle offset + RNG jitter on angle/height */
     localVel = src->vel;

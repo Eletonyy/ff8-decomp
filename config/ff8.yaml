@@ -526,7 +526,10 @@ binaries:
     bss_size: 0x1FACB
     subsegments:
     - [0x0, rodata]
-    - [0xEC, .rodata, we_object3]
+    # Undotted: func_800A1678 is decompiled, so there is no asm function left to
+    # migrate this into. The copy in C tests the source alignment at run time, so
+    # the table has to stay an external symbol rather than a const in the .c.
+    - [0xEC, rodata]
     - [0x11C, rodata]
     - [0x120, .rodata, we_object4]
     - [0x15C, rodata]
