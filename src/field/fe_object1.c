@@ -8,6 +8,7 @@
 #include "field/fe_object1.h"
 #include "field/fe_object1_2.h"
 #include "field/fe_object10.h"
+#include "thread.h"
 
 /**
  * @brief Initialize the field engine's double-buffered draw/display envs.
@@ -518,10 +519,8 @@ void func_8009912C(void) {
     renderAndUpdateDisplay(1);
 }
 
-extern void func_800275D4(void);                  /* thread.c: refresh raw controller buffers */
 extern s32  getAnimFrameParam(s32 slot, s32 sub); /* per-pad input-frame param (s32 view) */
 extern s32  func_80027A58(s32 a, s32 b);          /* per-pad newly-pressed input */
-extern s32  func_80027DB4(s32 a, s32 b, s32 c);   /* read an analog axis (b: 2 = X, 3 = Y) */
 extern s32  func_80030F10(s32 arg);               /* map pad input word to a button mask */
 
 /**
@@ -551,8 +550,8 @@ void func_80099180(void) {
     D_800704A8.field_0x160 = getAnimFrameParam(1, 0);
     D_800704A8.field_0x168 = func_80027A58(1, 0);
 
-    if (!(D_800704A8.padHeld & 0xF000) && func_80027DB4(0, 2, 0) != -1) {
-        r = (s16)func_80027DB4(0, 2, 0);
+    if (!(D_800704A8.padHeld & 0xF000) && func_80027DB4(0, PAD_AXIS_X, 0) != -1) {
+        r = (s16)func_80027DB4(0, PAD_AXIS_X, 0);
         if (r < 0x40) {
             D_800704A8.padHeld |= 0x8000;
             if (!(D_800704A8.padHeldPrev & 0x8000)) D_800704A8.padPressed |= 0x8000;
@@ -560,7 +559,7 @@ void func_80099180(void) {
             D_800704A8.padHeld |= 0x2000;
             if (!(D_800704A8.padHeldPrev & 0x2000)) D_800704A8.padPressed |= 0x2000;
         }
-        r = (s16)func_80027DB4(0, 3, 0);
+        r = (s16)func_80027DB4(0, PAD_AXIS_Y, 0);
         if (r < 0x40) {
             D_800704A8.padHeld |= 0x1000;
             if (!(D_800704A8.padHeldPrev & 0x1000)) D_800704A8.padPressed |= 0x1000;
@@ -1864,9 +1863,9 @@ void func_8009BEC8(Actor *ents, s32 flags) {
         if (D_800704A8.unk015 == 1 || (s16)D_800704A8.dialogState == 4) {
             continue;
         }
-        if (func_80027DB4(0, 2, 0) != -1) {
-            b.vx = 0x80 - func_80027DB4(0, 2, 0);
-            b.vy = func_80027DB4(0, 3, 0) - 0x80;
+        if (func_80027DB4(0, PAD_AXIS_X, 0) != -1) {
+            b.vx = 0x80 - func_80027DB4(0, PAD_AXIS_X, 0);
+            b.vy = func_80027DB4(0, PAD_AXIS_Y, 0) - 0x80;
             a.vx = 0;
             a.vy = 0;
             dir = func_8009A0E8((s32 *)&a, (s32 *)&b, dist);

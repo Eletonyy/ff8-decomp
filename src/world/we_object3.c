@@ -257,14 +257,14 @@ static void func_800A0388(void) {
     D_800D2240[6] = D_800C96D8[6];
     D_800D2240[7] = D_800C96D8[7];
 
-    D_800C96D8[0] = func_80027DB4(0, 2, 0);
-    D_800C96D8[1] = func_80027DB4(0, 3, 0);
-    D_800C96D8[2] = func_80027DB4(0, 0, 0);
-    D_800C96D8[3] = func_80027DB4(0, 1, 0);
-    D_800C96D8[4] = func_80027DB4(1, 2, 0);
-    D_800C96D8[5] = func_80027DB4(1, 3, 0);
-    D_800C96D8[6] = func_80027DB4(1, 0, 0);
-    D_800C96D8[7] = func_80027DB4(1, 1, 0);
+    D_800C96D8[0] = func_80027DB4(0, PAD_AXIS_X, 0);
+    D_800C96D8[1] = func_80027DB4(0, PAD_AXIS_Y, 0);
+    D_800C96D8[2] = func_80027DB4(0, PAD_AXIS_X2, 0);
+    D_800C96D8[3] = func_80027DB4(0, PAD_AXIS_Y2, 0);
+    D_800C96D8[4] = func_80027DB4(1, PAD_AXIS_X, 0);
+    D_800C96D8[5] = func_80027DB4(1, PAD_AXIS_Y, 0);
+    D_800C96D8[6] = func_80027DB4(1, PAD_AXIS_X2, 0);
+    D_800C96D8[7] = func_80027DB4(1, PAD_AXIS_Y2, 0);
 
     idx = D_800C4D04;
 

@@ -7,7 +7,19 @@
 
 /* Public prototypes */
 extern void func_800275D4(void);                /**< Refresh the raw controller buffers. */
-extern s32  func_80027DB4(s32 a, s32 b, s32 c); /**< Read an analog axis (b: 2 = X, 3 = Y). */
+/* Which axis func_80027DB4 reads. These are mutually exclusive selectors, not
+   flags -- the value is an index, never OR-ed or masked. X/Y are as documented
+   below; the other pair is named from the order callers sample them in, not from
+   a decoded implementation. */
+typedef enum {
+    PAD_AXIS_X2 = 0,
+    PAD_AXIS_Y2 = 1,
+    PAD_AXIS_X  = 2,
+    PAD_AXIS_Y  = 3
+} PadAxis;
+
+extern s32  func_80027DB4(s32 pad, PadAxis axis, s32 c); /**< Read one analog axis. */
+
 extern s32  func_80027CF8(s32 a, s32 b, s32 c); /**< Fold a recentred analog stick into d-pad bits. */
 
 /* getAnimFrameParam (thread.c) returns u16, but consumers like be_object4.c's readPads use the

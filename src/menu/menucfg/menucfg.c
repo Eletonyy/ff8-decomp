@@ -1,5 +1,6 @@
 #include "common.h"
 #include "menu.h"
+#include "thread.h"
 
 /** @brief Config menu entry point — delegates to func_801F798C. */
 void func_801E5800(s32 a0) {
@@ -66,7 +67,7 @@ s32 func_801E5820(CfgContext *arg0)
  * @brief Initialize config menu availability flags.
  *
  * Sets both config availability flags at @p a0[0x2D] and @p a0[0x2E]
- * to 1, then validates them. Calls func_80027DB4(0,0,0) to check
+ * to 1, then validates them. Calls func_80027DB4 on PAD_AXIS_X2 to check
  * memory card status; if negative, clears a0[0x2E]. Then calls
  * isAnimActive(); if it returns 0, clears a0[0x2D]. If nonzero,
  * calls getBattleAnimField0B(0) and clears a0[0x2D] if that returns 0.
@@ -77,7 +78,7 @@ void func_801E587C(u8 *a0) {
     s32 val = 1;
     a0[0x2E] = val;
     a0[0x2D] = val;
-    if (func_80027DB4(0, 0, 0) < 0) {
+    if (func_80027DB4(0, PAD_AXIS_X2, 0) < 0) {
         a0[0x2E] = 0;
     }
     if (isAnimActive() == 0 || getBattleAnimField0B(0) == 0) {
