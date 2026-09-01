@@ -341,14 +341,15 @@ typedef struct {
     /* 0x00 */ PartyData     party;                       /**< Party/gil/Griever (32 bytes). */
     /* 0x20 */ LimitBreakData limitBreaks;                /**< Limit break progress (16 bytes). */
     /* 0x30 */ u8            battleOrder[32];              /**< Battle item menu ordering. */
-    /* 0x50 */ ItemSlot      itemSlots[ITEM_SLOT_COUNT];  /**< Item inventory (198 slots). */
+    /* 0x50 */ ItemSlot      itemSlots[198];  /**< Item inventory (198 slots). */
     /* 0x1DC */ volatile s32  frameCounter;                /**< @c 0xCD0: game frame counter; incremented ~every 12 frames by @ref VsyncHandler (VSync ISR). */
     /* 0x1E0 */ volatile s32  countdownTimer;                  /**< @c 0xCD4: battle countdown timer. Set/get by field event opcodes, decremented by @ref VsyncHandler while nonzero; battle & color code read it as active / camera-shake state. */
     /* 0x1E4 */ u8           pad1E4[0x04];
     /* 0x1E8 */ s32          fieldCDC;                     /**< Snapshotted by @c func_800BFBBC into @c FieldVars.field14. */
     /* 0x1EC */ u16          fieldCE0;                     /**< Snapshotted by @c func_800BFBBC into @c FieldVars.field18. */
     /* 0x1EE */ u16          fieldCE2;                     /**< Snapshotted by @c func_800BFBBC into @c FieldVars.field1A. */
-    /* 0x1F0 */ u8           pad1F0[0x28];                 /**< Battle vars / misc (continued). */
+    /* 0x1F0 */ u8           pad1F0[0x20];                 /**< Battle vars / misc (continued). */
+    /* 0x210 */ u32          array210[2];
     /* 0x218 */ u32          array[1];                      /* used in func_8009F52C */
     /* 0x21C */ u8           pad21C[0x10];                 /**< Battle vars / misc (continued). */  
     /* 0x22C */ u16          fieldD20;                    /**< Unknown (zeroed on save init). */
