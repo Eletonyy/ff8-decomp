@@ -594,28 +594,28 @@ void func_800AC468(void *unused_a0, WorldViewXform *oa, WorldViewXform *mh, s32 
         func_800BC51C(&D_800DD658, &D_800C9858);
     } else {
         /* Critically damp delta-X to [-0x20000, 0x20000] with ±0x40000 wraparound. */
-        delta = D_800C9858.vx - D_800C9868.x;
+        delta = D_800C9858.vx - D_800C9868.vx;
         if (delta >  0x20000) D_800C9858.vx -= 0x40000;
         if (delta < -0x20000) D_800C9858.vx += 0x40000;
 
         /* Critically damp delta-Y to [-0x18000, 0x18000] with ±0x30000 wraparound. */
-        delta = D_800C9858.vy - D_800C9868.y;
+        delta = D_800C9858.vy - D_800C9868.vy;
         if (delta >  0x18000) D_800C9858.vy -= 0x30000;
         if (delta < -0x18000) D_800C9858.vy += 0x30000;
 
         /* Blend XY 1:1 with the target. */
-        D_800C9858.vx = ((D_800C9858.vx + D_800C9868.x) << 1) >> 2;
-        D_800C9858.vy = ((D_800C9858.vy + D_800C9868.y) << 1) >> 2;
+        D_800C9858.vx = ((D_800C9858.vx + D_800C9868.vx) << 1) >> 2;
+        D_800C9858.vy = ((D_800C9858.vy + D_800C9868.vy) << 1) >> 2;
 
         /* Blend Z 3:1 with a -0x100 bias (gated by D_800C5924 being 0). */
         if (D_800C5924 == 0) {
             s32 z3 = D_800C9858.vz * 3;
             z3 -= 0x100;
-            z3 += D_800C9868.z;
+            z3 += D_800C9868.vz;
             D_800C9858.vz = z3 >> 2;
         }
 
-        viewAngle = func_800A5DC8(D_800C9868.x, D_800C9868.y);
+        viewAngle = func_800A5DC8(D_800C9868.vx, D_800C9868.vy);
         {
             VECTOR *vp = &viewPos;
             func_800BC544(&D_800C9858, vp);
@@ -804,7 +804,7 @@ void func_800ACA70(VECTOR *out, Input32 *input) {
 
     func_800423DC(&local.a, &local.b_x, &result);
 
-    angle = func_800A5DC8(D_800C9868.x, D_800C9868.y);
+    angle = func_800A5DC8(D_800C9868.vx, D_800C9868.vy);
     func_800ACB70(angle, &vec);
 
     if (out != 0) {
@@ -861,7 +861,7 @@ void func_800ACBD0(VECTOR *out, SVECTOR *in) {
     VECTOR vec;
     s16 angle;
 
-    angle = func_800A5DC8(D_800C9868.x, D_800C9868.y);
+    angle = func_800A5DC8(D_800C9868.vx, D_800C9868.vy);
     func_800ACB70(angle, &vec);
 
     if (out != 0) {

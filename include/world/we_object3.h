@@ -129,4 +129,55 @@ extern void initWorldDoubleBuffer(void);
    color matrix. */
 extern void setupWorldRenderParams(void);
 
+/* The primitive pools. Public because the world entry loop (we_object0)
+   is what points D_800C9720 at a bank each frame; the glyph renderers
+   then draw out of whichever one it selected. */
+typedef struct {
+    POLY_GT3 *cur;       /* 0x00 */
+    POLY_GT3 *base;      /* 0x04 */
+    POLY_GT3 *end;       /* 0x08 */
+} Gt3Pool;               /* 0x0C */
+
+typedef struct {
+    POLY_FT3 *cur;       /* 0x00 */
+    POLY_FT3 *base;      /* 0x04 */
+    POLY_FT3 *end;       /* 0x08 */
+} Ft3Pool;               /* 0x0C */
+
+typedef struct {
+    POLY_FT4 *cur;       /* 0x00 */
+    POLY_FT4 *base;      /* 0x04 */
+    POLY_FT4 *end;       /* 0x08 */
+} Ft4Pool;               /* 0x0C */
+
+/** The three pools of one bank, one per primitive kind. Both banks are laid out
+    at start-up by @c func_800A246C, and the world entry loop (@c func_800987D8
+    in we_object0) re-points @c D_800C9720 at one of them every frame: bank 1
+    while the active scene context is the no-battle sentinel @c D_800CA040,
+    bank 0 otherwise. The glyph renderers then draw out of whichever it picked.
+    (Not @c D_800C53A4 — that one indexes the sprite record banks
+    @c D_800D2508.) */
+typedef struct {
+    Gt3Pool gt3;         /* 0x00 */
+    Ft3Pool ft3;         /* 0x0C */
+    Ft4Pool ft4;         /* 0x18 */
+} WorldPrimBank;         /* 0x24 */
+
+extern WorldPrimBank    D_800C9E88[2]; /**< The two banks. @c func_800A246C lays
+                                            them out; the world entry loop indexes
+                                            this array directly to choose one, and
+                                            everything else reaches the chosen bank
+                                            through @c D_800C9720. */
+extern WorldPrimBank   *D_800C9720;   /**< The bank the glyph renderers allocate
+                                           from this frame. The world entry loop
+                                           (@c func_800987D8) re-points it every
+                                           frame; the readers (we_object6,
+                                           we_object7) are still asm. */
+
+/* Also read by the world entry loop in we_object0. */
+extern s32              D_800C972C;   /**< Accumulated glyph-entry count. */
+extern s32              D_800C9ED0;   /**< Pad 0's raw frame parameter. */
+extern SVECTOR          D_800CA038;   /**< Reference offset fed to the pool placer. */
+extern s32              D_800D2238;
+
 #endif /* WORLD_WE_OBJECT3_H */

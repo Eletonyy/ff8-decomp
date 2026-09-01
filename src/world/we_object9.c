@@ -1062,9 +1062,9 @@ s32 func_800BD09C(SlotEntry *slot, s32 arg1, CmdDesc *cmd, s32 worldAngle) {
  *
  * No-op when the @c D_800C4DC8 flag is zero. Otherwise copies:
  *   - @c D_800DD698 → @c D_800C4D38 (primary cmd byte)
- *   - @c D_800DD680.vx → @c D_800C9868.x
- *   - @c D_800DD680.vy → @c D_800C9868.z  (Y/Z swap for PS1 coord system)
- *   - -@c D_800DD680.vz → @c D_800C9868.y (Z negated)
+ *   - @c D_800DD680.vx → @c D_800C9868.vx
+ *   - @c D_800DD680.vy → @c D_800C9868.vz  (Y/Z swap for PS1 coord system)
+ *   - -@c D_800DD680.vz → @c D_800C9868.vy (Z negated)
  *   - @c D_800DD690[0..8] → @c D_800C9770[1] (the rotation slot)
  *   - @c D_800DD69C → @c D_800C4D3C (secondary cmd byte)
  * and calls @c worldPosToCell with the source vector and @c D_800C9770 buffer.
@@ -1072,9 +1072,9 @@ s32 func_800BD09C(SlotEntry *slot, s32 arg1, CmdDesc *cmd, s32 worldAngle) {
 void func_800BD180(void) {
     if (D_800C4DC8 != 0) {
         D_800C4D38 = D_800DD698;
-        D_800C9868.x = D_800DD680.vx;
-        D_800C9868.z = D_800DD680.vy;
-        D_800C9868.y = -D_800DD680.vz;
+        D_800C9868.vx = D_800DD680.vx;
+        D_800C9868.vz = D_800DD680.vy;
+        D_800C9868.vy = -D_800DD680.vz;
         worldPosToCell(&D_800DD680, D_800C9770);
         memcpy(&D_800C9770[1], D_800DD690, 8);
         D_800C4D3C = D_800DD69C;

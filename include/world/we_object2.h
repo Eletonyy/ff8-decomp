@@ -4,6 +4,7 @@
 #include "common.h"
 #include "world.h"
 #include "psxsdk/libgte.h"
+#include "psxsdk/libetc.h"   /* VSync */
 
 typedef struct {
     s16 a;
@@ -47,10 +48,6 @@ extern s16             D_800C5344;
 extern u16             D_800C5346;        /* per-map yaw target (func_8009F6EC bit 0x8). */
 extern s32             D_800C9730;        /* GTE projection-plane distance (SetGeomScreen arg). */
 extern s32             D_800D2448;        /* world-ready gate flag (func_8009F6EC bit 0x10). */
-
-/* VSync is declared here with a void-returning view for this file's
- * matching codegen (psxsdk/libetc.h's s32-returning prototype is not used). */
-extern void VSync(s32 mode);
 
 extern void func_800A5F78(s32 screen);
 extern void func_800A5FD4(s32 screen);

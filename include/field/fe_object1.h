@@ -23,7 +23,6 @@ extern CdFileDesc D_800C0910[];  /**< Streaming table, third descriptor (passed 
 /** @brief Field id currently being streamed in (compared against @c D_8005F100). */
 extern s16 D_8005F14E;
 /** @brief Field render/present state halfword; the loader spins while it reads 4. */
-extern volatile s16 D_8005F146;
 
 /** @brief Section-pointer table bases published by the loaded field bundle. */
 extern u8 **D_800C7208;          /**< Event-queue block; assigned to @c D_8005F0F8. */

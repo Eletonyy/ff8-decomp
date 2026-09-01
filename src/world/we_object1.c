@@ -670,8 +670,8 @@ void func_8009C070(void) {
         func_8003FD84(&D_800C9838, &localA, &localB);
     }
     D_800D23C0.z = 0;
-    D_800D23C0.x = D_800C9868.x + localB.vx;
-    D_800D23C0.y = D_800C9868.y + localB.vz;
+    D_800D23C0.x = D_800C9868.vx + localB.vx;
+    D_800D23C0.y = D_800C9868.vy + localB.vz;
     SetRotMatrix(&D_800C9838);
     SetTransMatrix(&D_800C9838);
 }

@@ -193,38 +193,6 @@ extern WorldZone        D_800C59BC[];
     The packets are tagged once at start-up, so allocating one is a pointer bump
     and the renderers need only fill in vertices. One struct per kind, because
     the packet type is what gives each pool its stride. */
-typedef struct {
-    POLY_GT3 *cur;       /* 0x00 */
-    POLY_GT3 *base;      /* 0x04 */
-    POLY_GT3 *end;       /* 0x08 */
-} Gt3Pool;               /* 0x0C */
-
-typedef struct {
-    POLY_FT3 *cur;       /* 0x00 */
-    POLY_FT3 *base;      /* 0x04 */
-    POLY_FT3 *end;       /* 0x08 */
-} Ft3Pool;               /* 0x0C */
-
-typedef struct {
-    POLY_FT4 *cur;       /* 0x00 */
-    POLY_FT4 *base;      /* 0x04 */
-    POLY_FT4 *end;       /* 0x08 */
-} Ft4Pool;               /* 0x0C */
-
-/** The three pools of one bank, one per primitive kind. Both banks are laid out
-    at start-up and @c D_800C9720 is pointed at the table; picking a bank out of
-    it is left to the glyph renderers, which are still asm, so what drives that
-    choice is not yet known. (Not @c D_800C53A4 — that one indexes the sprite
-    record banks @c D_800D2508.) */
-typedef struct {
-    Gt3Pool gt3;         /* 0x00 */
-    Ft3Pool ft3;         /* 0x0C */
-    Ft4Pool ft4;         /* 0x18 */
-} WorldPrimBank;         /* 0x24 */
-
-extern WorldPrimBank    D_800C9E88[2]; /**< The two banks. No other code in the
-                                            tree names this array; everything
-                                            reaches it through @c D_800C9720. */
 
 /** Work RAM the pools are carved from: one contiguous run per primitive kind,
     each split between the two banks — @c BASE starts bank 0, @c MID is bank 0's
@@ -272,7 +240,6 @@ typedef struct {
     WorldSpriteRec rec[WORLD_BANK_RECORDS];
 } WorldSpriteBank;       /* 0x6E0 */
 
-extern SVECTOR          D_800CA038;   /**< Reference offset fed to the pool placer. */
 /** Six probe-corner offsets, used as two batches of three by @c func_800A1678.
     It stays an extern rather than a file-scope @c const because the struct copy
     tests the source alignment at run time, which only happens when the compiler
@@ -288,19 +255,12 @@ extern GlyphHeader     *D_800C9740;   /**< Glyph used when worldObjectById finds
 extern s32              D_800C53A4;   /**< Active pool bank (0 or 1). */
 extern s32              D_800C53A8;   /**< Cleared when a record is placed, bumped by the
                                            fallback; the pass loop stops below 4. */
-extern WorldPrimBank   *D_800C9720;   /**< Primitive banks the glyph renderers
-                                           allocate from. @c func_800A246C is the
-                                           only writer in the tree and points it at
-                                           the table once; the readers (we_object6,
-                                           we_object7) are still asm. */
-extern s32              D_800C972C;   /**< Accumulated glyph-entry count. */
 extern s32              D_800C96D8[WORLD_PAD_AXES]; /**< Analog axes sampled this frame;
                                            element 0 is pad 0's X, compared against 0x7F
                                            +- 0x2D/0x2E to pick a bank. */
 extern s32              D_800D2240[WORLD_PAD_AXES]; /**< Previous frame's copy of
                                            @c D_800C96D8, tested the same way. */
 extern s32              D_800C9724;   /**< Frames elapsed this tick; drives the repeat timers. */
-extern s32              D_800C9ED0;   /**< Pad 0's raw frame parameter. */
 extern s32              D_800C9ED4;   /**< Pad 1's raw frame parameter, packed into the high half. */
 extern s32              D_800D2470;   /**< Repeat delay accumulator. */
 extern s32              D_800D2474;   /**< Repeat step counter. */
@@ -356,7 +316,6 @@ static void             func_800A568C(void);
 /* func_800A5B48 is the only reference in the tree: when non-zero it skips the
    func_800A50A0 scan, admits a single node and zeroes the out-word. What sets
    it, and what it means, is unknown. */
-extern s32              D_800D2238;
 extern s32              func_800B21EC(WorldSpriteRec *rec, s32 mode, s32 c, s32 d);
 /* Both below are declared in we_object10.h, which this unit cannot include:
  * its func_800B0010 prototype is (void) to serve a no-argument caller there,
@@ -598,7 +557,7 @@ void renderWorldMapFrame(void) {
     newHead = emptyHead;
     newTail = emptyTail;
     func_800A1F10(&D_800C9868, &D_800C9838);
-    xo = D_800C9868.x + 0x60000;
+    xo = D_800C9868.vx + 0x60000;
     {
         s32 rnd = xo;
         if (xo < 0) {
@@ -607,7 +566,7 @@ void renderWorldMapFrame(void) {
         rnd = (rnd >> 18) << 18;
         xm = xo - rnd;
     }
-    coord = (xm / 0x800) + ((((D_800C9868.y + 0x48000) % 0x30000) / 0x800) << 7);
+    coord = (xm / 0x800) + ((((D_800C9868.vy + 0x48000) % 0x30000) / 0x800) << 7);
     ref = &D_800CA038;
     modeBias = mode - 0x20;
     for (bank = 0; bank < 2; bank++) {
@@ -818,7 +777,7 @@ void renderWorldMapFrame(void) {
                     if (((v >= 0) && (((u32) (D_800D23D8[0] - 1)) >= 2)) &&
                         (D_800D23D8[0] != 0xD)) {
                         D_800C4D7C = v;
-                        D_800C9770[0].vy = D_800C9868.z;
+                        D_800C9770[0].vy = D_800C9868.vz;
                         if (D_800C4D38 == 0x32) {
                             D_800C4D40 = 0;
                         }
@@ -829,7 +788,7 @@ void renderWorldMapFrame(void) {
                     if ((mode == 0x30) && (D_800D23D8[0] != 8)) {
                         /* The (u16)/(s16) casts below pick the load width and signedness the
                            heading comparison needs; each one changes the emitted code. */
-                        s16 cur = D_800C9868.z;
+                        s16 cur = D_800C9868.vz;
                         s32 want = (u16) rec->sprite[0].angle;
                         s32 back = ((u16) rec->sprite[0].angle) - 0x80;
                         u16 lo = rec->sprite[0].angle - 0x100;
@@ -870,14 +829,14 @@ void renderWorldMapFrame(void) {
                     if (D_800C4DC8 == 0) {
                         cmdp = rec->sprite[0].cmd;
                         if ((D_800D23D8[0] == 0) || (D_800D23D8[0] == 0xD)) {
-                            t = (D_800C9868.z = h);
+                            t = (D_800C9868.vz = h);
                             D_800C9770[0].vy = t;
                             D_800C9770[0].vx +=
-                                ((u16) rec->sprite[0].pos.vx) - ((u16) D_800C9868.x);
-                            vyu = (u16) D_800C9868.y;
+                                ((u16) rec->sprite[0].pos.vx) - ((u16) D_800C9868.vx);
+                            vyu = (u16) D_800C9868.vy;
                             D_800C9770[0].vz += vyu + rec->sprite[0].pos.vz;
-                            D_800C9868.x = rec->sprite[0].pos.vx;
-                            D_800C9868.y = -rec->sprite[0].pos.vz;
+                            D_800C9868.vx = rec->sprite[0].pos.vx;
+                            D_800C9868.vy = -rec->sprite[0].pos.vz;
                         }
                         D_800C4D74 = D_800C4D64;
                         if (D_800C4D64 != NULL) {
@@ -1498,7 +1457,7 @@ static WorldSpriteRec *func_800A26E8(GlyphHeader *p, WorldSpriteRec *rec, s32 v)
                 continue;
             }
             if (sp->cellId == key) {
-                angle = D_800C9868.z;
+                angle = D_800C9868.vz;
                 sp->angle = angle;
                 if (D_800C4D64->type < 6) {
                     sp->angle = angle - 0x140;
@@ -1651,7 +1610,7 @@ static s32 func_800A2920(GlyphHeader *glyph, WorldSprite *st, s16 key, CmdDesc *
                 continue;
             }
             if (mode == 0x32
-                || (mode == 0x30 && ((g->type >= 0x1E && g->type < 0x23) || D_800C9868.z <= 0))
+                || (mode == 0x30 && ((g->type >= 0x1E && g->type < 0x23) || D_800C9868.vz <= 0))
                 || g->type < 6
                 || D_800C4D64->type < 6
                 || (mode != 0x30 && mode != 0x32
@@ -1836,9 +1795,9 @@ s32 func_800A2D50(s32 code, s32 angZ, SVECTOR *angles, VECTOR *hitPos, s32 arg4,
                index compared below, and holding it in a callee-saved
                register is what lets the flag store share the constant. */
             two = 2;
-            e->pos.vx = D_800C9868.x + xf.vx;
-            e->pos.vy = D_800C9868.z + xf.vy;
-            camY = D_800C9868.y;
+            e->pos.vx = D_800C9868.vx + xf.vx;
+            e->pos.vy = D_800C9868.vz + xf.vy;
+            camY = D_800C9868.vy;
             e->pos.vz = xf.vz - camY;
             if (j != 0) {
                 if (j == 1) {
@@ -2601,9 +2560,9 @@ void func_800A4420(WorldSpriteRec *rec, SVECTOR *ref, SVECTOR *ang, s32 size) {
     gte_stlvnl(&xf);
 
     for (i = 0; i < WORLD_FAN_SPRITES; i++, e++) {
-        e->pos.vx = D_800C9868.x + xf.vx;
-        e->pos.vy = D_800C9868.z + xf.vy;
-        depth = D_800C9868.y;
+        e->pos.vx = D_800C9868.vx + xf.vx;
+        e->pos.vy = D_800C9868.vz + xf.vy;
+        depth = D_800C9868.vy;
         e->pos.vz = xf.vz - depth;
         if (i != 0) {
             if (i == 1) {

@@ -5,6 +5,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 #include "battle.h"
+#include "gamestate.h"   /* SceneState, in Slot */
 #include "sound.h"
 
 /** View of the sentinel ctx exposing the DISPENV template that sits past the
@@ -261,7 +262,8 @@ extern s32            D_800C97F4;        /**< World camera angle. Stored as a wo
                                               angular-delta helpers in we_object9 read only its
                                               low half — hence the (u16) cast at those sites. */
 extern MATRIX         D_800C9838;        /**< World-to-screen matrix loaded into the GTE. */
-extern WorldPos       D_800C9868;        /**< Source camera world position (cast to VECTOR* for GTE transform func_800BC544). */
+extern VECTOR         D_800C9868;        /**< Source camera world position. 16 bytes: the world entry loop copies
+                                              it whole into @c D_800C9858 and hands it straight to func_800BC544. */
 extern SVECTOR        D_800C9770[2];     /**< Camera scratch: [0] is a position offset, [1] a rotation. */
 extern s32           *D_800C9744;        /**< Texture-strip animation block: a NULL-terminated s32 offset
                                               table; each offset, relative to this pointer, locates one
@@ -527,7 +529,11 @@ typedef struct {
 typedef struct {
     /* 0x00 */ u8 pad00[0x18];
     /* 0x18 */ Track tracks[2];   /**< Track A at 0x18, Track B at 0x24. */
-    /* 0x30 */ u8 pad30[0x3C];
+    /* 0x30 */ u8 pad30[0x38];
+    /* 0x68 */ SceneState scene;  /**< Saved scene state; the world entry loop
+                                       saves the whole record here on a cold
+                                       start and restores @c cmd from it on a
+                                       warm one. */
     /* 0x6C */ s32 unk6C;         /**< Flags word; see SLOT_FLAG_CMD_MIRROR. */
     /* 0x70 */ u8 pad70[0x4];
     /* 0x74 */ u32 flags[2];      /**< 64-bit flag set (low/high). */

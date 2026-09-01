@@ -38,7 +38,7 @@ void func_800B3868(TrackObj *obj) {
     s32 i;
 
     viewX = func_800A5DC8(D_800D23C0.x, D_800D23C0.y);
-    viewY = func_800A5DC8(D_800C9868.x, D_800C9868.y);
+    viewY = func_800A5DC8(D_800C9868.vx, D_800C9868.vy);
 
     SetRotMatrix(&D_800C9838);
     SetTransMatrix(&D_800C9838);

@@ -83,6 +83,7 @@ SetSprt        = 0x8004D6E4;
 SetTile      = 0x8004D704;
 SetDrawTPage = 0x8004D724;
 SetDrawMove  = 0x8004D754;
+deactivateBattleCmd = 0x800308B0;   /* main; the world entry loop calls it on shutdown */
 SetDrawLoad  = 0x8004D7B4;
 g_gameState = 0x80077378;
 g_characterMagic = 0x80077818;

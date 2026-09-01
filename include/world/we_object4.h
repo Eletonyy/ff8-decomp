@@ -23,7 +23,7 @@ extern void func_800A7CD0(s32 *block);           /**< Load a VRAM row animation 
 extern void func_800A8400(void);                 /**< Draw the map-view HUD layer (panel, stars, gradient). */
 extern void func_800A8C1C(void);                 /**< Re-blend the world palette for the camera's position. */
 extern void func_800A9300(void);                 /**< Draw the D_800D9CB0 particle pool. */
-extern void func_800A9F54(WorldPos *pos, s32 x, s32 y);  /**< Draw the world-map inset mesh at @p pos. */
+extern void func_800A9F54(VECTOR *pos, s32 x, s32 y);  /**< Draw the world-map inset mesh at @p pos. */
 
 /** The camera-follow reference is written as a word but published as its low
  *  half by we_object3, so both views need a name. */

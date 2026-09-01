@@ -913,8 +913,8 @@ static void func_800A8024(void) {
     s16      w;
     s32      h;
 
-    x = D_800C9868.x;
-    y = D_800C9868.y;
+    x = D_800C9868.vx;
+    y = D_800C9868.vy;
 
     // Matching hack, but it's fine since it's all dead code, i.e. function is never called
     uninitReg(dx);
@@ -922,8 +922,8 @@ static void func_800A8024(void) {
 
     func_800A5E40(x, y);
     ofs.vz = 0;
-    ofs.vx = MARKER_WORLD_X - D_800C9868.x;
-    ofs.vy = MARKER_WORLD_Y - D_800C9868.y;
+    ofs.vx = MARKER_WORLD_X - D_800C9868.vx;
+    ofs.vy = MARKER_WORLD_Y - D_800C9868.vy;
     falloff = MARKER_RANGE_SQ - (dx * dx + dy * dy);
     if (falloff == 0) {
         return;
@@ -1408,8 +1408,8 @@ void func_800A8C1C(void) {
     SVECTOR    *np;
     VECTOR     *wp;
 
-    camX = D_800C9868.x;
-    camY = D_800C9868.y;
+    camX = D_800C9868.vx;
+    camY = D_800C9868.vy;
     /* The block is s32 offsets up front and WorldZone records behind them, so
      * reaching a record means stepping the base by a byte count and retyping. */
     def = (WorldZone *)((u8 *)D_800C9EE8 + D_800C9EE8[0]);
@@ -1602,7 +1602,7 @@ void func_800A9300(void) {
     tile = &D_800DA8D0[bank][0];
 
     headingA = func_800A5DC8(D_800D23C0.x, D_800D23C0.y);
-    headingB = func_800A5DC8(D_800C9868.x, D_800C9868.y);
+    headingB = func_800A5DC8(D_800C9868.vx, D_800C9868.vy);
 
     gte_sttr(&savedTrans);
     gte_ReadRotMatrix(&savedMat);
@@ -1911,7 +1911,7 @@ void func_800A9ED4(void) {
  * @param x   Screen x of the mesh's top-left corner.
  * @param y   Screen y of the mesh's top-left corner.
  */
-void func_800A9F54(WorldPos *pos, s32 x, s32 y) {
+void func_800A9F54(VECTOR *pos, s32 x, s32 y) {
     WorldTessVert verts[4];
     BattleSceneCtx *ctx;
     WorldPolyGT4 *gt4;
@@ -1919,8 +1919,8 @@ void func_800A9F54(WorldPos *pos, s32 x, s32 y) {
     s32 mapX, mapY;
     s32 i, c;
 
-    mapX = (pos->x + MAP_ORIGIN_X) / MAP_CELL_SIZE;
-    mapY = (pos->y + MAP_ORIGIN_Y) / MAP_CELL_SIZE;
+    mapX = (pos->vx + MAP_ORIGIN_X) / MAP_CELL_SIZE;
+    mapY = (pos->vy + MAP_ORIGIN_Y) / MAP_CELL_SIZE;
     D_800D8808 = x + MESH_CENTRE_BIAS;
     D_800D880C = y + MESH_CENTRE_BIAS;
 
