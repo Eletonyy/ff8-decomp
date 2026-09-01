@@ -686,7 +686,6 @@ void func_800A71C0(s32 idx) {
     BattleEntityData* temp_a0;
     s32 i;
 
-    
     temp_a3 = &g_battleChars.chars[idx];
     temp_a0 = (BattleEntityData*)&D_800ED148.entities[idx].entityData;
     
