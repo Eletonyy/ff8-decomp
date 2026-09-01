@@ -102,8 +102,6 @@ extern s32 func_800A358C(s32 kind, SlotEntry *slot, SVECTOR *angles, s32 flag);
    code @p b (only b's low 16 bits are examined; D_800C4D20 == 0 force-passes). */
 extern s32 func_800A45D8(u32 a, s32 b);
 
-/* Entry points the world loop in we_object0 calls. */
-
 /* Per-frame world setup: advance the frame clock, run the renderers and flip
    the scene context. */
 extern void func_800A01DC(s32 skipPresent);

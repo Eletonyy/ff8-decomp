@@ -5,8 +5,6 @@
 #include "world/we_object3.h"
 #include "world/we_object2.h"
 
-/* Defined in this file (via INCLUDE_ASM). */
-/* Arg 1 is dereferenced at +0x14, which is MATRIX.t[0]. */
 extern void func_800ACC68(MATRIX *outMat, SVECTOR *angles, SVECTOR *rotBuf,
                           SVECTOR *offset);
 

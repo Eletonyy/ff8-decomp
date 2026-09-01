@@ -2,6 +2,7 @@
 #define OVERLAY_H
 
 #include "common.h"
+#include "world/we_object0.h"
 
 /**
  * @brief Overlay command queue entry (D_80085168, 8-slot ring buffer).
@@ -57,10 +58,4 @@ extern s32 func_8003646C(); /* K&R: called with 1 or 2 args */
 /** @brief Run the loaded overlay's entry point (init / execute). */
 extern void func_80098000(void);
 
-/** @brief Run the world overlay: set the map up, then drive its frame loop
- *         until something asks the world to hand off. Defined in
- *         src/world/we_object0.c.
- *  @return 0 normally; 1 when the loop ended on the two-frame stall check
- *          (main checks @c == 1). */
-extern s32  func_800987D8(void);
 #endif /* OVERLAY_H */
