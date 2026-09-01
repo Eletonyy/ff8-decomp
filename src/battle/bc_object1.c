@@ -1,5 +1,5 @@
 #include "common.h"
-#include "main.h"   /* D_8005F146 */
+#include "main.h"
 #include "battle.h"
 #include "gf.h"
 #include "battle/bc_object1.h"

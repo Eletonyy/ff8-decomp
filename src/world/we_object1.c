@@ -5,11 +5,14 @@
 #include "world.h"
 #include "gamestate.h"
 #include "world/we_object1.h"
-#include "world/we_object2.h"   /* getAngleDelta */
-#include "world/we_object3.h"   /* func_800A2D50 */
+#include "world/we_object2.h"
+#include "world/we_object3.h"
 #include "psxsdk/libapi.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libc.h"
+#include "btl_sfx.h"
+#include "btl_anim.h"
+#include "world/we_object9.h"
 //#include "world/we_object6.h" // Deliberately not included for matching reasons, original code likely forgot to include this
 
 

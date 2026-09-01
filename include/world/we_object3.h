@@ -172,10 +172,47 @@ extern WorldPrimBank   *D_800C9720;   /**< The bank the glyph renderers allocate
                                            frame; we_object6 and we_object7
                                            read it. */
 
-/* Also read by the world entry loop in we_object0. */
 extern s32              D_800C972C;   /**< Accumulated glyph-entry count. */
 extern s32              D_800C9ED0;   /**< Pad 0's raw frame parameter. */
 extern SVECTOR          D_800CA038;   /**< Reference offset fed to the pool placer. */
 extern s32              D_800D2238;
+
+extern void func_800A5F78(s32 screen);
+
+extern void func_800A5FD4(s32 screen);
+
+/**
+ * @brief One placed world-map sprite produced by @c placeWorldSpriteFan (0x2C stride).
+ *
+ * @c pos is the final world position; @c cell receives the @c worldPosToCell
+ * projection; @c cellId/flag are the projected grid-cell id and a fixed marker.
+ * @note Field purpose partly uncertain — named from the access pattern.
+ */
+typedef struct {
+    VECTOR   pos;        /* 0x00 */
+    SVECTOR  cell;       /* 0x10 — worldPosToCell output */
+    u8       pad18[0x4]; /* 0x18 */
+    CmdDesc *cmd;        /* 0x1C — installed as the current descriptor D_800C4D64 */
+    s16      cellId;     /* 0x20 — worldPosToCell return */
+    s16      flag;       /* 0x22 — one of WORLD_SPRITE_* below */
+    s16      angle;      /* 0x24 — heading used to bias the camera track */
+    s16      code;       /* 0x26 — packed type | flag<<8 of the installed descriptor */
+    u16      unk28;      /* 0x28 — published to D_800C4D48; its readers are still asm */
+    u8       pad2A[0x2]; /* 0x2A */
+} WorldSprite;           /* 0x2C */
+
+/** @c WorldSprite::flag states. */
+#define WORLD_SPRITE_FREE    0  /**< Slot unused. */
+#define WORLD_SPRITE_PENDING 1  /**< Re-probed this pass but matched no descriptor. */
+#define WORLD_SPRITE_PLACED  2  /**< Given a position this pass. */
+#define WORLD_SPRITE_CLAIMED 3  /**< Matched a glyph this frame. */
+
+/** Sprites in one pool record: an anchor plus the four spread around it. */
+#define WORLD_FAN_SPRITES 5
+
+/** A pool record: five sprites placed together as one fan. */
+typedef struct {
+    WorldSprite sprite[WORLD_FAN_SPRITES];
+} WorldSpriteRec;        /* 0xDC */
 
 #endif /* WORLD_WE_OBJECT3_H */

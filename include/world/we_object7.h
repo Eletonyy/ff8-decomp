@@ -41,9 +41,7 @@ extern u8 *D_800C96C8;
  * we_object2; addItemToInventory, func_800A5DC8 and func_80041E84 are
  * main-binary. Caller-local prototypes. */
 extern s32 func_80041E84(s32 y, s32 x);
-extern s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text);
 extern void func_8009B550(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5, s32 a6);
-extern void func_8009D8A8(s32 a0);
 extern void addItemToInventory(s32 itemId, s32 count);
 
 extern s32  func_800B4AA0(void);

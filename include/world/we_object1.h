@@ -6,7 +6,7 @@
 #include "gamestate.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
-#include "main.h"  /* g_activeDrawEnv */
+#include "main.h"
 
 /* Projection scratch: worldPosToCell writes @c proj and returns @c angle. The
    trailing @c pad keeps the buffer 0x20 bytes (gcc reserves the full slot).
@@ -104,8 +104,6 @@ extern POLY_FT4  D_800C8648[2]; /* double-buffered worldmap quad primitive */
 extern void func_8009C528(s32 rc);
 extern void func_8009FEDC(u8 *work, u8 type);
 extern s32  func_80042634(s32 a);
-extern void func_800A5F78(s32 screen);
-extern void func_800A5FD4(s32 screen);
 extern void func_800A5D10(void);
 extern s32  getCurrentFieldMusic(void); /* defined u16 in btl_sfx; used full-width here */
 extern void setSfxPitch(s32 idx, s32 val);
@@ -126,14 +124,9 @@ extern void func_8009CDC4(s32 a, s32 b);
 extern void func_8009CE40(void);
 extern s32  func_8009D7D8(s32 a);
 extern void func_8003FD84(MATRIX *xform, VECTOR *in, VECTOR *out);
-extern void func_800BC544(VECTOR *src, VECTOR *dst);
 extern void func_8009C478(s32 *src, s32 x, s32 y);
 extern CmdDesc *glyphAt(GlyphQuery *v, AngleSlot *out);
 extern s32 func_800BEC1C(s32 kind);
-extern void func_8009D630(void);
-extern void fadeOutSfxFast(s32 idx);
-extern void renderAndUpdateDisplay(s32 frames);
-extern s32 renderBattleDisplayList(s32 *colorTag);
 extern void sndSeqSetTempoAlt(s32 tempo);
 extern void sndSetMasterVolume(s32 vol);
 extern void sndCmdF1(void);
@@ -147,5 +140,9 @@ extern void func_80099F78(void);
 extern void func_8009A954(void);
 extern void func_8009AEE4(s32 id);
 extern void func_8009B954(s32 a, s32 b, s32 c);
+
+extern s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text);
+
+extern s32 func_8009CC3C(void);
 
 #endif /* WORLD_WE_OBJECT1_H */

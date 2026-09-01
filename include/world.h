@@ -5,7 +5,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 #include "battle.h"
-#include "gamestate.h"   /* SceneState, in Slot */
+#include "gamestate.h"
 #include "sound.h"
 
 /** View of the sentinel ctx exposing the DISPENV template that sits past the
@@ -565,7 +565,6 @@ typedef struct {
 
 extern BattleSceneCtx D_800CA040;       /**< Worldmap "no-battle" sentinel — also functions as an empty BattleSceneCtx. */
 extern s16         D_800C53B8[];        /**< Bone-id table (used by we_object4). */
-extern ScriptOp *func_800AF004(u8 *base, s32 flag);
 extern s32 func_800AF28C(ScriptOp *p);
 extern s32 func_800BEFC4(void);
 extern void func_800BD82C(u8 *actor, SlotEntry *slot, s32 marker, s32 flag, SVECTOR *rot, VECTOR *trans);

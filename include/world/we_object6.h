@@ -2,8 +2,8 @@
 #define WORLD_WE_OBJECT6_H
 
 #include "world.h"
-#include "world/we_object3.h"   /* GlyphHeader, WorldPrimBank */
-#include "world/we_object2.h"   /* getAngleDelta */
+#include "world/we_object3.h"
+#include "world/we_object2.h"
 
 /* Defined in this file (via INCLUDE_ASM). */
 /* Arg 1 is dereferenced at +0x14, which is MATRIX.t[0]. */
@@ -30,5 +30,9 @@ extern s32 func_800B01A0(s16 viewY, s16 viewX, VECTOR *pos, SVECTOR *screenOut,
                          s8 *byteOut, s16 *halfOut);
 
 extern void func_800ACDC4(GlyphHeader *p, BattleSceneCtx *ctx, WorldPrimBank *pools);
+
+extern ScriptOp *func_800AF004(u8 *base, s32 flag);
+
+extern s32 func_800B21EC(WorldSpriteRec *rec, s32 mode, s32 c, s32 d);
 
 #endif /* WORLD_WE_OBJECT6_H */

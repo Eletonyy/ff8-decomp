@@ -5,7 +5,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 #include "tim.h"
-#include "battle_anim.h"  /* AnimFrame, BattleAnimEntity, BattleAnimState, g_battleAnims */
+#include "battle_anim.h"
 
 /** @brief Battle result values (BattleConfig.result). */
 #define BATTLE_RESULT_UNDETERMINED  0

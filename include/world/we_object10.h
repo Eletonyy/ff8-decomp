@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "world.h"
-#include "world/we_object3.h"   /* CmdDesc, GlyphHeader, WorldPrimBank */
+#include "world/we_object3.h"
 #include "psxsdk/libgte.h"
 
 /** @brief 32-byte record used by func_800BE5F8's table walker. */
@@ -60,17 +60,8 @@ extern void func_800BAC84(u8 *p);
 extern s32  func_800BA870(u8 *p);
 extern void *func_80047CE4(void *dst, s32 c, u32 n);
 extern s32 func_800BEF6C(void);
-extern s32  func_8009CC3C(void);
 extern void func_800AEB58(XformEntry *entry, XformGroup *group);
 extern void func_8009C5FC(s32 *data);
-extern void func_800BC51C(VECTOR *src, VECTOR *dst);
-extern void func_800BC544(VECTOR *src, VECTOR *dst);
-extern ScriptOp *func_800AF004(u8 *base, s32 flag);
-extern s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text);
-extern void func_8009D8A8(s32 a0);
-extern void fadeOutSfxFast(s32 idx);
-extern void renderAndUpdateDisplay(s32 frameCount);
-extern s32  renderBattleDisplayList(s32 *colorTag);
 
 extern void func_800BEC60(u8 *flags);
 

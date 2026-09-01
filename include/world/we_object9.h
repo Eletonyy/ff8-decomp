@@ -82,7 +82,6 @@ extern s32             D_800C971C;
 
 /* Per-scene angle bias applied to a placed sprite fan. */
 extern s32 func_800BC5E0(s32 ctx);
-extern s32 func_8009CC3C(void);
 extern void func_800BFFEC(void);
 extern void func_800C2C00(s32 a, s32 b, s32 c, s32 d, s32 e, U64 *f, s32 g, U64 *h);
 extern u8 *func_800BC8D8(u8 *buf, s32 magicId);
@@ -94,5 +93,9 @@ extern s32 func_800B00D8(s32 a);
 
 extern void func_800BB150(Slot *slot);
 extern void func_800BB4E8(void);
+
+extern void func_800BC51C(VECTOR *src, VECTOR *dst);
+
+extern void func_800BC544(VECTOR *src, VECTOR *dst);
 
 #endif /* WORLD_WE_OBJECT9_H */

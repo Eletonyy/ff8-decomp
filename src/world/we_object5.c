@@ -2,11 +2,13 @@
 #include "world.h"
 #include "world/we_object5.h"
 #include "world/we_object6.h"
-#include "world/we_object3.h"   /* worldPosToCell */
+#include "world/we_object3.h"
 #include "battle.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libc.h"
+#include "world/we_object1.h"
+#include "world/we_object9.h"
 
 
 

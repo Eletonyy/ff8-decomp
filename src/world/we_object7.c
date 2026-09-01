@@ -2,7 +2,8 @@
 #include "world.h"
 #include "world/we_object6.h"
 #include "world/we_object7.h"
-#include "world/we_object3.h"   /* func_800A5DC8 */
+#include "world/we_object3.h"
+#include "world/we_object1.h"
 
 /* ActorRecord now lives in world.h (shared across world TUs). */
 

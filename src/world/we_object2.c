@@ -8,6 +8,7 @@
 #include "world/we_object2.h"
 #include "world/we_object3.h"
 #include "world/we_object13.h"
+#include "btl_anim.h"
 
 /**
  * @brief Walk a world-engine image script and blit each record to VRAM.

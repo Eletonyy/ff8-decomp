@@ -5,13 +5,16 @@
 #include "world/we_object5.h"
 #include "world/we_object6.h"
 #include "world/we_object10.h"
-#include "world/we_object3.h"   /* worldPosToCell */
+#include "world/we_object3.h"
+#include "btl_sfx.h"
+#include "btl_anim.h"
+#include "world/we_object1.h"
+#include "world/we_object9.h"
 
 
 
 
 
-/* Defined below; the reset path above is its only caller. */
 static void func_800BEFEC(u8 *base);
 
 

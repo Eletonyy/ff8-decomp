@@ -19,6 +19,7 @@
 #include "world/we_object13.h"
 #include "main.h"
 #include "thread.h"
+#include "btl_anim.h"
 
 #define SP_SAVE_SCRATCH(slot)                                                  \
     asm volatile("addu  $t0, %0, $zero\n\t"                                    \
@@ -122,16 +123,11 @@ s32 func_800987D8(void)
     s32 cmd;
     s32 firstPass;
     s32 stall;
-    /* Codes the loop hands to the scene-change helpers. Their producers
-       (func_800B85DC, func_800BC46C, func_800997E8, func_800B99A4) are still
-       assembly, so what distinguishes them is only known by use here. */
     u16 sceneCmd;
     u16 hitCmd;
     u16 objMarker;
     s32 result;
 
-    /* firstPass must be set before stall: gcc keeps them in the two highest
-       callee-saved registers and picks which by initialisation order. */
     firstPass = 1;
     stall = 0;
     result = 0;
@@ -471,5 +467,6 @@ s32 func_800987D8(void)
     func_80048C50(0);
     func_800488D4(3);
     func_8009AD3C();
+
     return result;
 }

@@ -2,9 +2,9 @@
 #define TRIPLETRIAD_H
 
 #include "common.h"
-#include "psxsdk/libgpu.h"  /* TSPRT (drawCardOverlaySprite) */
-#include "psxsdk/libgte.h"  /* SVECTOR / MATRIX (CardRenderWork, CardAnimNode) */
-#include "main.h"          /* g_activeDrawEnv */
+#include "psxsdk/libgpu.h"
+#include "psxsdk/libgte.h"
+#include "main.h"
 
 /* Types, constants, and globals for the Triple Triad card mini-game. Its code
    is the `tripletriad` overlay, which loads at the same VRAM address

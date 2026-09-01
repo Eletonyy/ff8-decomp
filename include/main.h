@@ -2,8 +2,8 @@
 #define MAIN_H
 
 #include "common.h"
-#include "cd.h"            /* CdFileDesc */
-#include "psxsdk/libgpu.h" /* TILE */
+#include "cd.h"
+#include "psxsdk/libgpu.h"
 
 /* =============================================================== *
  *  Public interface — functions in main.c called by other units. *

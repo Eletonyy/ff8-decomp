@@ -7,8 +7,8 @@
 #include "world/we_object5.h"
 #include "world/we_object6.h"
 #include "world/we_object10.h"
-#include "world/we_object11.h"   /* D_800D23D0 */
-#include "world/we_object9.h"   /* func_800BC5E0 */
+#include "world/we_object11.h"
+#include "world/we_object9.h"
 #include "thread.h"
 
 /* ---- private to renderWorldMapFrame -------------------------------------
@@ -73,34 +73,6 @@ extern s32 D_800C53B0;
 extern s32 D_800D34E8;
 /** World-engine mode flags; bit 0 picks the alternate code table. */
 extern u16 D_800D241E;
-
-/* None of the declarations below are referenced outside this unit either. */
-
-/**
- * @brief One placed world-map sprite produced by @c placeWorldSpriteFan (0x2C stride).
- *
- * @c pos is the final world position; @c cell receives the @c worldPosToCell
- * projection; @c cellId/flag are the projected grid-cell id and a fixed marker.
- * @note Field purpose partly uncertain — named from the access pattern.
- */
-typedef struct {
-    VECTOR   pos;        /* 0x00 */
-    SVECTOR  cell;       /* 0x10 — worldPosToCell output */
-    u8       pad18[0x4]; /* 0x18 */
-    CmdDesc *cmd;        /* 0x1C — installed as the current descriptor D_800C4D64 */
-    s16      cellId;     /* 0x20 — worldPosToCell return */
-    s16      flag;       /* 0x22 — one of WORLD_SPRITE_* below */
-    s16      angle;      /* 0x24 — heading used to bias the camera track */
-    s16      code;       /* 0x26 — packed type | flag<<8 of the installed descriptor */
-    u16      unk28;      /* 0x28 — published to D_800C4D48; its readers are still asm */
-    u8       pad2A[0x2]; /* 0x2A */
-} WorldSprite;           /* 0x2C */
-
-/** @c WorldSprite::flag states. */
-#define WORLD_SPRITE_FREE    0  /**< Slot unused. */
-#define WORLD_SPRITE_PENDING 1  /**< Re-probed this pass but matched no descriptor. */
-#define WORLD_SPRITE_PLACED  2  /**< Given a position this pass. */
-#define WORLD_SPRITE_CLAIMED 3  /**< Matched a glyph this frame. */
 
 /** @brief Probe vector: three unsigned halfword components plus padding.
  *
@@ -227,13 +199,6 @@ extern WorldZone        D_800C59BC[];
 #define WORLD_PRIM_GT3_MID   ((POLY_GT3 *)0x801D0000)
 #define WORLD_PRIM_GT3_TOP   ((POLY_GT3 *)WORLD_STAGE_ADDR)
 
-/** Sprites in one pool record: an anchor plus the four spread around it. */
-#define WORLD_FAN_SPRITES 5
-
-/** A pool record: five sprites placed together as one fan. */
-typedef struct {
-    WorldSprite sprite[WORLD_FAN_SPRITES];
-} WorldSpriteRec;        /* 0xDC */
 
 /** Records in one pool bank. */
 #define WORLD_BANK_RECORDS 8
@@ -281,7 +246,6 @@ extern s16              D_800C9772;   /**< Receives the low half of the camera-f
    for the call-site ABI. */
 static void             func_800A1F10();
 static WorldObject     *worldObjectById(s16 id, WorldObject *head);
-/* All defined below; the render callback is the first caller in the file. */
 static void             buildViewportCellList(WorldPos *cam, WorldObject *out, MATRIX *m);
 static void            func_800A6030(WorldObject **pp);
 static WorldObject    *func_800A60B4(s32 key, WorldObject *head);
@@ -317,7 +281,6 @@ static void             func_800A568C(void);
 /* func_800A5B48 is the only reference in the tree: when non-zero it skips the
    func_800A50A0 scan, admits a single node and zeroes the out-word. What sets
    it, and what it means, is unknown. */
-extern s32              func_800B21EC(WorldSpriteRec *rec, s32 mode, s32 c, s32 d);
 static void             func_800A1678(s32 col, s32 mode);
 static void             func_800A0388(void);
 static void             func_800A39BC(WorldSprite *out, s16 h);
