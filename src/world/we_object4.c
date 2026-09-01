@@ -6,6 +6,7 @@
 #include "world/we_object3.h"
 #include "world/we_object5.h"
 #include "world/we_object10.h"
+#include "world/we_object6.h"
 #include "world/we_object4.h"
 
 extern TILE_1   D_800D5430[96];      /**< Second half of the star pool (== &D_800D4FB0[1][0]). */
@@ -827,8 +828,11 @@ void func_800A7CD0(s32 *block) {
  * differs from the slot's last blitted one (@c D_800D4EB0), the 256x1
  * source row at (u, v + frame) is copied to the slot's destination
  * (x, y) via @c MoveImage and the new frame is cached.
+ *
+ * @param ctx Scene context. The sole caller loads @c D_800D244C into it, but
+ *            the body works entirely off globals and never reads it.
  */
-void func_800A7E74(void) {
+void func_800A7E74(BattleSceneCtx *ctx) {
     WorldTexAnim *anim;
     s32 i;
     u32 n;
@@ -975,7 +979,7 @@ static void func_800A8024(void) {
  * @brief Project the world-map view centre to screen space.
  *
  * Builds a rotation matrix from the world transform's tail angle
- * (@c D_800D2390.tail.angle) with no translation, turns the map's zoom
+ * (@c D_800D2390.tail.vy) with no translation, turns the map's zoom
  * distance (@c D_800C4D30 * 4, biased by the transform's head field) into
  * a view-space offset through @c ApplyMatrixSV, shifts it by the camera
  * offset in @c D_800C9770, and runs the result through the GTE with the
@@ -994,7 +998,7 @@ void func_800A8270(SVECTOR *out) {
 
     rot.vx = 0;
     rot.vz = 0;
-    rot.vy = D_800D2390.tail.angle;
+    rot.vy = D_800D2390.tail.vy;
     RotMatrix(&rot, &m);
 
     m.t[2] = 0;
@@ -1003,7 +1007,7 @@ void func_800A8270(SVECTOR *out) {
     rot.vx = 0;
     rot.vy = 0;
     rot.vz = (u16)D_800C4D30 * 4;
-    rot.vz = rot.vz + D_800D2390.head.unk4;
+    rot.vz = rot.vz + D_800D2390.head.vz;
     ApplyMatrixSV(&m, &rot, &rot);
 
     rot.vx += D_800C9770[0].vx;
@@ -1016,7 +1020,7 @@ void func_800A8270(SVECTOR *out) {
     gte_stsxy(&screen);
     gte_stsz(&depth);
 
-    screen.vy -= abs(D_800D2390.head.unk4) / 300;
+    screen.vy -= abs(D_800D2390.head.vz) / 300;
     if (out != NULL) {
         out->vx = screen.vx;
         out->vy = screen.vy;
@@ -1537,8 +1541,6 @@ void func_800A9254(void) {
 /* Projects a slot into camera space. Declared here rather than pulled in from
  * we_object7.h: that unit prototypes it over its own TrackEntry view of the
  * same memory, which conflicts with Slot30. */
-extern s32 func_800B01A0(s16 headingA, s16 headingB, Slot30 *slot,
-                        SVECTOR *viewOut, s32 unused4, s32 unused5);
 
 /** Depth past which a particle is dropped rather than linked into the OT. */
 #define PARTICLE_MAX_OTZ 0x2000
@@ -1616,7 +1618,7 @@ void func_800A9300(void) {
 
         gte_SetRotMatrix(&D_800C9838);
         gte_SetTransVector(D_800C9838.t);
-        if (!func_800B01A0(headingB, headingA, slot, &slot->view, 0, 0)) {
+        if (!func_800B01A0(headingB, headingA, &slot->pos, &slot->view, NULL, NULL)) {
             continue;
         }
 

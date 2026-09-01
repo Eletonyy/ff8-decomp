@@ -102,9 +102,7 @@ extern s32 func_800A358C(s32 kind, SlotEntry *slot, SVECTOR *angles, s32 flag);
    code @p b (only b's low 16 bits are examined; D_800C4D20 == 0 force-passes). */
 extern s32 func_800A45D8(u32 a, s32 b);
 
-/* The seven entry points below are called from the world entry loop
- * func_800987D8 (we_object0), which is still assembly: it reaches them
- * through the linker rather than this header. */
+/* Entry points the world loop in we_object0 calls. */
 
 /* Per-frame world setup: advance the frame clock, run the renderers and flip
    the scene context. */
@@ -171,8 +169,8 @@ extern WorldPrimBank    D_800C9E88[2]; /**< The two banks. @c func_800A246C lays
 extern WorldPrimBank   *D_800C9720;   /**< The bank the glyph renderers allocate
                                            from this frame. The world entry loop
                                            (@c func_800987D8) re-points it every
-                                           frame; the readers (we_object6,
-                                           we_object7) are still asm. */
+                                           frame; we_object6 and we_object7
+                                           read it. */
 
 /* Also read by the world entry loop in we_object0. */
 extern s32              D_800C972C;   /**< Accumulated glyph-entry count. */

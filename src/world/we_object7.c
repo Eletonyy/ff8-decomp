@@ -1,5 +1,6 @@
 #include "common.h"
 #include "world.h"
+#include "world/we_object6.h"
 #include "world/we_object7.h"
 #include "world/we_object3.h"   /* func_800A5DC8 */
 
@@ -50,16 +51,16 @@ void func_800B3868(TrackObj *obj) {
 
     for (i = 0, current = obj->entries; i < obj->count; i++, current++) {
         if (current->status == -1) {
-            current->status = func_800B01A0(viewY, viewX, current, &current->posX, &current->unk30, current->unk2C);
+            current->status = func_800B01A0(viewY, viewX, &current->pos, &current->screen, &current->unk30, &current->unk2C);
         }
         if (current->targetIdx != 0 && current->status == 1) {
             target = current + current->targetIdx;
             if (target->status == -1) {
-                target->status = func_800B01A0(viewY, viewX, target, &target->posX, &target->unk30, target->unk2C);
+                target->status = func_800B01A0(viewY, viewX, &target->pos, &target->screen, &target->unk30, &target->unk2C);
             }
-            diff.vx = target->posX - current->posX;
-            diff.vy = target->posY - current->posY;
-            diff.vz = target->posZ - current->posZ;
+            diff.vx = target->screen.vx - current->screen.vx;
+            diff.vy = target->screen.vy - current->screen.vy;
+            diff.vz = target->screen.vz - current->screen.vz;
             current->unk18 = 0;
             horizDist = SquareRoot0(diff.vz * diff.vz + diff.vx * diff.vx);
             current->pitch = func_80041E84(-diff.vy, horizDist);

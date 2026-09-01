@@ -205,14 +205,8 @@ extern s32 D_800DCB48;
  * @brief 8-byte world-transform block — four packed halfwords.
  *
  * Every field is read/written as @c lh / @c sh at a fixed offset. Only
- * @c angle has an identified role (input to rotation helper @c getAngleDelta).
  */
-typedef struct {
-    /* 0x00 */ s16 unk0;
-    /* 0x02 */ s16 angle;
-    /* 0x04 */ s16 unk4;
-    /* 0x06 */ s16 unk6;
-} WorldXformBlock; /* 0x08 */
+
 
 /**
  * @brief 16-byte world-transform record at @c D_800D2390 (pair of blocks).
@@ -221,8 +215,8 @@ typedef struct {
  * snapshots @c tail, adjusts its @c angle, and forwards the modified copy.
  */
 typedef struct {
-    /* 0x00 */ WorldXformBlock head;
-    /* 0x08 */ WorldXformBlock tail;
+    /* 0x00 */ SVECTOR head;
+    /* 0x08 */ SVECTOR tail;
 } WorldXform; /* 0x10 */
 
 /* Shared world-overlay state referenced by more than one we_object*.c.

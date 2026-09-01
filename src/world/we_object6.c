@@ -11,8 +11,8 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object6", func_800ACC68);
  *
  * Steps:
  *  1. Compute @c delta = @c getAngleDelta(@c D_800C977A,
- *     @c D_800D2390.tail.angle) @c >> @c 1 — half the signed result.
- *  2. Snapshot @c D_800D2390.tail into a local @ref WorldXformBlock via
+ *     @c D_800D2390.tail.vy) @c >> @c 1 — half the signed result.
+ *  2. Snapshot @c D_800D2390.tail into a local SVECTOR via
  *     @c memcpy. The source is cast to @c (u8 @c *) so the compiler
  *     emits @c lwl / @c lwr (matching the target's byte-granular 8-byte
  *     copy).
@@ -24,19 +24,19 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object6", func_800ACC68);
  *       cached transform/rotation payload before dispatching world-render
  *       work.
  *
- * @param arg First arg forwarded verbatim to @c func_800ACC68.
+ * @param outMat Destination matrix, forwarded to @c func_800ACC68.
  */
-void func_800ACD38(s32 arg) {
-    WorldXformBlock buf;
+void func_800ACD38(MATRIX *outMat) {
+    SVECTOR buf;
     s32 delta;
 
-    delta = getAngleDelta(D_800C977A, D_800D2390.tail.angle) >> 1;
+    delta = getAngleDelta(D_800C977A, D_800D2390.tail.vy) >> 1;
 
     memcpy(&buf, (u8 *)&D_800D2390.tail, sizeof(buf));
 
-    buf.angle += delta;
+    buf.vy += delta;
 
-    func_800ACC68(arg, &buf, (u8 *)D_800C97F8, &D_800D2390);
+    func_800ACC68(outMat, &buf, D_800C97F8, &D_800D2390.head);
 }
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object6", func_800ACDC4);

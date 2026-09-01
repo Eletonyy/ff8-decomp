@@ -1,9 +1,9 @@
 #include "common.h"
 #include "gamestate.h"
-#include "btl_color.h"        /* deactivateBattleCmd */
-#include "psxsdk/libgpu.h"   /* SetDispMask */
-#include "psxsdk/libgte.h"    /* InitGeom, SquareRoot0 */
-#include "psxsdk/libetc.h"   /* getScratchAddr */
+#include "btl_color.h"
+#include "psxsdk/libgpu.h"
+#include "psxsdk/libgte.h"
+#include "psxsdk/libetc.h"
 #include "world.h"
 #include "world/we_object0.h"
 #include "world/we_object1.h"
@@ -11,21 +11,15 @@
 #include "world/we_object3.h"
 #include "world/we_object4.h"
 #include "world/we_object5.h"
+#include "world/we_object6.h"
+#include "world/we_object7.h"
+#include "world/we_object8.h"
 #include "world/we_object9.h"
+#include "world/we_object10.h"
+#include "world/we_object13.h"
 #include "main.h"
 #include "thread.h"
 
-/* Park the real stack pointer in the PS1 scratchpad and run the next call with
- * its stack there, then put the real stack back. There is no way to express a
- * stack switch in C, so this is the original's inline asm -- the same device as
- * SCRATCH_STACK_ENTER/LEAVE in src/field/fe_object1.c and the GP_* family in
- * include/common.h. As with GP_SAVE_SCRATCH the slot address arrives as an
- * operand and the compiler materializes it: here it schedules the lui/ori four
- * instructions away from the block, which is how we know the address is
- * compiler-generated rather than part of the asm. $t0 is named explicitly (it
- * is the same register at both call sites while the address register differs),
- * and declaring it clobbered is load-bearing -- without it the allocator picks
- * a different temp for the camera-magnitude multiply 900 bytes further down. */
 #define SP_SAVE_SCRATCH(slot)                                                  \
     asm volatile("addu  $t0, %0, $zero\n\t"                                    \
                  "sw    $sp, 0($t0)\n\t"                                       \
@@ -114,55 +108,6 @@ extern s32    *D_800D245C;
 
 extern Slot   D_800785D8;   /**< Slot-state record the loop publishes at D_800D226C. */
 
-/* Still assembly. Each is declared here, tagged with the unit that owns it,
- * until that unit is decompiled and can publish it from its own header. */
-extern s32   func_800997E8(u16 *out);                                   /* we_object1 */
-extern void  func_80099F78(void);                                       /* we_object1 */
-extern void  func_8009A954(void);                                       /* we_object1 */
-extern void  func_8009AEE4(s32 id);                                     /* we_object1 */
-extern void  func_8009B954(s32 a, s32 b, s32 c);                        /* we_object1 */
-extern void  func_8009DB88(u8 *p);                                      /* we_object2 */
-extern void  func_8009E5C8(VECTOR *pos, u8 *p, SVECTOR *ang, void *x);  /* we_object2 */
-extern void  func_800AD698(SceneState *st, u8 *flags);                  /* we_object6 */
-extern void  func_800AE31C(u8 *flags);                                  /* we_object6 */
-extern s32   func_800AE518(u8 *flags);                                  /* we_object6 */
-extern void  func_800AEEB0(u8 *flags, void *a, void *b, void *c);       /* we_object6 */
-extern void  func_800B04CC(SVECTOR *ang, MATRIX *m, u8 *flags, s32 v);  /* we_object6 */
-extern void  func_800B164C(SceneState *st, Slot *slot, u8 *flags,
-                           VECTOR *pos);                                 /* we_object6 */
-extern void  func_800B18B8(u8 *flags, VECTOR *pos, SVECTOR *ang);       /* we_object6 */
-extern s32   func_800B1BCC(u8 *p);                                      /* we_object6 */
-extern s32   func_800B4AA0(void);                                       /* we_object7 */
-extern void  func_800B56A0(void);                                       /* we_object7 */
-extern void  func_800B7240(s8 v);                                       /* we_object7 */
-extern void  func_800B881C(void);                                       /* we_object7 */
-extern void  func_800B893C(void);                                       /* we_object7 */
-extern void  func_800B8C70(void);                                       /* we_object8 */
-extern s32   func_800B99A4(u16 *p);                                     /* we_object8 */
-extern void  func_800B9D38(void);                                       /* we_object8 */
-extern void  func_800BB150(Slot *slot);                                 /* we_object9 */
-extern void  func_800BB4E8(void);                                       /* we_object9 */
-extern void  func_800BEC60(u8 *flags);                                  /* we_object10 */
-extern void  func_800C4AE4(s32 a);                                      /* we_object13 */
-
-/**
- * @brief The world overlay's entry point: set the map up, then run its frame
- *        loop until something asks the world to hand off.
- *
- * Called from the main state machine once the overlay is resident. The body is
- * one long init followed by @c while(1), and every way out of that loop is a
- * @c break that first records where control should go next -- a battle, a
- * field map, the world menu, or a clean shutdown. After the loop a single tail
- * tears the overlay down regardless of which exit fired.
- *
- * @c D_80082C8C.mode selects how much of the init runs. Mode 4 is a warm
- * re-entry that skips straight to the render setup; mode 0 is a cold start and
- * saves the whole scene-state block into the slot record; any other mode is a
- * return from elsewhere and restores just the dispatch code from it.
- *
- * @return 0 normally; 1 when the loop ended because @c D_800C9ED0 held
- *         @c WORLD_STALL_CODE for @c WORLD_STALL_FRAMES consecutive frames.
- */
 s32 func_800987D8(void)
 {
     s32 trigger;

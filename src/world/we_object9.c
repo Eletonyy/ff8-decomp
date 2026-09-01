@@ -2,8 +2,11 @@
 #include "psxsdk/libc.h"
 #include "gamestate.h"
 #include "world.h"
+#include "world/we_object5.h"
 #include "world/we_object9.h"
 #include "world/we_object3.h"   /* worldPosToCell */
+
+
 
 #define SPAWN_FLAG_LIFETIME_JITTER 1
 #define SPAWN_FLAG_SIZE_JITTER     2
@@ -136,8 +139,8 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object9", func_800BB4E8);
  * @param visRange Visibility threshold (higher = farther allowed).
  */
 void func_800BBD74(ParticleSource *src, s32 visRange) {
-    Velocity localVel;
-    PosDesc  localPos;
+    SVECTOR localVel;
+    VECTOR  localPos;
     s32      jitter;
     s32      absdx;
     s16      dx;
@@ -145,29 +148,29 @@ void func_800BBD74(ParticleSource *src, s32 visRange) {
 
     worldCam = D_800C97F4;
     localPos = src->pos;
-    dx       = ((u16) D_800C97F4) - src->pos.pos.half;
-    localPos.pos.word = worldCam;
+    dx       = ((u16) D_800C97F4) - (u16)src->pos.vy;
+    localPos.vy = worldCam;
     if ((func_8009CC3C() + (dx >> 2)) >= visRange) return;
     absdx = (dx >= 0) ? dx : -dx;
     if (absdx >= 0x258) return;
 
     /* Left-side spawn: +0x320 angle offset + RNG jitter on angle/height */
     localVel = src->vel;
-    localVel.angle += 0x320;
+    localVel.vy += 0x320;
     jitter = (func_8009CC3C() - 0x80) * 8;
-    localVel.angle += jitter;
+    localVel.vy += jitter;
     jitter = (func_8009CC3C() - 0x80) * 4;
-    localVel.height += jitter;
+    localVel.vz += jitter;
     func_800AC0A0(0x13, &localPos, &localVel,
                   SPAWN_FLAG_SIZE_JITTER | SPAWN_FLAG_LIFETIME_JITTER);
 
     /* Right-side spawn: -0x320 angle offset + RNG jitter on angle/height */
     localVel = src->vel;
-    localVel.angle -= 0x320;
+    localVel.vy -= 0x320;
     jitter = (func_8009CC3C() - 0x80) * 8;
-    localVel.angle += jitter;
+    localVel.vy += jitter;
     jitter = (func_8009CC3C() - 0x80) * 4;
-    localVel.height += jitter;
+    localVel.vz += jitter;
     func_800AC0A0(0x13, &localPos, &localVel,
                   SPAWN_FLAG_SIZE_JITTER | SPAWN_FLAG_LIFETIME_JITTER);
 }
@@ -199,24 +202,24 @@ void func_800BBD74(ParticleSource *src, s32 visRange) {
  *
  *       worldCam = D_800C97F4;
  *       localPos = src->pos;
- *       dx       = ((u16) D_800C97F4) - src->pos.pos.half;
- *       localPos.pos.word = worldCam;
+ *       dx       = ((u16) D_800C97F4) - (u16)src->pos.vy;
+ *       localPos.vy = worldCam;
  *       if (D_800C4D4C <= (func_8009CC3C() + (dx >> 2))) return;
  *       absdx = (dx >= 0) ? dx : -dx;
  *       if (absdx >= 0x1A4) return;
  *
  *       localVel = src->vel;
- *       localVel.angle += 0x320;
+ *       localVel.vy += 0x320;
  *       jitter = (func_8009CC3C() - 0x80) * 8;
- *       localVel.angle += jitter;
- *       localVel.height += func_8009CC3C() - 0x80;
+ *       localVel.vy += jitter;
+ *       localVel.vz += func_8009CC3C() - 0x80;
  *       func_800AC0A0(0xF, &localPos, &localVel, 3);
  *
  *       localVel = src->vel;
- *       localVel.angle -= 0x320;
+ *       localVel.vy -= 0x320;
  *       jitter = (func_8009CC3C() - 0x80) * 8;
- *       localVel.angle += jitter;
- *       localVel.height += func_8009CC3C() - 0x80;
+ *       localVel.vy += jitter;
+ *       localVel.vz += func_8009CC3C() - 0x80;
  *       func_800AC0A0(0xF, &localPos, &localVel, 3);
  *   }
  */
@@ -226,7 +229,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object9", func_800BBF0C);
  * @brief Spawn a mirrored particle pair (type 0x14) gated on a word-angle delta.
  *
  * Sibling of @c func_800BBD74 but with word-scale angle math instead of
- * halfword: computes @c (D_800C97F4 - src->pos.pos.word) >> 4 and
+ * halfword: computes @c (D_800C97F4 - src->pos.vy) >> 4 and
  * rejects the spawn when @c (rnd + delta) >= @c (D_800C4D4C / 2). When
  * the visibility gate opens, emits two particles via @c func_800AC0A0
  * with symmetric ±0x320 angle offsets and RNG jitter on angle/height.
@@ -239,8 +242,8 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object9", func_800BBF0C);
  * @param src Particle source (position descriptor + velocity template).
  */
 void func_800BC09C(ParticleSource *src) {
-    Velocity localVel;
-    PosDesc  localPos;
+    SVECTOR localVel;
+    VECTOR  localPos;
     s32      jitter;
     s32      threshold;
     u32      worldCam;
@@ -248,25 +251,25 @@ void func_800BC09C(ParticleSource *src) {
     worldCam = D_800C97F4;
     localPos = src->pos;
     threshold = D_800C4D4C >> 1;
-    localPos.pos.word = worldCam;
-    if ((func_8009CC3C() + ((s32)(D_800C97F4 - src->pos.pos.word) >> 4)) >= threshold) return;
+    localPos.vy = worldCam;
+    if ((func_8009CC3C() + ((s32)(D_800C97F4 - src->pos.vy) >> 4)) >= threshold) return;
 
     /* Left-side spawn: +0x320 angle offset + RNG jitter on angle/height */
     localVel = src->vel;
-    localVel.angle += 0x320;
+    localVel.vy += 0x320;
     jitter = (func_8009CC3C() - 0x80) * 8;
-    localVel.angle += jitter;
+    localVel.vy += jitter;
     jitter = (func_8009CC3C() - 0x80) * 4;
-    localVel.height += jitter;
+    localVel.vz += jitter;
     func_800AC0A0(0x14, &localPos, &localVel, 3);
 
     /* Right-side spawn: -0x320 angle offset + RNG jitter on angle/height */
     localVel = src->vel;
-    localVel.angle -= 0x320;
+    localVel.vy -= 0x320;
     jitter = (func_8009CC3C() - 0x80) * 8;
-    localVel.angle += jitter;
+    localVel.vy += jitter;
     jitter = (func_8009CC3C() - 0x80) * 4;
-    localVel.height += jitter;
+    localVel.vz += jitter;
     func_800AC0A0(0x14, &localPos, &localVel, 3);
 }
 

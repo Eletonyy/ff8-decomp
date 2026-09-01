@@ -6,9 +6,7 @@
 #include "world.h"
 
 /* we_object4's public surface. Everything else the unit owns is private to
- * src/world/we_object4.c and declared at the top of that file. The callers
- * below are still assembly, so they reach these through the linker rather
- * than this header -- it is here for when they are decompiled. */
+ * src/world/we_object4.c. */
 
 extern s32 D_800D2264;              /**< Counter increment per update (read by we_object3, we_object6). */
 
@@ -45,5 +43,9 @@ extern volatile CameraRef D_800C9870;
 extern void func_800AB2D4(VECTOR *pos);
 
 extern TILE_1 D_800D4FB0[2][96];    /**< Night-sky star pool, also primed by we_object5 (func_800A84D0). */
+
+/* Steps the texture-strip animations. @p ctx is passed by its only caller but
+   the body works entirely off globals and never reads it. */
+extern void func_800A7E74(BattleSceneCtx *ctx);
 
 #endif /* WORLD_WE_OBJECT4_H */

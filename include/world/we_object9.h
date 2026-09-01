@@ -5,26 +5,13 @@
 #include "world.h"
 #include "psxsdk/libgte.h"
 
+/* Particle source: position + velocity (with 4-byte gap between). Stride 0x28.
+   func_800AC0A0 takes these two as VECTOR/SVECTOR; the spawner reads .vy of
+   each as the heading and .vz of the velocity as the height. */
 typedef struct {
-    u32       pad0;
-    AngleSlot pos;
-    u32       pad8;
-    u32       padC;
-} PosDesc;
-
-/* 8-byte unaligned velocity (copied via lwl/lwr to spawner's slot[0x18..0x1F]) */
-typedef struct {
-    u16 pad0;
-    u16 angle;
-    u16 height;
-    u16 pad6;
-} Velocity;
-
-/* Particle source: position + velocity (with 4-byte gap between). Stride 0x28. */
-typedef struct {
-    PosDesc  pos;
-    u32      pad10;
-    Velocity vel;
+    VECTOR  pos;
+    u32     pad10;
+    SVECTOR vel;
 } ParticleSource;
 
 typedef struct {
@@ -96,7 +83,6 @@ extern s32             D_800C971C;
 /* Per-scene angle bias applied to a placed sprite fan. */
 extern s32 func_800BC5E0(s32 ctx);
 extern s32 func_8009CC3C(void);
-extern s32 func_800AC0A0(s32 type, PosDesc *pos, Velocity *vel, s32 flags);
 extern void func_800BFFEC(void);
 extern void func_800C2C00(s32 a, s32 b, s32 c, s32 d, s32 e, U64 *f, s32 g, U64 *h);
 extern u8 *func_800BC8D8(u8 *buf, s32 magicId);
@@ -105,5 +91,8 @@ extern void func_80047C74(u8 *dst, u8 *src);
 extern u8 *getStatName(s32 statId);
 extern u8 *func_800BCE74(u8 *buf, s32 statId);
 extern s32 func_800B00D8(s32 a);
+
+extern void func_800BB150(Slot *slot);
+extern void func_800BB4E8(void);
 
 #endif /* WORLD_WE_OBJECT9_H */

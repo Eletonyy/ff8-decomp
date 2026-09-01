@@ -52,7 +52,6 @@ extern s32             D_800D2448;        /* world-ready gate flag (func_8009F6E
 extern void func_800A5F78(s32 screen);
 extern void func_800A5FD4(s32 screen);
 extern void func_80099EDC(s32 idx);
-extern void func_800B3FD4(Slot *a0, s32 a1);
 extern void func_8009D630(void);
 extern void renderAndUpdateDisplay(s32 mode);
 extern s32  renderBattleDisplayList(s32 *colorTag);
@@ -74,5 +73,8 @@ extern void sndDisableReverb(u32 a);
 
 /* Defined in we_object2.c — shortest signed angular difference (0x1000 == 360°). */
 extern s32  getAngleDelta(s32 a, s32 b);
+
+extern void func_8009DB88(u8 *p);
+extern void func_8009E5C8(VECTOR *pos, u8 *p, SVECTOR *ang, void *x);
 
 #endif /* WORLD_WE_OBJECT2_H */

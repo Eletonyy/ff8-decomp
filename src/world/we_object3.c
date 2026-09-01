@@ -4,7 +4,10 @@
 #include "world/we_object1.h"
 #include "world/we_object3.h"
 #include "world/we_object4.h"
-#include "world/we_object5.h"   /* D_800D23D0 */
+#include "world/we_object5.h"
+#include "world/we_object6.h"
+#include "world/we_object10.h"
+#include "world/we_object11.h"   /* D_800D23D0 */
 #include "world/we_object9.h"   /* func_800BC5E0 */
 #include "thread.h"
 
@@ -307,8 +310,6 @@ extern void             func_80048DD4(BattleSceneCtx *ctx, s32 r, s32 g, s32 b);
 extern void             func_80049244(s32 *tag);
 extern void             func_800492B4(BattleSceneCtx *ctx);
 extern void             func_80049480(void *disp);
-extern void             func_800A7E74(BattleSceneCtx *ctx);
-extern void             func_800AC2B8(void);
 static s32              func_800A5B48(void);
 /* Writes exactly one word through its out-parameter. */
 extern s32              func_800A50A0(s32 *runs);
@@ -317,12 +318,6 @@ static void             func_800A568C(void);
    func_800A50A0 scan, admits a single node and zeroes the out-word. What sets
    it, and what it means, is unknown. */
 extern s32              func_800B21EC(WorldSpriteRec *rec, s32 mode, s32 c, s32 d);
-/* Both below are declared in we_object10.h, which this unit cannot include:
- * its func_800B0010 prototype is (void) to serve a no-argument caller there,
- * conflicting with the true (u32 kind) definition in we_object6.c that
- * func_800A2D50 relies on. */
-extern void            *func_80047CE4(void *dst, s32 c, u32 n);
-extern s32              func_800B0010(u32 kind);
 static void             func_800A1678(s32 col, s32 mode);
 static void             func_800A0388(void);
 static void             func_800A39BC(WorldSprite *out, s16 h);
@@ -330,11 +325,6 @@ static void             placeWorldSpriteFan(WorldSprite *out, VECTOR *v, SVECTOR
                                             s32 arg3, s32 arg4, VECTOR *origin);
 static s32              func_800A6254(WorldObject *head);
 static void             func_800A62E0(s16 val, u16 *coarse, u16 *fine);
-extern void             func_800ACDC4(GlyphHeader *p, BattleSceneCtx *ctx, WorldPrimBank *pools);
-extern void             func_800BF80C(GlyphHeader *p, s32 *ot, WorldPrimBank *pools);
-extern void             func_800BF2E8(GlyphHeader *p, s32 *ot, WorldPrimBank *pools);
-extern void             func_800BF20C(CmdDesc *p, s32 kind, s32 arg);
-extern void             func_800BFBFC(s32 kind);
 
 
 /**

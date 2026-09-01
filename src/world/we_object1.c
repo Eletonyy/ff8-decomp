@@ -10,6 +10,9 @@
 #include "psxsdk/libapi.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libc.h"
+//#include "world/we_object6.h" // Deliberately not included for matching reasons, original code likely forgot to include this
+
+
 
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_800997E8);
@@ -633,8 +636,6 @@ void func_8009BFA0(DVECTOR *coords, s16 count) {
 }
 
 
-/* func_800ACD38 is void func_800ACD38(s32) in we_object6; this call site sees an
-   int-returning function (K&R-era view), which the matching codegen requires. */
 
 /**
  * @brief Compose the world-map view transform and the resulting camera position.
