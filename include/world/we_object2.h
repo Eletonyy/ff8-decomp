@@ -57,7 +57,6 @@ extern void func_800A5FD4(s32 screen);
 extern void func_80099EDC(s32 idx);
 extern void func_800B3FD4(Slot *a0, s32 a1);
 extern void func_8009D630(void);
-extern void func_800C4450(void);
 extern void renderAndUpdateDisplay(s32 mode);
 extern s32  renderBattleDisplayList(s32 *colorTag);
 extern s32  func_800BD380(s16 *outLow, s16 *outHigh);
@@ -68,13 +67,11 @@ extern s32  func_800A017C(SVECTOR *v);
 
 /* Shared world helper: copies @p pos's low-16-bit angle triple into @p out and
  * returns a 128x96 grid-cell index derived from its X/Z world coords. */
-extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
 /* Reports whether a script is active and writes its current key to @p output. */
 extern s32  func_800BEDF0(u8 *output);
 
 /* Helpers used by setupWorldRender (world-map sound/display setup). */
 extern void func_800C3DB0(void (*cb)(void));
-extern void func_800A47A4(void);
 extern void sndEnableReverb(u32 a);
 extern void sndDisableReverb(u32 a);
 

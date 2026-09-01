@@ -91,6 +91,9 @@ typedef struct {
      (p)->u2 = (_u0),       (p)->v2 = (_v0) + (_h), \
      (p)->u3 = (_u0) + (_w), (p)->v3 = (_v0) + (_h))
 
+/* Initialise a textured 3-vertex polygon (len=7 words, code=0x24). */
+#define setPolyFT3(p)    setlen(p, 7),  setcode(p, 0x24)
+
 /* Initialise a flat-shaded 4-vertex polygon (len=5 words, code=0x28). */
 #define setPolyF4(p)     setlen(p, 5),  setcode(p, 0x28)
 
@@ -100,10 +103,10 @@ typedef struct {
 /* Initialise a gouraud-shaded 4-vertex polygon (len=8 words, code=0x38). */
 #define setPolyG4(p)     setlen(p, 8),  setcode(p, 0x38)
 
-/* Initialise a gouraud-shaded textured 3-vertex polygon (len=9 words, code=0x34). */
 /* Initialise a 1x1 tile primitive (len=2 words, code=0x68). */
 #define setTile1(p)      setlen(p, 2),  setcode(p, 0x68)
 
+/* Initialise a gouraud-shaded textured 3-vertex polygon (len=9 words, code=0x34). */
 #define setPolyGT3(p)    setlen(p, 9),  setcode(p, 0x34)
 
 /* Initialise a gouraud-shaded textured 4-vertex polygon (len=12 words, code=0x3C). */

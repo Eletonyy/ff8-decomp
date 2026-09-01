@@ -4,6 +4,7 @@
 #include "psxsdk/libc.h"
 #include "battle.h"
 #include "btl_anim.h"
+#include "thread.h"
 
 
 void callCdTick(void);
@@ -14,8 +15,6 @@ void func_800472E4(void);
 void func_800472F4(void);
 s32 getAnimFrameParam(s32, s32);
 u16 remapControllerInput(s32);
-s32 func_80027DB4(s32, s32, s32);
-s32 func_80027CF8(s32, s32, s32);
 s32 getAnimFrameStatusFlags(s32, s32);
 s32 func_8002CF54(s32);
 void decrementSfxCounter(void);
@@ -2116,9 +2115,9 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
         for (i = count; i >= 0; i--) {
             param = remapControllerInput(getAnimFrameParam(0, i) & 0xFFFF) & 0xFFFF;
             if ((param & 0xF000) == 0) {
-                val = func_80027DB4(0, 2, i);
+                val = func_80027DB4(0, PAD_AXIS_X, i);
                 if (val >= 0) {
-                    param |= func_80027CF8(0, val - 128, func_80027DB4(0, 3, i) - 128);
+                    param |= func_80027CF8(0, val - 128, func_80027DB4(0, PAD_AXIS_Y, i) - 128);
                 }
             }
             param |= remapControllerInput(func_80027A58(0, i) & 0xFFFF) << 16;
@@ -2131,9 +2130,9 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
         func_800472E4();
         param = remapControllerInput(getAnimFrameParam(0, 0) & 0xFFFF) & 0xFFFF;
         upperBits = remapControllerInput(func_80027A58(0, 0) & 0xFFFF) << 16;
-        val = func_80027DB4((0, 0), 2, 0);
+        val = func_80027DB4((0, 0), PAD_AXIS_X, 0);
         if (((param & 0xF000) == 0) && (val >= 0)) {
-            param |= func_80027CF8(0, val - 128, func_80027DB4(0, 3, 0) - 128);
+            param |= func_80027CF8(0, val - 128, func_80027DB4(0, PAD_AXIS_Y, 0) - 128);
         }
         func_800472F4();
         i = count;

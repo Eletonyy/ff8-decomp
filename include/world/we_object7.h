@@ -43,7 +43,6 @@ extern u8 *D_800C96C8;
 /* func_8009B358/func_8009B550 are defined in we_object1, func_8009D8A8 in
  * we_object2; addItemToInventory and the func_800A5DC8/func_800B01A0/
  * func_80041E84 helpers are main-binary. Caller-local prototypes. */
-extern s32 func_800A5DC8(s32 x, s32 y);
 extern s8 func_800B01A0(s16 viewY, s16 viewX, TrackEntry *e, u16 *posOut, s8 *unk30Out, u8 *unk2COut);
 extern s32 func_80041E84(s32 y, s32 x);
 extern s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text);

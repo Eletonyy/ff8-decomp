@@ -6,6 +6,7 @@
 #include "gamestate.h"
 #include "world/we_object1.h"
 #include "world/we_object2.h"   /* getAngleDelta */
+#include "world/we_object3.h"   /* func_800A2D50 */
 #include "psxsdk/libapi.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libc.h"
@@ -227,7 +228,7 @@ void func_8009A4DC(s32 count) {
  * @c D_800C4D30 = @c 0x1460, @c D_800C4D20 = @c 1, @c D_800C4D60 = @c 0xFFFF, the
  * section pointer @c D_800C4D5C = @c 0x80122000, and the "inactive" markers
  * @c D_800C4D78 / @c D_800C4D7C / @c D_800C4D88 / @c D_800C4D90 / @c D_800C4D94 = @c -1.
- * It then fills the 4-byte @c D_800C5398 flag block with @c 0xFF and clears the
+ * It then fills the @c D_800C5398 slot block with @c WORLD_SLOT_NONE and clears the
  * light-matrix work buffer @c D_800C9758 via @c func_8009FEDC.
  */
 void func_8009A638(void) {
@@ -269,8 +270,8 @@ void func_8009A638(void) {
     D_800C4DAC = 0;
     D_800C4DB0 = 0;
     D_800C4DB4 = 0;
-    for (i = 0; i < 4; i++) {
-        D_800C5398[i] = 0xFF;
+    for (i = 0; i < WORLD_SLOT_COUNT; i++) {
+        D_800C5398[i] = WORLD_SLOT_NONE;
     }
     func_8009FEDC(D_800C9758, 0);
 }
@@ -687,7 +688,7 @@ void func_8009C070(void) {
  * angle is stashed for @c D_800D212C) and resolves a command descriptor with
  * @c glyphAt. That descriptor is published to @c D_800C4D64 / @c D_800C4D74
  * (and to @c D_800C4D6C / @c D_800C4D68 when @c D_800C4D38 holds 0x31). Per-frame
- * scratch (@c D_800C4D48, @c D_800C9E38[0..2]) is cleared, and the rotation and
+ * scratch (@c D_800C4D48, @c D_800C9E38) is cleared, and the rotation and
  * translation matrices @c D_800C9838 are loaded into the GTE.
  */
 void func_8009C1A4(void) {
@@ -706,9 +707,9 @@ void func_8009C1A4(void) {
         D_800C4D68 = desc;
     }
     D_800C4D48 = 0;
-    D_800C9E38[0] = 0;
-    D_800C9E38[1] = 0;
-    D_800C9E38[2] = 0;
+    D_800C9E38.vx = 0;
+    D_800C9E38.vy = 0;
+    D_800C9E38.vz = 0;
     D_800D212C = buf.angle;
     SetRotMatrix(&D_800C9838);
     SetTransMatrix(&D_800C9838);

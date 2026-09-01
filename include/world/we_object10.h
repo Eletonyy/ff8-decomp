@@ -66,13 +66,11 @@ extern void func_800AEB58(XformEntry *entry, XformGroup *group);
 extern void func_8009C5FC(s32 *data);
 extern void func_800BC51C(VECTOR *src, VECTOR *dst);
 extern void func_800BC544(VECTOR *src, VECTOR *dst);
-extern s32 worldPosToCell(VECTOR *pos, SVECTOR *out);
 extern ScriptOp *func_800AF004(u8 *base, s32 flag);
 extern s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text);
 extern void func_8009D8A8(s32 a0);
 extern void fadeOutSfxFast(s32 idx);
 extern void renderAndUpdateDisplay(s32 frameCount);
 extern s32  renderBattleDisplayList(s32 *colorTag);
-extern s32  func_800A358C(s32 a0, void *a1, void *a2, s32 a3);
 
 #endif /* WORLD_WE_OBJECT10_H */
