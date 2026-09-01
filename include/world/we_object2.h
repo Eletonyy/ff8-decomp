@@ -4,6 +4,7 @@
 #include "common.h"
 #include "world.h"
 #include "psxsdk/libgte.h"
+#include "psxsdk/libetc.h"
 
 typedef struct {
     s16 a;
@@ -48,17 +49,8 @@ extern u16             D_800C5346;        /* per-map yaw target (func_8009F6EC b
 extern s32             D_800C9730;        /* GTE projection-plane distance (SetGeomScreen arg). */
 extern s32             D_800D2448;        /* world-ready gate flag (func_8009F6EC bit 0x10). */
 
-/* VSync is declared here with a void-returning view for this file's
- * matching codegen (psxsdk/libetc.h's s32-returning prototype is not used). */
-extern void VSync(s32 mode);
-
-extern void func_800A5F78(s32 screen);
-extern void func_800A5FD4(s32 screen);
 extern void func_80099EDC(s32 idx);
-extern void func_800B3FD4(Slot *a0, s32 a1);
 extern void func_8009D630(void);
-extern void renderAndUpdateDisplay(s32 mode);
-extern s32  renderBattleDisplayList(s32 *colorTag);
 extern s32  func_800BD380(s16 *outLow, s16 *outHigh);
 extern s32  func_800BD2A0(s16 *outLow, s16 *outHigh);
 extern s32  func_800BD460(s16 *outLow, s16 *outHigh);
@@ -77,5 +69,10 @@ extern void sndDisableReverb(u32 a);
 
 /* Defined in we_object2.c — shortest signed angular difference (0x1000 == 360°). */
 extern s32  getAngleDelta(s32 a, s32 b);
+
+extern void func_8009DB88(u8 *p);
+extern void func_8009E5C8(VECTOR *pos, u8 *p, SVECTOR *ang, void *x);
+
+extern void func_8009D8A8(s32 a0);
 
 #endif /* WORLD_WE_OBJECT2_H */

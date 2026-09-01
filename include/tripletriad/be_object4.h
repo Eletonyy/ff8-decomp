@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "tripletriad.h"
-#include "battle_anim.h"  /* BattleAnimState / BattleAnimEntity (func_800A29D4 prototype) */
+#include "battle_anim.h"
 
 /* Public interface of be_object4.c: the Triple Triad SFX request queue, the card-detail
    popup buffers, the rule-description string table, and the message-gate / menu helpers

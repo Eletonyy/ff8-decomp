@@ -2,7 +2,7 @@
 #define TIM_H
 
 #include "common.h"
-#include "psxsdk/libgpu.h"   /* RECT */
+#include "psxsdk/libgpu.h"
 
 /**
  * @brief One section of a PS1 TIM image file (CLUT block or pixel block).

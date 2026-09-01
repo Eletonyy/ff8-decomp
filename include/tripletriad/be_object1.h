@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "tripletriad.h"
-#include "tim.h"          /* Tim / TimSection (queued VRAM image uploads) */
+#include "tim.h"
 
 /* Declarations for be_object1.c (Triple Triad board/card setup, draw-buffer
    init, deferred VRAM transfers, the object-list system, debug text, and the

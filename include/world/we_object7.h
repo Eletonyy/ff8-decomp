@@ -8,21 +8,18 @@
  * @brief 0x34-byte tracking entry — one world-space target with screen-space
  * projection state and a relative neighbour link.
  *
- * Populated by @c func_800B01A0 (which fills the screen-space @c posX/Y/Z
- * fields plus @c unk30 and @c unk2C from the world transform pipeline) and
+ * Populated by @c func_800B01A0 (which fills @c screen plus @c unk30 and
+ * @c unk2C from the world transform pipeline) and
  * consumed by @c func_800B3868 to compute pitch/yaw to a chained target.
  */
 typedef struct {
-    u8 pad00[0x10];
-    u16 posX;            /**< 0x10: projected screen-space X. */
-    u16 posY;            /**< 0x12: projected screen-space Y. */
-    u16 posZ;            /**< 0x14: projected screen-space Z. */
-    u8 pad16[0x02];
+    VECTOR pos;          /**< 0x00: world position; func_800B01A0 projects it. */
+    SVECTOR screen;      /**< 0x10: projected screen-space position (x, y, z). */
     s16 unk18;           /**< 0x18: roll/twist angle — zeroed when target valid. */
     s16 yaw;             /**< 0x1A: yaw angle to target (atan2 + 0x800 bias). */
     s16 pitch;           /**< 0x1C: pitch angle to target. */
     u8 pad1E[0x0E];
-    u8 unk2C[0x02];      /**< 0x2C: scratch byte pair filled by func_800B01A0. */
+    s16 unk2C;           /**< 0x2C: scratch halfword filled by func_800B01A0. */
     s8 targetIdx;        /**< 0x2E: relative index of the chained target entry (0 = none). */
     s8 status;           /**< 0x2F: -1 = uninitialized, 1 = visible/active. */
     s8 unk30;            /**< 0x30: secondary status byte. */
@@ -41,13 +38,18 @@ typedef struct {
 extern u8 *D_800C96C8;
 
 /* func_8009B358/func_8009B550 are defined in we_object1, func_8009D8A8 in
- * we_object2; addItemToInventory and the func_800A5DC8/func_800B01A0/
- * func_80041E84 helpers are main-binary. Caller-local prototypes. */
-extern s8 func_800B01A0(s16 viewY, s16 viewX, TrackEntry *e, u16 *posOut, s8 *unk30Out, u8 *unk2COut);
+ * we_object2; addItemToInventory, func_800A5DC8 and func_80041E84 are
+ * main-binary. Caller-local prototypes. */
 extern s32 func_80041E84(s32 y, s32 x);
-extern s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text);
 extern void func_8009B550(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5, s32 a6);
-extern void func_8009D8A8(s32 a0);
 extern void addItemToInventory(s32 itemId, s32 count);
+
+extern s32  func_800B4AA0(void);
+extern void func_800B56A0(void);
+extern void func_800B7240(s8 v);
+extern void func_800B881C(void);
+extern void func_800B893C(void);
+
+extern void func_800B3FD4(Slot *slot, s32 mode);
 
 #endif /* WORLD_WE_OBJECT7_H */
