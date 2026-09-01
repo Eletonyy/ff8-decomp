@@ -167,6 +167,16 @@ typedef enum {
     CTRL_FLAG_400   = 0x400
 } ControlFlags;
 
+
+typedef struct {
+    u8 unk0;
+    u8 unk1; 
+} subStruct;
+
+typedef struct {
+    subStruct unk0[4];
+} Struct_func_800A8794;
+
 /**
 * @brief Data block reached two indirections away through
 *        @c BattleEntity.linkedPtr->data.
@@ -180,9 +190,49 @@ typedef struct {
     u8 padC[4];
     volatile s32 unk10;  // volatile because func_800A5688, func_800A559C
     volatile s32 unk14;  // volatile because func_800A5688, func_800A559C
-    u8 pad18[0xA9]; 
+    s32 unk18;
+    s32 unk1C;
+    s32 unk20;
+    s32 unk24[7];
+    u8 pad40[4];
+    u16 unk44[8];
+    s16 unk54[16];
+    u8 pad74[0x7C - 0x74];
+    volatile s32 unk7C;
+    u16 unk80;
+    u8 pad82[2];
+    u16 unk84;
+    u16 unk86;
+    u8 unk88;
+    u8 unk89;
+    u8 unk8A;
+    u8 pad8B[5];
+    u8 unk90[40];
+    u8 unkB8;
+    u8 unkB9;
+    u8 unkBA;
+    u8 unkBB;
+    u8 unkBC;
+    u8 unkBD;
+    u8 unkBE;
+    u8 unkBF;
+    u8 unkC0;
     u8 unkC1; 
-    u8 padC2[0x35];
+    u8 unkC2;
+    u8 unkC3;
+    u8 unkC4;
+    u8 unkC5;
+    u8 unkC6;
+    u8 unkC7;
+    u8 unkC8;
+    u8 padC9;
+    u8 unkCA;
+    u8 padCB;
+    u16 unkCC;
+    u8 padCE[0x26];
+    u8 unkF4;
+    u8 unkF5;
+    u8 unkF6;
     u8 immunityFlags;   /* bit 0 forces status bit 0x40 clear, bit 1 forces flags bit 0x2000 clear (read by @c func_8009AFF0). */
     u8 unkF8;
     u8 unkF9;
@@ -193,10 +243,13 @@ typedef struct {
     u8 unkFE;
     u8 unkFF;
     u8 pad100[4];
-    u8 unk104[1];       /* size unknown, probably struct, used in func_8009F65C */
-    u8 pad105[0x4A];
+    Struct_func_800A8794 unk104[1];       /* size unknown, probably struct, used in func_8009F65C */
+    u8 pad10C[0x14F - 0x10C];
     u8 unk14F;          /* byte read by func_800AF988. */
     u16 unk150[1];
+    u8 pad152[0xE];
+    u8 unk160[8]; 
+    u8 unk168[40];// possibly size taken from func_800A7FD0 while calling func_800A7EE0
 } BattleEntityData;
 
 #define ENTITY_FLAG_1 1
@@ -240,7 +293,7 @@ typedef struct {
     u8 unkE;
     u8 entityRef;
     BattleEntityData** entityData;
-    s32 pad14; // func_800A559C to fix
+    s32 pad14;
     s32 flags;
     s32 flagsBackup;
     s32 unk20;
@@ -248,7 +301,7 @@ typedef struct {
     s32 unk28;
     s32 unk2C;
     s32 unk30;
-    u8 pad34[32];     
+    u8 pad34[0x20];     
     u16 unk54[1];  /* used in  func_8009C598 */
     u8 unk56;
     u8 unk57;
@@ -419,10 +472,15 @@ typedef struct {
     /* 0x085C */ u8 pad85C[0x0CDC - 0x085C];
     /* 0x0CDC */ u8 unkCDC;
     /* 0x0CDC */ u8 unkCDD;
-    /* 0x0CDE */ u8 padCDE[0x0CE4 - 0x0CDE];
+    /* 0x0CDE */ u8 padCDE[0x0CE0 - 0x0CDE];
+    /* 0x0CE0 */ u8 unkCE0;
+    /* 0x0CE1 */ u8 unkCE1;
+    /* 0x0CE2 */ u8 unkCE2;
+    /* 0x0CE3 */ u8 unkCE3;
     /* 0x0CE4 */ BattleVec3u unkCE4[8];             /**< 8-entry x/y/z position table (read by @c func_8009A528). */
     /* 0x0D14 */ u8 unkD14[8];                      /**< Hit-type byte table (8 entries). */
-    /* 0x0D1C */ u8 padD1C[0x0D5C - 0x0D1C];
+    /* 0x0D1C */ u8 padD1C[0x0D54 - 0x0D1C];
+    /* 0x0D54 */ u8 unkD54[8];
     /* 0x0D5C */ u8 unkD5C[8];                      /**< Per-trigger flag array (8 entries). */
     /* 0x0D64 */ TaskLink unkD64[3][11];
     /* 0x0DE8 */ BattleUnkDE8 arrayDE8[3][11][2];   /**< (792 bytes: 0x318) size tied to func_800A5948 */
@@ -430,13 +488,13 @@ typedef struct {
     /* 0x1103 */ TaskLink taskLinks[16];            /**< Task queue link table (16 × 4 bytes). */
     /* 0x1143 */ u8 pad1143;
     /* 0x1144 */ TaskEntry taskData[16];            /**< Task queue data slots (16 × 16 bytes). */
-    /* 0x1244 */ Struct_1244 unk1244[1];
-    /* 0x125C  */ u8 pad125C[0x128C - 0x125C];
+    /* 0x1244 */ Struct_1244 unk1244[3];
     /* 0x128C */ callback_t unk128C;                /**< Cached userData for callback. */
     /* 0x1290 */ s16 unk1290;
     /* 0x1292 */ s16 unk1292;
     /* 0x1294 */ s16 unk1294;
-    /* 0x1296 */ u8 pad1296[0x12B8 - 0x1296];
+    /* 0x1296 */ s16 unk1296;
+    /* 0x1298 */ u8 pad1298[0x12B8 - 0x1298];
     /* 0x12B8 */ u16 array12B8[7];
     /* 0x12C6 */ u8 pad12C7[0x12CC - 0x12C6];
     /* 0x12CC */ Struct_12CC array12CC[1];          /* used in func_8009D594 */
@@ -454,7 +512,7 @@ typedef struct {
     /* 0x12EC */ u8 unk12EC;                        /**< Misc state byte (init to 0xFF). */
     /* 0x12ED */ u8 volatile unk12ED;               /**< Misc state byte. */
     /* 0x12EE */ u8 volatile unk12EE;               /**< Misc state byte. */
-    /* 0x12EF */ u8 unk12EF;
+    /* 0x12EF */ u8 volatile unk12EF;
     /* 0x12EF */ u8 unk12F0;
     /* 0x12EF */ u8 pad12F1;
     /* 0x12EF */ u8 unk12F2;
@@ -525,20 +583,27 @@ typedef struct {
 typedef struct {
     u8 id;          /* lookup key / command byte. */
     s8 value;       /* signed value byte. */
-    u8 pad2[3];
+    u8 unk2;
+    u8 unk3;
+    u8 unk4;
 } BattleAnimSlot;
 
 
 /** this struct might be related to draw function. Unk0 accessed in func_800A3094 */
 typedef struct {
     u8 unk0;
-    u8 pad[3];
+    u8 unk1;
+    u8 unk2;
+    u8 pad3;
 } drawSlot;
+
 
 /** @brief 0x47-byte sub-entry in @c BattleAnimTable.subEntries. */
 typedef struct {
     drawSlot array0[4]; /* size related to the index used in func_800A3094 */
-    u8 pad10[0x36];
+    u8 unk10;
+    u8 pad11[0x2F];
+    u8 unk40[6];
     u8 unk46;
 } BattleAnimSubEntry;   /* 0x47 */
 
@@ -547,34 +612,6 @@ typedef struct {
     /* 0x000 */ BattleAnimSlot animSlots[32];      /**< 32 × 5 = 0xA0 bytes. */
     /* 0x0A3 */ BattleAnimSubEntry subEntries[3];  /**< 3 × 0x47 = 0xD5 bytes. */
 } BattleAnimTable;
-
-
-
-/** @brief Battle magic slot entry (5 bytes). */
-typedef struct {
-    u8 unk0;
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-    u8 unk4;
-} BattleMagicSlot;
-
-/** @brief Battle item slot entry (5 bytes). */
-typedef struct {
-    u8 unk0;
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-    u8 unk4;
-} BattleItemSlot;
-
-/** @brief Battle command slot entry (4 bytes). */
-typedef struct {
-    u8 cmdType;
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-} BattleCmdSlot;
 
 /** @brief Data stream within a battle command (two per entry). */
 typedef struct {
@@ -627,9 +664,43 @@ typedef struct {
     u8 freeSpace[4];
 } BattleOtBuf;
 
+/** @brief Battle magic slot entry (5 bytes). */
+typedef struct {
+    u8 unk0;
+    s8 unk1;
+    u8 unk2;
+    u8 unk3;
+    u8 unk4;
+} BattleMagicSlot;
+
+/** @brief Battle item slot entry (5 bytes). */
+typedef struct {
+    u8 unk0;
+    u8 unk1;
+    u8 unk2;
+    u8 unk3;
+    u8 unk4;
+} BattleItemSlot;
+
+/** @brief Battle command slot entry (4 bytes). */
+typedef struct {
+    u8 cmdType;
+    u8 unk1;
+    u8 unk2;
+    u8 unk3;
+} BattleCmdSlot;
+
+typedef struct {
+    u8 unk0;
+    u8 unk1;
+    u8 unk2;
+    u8 unk3;
+} BattleUnkSlot;
+
 /** @brief Battle character render data (g_battleChars, stride 0x1D0 = 464 bytes). */
 typedef struct {
-    /* 0x000 */ u8 pad0[0x14];
+    /* 0x000 */ u8 pad0[0x008 - 0x000];
+    /* 0x008 */ BattleUnkSlot unkSlots[3];
     /* 0x014 */ u16 unk14;
     /* 0x016 */ u16 unk16;
     /* 0x018 */ s16 currentHp;          /**< Current HP in battle. */
@@ -656,7 +727,7 @@ typedef struct {
     /* 0x1B4 */ u16 abilityValue;
     /* 0x1B6 */ u16 atkStatusHit;      /**< Attack status hit chance. */
     /* 0x1B8 */ u8 level;              /**< Battle level (from findCharXpLevel). */
-    /* 0x1B9 */ u8 pad1B9;
+    /* 0x1B9 */ u8 unk1B9;
     /* 0x1BA */ u8 classId;            /**< Entity-class index into the @c D_80078E00 ability tables (stride 12 at @c 0x35C1). */
     /* 0x1BB */ u8 stats[8];           /**< Battle stats: STR, VIT, MAG, SPR, SPD, ?, hit (0x1C0), eva (0x1C1). 0x1C2 = ? */
     /* 0x1C3 */ u8 characterId;
@@ -754,7 +825,7 @@ typedef struct {
  * Only byte 0 (abilityId) is read by the known callers.
  */
 typedef struct {    
-    u8 pad0;             /* 0x3938 */
+    u8 unk0;             /* 0x3938 */
     u8 abilityId;        /**< 0x3939: Ability ID byte (input to ability flag funcs) */
     u8 unk2;             /* 0x393A */
     u8 unk3;             /* 0x393B */
@@ -952,9 +1023,11 @@ typedef struct {
 typedef struct {
     u8 unk0;
     u8 unk1;
-    u8 pad2[3];
+    u8 pad2[2];
+    u8 unk4;
     u8 unk5;
-    u8 pad6[3];
+    u8 unk6;
+    u8 pad7[2];
     u8 unk9;
     u8 padA[2]; 
 } Struct_35BD; /* 12 bytes */
@@ -962,7 +1035,8 @@ typedef struct {
 
 typedef struct {
     u8 unk0;
-    u8 pad1[2];
+    u8 unk1;
+    u8 pad2;
     u8 unk3;
     u8 pad4[32];
 } Struct_37A6; /* 36 bytes */
@@ -975,7 +1049,9 @@ typedef struct {
 
 typedef struct {
     u8 unk0;
-    u8 pad[7];
+    u8 pad1;
+    u8 unk2;
+    u8 pad3[5];
 } structE8;
 
 /**
@@ -995,8 +1071,8 @@ typedef struct {
     /* 0x00D8 */ u8 pad00D8[0x00DC - 0x00D8];                
     /* 0x00DC */ s32 unk4C0CArg;                /**< resolveKernelPtr arg paired with unk4C0C[]. */
     /* 0x00E0 */ u8 pad00E0[0x00E8 - 0x00E0];
-    /* 0x00E8 */ structE8 unkE8[1];
-    /* 0x00F0 */ u8 pad00F0[0x0220 - 0x00F0];
+    /* 0x00E8 */ structE8 unkE8[36];
+    /* 0x0208 */ u8 pad0208[0x0220 - 0x0208];
     /* 0x0220 */ BattleSpellRow spells[1];      /**< 60-byte stride (size unknown, index past). */
     /* 0x025C */ u8 pad025C[0x0F78 - 0x025C];
     /* 0x0F78 */ BattleSceneRow rows132[1];     /**< 132-byte stride (size unknown, index past). */
@@ -1148,7 +1224,9 @@ extern BattleConfig    g_battleConfig;
 extern s16             D_8005F11C;
 extern u8              D_80077E58;
 extern u8              D_80077E92;
+extern u8              D_80077E59;
 extern u8              D_800786D9;
+extern u8              D_80078DF8;
 extern BattleSceneData D_80078E00;
 extern u16             D_80082C0A;
 extern u8              D_80082C0F;
