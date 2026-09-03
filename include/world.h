@@ -5,6 +5,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 #include "battle.h"
+#include "gamestate.h"
 #include "sound.h"
 
 /** View of the sentinel ctx exposing the DISPENV template that sits past the
@@ -204,14 +205,8 @@ extern s32 D_800DCB48;
  * @brief 8-byte world-transform block — four packed halfwords.
  *
  * Every field is read/written as @c lh / @c sh at a fixed offset. Only
- * @c angle has an identified role (input to rotation helper @c getAngleDelta).
  */
-typedef struct {
-    /* 0x00 */ s16 unk0;
-    /* 0x02 */ s16 angle;
-    /* 0x04 */ s16 unk4;
-    /* 0x06 */ s16 unk6;
-} WorldXformBlock; /* 0x08 */
+
 
 /**
  * @brief 16-byte world-transform record at @c D_800D2390 (pair of blocks).
@@ -220,8 +215,8 @@ typedef struct {
  * snapshots @c tail, adjusts its @c angle, and forwards the modified copy.
  */
 typedef struct {
-    /* 0x00 */ WorldXformBlock head;
-    /* 0x08 */ WorldXformBlock tail;
+    /* 0x00 */ SVECTOR head;
+    /* 0x08 */ SVECTOR tail;
 } WorldXform; /* 0x10 */
 
 /* Shared world-overlay state referenced by more than one we_object*.c.
@@ -261,7 +256,8 @@ extern s32            D_800C97F4;        /**< World camera angle. Stored as a wo
                                               angular-delta helpers in we_object9 read only its
                                               low half — hence the (u16) cast at those sites. */
 extern MATRIX         D_800C9838;        /**< World-to-screen matrix loaded into the GTE. */
-extern WorldPos       D_800C9868;        /**< Source camera world position (cast to VECTOR* for GTE transform func_800BC544). */
+extern VECTOR         D_800C9868;        /**< Source camera world position. 16 bytes: the world entry loop copies
+                                              it whole into @c D_800C9858 and hands it straight to func_800BC544. */
 extern SVECTOR        D_800C9770[2];     /**< Camera scratch: [0] is a position offset, [1] a rotation. */
 extern s32           *D_800C9744;        /**< Texture-strip animation block: a NULL-terminated s32 offset
                                               table; each offset, relative to this pointer, locates one
@@ -527,7 +523,11 @@ typedef struct {
 typedef struct {
     /* 0x00 */ u8 pad00[0x18];
     /* 0x18 */ Track tracks[2];   /**< Track A at 0x18, Track B at 0x24. */
-    /* 0x30 */ u8 pad30[0x3C];
+    /* 0x30 */ u8 pad30[0x38];
+    /* 0x68 */ SceneState scene;  /**< Saved scene state; the world entry loop
+                                       saves the whole record here on a cold
+                                       start and restores @c cmd from it on a
+                                       warm one. */
     /* 0x6C */ s32 unk6C;         /**< Flags word; see SLOT_FLAG_CMD_MIRROR. */
     /* 0x70 */ u8 pad70[0x4];
     /* 0x74 */ u32 flags[2];      /**< 64-bit flag set (low/high). */
@@ -565,7 +565,6 @@ typedef struct {
 
 extern BattleSceneCtx D_800CA040;       /**< Worldmap "no-battle" sentinel — also functions as an empty BattleSceneCtx. */
 extern s16         D_800C53B8[];        /**< Bone-id table (used by we_object4). */
-extern ScriptOp *func_800AF004(u8 *base, s32 flag);
 extern s32 func_800AF28C(ScriptOp *p);
 extern s32 func_800BEFC4(void);
 extern void func_800BD82C(u8 *actor, SlotEntry *slot, s32 marker, s32 flag, SVECTOR *rot, VECTOR *trans);

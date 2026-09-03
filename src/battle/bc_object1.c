@@ -1,4 +1,5 @@
 #include "common.h"
+#include "main.h"
 #include "battle.h"
 #include "gf.h"
 #include "battle/bc_object1.h"
@@ -37,7 +38,6 @@
 extern void func_800D0F74(void);
 extern SoundCmd* func_800B8564(s16, u8); /* bc_object9.c */
 
-extern volatile s16 D_8005F146;
 
 void func_80099D30(void) {
     s32 i;

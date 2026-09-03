@@ -2,7 +2,7 @@
 #define TRIPLETRIAD_BE_OBJECT2_H
 
 #include "common.h"
-#include "tripletriad.h"   /* board/card types, SVECTOR / CVECTOR / VECTOR */
+#include "tripletriad.h"
 
 /* Declarations for be_object2.c (Triple Triad card objects, the rules engine,
    the menu/cursor sub-machine, and the AI move search). */

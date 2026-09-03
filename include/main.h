@@ -2,8 +2,8 @@
 #define MAIN_H
 
 #include "common.h"
-#include "cd.h"            /* CdFileDesc */
-#include "psxsdk/libgpu.h" /* TILE */
+#include "cd.h"
+#include "psxsdk/libgpu.h"
 
 /* =============================================================== *
  *  Public interface — functions in main.c called by other units. *
@@ -53,6 +53,9 @@ extern u8             g_vsyncSkip;
 extern volatile s32   D_8005F154; /**< VSync frame-counter timing accumulator (+0x88F/VSync). */
 extern volatile s32   D_8005F15C; /**< VSync countdown-timer timing accumulator (+0x88F/VSync). */
 extern u16            D_8005F11E; /**< VSync-done / status flag. */
+/** Scene-transition handshake driven by the VSync path; shared by the field,
+ *  world and battle engines (each spins on it with its own sentinel value). */
+extern volatile s16   D_8005F146;
 
 /* CD file-table descriptors + scratch buffers loaded/managed by main.c. */
 extern CdFileDesc     g_fileTableDesc[];

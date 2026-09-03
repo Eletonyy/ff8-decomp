@@ -2,6 +2,7 @@
 #define OVERLAY_H
 
 #include "common.h"
+#include "world/we_object0.h"
 
 /**
  * @brief Overlay command queue entry (D_80085168, 8-slot ring buffer).
@@ -57,8 +58,4 @@ extern s32 func_8003646C(); /* K&R: called with 1 or 2 args */
 /** @brief Run the loaded overlay's entry point (init / execute). */
 extern void func_80098000(void);
 
-/** @brief Query the loaded overlay; returns a status code (main checks @c == 1).
- *  @note Purpose uncertain - undecompiled; appears to report the overlay's
- *        load/ready result. */
-extern s32  func_800987D8(void);
 #endif /* OVERLAY_H */

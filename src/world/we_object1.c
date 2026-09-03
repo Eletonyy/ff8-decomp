@@ -5,11 +5,17 @@
 #include "world.h"
 #include "gamestate.h"
 #include "world/we_object1.h"
-#include "world/we_object2.h"   /* getAngleDelta */
-#include "world/we_object3.h"   /* func_800A2D50 */
+#include "world/we_object2.h"
+#include "world/we_object3.h"
 #include "psxsdk/libapi.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libc.h"
+#include "btl_sfx.h"
+#include "btl_anim.h"
+#include "world/we_object9.h"
+//#include "world/we_object6.h" // Deliberately not included for matching reasons, original code likely forgot to include this
+
+
 
 
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_800997E8);
@@ -633,8 +639,6 @@ void func_8009BFA0(DVECTOR *coords, s16 count) {
 }
 
 
-/* func_800ACD38 is void func_800ACD38(s32) in we_object6; this call site sees an
-   int-returning function (K&R-era view), which the matching codegen requires. */
 
 /**
  * @brief Compose the world-map view transform and the resulting camera position.
@@ -670,8 +674,8 @@ void func_8009C070(void) {
         func_8003FD84(&D_800C9838, &localA, &localB);
     }
     D_800D23C0.z = 0;
-    D_800D23C0.x = D_800C9868.x + localB.vx;
-    D_800D23C0.y = D_800C9868.y + localB.vz;
+    D_800D23C0.x = D_800C9868.vx + localB.vx;
+    D_800D23C0.y = D_800C9868.vy + localB.vz;
     SetRotMatrix(&D_800C9838);
     SetTransMatrix(&D_800C9838);
 }

@@ -2,7 +2,7 @@
 #define TRIPLETRIAD_BE_OBJECT1B_H
 
 #include "common.h"
-#include "psxsdk/libgte.h"  /* SVECTOR (layoutCardSlot) */
+#include "psxsdk/libgte.h"
 
 /* Declarations for be_object1b.c (Triple Triad match-flow controller, the
    per-frame update-list callbacks, and card-object search helpers). */

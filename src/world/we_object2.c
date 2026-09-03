@@ -8,6 +8,7 @@
 #include "world/we_object2.h"
 #include "world/we_object3.h"
 #include "world/we_object13.h"
+#include "btl_anim.h"
 
 /**
  * @brief Walk a world-engine image script and blit each record to VRAM.
@@ -754,11 +755,11 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object2", func_8009F594);
  *  - @c 0x1:  projection distance @c D_800C9730 (±8), then @c SetGeomScreen.
  *  - @c 0x2:  zoom/scale @c D_800C4D30 (±0x80).
  *  - @c 0x4:  set @c D_800C4D40 / @c D_800C4D44 from the map id (immediate, no step).
- *  - @c 0x8:  yaw @c D_800D2390.tail.angle — shortest-arc angle step (±0x20).
- *  - @c 0x10: pitch @c D_800D2390.tail.unk0 (±0x10); for map 0x32 the target is
+ *  - @c 0x8:  yaw @c D_800D2390.tail.vy — shortest-arc angle step (±0x20).
+ *  - @c 0x10: pitch @c D_800D2390.tail.vx (±0x10); for map 0x32 the target is
  *             @c -D_800C97F4 / 24 - 0x100.
- *  - @c 0x20: per-map scroll triple element [2] → @c D_800D2390.head.unk4 (±0x200).
- *  - @c 0x80: per-map scroll triple element [1] → @c D_800D2390.head.angle (±0x200).
+ *  - @c 0x20: per-map scroll triple element [2] → @c D_800D2390.head.vz (±0x200).
+ *  - @c 0x80: per-map scroll triple element [1] → @c D_800D2390.head.vy (±0x200).
  *
  * @c D_800C4D38 is the map id selecting targets; @c D_800C4D3C is a secondary
  * selector. Field roles are partly inferred.
@@ -854,17 +855,17 @@ void func_8009F6EC(void) {
         } else {
             target = D_800D239A;
         }
-        cur = D_800D2390.tail.angle;
+        cur = D_800D2390.tail.vy;
         raw = target - cur;
         d = (s16)raw;
         if ((d < 0 ? -d : d) >= 0x21) {
             if ((u16)(raw - 1) < 0x7FF || d < -0x7FF) {
-                D_800D2390.tail.angle = cur + 0x20;
+                D_800D2390.tail.vy = cur + 0x20;
             } else {
-                D_800D2390.tail.angle = cur - 0x20;
+                D_800D2390.tail.vy = cur - 0x20;
             }
         } else {
-            D_800D2390.tail.angle = target;
+            D_800D2390.tail.vy = target;
             D_800C4D2C ^= 0x8;
         }
     }
@@ -886,14 +887,14 @@ void func_8009F6EC(void) {
         } else if (d3c == 1) {
             target = D_800C5344;
         }
-        cur = D_800D2390.tail.unk0;
+        cur = D_800D2390.tail.vx;
         d = (s16)(cur - target);
         if (d < -0x10) {
-            D_800D2390.tail.unk0 = cur + 0x10;
+            D_800D2390.tail.vx = cur + 0x10;
         } else if (d >= 0x11) {
-            D_800D2390.tail.unk0 = cur - 0x10;
+            D_800D2390.tail.vx = cur - 0x10;
         } else {
-            D_800D2390.tail.unk0 = target;
+            D_800D2390.tail.vx = target;
             D_800C4D2C ^= 0x10;
         }
         if ((u32)D_800C4D38 < 0xA || D_800C4D38 == 0x80) {
@@ -928,14 +929,14 @@ void func_8009F6EC(void) {
             buf[2] = D_800C5354[2];
         }
         target = sp10[2];
-        cur = D_800D2390.head.unk4;
+        cur = D_800D2390.head.vz;
         d = (s16)(cur - target);
         if (d < -0x200) {
-            D_800D2390.head.unk4 = cur + 0x200;
+            D_800D2390.head.vz = cur + 0x200;
         } else if (d >= 0x201) {
-            D_800D2390.head.unk4 = cur - 0x200;
+            D_800D2390.head.vz = cur - 0x200;
         } else {
-            D_800D2390.head.unk4 = target;
+            D_800D2390.head.vz = target;
             D_800C4D2C ^= 0x20;
         }
     }
@@ -964,14 +965,14 @@ void func_8009F6EC(void) {
             sp18[2] = D_800C5354[2];
         }
         target = sp18[1];
-        cur = D_800D2390.head.angle;
+        cur = D_800D2390.head.vy;
         d = (s16)(cur - target);
         if (d < -0x200) {
-            D_800D2390.head.angle = cur + 0x200;
+            D_800D2390.head.vy = cur + 0x200;
         } else if (d >= 0x201) {
-            D_800D2390.head.angle = cur - 0x200;
+            D_800D2390.head.vy = cur - 0x200;
         } else {
-            D_800D2390.head.angle = target;
+            D_800D2390.head.vy = target;
             D_800C4D2C ^= 0x80;
         }
     }

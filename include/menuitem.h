@@ -9,8 +9,8 @@
 #define MENUITEM_H
 
 #include "common.h"
-#include "gamestate.h"   /* g_gameState */
-#include "menumain.h"    /* D_801F889C and the rest of the resident menu image */
+#include "gamestate.h"
+#include "menumain.h"
 
 extern s32 D_80083850;
 extern s32 D_801ECC10;

@@ -6,6 +6,7 @@
 #include "world/we_object3.h"
 #include "world/we_object5.h"
 #include "world/we_object10.h"
+#include "world/we_object6.h"
 #include "world/we_object4.h"
 
 extern TILE_1   D_800D5430[96];      /**< Second half of the star pool (== &D_800D4FB0[1][0]). */
@@ -827,8 +828,11 @@ void func_800A7CD0(s32 *block) {
  * differs from the slot's last blitted one (@c D_800D4EB0), the 256x1
  * source row at (u, v + frame) is copied to the slot's destination
  * (x, y) via @c MoveImage and the new frame is cached.
+ *
+ * @param ctx Scene context. The sole caller loads @c D_800D244C into it, but
+ *            the body works entirely off globals and never reads it.
  */
-void func_800A7E74(void) {
+void func_800A7E74(BattleSceneCtx *ctx) {
     WorldTexAnim *anim;
     s32 i;
     u32 n;
@@ -913,8 +917,8 @@ static void func_800A8024(void) {
     s16      w;
     s32      h;
 
-    x = D_800C9868.x;
-    y = D_800C9868.y;
+    x = D_800C9868.vx;
+    y = D_800C9868.vy;
 
     // Matching hack, but it's fine since it's all dead code, i.e. function is never called
     uninitReg(dx);
@@ -922,8 +926,8 @@ static void func_800A8024(void) {
 
     func_800A5E40(x, y);
     ofs.vz = 0;
-    ofs.vx = MARKER_WORLD_X - D_800C9868.x;
-    ofs.vy = MARKER_WORLD_Y - D_800C9868.y;
+    ofs.vx = MARKER_WORLD_X - D_800C9868.vx;
+    ofs.vy = MARKER_WORLD_Y - D_800C9868.vy;
     falloff = MARKER_RANGE_SQ - (dx * dx + dy * dy);
     if (falloff == 0) {
         return;
@@ -975,7 +979,7 @@ static void func_800A8024(void) {
  * @brief Project the world-map view centre to screen space.
  *
  * Builds a rotation matrix from the world transform's tail angle
- * (@c D_800D2390.tail.angle) with no translation, turns the map's zoom
+ * (@c D_800D2390.tail.vy) with no translation, turns the map's zoom
  * distance (@c D_800C4D30 * 4, biased by the transform's head field) into
  * a view-space offset through @c ApplyMatrixSV, shifts it by the camera
  * offset in @c D_800C9770, and runs the result through the GTE with the
@@ -994,7 +998,7 @@ void func_800A8270(SVECTOR *out) {
 
     rot.vx = 0;
     rot.vz = 0;
-    rot.vy = D_800D2390.tail.angle;
+    rot.vy = D_800D2390.tail.vy;
     RotMatrix(&rot, &m);
 
     m.t[2] = 0;
@@ -1003,7 +1007,7 @@ void func_800A8270(SVECTOR *out) {
     rot.vx = 0;
     rot.vy = 0;
     rot.vz = (u16)D_800C4D30 * 4;
-    rot.vz = rot.vz + D_800D2390.head.unk4;
+    rot.vz = rot.vz + D_800D2390.head.vz;
     ApplyMatrixSV(&m, &rot, &rot);
 
     rot.vx += D_800C9770[0].vx;
@@ -1016,7 +1020,7 @@ void func_800A8270(SVECTOR *out) {
     gte_stsxy(&screen);
     gte_stsz(&depth);
 
-    screen.vy -= abs(D_800D2390.head.unk4) / 300;
+    screen.vy -= abs(D_800D2390.head.vz) / 300;
     if (out != NULL) {
         out->vx = screen.vx;
         out->vy = screen.vy;
@@ -1408,8 +1412,8 @@ void func_800A8C1C(void) {
     SVECTOR    *np;
     VECTOR     *wp;
 
-    camX = D_800C9868.x;
-    camY = D_800C9868.y;
+    camX = D_800C9868.vx;
+    camY = D_800C9868.vy;
     /* The block is s32 offsets up front and WorldZone records behind them, so
      * reaching a record means stepping the base by a byte count and retyping. */
     def = (WorldZone *)((u8 *)D_800C9EE8 + D_800C9EE8[0]);
@@ -1537,8 +1541,6 @@ void func_800A9254(void) {
 /* Projects a slot into camera space. Declared here rather than pulled in from
  * we_object7.h: that unit prototypes it over its own TrackEntry view of the
  * same memory, which conflicts with Slot30. */
-extern s32 func_800B01A0(s16 headingA, s16 headingB, Slot30 *slot,
-                        SVECTOR *viewOut, s32 unused4, s32 unused5);
 
 /** Depth past which a particle is dropped rather than linked into the OT. */
 #define PARTICLE_MAX_OTZ 0x2000
@@ -1602,7 +1604,7 @@ void func_800A9300(void) {
     tile = &D_800DA8D0[bank][0];
 
     headingA = func_800A5DC8(D_800D23C0.x, D_800D23C0.y);
-    headingB = func_800A5DC8(D_800C9868.x, D_800C9868.y);
+    headingB = func_800A5DC8(D_800C9868.vx, D_800C9868.vy);
 
     gte_sttr(&savedTrans);
     gte_ReadRotMatrix(&savedMat);
@@ -1616,7 +1618,7 @@ void func_800A9300(void) {
 
         gte_SetRotMatrix(&D_800C9838);
         gte_SetTransVector(D_800C9838.t);
-        if (!func_800B01A0(headingB, headingA, slot, &slot->view, 0, 0)) {
+        if (!func_800B01A0(headingB, headingA, &slot->pos, &slot->view, NULL, NULL)) {
             continue;
         }
 
@@ -1911,7 +1913,7 @@ void func_800A9ED4(void) {
  * @param x   Screen x of the mesh's top-left corner.
  * @param y   Screen y of the mesh's top-left corner.
  */
-void func_800A9F54(WorldPos *pos, s32 x, s32 y) {
+void func_800A9F54(VECTOR *pos, s32 x, s32 y) {
     WorldTessVert verts[4];
     BattleSceneCtx *ctx;
     WorldPolyGT4 *gt4;
@@ -1919,8 +1921,8 @@ void func_800A9F54(WorldPos *pos, s32 x, s32 y) {
     s32 mapX, mapY;
     s32 i, c;
 
-    mapX = (pos->x + MAP_ORIGIN_X) / MAP_CELL_SIZE;
-    mapY = (pos->y + MAP_ORIGIN_Y) / MAP_CELL_SIZE;
+    mapX = (pos->vx + MAP_ORIGIN_X) / MAP_CELL_SIZE;
+    mapY = (pos->vy + MAP_ORIGIN_Y) / MAP_CELL_SIZE;
     D_800D8808 = x + MESH_CENTRE_BIAS;
     D_800D880C = y + MESH_CENTRE_BIAS;
 

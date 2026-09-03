@@ -2,10 +2,19 @@
 #include "battle.h"
 #include "gamestate.h"
 #include "world.h"
+#include "world/we_object5.h"
+#include "world/we_object6.h"
 #include "world/we_object10.h"
-#include "world/we_object3.h"   /* worldPosToCell */
+#include "world/we_object3.h"
+#include "btl_sfx.h"
+#include "btl_anim.h"
+#include "world/we_object1.h"
+#include "world/we_object9.h"
 
-/* Defined below; the reset path above is its only caller. */
+
+
+
+
 static void func_800BEFEC(u8 *base);
 
 
@@ -13,17 +22,18 @@ static void func_800BEFEC(u8 *base);
  * @brief Search @c D_800DBFB8 for the slot whose @c marker matches the
  *        value returned by @c func_800B0010.
  *
- * Calls @c func_800B0010 to get a marker byte, then linearly scans the
+ * Classifies @p kind via @c func_800B0010 to get a marker byte, then scans
  * first @c D_800C5B50 entries of @c D_800DBFB8 for the first slot whose
  * @c marker matches. Returns the slot index or @c -1 if not found.
  *
- * Twin of @c func_800BD754 — same scan loop but the search key is
- * sourced from @c func_800B0010 instead of an explicit argument.
+ * Twin of @c func_800BD754 — same scan loop, but the search key comes
+ * from classifying @p kind through @c func_800B0010.
  *
+ * @param kind Scene/map kind to classify.
  * @return Matching slot index, or @c -1 on no match.
  */
-s32 func_800BD6EC(void) {
-    s32 target = func_800B0010();
+s32 func_800BD6EC(u32 kind) {
+    s32 target = func_800B0010(kind);
     s32 i = 0;
     s32 count = D_800C5B50;
     if (count > 0) {

@@ -61,7 +61,6 @@ extern VECTOR     D_800DD658;     /* source position for func_800BC51C          
 
 extern void func_800A84D0(void);
 extern s32  func_8003F9F4(CVECTOR *input, CVECTOR *cue, s32 w1, s32 w2, CVECTOR *out);
-extern s32  func_8009CC3C(void);
 extern s32  func_800A4700(s32 a, s32 b);
 extern s32  func_800A475C(s32 a, s32 b);
 extern void func_800423DC(VECTOR *a, s32 *b_pos, VECTOR *out);
@@ -69,15 +68,15 @@ extern void func_800423DC(VECTOR *a, s32 *b_pos, VECTOR *out);
  * the four packed screen points and @c outOTZ their average depth. */
 extern void func_800ABEF0(SVECTOR *src, SVECTOR *rot, SVECTOR *trans,
                           DVECTOR *outSXY, u32 *outOTZ);
-extern void func_800ACC68(MATRIX *out_mat, SVECTOR *angles,
-                          SVECTOR *rotBuf, SVECTOR *offset);
 extern void func_800B5C60(s32 ctx, s16 count, MATRIX *outMat, SVECTOR *outAngles,
                           SVECTOR *rotBuf, u8 *xform, ActorRecord *recs);
-extern void func_800BC51C(VECTOR *src, VECTOR *dst);
-extern void func_800BC544(VECTOR *src, VECTOR *dst);
 
 /* Depth-cue a CVECTOR run into BGR555 halfwords (see the definition for the
    per-pixel blend and the STP-bit packing). */
 extern void func_800ABDD8(CVECTOR *input, u16 *output, s32 z, s16 count);
+
+extern s32  func_800AC0A0(s32 type, VECTOR *pos, SVECTOR *vec, u16 flags);
+
+extern void func_800AC2B8(void);
 
 #endif /* WORLD_WE_OBJECT5_H */
