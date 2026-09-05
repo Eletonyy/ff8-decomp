@@ -444,13 +444,14 @@ void func_800AAFB8(s32 arg0) {
     data->done = 1;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AB008);
-
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AB02C);
+void func_800AB008(s32 arg0) {
+    s32 idx;
+    
+    TaskEntry* task = &D_800ED148.taskData[func_8009B3D0(&func_800AAFB8)];
+    task->unk4 = func_800B0398(arg0);
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AB054);
-
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AB07C);
 
 void func_800AB0C0(s32 arg0, u16 arg1) {
     TaskEntry* currentEntry;
@@ -490,10 +491,6 @@ s32 func_800AB24C(void) {
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AB28C);
-
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AB300);
-
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AB36C);
 
 void func_800AB3C4(void) {
     D_800ED148.unk5C2 = 1;
