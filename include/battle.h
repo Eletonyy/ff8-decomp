@@ -494,8 +494,8 @@ typedef struct {
     /* 0x1292 */ s16 unk1292;
     /* 0x1294 */ s16 unk1294;
     /* 0x1296 */ s16 unk1296;
-    /* 0x1298 */ u8 pad1298[0x12B8 - 0x1298];
-    /* 0x12B8 */ u16 array12B8[7];
+    /* 0x1298 */ s32 unk1298[8];
+    /* 0x12B8 */ u16 unk12B8[7];
     /* 0x12C6 */ u8 pad12C7[0x12CC - 0x12C6];
     /* 0x12CC */ Struct_12CC array12CC[1];          /* used in func_8009D594 */
     /* 0x12CF */ u8 pad12CF[0x12D8 - 0x12CF];
@@ -697,6 +697,14 @@ typedef struct {
     u8 unk3;
 } BattleUnkSlot;
 
+typedef struct{
+    u8 unk0;
+    u8 unk1;
+    u8 unk2;
+    u8 unk3;
+    u8 unk4;
+} BattleTestSlot;
+
 /** @brief Battle character render data (g_battleChars, stride 0x1D0 = 464 bytes). */
 typedef struct {
     /* 0x000 */ u8 pad0[0x008 - 0x000];
@@ -708,7 +716,8 @@ typedef struct {
     /* 0x01C */ u8 unk1C;
     /* 0x01D */ u8 unk1D;
     /* 0x01E */ BattleCmdSlot cmdSlots[4];
-    /* 0x02E */ u8 pad2E[0x082 - 0x02E];
+    /* 0x02E */ u8 pad2E[4];
+    /* 0x032 */ BattleTestSlot testSlots[16];
     /* 0x082 */ BattleMagicSlot magicSlots[32];
     /* 0x122 */ BattleItemSlot itemSlots[16];
     /* 0x172 */ s16 unk172;          /**< Mirrored HP cap (set with hpRegenCap when battle HP is reduced). */
@@ -916,7 +925,9 @@ typedef struct {
  */
 typedef struct {
     u16 lookupId;       /**< u16 passed to resolveKernelPtr. */
-    u8 pad2[6];
+    u8 unk2;
+    u8 unk3;
+    u8 pad4[4];
 } BattleSceneRow8;      /* 8 bytes */
 
 typedef struct {
@@ -949,12 +960,12 @@ typedef struct {
 
 typedef struct {
     u16 unk0;
-    u8 unk1;
     u8 unk2;
     u8 unk3;
     u8 unk4;
     u8 unk5;
     u8 unk6;
+    u8 unk7;
     u8 unk8;
     u8 unk9;
     u16 unkA;
@@ -991,7 +1002,7 @@ typedef struct {
     u8 unk2;
     u8 unk3;
     u8 unk4;
-    u8 pad5;
+    u8 unk5;
     u8 unk6;
     u8 unk7;
     u8 unk8;
@@ -1098,8 +1109,7 @@ typedef struct {
     /* 0x3F63 */ u8 pad3F63[0x4020 - 0x3F63];
     /* 0x4020 */ Struct_4020 array4020[1];
     /* 0x4030 */ u8 pad4034[0x4484 - 0x4030];
-    /* 0x4484 */ Struct_446C array4484[1];
-    /* 0x449C */ u8 pad449C[0x44FC - 0x449C];
+    /* 0x4484 */ Struct_446C array4484[5];
     /* 0x44FC */ Struct_4020 array44FC[1];
     /* 0x450C */ u8 pad4510[0x45F8 - 0x450C];
     /* 0x45F8 */ Struct_45F8 array45F8[1];      /**< stride 8 */
@@ -1225,6 +1235,7 @@ extern s16             D_8005F11C;
 extern u8              D_80077E58;
 extern u8              D_80077E92;
 extern u8              D_80077E59;
+extern u8              D_8007809A;
 extern u8              D_800786D9;
 extern u8              D_80078DF8;
 extern BattleSceneData D_80078E00;

@@ -851,7 +851,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             
             else {
                 arg2 = D_80078E00.unkE8[arg1].unk0;
-                var_s3 = D_80078E00.array4020[arg2].unk6;
+                var_s3 = D_80078E00.array4020[arg2].unk7;
                 sp2E = D_80078E00.array4020[arg2].unk0;
                 break;
             }
@@ -1146,7 +1146,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             break;
             
         case 15:                                      
-            var_s3 = D_80078E00.array44FC[arg2].unk6;
+            var_s3 = D_80078E00.array44FC[arg2].unk7;
             sp2E = D_80078E00.array44FC[arg2].unk0;
             var_s2 = getJuncEffectName(arg2);
             break;
@@ -1261,7 +1261,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             if (!(D_800ED148.entities[sp2A].status & 4)) {
                 if (func_8009EF64(sp2A) != 0) {
                     arg2 = D_80078E00.unkE8[arg1].unk0;
-                    var_s3 = D_80078E00.array4020[arg2].unk6;
+                    var_s3 = D_80078E00.array4020[arg2].unk7;
                     sp2E = D_80078E00.array4020[arg2].unk0;
                     break;
                 }
@@ -1281,7 +1281,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
         case 33:                                     
         case 34:                                     
             arg2 = D_80078E00.unkE8[arg1].unk0;
-            var_s3 = D_80078E00.array4020[arg2].unk6;
+            var_s3 = D_80078E00.array4020[arg2].unk7;
             sp2E = D_80078E00.array4020[arg2].unk0;
             var_s2 = getAbilityEntryName(arg1);
             break;
@@ -1500,7 +1500,7 @@ s32 func_800A4798(u32 arg0, s32 arg1) { // arg0 is always 0-6
     u16 mask = 1 << arg0;
     
     for (i = 0; i < arg1; i++) {
-        if (mask & D_800ED148.array12B8[i]) {
+        if (mask & D_800ED148.unk12B8[i]) {
             count++;
         }
     }
@@ -1671,7 +1671,7 @@ void func_800A4B88(u16 arg0, s32 arg1) {
             var_a1 = func_800A4E08(var_a1, var_s0);
         }
         
-        D_800ED148.array12B8[i] = func_800A4A74(arg1, var_a1);
+        D_800ED148.unk12B8[i] = func_800A4A74(arg1, var_a1);
     }
     
     D_800ED148.unk130A = var_s0;
@@ -1691,7 +1691,7 @@ void func_800A4C84(u16 arg0) {
     func_800A4B88(arg0, D_800EE4C0.unkB);
     
     for (i = 0; i < D_800EE4C0.unkB; i++) {
-        temp_s1 = func_800A4FC4(D_800ED148.array12B8[i], sp10);
+        temp_s1 = func_800A4FC4(D_800ED148.unk12B8[i], sp10);
         var_s5 += temp_s1;
 
         if (temp_s1 != 0) {

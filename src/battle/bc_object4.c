@@ -314,9 +314,6 @@ void func_800A69BC(void) {
         case 4:
             func_8009AF3C(getMenuString(0x2F), (D_80077E59 * 8) + 8, 3, 128, 86);
             break;
-        
-        default:
-            return;
     }
 }
 
@@ -600,6 +597,7 @@ s32 func_800A703C(s32 a0) {
     if (a0 < limit) {
         return a0;
     }
+
     return limit;
 }
 

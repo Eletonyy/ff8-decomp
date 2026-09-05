@@ -19,7 +19,7 @@
 extern void func_800A97D4(void);
 
 /** @brief State queries polled by the battle flow controller (bc_object6). */
-extern s32 func_800A980C(void);
-extern s32 func_800A9888(void);
+extern u16 func_800A980C(void);
+extern u16 func_800A9888(void);
 
 #endif /* BC_OBJECT5_H */
