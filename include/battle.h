@@ -748,7 +748,7 @@ typedef struct {
 
 /** @brief GF battle entry (12 bytes, used for GF HP in battle). */
 typedef struct {
-    u8 pad0[8];
+    u8 unk0[8];
     u16 maxHp;          /* max HP cap (used to restore hp on revive) */
     s16 hp;             /* current HP */
 } BattleGfEntry;
@@ -763,6 +763,11 @@ typedef struct {
     u8 pad5[7];
 } BattleLevelEntry;
 
+typedef struct{
+    u8 unk0;
+    u8 unk1;
+} splitStruct;
+
 /** @brief Complete battle character/GF state block. */
 typedef struct {
     /* 0x000 */ BattleCharData chars[3];          /* 3 party members × 0x1D0 */
@@ -771,12 +776,12 @@ typedef struct {
     /* 0x57A */ u16 unk57A[3];
     /* 0x580 */ u16 unk580[16];
     /* 0x5A0 */ u16 unk5A0[16];
-    /* 0x5C0 */ u8 pad5C0[0x610 - 0x5C0];
+    /* 0x5C0 */ u16 unk5C0[16];
+    /* 0x5E0 */ splitStruct unk5E0[24];
     /* 0x610 */ BattleGfEntry gfEntries[1];       /* hp sub-array (stride 12, 16 entries) */
     /* 0x61C */ u8 pad61C[0x620 - 0x61C];
     /* 0x620 */ BattleLevelEntry levelEntries[16]; /* 16 × 12 bytes */
 } BattleCharState;/* 0x6E0 */
-
 
 
 /**
@@ -1276,6 +1281,8 @@ extern u16             D_800EEBC2;
 extern s32             D_800EEBC4;
 extern u8              D_800EEBC8;
 extern u8              D_800EEBD0;
+extern s32             D_800EEBD8;
+extern s32             D_800EEBDC;
 
 /* ---------------------------------------------------------------- *
  *  Battle-overlay function prototypes (battle internals).
