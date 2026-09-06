@@ -138,7 +138,19 @@ s32 func_800A9370(s32 arg0) {
 }
 
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800A9490);
+void func_800A9490(void) {
+    s32 i;
+
+    for (i = 0; i < 3; i++) {
+        g_battleChars.unk57A[i] = 0;
+        g_battleChars.unk574[i] = 0;
+    }
+
+    for (i = 0; i < 16; i++) {
+        g_battleChars.unk5A0[i] = 0;
+        g_battleChars.unk580[i] = 0;
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800A94E0);
 
@@ -406,7 +418,23 @@ s32 func_800AAA10(s32 arg0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AAA50);
+s32 func_800AAA50(s32 arg0, s32 arg1, s32 bit) {
+    if (arg1 == 0) {
+        s32 mask = (1 << bit);
+        if (arg0 & mask) {
+            return 1;
+        }
+    }
+
+    if (arg1 == 3) {
+        s32 mask = (1 << bit);
+        if (!(arg0 & mask)) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AAA9C);
 

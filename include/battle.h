@@ -766,7 +766,12 @@ typedef struct {
 /** @brief Complete battle character/GF state block. */
 typedef struct {
     /* 0x000 */ BattleCharData chars[3];          /* 3 party members × 0x1D0 */
-    /* 0x570 */ u8 pad570[0x610 - 0x570];
+    /* 0x570 */ u8 pad570[4];
+    /* 0x574 */ u16 unk574[3];
+    /* 0x57A */ u16 unk57A[3];
+    /* 0x580 */ u16 unk580[16];
+    /* 0x5A0 */ u16 unk5A0[16];
+    /* 0x5C0 */ u8 pad5C0[0x610 - 0x5C0];
     /* 0x610 */ BattleGfEntry gfEntries[1];       /* hp sub-array (stride 12, 16 entries) */
     /* 0x61C */ u8 pad61C[0x620 - 0x61C];
     /* 0x620 */ BattleLevelEntry levelEntries[16]; /* 16 × 12 bytes */
