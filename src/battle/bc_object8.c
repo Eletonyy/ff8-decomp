@@ -1,8 +1,9 @@
 #include "common.h"
+#include "psxsdk/libetc.h"
 #include "battle.h"
 #include "battle/bc_object8.h"
 
-extern u8 D_800EEED8[];
+extern u8 *D_800EEED8;
 void func_800B304C();
 extern u8 D_8007DADB[];
 extern u8 D_800EE42C[];
@@ -654,33 +655,32 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3650);
  * @return Pointer to the allocated region.
  */
 void *func_800B3698(s32 size) {
-    s32 ptr = *(s32 *)D_800EEED8;
-    *(s32 *)D_800EEED8 = ptr + ((size + 3) & ~3);
-    return (void *)ptr;
+    u8 *ptr = D_800EEED8;
+    D_800EEED8 = ptr + ((size + 3) & ~3);
+    return ptr;
 }
 
 /**
  * @brief Free aligned memory back to the scratchpad buffer.
  *
  * Aligns the requested size up to 4 bytes and moves the D_800EEED8 pointer
- * back by that much. The original leaves the new pointer in v0, but nothing
- * reads it: the effect overlays were compiled against a void declaration,
- * and this spelling (the subtraction folded into the store) is what puts the
- * pointer in v0 without returning it.
+ * back by that much. The subtraction folded into the store is what leaves the
+ * new pointer in v0 the way the original does; a two-statement spelling swaps
+ * v0 and v1.
  *
  * @param size Number of bytes to free.
  */
 void func_800B36B8(s32 size) {
-    s32 ptr = *(s32 *)D_800EEED8;
+    u8 *ptr = D_800EEED8;
 
-    *(s32 *)D_800EEED8 = ptr - ((size + 3) & ~3);
+    D_800EEED8 = ptr - ((size + 3) & ~3);
 }
 
 /**
  * @brief Set D_800EEED8 to the scratchpad base address 0x1F800000.
  */
 void func_800B36D8(void) {
-    *(s32 *)D_800EEED8 = 0x1F800000;
+    D_800EEED8 = (u8 *)getScratchAddr(0);
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B36E8);
