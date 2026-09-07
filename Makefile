@@ -303,8 +303,13 @@ build-overlays: $(foreach ovl,$(OVERLAYS),build-$(ovl))
 ### Progress report (objdiff) ###
 OBJDIFF := tools/objdiff/objdiff
 
+# Target objects for the objdiff GUI: the original code of every C unit,
+# assembled from splat's disassembly into expected/ and proven by relinking
+# every binary from them. Run on a verified tree. objdiff.json is written to
+# point at them; `make report` writes it back to the built objects.
 expected:
-	@python3 tools/objdiff/build_expected.py
+	$(PYTHON) tools/objdiff/build_expected.py --check
+	@$(PYTHON) tools/objdiff/objdiff_generate.py --expected
 
 objdiff-config:
 	@python3 tools/objdiff/objdiff_generate.py
