@@ -26,6 +26,8 @@ s32 func_800B2B68(void *pool);
 
 /** @brief Take @p size bytes off the scratchpad stack. */
 void *func_800B3698(s32 size);
+/** @brief Give the last @p size bytes taken back to the scratchpad stack. */
+void func_800B36B8(s32 size);
 
 /**
  * @brief Take one task off the shared pool and install @p task on it.

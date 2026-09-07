@@ -289,7 +289,6 @@ typedef void (*EffectHandler)(EffectEntity *);
  *       in every effect function that releases scratch, and declaring none
  *       there moves battle's own. The two builds saw different declarations.
  */
-void func_800B36B8(s32 size);
 
 /** @} */
 

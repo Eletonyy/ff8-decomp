@@ -23,11 +23,6 @@ u32 func_8009A2E0(void);
 void func_800D13CC(void);
 void func_800D5E48(void);
 
-/* Declared here rather than in bc_object8.h: the effect overlays were built
-   against a void-returning declaration of this function, and either spelling
-   breaks the other binary's codegen. */
-void *func_800B36B8(s32 size);
-
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CA078);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CA344);

@@ -662,17 +662,18 @@ void *func_800B3698(s32 size) {
 /**
  * @brief Free aligned memory back to the scratchpad buffer.
  *
- * Aligns the requested size up to 4 bytes, decrements the D_800EEED8
- * pointer, and returns the new (post-decrement) pointer.
+ * Aligns the requested size up to 4 bytes and moves the D_800EEED8 pointer
+ * back by that much. The original leaves the new pointer in v0, but nothing
+ * reads it: the effect overlays were compiled against a void declaration,
+ * and this spelling (the subtraction folded into the store) is what puts the
+ * pointer in v0 without returning it.
  *
  * @param size Number of bytes to free.
- * @return New pointer value after deallocation.
  */
-void *func_800B36B8(s32 size) {
+void func_800B36B8(s32 size) {
     s32 ptr = *(s32 *)D_800EEED8;
-    ptr -= (size + 3) & ~3;
-    *(s32 *)D_800EEED8 = ptr;
-    return (void *)ptr;
+
+    *(s32 *)D_800EEED8 = ptr - ((size + 3) & ~3);
 }
 
 /**
