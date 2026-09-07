@@ -15,17 +15,6 @@
 void *func_801A0000(EffectAnimSet *animSet);
 
 /**
- * @brief Pose each joint of @p skeleton and link its parts into @p ot.
- *
- * @param skeleton Skeleton to walk, as the battle slot holds it.
- * @param ot       Ordering table the posed parts are linked into.
- * @param mode     Prim mode passed through to the renderer.
- * @param render   Render state the joints are posed through.
- */
-void func_801A1EBC(EffectSkeleton **skeleton, u8 *ot, s32 mode,
-                   EffectRender *render);
-
-/**
  * @name Overlay data
  *
  * The blob carried in the overlay image behind the code, from @c 0x801A4678

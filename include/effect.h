@@ -91,8 +91,8 @@ typedef struct {
     /* 0x000 */ void *unk000;
     /* 0x004 */ EffectRenderPart *part;
     /* 0x008 */ struct BattleEffectSlot *slot;
-    /* 0x00C */ s32 *unk00C;
-    /* 0x010 */ void *unk010;
+    /* 0x00C */ s32 *unk00C;         /**< Head of the textured prim list, kept as a word by battle.bin. */
+    /* 0x010 */ void **unk010;       /**< Head of the shaded prim list. */
     /* 0x014 */ MATRIX unk014;
     /* 0x034 */ MATRIX unk034;
     /* 0x054 */ MATRIX unk054;
@@ -107,7 +107,7 @@ typedef struct {
     /* 0x0C6 */ u8 b;
     /* 0x0C7 */ u8 pad0C7;
     /* 0x0C8 */ s32 scale;
-    /* 0x0CC */ u8 pad0CC[0xCE - 0xCC];
+    /* 0x0CC */ s16 unk0CC;
     /* 0x0CE */ s16 unk0CE;
     /* 0x0D0 */ u8 pad0D0[0xD2 - 0xD0];
     /* 0x0D2 */ s16 unk0D2;
@@ -126,6 +126,7 @@ typedef struct {
     /* 0x0EE */ u16 clut;
     /* 0x0F0 */ u8 pad0F0[0xF2 - 0xF0];
     /* 0x0F2 */ s16 unk0F2;
+    /* 0x0F4 */ s16 unk0F4;          /**< 1 when the mesh is back-face culled against its light matrix. */
 } EffectRender;
 
 /** @brief A spark task spawned by the scatter opcodes; stride 0x5C. */
@@ -182,6 +183,17 @@ typedef struct EffectSkeleton {
 } EffectSkeleton;
 
 /**
+ * @brief The skeleton and part table an effect's mesh is drawn from.
+ *
+ * @c parts[0] is the part count; @c parts[1..] are the byte offsets of each
+ * part's command stream, measured from the table itself.
+ */
+typedef struct EffectMesh {
+    /* 0x00 */ EffectSkeleton *skeleton;
+    /* 0x04 */ u32 *parts;
+} EffectMesh;
+
+/**
  * @brief Holder of a skeleton pointer.
  *
  * The only evidence for this type is func_801A1960's own accesses; nothing in
@@ -189,7 +201,7 @@ typedef struct EffectSkeleton {
  */
 typedef struct {
     /* 0x00 */ u8 pad000[0x4];
-    /* 0x04 */ struct EffectSkeleton **skeleton;
+    /* 0x04 */ EffectMesh *mesh;
 } EffectSkeletonRef;
 
 /** @brief The pair of matrices an effect is posed through. */

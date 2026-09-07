@@ -1315,7 +1315,7 @@ u16 func_800A97FC(s32 arg0);
 /** @brief A second skeleton hung off a battle slot. */
 struct EffectAttachment {
     /* 0x00 */ u8 pad000[0x4];
-    /* 0x04 */ struct EffectSkeleton **skeleton;
+    /* 0x04 */ struct EffectMesh *mesh;
 };
 
 /**
@@ -1332,14 +1332,17 @@ typedef struct BattleEffectSlot {
     /* 0x1E */ u16 unk01E;         /**< Y origin: summed with a model's Y bounds. */
     /* 0x20 */ u8 pad020[0x24 - 0x20];
     /* 0x24 */ u16 unk024;
-    /* 0x26 */ u8 pad026[0x40 - 0x26];
+    /* 0x26 */ u8 pad026[0x28 - 0x26];
+    /* 0x28 */ u32 unk028;         /**< Packed RGB the textured prims are drawn with. */
+    /* 0x2C */ u8 pad02C[0x40 - 0x2C];
     /* 0x40 */ MATRIX mtx;         /**< Pose the effect's render matrices start from. */
     /* 0x60 */ u8 unk060[0x64 - 0x60];
-    /* 0x64 */ struct EffectSkeleton **skeleton;
+    /* 0x64 */ struct EffectMesh *mesh;
     /* 0x68 */ u8 pad068[0x6C - 0x68];
     /* 0x6C */ u8 unk06C[0x78 - 0x6C];
     /* 0x78 */ struct EffectAttachment *unk078;
-    /* 0x7C */ u8 pad07C[0x9C - 0x7C];
+    /* 0x7C */ u32 unk07C;         /**< Bit @c n set: mesh part @c n is drawn. */
+    /* 0x80 */ u8 pad080[0x9C - 0x80];
 } BattleEffectSlot; /* 0x9C */
 
 #define BATTLE_SLOT_FLAG_UNK02 0x2
@@ -1355,7 +1358,7 @@ typedef struct BattleEffectSlot {
 typedef struct {
     /* 0x00 */ u8 pad000[0x14];
     /* 0x0014 */ u8 font[0x44 - 0x14];   /**< Glyph set handed to the text drawer. */
-    /* 0x0044 */ u8 ot[0x4040 - 0x44];   /**< Ordering table the effects link into. */
+    /* 0x0044 */ u32 ot[(0x4040 - 0x44) / 4];   /**< Ordering table the effects link into. */
     /* 0x4040 */ u8 unk4040[4];
 } BattleGfx;
 
