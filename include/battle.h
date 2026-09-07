@@ -523,7 +523,9 @@ typedef struct {
     /* 0x12F7 */ u8 unk12F7;
     /* 0x12F8 */ u8 unk12F8;
     /* 0x12F9 */ u8 unk12F9;
-    /* 0x12FA */ u8 pad12FA[3];
+    /* 0x12FA */ u8 pad12FA;
+    /* 0x12FB */ u8 unk12FB; // used as index for entities (max 7)
+    /* 0x12FC */ u8 unk12FC; // used as index for unkD54,unkD14 (max 8)
     /* 0x12FD */ u8 unk12FD;
     /* 0x12FE */ u8 unk12FE;
     /* 0x12FF */ u8 unk12FF;

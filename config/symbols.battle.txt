@@ -241,7 +241,6 @@ func_800AA980 = 0x800AA980; // type:func
 func_800AAB50 = 0x800AAB50; // type:func
 func_800AABEC = 0x800AABEC; // type:func
 func_800AACD0 = 0x800AACD0; // type:func
-func_800AAD5C = 0x800AAD5C; // type:func
 func_800AAE10 = 0x800AAE10; // type:func
 func_800AAE98 = 0x800AAE98; // type:func
 func_800AAF48 = 0x800AAF48; // type:func
