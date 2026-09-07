@@ -3,6 +3,12 @@
 
 #include "common.h"
 #include "psxsdk/libgte.h"
+#include "battle.h"
+#include "battle/bc_object8.h"
+#include "battle/bc_object11.h"
+#include "battle/bc_object12.h"
+#include "battle/bc_object13.h"
+#include "battle/bc_object15.h"
 
 /**
  * @file
@@ -13,49 +19,22 @@
  * and entered at its first byte. See docs/battle-effect-overlays.md.
  */
 
-/** @brief A second skeleton hung off a battle slot. */
-struct EffectAttachment {
-    /* 0x00 */ u8 pad000[0x4];
-    /* 0x04 */ struct EffectSkeleton **skeleton;
-};
-
-/**
- * @brief Battle-side per-entity record, as the effect overlays index it.
- *
- * battle.bin declares this symbol @c u8[] and indexes it with an explicit
- * @c 0x9C stride. Retyping it there would change that overlay's codegen, so
- * the effect overlays carry their own view of the same record.
- */
-typedef struct BattleEffectSlot {
-    /* 0x00 */ u16 flags;          /**< See @c BATTLE_SLOT_FLAG_*. */
-    /* 0x02 */ u8 pad002[0x1E - 0x2];
-    /* 0x1E */ u16 unk01E;         /**< Y origin: summed with a model's Y bounds. */
-    /* 0x20 */ u8 pad020[0x24 - 0x20];
-    /* 0x24 */ u16 unk024;
-    /* 0x26 */ u8 pad026[0x40 - 0x26];
-    /* 0x40 */ MATRIX mtx;         /**< Pose the effect's render matrices start from. */
-    /* 0x60 */ u8 unk060[0x64 - 0x60];
-    /* 0x64 */ struct EffectSkeleton **skeleton;
-    /* 0x68 */ u8 pad068[0x6C - 0x68];
-    /* 0x6C */ u8 unk06C[0x78 - 0x6C];
-    /* 0x78 */ struct EffectAttachment *unk078;
-    /* 0x7C */ u8 pad07C[0x9C - 0x7C];
-} BattleEffectSlot; /* 0x9C */
-
-extern BattleEffectSlot D_800EF2D0[];
-
-/** @brief @ref EffectEntity::flags -- stop the script after this opcode. */
 /** @brief Scratchpad address the per-frame world matrix is staged at. */
 #define EFFECT_SCRATCH_MATRIX 0x1F8002E0
 
+/** @brief @ref EffectEntity::flags -- stop the script after this opcode. */
 #define EFFECT_FLAG_STOP 0x1
 #define EFFECT_FLAG_UNK02 0x2
 /** @brief @ref EffectEntity::flags -- the script's counter reached its limit. */
 #define EFFECT_FLAG_DONE 0x4
 #define EFFECT_FLAG_UNK08 0x8
-#define BATTLE_SLOT_FLAG_UNK02 0x2
-#define BATTLE_SLOT_FLAG_UNK04 0x4
-#define BATTLE_SLOT_FLAG_UNK20 0x20
+/**
+ * @brief @ref EffectAnimSet::flags -- the effect's own assets are already up.
+ *
+ * Set, the overlay skips publishing its table and uploading its TIM.
+ */
+#define EFFECT_ANIMSET_FLAG_LOADED 0x1
+
 
 /**
  * @brief The geometry an effect script drives: three vectors and a bounding box.
@@ -73,19 +52,6 @@ typedef struct EffectModel {
     /* 0x63 */ u8 unk063;
     /* 0x64 */ u8 pad064[0x100 - 0x64];
 } EffectModel; /* >= 0x100 */
-
-/**
- * @brief The battle renderer's graphics context, as the effect overlays use it.
- *
- * Only the two members the effect overlays reach for are named; the record
- * itself belongs to battle.bin.
- */
-typedef struct {
-    /* 0x00 */ u8 pad000[0x14];
-    /* 0x0014 */ u8 font[0x44 - 0x14];   /**< Glyph set handed to the text drawer. */
-    /* 0x0044 */ u8 ot[0x4040 - 0x44];   /**< Ordering table the effects link into. */
-    /* 0x4040 */ u8 unk4040[4];
-} BattleGfx;
 
 /** @brief GPU primitive an effect hands to the battle renderer. */
 typedef struct {
@@ -248,7 +214,7 @@ typedef struct {
 /** @brief Owner of an effect's animation table. */
 typedef struct {
     /* 0x00 */ u8 slot;            /**< Battle slot the effect is attached to. */
-    /* 0x01 */ u8 unk001;
+    /* 0x01 */ u8 flags;          /**< See @c EFFECT_ANIMSET_FLAG_*. */
     /* 0x02 */ u8 pad002[0x4 - 0x2];
     /* 0x04 */ EffectAnim *anims;
 } EffectAnimSet;
@@ -302,5 +268,26 @@ typedef struct EffectEntity {
 
 /** @brief One step of an effect script: the handler for a single @c pc value. */
 typedef void (*EffectHandler)(EffectEntity *);
+
+/**
+ * @name battle.bin
+ *
+ * An effect overlay is entered from battle.bin and calls back into it. Those
+ * services are declared by the battle units that own them, and the state it
+ * reads by battle.h; the one exception is below.
+ * @{
+ */
+
+/**
+ * @brief Give the top @p size bytes of the battle scratchpad stack back.
+ *
+ * @note Not taken from @c battle/bc_object8.h, where it returns the new stack
+ *       pointer: declaring a return value here moves the register allocation
+ *       in every effect function that releases scratch, and declaring none
+ *       there moves battle's own. The two builds saw different declarations.
+ */
+void func_800B36B8(s32 size);
+
+/** @} */
 
 #endif /* EFFECT_H */
