@@ -225,18 +225,24 @@ s32 func_800A20AC(s32 arg0) {
     s32 result;
 
     temp_a0 = &g_battleChars.chars[arg0];
-    
     result = 0;
-    for (mask = 1, i = 0; i < 8; i++, mask *= 2) {
+    
+    mask = 1;
+    for (i = 0; i < 8; i++) {
         if (temp_a0->displayStatus & mask) {
             result += D_80078E00.unk4CDC[i];
         }
+        
+        mask <<= 1;
     }
     
-    for (mask = 1, i = 0; i < 24; i++, mask *= 2) {
+    mask = 1;
+    for (i = 0; i < 24; i++) {
         if (temp_a0->unk188 & mask) {
             result += D_80078E00.unk4CE4[i];
         }
+
+        mask <<= 1;
     }
     
     return result;
@@ -647,7 +653,7 @@ u16 func_800A2E48(BattleEntityData* arg0, s32 index) {
     return arg0->unk150[entity[index+1].slot8.byteView.unkA + result];
 }
 
-s32 func_800A2EB8(s32 arg0, s32 arg1) {
+s32 func_800A2EB8(s32 arg0, s32 flags) {
     s32 var_a0;
     s32 mask;
     s32 i;
@@ -658,12 +664,13 @@ s32 func_800A2EB8(s32 arg0, s32 arg1) {
     }
 
     do {
-        for (i = 0, mask = 1; i < var_a0; i++) {
-            mask *= 2;
+        mask = 1;
+        for (i = 0; i < var_a0; i++) {
+            mask <<= 1;
         }
 
         var_a0--;
-    } while (!(mask & arg1));
+    } while (!(mask & flags));
 
     return var_a0 + 1;
 }

@@ -1452,7 +1452,25 @@ s32 func_800A97A4(s32);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8B7C);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8CA4);
+void func_800A8CA4(s32 characterId, s32 targetId) {
+    BattleAnimSubEntry* var_s0;
+    s32 i;
+
+    if (D_800ED148.entities[targetId].controlFlags & 1) {
+        for (i = 0; i < 4; i++) {
+            var_s0 = &D_800EE9E8.subEntries[targetId - 3];
+            if (var_s0->array0[i].unk0 < 64) {
+                if (hasJunctionedAbility(characterId, var_s0->array0[i].unk0) != 0) {
+                    var_s0->array0[i].unk1 |= 4;
+                } 
+                
+                else {
+                    var_s0->array0[i].unk1 &= 0xFB;
+                }
+            }
+        }
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8D7C);
 
@@ -1473,7 +1491,10 @@ s32 func_800A8EFC(BattleCharData* arg0) {
     s32 i;
     s32 val;
 
-    for (val = 0, bit = 1, i = 0; i < 16; bit *= 2, i++) {
+    val = 0; 
+    bit = 1; 
+
+    for (i = 0; i < 16; i++) {
         if (g_gameState.mainData.limitBreaks.quistisLimits & bit) {
             arg0->testSlots[val].unk0 = i;
             arg0->testSlots[val].unk2 = D_80078E00.array44FC[i].unk4;
@@ -1488,6 +1509,8 @@ s32 func_800A8EFC(BattleCharData* arg0) {
             
             val++;
         }
+
+        bit <<= 1;
     }
     
     return val;
@@ -1529,7 +1552,7 @@ s32 func_800A9064(BattleCharData* arg0) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A9084);
 
-u8 func_800A9240(s32 arg0) {
+s32 func_800A9240(s32 arg0) {
     s32 i;
     
     for (i = 0; i < 198; i++) {
@@ -1596,7 +1619,6 @@ s32 func_800A9370(s32 arg0) {
             return 1;
     }
 }
-
 
 void func_800A9490(void) {
     s32 i;
@@ -1771,12 +1793,12 @@ void func_800A99E8(s32 arg0) {
 
 void func_800A9A6C(s32 arg0) {
     switch (arg0) {
-        case 0xC8:
+        case 200:
             D_800EEBD8 = 0;
             D_800EEBDC = 3;
             break;
         
-        case 0xC9:
+        case 201:
             D_800EEBD8 = 3;
             D_800EEBDC = 7;
             break;
@@ -1816,7 +1838,39 @@ void func_800A9FDC(void) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800AA034);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800AA368);
+s32 func_800AA368(s32 arg0) {
+    s32 i;
+    s32 val;
+
+    val = 0;
+    switch(arg0) {
+        case 200:
+            for (i = 0; i < 3; i++) {
+                if (!(D_800ED148.entities[i].status & 1)) {
+                    val++;
+                }
+            }
+            break;
+            
+        case 201:
+            for (i = 3; i < 7; i++) {
+                if (!(D_800ED148.entities[i].status & 1)) {
+                    val++;
+                }
+            }
+            break;
+            
+        default:
+            for (i = 0; i < 7; i++) {
+                if ((D_800ED148.entities[i].linkedIdx == arg0) && !(D_800ED148.entities[i].status & 1)) {
+                    val++;
+                }
+            }   
+            break;
+    }
+    
+    return val;
+}
 
 u16 func_800AA44C(s32 arg0) {
     s32 bit;

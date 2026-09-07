@@ -105,7 +105,23 @@ s32 func_800AA840(s32 arg0, s32 arg1) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AA88C);
+s32 func_800AA88C(s32 arg0, s32 arg1) {
+    if (arg0 == 0) {
+        if ((D_800ED148.entities[arg1].controlFlags & 1) && !(D_800ED148.entities[arg1].status & 1)) {
+            return 1;
+        }
+        
+        return 0;
+    }
+    
+    if (arg0 == 3) {
+        if ((D_800ED148.entities[arg1].controlFlags & 1) && !(D_800ED148.entities[arg1].status & 1)) {
+            return 0;
+        }
+
+        return 1;
+    }
+}
 
 s32 func_800AA930(s32 arg0) {
     drawSlot* var_v1;
@@ -170,14 +186,35 @@ s32 func_800AAA50(s32 arg0, s32 arg1, s32 bit) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AAA9C);
+s32 func_800AAA9C(s32 arg0, u32 arg1, BattleEntityData* arg2) {
+    if (arg1 < 16) {
+        if (arg0 == 0 && ((arg2->unk80 >> arg1) & 1)) {
+            return 1;
+        }
+        
+        if (arg0 == 3 && !((arg2->unk80 >> arg1) & 1)) {
+            return 1;
+        }
+    }
+    
+    else if (arg0 == 0 && (arg2->unk8 & (1 << (arg1 - 16)))) {
+        return 1;
+    } 
+    
+    else if (arg0 == 3 && !(arg2->unk8 & (1 << (arg1 - 16)))) {
+        return 1;  
+    }
+        
+    
+    return 0;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AAB50);
 
 s32 func_800AABEC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     if (arg4 != 0 && arg1 == 0) {
         if (D_800ED148.entities[arg3].controlFlags & 1) {
-            BattleEntity* var_a2 = (BattleEntity*)&D_800ED148.entities[arg3].entityData;
+            BattleEntityData* var_a2 = (BattleEntityData*)&D_800ED148.entities[arg3].entityData;
             arg2 += func_800AAA9C(arg0, arg1, var_a2);
         }
         
@@ -186,7 +223,7 @@ s32 func_800AABEC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
 
     else if (D_800ED148.entities[arg3].controlFlags & 1) {
         if (!(D_800ED148.entities[arg3].status & 1)) {
-            BattleEntity* var_a2 = (BattleEntity*)&D_800ED148.entities[arg3].entityData;
+            BattleEntityData* var_a2 = (BattleEntityData*)&D_800ED148.entities[arg3].entityData;
             if (arg4 == 0) {
                 arg2 += func_800AAB50(arg0, arg1, var_a2);
             } 
@@ -212,13 +249,13 @@ s32 func_800AACD0(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     
     result = 0;
     switch(arg0) {
-        case 0xC8:
+        case 200:
             for (i = 0; i < 3; i++) {
                 result = func_800AABEC(var_s2, arg2, result, i, arg3);
             }
             break;
 
-        case 0xC9:
+        case 201:
             for (i = 3; i < 7; i++) {
                 result = func_800AABEC(var_s2, arg2, result, i, arg3);
             }

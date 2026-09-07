@@ -336,8 +336,8 @@ s32 func_8009C300(s32 arg0, s32 arg1) {
 
 u8 func_8009C390(s32 arg0, s32 arg1, s32 arg2) {
     s32 temp_s3;
-    s32 var_s0;
-    s32 var_s1;
+    s32 i;
+    s32 mask;
     s32 var_s2;
     s32 var_s5;
     s32 sp20;
@@ -358,18 +358,22 @@ u8 func_8009C390(s32 arg0, s32 arg1, s32 arg2) {
             temp_s3 = func_8009C300(arg1, 1);
         }
         
-        var_s1 = 1;
-        for (var_s0 = 0; var_s0 < 7; var_s0++, var_s1 *= 2) {
-            if (D_800EEBC2 & var_s1) {
-                var_s2 += func_8009C104(arg0, arg1, var_s0, var_s1, 0, var_s5, temp_s3, D_800EEBBA);
+        mask = 1;
+        for (i = 0; i < 7; i++) {
+            if (D_800EEBC2 & mask) {
+                var_s2 += func_8009C104(arg0, arg1, i, mask, 0, var_s5, temp_s3, D_800EEBBA);
             }
+
+            mask <<= 1;
         }
 
-        var_s1 = 1;
-        for (var_s0 = 8; var_s0 < 40; var_s0++, var_s1 *= 2) {
-            if (D_800EEBC4 & var_s1) {
-                var_s2 += func_8009C104(arg0, arg1, var_s0, var_s1, 1, var_s5, temp_s3, D_800EEBBA);
+        mask = 1;
+        for (i = 8; i < 40; i++) {
+            if (D_800EEBC4 & mask) {
+                var_s2 += func_8009C104(arg0, arg1, i, mask, 1, var_s5, temp_s3, D_800EEBBA);
             }
+
+            mask <<= 1;
         }
         
         func_8009BF70(sp20, &D_800ED148.entities[arg1].flags);
@@ -1022,7 +1026,7 @@ void func_8009DD2C(s32 arg0, s32 arg1, u16 sp10, s32 arg3) {
     s32 i;
     BattleEntity* entities;
     BattleEntity* entity;
-    s32 var_s0;
+    s32 mask;
     s32 var_s2;
 
 
@@ -1031,22 +1035,22 @@ void func_8009DD2C(s32 arg0, s32 arg1, u16 sp10, s32 arg3) {
         func_8009B878(arg0, &sp10, &D_800EEBC4, 0);
         var_s2 = 0;
         
-        var_s0 = 1;
+        mask = 1;
         for(i = 0; i < 7; i++) {
-            if ((sp10 & var_s0) && (entities[arg0].status & var_s0)) {
+            if ((sp10 & mask) && (entities[arg0].status & mask)) {
                 var_s2 = 1;
             }
             
-            var_s0 *= 2;
+            mask <<= 1;
         }
 
-        var_s0 = 1;
+        mask = 1;
         for(i = 8; i < 40; i++) {
-            if ((arg3 & var_s0) && (D_800ED148.entities[arg0].flags & var_s0) && (func_800B0668(arg0, var_s0) == 0)) {
+            if ((arg3 & mask) && (D_800ED148.entities[arg0].flags & mask) && (func_800B0668(arg0, mask) == 0)) {
                 var_s2 = 1;
             }
             
-            var_s0 *= 2;
+            mask <<= 1;
         }
 
         
