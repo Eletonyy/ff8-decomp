@@ -107,8 +107,11 @@ MENU_OVERLAYS := menumain menucfg menupty menusts menuabl menushop menuext \
 CODE_OVERLAYS := field_init intro field \
                  tripletriad battle_render battle world
 
-EFFECT_OVERLAYS := $(filter effect_%,$(SPLAT_BINARIES))
+ALL_EFFECT_OVERLAYS := $(filter effect_%,$(SPLAT_BINARIES))
+EFFECTS ?= effect_001
+EFFECT_OVERLAYS := $(if $(filter all,$(EFFECTS)),$(ALL_EFFECT_OVERLAYS),$(EFFECTS))
 OVERLAYS      := $(MENU_OVERLAYS) $(CODE_OVERLAYS) $(EFFECT_OVERLAYS)
+ALL_OVERLAYS  := $(MENU_OVERLAYS) $(CODE_OVERLAYS) $(ALL_EFFECT_OVERLAYS)
 
 ### Targets ###
 
@@ -276,7 +279,7 @@ endef
 # template would expand its paths to bare "/". Make regenerates binaries.mk
 # above and re-executes, and the rules get defined on that second pass.
 ifneq ($(wildcard $(BINARIES_MK)),)
-$(foreach ovl,$(OVERLAYS),$(eval $(call OVERLAY_TEMPLATE,$(ovl))))
+$(foreach ovl,$(ALL_OVERLAYS),$(eval $(call OVERLAY_TEMPLATE,$(ovl))))
 endif
 
 # field_init: extract font TIM from overlay binary during split
@@ -312,4 +315,4 @@ report: objdiff-config
 
 .PHONY: all full build verify check setup split splat-config clean permute build-overlays \
         expected objdiff-config report \
-        $(foreach ovl,$(OVERLAYS),split-$(ovl) build-$(ovl) verify-$(ovl))
+        $(foreach ovl,$(ALL_OVERLAYS),split-$(ovl) build-$(ovl) verify-$(ovl))
