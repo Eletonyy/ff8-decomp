@@ -13,7 +13,7 @@ MENU_OVERLAYS = [
 ]
 CODE_OVERLAYS = [
     "field_init", "intro", "field",
-    "tripletriad", "battle_render", "battle", "world",
+    "tripletriad", "battle_render", "battle", "world", "effect_001",
 ]
 
 OVERLAY_EXT = {name: "ovl" for name in MENU_OVERLAYS}
@@ -27,6 +27,7 @@ OVERLAY_SRC_GLOBS = {
     "battle":      ["src/battle/*.c"],
     "tripletriad": ["src/tripletriad/*.c"],
     "world":       ["src/world/*.c"],
+    "effect_001":  ["src/effect/effect_001.c"],
     **{name: [f"src/menu/{name}/*.c"] for name in MENU_OVERLAYS},
 }
 
