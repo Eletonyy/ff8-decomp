@@ -506,9 +506,9 @@ void func_801E7B9C(s32 a0) {
     MenuTask *temp_s0;
 
     temp_s0 = (MenuTask *)func_801F179C((s32)func_801E5E90, (s32)func_801E79D4);
-    func_801F1D2C(0, (s32)"shop.bin", (s32)D_801EA170);
-    func_801F1D2C(0, (s32)"price.bin", (s32)D_801EA3F0);
-    func_801F1D2C(0, (s32)"mitem.bin", (s32)D_801EA70C);
+    func_801F1D2C(0, "shop.bin", (s32)D_801EA170);
+    func_801F1D2C(0, "price.bin", (s32)D_801EA3F0);
+    func_801F1D2C(0, "mitem.bin", (s32)D_801EA70C);
     if (temp_s0 != NULL) {
         temp_s0->unk2C = D_80077EBC;
         temp_s0->unk36 = 0x1000;
