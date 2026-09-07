@@ -684,7 +684,16 @@ binaries:
     subsegments:
     - [0x0, c, effect_001]
     - [0x4614, .rodata, effect_001]
-    - [0x4678, bin, effect_001]
+    # The overlay's data, cut at every address the code names. The TIM parses
+    # to exactly 0x2532C, where the five prim source tables begin.
+    - [0x4678, databin, effect_001_akao]         # D_801A4678 'AKAO' sequence 3
+    - [0x475C, databin, effect_001_tables]       # D_801A475C two offsets, published to battle.bin
+    - [0x4F0C, databin, effect_001_tim]          # D_801A4F0C 8bpp TIM + CLUT; its pixels become the frame banks
+    - [0x2532C, databin, effect_001_prim_aim]    # D_801C532C
+    - [0x25380, databin, effect_001_prim_timer]  # D_801C5380
+    - [0x25410, databin, effect_001_prim_drift]  # D_801C5410
+    - [0x255EC, databin, effect_001_prim_scatter] # D_801C55EC
+    - [0x258B8, databin, effect_001_prim_tint]   # D_801C58B8
   - [0x258E0]
 - name: effect_002
   sha1: 25c0a9960ba3926df3d8b37f58ae7ed430751beb
