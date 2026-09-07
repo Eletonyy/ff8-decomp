@@ -37,6 +37,7 @@ typedef struct {
 
 MATRIX *RotMatrix(SVECTOR *r, MATRIX *m);
 MATRIX *RotMatrixYXZ(SVECTOR *r, MATRIX *m);
+MATRIX *RotMatrixZ(s32 r, MATRIX *m);
 MATRIX *CompMatrix(MATRIX *m0, MATRIX *m1, MATRIX *m2);
 MATRIX *MulMatrix(MATRIX *m0, MATRIX *m1);
 MATRIX *ScaleMatrix(MATRIX *m, VECTOR *scale);

@@ -710,19 +710,19 @@ static void func_801A1610(s32 *dst, s32 size) {
 /** @brief Build this effect's primitive and link it into the battle display list. */
 static void func_801A1648(EffectEntity *entity) {
     s16 count;
-    EffectPrim *prim;
+    BattleSpritePrim *prim;
 
     if (entity->flags & EFFECT_FLAG_DONE) {
         return;
     }
-    prim = func_800B3698(0xB4);
+    prim = func_800B3698(sizeof(BattleSpritePrim));
     func_800C96E4(&entity->pos, ONE, entity->unk054);
-    prim->unk000 = entity->unk04C;
+    prim->anim = entity->unk04C;
     count = entity->unk050;
-    prim->unk024 = 0;
-    prim->unk004 = count;
+    prim->flags = 0;
+    prim->frame = count;
     D_801C58F4 = func_800C9E10(prim, D_800FA5E8->ot, 2, D_801C58F4);
-    func_800B36B8(0xB4);
+    func_800B36B8(sizeof(BattleSpritePrim));
 }
 
 /** @brief Advance the script's counter, clamping at its limit. */
@@ -736,11 +736,12 @@ static s32 func_801A16E4(EffectEntity *entity) {
     return 0;
 }
 
-/** @brief Pose @p model at the entity's position and link it into the OT. */
-static void func_801A172C(EffectEntity *entity, void *model, CVECTOR *colour) {
+/** @brief Draw @p anim at the entity's position in @p colour and link it into the OT. */
+static void func_801A172C(EffectEntity *entity, BattleSpriteAnim *anim,
+                          CVECTOR *colour) {
     MATRIX m;
     void **head;
-    EffectPrim *prim;
+    BattleSpritePrim *prim;
 
     if (entity->flags & EFFECT_FLAG_DONE) {
         return;
@@ -753,14 +754,14 @@ static void func_801A172C(EffectEntity *entity, void *model, CVECTOR *colour) {
     CompMatrix(&D_800F02C8, &m, &m);
     SetRotMatrix(&m);
     SetTransMatrix(&m);
-    prim = func_800B3698(0xB4);
+    prim = func_800B3698(sizeof(BattleSpritePrim));
     head = &D_801C58F4;
-    prim->unk000 = model;
-    prim->unk004 = 0;
-    prim->unk024 = 4;
-    prim->unk01C = *colour;
+    prim->anim = anim;
+    prim->frame = 0;
+    prim->flags = BATTLE_SPRITE_FLAG_COLOUR;
+    prim->colour = *colour;
     *head = func_800C9E10(prim, D_800FA5E8->ot, 2, *head);
-    func_800B36B8(0xB4);
+    func_800B36B8(sizeof(BattleSpritePrim));
 }
 
 /** @brief Refresh the render matrices from @p pose and apply the offset. */
@@ -1699,7 +1700,7 @@ static s32 func_801A3E64(EffectEntity *entity) {
     if (entity->unk024 < 20) {
         tint.r = tint.g = tint.b = (20 - entity->unk024) * 3;
         func_801A1648(entity);
-        func_801A172C(entity, D_801C58B8, &tint);
+        func_801A172C(entity, &D_801C58B8, &tint);
     } else {
         func_801A1648(entity);
     }

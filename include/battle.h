@@ -1365,6 +1365,9 @@ typedef struct {
 /** @brief Per-entity battle records the effect overlays pose their models from. */
 extern BattleEffectSlot D_800EF2D0[];
 
+/** @brief Angle every sprite prim is rolled by unless it opts out. */
+extern s16 D_800F02A0;
+
 /** @brief The world matrix for this frame; effect matrices compose onto it. */
 extern MATRIX D_800F02C8;
 

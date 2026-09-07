@@ -4,6 +4,7 @@
 #include "common.h"
 #include "psxsdk/libgte.h"
 #include "battle.h"
+#include "battle/bc_object15.h"
 #include "battle/bc_object8.h"
 #include "battle/bc_object11.h"
 #include "battle/bc_object12.h"
@@ -52,16 +53,6 @@ typedef struct EffectModel {
     /* 0x63 */ u8 unk063;
     /* 0x64 */ u8 pad064[0x100 - 0x64];
 } EffectModel; /* >= 0x100 */
-
-/** @brief GPU primitive an effect hands to the battle renderer. */
-typedef struct {
-    /* 0x00 */ void *unk000;
-    /* 0x04 */ u16 unk004;
-    /* 0x06 */ u8 pad006[0x1C - 0x6];
-    /* 0x1C */ CVECTOR unk01C;
-    /* 0x20 */ u8 pad020[0x24 - 0x20];
-    /* 0x24 */ u16 unk024;
-} EffectPrim;
 
 /** @brief One member of an animated part list; stride 24. */
 typedef struct {
@@ -261,7 +252,7 @@ typedef struct EffectEntity {
     /* 0x40 */ SVECTOR unk040;
     /* 0x48 */ u8 unk048[0x4C - 0x48]; /**< func_801A101C writes a bounding box
                                            across this and @c unk04C. */
-    /* 0x4C */ void *unk04C;
+    /* 0x4C */ BattleSpriteAnim *unk04C;
     /* 0x50 */ s16 unk050;
     /* 0x52 */ s16 unk052;
     /* 0x54 */ s16 unk054;

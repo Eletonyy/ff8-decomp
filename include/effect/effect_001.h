@@ -39,26 +39,26 @@ extern u8 D_801A4F0C;
 /**
  * @name Prim source tables
  *
- * Packed blobs a script step hands to its entity through
+ * Sprite animations a script step hands to its entity through
  * @ref EffectEntity::unk04C; the entity's prim carries the pointer straight
- * through to the battle renderer as @ref EffectPrim::unk000.
+ * through to the battle renderer as @ref BattleSpritePrim::anim.
  * @{
  */
 
 /** @brief Table the aim-at-target step draws through. */
-extern s32 D_801C532C;
+extern BattleSpriteAnim D_801C532C;
 
 /** @brief Table the effect switches to once its timer passes 20. */
-extern s32 D_801C5380;
+extern BattleSpriteAnim D_801C5380;
 
 /** @brief Table the downward-drift step draws through. */
-extern s32 D_801C5410;
+extern BattleSpriteAnim D_801C5410;
 
 /** @brief Table the scatter step draws through. */
-extern s32 D_801C55EC;
+extern BattleSpriteAnim D_801C55EC;
 
 /** @brief Table drawn with an explicit tint rather than the model's own. */
-extern u8 D_801C58B8[];
+extern BattleSpriteAnim D_801C58B8;
 
 /** @} */
 /** @} */

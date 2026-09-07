@@ -66,4 +66,7 @@
     : "r"(r0)                                            \
     : "memory")
 
+/* RT -- rotation matrix times V0, plus the translation vector, unscaled. */
+#define gte_rt() gte_mvmva(1, 0, 0, 0, 0)
+
 #endif /* INLINE_C_H */
