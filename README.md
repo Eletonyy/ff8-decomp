@@ -199,6 +199,7 @@ Any help is greatly appreciated! Below are some basic steps to get started and b
    make split          # re-run splat
    make build-assets   # regenerate asset C source
    make verify         # build and compare SHA1s
+   make verify EFFECTS=all   # ... including all 343 battle effect overlays
    ```
 
 ## References
