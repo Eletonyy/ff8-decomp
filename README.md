@@ -202,6 +202,13 @@ Any help is greatly appreciated! Below are some basic steps to get started and b
    make verify EFFECTS=all   # ... including all 343 battle effect overlays
    ```
 
+6. **objdiff GUI** (optional). To diff against the original in
+   [objdiff](https://github.com/encounter/objdiff):
+   ```bash
+   make expected       # builds the target objects, on a verified tree
+   ```
+   then open the repository in objdiff. Re-run after `make split`.
+
 ## References
 This project stands on the shoulders of giants. A lot of work has already been put into figuring out the inner workings of FF8 which I have liberally used when starting with this project. A shoutout to the decomp community as well, this project wouldn't be possible without all the work that has been put in and the tools that have developed.
 

@@ -5,6 +5,7 @@ Maps each compiled .o file (base) to its expected target .o file,
 categorized by binary (main exe or overlay).
 """
 
+import argparse
 import json
 import os
 from pathlib import Path
@@ -52,6 +53,18 @@ IGNORED = {"header.o", "asm"}
 SDK_DIRS = {"psxsdk"}
 
 
+USE_EXPECTED = False
+
+
+def target_path(expected_o, o_file):
+    """The built object itself -- INCLUDE_ASM's .NON_MATCHING aliases are what
+    the report counts, so it needs no other target -- or, for the objdiff GUI
+    (--expected, set by `make expected`), the original code in expected/."""
+    if USE_EXPECTED and expected_o.exists():
+        return str(expected_o.relative_to(ROOT))
+    return str(o_file.relative_to(ROOT))
+
+
 def find_units():
     units = []
 
@@ -64,7 +77,7 @@ def find_units():
             expected_o = EXPECTED / "build" / "src" / o_file.name
             units.append({
                 "name": f"src/{name}",
-                "target_path": str(expected_o.relative_to(ROOT)),
+                "target_path": target_path(expected_o, o_file),
                 "base_path": str(o_file.relative_to(ROOT)),
                 "metadata": {"progress_categories": ["main"]},
             })
@@ -78,7 +91,7 @@ def find_units():
                     rel_str = str(rel).replace('.o', '')
                     units.append({
                         "name": f"src/{rel_str}",
-                        "target_path": str(expected_o.relative_to(ROOT)),
+                        "target_path": target_path(expected_o, o_file),
                         "base_path": str(o_file.relative_to(ROOT)),
                         "metadata": {"progress_categories": ["main"]},
                     })
@@ -101,7 +114,7 @@ def find_units():
             src_rel = str(rel_from_ovl).replace(".o", "")
             units.append({
                 "name": f"ovl/{ovl_name}/{Path(src_rel).name}",
-                "target_path": str(expected_o.relative_to(ROOT)),
+                "target_path": target_path(expected_o, o_file),
                 "base_path": str(o_file.relative_to(ROOT)),
                 "metadata": {"progress_categories": [ovl_name]},
             })
@@ -110,6 +123,11 @@ def find_units():
 
 
 def main():
+    global USE_EXPECTED
+    ap = argparse.ArgumentParser(description="Generate objdiff.json.")
+    ap.add_argument("--expected", action="store_true",
+                    help="point targets at the objects `make expected` built")
+    USE_EXPECTED = ap.parse_args().expected
     units = find_units()
 
     config = {
