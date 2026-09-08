@@ -465,6 +465,7 @@ void *ReadTIM(void *timimg);
 s32 GetODE(void);
 void SetSemiTrans(void *p, s32 abe);
 void SetShadeTex(void *p, s32 tge);
+void SetDrawMode(void *p, s32 dfe, s32 dtd, s32 tpage, RECT *tw);
 void SetDrawTPage(void *p, s32 dfe, s32 dtd, u16 tpage);
 void SetTile(void *p);
 void SetSprt(SPRT *p);

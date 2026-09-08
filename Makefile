@@ -53,6 +53,38 @@ PSYQ40_MASPSXFLAGS := --aspsx-version=2.56  # used by O0_SRCS
 PSYQ41_MASPSXFLAGS := --aspsx-version=2.67  # default for PsyQ 4.1 sources
 PSYQ43_MASPSXFLAGS := --aspsx-version=2.77  # used by PSYQ43_SRCS
 
+# ASPSX expands an integer division into `div` plus the range checks that break
+# on a zero divisor and on INT_MIN / -1 -- nine instructions the original build
+# selected per assembler invocation, so it is a property of the OBJECT.
+#
+# Counted over the shipped code: every effect overlay is uniform, 198 expanding
+# and 70 not, so those are keyed by binary. Every other overlay is bare.
+# SLUS_008.92 is the one binary whose own objects disagree, 45 expanded against
+# 9 bare, so its sources take the override below rather than a binary-wide rule.
+#
+# Do not key the effect overlays on filenames: the same engine source will be
+# linked into overlays from both sets, and ten functions already ship both ways.
+NO_EXPAND_DIV := effect_011 effect_012 effect_017 effect_044 effect_063 effect_064 \
+                    effect_065 effect_069 effect_070 effect_089 effect_102 effect_105 \
+                    effect_107 effect_108 effect_110 effect_112 effect_113 effect_116 \
+                    effect_117 effect_118 effect_123 effect_124 effect_126 effect_128 \
+                    effect_129 effect_131 effect_132 effect_134 effect_135 effect_136 \
+                    effect_138 effect_139 effect_140 effect_207 effect_210 effect_212 \
+                    effect_213 effect_214 effect_216 effect_226 effect_227 effect_251 \
+                    effect_260 effect_275 effect_276 effect_277 effect_278 effect_279 \
+                    effect_280 effect_283 effect_284 effect_285 effect_287 effect_290 \
+                    effect_291 effect_297 effect_298 effect_300 effect_302 effect_304 \
+                    effect_308 effect_311 effect_314 effect_316 effect_317 effect_320 \
+                    effect_322 effect_323 effect_325 effect_338
+
+# Sources whose object expands inside a binary that otherwise does not. Only
+# SLUS_008.92 mixes, so only its sources belong here.
+EXPAND_DIV_SRCS :=
+
+# $(call expand_div,<binary>,<source>): the source override wins, else effect
+# overlays expand unless listed above, and nothing else expands.
+expand_div = $(if $(filter $(2),$(EXPAND_DIV_SRCS)),--expand-div,$(if $(filter effect_%,$(1)),$(if $(filter $(1),$(NO_EXPAND_DIV)),,--expand-div)))
+
 # Source files compiled with PsyQ 4.3 (default is PsyQ 4.1)
 PSYQ43_SRCS := src/snd_init.c src/snd_dma.c src/snd_voice.c src/snd_bank.c src/snd_param.c src/snd_note.c src/snd_track.c src/snd_cmd.c \
                src/world/we_object0.c \
@@ -108,7 +140,7 @@ CODE_OVERLAYS := field_init intro field \
                  tripletriad battle_render battle world
 
 ALL_EFFECT_OVERLAYS := $(filter effect_%,$(SPLAT_BINARIES))
-EFFECTS ?= effect_001
+EFFECTS ?= effect_001 effect_025
 EFFECT_OVERLAYS := $(if $(filter all,$(EFFECTS)),$(ALL_EFFECT_OVERLAYS),$(EFFECTS))
 OVERLAYS      := $(MENU_OVERLAYS) $(CODE_OVERLAYS) $(EFFECT_OVERLAYS)
 ALL_OVERLAYS  := $(MENU_OVERLAYS) $(CODE_OVERLAYS) $(ALL_EFFECT_OVERLAYS)
@@ -242,9 +274,9 @@ $$($(1)_DIR)/%.o: %.c
 	$$(CPP) -E -lang-c -nostdinc -Iinclude $$< -o $$($(1)_DIR)/$$(*F).i && \
 	$$(if $$(filter $$<,$$(PSYQ43_SRCS)), \
 		$$(PSYQ43_CC1) -quiet $$(CC_FLAGS) $$($(1)_DIR)/$$(*F).i -o $$($(1)_DIR)/$$(*F).s && \
-		cat $$($(1)_DIR)/$$(*F).s | $$(MASPSX) $$(PSYQ43_MASPSXFLAGS) --run-assembler $$(ASFLAGS) -o $$@, \
+		cat $$($(1)_DIR)/$$(*F).s | $$(MASPSX) $$(PSYQ43_MASPSXFLAGS) $$(call expand_div,$(1),$$<) --run-assembler $$(ASFLAGS) -o $$@, \
 		$$(PSYQ41_CC1) -quiet $$(CC_FLAGS) $$($(1)_DIR)/$$(*F).i -o $$($(1)_DIR)/$$(*F).s && \
-		cat $$($(1)_DIR)/$$(*F).s | $$(MASPSX) $$(PSYQ41_MASPSXFLAGS) --run-assembler $$(ASFLAGS) -o $$@)
+		cat $$($(1)_DIR)/$$(*F).s | $$(MASPSX) $$(PSYQ41_MASPSXFLAGS) $$(call expand_div,$(1),$$<) --run-assembler $$(ASFLAGS) -o $$@)
 
 $$($(1)_DIR)/assets/%.o: assets/%.bin
 	@mkdir -p $$(dir $$@)

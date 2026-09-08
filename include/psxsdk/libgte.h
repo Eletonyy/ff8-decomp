@@ -40,6 +40,7 @@ MATRIX *RotMatrixYXZ(SVECTOR *r, MATRIX *m);
 MATRIX *RotMatrixZ(s32 r, MATRIX *m);
 MATRIX *CompMatrix(MATRIX *m0, MATRIX *m1, MATRIX *m2);
 MATRIX *MulMatrix(MATRIX *m0, MATRIX *m1);
+MATRIX *MulMatrix0(MATRIX *m0, MATRIX *m1, MATRIX *m2);   /**< @p m2 = @p m0 * @p m1, leaving both operands alone. */
 MATRIX *ScaleMatrix(MATRIX *m, VECTOR *scale);
 MATRIX *ScaleMatrixL(MATRIX *m, VECTOR *scale);
 MATRIX *TransposeMatrix(MATRIX *m0, MATRIX *m1);

@@ -9,10 +9,8 @@ extern u8 D_800FA4FC[];
 extern u8 D_800E662C[];
 extern u8 D_800F1B90[];
 extern u8 D_800FA4F8[];
-extern u8 D_800EF738[];
 extern u8 D_800FA504[];
 extern u8 D_800FA500[];
-extern u8 D_800EEC5C[];
 extern u8 D_800EEC54[];
 extern u8 D_800F02F4[];
 s32 func_800C5B1C(u8 *a0);
@@ -23,6 +21,7 @@ void func_800472F4(void);
 void sndEnableReverb(s32);
 void sndDisableReverb(s32);
 void func_8009B6B0(void);
+static void func_800C6DB4(s32 level, s32 colour);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C4A64);
 
@@ -122,13 +121,13 @@ s32 func_800C5490(void) {
     volatile s32 *pVal = (volatile s32 *)D_800F1B90;
     s32 val = *pVal;
     if (val < 0) {
-        if (*(s32 *)D_800EEC5C & 0x200) {
+        if (D_800EEC5C & BATTLE_STATE_UNK200) {
             return -1;
         }
         func_800C5338(1);
         return -1;
     } else {
-        if (*(s32 *)D_800EEC5C & 0x200) {
+        if (D_800EEC5C & BATTLE_STATE_UNK200) {
             func_800C5338(0);
         }
         return *pVal;
@@ -293,25 +292,23 @@ void func_800C6D3C(s32 a0, s32 a1, s32 a2, s32 a3) {
 }
 
 /**
- * @brief Write a halfword and a word to 4 entries of D_800EF738 table.
+ * @brief Set every screen tint to @p colour at @p level.
  *
- * Stores a0 as a halfword at offset 2 and a1 as a word at offset 0x28
- * for 4 consecutive entries at stride 0x2C.
- *
- * @param a0 Halfword value to store at each entry's offset 2.
- * @param a1 Word value to store at each entry's offset 0x28.
+ * @param level  How far each tint has come up; @ref func_800B9078 steps it.
+ * @param colour The three colour bytes, written together as one word.
  */
-void func_800C6DB4(s32 a0, s32 a1) {
+static void func_800C6DB4(s32 level, s32 colour) {
     s32 i = 0;
-    s32 base = (s32)D_800EF738;
-    s32 base2 = base + 0x28;
-    s32 ptr = base;
+    BattleTint *base = D_800EF738;
+    u32 *rgb = (u32 *)&base->r;
+    BattleTint *tint = base;
+
     do {
-        *(s16 *)(ptr + 2) = a0;
-        *(s32 *)base2 = a1;
-        base2 += 0x2C;
+        tint->level = level;
+        *rgb = colour;
+        rgb += sizeof(BattleTint) / sizeof(u32);
         i++;
-        ptr += 0x2C;
+        tint++;
     } while (i < 4);
 }
 

@@ -9,7 +9,6 @@
 #include "battle/bc_object11.h"
 #include "battle/bc_object12.h"
 #include "battle/bc_object13.h"
-#include "battle/bc_object15.h"
 
 /**
  * @file
@@ -29,6 +28,7 @@
 /** @brief @ref EffectEntity::flags -- the script's counter reached its limit. */
 #define EFFECT_FLAG_DONE 0x4
 #define EFFECT_FLAG_UNK08 0x8
+#define EFFECT_FLAG_UNK10 0x10
 /**
  * @brief @ref EffectAnimSet::flags -- the effect's own assets are already up.
  *
@@ -266,7 +266,18 @@ typedef struct EffectEntity {
     /* 0x63 */ u8 unk063;
     /* 0x64 */ u8 pad064[0x68 - 0x64];
     /* 0x68 */ s16 unk068;
-    /* 0x6A */ u8 pad06A[0x100 - 0x6A];
+    /* 0x6A */ u8 pad06A[0x6C - 0x6A];
+    /* 0x6C */ s16 unk06C;
+    /* 0x6E */ u8 pad06E[0x70 - 0x6E];
+    /* 0x70 */ BattleSpriteAnim *unk070;
+    /* 0x74 */ u8 pad074[0x78 - 0x74];
+    /* 0x78 */ s16 unk078;
+    /* 0x7A */ s16 unk07A;
+    /* 0x7C */ s16 unk07C;
+    /* 0x7E */ s16 unk07E;
+    /* 0x80 */ u8 pad080[0xC4 - 0x80];
+    /* 0xC4 */ s16 unk0C4;
+    /* 0xC6 */ u8 pad0C6[0x100 - 0xC6];
 } EffectEntity; /* >= 0x100 */
 
 /** @brief One step of an effect script: the handler for a single @c pc value. */
@@ -290,6 +301,121 @@ typedef void (*EffectHandler)(EffectEntity *);
  *       there moves battle's own. The two builds saw different declarations.
  */
 
+/** @} */
+
+/**
+ * @name Engine scratch
+ *
+ * Types every effect overlay's copy of the engine shares: the scratchpad
+ * records the transform helpers work in, and the mesh stream they draw.
+ * @{
+ */
+/** @brief Scratch a model's bounding box is accumulated in. */
+typedef struct {
+    /* 0x00 */ SVECTOR v;
+    /* 0x08 */ VECTOR pos;
+    /* 0x18 */ SVECTOR min;
+    /* 0x20 */ SVECTOR max;
+    /* 0x28 */ s32 flag;
+} EffectBoundsScratch; /* 0x2C */
+
+/** @brief Scratch the billboard basis is built in. */
+typedef struct {
+    /* 0x00 */ VECTOR delta;
+    /* 0x10 */ SVECTOR up;
+    /* 0x18 */ SVECTOR dir;
+    /* 0x20 */ MATRIX rot;
+    /* 0x40 */ MATRIX out;
+    /* 0x60 */ s32 distSq;
+    /* 0x64 */ s32 dist;
+    /* 0x68 */ SVECTOR pos;
+} EffectAimScratch; /* 0x70 */
+
+/** @brief Scratch a rotation is built in before being folded into a matrix. */
+typedef struct {
+    /* 0x00 */ MATRIX m;
+    /* 0x20 */ s16 sin;
+    /* 0x22 */ s16 cos;
+} EffectRotScratch; /* 0x24 */
+
+/** @brief One posed mesh vertex; only the position is written here. */
+typedef struct EffectMeshVertex {
+    /* 0x00 */ u8 pad000[0x4];
+    /* 0x04 */ SVECTOR pos;
+    /* 0x0C */ u8 pad00C[0x10 - 0xC];
+} EffectMeshVertex; /* 0x10 */
+
+/** @brief One triangle of a mesh part: three 12-bit vertex indices and UVs. */
+typedef struct {
+    /* 0x00 */ u16 idx0;
+    /* 0x02 */ u16 idx1;
+    /* 0x04 */ u16 idx2;
+    /* 0x06 */ u16 uv2;
+    /* 0x08 */ u32 uv0;
+    /* 0x0C */ u16 uv1;
+    /* 0x0E */ u16 tpage;   /**< Bit 0x200 selects the semi-transparent blend. */
+} EffectMeshTri; /* 0x10 */
+
+/** @brief One quad of a mesh part. */
+typedef struct {
+    /* 0x00 */ u16 idx0;
+    /* 0x02 */ u16 idx1;
+    /* 0x04 */ u16 idx2;
+    /* 0x06 */ u16 idx3;
+    /* 0x08 */ u32 uv0;
+    /* 0x0C */ u16 uv1;
+    /* 0x0E */ u16 tpage;
+    /* 0x10 */ u16 uv2;
+    /* 0x12 */ u16 uv3;
+} EffectMeshQuad; /* 0x14 */
+
+/** @brief Vertex indices in a mesh part are 12 bits wide. */
+#define EFFECT_MESH_INDEX_MASK 0xFFF
+/** @brief @ref EffectMeshTri::tpage -- draw the textured prim semi-transparent. */
+#define EFFECT_MESH_TPAGE_ABE 0x200
+/** @brief Screen centre the clip rect and the projected points are offset by. */
+#define EFFECT_SCREEN_CX 0xA0
+/** @brief @copybrief EFFECT_SCREEN_CX */
+#define EFFECT_SCREEN_CY 0x78
+/** @brief A prim's tag word with no link: its length in words. */
+#define EFFECT_PRIM_TAG(type) (((sizeof(type) - sizeof(u32)) / sizeof(u32)) << 24)
+/** @brief A libgpu prim code in the top byte of an RGB word. */
+#define EFFECT_PRIM_CODE(code) ((u32)(code) << 24)
+/** @brief The 24 colour bits of that word, with the code byte taken off. */
+#define EFFECT_PRIM_RGB 0xFFFFFF
+
+/** @brief Scratch @ref func_801A1EBC works a mesh in; taken from the battle scratchpad. */
+typedef struct {
+    /* 0x00 */ MATRIX view;
+    /* 0x20 */ MATRIX light;
+    /* 0x40 */ DVECTOR sxy[4];      /**< Projected vertices, offset into the clip rect. */
+    /* 0x50 */ u8 pad050[0x70 - 0x50];
+    /* 0x70 */ SVECTOR normal;
+    /* 0x78 */ u8 pad078[0x8C - 0x78];
+    /* 0x8C */ s32 nclip;
+    /* 0x90 */ s32 otz;
+    /* 0x94 */ s32 idx0;
+    /* 0x98 */ s32 idx1;
+    /* 0x9C */ s32 idx2;
+    /* 0xA0 */ s32 idx3;
+    /* 0xA4 */ u16 unk0A4;
+    /* 0xA6 */ u16 unk0A6;
+    /* 0xA8 */ u32 colour;          /**< Shaded triangle RGB + code word. */
+    /* 0xAC */ u32 unk0AC;          /**< Shaded quad RGB + code word. */
+    /* 0xB0 */ u32 unk0B0;          /**< Textured triangle RGB + code word. */
+    /* 0xB4 */ u32 unk0B4;          /**< Textured quad RGB + code word. */
+    /* 0xB8 */ u32 visible;         /**< Copy of the slot's part mask. */
+    /* 0xBC */ u16 tpage;
+    /* 0xBE */ u16 clut;
+    /* 0xC0 */ s16 clipX0;
+    /* 0xC2 */ s16 clipX1;
+    /* 0xC4 */ s16 clipY0;
+    /* 0xC6 */ s16 clipY1;
+    /* 0xC8 */ s16 offX;
+    /* 0xCA */ s16 offY;
+    /* 0xCC */ s16 reject;          /**< Set once a primitive fails the cull or clip test. */
+    /* 0xCE */ s16 unk0CE;          /**< Copy of @ref EffectRender::unk0F4. */
+} EffectMeshScratch; /* 0xD0 */
 /** @} */
 
 #endif /* EFFECT_H */

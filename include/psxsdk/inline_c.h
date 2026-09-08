@@ -69,4 +69,57 @@
 /* RT -- rotation matrix times V0, plus the translation vector, unscaled. */
 #define gte_rt() gte_mvmva(1, 0, 0, 0, 0)
 
+/* Load the packed RGB source DPCS reads (GTE data register 6). */
+#define gte_ldrgb(r0) __asm__ volatile (                 \
+    "lwc2   $6, 0( %0 )"                                 \
+    :                                                    \
+    : "r"(r0))
+
+/* DPCS -- fade the loaded colour toward the far colour by IR0. */
+#define gte_dpcs() __asm__ volatile (                    \
+    "nop;"                                               \
+    "nop;"                                               \
+    ".word  0x4A780010"                                  \
+    : : )
+
+/* Load the three colour FIFO slots, and RGBC from the third. */
+#define gte_ldrgb3(r0, r1, r2) __asm__ volatile (        \
+    "lwc2   $20, 0( %0 );"                               \
+    "lwc2   $21, 0( %1 );"                               \
+    "lwc2   $22, 0( %2 );"                               \
+    "lwc2   $6,  0( %2 )"                                \
+    :                                                    \
+    : "r"(r0), "r"(r1), "r"(r2))
+
+/* DPCT -- run DPCS over all three colours in the FIFO. */
+#define gte_dpct() __asm__ volatile (                    \
+    "nop;"                                               \
+    "nop;"                                               \
+    ".word  0x4AF8002A"                                  \
+    : : )
+
+/* Store the three colour FIFO slots. */
+#define gte_strgb3(r0, r1, r2) __asm__ volatile (        \
+    "swc2   $20, 0( %0 );"                               \
+    "swc2   $21, 0( %1 );"                               \
+    "swc2   $22, 0( %2 )"                                \
+    :                                                    \
+    : "r"(r0), "r"(r1), "r"(r2)                          \
+    : "memory")
+
+/* GPF -- IR1..IR3 = IR0 * IR1..IR3, shifted 12. Two nops cover the stall
+ * between the mtc2 that loads IR and the op that reads it. */
+#define gte_gpf1() __asm__ volatile (                    \
+    "nop;"                                               \
+    "nop;"                                               \
+    ".word  0x4B98003D"                                  \
+    : : )
+
+/* GPL -- IR1..IR3 += IR0 * IR1..IR3, shifted 12. */
+#define gte_gpl1() __asm__ volatile (                    \
+    "nop;"                                               \
+    "nop;"                                               \
+    ".word  0x4BA8003E"                                  \
+    : : )
+
 #endif /* INLINE_C_H */

@@ -1365,6 +1365,39 @@ typedef struct {
 /** @brief Per-entity battle records the effect overlays pose their models from. */
 extern BattleEffectSlot D_800EF2D0[];
 
+/**
+ * @brief One of the four screen-tint entries battle steps every frame.
+ *
+ * @c level rises and falls under an effect's control; the three colour bytes
+ * are also written together as one word.
+ */
+typedef struct {
+    /* 0x00 */ u16 unk000;
+    /* 0x02 */ u16 level;
+    /* 0x04 */ u8 pad004[0x28 - 0x4];
+    /* 0x28 */ u8 r;
+    /* 0x29 */ u8 g;
+    /* 0x2A */ u8 b;
+    /* 0x2B */ u8 pad02B[0x2C - 0x2B];
+} BattleTint; /* 0x2C */
+
+extern BattleTint D_800EF738[];
+
+/**
+ * @name Battle state flags -- @ref D_800EEC5C
+ *
+ * One word the battle loop and its effects both test. The names are
+ * placeholders; only the bit positions are established.
+ * @{
+ */
+#define BATTLE_STATE_UNK001 0x1
+#define BATTLE_STATE_UNK100 0x100
+#define BATTLE_STATE_UNK200 0x200
+/** @} */
+
+/** @brief State the battle loop and its effects share; see the flags above. */
+extern s32 D_800EEC5C;
+
 /** @brief Angle every sprite prim is rolled by unless it opts out. */
 extern s16 D_800F02A0;
 
