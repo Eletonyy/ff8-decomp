@@ -110,7 +110,7 @@ static void func_801A01F0(void) {
 
 /** @brief Draw @p value as eight hex glyphs at the current debug text cursor. */
 static void func_801A0340(u32 value) {
-    u8 *font = D_800FA5E8->font;
+    u32 *ot = D_800FA5E8->frontOT;
     u8 text[9];
     s32 i;
 
@@ -119,7 +119,7 @@ static void func_801A0340(u32 value) {
         value >>= 4;
     }
     text[8] = 0;
-    D_801C58F4 = func_8002C56C(font, D_801C58F4, D_801D5D14, D_801D5D18,
+    D_801C58F4 = func_8002C56C(ot, D_801C58F4, D_801D5D14, D_801D5D18,
                                text, D_801D5D1C);
     D_801D5D14 += 0x48;
 }
@@ -557,14 +557,14 @@ static s16 func_801A13E4(EffectEntity *entity) {
 static s16 func_801A1408(EffectEntity *entity) {
     BattleEffectSlot *slot = &D_800EF2D0[entity->unk02D];
 
-    return slot->unk01E + entity->unk014->boundsMax.vy;
+    return slot->pos.vy + entity->unk014->boundsMax.vy;
 }
 
 /** @brief Y of the bottom of the linked model, in battle-entity space. */
 static s16 func_801A1450(EffectEntity *entity) {
     BattleEffectSlot *slot = &D_800EF2D0[entity->unk02D];
 
-    return slot->unk01E + entity->unk014->boundsMin.vy;
+    return slot->pos.vy + entity->unk014->boundsMin.vy;
 }
 
 /** @brief A random point up the linked model, in battle-entity space. */
@@ -574,14 +574,14 @@ static s16 func_801A1498(EffectEntity *entity) {
     s16 height = model->boundsMax.vy - model->boundsMin.vy;
     s16 offset = (rand() & 0xFFF) * height / 4096;
 
-    return slot->unk01E + model->boundsMax.vy - offset / 2;
+    return slot->pos.vy + model->boundsMax.vy - offset / 2;
 }
 
 /** @brief Y of the centre of the linked model, in battle-entity space. */
 static s16 func_801A1550(EffectEntity *entity) {
     EffectModel *model = entity->unk014;
 
-    return D_800EF2D0[entity->unk02D].unk01E +
+    return D_800EF2D0[entity->unk02D].pos.vy +
            (model->boundsMax.vy + model->boundsMin.vy) / 2;
 }
 

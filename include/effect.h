@@ -49,7 +49,9 @@ typedef struct EffectModel {
     /* 0x40 */ SVECTOR unk040;
     /* 0x48 */ SVECTOR boundsMin; /**< Lower corner of the model's bounding box. */
     /* 0x50 */ SVECTOR boundsMax; /**< Upper corner of the model's bounding box. */
-    /* 0x58 */ u8 pad058[0x63 - 0x58];
+    /* 0x58 */ u8 pad058[0x5A - 0x58];
+    /* 0x5A */ u16 unk05A;        /**< How many strands an effect builds from it. */
+    /* 0x5C */ u8 pad05C[0x63 - 0x5C];
     /* 0x63 */ u8 unk063;
     /* 0x64 */ u8 pad064[0x100 - 0x64];
 } EffectModel; /* >= 0x100 */

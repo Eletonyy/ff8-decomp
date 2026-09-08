@@ -1328,13 +1328,20 @@ struct EffectAttachment {
  */
 typedef struct BattleEffectSlot {
     /* 0x00 */ u16 flags;          /**< See @c BATTLE_SLOT_FLAG_*. */
-    /* 0x02 */ u8 pad002[0x1E - 0x2];
-    /* 0x1E */ u16 unk01E;         /**< Y origin: summed with a model's Y bounds. */
-    /* 0x20 */ u8 pad020[0x24 - 0x20];
+    /* 0x02 */ u8 pad002[0xE - 0x2];
+    /* 0x0E */ s16 facing;         /**< Angle the slot's model is turned to. */
+    /* 0x10 */ u8 pad010[0x1C - 0x10];
+    /* 0x1C */ SVECTOR pos;        /**< Where the slot's model stands; @c vy is
+                                        the origin a model's Y bounds are summed
+                                        with. */
     /* 0x24 */ u16 unk024;
     /* 0x26 */ u8 pad026[0x28 - 0x26];
     /* 0x28 */ u32 unk028;         /**< Packed RGB the textured prims are drawn with. */
-    /* 0x2C */ u8 pad02C[0x40 - 0x2C];
+    /* 0x2C */ u8 pad02C[0x36 - 0x2C];
+    /* 0x36 */ u16 unk036;
+    /* 0x38 */ u8 pad038[0x3C - 0x38];
+    /* 0x3C */ s16 unk03C;         /**< Its distance above @c unk036 sizes the draw list. */
+    /* 0x3E */ u8 pad03E[0x40 - 0x3E];
     /* 0x40 */ MATRIX mtx;         /**< Pose the effect's render matrices start from. */
     /* 0x60 */ u8 unk060[0x64 - 0x60];
     /* 0x64 */ struct EffectMesh *mesh;
@@ -1357,7 +1364,7 @@ typedef struct BattleEffectSlot {
  */
 typedef struct {
     /* 0x00 */ u8 pad000[0x14];
-    /* 0x0014 */ u8 font[0x44 - 0x14];   /**< Glyph set handed to the text drawer. */
+    /* 0x0014 */ u32 frontOT[(0x44 - 0x14) / 4]; /**< Ordering table the screen overlays link into. */
     /* 0x0044 */ u32 ot[(0x4040 - 0x44) / 4];   /**< Ordering table the effects link into. */
     /* 0x4040 */ u8 unk4040[4];
 } BattleGfx;
