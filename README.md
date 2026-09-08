@@ -191,7 +191,6 @@ Any help is greatly appreciated! Below are some basic steps to get started and b
    python3 -m venv .venv
    .venv/bin/pip install -e "tools/splat[mips]"
    ```
-   - **Note:** If you are using WSL and encounter an error, try run the command with `sudo`.
 
 3. **Provide your own disc image** — You need a BIN/CUE of
    FF8 Disc 1 (USA, SLUS-00892).
