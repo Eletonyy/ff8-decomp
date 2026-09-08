@@ -5,6 +5,7 @@ Maps each compiled .o file (base) to its expected target .o file,
 categorized by binary (main exe or overlay).
 """
 
+import argparse
 import json
 import os
 from pathlib import Path
@@ -43,13 +44,37 @@ CATEGORIES = [
     {"id": "battle_render", "name": "battle_render.bin"},
     {"id": "battle", "name": "battle.bin"},
     {"id": "world", "name": "world.bin"},
-    {"id": "effect_001", "name": "effect_001.bin"},
 ]
 
 # Files/dirs to skip
 IGNORED = {"header.o", "asm"}
 # SDK libraries — third-party code, not tracked for progress
 SDK_DIRS = {"psxsdk"}
+
+
+USE_EXPECTED = False
+
+
+def target_path(expected_o, o_file):
+    """The built object itself -- INCLUDE_ASM's .NON_MATCHING aliases are what
+    the report counts, so it needs no other target -- or, for the objdiff GUI
+    (--expected, set by `make expected`), the original code in expected/."""
+    if USE_EXPECTED and expected_o.exists():
+        return str(expected_o.relative_to(ROOT))
+    return str(o_file.relative_to(ROOT))
+
+
+def effect_categories():
+    """A category per effect overlay the build produced. The splat config
+    carries all 343 of them but the Makefile's EFFECTS list decides which ones
+    compile, so ask the build tree rather than the config -- a category with no
+    objects behind it would report an empty binary."""
+    names = []
+    for parent in (BUILD, BUILD / "ovl"):
+        for ovl_dir in sorted(parent.glob("effect_*")):
+            if (ovl_dir / "src").is_dir() and ovl_dir.name not in names:
+                names.append(ovl_dir.name)
+    return [{"id": name, "name": f"{name}.bin"} for name in names]
 
 
 def find_units():
@@ -64,7 +89,7 @@ def find_units():
             expected_o = EXPECTED / "build" / "src" / o_file.name
             units.append({
                 "name": f"src/{name}",
-                "target_path": str(expected_o.relative_to(ROOT)),
+                "target_path": target_path(expected_o, o_file),
                 "base_path": str(o_file.relative_to(ROOT)),
                 "metadata": {"progress_categories": ["main"]},
             })
@@ -78,7 +103,7 @@ def find_units():
                     rel_str = str(rel).replace('.o', '')
                     units.append({
                         "name": f"src/{rel_str}",
-                        "target_path": str(expected_o.relative_to(ROOT)),
+                        "target_path": target_path(expected_o, o_file),
                         "base_path": str(o_file.relative_to(ROOT)),
                         "metadata": {"progress_categories": ["main"]},
                     })
@@ -101,7 +126,7 @@ def find_units():
             src_rel = str(rel_from_ovl).replace(".o", "")
             units.append({
                 "name": f"ovl/{ovl_name}/{Path(src_rel).name}",
-                "target_path": str(expected_o.relative_to(ROOT)),
+                "target_path": target_path(expected_o, o_file),
                 "base_path": str(o_file.relative_to(ROOT)),
                 "metadata": {"progress_categories": [ovl_name]},
             })
@@ -110,6 +135,12 @@ def find_units():
 
 
 def main():
+    global USE_EXPECTED
+    ap = argparse.ArgumentParser(description="Generate objdiff.json.")
+    ap.add_argument("--expected", action="store_true",
+                    help="point targets at the objects `make expected` built")
+    USE_EXPECTED = ap.parse_args().expected
+    CATEGORIES.extend(effect_categories())
     units = find_units()
 
     config = {
