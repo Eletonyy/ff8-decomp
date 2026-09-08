@@ -13,7 +13,6 @@ extern u8 D_800F02F8[];
 extern u8 D_800F0308[];
 extern u8 D_800F0408[];
 extern u8 D_800F0578[];
-extern u8 D_800EEC5C[];
 void func_800B8314(void);
 s32 func_8013E000(s32);
 void func_800C2B88(u8 *);
@@ -271,18 +270,12 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B79B8);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B7C48);
 
-/**
- * @brief Set or clear bit 8 (0x100) of D_800EEC5C.
- *
- * If a0 is non-zero, sets bit 8. If a0 is zero, clears bit 8.
- *
- * @param a0 Non-zero to set, zero to clear.
- */
-void func_800B7D20(s32 a0) {
-    if (a0 != 0) {
-        *(s32 *)D_800EEC5C |= 0x100;
+/** @brief Raise @ref BATTLE_STATE_UNK100 when @p on, lower it otherwise. */
+void func_800B7D20(s32 on) {
+    if (on != 0) {
+        D_800EEC5C |= BATTLE_STATE_UNK100;
     } else {
-        *(s32 *)D_800EEC5C &= ~0x100;
+        D_800EEC5C &= ~BATTLE_STATE_UNK100;
     }
 }
 

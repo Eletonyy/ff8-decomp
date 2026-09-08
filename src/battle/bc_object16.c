@@ -16,7 +16,6 @@ extern u8 D_800FB444[];
 extern u8 D_800FB448[];
 extern u8 D_800F1B80[];
 extern u8 D_800FB408[];
-extern s32 D_800EEC5C;
 
 
 u32 func_8009A2E0(void);
@@ -60,29 +59,13 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CCCB8);
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CD1C0);
 
 /**
- * @brief Render a particle/effect primitive and update its animation state.
+ * @brief Draw one particle and step it, unless the battle is held.
  *
- * Builds a transform matrix from the particle's position, Y rotation and
- * scale, composes it with the current world matrix at @c D_800F02C8, then
- * sets the GTE rotation/translation registers. Allocates a 0x58-byte
- * primitive packet from the scratch ring (@c func_800B3698), initializes
- * its header fields (cmd word @c 0x3867 at offset 0x14, attribute word
- * @c 0x230 at offset 0x1C). When the frame counter has reached 8, zeros
- * the RGB color triple at offsets 0x8/0x9/0xA, encodes the post-frame-8
- * index as @c (frame-8)*341 at offset 0xC, and ORs @c 0xC0 into the
- * attribute word. Submits the packet via @c func_800CBC68 and updates the
- * scratch tail pointer @c D_800FA5F0 with the call's return value, then
- * frees the temporary 0x58 byte slot.
+ * The draw happens either way. @ref BATTLE_STATE_UNK001 gates only the step,
+ * so a held battle keeps redrawing the particle where it stands.
  *
- * If bit 0 of @c D_800EEC5C is set, returns @c 0 immediately. Otherwise
- * advances the particle: angle += angVel; angVel decays by >>4; sizeX +=
- * sizeXVel; for the first 5 frames sizeY accumulates sizeYVel, after that
- * it instead decays by sizeYVel/2; sizeYVel always decays by >>3. Frame
- * counter increments by 1 and the function returns @c 2 once the counter
- * passes @c 20 (signaling the effect should end), @c 0 otherwise.
- *
- * @param p Particle entry to render and step.
- * @return @c 2 when the particle has expired, @c 0 otherwise.
+ * @param p Particle entry to draw and step.
+ * @return @c 2 once the particle has expired, @c 0 otherwise.
  */
 s32 func_800CD35C(ParticleEntry *p) {
     SVECTOR     rot;
@@ -123,7 +106,7 @@ s32 func_800CD35C(ParticleEntry *p) {
     D_800FA5F0 = func_800CBC68(prim, D_800FA5E8->ot, 2, D_800FA5F0);
     func_800B36B8(0x58);
 
-    if (D_800EEC5C & 1) {
+    if (D_800EEC5C & BATTLE_STATE_UNK001) {
         return 0;
     }
 
@@ -151,26 +134,17 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CDB94);
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object16", func_800CDD30);
 
 /**
- * @brief Render a wait-gated particle and step its motion.
+ * @brief As @ref func_800CD35C, for a particle that waits before it appears.
  *
- * Variant of @c func_800CD35C used by particles with a per-entry @c delay
- * counter and a per-entry prim cmd word. While @c delay is positive, decrements
- * it and returns @c 0 each tick without rendering (skipped entirely when
- * bit @c 0 of @c D_800EEC5C is set). Otherwise builds the rotation/scale
- * matrix from @c angle/posXYZ/sizeX/sizeY, composes it with @c D_800F02C8,
- * allocates a 0x58-byte prim, sets its dispatch index (3 instead of 4),
- * cmd word from @c p->cmdWord, and flags @c 0x233 (vs @c 0x230). When
- * @c frame >= 4 (vs 8 in @c func_800CD35C) clears the BG color and writes
- * depth @c (frame-4)*409 plus OR's @c 0xC0 into flags. Submits the packet
- * via @c func_800CBC68 and frees the slot.
+ * A positive @c delay counts down in place of the draw. @ref
+ * BATTLE_STATE_UNK001 freezes the whole thing: neither the countdown nor the
+ * size step runs while it is set. Past the delay it draws with the entry's own
+ * command word, and differs from its sibling in its dispatch index, in
+ * switching behaviour at frame 4 rather than 8, and in decaying @c sizeYVel
+ * with a signed divide rather than a shift.
  *
- * If the global skip bit is clear, advances the particle: @c sizeX += sizeXVel,
- * @c sizeY += sizeYVel, @c sizeYVel -= sizeYVel/3 (signed div, not @c >>3).
- * Then increments @c frame and returns @c 2 once @c (frame+1) > 14 to signal
- * expiration, @c 0 otherwise.
- *
- * @param p Particle entry to render and step.
- * @return @c 2 when the particle has expired, @c 0 otherwise.
+ * @param p Particle entry to draw and step.
+ * @return @c 2 once the particle has expired, @c 0 otherwise.
  */
 s32 func_800CDF3C(ParticleEntry *p) {
     SVECTOR     rot;
@@ -179,7 +153,7 @@ s32 func_800CDF3C(ParticleEntry *p) {
     BattleEffectPrim *prim;
 
     if (p->delay > 0) {
-        if (D_800EEC5C & 1) {
+        if (D_800EEC5C & BATTLE_STATE_UNK001) {
             return 0;
         }
         p->delay = p->delay - 1;
@@ -218,7 +192,7 @@ s32 func_800CDF3C(ParticleEntry *p) {
     D_800FA5F0 = func_800CBC68(prim, D_800FA5E8->ot, 2, D_800FA5F0);
     func_800B36B8(0x58);
 
-    if (!(D_800EEC5C & 1)) {
+    if (!(D_800EEC5C & BATTLE_STATE_UNK001)) {
         p->sizeX    = p->sizeX + p->sizeXVel;
         p->sizeY    = p->sizeY + p->sizeYVel;
         p->sizeYVel = p->sizeYVel - p->sizeYVel / 3;

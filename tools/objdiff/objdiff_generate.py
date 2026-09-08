@@ -44,7 +44,6 @@ CATEGORIES = [
     {"id": "battle_render", "name": "battle_render.bin"},
     {"id": "battle", "name": "battle.bin"},
     {"id": "world", "name": "world.bin"},
-    {"id": "effect_001", "name": "effect_001.bin"},
 ]
 
 # Files/dirs to skip
@@ -63,6 +62,19 @@ def target_path(expected_o, o_file):
     if USE_EXPECTED and expected_o.exists():
         return str(expected_o.relative_to(ROOT))
     return str(o_file.relative_to(ROOT))
+
+
+def effect_categories():
+    """A category per effect overlay the build produced. The splat config
+    carries all 343 of them but the Makefile's EFFECTS list decides which ones
+    compile, so ask the build tree rather than the config -- a category with no
+    objects behind it would report an empty binary."""
+    names = []
+    for parent in (BUILD, BUILD / "ovl"):
+        for ovl_dir in sorted(parent.glob("effect_*")):
+            if (ovl_dir / "src").is_dir() and ovl_dir.name not in names:
+                names.append(ovl_dir.name)
+    return [{"id": name, "name": f"{name}.bin"} for name in names]
 
 
 def find_units():
@@ -128,6 +140,7 @@ def main():
     ap.add_argument("--expected", action="store_true",
                     help="point targets at the objects `make expected` built")
     USE_EXPECTED = ap.parse_args().expected
+    CATEGORIES.extend(effect_categories())
     units = find_units()
 
     config = {
