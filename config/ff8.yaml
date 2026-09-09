@@ -1097,16 +1097,40 @@ binaries:
   options:
     target_path: original/effect/effect_027.bin
     src_path: src/effect
+    section_order: [.text, .rodata, .data, .bss]
   segments:
   - name: effect_027
     type: code
     start: 0x0
     vram: 0x801A0000
     subsegments:
-    - [0x0, c, effect_027]
-    - [0x9BB8, .rodata, effect_027]
-    - [0x9BCC, bin, effect_027]
+    - [0x0, c, effect_027_entry]
+    - [0x1EC, c, lib/common]
+    - [0x95C, c, lib/rotz]
+    - [0xAE8, c, lib/heading]
+    - [0xB18, c, lib/entity]
+    - [0x1688, c, lib/vector]
+    - [0x1DF4, c, lib/emit]
+    - [0x3C28, c, lib/packet]
+    - [0x3E30, c, lib/particlestep]
+    - [0x5124, c, lib/particlealloc]
+    - [0x5240, c, lib/draw]
+    - [0x5E9C, c, lib/emitteralloc]
+    - [0x5FBC, c, lib/spawn]
+    - [0x7D70, c, lib/list]
+    - [0x838C, c, lib/trail]
+    - [0x8500, c, lib/strands]
+    - [0x89EC, c, lib/tables]
+    - [0x8D00, c, lib/bankclear]
+    - [0x8D58, c, lib/drawscript]
+    - [0x91BC, c, effect_027]
+    - [0x9BB8, .rodata, lib/particlestep]
+    - [0x9BCC, pad]
+    - [0x9BD0, .rodata, lib/list]
+    - [0x9BFC, .rodata, effect_027]
+    - [0x9C5C, bin, effect_027]
   - [0x3AAF8]
+
 - name: effect_028
   sha1: eb8243db98aedc14e57e62c7b42d639c8171f9c5
   options:
