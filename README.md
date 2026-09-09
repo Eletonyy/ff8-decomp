@@ -170,6 +170,21 @@ Any help is greatly appreciated! Below are some basic steps to get started and b
    git clone --recursive https://github.com/roengstrom/ff8-decomp.git
    cd ff8-decomp
    ```
+    - **Note:** If you are using Windows, you must use **WSL 2** to build the project.
+
+      The following distributions have been tested for building the project:
+
+      |    Distro    | Can build? |
+      |:------------:|:----------:|
+      | Ubuntu-22.04 |     ✅     |
+      | Ubuntu-24.04 |     ✅     |
+      | Ubuntu-26.04 |     ❌     |
+
+      On a fresh installation, run the following commands to install the packages required to build the project:
+      ```bash
+      sudo apt update
+      sudo apt install python3-venv make build-essential binutils-mipsel-linux-gnu
+      ```
 
 2. **Create a Python venv and install splat**:
    ```bash
