@@ -1,6 +1,15 @@
 #include "common.h"
+#include "battle.h"
 #include "battle/bc_object8.h"
 #include "battle/bc_object13.h"
+
+/**
+ * @name Flags in the halfword at @c 0x2C of a slot's battle entity.
+ * @{
+ */
+#define BATTLE_ENTITY_FLAG_UNK40 0x40
+#define BATTLE_ENTITY_FLAG_UNK100 0x100
+/** @} */
 
 extern u8 D_800F1A90[];
 extern u8 D_800F1A94[];
@@ -47,7 +56,7 @@ s32 func_800C3418(s32);
 void func_800C2B88(s32 a0, s32 a1) {
     u8 *entity = *(u8 **)(a0 + 0x74);
     a1 &= ~0x1000;
-    if (*(u16 *)(entity + 0x2C) & 0x40) {
+    if (*(u16 *)(entity + 0x2C) & BATTLE_ENTITY_FLAG_UNK40) {
         func_800C2AB0(a0);
     } else {
         entity[3] = a1;
@@ -55,19 +64,16 @@ void func_800C2B88(s32 a0, s32 a1) {
 }
 
 /**
- * @brief Check entity status flags and reset if certain bits set.
+ * @brief Reset @p slot when its entity's flags call for it.
  *
- * Reads halfword at entity->0x74->0x2C, tests bits 0x140.
- * If any of those bits are set, calls func_800C2AB0 and returns 0.
- * Otherwise returns -1.
- *
- * @param a0 Entity pointer.
- * @return 0 if flags triggered reset, -1 otherwise.
+ * @param slot Entity whose flags are checked.
+ * @param arg1 Ignored; the one call site passes 4.
+ * @return 0 if the slot was reset, -1 if its flags did not ask for one.
  */
-s32 func_800C2BD0(s32 a0) {
-    u16 flags = *(u16 *)(*(s32 *)(a0 + 0x74) + 0x2C);
-    if ((flags & 0x140) != 0) {
-        func_800C2AB0(a0);
+s32 func_800C2BD0(BattleEffectSlot *slot, s32 arg1) {
+    u16 flags = *(u16 *)(slot->unk074 + 0x2C);
+    if ((flags & (BATTLE_ENTITY_FLAG_UNK40 | BATTLE_ENTITY_FLAG_UNK100)) != 0) {
+        func_800C2AB0((s32)slot);
         return 0;
     }
     return -1;
