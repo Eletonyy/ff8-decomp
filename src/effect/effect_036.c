@@ -273,6 +273,13 @@ static void func_801A9B40(EffectEntity *entity) {
 static void func_801A9B5C(EffectEntity *entity) {
 }
 
+/**
+ * @brief Run one frame of the effect: its opcode, then every task pool it owns.
+ *
+ * @param entity The script's root entity.
+ * @return 2 once the script has stopped and its children have drained, 0 while
+ *         it is still running.
+ */
 s32 func_801A9B64(EffectEntity *entity) {
     EffectHandler handlers[11] = {
         func_801A998C, func_801A99A0, func_801A99B4, func_801A9A24, func_801A9A7C,
