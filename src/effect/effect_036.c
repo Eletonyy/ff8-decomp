@@ -3,250 +3,310 @@
  * @brief Confuse
  */
 #include "common.h"
+#include "game.h"
+#include "effect.h"
+#include "psxsdk/libgpu.h"
+#include "effect/effect_036.h"
+#include "effect/lib/particle.h"
+#include "effect/lib/entity.h"
+#include "effect/lib/tables.h"
+#include "effect/lib/drawscript.h"
+#include "effect/lib/bankclear.h"
+#include "effect/lib/common.h"
+#include "effect/lib/tint.h"
+#include "battle.h"
+#include "battle/bc_object13.h"
+#include "btl_entity.h"
+#include "effect_params.h"
 
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0000);
+/** @brief Where in the scratchpad the effect keeps its view matrix. */
+#define EFFECT_SCRATCHPAD ((MATRIX *)0x1F8002E0)
 
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A020C);
+/** @brief @ref EffectEntity::unk05C -- the frame counter's low bit picks a bank. */
+#define EFFECT_FRAME_ODD 0x1
 
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A035C);
+/** @brief Sentinel ending @ref D_801A9DF8: the script stops on this entry. */
+#define EFFECT_TABLE_END 0x7F
 
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0408);
+static void func_801A94B4(EffectEntity *entity);
+static void func_801A9508(EffectEntity *entity);
+static s32 func_801A9510(EffectEntity *entity);
+static s32 func_801A9810(EffectEntity *entity);
+static void func_801A99B4(EffectEntity *entity);
+static void func_801A95A8(EffectEntity *entity);
+static void func_801A9604(EffectEntity *entity);
+static void func_801A964C(EffectEntity *entity);
+static s32 func_801A9654(EffectEntity *entity);
+static void func_801A96F4(EffectEntity *entity);
+static void func_801A974C(EffectEntity *entity);
+static void func_801A9780(EffectEntity *entity);
+static void func_801A9808(EffectEntity *entity);
+static void func_801A998C(EffectEntity *entity);
+static void func_801A99A0(EffectEntity *entity);
+static void func_801A9A24(EffectEntity *entity);
+static void func_801A9A7C(EffectEntity *entity);
+static void func_801A9ADC(EffectEntity *entity);
+static void func_801A9AF0(EffectEntity *entity);
+static void func_801A9B18(EffectEntity *entity);
+static void func_801A9B2C(EffectEntity *entity);
+static void func_801A9B40(EffectEntity *entity);
+static void func_801A9B5C(EffectEntity *entity);
 
-void func_801A0428(void) {
+/** @brief Opcode handler: play this frame's table entry, or stop at the end. */
+static void func_801A94B4(EffectEntity *entity) {
+    if (D_801A9DF8[entity->unk024] == EFFECT_TABLE_END) {
+        entity->flags |= EFFECT_FLAG_STOP;
+        entity->pc++;
+    } else {
+        D_800F02C2 = D_801A9DF8[entity->unk024];
+    }
 }
 
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0430);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A052C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0628);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0660);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A07F0);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A097C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0B08);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0B38);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0B60);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0CEC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0E20);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0E50);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0E80);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0EB0);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A0FEC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A101C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A104C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A107C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A12C8);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1318);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A13BC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A13EC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1444);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1468);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A14B0);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A14F8);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A15B0);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1604);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1670);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A16A8);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1984);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1A08);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1AAC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1B24);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1BF0);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1C84);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1CFC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1D8C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1E04);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1E34);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1E90);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A1F5C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A20F0);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A23BC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A26E0);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A2A68);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A2E4C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A3154);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A34DC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A3898);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A3CE0);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A3F24);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A412C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A41E4);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A49EC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A4AE0);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A5420);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A553C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A5574);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A5620);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A570C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A5724);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A5D50);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A5FB8);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A6078);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A6198);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A62B8);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A6320);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A6DBC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A6EBC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A6F5C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A71E4);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A73EC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A75FC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A806C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A80A8);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A80E8);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A8100);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A8188);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A83BC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A8470);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A85AC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A8688);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A87FC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A8908);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A8A20);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A8CE8);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A8F8C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A8FFC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9050);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A92F8);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9420);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A94B4);
-
-void func_801A9508(void) {
+/** @brief Opcode handler: no-op. */
+static void func_801A9508(EffectEntity *entity) {
 }
 
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9510);
+/**
+ * @brief Script dispatcher for the table player.
+ *
+ * @return 2 once the script has stopped and its children have drained, 0 while
+ *         it is still running.
+ */
+static s32 func_801A9510(EffectEntity *entity) {
+    EffectHandler handlers[2] = { func_801A94B4, func_801A9508 };
 
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A95A8);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9604);
-
-void func_801A964C(void) {
+    handlers[entity->pc](entity);
+    entity->unk024++;
+    if (entity->flags & EFFECT_FLAG_STOP) {
+        if (entity->wait != 0) {
+            return 0;
+        }
+        effectReleaseWait(entity);
+        return 2;
+    }
+    return 0;
 }
 
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9654);
+/** @brief Opcode handler: draw and retire once the frame count is reached. */
+static void func_801A95A8(EffectEntity *entity) {
+    EffectDrawScript *script = (EffectDrawScript *)entity;
 
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A96F4);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A974C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9780);
-
-void func_801A9808(void) {
+    if (entity->unk024 >= script->stopFrame) {
+        /* Called with no argument: the entity is already in $a0 and stays there. */
+        ((void (*)())effectDrawScriptStart)();
+        effectDrawScriptRun(script);
+        entity->pc++;
+    }
 }
 
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9810);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A998C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A99A0);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A99B4);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9A24);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9A7C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9ADC);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9AF0);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9B18);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9B2C);
-
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9B40);
-
-void func_801A9B5C(void) {
+/** @brief Opcode handler: hold still until the draw script finishes. */
+static void func_801A9604(EffectEntity *entity) {
+    if (effectDrawScriptRun((EffectDrawScript *)entity) != 0) {
+        entity->flags |= EFFECT_FLAG_STOP;
+        entity->pc++;
+    }
 }
 
-INCLUDE_ASM("asm/ovl/effect_036/nonmatchings/effect_036", func_801A9B64);
+/** @brief Opcode handler: no-op. */
+static void func_801A964C(EffectEntity *entity) {
+}
+
+/**
+ * @brief Script dispatcher: run this frame's step, draw, and retire the entity.
+ *
+ * @return 2 once the script has stopped and its children have drained, 0 while
+ *         it is still running.
+ */
+static s32 func_801A9654(EffectEntity *entity) {
+    EffectHandler handlers[3] = { func_801A95A8, func_801A9604, func_801A964C };
+
+    handlers[entity->pc](entity);
+    entity->unk024++;
+    if (entity->flags & EFFECT_FLAG_STOP) {
+        if (entity->wait != 0) {
+            return 0;
+        }
+        effectReleaseWait(entity);
+        return 2;
+    }
+    return 0;
+}
+
+/** @brief Opcode handler: start the pose script on the taken model. */
+static void func_801A96F4(EffectEntity *entity) {
+    effectStartChildScript(entity, func_801A9654, &D_801B2DE0, 0, 0x2D, 0);
+    entity->pc++;
+}
+
+/** @brief Opcode handler: release the model once the count reaches 30. */
+static void func_801A974C(EffectEntity *entity) {
+    if (entity->unk024 == 30) {
+        entity->unk010->unk063 = 0;
+        entity->pc++;
+    }
+}
+
+/** @brief Opcode handler: hand the current part to battle, then stop. */
+static void func_801A9780(EffectEntity *entity) {
+    if (entity->unk024 >= 30) {
+        func_800BFE1C(&entity->animSet->anims[entity->unk02A].parts[entity->unk02B]);
+        entity->flags |= EFFECT_FLAG_STOP;
+        entity->pc++;
+    }
+}
+
+/** @brief Opcode handler: no-op. */
+static void func_801A9808(EffectEntity *entity) {
+}
+
+/**
+ * @brief Script dispatcher: pose the model, then run this frame's opcode.
+ *
+ * @return 2 once the script has stopped and its children have drained, 0 while
+ *         it is still running.
+ */
+static s32 func_801A9810(EffectEntity *entity) {
+    EffectHandler handlers[4] = { func_801A96F4, func_801A974C, func_801A9780,
+                                  func_801A9808 };
+
+    effectCacheSlotAnchors(entity);
+    effectUpdateModelBounds(entity);
+    handlers[entity->pc](entity);
+    if (entity->unk024 == 0) {
+        func_800C4764(D_801A9E10, 0, 0x80);
+    }
+    if (entity->unk024 == 20) {
+        effectSpawnTask(&D_801E2590, func_801A9510, 0x40, entity);
+    }
+    if (entity->unk024 == 20) {
+        EffectTintScript *child = effectSpawnTask(&D_801E30F0, effectTintPlay,
+                                                  sizeof(EffectTintScript), entity);
+        child->steps = D_801A9E04;
+    }
+    if (entity->unk024 == 18) {
+        func_800C2BD0(&D_800EF2D0[entity->unk02D], 4);
+    }
+    entity->unk024++;
+    if (entity->flags & EFFECT_FLAG_STOP) {
+        if (entity->wait != 0) {
+            return 0;
+        }
+        effectReleaseWait(entity);
+        return 2;
+    }
+    return 0;
+}
+
+/** @brief Opcode handler: consume the opcode and do nothing else. */
+static void func_801A998C(EffectEntity *entity) {
+    entity->pc++;
+}
+
+/** @brief Opcode handler: consume the opcode and do nothing else. */
+static void func_801A99A0(EffectEntity *entity) {
+    entity->pc++;
+}
+
+/** @brief Opcode handler: carve both record banks. */
+static void func_801A99B4(EffectEntity *entity) {
+    if (entity->wait == 0) {
+        /* Both banks are carved out of the same byte arena behind the TIM. */
+        g_effectEmitterBank = (EffectEmitter *)D_801E2300;
+        D_801E2300 += EFFECT_EMITTER_BANK_BYTES;
+        g_effectParticleBank = (EffectParticle *)D_801E2300;
+        D_801E2300 += EFFECT_PARTICLE_BANK_BYTES;
+        effectBanksClear();
+        entity->pc++;
+    }
+}
+
+/** @brief Opcode handler: start a task running @ref func_801A9810. */
+static void func_801A9A24(EffectEntity *entity) {
+    entity->unk063 = 1;
+    effectSpawnTask(&D_801E3020, func_801A9810, 0x58, entity);
+    entity->pc++;
+}
+
+/** @brief Opcode handler: repeat the preceding opcode until the count runs out. */
+static void func_801A9A7C(EffectEntity *entity) {
+    if (entity->unk063 != 0) {
+        return;
+    }
+    if (entity->unk02A < entity->unk058) {
+        entity->unk02A++;
+        entity->unk02E++;
+        entity->pc--;
+    } else {
+        entity->pc++;
+    }
+}
+
+/** @brief Opcode handler: consume the opcode and do nothing else. */
+static void func_801A9ADC(EffectEntity *entity) {
+    entity->pc++;
+}
+
+/** @brief Opcode handler: stall here until @c unk05E reaches zero. */
+static void func_801A9AF0(EffectEntity *entity) {
+    if (entity->unk05E == 0) {
+        entity->pc++;
+    }
+}
+
+/** @brief Opcode handler: consume the opcode and do nothing else. */
+static void func_801A9B18(EffectEntity *entity) {
+    entity->pc++;
+}
+
+/** @brief Opcode handler: consume the opcode and do nothing else. */
+static void func_801A9B2C(EffectEntity *entity) {
+    entity->pc++;
+}
+
+/** @brief Opcode handler: raise @ref EFFECT_FLAG_STOP and consume the opcode. */
+static void func_801A9B40(EffectEntity *entity) {
+    entity->flags |= EFFECT_FLAG_STOP;
+    entity->pc++;
+}
+
+/** @brief Opcode handler: no-op. */
+static void func_801A9B5C(EffectEntity *entity) {
+}
+
+s32 func_801A9B64(EffectEntity *entity) {
+    EffectHandler handlers[11] = {
+        func_801A998C, func_801A99A0, func_801A99B4, func_801A9A24, func_801A9A7C,
+        func_801A9ADC, func_801A9AF0, func_801A9B18, func_801A9B2C, func_801A9B40,
+        func_801A9B5C
+    };
+    MATRIX *view = EFFECT_SCRATCHPAD;
+
+    *view = D_800F02C8;
+    g_effectStackTop = (u8 *)view;
+    g_effectStackBase = view;
+    if (entity->unk05C & EFFECT_FRAME_ODD) {
+        g_effectPrimCursor = D_801E2DC8;
+        D_801E2DC4 = D_801E2DD0;
+    } else {
+        g_effectPrimCursor = D_801E2DCC;
+        D_801E2DC4 = D_801E2DD4;
+    }
+    effectCacheAnimSlotAnchors(entity);
+    handlers[entity->pc](entity);
+    g_effectParticleTotal = 0;
+    entity->unk05E = 0;
+    g_effectLiveTotal = 0;
+    entity->unk05E += func_800B2B68(&D_801E3020);
+    entity->unk05E += func_800B2B68(&D_801E30F0);
+    entity->unk05E += func_800B2B68(&g_effectChildPool);
+    entity->unk05E += func_800B2B68(&D_801E2590);
+    entity->unk05C++;
+    entity->unk024++;
+    if (entity->flags & EFFECT_FLAG_STOP) {
+        if (entity->wait == 0) {
+            effectReleaseWait(entity);
+            return 2;
+        }
+    }
+    return 0;
+}

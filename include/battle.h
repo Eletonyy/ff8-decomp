@@ -1346,7 +1346,9 @@ typedef struct BattleEffectSlot {
     /* 0x60 */ u8 unk060[0x64 - 0x60];
     /* 0x64 */ struct EffectMesh *mesh;
     /* 0x68 */ u8 pad068[0x6C - 0x68];
-    /* 0x6C */ u8 unk06C[0x78 - 0x6C];
+    /* 0x6C */ u8 unk06C[0x74 - 0x6C];
+    /* 0x74 */ u8 *unk074;         /**< The battle entity behind the slot;
+                                        its @c 0x2C halfword carries the flags. */
     /* 0x78 */ struct EffectAttachment *unk078;
     /* 0x7C */ u32 unk07C;         /**< Bit @c n set: mesh part @c n is drawn. */
     /* 0x80 */ u8 pad080[0x9C - 0x80];
@@ -1407,6 +1409,8 @@ extern s32 D_800EEC5C;
 
 /** @brief Angle every sprite prim is rolled by unless it opts out. */
 extern s16 D_800F02A0;
+
+extern s16 D_800F02C2;
 
 /** @brief The world matrix for this frame; effect matrices compose onto it. */
 extern MATRIX D_800F02C8;
