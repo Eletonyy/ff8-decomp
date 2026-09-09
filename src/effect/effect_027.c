@@ -85,7 +85,7 @@ static void func_801A9208(EffectEntity *entity) {
         entity->flags |= EFFECT_FLAG_STOP;
         entity->pc++;
     }
-    for (i = 3; i >= 0; i--) {
+    for (i = 0; i < 4; i++) {
         tint->level = entity->pos.vx;
         tint++;
     }
@@ -133,7 +133,7 @@ static void func_801A9330(EffectEntity *entity) {
         entity->flags |= EFFECT_FLAG_STOP;
         entity->pc++;
     }
-    for (i = 3; i >= 0; i--) {
+    for (i = 0; i < 4; i++) {
         tint->level = entity->pos.vx;
         tint++;
     }
