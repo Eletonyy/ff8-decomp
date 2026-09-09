@@ -13,7 +13,8 @@
 /**
  * @brief Allocate a particle from its pool and put it on the draw list.
  *
- * The search starts where the last one left off and gives up after one lap.
+ * The search starts where the last one left off, and tries one slot more
+ * than the ring holds, so the slot it started on is examined last.
  *
  * @return The particle, or NULL when the pool is full.
  */
@@ -22,7 +23,7 @@ EffectParticle *effectParticleAlloc(EffectEmitter *owner, u8 source) {
     s32 i = g_effectParticleCursor;
     s32 n;
 
-    for (n = 0; n < 0x8C; n++) {
+    for (n = 0; n < EFFECT_PARTICLE_COUNT + 1; n++) {
         if (g_effectParticleBank[i].inUse == 0) {
             EffectParticle *particle = &g_effectParticleBank[i];
 

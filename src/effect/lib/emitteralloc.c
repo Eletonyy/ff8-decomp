@@ -14,7 +14,8 @@
 /**
  * @brief Allocate an emitter from its pool and put it on the draw list.
  *
- * The search starts where the last one left off and gives up after one lap.
+ * The search starts where the last one left off, and tries one slot more
+ * than the ring holds, so the slot it started on is examined last.
  *
  * @return The emitter, or NULL when the pool is full.
  */
@@ -23,7 +24,7 @@ EffectEmitter *effectEmitterAlloc(void *owner, s16 source, s16 index) {
     s32 i = g_effectEmitterCursor;
     s32 n;
 
-    for (n = 0; n < 0x5A; n++) {
+    for (n = 0; n < EFFECT_EMITTER_COUNT + 1; n++) {
         if (g_effectEmitterBank[i].inUse == 0) {
             EffectEmitter *emitter = &g_effectEmitterBank[i];
 
