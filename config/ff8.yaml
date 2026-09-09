@@ -1496,15 +1496,41 @@ binaries:
   options:
     target_path: original/effect/effect_052.bin
     src_path: src/effect
+    section_order: [.text, .rodata, .data, .bss]
   segments:
   - name: effect_052
     type: code
     start: 0x0
     vram: 0x801A0000
     subsegments:
-    - [0x0, c, effect_052]
-    - [0x9BDC, .rodata, effect_052]
-    - [0x9BF0, bin, effect_052]
+    - [0x0, c, effect_052_entry]
+    - [0x1EC, c, lib/common]
+    - [0x95C, c, lib/rotz]
+    - [0xAE8, c, lib/heading]
+    - [0xB18, c, lib/entity]
+    - [0x1688, c, lib/tint]
+    - [0x1964, c, lib/vector]
+    - [0x20D0, c, lib/emit]
+    - [0x3F04, c, lib/packet]
+    - [0x410C, c, lib/particlestep]
+    - [0x5400, c, lib/particlealloc]
+    - [0x551C, c, lib/draw]
+    - [0x6178, c, lib/emitteralloc]
+    - [0x6298, c, lib/spawn]
+    - [0x804C, c, lib/list]
+    - [0x8668, c, lib/trail]
+    - [0x87DC, c, lib/strands]
+    - [0x8CC8, c, lib/tables]
+    - [0x8FDC, c, lib/bankclear]
+    - [0x9034, c, lib/drawscript]
+    - [0x9498, c, effect_052]
+    # particlestep's jump table, then the pad its section end carried, then
+    # list's two, then the script dispatch tables.
+    - [0x9BDC, .rodata, lib/particlestep]
+    - [0x9BF0, pad]
+    - [0x9BF4, .rodata, lib/list]
+    - [0x9C20, .rodata, effect_052]
+    - [0x9C68, bin, effect_052]
   - [0x3C6D8]
 - name: effect_053
   sha1: 738b1bb7de8b266db68995f925e9602f88fca51f
