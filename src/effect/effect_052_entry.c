@@ -7,7 +7,7 @@
 #include "effect/lib/entity.h"
 #include "effect/lib/tables.h"
 #include "effect/effect_052.h"
-#include "effect/effect_028_entry.h"
+#include "effect/effect_052_entry.h"
 
 /** @brief Stride between the prim and frame banks carved out of the TIM. */
 #define EFFECT_BANK_SIZE 0x6000
