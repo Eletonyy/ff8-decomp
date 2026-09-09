@@ -170,6 +170,21 @@ Any help is greatly appreciated! Below are some basic steps to get started and b
    git clone --recursive https://github.com/roengstrom/ff8-decomp.git
    cd ff8-decomp
    ```
+    - **Note:** If you are using Windows, you must use **WSL 2** to build the project.
+
+      The following distributions have been tested for building the project:
+
+      |    Distro    | Can build? |
+      |:------------:|:----------:|
+      | Ubuntu-22.04 |     ✅     |
+      | Ubuntu-24.04 |     ✅     |
+      | Ubuntu-26.04 |     ❌     |
+
+      On a fresh installation, run the following commands to install the packages required to build the project:
+      ```bash
+      sudo apt update
+      sudo apt install python3-venv make build-essential binutils-mipsel-linux-gnu
+      ```
 
 2. **Create a Python venv and install splat**:
    ```bash
@@ -199,7 +214,15 @@ Any help is greatly appreciated! Below are some basic steps to get started and b
    make split          # re-run splat
    make build-assets   # regenerate asset C source
    make verify         # build and compare SHA1s
+   make verify EFFECTS=all   # ... including all 343 battle effect overlays
    ```
+
+6. **objdiff GUI** (optional). To diff against the original in
+   [objdiff](https://github.com/encounter/objdiff):
+   ```bash
+   make expected       # builds the target objects, on a verified tree
+   ```
+   then open the repository in objdiff. Re-run after `make split`.
 
 ## References
 This project stands on the shoulders of giants. A lot of work has already been put into figuring out the inner workings of FF8 which I have liberally used when starting with this project. A shoutout to the decomp community as well, this project wouldn't be possible without all the work that has been put in and the tools that have developed.

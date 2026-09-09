@@ -3,6 +3,7 @@
 
 import glob
 import os
+import re
 import sys
 
 # Overlay names in display order, with file extensions
@@ -11,10 +12,24 @@ MENU_OVERLAYS = [
     "menuext", "menuitem", "menumgc", "menugf", "menujnc2", "menusav",
     "menucrd", "menututo", "menutmag", "menutips", "menutest",
 ]
+
+
+def effect_overlays():
+    """The effect overlays the Makefile compiles. The splat config carries all
+    343 of them; EFFECTS names the ones with source worth counting. `all` only
+    ever arrives on the command line, which is not a README table."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "Makefile")) as f:
+        match = re.search(r"^EFFECTS \?= (.*)$", f.read(), re.M)
+    names = match.group(1).split() if match else []
+    return [name for name in names if name != "all"]
+
+
+EFFECT_OVERLAYS = effect_overlays()
 CODE_OVERLAYS = [
     "field_init", "intro", "field",
     "tripletriad", "battle_render", "battle", "world",
-]
+] + EFFECT_OVERLAYS
 
 OVERLAY_EXT = {name: "ovl" for name in MENU_OVERLAYS}
 OVERLAY_EXT.update({name: "bin" for name in CODE_OVERLAYS})
@@ -27,6 +42,7 @@ OVERLAY_SRC_GLOBS = {
     "battle":      ["src/battle/*.c"],
     "tripletriad": ["src/tripletriad/*.c"],
     "world":       ["src/world/*.c"],
+    **{name: [f"src/effect/{name}.c"] for name in EFFECT_OVERLAYS},
     **{name: [f"src/menu/{name}/*.c"] for name in MENU_OVERLAYS},
 }
 

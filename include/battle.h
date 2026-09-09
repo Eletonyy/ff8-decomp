@@ -1234,7 +1234,7 @@ typedef struct {
     /* 0x18 */ u8  pad18[0x4];       /**< Cleared when flag bit @c 0x1000 unset. */
     /* 0x1C */ s32 flags;            /**< Attribute/flag word (bits @c 0x1000 / @c 0x2000 read by @c func_800CBC68). */
     /* 0x20 */ u8  pad20[0x38];      /**< Working pointer + remaining unmapped fields. */
-} EffectPrim; /* 0x58 */
+} BattleEffectPrim; /* 0x58 */
 
 
 /* ---------------------------------------------------------------- *
@@ -1332,5 +1332,115 @@ void func_800D0608(void); /* bc_object17: overlay VSync handler (RENDER_OVERLAY)
 void func_8002A2C4(u8 *, s32);
 s32 func_80037ADC(void);
 u16 func_800A97FC(s32 arg0);
+
+/* ---------------------------------------------------------------- *
+ * Records the effect overlays share with battle.bin
+ * ---------------------------------------------------------------- */
+
+/** @brief A second skeleton hung off a battle slot. */
+struct EffectAttachment {
+    /* 0x00 */ u8 pad000[0x4];
+    /* 0x04 */ struct EffectMesh *mesh;
+};
+
+/**
+ * @brief One battle entity slot; @ref D_800EF2D0 holds seven of them.
+ *
+ * Both binaries index the table: battle.bin through the symbol, the effect
+ * overlays through a pointer they are handed. Three sites in battle take the
+ * table address into a local before indexing -- indexing inline emits the
+ * multiply ahead of the address and does not match.
+ */
+typedef struct BattleEffectSlot {
+    /* 0x00 */ u16 flags;          /**< See @c BATTLE_SLOT_FLAG_*. */
+    /* 0x02 */ u8 pad002[0xE - 0x2];
+    /* 0x0E */ s16 facing;         /**< Angle the slot's model is turned to. */
+    /* 0x10 */ u8 pad010[0x1C - 0x10];
+    /* 0x1C */ SVECTOR pos;        /**< Where the slot's model stands; @c vy is
+                                        the origin a model's Y bounds are summed
+                                        with. */
+    /* 0x24 */ u16 unk024;
+    /* 0x26 */ u8 pad026[0x28 - 0x26];
+    /* 0x28 */ u32 unk028;         /**< Packed RGB the textured prims are drawn with. */
+    /* 0x2C */ u8 pad02C[0x36 - 0x2C];
+    /* 0x36 */ u16 unk036;
+    /* 0x38 */ u8 pad038[0x3C - 0x38];
+    /* 0x3C */ s16 unk03C;         /**< Its distance above @c unk036 sizes the draw list. */
+    /* 0x3E */ u8 pad03E[0x40 - 0x3E];
+    /* 0x40 */ MATRIX mtx;         /**< Pose the effect's render matrices start from. */
+    /* 0x60 */ u8 unk060[0x64 - 0x60];
+    /* 0x64 */ struct EffectMesh *mesh;
+    /* 0x68 */ u8 pad068[0x6C - 0x68];
+    /* 0x6C */ u8 unk06C[0x78 - 0x6C];
+    /* 0x78 */ struct EffectAttachment *unk078;
+    /* 0x7C */ u32 unk07C;         /**< Bit @c n set: mesh part @c n is drawn. */
+    /* 0x80 */ u8 pad080[0x9C - 0x80];
+} BattleEffectSlot; /* 0x9C */
+
+#define BATTLE_SLOT_FLAG_UNK02 0x2
+#define BATTLE_SLOT_FLAG_UNK04 0x4
+#define BATTLE_SLOT_FLAG_UNK20 0x20
+
+/**
+ * @brief The battle renderer's graphics context.
+ *
+ * Only the members reached from C are named; the rest of the record is still
+ * battle.bin's own.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad000[0x14];
+    /* 0x0014 */ u32 frontOT[(0x44 - 0x14) / 4]; /**< Ordering table the screen overlays link into. */
+    /* 0x0044 */ u32 ot[(0x4040 - 0x44) / 4];   /**< Ordering table the effects link into. */
+    /* 0x4040 */ u8 unk4040[4];
+} BattleGfx;
+
+/** @brief Per-entity battle records the effect overlays pose their models from. */
+extern BattleEffectSlot D_800EF2D0[];
+
+/**
+ * @brief One of the four screen-tint entries battle steps every frame.
+ *
+ * @c level rises and falls under an effect's control; the three colour bytes
+ * are also written together as one word.
+ */
+typedef struct {
+    /* 0x00 */ u16 unk000;
+    /* 0x02 */ u16 level;
+    /* 0x04 */ u8 pad004[0x28 - 0x4];
+    /* 0x28 */ u8 r;
+    /* 0x29 */ u8 g;
+    /* 0x2A */ u8 b;
+    /* 0x2B */ u8 pad02B[0x2C - 0x2B];
+} BattleTint; /* 0x2C */
+
+extern BattleTint D_800EF738[];
+
+/**
+ * @name Battle state flags -- @ref D_800EEC5C
+ *
+ * One word the battle loop and its effects both test. The names are
+ * placeholders; only the bit positions are established.
+ * @{
+ */
+#define BATTLE_STATE_UNK001 0x1
+#define BATTLE_STATE_UNK100 0x100
+#define BATTLE_STATE_UNK200 0x200
+/** @} */
+
+/** @brief State the battle loop and its effects share; see the flags above. */
+extern s32 D_800EEC5C;
+
+/** @brief Angle every sprite prim is rolled by unless it opts out. */
+extern s16 D_800F02A0;
+
+/** @brief The world matrix for this frame; effect matrices compose onto it. */
+extern MATRIX D_800F02C8;
+
+/** @brief The battle renderer's graphics context. */
+extern BattleGfx *D_800FA5E8;
+
+/** @brief Head of the prim list a posed battle model links into. */
+extern s32 D_800FA5F0;
+
 
 #endif /* BATTLE_H */

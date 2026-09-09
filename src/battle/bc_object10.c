@@ -1,18 +1,19 @@
 #include "common.h"
+#include "battle/bc_object8.h"
+#include "battle/bc_object10.h"
+#include "battle.h"
 
 extern u8 D_800F082C[];
 extern u8 D_800F085C[];
 extern u8 D_800F0830[];
 extern u8 D_800F1668[];
 extern u8 D_800E3DA8[];
-extern u8 D_800EF738[];
 extern u8 D_800F05F0[];
 extern u8 D_800F0854[];
 extern u8 D_80170000[];
 s32 *func_800B88A0(void);
 void func_800B8BEC(void);
 void func_800B9078(void);
-s32 func_800B2C58(s32);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B872C);
 
@@ -209,7 +210,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B8F2C);
  * @param a0 Value stored as halfword at handler offset 0xE.
  */
 void func_800B8F4C(s32 a0) {
-    u8 *result = (u8 *)func_800B2C58((s32)func_800B8BEC);
+    u8 *result = func_800B2C58(func_800B8BEC);
     if (result != 0) {
         *(u16 *)(result + 0xC) = 0;
         *(u16 *)(result + 0xE) = a0;
@@ -226,7 +227,7 @@ void func_800B8F4C(s32 a0) {
  * @param a0 Value stored as halfword at handler offset 0xE.
  */
 void func_800B8F98(s32 a0) {
-    u8 *result = (u8 *)func_800B2C58((s32)func_800B8BEC);
+    u8 *result = func_800B2C58(func_800B8BEC);
     if (result != 0) {
         *(u16 *)(result + 0xC) = 0;
         *(u16 *)(result + 0xE) = a0;
@@ -262,27 +263,25 @@ void func_800B9048(s32 a0) {
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object10", func_800B9078);
 
 /**
- * @brief Initialize D_800EF738 color entries and register animation callback.
+ * @brief Black out the screen tint and start the task that animates it.
  *
- * Clears 3 bytes at offset 0x28 for each of 4 entries at stride 0x2C
- * in D_800EF738. Then registers func_800B9078 via func_800B2C58,
- * clears the halfword at offset 0xC of the result, and stores a0
- * at offset 0xE.
+ * @param a0 Stored at offset 0xE of the task's storage.
  *
- * @param a0 Value to store at result offset 0xE.
+ * @note The colour stores are volatile: without it the three bytes are merged
+ *       into one halfword and a byte.
  */
 void func_800B9114(s32 a0) {
-    u8 *ptr;
+    BattleTint *tint;
     s32 i = 0;
-    ptr = D_800EF738;
+    tint = D_800EF738;
     for (; i < 4; i++) {
-        *(volatile u8 *)(ptr + 0x28) = 0;
-        *(volatile u8 *)(ptr + 0x29) = 0;
-        *(volatile u8 *)(ptr + 0x2A) = 0;
-        ptr += 0x2C;
+        *(volatile u8 *)&tint->r = 0;
+        *(volatile u8 *)&tint->g = 0;
+        *(volatile u8 *)&tint->b = 0;
+        tint++;
     }
     {
-        u8 *result = (u8 *)func_800B2C58((s32)func_800B9078);
+        u8 *result = func_800B2C58(func_800B9078);
         *(u16 *)(result + 0xC) = 0;
         *(u16 *)(result + 0xE) = a0;
     }

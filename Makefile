@@ -53,6 +53,38 @@ PSYQ40_MASPSXFLAGS := --aspsx-version=2.56  # used by O0_SRCS
 PSYQ41_MASPSXFLAGS := --aspsx-version=2.67  # default for PsyQ 4.1 sources
 PSYQ43_MASPSXFLAGS := --aspsx-version=2.77  # used by PSYQ43_SRCS
 
+# ASPSX expands an integer division into `div` plus the range checks that break
+# on a zero divisor and on INT_MIN / -1 -- nine instructions the original build
+# selected per assembler invocation, so it is a property of the OBJECT.
+#
+# Counted over the shipped code: every effect overlay is uniform, 198 expanding
+# and 70 not, so those are keyed by binary. Every other overlay is bare.
+# SLUS_008.92 is the one binary whose own objects disagree, 45 expanded against
+# 9 bare, so its sources take the override below rather than a binary-wide rule.
+#
+# Do not key the effect overlays on filenames: the same engine source will be
+# linked into overlays from both sets, and ten functions already ship both ways.
+NO_EXPAND_DIV := effect_011 effect_012 effect_017 effect_044 effect_063 effect_064 \
+                    effect_065 effect_069 effect_070 effect_089 effect_102 effect_105 \
+                    effect_107 effect_108 effect_110 effect_112 effect_113 effect_116 \
+                    effect_117 effect_118 effect_123 effect_124 effect_126 effect_128 \
+                    effect_129 effect_131 effect_132 effect_134 effect_135 effect_136 \
+                    effect_138 effect_139 effect_140 effect_207 effect_210 effect_212 \
+                    effect_213 effect_214 effect_216 effect_226 effect_227 effect_251 \
+                    effect_260 effect_275 effect_276 effect_277 effect_278 effect_279 \
+                    effect_280 effect_283 effect_284 effect_285 effect_287 effect_290 \
+                    effect_291 effect_297 effect_298 effect_300 effect_302 effect_304 \
+                    effect_308 effect_311 effect_314 effect_316 effect_317 effect_320 \
+                    effect_322 effect_323 effect_325 effect_338
+
+# Sources whose object expands inside a binary that otherwise does not. Only
+# SLUS_008.92 mixes, so only its sources belong here.
+EXPAND_DIV_SRCS :=
+
+# $(call expand_div,<binary>,<source>): the source override wins, else effect
+# overlays expand unless listed above, and nothing else expands.
+expand_div = $(if $(filter $(2),$(EXPAND_DIV_SRCS)),--expand-div,$(if $(filter effect_%,$(1)),$(if $(filter $(1),$(NO_EXPAND_DIV)),,--expand-div)))
+
 # Source files compiled with PsyQ 4.3 (default is PsyQ 4.1)
 PSYQ43_SRCS := src/snd_init.c src/snd_dma.c src/snd_voice.c src/snd_bank.c src/snd_param.c src/snd_note.c src/snd_track.c src/snd_cmd.c \
                src/world/we_object0.c \
@@ -106,7 +138,12 @@ MENU_OVERLAYS := menumain menucfg menupty menusts menuabl menushop menuext \
                  menutmag menutips menutest
 CODE_OVERLAYS := field_init intro field \
                  tripletriad battle_render battle world
-OVERLAYS      := $(MENU_OVERLAYS) $(CODE_OVERLAYS)
+
+ALL_EFFECT_OVERLAYS := $(filter effect_%,$(SPLAT_BINARIES))
+EFFECTS ?= effect_001 effect_025 effect_028
+EFFECT_OVERLAYS := $(if $(filter all,$(EFFECTS)),$(ALL_EFFECT_OVERLAYS),$(EFFECTS))
+OVERLAYS      := $(MENU_OVERLAYS) $(CODE_OVERLAYS) $(EFFECT_OVERLAYS)
+ALL_OVERLAYS  := $(MENU_OVERLAYS) $(CODE_OVERLAYS) $(ALL_EFFECT_OVERLAYS)
 
 ### Targets ###
 
@@ -151,28 +188,28 @@ build: $(BUILT_EXE) build-overlays
 
 # Build and compare SHA1 against originals (main + overlays).
 # Builds each overlay; any build failure or SHA1 mismatch fails the target.
+# The name/built/original triples go through a file rather than being expanded
+# into the recipe: inline, several hundred overlays exceed the kernel's 128 KB
+# limit on a single shell argument and make dies with "Argument list too long".
+VERIFY_LIST := $(BUILD_DIR)/verify.list
+
 verify: $(BUILT_EXE) $(foreach ovl,$(OVERLAYS),build-$(ovl))
+	@mkdir -p $(BUILD_DIR)
+	$(file >$(VERIFY_LIST),$(MAIN) $(BUILT_EXE) $(TARGET))
+	$(foreach ovl,$(OVERLAYS),$(file >>$(VERIFY_LIST),$(notdir $($(ovl)_TARGET)) $($(ovl)_BIN) $($(ovl)_TARGET)))
 	@FAIL=0; \
 	printf "%-20s  %-40s  %-40s  %s\n" "Name" "Expected" "Actual" "State"; \
 	printf "%-20s  %-40s  %-40s  %s\n" "--------------------" "----------------------------------------" "----------------------------------------" "--------"; \
-	BUILT=$$(sha1sum $(BUILT_EXE) | cut -d' ' -f1); \
-	ORIG=$$(sha1sum $(TARGET) | cut -d' ' -f1); \
-	if [ "$$BUILT" = "$$ORIG" ]; then \
-		printf "%-20s  %s  \033[32m%s\033[0m  \033[32m%s\033[0m\n" "$(MAIN)" "$$ORIG" "$$BUILT" "Match"; \
-	else \
-		printf "%-20s  %s  \033[31m%s\033[0m  \033[31m%s\033[0m\n" "$(MAIN)" "$$ORIG" "$$BUILT" "Mismatch"; \
-		FAIL=1; \
-	fi; \
-	$(foreach ovl,$(OVERLAYS), \
-		BUILT=$$(sha1sum $($(ovl)_BIN) | cut -d' ' -f1); \
-		ORIG=$$(sha1sum $($(ovl)_TARGET) | cut -d' ' -f1); \
-		if [ "$$BUILT" = "$$ORIG" ]; then \
-			printf "%-20s  %s  \033[32m%s\033[0m  \033[32m%s\033[0m\n" "$(notdir $($(ovl)_TARGET))" "$$ORIG" "$$BUILT" "Match"; \
+	while read -r NAME BUILT ORIG; do \
+		B=$$(sha1sum "$$BUILT" | cut -d' ' -f1); \
+		O=$$(sha1sum "$$ORIG" | cut -d' ' -f1); \
+		if [ "$$B" = "$$O" ]; then \
+			printf "%-20s  %s  \033[32m%s\033[0m  \033[32m%s\033[0m\n" "$$NAME" "$$O" "$$B" "Match"; \
 		else \
-			printf "%-20s  %s  \033[31m%s\033[0m  \033[31m%s\033[0m\n" "$(notdir $($(ovl)_TARGET))" "$$ORIG" "$$BUILT" "Mismatch"; \
+			printf "%-20s  %s  \033[31m%s\033[0m  \033[31m%s\033[0m\n" "$$NAME" "$$O" "$$B" "Mismatch"; \
 			FAIL=1; \
 		fi; \
-	) \
+	done < $(VERIFY_LIST); \
 	if [ "$$FAIL" = "1" ]; then exit 1; fi
 
 # First-time setup: create venv, install dependencies, run splat
@@ -237,9 +274,9 @@ $$($(1)_DIR)/%.o: %.c
 	$$(CPP) -E -lang-c -nostdinc -Iinclude $$< -o $$($(1)_DIR)/$$(*F).i && \
 	$$(if $$(filter $$<,$$(PSYQ43_SRCS)), \
 		$$(PSYQ43_CC1) -quiet $$(CC_FLAGS) $$($(1)_DIR)/$$(*F).i -o $$($(1)_DIR)/$$(*F).s && \
-		cat $$($(1)_DIR)/$$(*F).s | $$(MASPSX) $$(PSYQ43_MASPSXFLAGS) --run-assembler $$(ASFLAGS) -o $$@, \
+		cat $$($(1)_DIR)/$$(*F).s | $$(MASPSX) $$(PSYQ43_MASPSXFLAGS) $$(call expand_div,$(1),$$<) --run-assembler $$(ASFLAGS) -o $$@, \
 		$$(PSYQ41_CC1) -quiet $$(CC_FLAGS) $$($(1)_DIR)/$$(*F).i -o $$($(1)_DIR)/$$(*F).s && \
-		cat $$($(1)_DIR)/$$(*F).s | $$(MASPSX) $$(PSYQ41_MASPSXFLAGS) --run-assembler $$(ASFLAGS) -o $$@)
+		cat $$($(1)_DIR)/$$(*F).s | $$(MASPSX) $$(PSYQ41_MASPSXFLAGS) $$(call expand_div,$(1),$$<) --run-assembler $$(ASFLAGS) -o $$@)
 
 $$($(1)_DIR)/assets/%.o: assets/%.bin
 	@mkdir -p $$(dir $$@)
@@ -274,7 +311,7 @@ endef
 # template would expand its paths to bare "/". Make regenerates binaries.mk
 # above and re-executes, and the rules get defined on that second pass.
 ifneq ($(wildcard $(BINARIES_MK)),)
-$(foreach ovl,$(OVERLAYS),$(eval $(call OVERLAY_TEMPLATE,$(ovl))))
+$(foreach ovl,$(ALL_OVERLAYS),$(eval $(call OVERLAY_TEMPLATE,$(ovl))))
 endif
 
 # field_init: extract font TIM from overlay binary during split
@@ -298,8 +335,13 @@ build-overlays: $(foreach ovl,$(OVERLAYS),build-$(ovl))
 ### Progress report (objdiff) ###
 OBJDIFF := tools/objdiff/objdiff
 
+# Target objects for the objdiff GUI: the original code of every C unit,
+# assembled from splat's disassembly into expected/ and proven by relinking
+# every binary from them. Run on a verified tree. objdiff.json is written to
+# point at them; `make report` writes it back to the built objects.
 expected:
-	@python3 tools/objdiff/build_expected.py
+	$(PYTHON) tools/objdiff/build_expected.py --check
+	@$(PYTHON) tools/objdiff/objdiff_generate.py --expected
 
 objdiff-config:
 	@python3 tools/objdiff/objdiff_generate.py
@@ -310,4 +352,4 @@ report: objdiff-config
 
 .PHONY: all full build verify check setup split splat-config clean permute build-overlays \
         expected objdiff-config report \
-        $(foreach ovl,$(OVERLAYS),split-$(ovl) build-$(ovl) verify-$(ovl))
+        $(foreach ovl,$(ALL_OVERLAYS),split-$(ovl) build-$(ovl) verify-$(ovl))
