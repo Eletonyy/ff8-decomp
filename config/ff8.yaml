@@ -676,13 +676,22 @@ binaries:
   options:
     target_path: original/effect/effect_001.bin
     src_path: src/effect
+    section_order: [.text, .rodata, .data, .bss]
   segments:
   - name: effect_001
     type: code
     start: 0x0
     vram: 0x801A0000
     subsegments:
-    - [0x0, c, effect_001]
+    - [0x0, c, effect_001_entry]
+    - [0x1F0, c, lib/common]
+    - [0x960, c, lib/aim]
+    - [0xAD8, c, lib/entity]
+    - [0x1648, c, lib/sprite]
+    - [0x16E4, c, lib/step]
+    - [0x172C, c, effect_001_anim]
+    - [0x181C, c, lib/render]
+    - [0x2E48, c, effect_001]
     - [0x4614, .rodata, effect_001]
     # The overlay's data, cut at every address the code names. The TIM parses
     # to exactly 0x2532C, where the five prim source tables begin.
@@ -1039,14 +1048,33 @@ binaries:
   options:
     target_path: original/effect/effect_025.bin
     src_path: src/effect
+    section_order: [.text, .rodata, .data, .bss]
   segments:
   - name: effect_025
     type: code
     start: 0x0
     vram: 0x801A0000
     subsegments:
-    - [0x0, c, effect_025]
-    - [0x8304, .rodata, effect_025]
+    - [0x0, c, effect_025_entry]
+    - [0x14C, c, lib/common]
+    - [0x8BC, c, lib/aim]
+    - [0xA34, c, lib/heading]
+    - [0xA64, c, lib/scatter]
+    - [0xB6C, c, lib/render]
+    - [0x2198, c, lib/entity]
+    - [0x2D08, c, lib/emit_mode]
+    - [0x4BFC, c, effect_025_scroll]
+    - [0x4F44, c, lib/sprite]
+    - [0x4FE0, c, effect_025_anim]
+    - [0x5204, c, lib/step]
+    - [0x524C, c, effect_025_motes]
+    - [0x5CEC, c, lib/fill]
+    - [0x5D10, c, lib/rot]
+    - [0x5F14, c, lib/pose]
+    - [0x6910, c, lib/interpolate]
+    - [0x6A00, c, effect_025]
+    - [0x8304, .rodata, effect_025_motes]
+    - [0x8344, .rodata, effect_025]
     - [0x83D0, bin, effect_025]
   - [0x33EA4]
 - name: effect_026
@@ -1084,14 +1112,38 @@ binaries:
   options:
     target_path: original/effect/effect_028.bin
     src_path: src/effect
+    section_order: [.text, .rodata, .data, .bss]
   segments:
   - name: effect_028
     type: code
     start: 0x0
     vram: 0x801A0000
     subsegments:
-    - [0x0, c, effect_028]
-    - [0x9EFC, .rodata, effect_028]
+    - [0x0, c, effect_028_entry]
+    - [0x208, c, lib/common]
+    - [0x978, c, lib/rotz]
+    - [0xB04, c, lib/heading]
+    - [0xB34, c, lib/entity]
+    - [0x16A4, c, lib/tint]
+    - [0x1980, c, lib/vector]
+    - [0x20EC, c, lib/emit]
+    - [0x3F20, c, lib/packet]
+    - [0x4128, c, lib/particlestep]
+    - [0x541C, c, lib/particlealloc]
+    - [0x5538, c, lib/draw]
+    - [0x6194, c, lib/emitteralloc]
+    - [0x62B4, c, lib/spawn]
+    - [0x8068, c, lib/list]
+    - [0x8684, c, lib/trail]
+    - [0x87F8, c, lib/strands]
+    - [0x8CE4, c, lib/tables]
+    - [0x8FF8, c, lib/bankclear]
+    - [0x9050, c, lib/drawscript]
+    - [0x94B4, c, effect_028]
+    - [0x9EFC, .rodata, lib/particlestep]
+    - [0x9F10, pad]
+    - [0x9F14, .rodata, lib/list]
+    - [0x9F40, .rodata, effect_028]
     - [0x9FA0, bin, effect_028]
   - [0x3CCB0]
 - name: effect_029

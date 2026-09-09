@@ -8,6 +8,7 @@ categorized by binary (main exe or overlay).
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -77,6 +78,22 @@ def effect_categories():
     return [{"id": name, "name": f"{name}.bin"} for name in names]
 
 
+def unit_name(ovl_name, rel_from_ovl):
+    """The object's path under the overlay's src_path, so a unit in a
+    subdirectory keeps it: effect/lib/entity.o is lib/entity, not entity."""
+    src_path = f"src/{ovl_name}"
+    yaml_path = ROOT / "build" / "splat" / f"{ovl_name}.yaml"
+    if yaml_path.exists():
+        m = re.search(r"^\s*src_path:\s*(\S+)", yaml_path.read_text(), re.M)
+        if m:
+            src_path = m.group(1)
+    stem = str(rel_from_ovl)[:-2]
+    prefix = src_path.rstrip("/") + "/"
+    if stem.startswith(prefix):
+        return stem[len(prefix):]
+    return Path(stem).name
+
+
 def find_units():
     units = []
 
@@ -123,9 +140,8 @@ def find_units():
         for o_file in sorted(src_root.rglob("*.o")):
             rel_from_ovl = o_file.relative_to(ovl_dir)
             expected_o = EXPECTED / ovl_dir.relative_to(ROOT) / rel_from_ovl
-            src_rel = str(rel_from_ovl).replace(".o", "")
             units.append({
-                "name": f"ovl/{ovl_name}/{Path(src_rel).name}",
+                "name": f"ovl/{ovl_name}/{unit_name(ovl_name, rel_from_ovl)}",
                 "target_path": target_path(expected_o, o_file),
                 "base_path": str(o_file.relative_to(ROOT)),
                 "metadata": {"progress_categories": [ovl_name]},

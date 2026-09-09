@@ -9,12 +9,14 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/inline_c.h"
 #include "effect/effect_001.h"
+#include "effect/effect_001_anim.h"
+#include "effect/lib/common.h"
+#include "effect/lib/entity.h"
+#include "effect/lib/sprite.h"
+#include "effect/lib/step.h"
+#include "effect/lib/render.h"
 #include "btl_entity.h"
 
-static void func_801A0644(MATRIX *m, s32 angle);
-static void func_801A0960(MATRIX *m, SVECTOR *dir, SVECTOR *up);
-static EffectEntity *func_801A0B00(void *pool, void *task, s32 stride,
-                                   EffectEntity *owner);
 static s32 func_801A2E48(EffectSpark *spark);
 static void func_801A351C(EffectEntity *entity);
 static void func_801A3640(EffectEntity *entity);
@@ -22,1112 +24,6 @@ static s32 func_801A3924(EffectEntity *entity);
 static s32 func_801A3B6C(EffectEntity *entity);
 static s32 func_801A3E64(EffectEntity *entity);
 static s32 func_801A41C8(EffectEntity *entity);
-static s32 func_801A4434(EffectEntity *entity);
-
-/** @brief Stride between the prim and frame banks carved out of the TIM. */
-#define EFFECT_BANK_SIZE 0x10000
-
-
-/**
- * @brief Start an effect script and hand back its task pool.
- *
- * Builds the four task pools, allocates the root entity, seeds it from the
- * animation set, and publishes the three frame banks the renderer reads from.
- *
- * @param animSet Animation set the effect plays.
- * @return The pool the root entity lives in.
- */
-void *func_801A0000(EffectAnimSet *animSet) {
-    u8 *bank0;
-    EffectEntity *entity;
-    u8 *bank1;
-    u8 *frames;
-
-    D_801C58E0 = 0;
-    D_801C58E4 = 0;
-    func_800B2A00(&D_801C59E0, &D_801C5910, 0x64, 2);
-    entity = func_801A0B00(&D_801C59E0, func_801A4434, 0x64, NULL);
-    entity->animSet = animSet;
-    entity->unk02C = animSet->anims[entity->unk02A].unk000;
-    entity->unk02D =
-        entity->animSet->anims[entity->unk02A].parts[entity->unk02B].unk000;
-    entity->pc = 0;
-    entity->unk05A = animSet->anims->unk010;
-    entity->unk058 = animSet->anims->unk011;
-    entity->unk02F = entity->unk05A - 1;
-    if (entity->unk02F < entity->unk058) {
-        entity->unk02F = entity->unk058;
-    }
-    if (!(animSet->flags & EFFECT_ANIMSET_FLAG_LOADED)) {
-        func_800C3BE0(&D_801A475C);
-        func_800BB084(&D_801A4F0C);
-    }
-    D_801C58F0 = &D_801A4F0C;
-    bank0 = &D_801A4F0C;
-    D_801C58FC = bank0;
-    bank1 = bank0 + EFFECT_BANK_SIZE;
-    D_801C5904 = bank0 + EFFECT_BANK_SIZE;
-    D_801C58F0 = bank0 + EFFECT_BANK_SIZE;
-    frames = bank1;
-    D_801C5900 = frames;
-    frames += EFFECT_BANK_SIZE;
-    D_801C58F0 = frames;
-    D_801C5908 = frames;
-    func_800B2A00(&D_801C5B50, &D_801C59F0, 0x58, 4);
-    func_800B2A00(&D_801CD9F0, &D_801C5B60, 0x6C, 0x12C);
-    func_800B2A00(&D_801D5CF0, &D_801D3900, 0x5C, 0x64);
-    return &D_801C59E0;
-}
-
-/**
- * @brief Cache the sixteen hex digit glyphs and reset the debug text cursor.
- *
- * @note The lookup runs once per glyph -- the target holds 16 separate calls,
- *       so a loop or a cached pointer does not match.
- */
-static void func_801A01F0(void) {
-    D_801D5D00[0] = getMenuString(11)[1];
-    D_801D5D00[1] = getMenuString(11)[2];
-    D_801D5D00[2] = getMenuString(11)[3];
-    D_801D5D00[3] = getMenuString(11)[4];
-    D_801D5D00[4] = getMenuString(11)[5];
-    D_801D5D00[5] = getMenuString(11)[6];
-    D_801D5D00[6] = getMenuString(11)[7];
-    D_801D5D00[7] = getMenuString(11)[8];
-    D_801D5D00[8] = getMenuString(11)[9];
-    D_801D5D00[9] = getMenuString(11)[10];
-    D_801D5D00[10] = getMenuString(11)[11];
-    D_801D5D00[11] = getMenuString(11)[12];
-    D_801D5D00[12] = getMenuString(11)[13];
-    D_801D5D00[13] = getMenuString(11)[14];
-    D_801D5D00[14] = getMenuString(11)[15];
-    D_801D5D00[15] = getMenuString(11)[16];
-    D_801D5D00[16] = 0;
-    D_801D5D14 = 10;
-    D_801D5D18 = 20;
-    D_801D5D1C = 3;
-}
-
-/** @brief Draw @p value as eight hex glyphs at the current debug text cursor. */
-static void func_801A0340(u32 value) {
-    u32 *ot = D_800FA5E8->frontOT;
-    u8 text[9];
-    s32 i;
-
-    for (i = 7; i >= 0; i--) {
-        text[i] = D_801D5D00[value & 0xF];
-        value >>= 4;
-    }
-    text[8] = 0;
-    D_801C58F4 = func_8002C56C(ot, D_801C58F4, D_801D5D14, D_801D5D18,
-                               text, D_801D5D1C);
-    D_801D5D14 += 0x48;
-}
-
-/** @brief Opcode handler: arm the frame delay and advance the running total. */
-static void func_801A03EC(void) {
-    D_801D5D14 = 10;
-    D_801D5D18 += 10;
-}
-
-/** @brief Opcode handler: no-op. */
-static void func_801A040C(EffectEntity *entity) {
-}
-
-/**
- * @brief Emit a 128x128 textured quad at the head of the prim buffer.
- *
- * @param x     Left edge in screen space.
- * @param y     Top edge in screen space.
- * @param tx    Texture page X.
- * @param ty    Texture page Y.
- * @param clutX Palette X.
- * @param clutY Palette Y.
- * @param abr   Semi-transparency rate for the page.
- */
-static void func_801A0414(s16 x, s16 y, s16 tx, s16 ty, u32 clutX, s32 clutY,
-                   s32 abr) {
-    POLY_FT4 *poly = D_801C58F4;
-
-    setPolyFT4(poly);
-    setSemiTrans(poly, 1);
-    setShadeTex(poly, 1);
-    poly->tpage = getTPage(1, abr, tx, ty);
-    poly->clut = getClut(clutX, clutY);
-    poly->u0 = poly->u2 = 0;
-    poly->u1 = poly->u3 = 0xFF;
-    poly->v0 = poly->v1 = 0;
-    poly->v2 = poly->v3 = 0xFF;
-    poly->x0 = poly->x2 = x;
-    poly->x1 = poly->x3 = x + 0x7F;
-    poly->y0 = poly->y1 = y;
-    poly->y2 = poly->y3 = y + 0x7F;
-    AddPrim(D_800FA5E8, poly);
-    poly++;
-    D_801C58F4 = poly;
-}
-
-/**
- * @brief Emit a 256x256 textured quad at the head of the prim buffer.
- *
- * @param x     Left edge in screen space.
- * @param y     Top edge in screen space.
- * @param tx    Texture page X.
- * @param ty    Texture page Y.
- * @param clutX Palette X.
- * @param clutY Palette Y.
- * @param abr   Semi-transparency rate for the page.
- */
-static void func_801A0510(s16 x, s16 y, s16 tx, s16 ty, u32 clutX, s32 clutY,
-                   s32 abr) {
-    POLY_FT4 *poly = D_801C58F4;
-
-    setPolyFT4(poly);
-    setSemiTrans(poly, 1);
-    setShadeTex(poly, 1);
-    poly->tpage = getTPage(1, abr, tx, ty);
-    poly->clut = getClut(clutX, clutY);
-    poly->u0 = poly->u2 = 0;
-    poly->u1 = poly->u3 = 0xFF;
-    poly->v0 = poly->v1 = 0;
-    poly->v2 = poly->v3 = 0xFF;
-    poly->x0 = poly->x2 = x;
-    poly->x1 = poly->x3 = x + 0xFF;
-    poly->y0 = poly->y1 = y;
-    poly->y2 = poly->y3 = y + 0xFF;
-    AddPrim(D_800FA5E8, poly);
-    poly++;
-    D_801C58F4 = poly;
-}
-
-/** @brief Load the identity matrix. */
-static void func_801A060C(MATRIX *m) {
-    m->m[0][0] = ONE;
-    m->m[1][0] = 0;
-    m->m[2][0] = 0;
-    m->m[0][1] = 0;
-    m->m[1][1] = ONE;
-    m->m[2][1] = 0;
-    m->m[0][2] = 0;
-    m->m[1][2] = 0;
-    m->m[2][2] = ONE;
-    m->t[0] = 0;
-    m->t[1] = 0;
-    m->t[2] = 0;
-}
-
-/** @brief Post-multiply @p m by a rotation of @p angle about X. */
-static void func_801A0644(MATRIX *m, s32 angle) {
-    EffectRotScratch *rot = func_800B3698(sizeof(EffectRotScratch));
-
-    rot->sin = rsin(angle);
-    rot->cos = rsin((angle + 0x400) & 0xFFF);
-    rot->m.m[0][0] = ONE;
-    rot->m.m[0][1] = 0;
-    rot->m.m[0][2] = 0;
-    rot->m.m[1][0] = 0;
-    rot->m.m[1][1] = rot->cos;
-    rot->m.m[1][2] = -rot->sin;
-    rot->m.m[2][0] = 0;
-    rot->m.m[2][1] = rot->sin;
-    rot->m.m[2][2] = rot->cos;
-    gte_MulMatrix0(m, &rot->m, m);
-    func_800B36B8(sizeof(EffectRotScratch));
-}
-
-/**
- * @brief Compose a rotation about the Y axis into @p m.
- *
- * @param m     Matrix rotated in place.
- * @param angle Rotation, in the 0x1000-per-turn units @ref rsin takes.
- */
-static void func_801A07D4(MATRIX *m, s32 angle) {
-    EffectRotScratch *rot = func_800B3698(sizeof(EffectRotScratch));
-
-    rot->sin = rsin(angle);
-    rot->cos = rsin((angle + 0x400) & 0xFFF);
-    rot->m.m[0][0] = rot->cos;
-    rot->m.m[0][1] = 0;
-    rot->m.m[0][2] = rot->sin;
-    rot->m.m[1][0] = 0;
-    rot->m.m[1][1] = ONE;
-    rot->m.m[1][2] = 0;
-    rot->m.m[2][0] = -rot->sin;
-    rot->m.m[2][1] = 0;
-    rot->m.m[2][2] = rot->cos;
-    gte_MulMatrix0(m, &rot->m, m);
-    func_800B36B8(sizeof(EffectRotScratch));
-}
-
-/** @brief Build a matrix in @p m that aims along @p dir with @p up as the roll. */
-static void func_801A0960(MATRIX *m, SVECTOR *dir, SVECTOR *up) {
-    MATRIX *basis = func_800B3698(sizeof(MATRIX));
-    SVECTOR *row1 = (SVECTOR *)basis->m[1];
-    SVECTOR *row2 = (SVECTOR *)basis->m[2];
-
-    /* A matrix row is 6 bytes, so the whole-vector store spills one halfword
-       into row 2 -- harmless, row 2 is written next. The width is load-bearing:
-       it is the unaligned 8-byte copy the target does here, where the
-       element-wise stores below are three halfwords. */
-    *row1 = *up;
-    row2->vx = dir->vx;
-    row2->vy = dir->vy;
-    row2->vz = dir->vz;
-    gte_ldopv1SV(row1);
-    gte_ldopv2SV(row2);
-    gte_op12();
-    gte_stsv(basis->m[0]);
-    MatrixNormal_2(basis, basis);
-    TransposeMatrix(basis, m);
-    func_800B36B8(sizeof(MATRIX));
-}
-
-/** @brief Aim @p m along the vector from @p from to @p to, Y up. */
-static void func_801A0A6C(MATRIX *m, SVECTOR *from, SVECTOR *to) {
-    SVECTOR up;
-    SVECTOR delta;
-
-    up.vx = 0;
-    up.vy = ONE;
-    up.vz = 0;
-    delta.vx = to->vx - from->vx;
-    delta.vy = to->vy - from->vy;
-    delta.vz = to->vz - from->vz;
-    func_801A0960(m, &delta, &up);
-}
-
-/** @brief Opcode handler: release one frame of the linked script's wait. */
-static void func_801A0AD8(EffectEntity *entity) {
-    if (entity->unk018 != NULL) {
-        entity->unk018->wait--;
-    }
-}
-
-/**
- * @brief Allocate an effect entity from @p pool and hang it off @p owner.
- *
- * The pool keeps its own 12-byte task header ahead of the entity fields, so
- * only the remainder of @p stride is cleared. A child inherits the owner's
- * model, animation set and position; an entity with no owner becomes its own
- * model.
- *
- * @param pool   Task pool to allocate from.
- * @param task   Per-frame step to install on the new entity.
- * @param stride Total size of the allocation, header included.
- * @param owner  Parent entity, or NULL for a root.
- * @return The new entity, or NULL if the pool is full.
- */
-static EffectEntity *func_801A0B00(void *pool, void *task, s32 stride,
-                                   EffectEntity *owner) {
-    EffectEntity *node = func_800B2A84(pool, task);
-    s32 *clear;
-    s32 words;
-    s32 i;
-
-    if (node == NULL) {
-        return NULL;
-    }
-    clear = (s32 *)&node->animSet;
-    stride = stride - 0xC;
-    words = stride / 4;
-    for (i = 0; i < words; i++) {
-        *clear = 0;
-        clear++;
-    }
-    if (owner == NULL) {
-        node->unk018 = NULL;
-        node->unk014 = NULL;
-        /* A root drives its own geometry, so it is its own model. */
-        node->unk010 = (EffectModel *)node;
-    } else {
-        if (owner->unk014 == NULL) {
-            node->unk014 = (EffectModel *)node;
-        } else {
-            node->unk014 = owner->unk014;
-        }
-        node->unk018 = owner;
-        node->unk010 = owner->unk010;
-        node->animSet = owner->animSet;
-        node->pos = owner->pos;
-        node->unk02A = owner->unk02A;
-        node->unk02B = owner->unk02B;
-        node->unk02E = owner->unk02E;
-        node->unk02F = owner->unk02F;
-        owner->wait++;
-        node->unk02C = node->animSet->anims[node->unk02A].unk000;
-        node->unk02D =
-            node->animSet->anims[node->unk02A].parts[node->unk02B].unk000;
-    }
-    return node;
-}
-
-/** @brief Cache the battle slot's two anchor points and their midpoint. */
-static void func_801A0C8C(EffectEntity *entity) {
-    BattleEffectSlot *slot = &D_800EF2D0[entity->unk02D];
-    SVECTOR top;
-    SVECTOR bottom;
-
-    if (!(slot->flags & BATTLE_SLOT_FLAG_UNK02)) {
-        return;
-    }
-    func_800B3960(slot, 0xF0, 0, &top);
-    func_800B3960(slot, 0xF1, 0, &bottom);
-    entity->unk040.vx = top.vx;
-    entity->unk040.vy = top.vy;
-    entity->unk040.vz = top.vz;
-    entity->unk038.vx = (top.vx + bottom.vx) / 2;
-    entity->unk038.vy = (top.vy + bottom.vy) / 2;
-    entity->unk038.vz = (top.vz + bottom.vz) / 2;
-    entity->unk030.vx = bottom.vx;
-    entity->unk030.vy = slot->unk024;
-    entity->unk030.vz = bottom.vz;
-}
-
-/** @brief Copy @c unk030 of the linked model out to @p out. */
-static void func_801A0DC0(EffectEntity *entity, SVECTOR *out) {
-    *out = entity->unk014->unk030;
-}
-
-/** @brief Copy @c unk038 of the linked model out to @p out. */
-static void func_801A0DF0(EffectEntity *entity, SVECTOR *out) {
-    *out = entity->unk014->unk038;
-}
-
-/** @brief Copy @c unk040 of the linked model out to @p out. */
-static void func_801A0E20(EffectEntity *entity, SVECTOR *out) {
-    *out = entity->unk014->unk040;
-}
-
-/** @brief As @ref func_801A0C8C, but for the slot the animation set names. */
-static void func_801A0E50(EffectEntity *entity) {
-    BattleEffectSlot *slot = &D_800EF2D0[entity->animSet->slot];
-    SVECTOR top;
-    SVECTOR bottom;
-
-    if (!(slot->flags & BATTLE_SLOT_FLAG_UNK02)) {
-        return;
-    }
-    func_800B3960(slot, 0xF0, 0, &top);
-    func_800B3960(slot, 0xF1, 0, &bottom);
-    entity->unk040.vx = top.vx;
-    entity->unk040.vy = top.vy;
-    entity->unk040.vz = top.vz;
-    entity->unk038.vx = (top.vx + bottom.vx) / 2;
-    entity->unk038.vy = (top.vy + bottom.vy) / 2;
-    entity->unk038.vz = (top.vz + bottom.vz) / 2;
-    entity->unk030.vx = bottom.vx;
-    entity->unk030.vy = slot->unk024;
-    entity->unk030.vz = bottom.vz;
-}
-
-/** @brief Copy @c unk030 of the linked model out to @p out. */
-static void func_801A0F8C(EffectEntity *entity, SVECTOR *out) {
-    *out = entity->unk010->unk030;
-}
-
-/** @brief Copy @c unk038 of the linked model out to @p out. */
-static void func_801A0FBC(EffectEntity *entity, SVECTOR *out) {
-    *out = entity->unk010->unk038;
-}
-
-/** @brief Copy @c unk040 of the linked model out to @p out. */
-static void func_801A0FEC(EffectEntity *entity, SVECTOR *out) {
-    *out = entity->unk010->unk040;
-}
-
-/**
- * @brief Recompute the model's bounding box from its posed skeleton.
- *
- * Transforms every joint after the root through the GTE and keeps the running
- * minimum and maximum, then publishes the box back onto the entity.
- *
- * @param entity Entity whose model is measured.
- */
-static void func_801A101C(EffectEntity *entity) {
-    BattleEffectSlot *slot = &D_800EF2D0[entity->unk02D];
-    EffectSkeleton *skeleton = slot->mesh->skeleton;
-    EffectJoint *joint = skeleton->joints;
-    EffectBoundsScratch *b = func_800B3698(sizeof(EffectBoundsScratch));
-    SVECTOR *bounds;
-    s32 i;
-    s16 x = joint->mtx.t[0];
-    s16 y;
-    s16 z;
-
-    b->max.vx = x;
-    b->min.vx = x;
-    y = joint->mtx.t[1];
-    b->max.vy = y;
-    b->min.vy = y;
-    z = joint->mtx.t[2];
-    b->max.vz = z;
-    b->min.vz = z;
-    b->v.vx = 0;
-    b->v.vy = 0;
-    joint = &skeleton->joints[1];
-    for (i = 1; i < skeleton->count; i++) {
-        SetRotMatrix(&joint->mtx);
-        SetTransMatrix(&joint->mtx);
-        b->v.vz = -joint->unk002;
-        gte_ldv0(&b->v);
-        gte_mvmva(1, 0, 0, 0, 0);
-        gte_stlvnl(&b->pos);
-        gte_stflg(&b->flag);
-        if (b->pos.vx < b->min.vx) {
-            b->min.vx = b->pos.vx;
-        } else if (b->max.vx < b->pos.vx) {
-            b->max.vx = b->pos.vx;
-        }
-        if (b->pos.vy < b->min.vy) {
-            b->min.vy = b->pos.vy;
-        } else if (b->max.vy < b->pos.vy) {
-            b->max.vy = b->pos.vy;
-        }
-        if (b->pos.vz < b->min.vz) {
-            b->min.vz = b->pos.vz;
-        } else if (b->max.vz < b->pos.vz) {
-            b->max.vz = b->pos.vz;
-        }
-        joint++;
-    }
-    /* The box overlays unk048/unk04C, which the script opcodes use as a table
-       pointer -- the two never overlap in time. */
-    bounds = (SVECTOR *)entity->unk048;
-    bounds[0] = b->min;
-    bounds[1] = b->max;
-    func_800B36B8(sizeof(EffectBoundsScratch));
-}
-
-/** @brief Copy the linked model's bounding box out to @p min and @p max. */
-static void func_801A1268(EffectEntity *entity, SVECTOR *min, SVECTOR *max) {
-    EffectModel *model = entity->unk014;
-
-    *min = model->boundsMin;
-    *max = model->boundsMax;
-}
-
-/**
- * @brief Half the longest side of the model's bounding box.
- *
- * @param entity Entity whose model is measured.
- * @return Half the largest of the box's three extents.
- */
-static s32 func_801A12B8(EffectEntity *entity) {
-    EffectModel *model = entity->unk014;
-    s16 dx = model->boundsMax.vx - model->boundsMin.vx;
-    s16 dy = model->boundsMax.vy - model->boundsMin.vy;
-    s16 dz = model->boundsMax.vz - model->boundsMin.vz;
-    if (dx > dy) {
-        if (dx > dz) {
-            return dx / 2;
-        }
-        return dz / 2;
-    }
-    if (dy > dz) {
-        return dy / 2;
-    }
-    return dz / 2;
-}
-
-/** @brief Half the height of the linked model's bounding box. */
-static s16 func_801A135C(EffectEntity *entity) {
-    EffectModel *model = entity->unk014;
-
-    return (s16)(model->boundsMax.vy - model->boundsMin.vy) / 2;
-}
-
-/** @brief Half the linked model's larger horizontal extent. */
-static s16 func_801A138C(EffectEntity *entity) {
-    EffectModel *model = entity->unk014;
-    s16 spanX = model->boundsMax.vx - model->boundsMin.vx;
-    s16 spanZ = model->boundsMax.vz - model->boundsMin.vz;
-    /* Compared as `span` but returned as `spanX`: testing a separate copy is
-       what puts the wider-X arm on the taken branch. */
-    s16 span = spanX;
-
-    return (span <= spanZ ? spanZ : spanX) / 2;
-}
-
-/** @brief Height of the linked model's bounding box. */
-static s16 func_801A13E4(EffectEntity *entity) {
-    return entity->unk014->boundsMax.vy - entity->unk014->boundsMin.vy;
-}
-
-/** @brief Y of the top of the linked model, in battle-entity space. */
-static s16 func_801A1408(EffectEntity *entity) {
-    BattleEffectSlot *slot = &D_800EF2D0[entity->unk02D];
-
-    return slot->pos.vy + entity->unk014->boundsMax.vy;
-}
-
-/** @brief Y of the bottom of the linked model, in battle-entity space. */
-static s16 func_801A1450(EffectEntity *entity) {
-    BattleEffectSlot *slot = &D_800EF2D0[entity->unk02D];
-
-    return slot->pos.vy + entity->unk014->boundsMin.vy;
-}
-
-/** @brief A random point up the linked model, in battle-entity space. */
-static s16 func_801A1498(EffectEntity *entity) {
-    BattleEffectSlot *slot = &D_800EF2D0[entity->unk02D];
-    EffectModel *model = entity->unk014;
-    s16 height = model->boundsMax.vy - model->boundsMin.vy;
-    s16 offset = (rand() & 0xFFF) * height / 4096;
-
-    return slot->pos.vy + model->boundsMax.vy - offset / 2;
-}
-
-/** @brief Y of the centre of the linked model, in battle-entity space. */
-static s16 func_801A1550(EffectEntity *entity) {
-    EffectModel *model = entity->unk014;
-
-    return D_800EF2D0[entity->unk02D].pos.vy +
-           (model->boundsMax.vy + model->boundsMin.vy) / 2;
-}
-
-/** @brief Centre of the linked model's bounding box. */
-static void func_801A15A4(EffectEntity *entity, SVECTOR *out) {
-    EffectModel *model = entity->unk014;
-
-    out->vx = (model->boundsMax.vx + model->boundsMin.vx) / 2;
-    out->vy = (model->boundsMax.vy + model->boundsMin.vy) / 2;
-    out->vz = (model->boundsMax.vz + model->boundsMin.vz) / 2;
-}
-
-/** @brief Zero @p size bytes' worth of words starting at @p dst. */
-static void func_801A1610(s32 *dst, s32 size) {
-    s32 i;
-
-    for (i = 0; i < size / 4; i++) {
-        *dst = 0;
-        dst++;
-    }
-}
-
-/** @brief Build this effect's primitive and link it into the battle display list. */
-static void func_801A1648(EffectEntity *entity) {
-    s16 count;
-    BattleSpritePrim *prim;
-
-    if (entity->flags & EFFECT_FLAG_DONE) {
-        return;
-    }
-    prim = func_800B3698(sizeof(BattleSpritePrim));
-    func_800C96E4(&entity->pos, ONE, entity->unk054);
-    prim->anim = entity->unk04C;
-    count = entity->unk050;
-    prim->flags = 0;
-    prim->frame = count;
-    D_801C58F4 = func_800C9E10(prim, D_800FA5E8->ot, 2, D_801C58F4);
-    func_800B36B8(sizeof(BattleSpritePrim));
-}
-
-/** @brief Advance the script's counter, clamping at its limit. */
-static s32 func_801A16E4(EffectEntity *entity) {
-    entity->unk050++;
-    if (entity->unk052 < entity->unk050) {
-        entity->unk050 = entity->unk052;
-        entity->flags |= EFFECT_FLAG_DONE;
-        return 1;
-    }
-    return 0;
-}
-
-/** @brief Draw @p anim at the entity's position in @p colour and link it into the OT. */
-static void func_801A172C(EffectEntity *entity, BattleSpriteAnim *anim,
-                          CVECTOR *colour) {
-    MATRIX m;
-    void **head;
-    BattleSpritePrim *prim;
-
-    if (entity->flags & EFFECT_FLAG_DONE) {
-        return;
-    }
-    func_801A060C(&m);
-    func_801A0644(&m, 0x400);
-    m.t[0] = entity->pos.vx;
-    m.t[1] = 0;
-    m.t[2] = entity->pos.vz;
-    CompMatrix(&D_800F02C8, &m, &m);
-    SetRotMatrix(&m);
-    SetTransMatrix(&m);
-    prim = func_800B3698(sizeof(BattleSpritePrim));
-    head = &D_801C58F4;
-    prim->anim = anim;
-    prim->frame = 0;
-    prim->flags = BATTLE_SPRITE_FLAG_COLOUR;
-    prim->colour = *colour;
-    *head = func_800C9E10(prim, D_800FA5E8->ot, 2, *head);
-    func_800B36B8(sizeof(BattleSpritePrim));
-}
-
-/** @brief Refresh the render matrices from @p pose and apply the offset. */
-static void func_801A181C(EffectRender *render, BattleEffectSlot *slot) {
-    SVECTOR offset;
-
-    render->unk014 = slot->mtx;
-    render->unk054 = render->unk014;
-    switch (render->unk0D2) {
-    case 0:
-        ApplyMatrixSV(&render->unk054, &render->unk0B4, &offset);
-        render->unk054.t[0] += offset.vx;
-        render->unk054.t[1] += offset.vy;
-        render->unk054.t[2] += offset.vz;
-        break;
-    case 1:
-        render->unk054.t[0] += render->unk0B4.vx;
-        render->unk054.t[1] += render->unk0B4.vy;
-        render->unk054.t[2] += render->unk0B4.vz;
-        break;
-    }
-}
-
-/** @brief Compose each joint's matrix through the pose and the per-joint offset. */
-static void func_801A1960(EffectSkeletonRef *ref, EffectPose *pose) {
-    MATRIX *offset = D_801D5D20;
-    EffectSkeleton *skeleton = ref->mesh->skeleton;
-    EffectJoint *joint = skeleton->joints;
-    s32 i;
-
-    for (i = 0; i < skeleton->count; i++) {
-        CompMatrix(&pose->world, &joint->mtx, offset);
-        CompMatrix(&pose->view, &joint->mtx, &joint->mtx);
-        joint++;
-        offset++;
-    }
-}
-
-/** @brief Rebase a table of absolute pointers into offsets from its own head. */
-static void func_801A1A0C(s32 *table) {
-    s32 *base;
-    s32 count;
-    s32 i;
-
-    base = table;
-    count = *table;
-    for (i = 0; i < count; i++) {
-        table++;
-        *table -= (s32)base;
-    }
-}
-
-/** @brief Aim the render's model at the camera reference point. */
-static void func_801A1A4C(EffectRender *render) {
-    EffectAimScratch *a = func_800B3698(sizeof(EffectAimScratch));
-    s32 dx;
-    s32 dy;
-    s32 dz;
-
-    a->pos.vx = render->unk054.t[0];
-    a->pos.vy = render->unk054.t[1];
-    a->pos.vz = render->unk054.t[2];
-    dx = a->pos.vx - render->unk0DC;
-    a->delta.vx = dx;
-    dy = a->pos.vy - render->unk0DE;
-    a->delta.vy = dy;
-    dz = a->pos.vz - render->unk0E0;
-    a->delta.vz = dz;
-    a->distSq = dx * dx + dy * dy + dz * dz;
-    a->dist = SquareRoot0(a->distSq);
-    a->up.vx = 0;
-    a->up.vy = ONE;
-    a->up.vz = 0;
-    VectorNormalS(&a->delta, &a->dir);
-    func_801A0960(&a->rot, &a->dir, &a->up);
-    TransposeMatrix(&a->rot, &a->out);
-    a->out.t[0] = 0;
-    a->out.t[1] = 0;
-    a->out.t[2] = render->scale;
-    a->rot = render->unk014;
-    a->rot.t[0] = render->unk014.t[0] - render->unk054.t[0];
-    a->rot.t[1] = render->unk014.t[1] - render->unk054.t[1];
-    a->rot.t[2] = render->unk014.t[2] - render->unk054.t[2];
-    gte_MulMatrix0(&a->out, &a->rot, &render->unk074);
-    gte_SetTransMatrix(&a->out);
-    gte_ldlv0(a->rot.t);
-    gte_mvmva(1, 0, 0, 0, 0);
-    gte_stlvnl(render->unk074.t);
-    func_800B36B8(sizeof(EffectAimScratch));
-}
-
-/** @brief Reset a render request to its default pose, white, and unit scale. */
-static void func_801A1D38(EffectRender *render, void *pose, EffectRenderPart *part,
-                   void *texture, BattleEffectSlot *source, s32 frame) {
-    render->unk00C = &D_800FA5F0;
-    render->unk000 = pose;
-    render->part = part;
-    render->unk010 = &D_801C58F4;
-    render->unk0B4.vx = 0;
-    render->unk0B4.vy = 0;
-    render->unk0B4.vz = 0;
-    render->r = 0x80;
-    render->g = 0x80;
-    render->b = 0x80;
-    render->scale = 0x2000;
-    render->unk0D2 = 1;
-    render->unk0CE = 0;
-    render->unk0F2 = 0;
-    render->unk0A4.vx = 0;
-    render->unk0A4.vy = 0;
-    render->unk0A4.vz = 0;
-    render->unk0AC.vx = 0;
-    render->unk0AC.vy = 0;
-    render->unk0AC.vz = 0;
-    render->unk0BC.vx = 0;
-    render->unk0BC.vy = 0;
-    render->unk0BC.vz = 0;
-    render->slot = source;
-    render->unk0DA = frame;
-    part->unk018 = 0x140;
-    part->unk004 = texture;
-    part->unk014 = 0;
-    part->unk016 = 0;
-    part->unk01A = 0;
-    part->r = 0x80;
-    part->g = 0x80;
-    part->b = 0x80;
-    part->unk020 = -1;
-    part->unk024 = 0;
-}
-
-/** @brief Point a render request at a texture page, CLUT and source rectangle. */
-static void func_801A1DF4(EffectRender *render, SVECTOR *pos, s16 tx, s16 ty,
-                   s16 clutX, s16 clutY, s16 w, s16 h) {
-    POLY_FT3 poly;
-
-    render->unk0DC = pos->vx;
-    render->unk0DE = pos->vy;
-    render->unk0E0 = pos->vz;
-    setPolyFT3(&poly);
-    setSemiTrans(&poly, 1);
-    setShadeTex(&poly, 1);
-    poly.tpage = getTPage(1, 1, tx, ty);
-    poly.clut = getClut(clutX, clutY);
-    render->tpage = poly.tpage;
-    render->clut = poly.clut;
-    render->unk0E4 = w;
-    render->unk0E6 = h;
-    /* The u coordinate within the page, doubled for the 4bpp texture. */
-    render->unk0E8 = ((s16)tx - (s16)(tx & ~0x3F)) * 2;
-    render->unk0EA = ty & 0xFF;
-}
-
-/**
- * @brief Draw one mesh: pose its vertices by joint, then emit its triangles and
- *        quads into the ordering table.
- *
- * Each part of the mesh is a command stream. Its first section lists vertex
- * groups, each posed through one joint of the skeleton with the GTE's light
- * matrix (the part's vertices are normals: @c mvmva against the loaded joint).
- * The aligned tail holds a triangle list and a quad list. Every primitive is
- * transformed twice: once with the view matrix, which gives the screen
- * coordinates and depth for BOTH the shaded prim (whose UVs are the screen
- * coordinates -- an environment map) and the textured prim; then with the
- * light matrix, whose winding decides the back-face cull when the render asks
- * for it. A primitive is also rejected when any projected vertex leaves the
- * clip rectangle, in which case only the textured prim is emitted.
- *
- * The prim cursors come from and return to the render's two list heads; the
- * scratch record lives in the battle scratchpad for the duration.
- *
- * @param mesh   Skeleton and part table to draw.
- * @param ot     Ordering table the prims are linked into.
- * @param mode   Unused.
- * @param render Render state: matrices, colour, texture page and clip rect.
- */
-static void func_801A1EBC(EffectMesh *mesh, u32 *ot, s32 mode,
-                          EffectRender *render) {
-    EffectMeshVertex *vbuf = render->part->unk004;
-    EffectJoint *joints = mesh->skeleton->joints;
-    u32 *parts = mesh->parts;
-    s32 count = parts[0];
-    /* battle.bin keeps this list head as a word (see D_800FA5F0). */
-    POLY_FT3 *ft3 = (POLY_FT3 *)render->unk00C[0];
-    POLY_GT3 *gt3 = render->unk010[0];
-    BattleEffectSlot *slot = render->slot;
-    EffectMeshScratch *s = func_800B3698(sizeof(EffectMeshScratch));
-    s32 part;
-    POLY_FT4 *ft4;
-    POLY_GT4 *gt4;
-    u32 colour;
-
-    s->visible = slot->unk07C;
-    s->unk0CE = render->unk0F4;
-    s->tpage = render->tpage;
-    s->clut = render->clut;
-    s->clipX0 = -(render->unk0E4 / 2);
-    s->clipX1 = render->unk0E4 / 2 - 1;
-    s->clipY0 = -(render->unk0E6 / 2);
-    s->clipY1 = render->unk0E6 / 2 - 1;
-    s->clipX0 += EFFECT_SCREEN_CX;
-    s->clipX1 += EFFECT_SCREEN_CX;
-    s->clipY0 += EFFECT_SCREEN_CY;
-    s->clipY1 += EFFECT_SCREEN_CY;
-    s->offX = render->unk0E8 + render->unk0E4 / 2 - EFFECT_SCREEN_CX;
-    s->offY = render->unk0EA + render->unk0E6 / 2 - EFFECT_SCREEN_CY;
-    /* The shaded prims are semi-transparent (code bit 2), the textured are not. */
-    s->colour = *(u32 *)&render->r & EFFECT_PRIM_RGB;
-    s->unk0AC = s->colour | EFFECT_PRIM_CODE(0x3C | 0x02);
-    s->colour = s->colour | EFFECT_PRIM_CODE(0x34 | 0x02);
-    s->unk0B0 = slot->unk028 & EFFECT_PRIM_RGB;
-    s->unk0B4 = s->unk0B0 | EFFECT_PRIM_CODE(0x2C);
-    s->unk0B0 = s->unk0B0 | EFFECT_PRIM_CODE(0x24);
-    s->view = render->unk034;
-    s->light = render->unk074;
-    s->unk0A4 = render->unk0CE;
-    s->unk0A6 = render->unk0CC;
-    parts++;
-    gte_SetRotMatrix(&s->view);
-    gte_SetTransMatrix(&s->view);
-    for (part = 0; part < count; part++) {
-        EffectMeshVertex *vb = vbuf;
-        s16 *stream = (s16 *)((u8 *)mesh->parts + *parts++);
-        s32 groups;
-        s32 g;
-        s32 n;
-        s32 v;
-        s32 tris;
-        EffectMeshTri *tri;
-        MATRIX *jm;
-        EffectMeshQuad *quad;
-        s32 quads;
-        POLY_GT3 *gt;
-        POLY_FT3 *ft;
-
-        if (!((s->visible >> part) & 1)) {
-            continue;
-        }
-        groups = *stream++;
-        for (g = 0; g < groups; g++) {
-            jm = &joints[*stream++].mtx;
-            gte_SetLightMatrix(jm);
-            gte_ldbkdir(jm->t[0], jm->t[1], jm->t[2]);
-            n = *stream++;
-            for (v = 0; v < n; v++) {
-                s->normal.vx = *stream++;
-                s->normal.vy = *stream++;
-                s->normal.vz = *stream++;
-                gte_ldv0(&s->normal);
-                gte_mvmva(1, 1, 0, 1, 0);
-                gte_stsv(&vb->pos);
-                vb++;
-            }
-        }
-        stream = (s16 *)(((u32)stream + 3) & ~3);
-        tris = *stream++;
-        quads = *stream++;
-        stream += 4;
-        tri = (EffectMeshTri *)stream;
-        vb = vbuf;
-        gt = gt3;
-        ft = ft3;
-        for (g = 0; g < tris; g++) {
-            s->idx0 = tri->idx0 & EFFECT_MESH_INDEX_MASK;
-            s->idx1 = tri->idx1 & EFFECT_MESH_INDEX_MASK;
-            s->idx2 = tri->idx2 & EFFECT_MESH_INDEX_MASK;
-            gte_ldv3(&vb[s->idx0].pos, &vb[s->idx1].pos, &vb[s->idx2].pos);
-            gte_rtpt();
-            gte_nclip();
-            gte_stopz(&s->nclip);
-            if (s->nclip > 0) {
-                gte_avsz3();
-                gte_stotz(&s->otz);
-                s->otz = (u32)s->otz >> 2;
-                gte_stsxy3_gt3(gt);
-                gte_stsxy3_ft3(ft);
-                gte_SetRotMatrix(&s->light);
-                gte_SetTransMatrix(&s->light);
-                gte_ldv3(&vb[s->idx0].pos, &vb[s->idx1].pos,
-                         &vb[s->idx2].pos);
-                gte_rtpt();
-                s->reject = 0;
-                gte_nclip();
-                gte_stopz(&s->nclip);
-                if (s->unk0CE == 1 && s->nclip <= 0) {
-                    s->reject = 1;
-                }
-                if (!s->reject) {
-                    gte_stsxy3c(s->sxy);
-                    for (v = 0; v < 3; v++) {
-                        if (s->sxy[v].vx < s->clipX0) {
-                            s->reject = 1;
-                            break;
-                        }
-                        if (s->clipX1 < s->sxy[v].vx) {
-                            s->reject = 1;
-                            break;
-                        }
-                        if (s->sxy[v].vy < s->clipY0) {
-                            s->reject = 1;
-                            break;
-                        }
-                        if (s->clipY1 < s->sxy[v].vy) {
-                            s->reject = 1;
-                            break;
-                        }
-                        s->sxy[v].vx += s->offX;
-                        s->sxy[v].vy += s->offY;
-                    }
-                }
-                if (!s->reject) {
-                    gt->tag = EFFECT_PRIM_TAG(POLY_GT3);
-                    gt->u0 = s->sxy[0].vx;
-                    gt->v0 = s->sxy[0].vy;
-                    gt->u1 = s->sxy[1].vx;
-                    gt->v1 = s->sxy[1].vy;
-                    gt->u2 = s->sxy[2].vx;
-                    gt->v2 = s->sxy[2].vy;
-                    gt->tpage = s->tpage;
-                    gt->clut = s->clut;
-                    /* Colour and code as one word; four byte stores do not match. */
-                    colour = s->colour;
-                    *(u32 *)&gt->r2 = colour;
-                    *(u32 *)&gt->r1 = colour;
-                    *(u32 *)&gt->r0 = colour;
-                    addPrim(&ot[s->otz], gt);
-                    gt++;
-                }
-                ft->tag = EFFECT_PRIM_TAG(POLY_FT3);
-                *(u32 *)&ft->u0 = tri->uv0;
-                *(u32 *)&ft->u1 = *(u32 *)&tri->uv1;
-                *(u16 *)&ft->u2 = tri->uv2;
-                *(u32 *)&ft->r0 = s->unk0B0;
-                if (tri->tpage & EFFECT_MESH_TPAGE_ABE) {
-                    ft->code |= 2;
-                }
-                addPrim(&ot[s->otz], ft);
-                ft++;
-                gte_SetRotMatrix(&s->view);
-                gte_SetTransMatrix(&s->view);
-            }
-            tri++;
-        }
-        quad = (EffectMeshQuad *)tri;
-        ft4 = (POLY_FT4 *)ft;
-        gt4 = (POLY_GT4 *)gt;
-        for (g = 0; g < quads; g++) {
-            s->idx0 = quad->idx0 & EFFECT_MESH_INDEX_MASK;
-            s->idx1 = quad->idx1 & EFFECT_MESH_INDEX_MASK;
-            s->idx2 = quad->idx2 & EFFECT_MESH_INDEX_MASK;
-            gte_ldv3(&vb[s->idx0].pos, &vb[s->idx1].pos, &vb[s->idx2].pos);
-            gte_rtpt();
-            gte_nclip();
-            gte_stopz(&s->nclip);
-            if (s->nclip > 0) {
-                gte_stsxy3_gt3(gt4);
-                gte_stsxy3_ft3(ft4);
-                s->idx3 = quad->idx3 & EFFECT_MESH_INDEX_MASK;
-                gte_ldv0(&vb[s->idx3].pos);
-                gte_rtps();
-                gte_stsxy(&gt4->x3);
-                gte_stsxy(&ft4->x3);
-                gte_avsz4();
-                gte_stotz(&s->otz);
-                s->otz = (u32)s->otz >> 2;
-                gte_SetRotMatrix(&s->light);
-                gte_SetTransMatrix(&s->light);
-                gte_ldv3(&vb[s->idx0].pos, &vb[s->idx1].pos,
-                         &vb[s->idx2].pos);
-                gte_rtpt();
-                s->reject = 0;
-                gte_nclip();
-                gte_stopz(&s->nclip);
-                if (s->unk0CE == 1 && s->nclip <= 0) {
-                    s->reject = 1;
-                }
-                if (!s->reject) {
-                    gte_stsxy3c(s->sxy);
-                    gte_ldv0(&vb[s->idx3].pos);
-                    gte_rtps();
-                    gte_stsxy(&s->sxy[3]);
-                    for (v = 0; v < 4; v++) {
-                        if (s->sxy[v].vx < s->clipX0) {
-                            s->reject = 1;
-                            break;
-                        }
-                        if (s->clipX1 < s->sxy[v].vx) {
-                            s->reject = 1;
-                            break;
-                        }
-                        if (s->sxy[v].vy < s->clipY0) {
-                            s->reject = 1;
-                            break;
-                        }
-                        if (s->clipY1 < s->sxy[v].vy) {
-                            s->reject = 1;
-                            break;
-                        }
-                        s->sxy[v].vx += s->offX;
-                        s->sxy[v].vy += s->offY;
-                    }
-                }
-                if (!s->reject) {
-                    gt4->tag = EFFECT_PRIM_TAG(POLY_GT4);
-                    gt4->u0 = s->sxy[0].vx;
-                    gt4->v0 = s->sxy[0].vy;
-                    gt4->u1 = s->sxy[1].vx;
-                    gt4->v1 = s->sxy[1].vy;
-                    gt4->u2 = s->sxy[2].vx;
-                    gt4->v2 = s->sxy[2].vy;
-                    gt4->u3 = s->sxy[3].vx;
-                    gt4->v3 = s->sxy[3].vy;
-                    gt4->tpage = s->tpage;
-                    gt4->clut = s->clut;
-                    colour = s->unk0AC;
-                    *(u32 *)&gt4->r3 = colour;
-                    *(u32 *)&gt4->r2 = colour;
-                    *(u32 *)&gt4->r1 = colour;
-                    *(u32 *)&gt4->r0 = colour;
-                    addPrim(&ot[s->otz], gt4);
-                    gt4++;
-                }
-                ft4->tag = EFFECT_PRIM_TAG(POLY_FT4);
-                *(u32 *)&ft4->u0 = quad->uv0;
-                *(u32 *)&ft4->u1 = *(u32 *)&quad->uv1;
-                *(u16 *)&ft4->u2 = quad->uv2;
-                *(u16 *)&ft4->u3 = quad->uv3;
-                *(u32 *)&ft4->r0 = s->unk0B4;
-                if (quad->tpage & EFFECT_MESH_TPAGE_ABE) {
-                    ft4->code |= 2;
-                }
-                addPrim(&ot[s->otz], ft4);
-                ft4++;
-                gte_SetRotMatrix(&s->view);
-                gte_SetTransMatrix(&s->view);
-            }
-            quad++;
-        }
-        ft3 = (POLY_FT3 *)ft4;
-        gt3 = (POLY_GT3 *)gt4;
-    }
-    render->unk00C[0] = (s32)ft3;
-    render->unk010[0] = gt3;
-    func_800B36B8(sizeof(EffectMeshScratch));
-}
-
-/** @brief Pose the effect's model and link its skeletons into the battle OT. */
-static void func_801A2D0C(EffectRender *render) {
-    BattleEffectSlot *slot = render->slot;
-
-    func_801A181C(render, slot);
-    if (render->unk0DA != 0xFF) {
-        func_800BC420(slot->unk060);
-    } else if (func_800BCA3C(slot->unk060, slot->unk06C) != 0) {
-        func_800BCF6C(slot->unk060, slot->unk06C, render->unk0D8);
-    }
-    CompMatrix(&D_800F02C8, &render->unk014, &render->unk034);
-    if (!(slot->flags & BATTLE_SLOT_FLAG_UNK20)) {
-        *render->unk00C = func_800BC060(slot, D_800FA5E8->unk4040, 0x10, *render->unk00C);
-    }
-    func_801A1A4C(render);
-    func_801A1EBC(slot->mesh, D_800FA5E8->ot, 4, render);
-    if (slot->unk078 != NULL) {
-        func_801A1EBC(slot->unk078->mesh, D_800FA5E8->ot, 4, render);
-    }
-    if (render->unk0DA != 0xFF) {
-        func_800BC420(slot->unk060);
-    }
-}
 
 /**
  * @brief Per-frame step for one impact spark.
@@ -1141,7 +37,7 @@ static void func_801A2D0C(EffectRender *render) {
  */
 static s32 func_801A2E48(EffectSpark *spark) {
     u32 *ot = D_800FA5E8->ot;
-    POLY_G3 *prim = D_801C58F4;
+    POLY_G3 *prim = g_effectPrimCursor;
     POLY_G4 *quad;
     DR_MODE *mode;
     void *next;
@@ -1152,8 +48,8 @@ static s32 func_801A2E48(EffectSpark *spark) {
     s32 otz;
     s32 i;
 
-    func_801A0DF0((EffectEntity *)spark, &spark->pos);
-    spark->pos.vy = func_801A1550((EffectEntity *)spark);
+    effectSlotAnchor1((EffectEntity *)spark, &spark->pos);
+    spark->pos.vy = effectModelCentreY((EffectEntity *)spark);
     switch (spark->pc) {
     case 0:
         spark->unk038 = 0;
@@ -1274,12 +170,12 @@ static s32 func_801A2E48(EffectSpark *spark) {
         SetDrawMode(mode, 0, 0, GetTPage(0, 1, 0x280, 0), NULL);
         AddPrim(&ot[otz], mode);
         next = mode + 1;
-        D_801C58F4 = next;
+        g_effectPrimCursor = next;
     }
     spark->unk024++;
     if (spark->flags & EFFECT_FLAG_STOP) {
         if (spark->wait == 0) {
-            func_801A0AD8((EffectEntity *)spark);
+            effectReleaseWait((EffectEntity *)spark);
             return 2;
         }
     }
@@ -1312,9 +208,9 @@ static void func_801A351C(EffectEntity *entity) {
         count = 2;
     }
     for (i = 0; i < count; i++) {
-        spark = (EffectSpark *)func_801A0B00(&D_801D5CF0,
-                                             func_801A2E48, 0x5C,
-                                             entity);
+        spark = effectSpawnTask(&D_801D5CF0,
+                                func_801A2E48, 0x5C,
+                                entity);
         spark->unk056 = 8;
         spark->r = 0x10;
         spark->g = 0x10;
@@ -1360,16 +256,16 @@ static void func_801A3640(EffectEntity *entity) {
         for (i = 0; i < count; i++) {
             s32 bearing = rand() & EFFECT_MESH_INDEX_MASK;
             EffectEntity *spark =
-                func_801A0B00(&D_801CD9F0, func_801A3924, 0x6C, entity);
+                effectSpawnTask(&D_801CD9F0, func_801A3924, 0x6C, entity);
             s16 base;
             s16 angle;
 
-            func_801A0DC0(spark, &spark->pos);
+            effectSlotAnchor0(spark, &spark->pos);
             spark->pos.vy = entity->pos.vy;
-            base = func_801A1408(entity);
+            base = effectModelTop(entity);
             spark->pos.vy -= (entity->pos.vy - base) * (rand() & 0x1F) / 48;
             angle = bearing;
-            spark->unk068 = func_801A138C(entity) * 3 / 2;
+            spark->unk068 = effectModelHalfWidth(entity) * 3 / 2;
             if (spark->unk068 >= 0x401) {
                 spark->unk068 = 0x400;
             }
@@ -1395,7 +291,7 @@ static void func_801A38A0(EffectEntity *entity) {
     entity->pos.vx += entity->unk058;
     entity->pos.vy += entity->unk05A;
     entity->pos.vz += entity->unk05C;
-    if (func_801A16E4(entity) != 0) {
+    if (effectStepCounter(entity) != 0) {
         entity->flags |= EFFECT_FLAG_STOP;
         entity->pc++;
     }
@@ -1410,13 +306,13 @@ static s32 func_801A3924(EffectEntity *entity) {
     EffectHandler handlers[3] = { func_801A3840, func_801A38A0, func_801A391C };
 
     handlers[entity->pc](entity);
-    func_801A1648(entity);
+    effectDrawSprite(entity);
     entity->unk024++;
     if (entity->flags & EFFECT_FLAG_STOP) {
         if (entity->wait != 0) {
             return 0;
         }
-        func_801A0AD8(entity);
+        effectReleaseWait(entity);
         return 2;
     }
     return 0;
@@ -1448,7 +344,7 @@ static void func_801A39CC(EffectEntity *entity) {
         count = 1;
     }
     for (i = 0; i < count; i++) {
-        func_801A0B00(&D_801CD9F0, func_801A3B6C, 0x6C, entity);
+        effectSpawnTask(&D_801CD9F0, func_801A3B6C, 0x6C, entity);
     }
 }
 
@@ -1467,7 +363,7 @@ static void func_801A3AE8(EffectEntity *entity) {
     entity->pos.vx += entity->unk058;
     entity->pos.vy += entity->unk05A;
     entity->pos.vz += entity->unk05C;
-    if (func_801A16E4(entity) != 0) {
+    if (effectStepCounter(entity) != 0) {
         entity->flags |= EFFECT_FLAG_STOP;
         entity->pc++;
     }
@@ -1482,13 +378,13 @@ static s32 func_801A3B6C(EffectEntity *entity) {
     EffectHandler handlers[3] = { func_801A3A74, func_801A3AE8, func_801A3B64 };
 
     handlers[entity->pc](entity);
-    func_801A1648(entity);
+    effectDrawSprite(entity);
     entity->unk024++;
     if (entity->flags & EFFECT_FLAG_STOP) {
         if (entity->wait != 0) {
             return 0;
         }
-        func_801A0AD8(entity);
+        effectReleaseWait(entity);
         return 2;
     }
     return 0;
@@ -1503,17 +399,17 @@ static void func_801A3C14(EffectEntity *entity) {
     entity->flags |= EFFECT_FLAG_UNK02;
     /* The aim point overlays unk060/unk063, which the loop opcodes use as a
        counter -- the two never overlap in time. */
-    func_801A0DC0(entity, (SVECTOR *)entity->unk060);
-    ((SVECTOR *)entity->unk060)->vy = func_801A1408(entity);
-    span = func_801A138C(entity);
+    effectSlotAnchor0(entity, (SVECTOR *)entity->unk060);
+    ((SVECTOR *)entity->unk060)->vy = effectModelTop(entity);
+    span = effectModelHalfWidth(entity);
     entity->unk068 = span * 2;
     if ((s16)(span * 2) >= 0x401) {
         entity->unk068 = 0x400;
     }
-    entity->unk05A = -(func_801A13E4(entity) + 0x100) / 20;
+    entity->unk05A = -(effectModelHeight(entity) + 0x100) / 20;
     entity->unk05A = entity->unk05A / 4;
-    func_801A1D38(&D_801D3800, &D_801D37F0, &D_801CDA00, &D_801CDA30,
-                  &D_800EF2D0[entity->unk02D], entity->unk02D);
+    effectRenderReset(&D_801D3800, &D_801D37F0, &D_801CDA00, &D_801CDA30,
+                      &D_800EF2D0[entity->unk02D], entity->unk02D);
     entity->flags |= EFFECT_FLAG_UNK08;
     slot->flags |= BATTLE_SLOT_FLAG_UNK04;
     entity->pc++;
@@ -1533,7 +429,7 @@ static void func_801A3DCC(EffectEntity *entity) {
     BattleEffectSlot *slot;
     EffectModel *model;
 
-    if (func_801A16E4(entity) != 0) {
+    if (effectStepCounter(entity) != 0) {
         slot = &D_800EF2D0[entity->unk02D];
         model = entity->unk010;
         entity->flags &= ~EFFECT_FLAG_UNK08;
@@ -1590,21 +486,21 @@ static s32 func_801A3E64(EffectEntity *entity) {
     }
     if (entity->flags & EFFECT_FLAG_UNK08) {
         D_801D3800.unk0B4.vy = entity->pos.vy;
-        func_801A1DF4(&D_801D3800, &entity->pos, 0x200, 0x180, 0x140, 0xF1, 0x80,
-                      0x80);
-        func_801A2D0C(&D_801D3800);
+        effectRenderSetTexture(&D_801D3800, &entity->pos, 0x200, 0x180, 0x140, 0xF1, 0x80,
+                               0x80);
+        effectRenderModel(&D_801D3800);
     }
     if (entity->unk024 < 20) {
         tint.r = tint.g = tint.b = (20 - entity->unk024) * 3;
-        func_801A1648(entity);
+        effectDrawSprite(entity);
         func_801A172C(entity, &D_801C58B8, &tint);
     } else {
-        func_801A1648(entity);
+        effectDrawSprite(entity);
     }
     entity->unk024++;
     if (entity->flags & EFFECT_FLAG_STOP) {
         if (entity->wait == 0) {
-            func_801A0AD8(entity);
+            effectReleaseWait(entity);
             return 2;
         }
     }
@@ -1613,7 +509,7 @@ static s32 func_801A3E64(EffectEntity *entity) {
 
 /** @brief Opcode handler: start a task running @ref func_801A3E64. */
 static void func_801A40D4(EffectEntity *entity) {
-    func_801A0B00(&D_801CD9F0, func_801A3E64, 0x6C, entity);
+    effectSpawnTask(&D_801CD9F0, func_801A3E64, 0x6C, entity);
     entity->pc++;
 }
 
@@ -1640,8 +536,8 @@ static s32 func_801A41C8(EffectEntity *entity) {
     EffectHandler handlers[4] = { func_801A40D4, func_801A4124, func_801A4138,
                                   func_801A41C0 };
 
-    func_801A0C8C(entity);
-    func_801A101C(entity);
+    effectCacheSlotAnchors(entity);
+    effectUpdateModelBounds(entity);
     handlers[entity->pc](entity);
     if (entity->unk024 == 0) {
         func_800C4764(D_801A4678, 0, 0x80);
@@ -1651,7 +547,7 @@ static s32 func_801A41C8(EffectEntity *entity) {
         if (entity->wait != 0) {
             return 0;
         }
-        func_801A0AD8(entity);
+        effectReleaseWait(entity);
         return 2;
     }
     return 0;
@@ -1677,7 +573,7 @@ static void func_801A42CC(EffectEntity *entity) {
 /** @brief Opcode handler: start a task running @ref func_801A41C8. */
 static void func_801A42F4(EffectEntity *entity) {
     entity->unk063 = 1;
-    func_801A0B00(&D_801C5B50, func_801A41C8, 0x58, entity);
+    effectSpawnTask(&D_801C5B50, func_801A41C8, 0x58, entity);
     entity->pc++;
 }
 
@@ -1738,7 +634,7 @@ static void func_801A442C(EffectEntity *entity) {
  * @param entity Script whose frame is being run.
  * @return 2 once the script has stopped and drained, 0 while it is still live.
  */
-static s32 func_801A4434(EffectEntity *entity) {
+s32 func_801A4434(EffectEntity *entity) {
     EffectHandler handlers[] = {
         func_801A42A4, func_801A42B8, func_801A42CC, func_801A42F4,
         func_801A434C, func_801A43AC, func_801A43C0, func_801A43E8,
@@ -1750,13 +646,13 @@ static s32 func_801A4434(EffectEntity *entity) {
     D_801C58EC = world;
     D_801C58E8 = world;
     if (entity->unk05C & 1) {
-        D_801C58F4 = D_801C58FC;
+        g_effectPrimCursor = D_801C58FC;
         D_801C58F8 = D_801C5904;
     } else {
-        D_801C58F4 = D_801C5900;
+        g_effectPrimCursor = D_801C5900;
         D_801C58F8 = D_801C5908;
     }
-    func_801A0E50(entity);
+    effectCacheAnimSlotAnchors(entity);
     handlers[entity->pc](entity);
     entity->unk05E = 0;
     entity->unk05E += func_800B2B68(&D_801C5B50);
@@ -1766,7 +662,7 @@ static s32 func_801A4434(EffectEntity *entity) {
     entity->unk024++;
     if (entity->flags & EFFECT_FLAG_STOP) {
         if (entity->wait == 0) {
-            func_801A0AD8(entity);
+            effectReleaseWait(entity);
             return 2;
         }
     }

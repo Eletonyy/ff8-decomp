@@ -25,6 +25,16 @@ def effect_overlays():
     return [name for name in names if name != "all"]
 
 
+def effect_sources(name):
+    """The C units an effect overlay links, from its ff8.yaml entry: its own
+    files and the library units it shares with the other effects."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "config", "ff8.yaml")) as f:
+        entry = re.search(r"^- name: " + name + r"\n(.*?)(?=^- name: |\Z)", f.read(), re.M | re.S)
+    units = re.findall(r"^\s*- \[0x[0-9A-Fa-f]+, c, ([\w/]+)\]", entry.group(1), re.M) if entry else [name]
+    return [f"src/effect/{unit}.c" for unit in units]
+
+
 EFFECT_OVERLAYS = effect_overlays()
 CODE_OVERLAYS = [
     "field_init", "intro", "field",
@@ -42,7 +52,7 @@ OVERLAY_SRC_GLOBS = {
     "battle":      ["src/battle/*.c"],
     "tripletriad": ["src/tripletriad/*.c"],
     "world":       ["src/world/*.c"],
-    **{name: [f"src/effect/{name}.c"] for name in EFFECT_OVERLAYS},
+    **{name: effect_sources(name) for name in EFFECT_OVERLAYS},
     **{name: [f"src/menu/{name}/*.c"] for name in MENU_OVERLAYS},
 }
 

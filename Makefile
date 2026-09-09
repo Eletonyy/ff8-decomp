@@ -271,7 +271,7 @@ $$($(1)_DIR)/%.o: %.s
 
 $$($(1)_DIR)/%.o: %.c
 	@mkdir -p $$(dir $$@)
-	$$(CPP) -E -lang-c -nostdinc -Iinclude $$< -o $$($(1)_DIR)/$$(*F).i && \
+	$$(CPP) -E -lang-c -nostdinc -Iinclude $$(if $$(wildcard include/effect/params/$(1)),-Iinclude/effect/params/$(1)) $$< -o $$($(1)_DIR)/$$(*F).i && \
 	$$(if $$(filter $$<,$$(PSYQ43_SRCS)), \
 		$$(PSYQ43_CC1) -quiet $$(CC_FLAGS) $$($(1)_DIR)/$$(*F).i -o $$($(1)_DIR)/$$(*F).s && \
 		cat $$($(1)_DIR)/$$(*F).s | $$(MASPSX) $$(PSYQ43_MASPSXFLAGS) $$(call expand_div,$(1),$$<) --run-assembler $$(ASFLAGS) -o $$@, \
