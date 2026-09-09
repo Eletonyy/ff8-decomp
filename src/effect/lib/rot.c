@@ -3,8 +3,8 @@
  * @brief Rotation matrices built from an angle.
  *
  * The three builders clear the matrix through a countdown whose index is never
- * read. Written ascending it assembles differently and effect_025 stops
- * matching, so the `i != 0` form is load-bearing.
+ * read, which makes it look like a loop that should count up. It is not: the
+ * ascending form generates different code, so `i != 0` is load-bearing.
  */
 #include "common.h"
 #include "effect.h"
