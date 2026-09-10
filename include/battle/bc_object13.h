@@ -14,4 +14,7 @@ void func_800C3BE0(u8 *base);
 /** @brief Queue the AKAO sequence at @p sequence for playback. */
 void func_800C4764(u8 *sequence, s32 arg1, s32 arg2);
 
+/** @brief Reset @p slot when its entity's flags call for it. */
+s32 func_800C2BD0(struct BattleEffectSlot *slot, s32 arg1);
+
 #endif /* BATTLE_BC_OBJECT13_H */

@@ -4,17 +4,6 @@
 #include "effect.h"
 
 /**
- * @brief Entry point of the effect_001 overlay.
- *
- * battle.bin calls this at the overlay's load address once the image is in
- * place; it builds the effect's root entity and its task pools.
- *
- * @param animSet Animation table the effect draws its models from.
- * @return The task pool the effect's scripts run out of.
- */
-void *func_801A0000(EffectAnimSet *animSet);
-
-/**
  * @name Overlay data
  *
  * The blob carried in the overlay image behind the code, from @c 0x801A4678
@@ -83,7 +72,6 @@ extern MATRIX *D_801C58EC;
 extern u8 *D_801C58F0;
 
 /** @brief Cursors this frame's prims and frames are written through. */
-extern void *D_801C58F4;
 extern void *D_801C58F8;
 
 /** @brief The two bank pairs, one per parity of the frame counter. */
@@ -114,17 +102,9 @@ extern EffectRender D_801D3800;
 extern s32 D_801D3900;
 extern s32 D_801D5CF0;
 
-/** @brief The sixteen hex digit glyphs, cached from the main string table. */
-extern u8 D_801D5D00[];
-
-/** @brief Debug text cursor: X, Y, and the colour the glyphs are drawn in. */
-extern s32 D_801D5D14;
-extern s32 D_801D5D18;
-extern s32 D_801D5D1C;
-
-/** @brief Per-joint world matrices, one per joint of the posed skeleton. */
-extern MATRIX D_801D5D20[];
-
 /** @} */
+
+/** @brief Advance one effect script by a single frame. */
+s32 func_801A4434(EffectEntity *entity);
 
 #endif /* EFFECT_EFFECT_001_H */

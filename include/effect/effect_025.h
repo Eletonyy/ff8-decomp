@@ -2,36 +2,7 @@
 #define EFFECT_EFFECT_025_H
 
 #include "effect.h"
-
-/**
- * @brief Entry point of the effect_025 overlay.
- *
- * battle.bin calls this at the overlay's load address once the image is in
- * place; it builds the effect's root entity and its task pools.
- *
- * @param animSet Animation table the effect draws its models from.
- * @return The task pool the effect's scripts run out of.
- */
-void *func_801A0000(EffectAnimSet *animSet);
-
-/** @brief One animated part of a posed model; its flags size its pose slot. */
-typedef struct {
-    /* 0x00 */ s32 unk000;
-    /* 0x04 */ s32 flags;
-} EffectPosePart;
-
-/** @brief The part list a posed model carries, each part at a byte offset. */
-typedef struct {
-    /* 0x00 */ s32 count;
-    /* 0x04 */ s32 unk004;
-    /* 0x08 */ s32 offsets[1];
-} EffectPoseParts;
-
-/** @brief A posed model: a header naming the part list behind it. */
-typedef struct {
-    /* 0x00 */ s32 unk000;
-    /* 0x04 */ s32 partsOffset;
-} EffectPoseModel;
+#include "effect/lib/pose.h"
 
 /**
  * @name Overlay data
@@ -88,12 +59,6 @@ extern s32 D_801D7324;
 /** @brief Texture the posed model is drawn with. */
 extern s32 D_801D3EA4;
 
-/** @brief Cursor this frame's prims are written through. */
-extern void *D_801D3EB8;
-
-/** @brief Draw-mode command word every emitted prim carries. */
-extern u32 D_801EEA0C;
-
 /** @brief Script entity pool: 4 entries of 0x58. */
 extern s32 D_801D4104;
 
@@ -122,17 +87,12 @@ extern s32 D_801E74F4;
 extern EffectRenderPart D_801E7504;
 extern s32 D_801E7534;
 
-/** @brief The sixteen hex digit glyphs, cached from the main string table. */
-extern u8 D_801ED404[];
-
-/** @brief Debug text cursor: X, Y, and the colour the glyphs are drawn in. */
-extern s32 D_801ED418;
-extern s32 D_801ED41C;
-extern s32 D_801ED420;
-
-/** @brief Per-joint world matrices, one per joint of the posed skeleton. */
-extern MATRIX D_801ED424[];
-
 /** @} */
+
+/**
+ * @brief Root script dispatcher: swap the prim bank, run one step, then run
+ *        every child pool.
+ */
+s32 func_801A81D0(EffectEntity *entity);
 
 #endif /* EFFECT_EFFECT_025_H */

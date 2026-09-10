@@ -140,7 +140,7 @@ CODE_OVERLAYS := field_init intro field \
                  tripletriad battle_render battle world
 
 ALL_EFFECT_OVERLAYS := $(filter effect_%,$(SPLAT_BINARIES))
-EFFECTS ?= effect_001 effect_025 effect_028
+EFFECTS ?= effect_001 effect_025 effect_028 effect_052 effect_039 effect_056 effect_050 effect_051 effect_036
 EFFECT_OVERLAYS := $(if $(filter all,$(EFFECTS)),$(ALL_EFFECT_OVERLAYS),$(EFFECTS))
 OVERLAYS      := $(MENU_OVERLAYS) $(CODE_OVERLAYS) $(EFFECT_OVERLAYS)
 ALL_OVERLAYS  := $(MENU_OVERLAYS) $(CODE_OVERLAYS) $(ALL_EFFECT_OVERLAYS)
@@ -271,7 +271,7 @@ $$($(1)_DIR)/%.o: %.s
 
 $$($(1)_DIR)/%.o: %.c
 	@mkdir -p $$(dir $$@)
-	$$(CPP) -E -lang-c -nostdinc -Iinclude $$< -o $$($(1)_DIR)/$$(*F).i && \
+	$$(CPP) -E -lang-c -nostdinc -Iinclude $$(if $$(wildcard include/effect/params/$(1)),-Iinclude/effect/params/$(1)) $$< -o $$($(1)_DIR)/$$(*F).i && \
 	$$(if $$(filter $$<,$$(PSYQ43_SRCS)), \
 		$$(PSYQ43_CC1) -quiet $$(CC_FLAGS) $$($(1)_DIR)/$$(*F).i -o $$($(1)_DIR)/$$(*F).s && \
 		cat $$($(1)_DIR)/$$(*F).s | $$(MASPSX) $$(PSYQ43_MASPSXFLAGS) $$(call expand_div,$(1),$$<) --run-assembler $$(ASFLAGS) -o $$@, \
