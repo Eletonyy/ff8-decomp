@@ -3,9 +3,7 @@
 #include "gf.h"
 #include "gamestate.h"
 #include "battle/bc_object4.h"
-
 extern void func_800E1850(void);
-
 
 
 void func_800A6184(s32 arg0, s32 arg1, s32 arg2, u16 arg3) {
@@ -1432,15 +1430,7 @@ s32 func_800A8AFC(s32 arg0) {
     return 2;
 }
 
-// bc_object5
-
-#include "battle/bc_object5.h"
-#include "battle/bc_object6.h"
 #include "battle/bc_object7.h"
-
-extern u8 D_800E3CEC[];
-s32 func_800B0398(s32);
-void func_800A59AC(s32, s32, s32);
 
 s32 func_800A8B7C(s32 arg0) {
     BattleCharData* temp_s0;

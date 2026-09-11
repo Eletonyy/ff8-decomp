@@ -2,13 +2,6 @@
 #include "battle.h"
 #include "gamestate.h"
 #include "battle/bc_object5.h"
-#include "battle/bc_object6.h"
-#include "battle/bc_object7.h"
-
-extern u8 D_800E3CEC[];
-s32 func_800B0398(s32);
-void func_800A59AC(s32, s32, s32);
-s32 func_800A97A4(s32);
 
 s32 func_800AA68C(s32 arg0, u32 arg1, u32 arg2) {
     switch (arg1) {

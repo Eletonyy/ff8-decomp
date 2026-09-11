@@ -1,6 +1,7 @@
 #include "common.h"
 #include "gamestate.h"
 #include "battle.h"
+#include "game.h"
 #include "battle/bc_object2.h"
 #include "battle/bc_object3.h"
 #include "battle/bc_object7.h"

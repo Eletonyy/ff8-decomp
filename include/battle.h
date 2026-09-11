@@ -1270,6 +1270,7 @@ extern u8              D_800E3CC5;
 extern u8              D_800E3CC6;
 extern u8              D_800E3CBC[];
 extern u8              D_800E3CE8;
+extern u8              D_800E3CEC[];
 extern BattleSystem    D_800ED148;
 extern BattleCmdBuf    D_800EE4C0;
 extern BattleAnimTable D_800EE9E8; // (D_800EE9B3 = D_800EE9E8-3)
