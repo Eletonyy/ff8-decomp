@@ -208,7 +208,18 @@ s32 func_800AAA9C(s32 arg0, u32 arg1, BattleEntityData* arg2) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object5", func_800AAB50);
+s32 func_800AAB50(s32 arg0, u32 arg1, BattleEntityData* arg2) {
+    switch (arg1) {
+        case 1 ... 9:
+            return func_800AA68C(arg2->unk18, arg0, (arg2->unk1C / 10) * arg1);
+        
+        case 10:
+            return func_800AA68C(arg2->unk18, arg0, arg2->unk1C >> 2);        
+
+        default:
+            return func_800AA68C(arg2->unk18, arg0, arg1);
+    }
+}
 
 s32 func_800AABEC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     if (arg4 != 0 && arg1 == 0) {

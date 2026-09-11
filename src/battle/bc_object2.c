@@ -666,24 +666,7 @@ s32 func_8009CF18(void) {
     return func_8009B7BC(33) + 239;
 }
 
-/**
- * @brief Compute damage for a battle action based on type and route to dispatcher.
- *
- *   - case 0/19: scale formula using attacker @c unkCD (squared), defense,
- *                power, and the @c func_8009CF18 modifier. Case 19 forces
- *                @c defense to 0 first.
- *   - case 1:    if target's @c controlFlags bit 0x10000 is set, mark
- *                @c D_800EE4C0[6] (bit 2) and report 0; else scale @c unk28.
- *   - case 3:    multiply attacker's @c unk2C by 5.
- *   - case 16:   active party member's kill count (selected via the party
- *                slot at @c targetIdx) times power. If @c targetIdx >= 3,
- *                the damage is forced to 0.
- *
- * @param attackerIdx Battle entity index of the attacker (case 0/3 path).
- * @param targetIdx   Battle entity index of the target (case 1) or party slot (case 16).
- * @param power       Damage multiplier.
- * @param type        Action type, indexes the case dispatch.
- */
+
 s32 func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, u32 type) {
     s32 defense;
     s32 dmg;
@@ -2109,17 +2092,8 @@ void func_8009FE14(s32 arg0) {
         break;
 
     case 7:  
-    case 23: 
-    case 24: 
-    case 25: 
-    case 26: 
-    case 27: 
-    case 29: 
-    case 30: 
-    case 31: 
-    case 32: 
-    case 33: 
-    case 34: 
+    case 23 ... 27: 
+    case 29 ... 34: 
     case 38: 
         D_800EEBB9 = D_80078E00.array4020[D_800EE4C0.statusCode].unk8;
         D_800EEBBA = D_80078E00.array4020[D_800EE4C0.statusCode].unk9;
@@ -2533,16 +2507,8 @@ void func_800A09D0(s32 arg0) {
         break;
 
     case 7:        
-    case 23:       
-    case 24:       
-    case 25:       
-    case 26:       
-    case 27:       
-    case 30:       
-    case 31:       
-    case 32:       
-    case 33:       
-    case 34:       
+    case 23 ... 27:             
+    case 30 ... 34:           
         func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk6);
         var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk5;
         D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk3;

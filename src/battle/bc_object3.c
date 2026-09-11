@@ -1142,11 +1142,8 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             var_s2 = getGfSummonData(arg3);
             break;
             
-        case 17:                                     
-        case 18:                                     
-        case 20:                                     
-        case 21:                                     
-        case 22:                                     
+        case 17 ... 18:                                   
+        case 20 ... 22:                                
             var_s3 = D_80078E00.array4484[arg2].unk8;
             sp2E = D_80078E00.array4484[arg2].unk0;
             var_s2 = getJuncCategoryName(arg2);
@@ -1277,16 +1274,8 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             func_800A42DC(112, &arg1, &arg6, &sp2E, &arg2);
             break;
             
-        case 23:                                     
-        case 24:                                     
-        case 25:                                     
-        case 26:                                     
-        case 27:                                     
-        case 30:                                     
-        case 31:                                     
-        case 32:                                     
-        case 33:                                     
-        case 34:                                     
+        case 23 ... 27:                                   
+        case 30 ... 34:                                   
             arg2 = D_80078E00.unkE8[arg1].unk0;
             var_s3 = D_80078E00.array4020[arg2].unk7;
             sp2E = D_80078E00.array4020[arg2].unk0;
@@ -2283,12 +2272,7 @@ void func_800A5C48(InternalStruct* arg0) {
             case 11:
             case 14:
             case 15:
-            case 17:
-            case 18:
-            case 19:
-            case 20:
-            case 21:
-            case 22:
+            case 17 ... 22:
                 D_800E3CE8 = func_8009B2A4(D_800ED148.unkD64[1], &D_800ED148.unk1100[1], 11);
                 var_s3 = 1;
                 func_800A5AF4(p->unk2);

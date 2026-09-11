@@ -1069,13 +1069,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7D8C);
 
 u8 func_800A7EE0(BattleEntityData* arg0, s32 arg1) {
     switch (arg1) {
-        case 0:
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-        case 6:
+        case 0 ... 6:
             return arg0->unk168[arg1];
 
         case 8:
@@ -2061,26 +2055,21 @@ u16 func_800AA034(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
         case 0:
             var_s0 = 1;
             /* fallthrough */
-        case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8: case 9:
-        case 16: case 17: case 18: case 19: case 20: case 21: case 22: case 23:
-        case 24: case 25: case 26: case 27: case 28: case 29: case 30: case 31:
-        case 32: case 33: case 34: case 35: case 36: case 37: case 38: case 39:
-        case 40: case 41: case 42:
-        case 46: case 47:
+        case 1  ... 9:
+        case 16 ... 42:
+        case 46 ... 47:
             func_800A99E8(arg3);
             break;
         
-        case 205: case 206: case 207: case 208: case 209: case 210: case 211: case 212:
-        case 213: case 214: case 215: case 216: case 217: case 218: case 219: case 220:
+        case 205 ... 220:
             func_800A9AC0(arg3, arg1);
             break;
 
-        case 221: case 222: case 223: case 224: case 225: case 226: case 227: case 228:
-        case 229: case 230: case 231: case 232: case 233: case 234: case 235: case 236:
+        case 221 ... 236:
             func_800A9C68(arg3, arg1);
             break;
         
-        case 203: case 204:
+        case 203 ... 204:
             func_800A9E08(arg3, arg1);
             break;
         
