@@ -1,6 +1,10 @@
 /**
  * @file rot.c
  * @brief Rotation matrices built from an angle.
+ *
+ * The three builders clear the matrix through a countdown whose index is never
+ * read, which makes it look like a loop that should count up. It is not: the
+ * ascending form generates different code, so the countdown is load-bearing.
  */
 #include "common.h"
 #include "effect.h"
