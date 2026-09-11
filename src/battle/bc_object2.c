@@ -349,7 +349,7 @@ u8 func_8009C390(s32 arg0, s32 arg1, s32 arg2) {
         sp20 = entities[arg1].flags;
         
         if (arg2 == 0) {
-            var_s5 = entities[arg0].unkCD;
+            var_s5 = entities[arg0].unkCD[0];
             temp_s3 = func_8009C300(arg1, 0);
         } 
         
@@ -680,7 +680,7 @@ s32 func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, u32 type) {
             defense = 0;
         case 0:
             mod = func_8009CF18();
-            stat = D_800ED148.entities[attackerIdx].unkCD;
+            stat = D_800ED148.entities[attackerIdx].unkCD[0];
             sq = stat * stat / 16 + stat;
             dmg = sq * (265 - defense) / 256 * power / 16 * mod / 256;
             break;
@@ -766,9 +766,9 @@ s32 func_8009D228(s32 arg0, s32 arg1, s32 arg2) {
         result1 = func_8009C300(arg1, 0);
         result2 = func_8009CF18();
         
-        var_v1 = D_800ED148.entities[arg0].unkCD * D_800ED148.entities[arg0].unkCD;
+        var_v1 = D_800ED148.entities[arg0].unkCD[0] * D_800ED148.entities[arg0].unkCD[0];
         
-        var2 = ((var_v1 / 16) + D_800ED148.entities[arg0].unkCD) * (265 - result1);
+        var2 = ((var_v1 / 16) + D_800ED148.entities[arg0].unkCD[0]) * (265 - result1);
         
         var1 = (var2 / 256) * arg2;
         

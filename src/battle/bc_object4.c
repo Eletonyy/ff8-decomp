@@ -1936,7 +1936,50 @@ void func_800A9A6C(s32 arg0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A9AC0);
+void func_800A9AC0(s32 arg0, s32 arg1) {
+    s32 i;
+    s32 val;
+    s32 idx;
+
+    func_800A9A6C(arg1);
+    
+    if (arg0 < 213) {
+        val = 0;
+        idx = arg0 - 0xCD;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                u8* cd = D_800ED148.entities[i].unkCD;
+                if (val < cd[idx]) {
+                    val = cd[idx];
+                }
+            }
+        }
+    }
+    
+    else {
+        val = 255;
+        idx = arg0 - 0xD5;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                u8* cd = D_800ED148.entities[i].unkCD;
+                if (cd[idx] < val){
+                    val = cd[idx];
+                }
+            }
+        }
+    }
+
+    for (i = 0; i < 7; i++) {
+        u8* cd = D_800ED148.entities[i].unkCD;
+        if (val == cd[idx]) {
+            D_800EEBE0[i] = 1;
+        }
+        
+        else {
+            D_800EEBE0[i] = 0;
+        }
+    }
+}
 
 void func_800A9C68(s32 arg0, s32 arg1) {
     s32 i;

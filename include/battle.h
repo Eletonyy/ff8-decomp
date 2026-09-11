@@ -351,7 +351,7 @@ typedef struct {
     u8 unkC8[3];
     u8 linkedIdx;
     u8 unkCC;
-    u8 unkCD;        /* 0xCD: stat byte used in case-0 damage formula (squared). */
+    u8 unkCD[1];        /* 0xCD: stat byte used in case-0 damage formula (squared). */
     u8 unkCE;
     u8 unkCF;        /* 0xCF: stat byte averaged with arg2 in func_8009DEF0 mode-7. */
 } BattleEntity; /* 208 bytes */
