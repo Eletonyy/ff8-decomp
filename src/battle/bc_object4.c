@@ -1131,8 +1131,8 @@ void func_800A7FD0(s32 arg0, s32 arg1, s32 arg2) {
 
 
     temp_s3 = *D_800ED148.entities[arg0].entityData;
-    D_800EE9E8.subEntries[arg0 - 3].unk10 = 0;
     temp_s1 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    D_800EE9E8.subEntries[arg0 - 3].unk10 = 0;
     temp_s1->unkBC = func_800A7154(arg1);
     temp_s1->unk7C = 17;
     if (temp_s3->immunityFlags & 0x10) {
@@ -1444,13 +1444,37 @@ s32 func_800A8AFC(s32 arg0) {
 #include "battle/bc_object6.h"
 #include "battle/bc_object7.h"
 
-extern u8 D_800EEBE0[]; // an array containing 1s and 0s (size 7)
 extern u8 D_800E3CEC[];
 s32 func_800B0398(s32);
 void func_800A59AC(s32, s32, s32);
-s32 func_800A97A4(s32);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8B7C);
+s32 func_800A8B7C(s32 arg0) {
+    BattleCharData* temp_s0;
+
+    temp_s0 = &g_battleChars.chars[arg0];
+    func_800A8A48(temp_s0, 2, 0, 1);
+
+    switch (temp_s0->unk188 & 0x60000) {
+        case 0:
+            return 0;
+        
+        case 0x60000:
+            func_800A8A48(temp_s0, 0, 0x23, 1);
+            func_800A8A48(temp_s0, 1, 0x24, 1);
+            func_800A8A48(temp_s0, 2, 0x25, 1);
+            return 3;
+            
+        case 0x20000:
+            func_800A8A48(temp_s0, 0, 0x23, 1);
+            func_800A8A48(temp_s0, 1, 0x24, 1);
+            return 2;
+            
+        case 0x40000:
+            func_800A8A48(temp_s0, 0, 0x23, 1);
+            func_800A8A48(temp_s0, 1, 0x25, 1);
+            return 2;
+    }
+}
 
 void func_800A8CA4(s32 characterId, s32 targetId) {
     BattleAnimSubEntry* var_s0;
@@ -1472,7 +1496,40 @@ void func_800A8CA4(s32 characterId, s32 targetId) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A8D7C);
+void func_800A8D7C(s32 arg0, s32 arg1) {
+    BattleCharData* temp_s0;
+
+    temp_s0 = &g_battleChars.chars[arg0];
+    temp_s0->pad0[0] = 10;
+    temp_s0->pad0[1] = D_80078E00.unk0139;
+    temp_s0->pad0[2] = D_80078E00.unk013A;
+    temp_s0->pad0[3] = 0;
+    if (arg1 < 64) {
+        temp_s0->pad0[4] = 9;
+        temp_s0->pad0[5] = D_80078E00.spells[arg1].unk5;
+        temp_s0->pad0[6] = D_80078E00.spells[arg1].magicId;
+        temp_s0->pad0[7] = 0;
+        
+        if (D_80078E00.spells[arg1].unk7 & 0x80) {
+            temp_s0->pad0[7] = 1;
+            
+            if (D_80078E00.spells[arg1].unk7 & 0x80) {
+                temp_s0->pad0[3] |= 1;
+            }
+        }
+        
+        if (func_800A89B8(arg0, arg1) != 0) {
+            temp_s0->pad0[3] |= 2;
+        }
+    } 
+    
+    else {
+        temp_s0->pad0[4] = 9;
+        temp_s0->pad0[5] = 0;
+        temp_s0->pad0[6] = 0;
+        temp_s0->pad0[7] = 2;
+    }
+}
 
 void func_800A8E90(BattleCharData* arg0, s32 arg1) {
     arg0->testSlots[0].unk0 = arg1;
@@ -1564,7 +1621,40 @@ s32 func_800A9240(s32 arg0) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A9284);
+s32 func_800A9284(BattleCharData* arg0) {
+    s32 i;
+    u16 mask;
+    s32 val;
+    s32 temp_a0;
+    s32 var_s1;
+
+    val = 0;
+    mask = 1;
+    var_s1 = 101;
+        
+    for (i = 0; i < 8; i++) {
+        temp_a0 = func_800A9240(var_s1);
+        if ((g_gameState.mainData.limitBreaks.irvineLimits & mask) || (temp_a0 != 0)) {
+            arg0->testSlots[val].unk0 = var_s1;
+            arg0->testSlots[val].unk2 = 0x80;
+            arg0->testSlots[val].unk3 = D_80078E00.unk015A;
+            arg0->testSlots[val].unk4 = 0;
+            arg0->testSlots[val].unk1 = temp_a0;
+            arg0->testSlots[val].unk4 &= 0xEF;
+            
+            if (temp_a0 == 0) {
+                arg0->testSlots[val].unk4 |= 2;
+            }
+          
+            val++;
+        }
+        
+        var_s1++;
+        mask <<= 1;
+    }
+    
+    return val;
+}
 
 s32 func_800A9370(s32 arg0) {
     BattleCharData* temp_a0;
@@ -1676,7 +1766,49 @@ void func_800A95A0(s32 arg0, s32 arg1) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A960C);
+void func_800A960C(s32 arg0) {
+    s32 result;
+
+    if (D_800ED148.entities[arg0].status & 0x200) {
+        result = D_800ED148.entities[arg0].unk2C - D_800ED148.entities[arg0].unk28;
+        if (result <= 200) {
+            return;
+        }
+        
+        if (result > 1000) {
+            if (func_800A9568(3) != 0) {
+                func_800A95A0(arg0, 3);
+            } 
+            
+            else if (func_800A9568(1) != 0) {
+                func_800A95A0(arg0, 1);
+            } 
+            
+            else if (func_800A9568(2) != 0) {
+                func_800A95A0(arg0, 2);
+            } 
+            
+            else if (func_800A9568(4) != 0) {
+                func_800A95A0(arg0, 4);
+            } 
+            
+            else if (func_800A9568(5) != 0) {
+                func_800A95A0(arg0, 5);
+            } 
+            
+            else if (func_800A9568(9) != 0) {
+                func_800A95A0(arg0, 9);
+            }
+        }
+            
+        else {
+            if (func_800A9568(1) != 0) {
+                func_800A95A0(arg0, 1);
+            }
+        }
+    }
+}
+
 
 s32 func_800A972C(s32 arg0) {
     return func_800B0F9C(D_80078E00.entriesA0[arg0].unk7) | func_800B0F7C(D_80078E00.entriesA0[arg0].unk7);
@@ -1702,8 +1834,8 @@ void func_800A97D4(void) {
     }
 }
 
-u16 func_800A97FC(s32 arg0) {
-    return (1 << arg0);
+s32 func_800A97FC(s32 arg0) {
+    return (u16)(1 << arg0); // functions in this folder break with u16 return prototype
 }
 
 u16 func_800A980C(void) {
@@ -1812,9 +1944,87 @@ void func_800A9A6C(s32 arg0) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A9AC0);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A9C68);
+void func_800A9C68(s32 arg0, s32 arg1) {
+    s32 i;
+    u16 val;
+    s32 idx;
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A9E08);
+    func_800A9A6C(arg1);
+    
+    if (arg0 < 229) {
+        val = 0;
+        idx = arg0 - 221;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                if (val < D_800ED148.entities[i].unk54[idx]) {
+                    val = D_800ED148.entities[i].unk54[idx];
+                }
+            }
+        }
+    }
+    
+    else {
+        val = 65535;
+        idx = arg0 - 229;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                if (D_800ED148.entities[i].unk54[idx] < val) {
+                    val = D_800ED148.entities[i].unk54[idx];
+                }
+            }
+        }       
+    }
+
+
+    for (i = 0; i < 7; i++) {
+        if (val == D_800ED148.entities[i].unk54[idx]) {
+            D_800EEBE0[i] = 1;
+        }
+        
+        else {
+            D_800EEBE0[i] = 0;
+        }
+    }
+}
+
+void func_800A9E08(s32 arg0, s32 arg1) {
+    s32 i;
+    s32 val;
+
+    func_800A9A6C(arg1);
+    
+    if (arg0 == 203) {
+        val = 0;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                if (val < D_800ED148.entities[i].unk28) {
+                    val = D_800ED148.entities[i].unk28;
+                }
+            }
+        }
+    }
+    
+    else {
+        val = 0x7FFFFFFF;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                if ((D_800ED148.entities[i].unk28 < val) && (D_800ED148.entities[i].unk28 != 0)) {
+                    val = D_800ED148.entities[i].unk28;
+                }
+            }
+        }
+    }
+
+    for (i = 0; i < 7; i++) {
+        if (val == D_800ED148.entities[i].unk28) {
+            D_800EEBE0[i]= 1;
+        } 
+        
+        else {
+             D_800EEBE0[i] = 0;
+        }
+    }
+}
 
 void func_800A9F98(void) {
     s32 i;
@@ -1836,7 +2046,116 @@ void func_800A9FDC(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800AA034);
+u16 func_800AA034(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
+    s32 i;
+    s32 result;
+    s32 var_s0;
+
+    var_s0 = 0;
+    
+    switch (arg3) {
+        case 200: case 201:
+            func_800A9970(arg3);
+            break;
+        
+        case 0:
+            var_s0 = 1;
+            /* fallthrough */
+        case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8: case 9:
+        case 16: case 17: case 18: case 19: case 20: case 21: case 22: case 23:
+        case 24: case 25: case 26: case 27: case 28: case 29: case 30: case 31:
+        case 32: case 33: case 34: case 35: case 36: case 37: case 38: case 39:
+        case 40: case 41: case 42:
+        case 46: case 47:
+            func_800A99E8(arg3);
+            break;
+        
+        case 205: case 206: case 207: case 208: case 209: case 210: case 211: case 212:
+        case 213: case 214: case 215: case 216: case 217: case 218: case 219: case 220:
+            func_800A9AC0(arg3, arg1);
+            break;
+
+        case 221: case 222: case 223: case 224: case 225: case 226: case 227: case 228:
+        case 229: case 230: case 231: case 232: case 233: case 234: case 235: case 236:
+            func_800A9C68(arg3, arg1);
+            break;
+        
+        case 203: case 204:
+            func_800A9E08(arg3, arg1);
+            break;
+        
+        default:
+            break;
+    }
+    
+    if (arg2 == 3) {
+        func_800A9938();
+    }
+    
+    if (var_s0 == 0) {
+        func_800A9FDC();
+    }
+        
+    else {
+        func_800A9F98();
+    }
+    
+    if (arg0 == 0) {
+        switch (arg1) {
+            case 200:
+                do {
+                    i = func_800A97A4(3);
+                } while (D_800EEBE0[i] == 0);
+                result = func_800A97FC(i);
+                break;
+            
+            case 201:
+                do {
+                    i = func_800A97A4(4) + 3;
+                } while (D_800EEBE0[i] == 0);
+                result = func_800A97FC(i);
+                break;
+                
+            default:
+                do {
+                    i = func_800A97A4(7);
+                } while ((D_800EEBE0[i] == 0) || D_800ED148.entities[i].linkedIdx != arg1);
+                result = func_800A97FC(i);
+                break;
+        }
+    }
+        
+    else {
+        result = 32768;
+        switch (arg1) {
+            case 200:
+                for (i = 0; i < 3; i++) {
+                    if (D_800EEBE0[i] != 0) {
+                        result |= func_800A97FC(i);
+                    }
+                }
+                break;
+            
+            case 201:
+                for (i = 3; i < 7; i++) {
+                    if (D_800EEBE0[i] != 0) {
+                        result |= func_800A97FC(i);
+                    }
+                }
+                break;
+            
+            default:
+                for (i = 0; i < 7; i++) {
+                    if ((D_800ED148.entities[i].linkedIdx == arg1) && (D_800EEBE0[i] != 0)) {
+                        result |= func_800A97FC(i);
+                    }
+                }
+                break;
+        }
+    }
+    
+    return result;
+}
 
 s32 func_800AA368(s32 arg0) {
     s32 i;

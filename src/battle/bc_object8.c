@@ -34,6 +34,8 @@ s32 func_800AA4E0(void);
 extern u8 D_800EEED0[];
 extern u8 D_800EEED4[];
 
+u16 func_800A97FC(s32 arg0);
+
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B1624);
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B16C0);

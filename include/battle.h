@@ -728,7 +728,7 @@ typedef struct {
     /* 0x17C */ s32 xpToNext;          /**< XP needed to reach next level. */
     /* 0x180 */ u32 unk180;
     /* 0x184 */ u32 unk184;
-    /* 0x188 */ s32 unk188;          /**< Status/ability mask checked for bit 0x60000. */
+    /* 0x188 */ u32 unk188;          /**< Status/ability mask checked for bit 0x60000. */
     /* 0x18C */ s32 abilityFlags;
     /* 0x190 */ s32 statusFlags;
     /* 0x194 */ u16 elemResistances[8];/**< Element resistance values (8 × s16). */
@@ -1094,8 +1094,13 @@ typedef struct {
     /* 0x00D8 */ u8 pad00D8[0x00DC - 0x00D8];                
     /* 0x00DC */ s32 unk4C0CArg;                /**< resolveKernelPtr arg paired with unk4C0C[]. */
     /* 0x00E0 */ u8 pad00E0[0x00E8 - 0x00E0];
-    /* 0x00E8 */ structE8 unkE8[36];
-    /* 0x0208 */ u8 pad0208[0x0220 - 0x0208];
+    /* 0x00E8 */ structE8 unkE8[7];
+    /* 0x0120 */ u8 pad00F0[0x0139 - 0x0120];
+    /* 0x0139 */ u8 unk0139;
+    /* 0x013A */ u8 unk013A;
+    /* 0x013B */ u8 pad013B[0x015A - 0x013B];
+    /* 0x015A */ u8 unk015A;
+    /* 0x015B */ u8 pad015B[0x0220 - 0x015B];
     /* 0x0220 */ BattleSpellRow spells[1];      /**< 60-byte stride (size unknown, index past). */
     /* 0x025C */ u8 pad025C[0x0F78 - 0x025C];
     /* 0x0F78 */ BattleSceneRow rows132[1];     /**< 132-byte stride (size unknown, index past). */
@@ -1285,6 +1290,7 @@ extern u8              D_800EEBC8;
 extern u8              D_800EEBD0;
 extern s32             D_800EEBD8;
 extern s32             D_800EEBDC;
+extern u8              D_800EEBE0[7];
 
 /* ---------------------------------------------------------------- *
  *  Battle-overlay function prototypes (battle internals).
@@ -1331,7 +1337,6 @@ void func_800D0608(void); /* bc_object17: overlay VSync handler (RENDER_OVERLAY)
 
 void func_8002A2C4(u8 *, s32);
 s32 func_80037ADC(void);
-u16 func_800A97FC(s32 arg0);
 
 /* ---------------------------------------------------------------- *
  * Records the effect overlays share with battle.bin

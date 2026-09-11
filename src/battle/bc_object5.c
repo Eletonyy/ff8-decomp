@@ -5,7 +5,6 @@
 #include "battle/bc_object6.h"
 #include "battle/bc_object7.h"
 
-extern u8 D_800EEBE0[]; // an array containing 1s and 0s (size 7)
 extern u8 D_800E3CEC[];
 s32 func_800B0398(s32);
 void func_800A59AC(s32, s32, s32);
