@@ -37,7 +37,7 @@ defaults:
     data_string_guesser_level: 2
     # Misc
     section_order: [.text, .rodata, .data]
-    subalign: 2
+    subalign: 4
     o_as_suffix: true
     generate_asm_macros_files: false
 
@@ -467,7 +467,6 @@ binaries:
   options:
     target_path: original/menututo.ovl
     src_path: src/menu/menututo
-    subalign: null
   segments:
   - name: menututo
     type: code
@@ -518,7 +517,6 @@ binaries:
     target_path: original/world.bin
     section_order: [.rodata, .text, .data, .bss]
     ld_bss_is_noload: true
-    subalign: 1
   segments:
   - name: world
     type: code
@@ -573,7 +571,6 @@ binaries:
     undefined_funcs_auto_path: build/splat/undefined_funcs_auto.txt
     undefined_syms_auto_path: build/splat/undefined_syms_auto.txt
     section_order: [.rodata, .text, .data, .bss]
-    subalign: 4
   segments:
   - name: header
     type: header
