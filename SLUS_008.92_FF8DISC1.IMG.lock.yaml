@@ -1,5 +1,6 @@
 image:
   name: FF8DISC1.IMG
+  sector_size: 2048
   sectors: 310364
   sha1: 64e417495ffd743aad6f322f9b0cc59aa08e2025
 entries:

@@ -15,8 +15,6 @@ import sys
 
 import yaml
 
-SECTOR_SIZE = 2048
-
 
 def sha1_of_file(path):
     h = hashlib.sha1()
@@ -42,11 +40,12 @@ def main():
         print(f"{args.image}: SHA1 {image_sha1}, expected {lock['image']['sha1']}", file=sys.stderr)
         return 1
 
+    sector_size = lock["image"]["sector_size"]
     count = 0
     failed = 0
     with open(args.image, "rb") as img:
         for entry in lock["entries"]:
-            img.seek(entry["sector"] * SECTOR_SIZE)
+            img.seek(entry["sector"] * sector_size)
             data = img.read(entry["size"])
             if hashlib.sha1(data).hexdigest() != entry["sha1"]:
                 print(f"{entry['path']}: SHA1 mismatch", file=sys.stderr)
