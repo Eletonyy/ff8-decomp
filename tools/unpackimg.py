@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unpack FF8DISC1.IMG into the files listed in its lock file.
+"""Unpack .IMG files into the files listed in its lock file.
 
 The image SHA1 is checked against the lock before anything is written,
 and each file is checked against its own SHA1 as it is unpacked.
