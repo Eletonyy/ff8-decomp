@@ -1557,6 +1557,19 @@ s32 func_800A8EFC(BattleCharData* arg0) {
     return val;
 }
 
+/**
+* @brief Initialize entity ability fields from the ability table.
+*
+* Writes a1 as the ability ID at offset 0x32 of the entity entry
+* (computed as a0 + a2*5). Looks up ability data in D_80078E00
+* (offset 0x4A60, stride 8) and copies two bytes to offsets 0x34-0x35.
+* Clears offset 0x36 and sets offset 0x33 to 1.
+*
+* @param a0 Base entity pointer (as integer).
+* @param a1 Ability ID.
+* @param a2 Slot index (multiplied by 5 for stride).
+*/
+
 void func_800A8F98(BattleCharData* arg0, s32 arg1, s32 arg2) {
     arg0->testSlots[arg2].unk0 = arg1;
     arg0->testSlots[arg2].unk2 = D_80078E00.rows8[arg1].unk2;
@@ -1583,6 +1596,14 @@ s32 func_800A8FDC(BattleCharData* arg0) {
     return val;
 }
 
+
+/**
+* @brief Initialize three type bytes in an entity structure.
+*
+* @param a0 Pointer to entity data.
+* @return Always 3.
+*/
+
 s32 func_800A9064(BattleCharData* arg0) {
     arg0->testSlots[0].unk0 = 65;
     arg0->testSlots[1].unk0 = 67;
@@ -1592,6 +1613,16 @@ s32 func_800A9064(BattleCharData* arg0) {
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A9084);
+
+/**
+* @brief Search g_gameState+0xB44 table for entry matching a given byte.
+*
+* Iterates up to 198 entries (stride 2) in g_gameState at offset 0xB44.
+* If byte[0] matches a0, returns byte[1]. Returns 0 if not found.
+*
+* @param a0 Value to search for.
+* @return Unsigned byte at offset 1 of matching entry, or 0 if not found.
+*/
 
 s32 func_800A9240(s32 arg0) {
     s32 i;
@@ -1729,6 +1760,16 @@ void func_800A94E0(void) {
     }
 }
 
+/**
+* @brief Search D_800EE9E8 table for a matching byte value.
+*
+* Iterates up to 32 entries (stride 5) in D_800EE9E8, comparing
+* the first byte of each entry to a0.
+*
+* @param a0 Value to search for.
+* @return 1 if found, 0 if not found.
+*/
+
 s32 func_800A9568(s32 arg0) {
     s32 i;
 
@@ -1740,6 +1781,17 @@ s32 func_800A9568(s32 arg0) {
     
     return 0;
 }
+
+/**
+* @brief Set up entity action with sound and visual effects.
+*
+* Calls func_800A97FC to get a value, then triggers entity action
+* via func_800B0754, sets animation via func_800AF4BC, and
+* conditionally calls func_800AE3D4 based on func_800AE390 result.
+*
+* @param a0 Entity index passed to func_800A97FC and func_800B0754.
+* @param a1 Mode parameter for func_800B0754 and subsequent calls.
+*/
 
 void func_800A95A0(s32 arg0, s32 arg1) {
     func_800B0754(arg0, 4, arg1, func_800A97FC(arg0));
@@ -1793,10 +1845,31 @@ void func_800A960C(s32 arg0) {
     }
 }
 
+/**
+* @brief Compute paired lookup results from entity table and return combined.
+*
+* Computes D_80078E00 + a0 * 20 as the base address, loads the byte at
+* offset 0x3EE7, calls func_800B0F9C and func_800B0F7C with it, and
+* returns the bitwise OR of both results masked to 16 bits.
+*
+* @param a0 Entity index (stride 20 in D_80078E00).
+* @return Combined result from both lookups, masked to u16.
+*/
 
 s32 func_800A972C(s32 arg0) {
     return func_800B0F9C(D_80078E00.entriesA0[arg0].unk7) | func_800B0F7C(D_80078E00.entriesA0[arg0].unk7);
 }
+
+/**
+* @brief Resolve a 16-bit offset to an address.
+*
+* If the offset is 0xFFFF (sentinel), returns D_800E3CEC.
+* Otherwise returns offset + base.
+*
+* @param offset 16-bit offset value (0xFFFF = invalid).
+* @param base Base address to add offset to.
+* @return Resolved address.
+*/
 
 u8* func_800A9784(u16 arg0, s32 arg1) {
     if (arg0 == 65535) {
@@ -1806,9 +1879,23 @@ u8* func_800A9784(u16 arg0, s32 arg1) {
     return arg0 + arg1; // weird
 }
 
+/**
+* @brief Return a random number modulo @p a0.
+*
+* @param a0 Divisor (also the modulo bound).
+* @return Remainder of @c func_8009B15C() / @p a0.
+*/
+
 s32 func_800A97A4(s32 arg0) {
     return func_8009B15C() % arg0;
 }
+
+/**
+* @brief Clear 8 entity word fields in the battle entity table.
+*
+* Zeros 8 consecutive words at offset 0x12B4 down to 0x1298
+* relative to D_800ED148.
+*/
 
 void func_800A97D4(void) {
     s32 i;
@@ -1818,9 +1905,27 @@ void func_800A97D4(void) {
     }
 }
 
+/**
+* @brief Compute a single-bit mask at the given position.
+*
+* @param bitPos Bit position (0-15).
+* @return 16-bit mask with bit at bitPos set.
+*/
+
 s32 func_800A97FC(s32 arg0) {
     return (u16)(1 << arg0); // functions in this folder break with u16 return prototype
 }
+
+/**
+* @brief Find a random available entity (among first 3) and return its bitmask.
+*
+* Calls func_800AE730 to get entity count. If 0xFF, returns 0.
+* Otherwise loops calling func_800A97A4(3) to pick random indices,
+* checking entity[0x90] bit 0 (busy flag). Returns (1 << idx) & 0xFFFF
+* when an available entity is found.
+*
+* @return Bitmask of selected entity, or 0 if none available.
+*/
 
 u16 func_800A980C(void) {
     s32 idx;
@@ -1836,6 +1941,17 @@ u16 func_800A980C(void) {
     return (1 << idx);
 }
 
+/**
+* @brief Find a random available entity (among 4, offset by 3) and return its bitmask.
+*
+* Calls func_800AE788 to get entity count. If 0xFF, returns 8.
+* Otherwise loops calling func_800A97A4(4), adds 3 to the index,
+* checks entity[0x90] bit 0 (busy flag). Returns (1 << (idx+3)) & 0xFFFF
+* when an available entity is found.
+*
+* @return Bitmask of selected entity, or 8 if none available.
+*/
+
 u16 func_800A9888(void) {
     s32 idx;
 
@@ -1850,9 +1966,20 @@ u16 func_800A9888(void) {
     return (1 << idx);
 }
 
+/**
+* @brief Compute a bitmask from an entity's byte at offset 0x98.
+*
+* @param a0 Entity index (stride 0xD0).
+* @return 16-bit mask with one bit set at the position given by entity[0x98].
+*/
+
 u16 func_800A9904(s32 arg0) {
     return (1 << D_800ED148.entities[arg0].unk98);
 }
+
+/**
+* @brief Toggle the least significant bit of 7 bytes in D_800EEBE0.
+*/
 
 void func_800A9938(void) {
     s32 i;
@@ -1861,6 +1988,17 @@ void func_800A9938(void) {
         D_800EEBE0[i] = ~D_800EEBE0[i] & 1;
     }
 }
+
+/**
+* @brief Populate entity alive flags array from status bits.
+*
+* Iterates over 7 entities at stride 0xD0 from D_800ED148. For each,
+* checks bit 8 (0x100) of the flags word at offset 0x8C. Writes 1 to
+* D_800EEBE0[i] if the bit is set, 0 otherwise. If a0 equals 0xC8,
+* calls func_800A9938 to toggle the result bits.
+*
+* @param a0 Trigger value — if 0xC8, post-processes the flags.
+*/
 
 void func_800A9970(s32 arg0) {
     s32 i;
@@ -2053,6 +2191,13 @@ void func_800A9E08(s32 arg0, s32 arg1) {
     }
 }
 
+/**
+* @brief Clear D_800EEBE0 entries for inactive entities.
+*
+* Loops over 7 entities at D_800ED148 (stride 0xD0). If bit 0 of the
+* word at offset 0x8C is not set, clears D_800EEBE0[i] to zero.
+*/
+
 void func_800A9F98(void) {
     s32 i;
     
@@ -2062,6 +2207,13 @@ void func_800A9F98(void) {
         }
     }
 }
+
+/**
+* @brief Clear D_800EEBE0 entries for inactive or dead entities.
+*
+* Iterates 7 entities (stride 0xD0 in D_800ED148). Clears
+* D_800EEBE0[i] to zero unless the entity is both active and alive.
+*/
 
 void func_800A9FDC(void) {
     s32 i;
@@ -2241,6 +2393,13 @@ s32 func_800AA4F0(void) {
     return 33023;
 }
 
+/**
+* @brief Search entity table for a matching byte at offset 0xCB.
+*
+* @param a0 Value to search for.
+* @return Entity index (0-6) if found, or 0xFF if not found.
+*/
+
 s32 func_800AA4F8(s32 arg0) {
     s32 i;
 
@@ -2252,6 +2411,13 @@ s32 func_800AA4F8(s32 arg0) {
 
     return 255;    
 }
+
+/**
+ * @brief Search entity table for active entity linked to index a0.
+ *
+ * @param a0 Link index to search for.
+ * @return Entity index if found, 0xFF otherwise.
+ */
 
 s32 func_800AA530(s32 arg0) {
     s32 i;

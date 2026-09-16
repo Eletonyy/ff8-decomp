@@ -514,9 +514,9 @@ typedef struct {
     /* 0x12EE */ u8 volatile unk12EE;               /**< Misc state byte. */
     /* 0x12EF */ u8 volatile unk12EF;
     /* 0x12EF */ u8 unk12F0;
-    /* 0x12EF */ u8 pad12F1;
-    /* 0x12EF */ u8 unk12F2;
-    /* 0x12F3 */ u8 unk12F3;                        /* used as index in func_8009F824 */
+    /* 0x12EF */ u8 unk12F1;                        /* used as index for BattleEntity unkC8 in func_800AE414 */
+    /* 0x12EF */ u8 unk12F2;                        /* used as index for unkD64 and unk1100 in func_800A57E0 */
+    /* 0x12F3 */ u8 unk12F3;                        /* used as index for entities in func_8009F824 */
     /* 0x12F4 */ u8 unk12F4;
     /* 0x12F5 */ u8 unk12F5;
     /* 0x12F6 */ u8 taskHead;                       /**< Head index of the task queue linked list. */

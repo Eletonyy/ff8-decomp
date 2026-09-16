@@ -139,6 +139,14 @@ top:
     return 1;
 }
 
+/**
+* @brief Check battle conditions and trigger entity action sequence.
+*
+* Checks bit 1 of D_8007809A. If set, calls func_800B1A78 to validate.
+* If valid, calls func_8009B79C(0x20, 0xFF) to test entity availability.
+* If available, clears D_800EE45C and calls func_800B1A48 to start action.
+*/
+
 void func_800B1ACC(void) {
     if (!(D_8007809A & 2)) {
         return;
@@ -268,6 +276,14 @@ void func_800B2038(void) {
     }
 }
 
+/**
+* @brief Check battle mode flag and conditionally trigger entity processing.
+*
+* Checks bit 3 of D_8007809A. If set, calls func_8009B79C(8, 0xFF) to test
+* entity availability. If available, calls func_800B1B68 and returns.
+* Otherwise (bit not set or entity unavailable), clears D_800EE465.
+*/
+
 void func_800B2084(void) {
     if (D_8007809A & 8 && func_8009B79C(8, 255) != 0) {
         func_800B1B68();
@@ -296,6 +312,18 @@ top:
     if (i < 3) goto top;
     return 1;
 }
+
+/**
+* @brief Check if conditions are met to initiate an auto-battle action.
+*
+* Checks a chain of conditions: whether func_800AE788 returns the sentinel
+* 0xFF, whether func_800B20D8 indicates busy, bit 2 of D_8007809A flags,
+* whether g_battleConfig matches 0x13D, and whether entity slot 0x40 is
+* available via func_8009B79C. If all pass, sets D_800EE45C to 1 and
+* calls func_800B1A48 to start the action.
+*
+* @return 1 if action was initiated, 0 otherwise.
+*/
 
 s32 func_800B2128(void) {
     if (func_800AE788() == 255) {
