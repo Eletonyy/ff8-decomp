@@ -1193,7 +1193,7 @@ void func_801F3994(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
  */
 void func_801F39D0(s32 val, s32 ctx, s32 dl, s32 y, s32 a4, s32 a5) {
     u8 buf[16];
-    s32 digits = D_80083858.digitBase;
+    s32 digits = D_80083858.digits[0];
     s32 cursor;
     u8 *str;
 
@@ -1778,20 +1778,20 @@ s32 func_801F6234(s32 ctx, s32 dl, s32 x, s32 y, s32 mask) {
 /* ======================================================================== */
 
 /** @brief Look up string resource pointer by index from D_801F8BB8 table. */
-s32 func_801F6324(s32 a0) {
+u8 *func_801F6324(s32 a0) {
     u16 *table = (u16 *)D_801F8BB8;
 
     if (a0 >= table[0]) {
         a0 = 0;
     }
     a0 += 1;
-    return table[a0] + (s32)table;
+    return (u8 *)table + table[a0];
 }
 
 /** @brief Decode and render an indexed string resource to screen. */
 s32 func_801F6358(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4) {
     u8 buf[256];
-    s32 ptr = func_801F6324(a4);
+    u8 *ptr = func_801F6324(a4);
     decodeMessage(ptr, buf, -1);
     func_801F0FEC(a0, a1, a2, a3, buf, 7);
 }
