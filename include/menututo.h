@@ -127,7 +127,6 @@ extern s32 func_801EF9AC(s32, s32, s32, s32);
 extern u32 func_801EFBB4(s32, s32, s32);
 extern s32 func_801F7A54(void);
 extern s32 drawColorByMenuPalette(s32, s32, s32, s32, s32);
-extern void decodeMessage(u8 *, u8 *, s32);
 
 /* ======================================================================== */
 /* Forward declarations (defined within menututo.c)                         */

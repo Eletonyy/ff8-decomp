@@ -2,6 +2,7 @@
 #include "gamestate.h"
 #include "overlay.h"
 #include "menututo.h"
+#include "numstr.h"
 
 /**
  * @brief Read tutorial column index 1.

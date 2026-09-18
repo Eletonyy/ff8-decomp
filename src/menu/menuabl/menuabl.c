@@ -2,10 +2,10 @@
 #include "menu.h"
 #include "gamestate.h"
 #include "menuabl.h"
+#include "numstr.h"
 
 extern AbilityEntry  D_8007CEE0[];
 
-extern void decodeMessage(u8 *src, u8 *dst, s32 mode);
 extern s32  getAbilityDesc(s32 id);
 extern u8  *getAbilityName(s32 abilityId);
 extern s32  getDisplayListHead(void);

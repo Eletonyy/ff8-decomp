@@ -132,28 +132,11 @@ typedef struct {
 
 /** @brief Message formatting config (D_80083858). */
 typedef struct {
-    u8 digitBase;              /* base character code for digit rendering */
-    u8 pad01[0xF];             /* padding */
+    u8 digits[0x10];           /* glyph codes of the digits 0-F; [0] is the decimal digit base */
     u8 separator;              /* thousands separator character */
 } MsgFormatConfig;
 
 
-
-/** @brief Message state struct passed to decode/advance functions.
- *
- * Accessed as s32[] array in some functions, with a u8 skip count at +0x22.
- * Fields at +0x00..+0x07 are unknown; +0x08 is the stream pointer,
- * +0x0C is the stored/output pointer.
- */
-typedef struct {
-    s32 unk0;
-    s32 unk4;
-    s32 streamPtr;              /* current stream pointer (a0[2]) */
-    s32 storedPtr;              /* stored/output pointer (a0[3]) */
-    u8 pad10[0x12];
-    u8 skipCount;               /* number of control codes to skip */
-    u8 pad23;
-} MsgState;
 
 typedef enum {
     CTRL_ACTIVE     = 0x01,
