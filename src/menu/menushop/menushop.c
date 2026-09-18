@@ -1349,7 +1349,7 @@ u8* func_801E7CFC(s32 arg0) {
     ptr1 = D_801E9BA0;
     ptr2 = D_801E9D2C;
 
-    ptr1 += arg0 & -0xc1;
+    ptr1 += arg0 & ~0xC0;
     ptr2 += ptr1->unk0;
 
     return ptr2;
