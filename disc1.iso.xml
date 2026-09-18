@@ -1,0 +1,13 @@
+<iso_project image_name="@OUTPUT_BIN@" cue_sheet="@OUTPUT_CUE@">
+    <track type="data" xa_edc="true" new_type="false">
+        <identifiers system="PLAYSTATION" application="PLAYSTATION" creation_date="1999071703281200+36" modification_date="1999071703281200+36"/>
+        <license file="@STAGING@/license_data.dat"/>
+        <default_attributes gmt_offs="36" xa_attrib="0" xa_perm="273" xa_gid="62465" xa_uid="25600" hidden="1"/>
+        <directory_tree xa_perm="1365" xa_gid="0" xa_uid="0" hidden="0" offs="22">
+            <file name="SYSTEM.CNF" source="@STAGING@/SYSTEM.CNF" type="data" offs="23"/>
+            <file name="SLUS_008.92" source="@STAGING@/SLUS_008.92" type="data" offs="24"/>
+            <file name="FF8DISC1.IMG" source="@STAGING@/FF8DISC1.IMG" type="data" offs="826"/>
+            <dummy sectors="150" type="32" offs="311190"/>
+        </directory_tree>
+    </track>
+</iso_project>
