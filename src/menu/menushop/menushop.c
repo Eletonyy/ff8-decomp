@@ -319,16 +319,14 @@ void func_801E5E90(ShopMenuState *s) {
     u32 cfgFlags;
     u16 *statePtr;
     u16 state;
-    u16 state2;
 
     statePtr = &s->state;
     btnFlags = g_menuDisplayCfg.inputNew;
     cfgFlags = g_menuDisplayCfg.inputRepeat;
     state = s->state;
-block_38:
-    state &= 0xFFFF;
-block_40:
-    switch (state) {
+
+restart:
+    switch (state & 0xFFFF) {
     case 0:
         s->union30.unk30_s32 = func_801F6AA4(0x40);
         s->unk38 = 0;
@@ -376,7 +374,7 @@ block_40:
 
         if ((s8)s->unk42 == 2) {
             state = 16;
-            goto block_38;
+            goto restart;
         }
 
         s->unk46 = s->unk42;
@@ -384,12 +382,10 @@ block_40:
             s->union30.unk30_s32 = func_801F6AA4(0x42);
             s->unk47 = 2;
         } else {
-        block_17c:
             s->union30.unk30_s32 = func_801F6AA4(0x41);
             s->unk47 = 0x19;
         }
 
-    block_190:
         s->unk40 = s->union3C.unk3C_s16[s->unk46] / 8;
         func_801E5C08(s->gil);
         s->gil = func_801E5D28();
@@ -404,11 +400,12 @@ block_40:
     case 5:
         s->unk36 -= 0x100;
         if (((s16)s->unk36 << 0x10) <= 0) {
-            state2 = 6;
             s->unk36 = 0;
-            goto block_894;
+            *statePtr = 6;
         }
-        goto block_898;
+        func_801E5BA4(0, (s8)s->unk42);
+        func_801E5930(1, s->union3C.unk3C_s16[s->unk46], s);
+        break;
 
     case 6: {
         s32 param;
@@ -441,11 +438,11 @@ block_40:
 
         if (btnFlags & 0x8000) {
             state = 7;
-            goto block_38;
+            goto restart;
         }
         if (btnFlags & 0x2000) {
             state = 9;
-            goto block_38;
+            goto restart;
         }
         func_801E5BA4(0, (s8)s->unk42);
         func_801E5930(1, s->union3C.unk3C_s16[s->unk46], s);
@@ -457,15 +454,14 @@ block_40:
         }
         if (cfgFlags & 0x40) {
             if (func_801E583C(s, s->unk46, s->union3C.unk3C_s16[s->unk46])) {
-                if (s->unk46 == 1) {
-                    if (s->union3C.unk3C_s16[s->unk46] >= 0xC6) {
-                        goto block_774;
-                    }
+                if (s->unk46 == 1 && s->union3C.unk3C_s16[s->unk46] >= 0xC6) {
+                    sendSpuCommand(5);
+                    break;
                 }
                 state = 11;
-                goto block_40;
+                goto restart;
             }
-            goto block_774;
+            sendSpuCommand(5);
         }
         break;
     }
@@ -481,7 +477,8 @@ block_40:
 
         if (s->unk46 == 0) {
             if (index == 0) {
-                goto block_774;
+                sendSpuCommand(5);
+                break;
             }
 
             if (s->gil < price) {
@@ -514,17 +511,15 @@ block_40:
             if ((s32)count + D_801EB088[index] >= 100) {
                 count = 100 - D_801EB088[index];
             }
-
-            goto block_4f4;
+        } else {
+            if (index == 0) {
+                sendSpuCommand(5);
+                break;
+            }
+    
+            count = D_801EB088[index];
         }
 
-        if (index == 0) {
-            goto block_774;
-        }
-
-        count = D_801EB088[index];
-
-    block_4f4:
         sendSpuCommand(2);
         s->unk49 = count;
         s->unk4A = 0x40;
@@ -604,7 +599,6 @@ block_40:
                 D_801EB088[index] += s->unk48;
             } else {
                 if (s->union3C.unk3C_s16[s->unk46] >= 0xC6) {
-                block_774:
                     sendSpuCommand(5);
                     break;
                 }
@@ -635,14 +629,10 @@ block_40:
     case 14:
         func_801E5BA4(0, (s8)s->unk42);
         s->unk36 += 0x100;
-        if ((s16)s->unk36 < 0x1000) {
-            goto block_898;
+        if ((s16)s->unk36 >= 0x1000) {
+            s->unk36 = 0x1000;
+            *statePtr = 3;
         }
-        s->unk36 = 0x1000;
-        state2 = 3;
-    block_894:
-        *statePtr = state2;
-    block_898:
         func_801E5BA4(0, (s8)s->unk42);
         func_801E5930(1, s->union3C.unk3C_s16[s->unk46], s);
         break;
@@ -675,10 +665,17 @@ block_40:
         func_801E5BA4(0, (s8)s->unk42);
         func_801E5930(1,  s->union3C.unk3C_s16[s->unk46], s);
         s->unk3A += 0x199;
-        if (s->unk3A < 0) {
-            goto block_b10;
+        if (s->unk3A >= 0) {
+            s->unk3A = 0;
+            *statePtr = 6;
         }
-        goto block_b0c;
+        if (cfgFlags & 0x8000) {
+            *statePtr = 7;
+        }
+        if (cfgFlags & 0x2000) {
+            *statePtr = 9;
+        }
+        break;
 
     case 9: {
         s32 dividend;
@@ -709,11 +706,9 @@ block_40:
         func_801E5930(1,  s->union3C.unk3C_s16[s->unk46], s);
         s->unk3A -= 0x199;
         if (s->unk3A <= 0) {
-        block_b0c:
             s->unk3A = 0;
             *statePtr = 6;
         }
-        block_b10:
         if (cfgFlags & 0x8000) {
             *statePtr = 7;
         }
