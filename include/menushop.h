@@ -30,7 +30,7 @@ typedef struct {
 } MItemEntry; /* 0x4 = 4 bytes */
 
 typedef struct {
-    u8 pad000[0xF];
+    u8 pad000[0x10];
     u16 state;          /**< 0x10: state machine current state (0-17) */
     u8 pad12[0x8];
     s16 unk1C;
@@ -84,10 +84,10 @@ extern ShopData D_80077CC8[SHOP_COUNT]; /**< Shop data table. */
 extern s32 D_80077E70;
 extern u8 D_80077EBC[ITEM_SLOT_COUNT]; /**< Item slot inventory. */
 extern Struct_func_801E7F4C D_8007C3B8[28];
-extern u16 D_801E9B64[4]; /**< 8 bytes. */
-extern u8 D_801E9B6C[52]; /**< 52 bytes. */
-extern Struct_func_801E7CFC D_801E9BA0[33]; /**< 396 bytes. */
-extern u8 D_801E9D2C[68]; /**< 68 bytes. */
+extern u16 D_801E9B64[4];
+extern u8 D_801E9B6C[52];
+extern Struct_func_801E7CFC D_801E9BA0[33];
+extern u8 D_801E9D2C[68];
 extern ShopItemRarity D_801EA170[SHOP_COUNT][SHOP_ITEM_COUNT]; /**< Shop item rarity tables (shop.bin content). */
 extern ShopItemPrice D_801EA3F0[ITEM_PRICE_COUNT]; /**< Item price table (price.bin content). */
 extern MItemEntry D_801EA70C[199]; /**< Field-menu item table (mitem.bin content). */
