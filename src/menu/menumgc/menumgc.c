@@ -7,6 +7,7 @@
 #include "menu.h"
 #include "menumgc.h"
 #include "numstr.h"
+#include "psxsdk/libetc.h"
 
 /*
  * menumain.h must not be included here: its `u16 func_801F22F4(void)` and,
@@ -624,14 +625,14 @@ dispatch:
         ctx->commandIdx = func_801F76E0(inputRepeat, ctx->commandMask, ctx->commandIdx);
         if (popcount(func_80036EC0()) >= 2) {
             ctx->drawFlags &= ~MAGIC_DRAW_SUB_CURSOR;
-            if (inputRepeat & 4) {
+            if (inputRepeat & PADL1) {
                 ctx->refreshHelpText = 1;
                 ctx->headerCursorActive = 0;
                 ctx->returnState = 3;
                 state = 4;
                 goto dispatch;
             }
-            if (inputRepeat & 8) {
+            if (inputRepeat & PADR1) {
                 ctx->refreshHelpText = 1;
                 ctx->headerCursorActive = 0;
                 ctx->returnState = 3;
@@ -639,7 +640,7 @@ dispatch:
                 goto dispatch;
             }
         }
-        if (inputRepeat & 0x40) {
+        if (inputRepeat & PADRdown) {
             sendSpuCommand(2);
             switch (ctx->commandIdx) {
             case 0:
@@ -657,7 +658,7 @@ dispatch:
             }
             break;
         }
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0x70;
         }
@@ -700,17 +701,17 @@ dispatch:
         }
         if (ctx->headerCursorActive != 0) {
             func_801E6A9C(1);
-            if (inputNew & 0x8000) {
+            if (inputNew & PADLleft) {
                 *statePtr = 4;
             }
-            if (inputNew & 0x2000) {
+            if (inputNew & PADLright) {
                 *statePtr = 6;
             }
         }
-        if (inputNew & 4) {
+        if (inputNew & PADL1) {
             *statePtr = 4;
         }
-        if (inputNew & 8) {
+        if (inputNew & PADR1) {
             *statePtr = 6;
         }
         break;
@@ -748,17 +749,17 @@ dispatch:
         }
         if (ctx->headerCursorActive != 0) {
             func_801E6A9C(1);
-            if (inputNew & 0x8000) {
+            if (inputNew & PADLleft) {
                 *statePtr = 4;
             }
-            if (inputNew & 0x2000) {
+            if (inputNew & PADLright) {
                 *statePtr = 6;
             }
         }
-        if (inputNew & 4) {
+        if (inputNew & PADL1) {
             *statePtr = 4;
         }
-        if (inputNew & 8) {
+        if (inputNew & PADR1) {
             *statePtr = 6;
         }
         break;
@@ -791,10 +792,10 @@ dispatch:
             ctx->slideOffset = 0;
             *statePtr = ctx->returnState;
         }
-        if (inputNew & 4) {
+        if (inputNew & PADL1) {
             *statePtr = 8;
         }
-        if (inputNew & 8) {
+        if (inputNew & PADR1) {
             *statePtr = 0xA;
         }
         break;
@@ -826,10 +827,10 @@ dispatch:
             ctx->slideOffset = 0;
             *statePtr = ctx->returnState;
         }
-        if (inputNew & 4) {
+        if (inputNew & PADL1) {
             *statePtr = 8;
         }
-        if (inputNew & 8) {
+        if (inputNew & PADR1) {
             *statePtr = 0xA;
         }
         break;
@@ -852,24 +853,24 @@ dispatch:
         row = slot % 4;
         slot = ctx->upperPage * 4 + func_801F6768(inputRepeat, 4, row);
         ctx->slotCursor[ctx->charIdx] = slot;
-        if (inputRepeat & 0x8000) {
+        if (inputRepeat & PADLleft) {
             ctx->pageReturnState = 0xD;
             state = 0xE;
             goto dispatch;
         }
-        if (inputRepeat & 0x2000) {
+        if (inputRepeat & PADLright) {
             ctx->pageReturnState = 0xD;
             state = 0x10;
             goto dispatch;
         }
         if (popcount(_getJunctionableCharMask()) >= 2) {
             ctx->drawFlags |= MAGIC_DRAW_SUB_CURSOR;
-            if (inputRepeat & 4) {
+            if (inputRepeat & PADL1) {
                 ctx->returnState = 0xD;
                 state = 8;
                 goto dispatch;
             }
-            if (inputRepeat & 8) {
+            if (inputRepeat & PADR1) {
                 ctx->returnState = 0xD;
                 state = 0xA;
                 goto dispatch;
@@ -878,11 +879,11 @@ dispatch:
         func_801E69EC(ctx, 0, ctx->commandIdx);
         func_801E6B3C(1, slot);
         ctx->itemPtr = func_801E6F54(ctx->charIdx, ctx->slotCursor[ctx->charIdx], ctx->upperPage);
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 2;
         }
-        if (inputRepeat & 0x40) {
+        if (inputRepeat & PADRdown) {
             s32 spellId;
             s32 qty;
 
@@ -896,7 +897,7 @@ dispatch:
                 sendSpuCommand(5);
             }
         }
-        if (inputNew & 0x80) {
+        if (inputNew & PADRleft) {
             s32 spellId;
             s32 qty;
 
@@ -938,10 +939,10 @@ dispatch:
             ctx->upperPageSlide = 0;
             *statePtr = ctx->pageReturnState;
         }
-        if (inputNew & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 0xE;
         }
-        if (inputNew & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 0x10;
             return;
         }
@@ -968,10 +969,10 @@ dispatch:
             ctx->upperPageSlide = 0;
             *statePtr = ctx->pageReturnState;
         }
-        if (inputNew & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 0xE;
         }
-        if (inputNew & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 0x10;
             return;
         }
@@ -997,7 +998,7 @@ dispatch:
         }
         break;
     case 0x14:
-        if (D_8005F170 && (inputNew & 0x400)) {
+        if (D_8005F170 && (inputNew & PADj)) {
             s32 i;
             s32 j;
 
@@ -1011,11 +1012,11 @@ dispatch:
         func_801E69EC(ctx, 0, ctx->commandIdx);
         func_801E6B3C(0, ctx->slotCursor[ctx->charIdx]);
         func_801E6A64(1, ctx->targetCursor);
-        if (inputRepeat & 0x40) {
+        if (inputRepeat & PADRdown) {
             state = 0x16;
             goto dispatch;
         }
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0x15;
             return;
@@ -1080,19 +1081,19 @@ dispatch:
         column = slot % 4;    /* computed before the call's other arguments */
         slot = ctx->upperPage * 4 + func_801F6768(inputRepeat, 4, column);
         ctx->slotCursor[ctx->charIdx] = slot;
-        if (inputRepeat & 0x8000) {
+        if (inputRepeat & PADLleft) {
             ctx->pageReturnState = 0x1A;
             state = 0xE;
             goto dispatch;
         }
-        if (inputRepeat & 0x2000) {
+        if (inputRepeat & PADLright) {
             ctx->pageReturnState = 0x1A;
             state = 0x10;
             goto dispatch;
         }
         if (popcount(func_80036EC0()) >= 2) {
             ctx->drawFlags |= MAGIC_DRAW_SUB_CURSOR;
-            if (inputRepeat & 4) {
+            if (inputRepeat & PADL1) {
                 ctx->drawMode = 3;
                 ctx->headerCursorActive = 0;
                 ctx->refreshHelpText = 0;
@@ -1100,7 +1101,7 @@ dispatch:
                 state = 4;
                 goto dispatch;
             }
-            if (inputRepeat & 8) {
+            if (inputRepeat & PADR1) {
                 ctx->drawMode = 3;
                 ctx->headerCursorActive = 0;
                 ctx->refreshHelpText = 0;
@@ -1112,18 +1113,18 @@ dispatch:
         func_801E69EC(ctx, 0, ctx->commandIdx);
         func_801E6B3C(1, slot);
         ctx->itemPtr = func_801E6F54(ctx->charIdx, ctx->slotCursor[ctx->charIdx], ctx->upperPage);
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0x41;
         }
-        if (inputRepeat & 0x40) {
+        if (inputRepeat & PADRdown) {
             sendSpuCommand(2);
             if (ctx->charIdx == ctx->partnerCharIdx) {
                 ctx->partnerCharIdx = func_801F56E4(ctx->charIdx, func_80036EC0() & ~(1 << ctx->charIdx));
             }
             *statePtr = 0x1B;
         }
-        if (inputNew & 0x80) {
+        if (inputNew & PADRleft) {
             s32 spellId;
             s32 qty;
 
@@ -1161,21 +1162,21 @@ dispatch:
         func_801E6AC4(1);
         if (popcount(func_80036EC0() & ~(1 << ctx->charIdx)) >= 2) {
             ctx->drawFlags |= MAGIC_DRAW_SUB_CURSOR;
-            if (inputRepeat & 0x8004) {
+            if (inputRepeat & (PADL1 | PADLleft)) {
                 *statePtr = 0x1D;
                 return;
             }
-            if (inputRepeat & 0x2008) {
+            if (inputRepeat & (PADR1 | PADLright)) {
                 *statePtr = 0x1F;
                 return;
             }
         }
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             sendSpuCommand(2);
             ctx->drawFlags &= ~MAGIC_DRAW_LR_ARROWS;
             *statePtr = 0x28;
         }
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             ctx->drawFlags &= ~MAGIC_DRAW_LR_ARROWS;
             *statePtr = 0x1A;
@@ -1207,10 +1208,10 @@ dispatch:
             ctx->partnerSlideOffset = 0;
             *statePtr = 0x1C;
         }
-        if (inputNew & 0x8004) {
+        if (inputNew & (PADL1 | PADLleft)) {
             *statePtr = 0x1D;
         }
-        if (inputNew & 0x2008) {
+        if (inputNew & (PADR1 | PADLright)) {
             *statePtr = 0x1F;
             return;
         }
@@ -1240,10 +1241,10 @@ dispatch:
             ctx->partnerSlideOffset = 0;
             *statePtr = 0x1C;
         }
-        if (inputNew & 0x8004) {
+        if (inputNew & (PADL1 | PADLleft)) {
             *statePtr = 0x1D;
         }
-        if (inputNew & 0x2008) {
+        if (inputNew & (PADR1 | PADLright)) {
             *statePtr = 0x1F;
         }
         break;
@@ -1265,7 +1266,7 @@ dispatch:
             ctx->drawFlags |= MAGIC_DRAW_NO_LOWER_CUR;
             ctx->upperPage = ctx->slotCursor[ctx->charIdx] >> 2;
             ctx->lowerPage = ctx->slotCursor[ctx->partnerCharIdx] >> 2;
-            ctx->exchangeMode = 0x81;
+            ctx->exchangeMode = MAGIC_EXCHANGE_THREE_CHOICE | MAGIC_EXCHANGE_TO_PARTNER;
             ctx->promptCancelState = 0x1C;
             state = 0x35;
         }
@@ -1295,20 +1296,20 @@ dispatch:
         slot = rowBase + func_801F6768(inputRepeat, 4, slot % 4);
         ctx->slotCursor[ctx->partnerCharIdx] = slot;
         ctx->itemPtr = func_801E6F54(ctx->partnerCharIdx, ctx->slotCursor[ctx->partnerCharIdx], ctx->lowerPage);
-        if (inputRepeat & 0x8000) {
+        if (inputRepeat & PADLleft) {
             *statePtr = 0x2D;
             return;
         }
-        if (inputRepeat & 0x2000) {
+        if (inputRepeat & PADLright) {
             *statePtr = 0x2F;
             return;
         }
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0x1B;
             return;
         }
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             s32 spellA;
             s32 spellB;
 
@@ -1377,7 +1378,7 @@ dispatch:
                 }
             }
         }
-        if (inputNew & 0x80) {
+        if (inputNew & PADRleft) {
             s32 spellId;
             s32 qty;
 
@@ -1432,10 +1433,10 @@ dispatch:
             ctx->lowerPageSlide = 0;
             *statePtr = 0x2C;
         }
-        if (inputNew & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 0x2D;
         }
-        if (inputNew & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 0x2F;
             return;
         }
@@ -1475,11 +1476,11 @@ dispatch:
             ctx->lowerPageSlide = 0;
             *statePtr = 0x2C;
         }
-        if (inputNew & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 0x2D;
             return;
         }
-        if (inputNew & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 0x2F;
             return;
         }
@@ -1507,7 +1508,7 @@ dispatch:
         *statePtr = 0x34;
         return;
     case 0x34:
-        if (ctx->exchangeMode & 0x7F) {
+        if (ctx->exchangeMode & MAGIC_EXCHANGE_DIR_MASK) {
             state = *statePtr = 0x37;
             goto dispatch;
         }
@@ -1517,12 +1518,12 @@ dispatch:
         func_801E6B3C(0, ctx->slotCursor[ctx->charIdx]);
         func_801E6AEC(0, ctx->slotCursor[ctx->partnerCharIdx]);
         func_801E6810(ctx, 1, ctx->promptCursor);
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             ctx->drawFlags = 0;
             *statePtr = ctx->promptCancelState;
         }
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             s32 srcSpell;
             s32 dstSpell;
 
@@ -1563,20 +1564,20 @@ dispatch:
         func_801E6B3C(0, ctx->slotCursor[ctx->charIdx]);
         func_801E6AEC(0, ctx->slotCursor[ctx->partnerCharIdx]);
         func_801E6858(ctx, 1, ctx->promptCursor);
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             ctx->drawFlags = 0;
             *statePtr = ctx->promptCancelState;
         }
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             sendSpuCommand(2);
             switch (ctx->promptCursor) {
             case 0:
-                ctx->exchangeMode = 0x80;
+                ctx->exchangeMode = MAGIC_EXCHANGE_THREE_CHOICE;
                 state = 0x39;
                 break;
             case 1:
-                ctx->exchangeMode = 0x81;
+                ctx->exchangeMode = MAGIC_EXCHANGE_THREE_CHOICE | MAGIC_EXCHANGE_TO_PARTNER;
                 state = 0x39;
                 break;
             case 2:
@@ -1598,7 +1599,7 @@ dispatch:
         ctx->slotCursor[ctx->partnerCharIdx] = func_801E5C00(ctx->partnerCharIdx, g_gameState.chars[ctx->charIdx].magic[ctx->slotCursor[ctx->charIdx]].magicId);
         srcQty = g_gameState.chars[ctx->charIdx].magic[ctx->slotCursor[ctx->charIdx]].quantity;
         dstQty = g_gameState.chars[ctx->partnerCharIdx].magic[ctx->slotCursor[ctx->partnerCharIdx]].quantity;
-        if (ctx->exchangeMode & 0x7F) {
+        if (ctx->exchangeMode & MAGIC_EXCHANGE_DIR_MASK) {
             dstQty += srcQty;
             srcQty = 0;
             if (dstQty > 100) {
@@ -1633,7 +1634,7 @@ dispatch:
         ctx->slotCursor[ctx->partnerCharIdx] = func_801E5C00(ctx->partnerCharIdx, g_gameState.chars[ctx->charIdx].magic[ctx->slotCursor[ctx->charIdx]].magicId);
         srcQty = g_gameState.chars[ctx->charIdx].magic[ctx->slotCursor[ctx->charIdx]].quantity;
         dstQty = g_gameState.chars[ctx->partnerCharIdx].magic[ctx->slotCursor[ctx->partnerCharIdx]].quantity;
-        if (ctx->exchangeMode & 0x7F) {
+        if (ctx->exchangeMode & MAGIC_EXCHANGE_DIR_MASK) {
             dstQty += srcQty;
             srcQty = 0;
             if (dstQty > 100) {
@@ -1654,7 +1655,7 @@ dispatch:
             func_801E5B00(ctx->charIdx, 0);
             func_801E5B00(ctx->partnerCharIdx, 1);
             ctx->returnState = 0x38;
-            if (ctx->exchangeMode & 0x80) {
+            if (ctx->exchangeMode & MAGIC_EXCHANGE_THREE_CHOICE) {
                 ctx->exitState = 0x36;
             } else {
                 ctx->exitState = 0x33;
@@ -1706,7 +1707,7 @@ dispatch:
             func_801E5B00(ctx->charIdx, 0);
             func_801E5B00(ctx->partnerCharIdx, 1);
             ctx->returnState = 0x31;
-            if (ctx->exchangeMode & 0x80) {
+            if (ctx->exchangeMode & MAGIC_EXCHANGE_THREE_CHOICE) {
                 ctx->exitState = 0x36;
             } else {
                 ctx->exitState = 0x33;
@@ -1773,13 +1774,13 @@ dispatch:
                     capped = 100 - ctx->charQty;
                 }
                 step = capped;
-                if (inputRepeat & 0x8000) {
+                if (inputRepeat & PADLleft) {
                     sendSpuCommand(1);
                     moved = 1;
                     ctx->charQty++;
                     ctx->partnerQty--;
                 }
-                if ((inputRepeat & 0x1000) && !moved) {
+                if ((inputRepeat & PADLup) && !moved) {
                     sendSpuCommand(1);
                     moved = 1;
                     ctx->charQty += step;
@@ -1796,27 +1797,27 @@ dispatch:
                     capped = 100 - ctx->partnerQty;
                 }
                 step = capped;
-                if ((inputRepeat & 0x2000) && !moved) {
+                if ((inputRepeat & PADLright) && !moved) {
                     sendSpuCommand(1);
                     moved = 1;
                     ctx->charQty--;
                     ctx->partnerQty++;
                 }
-                if ((inputRepeat & 0x4000) && !moved) {
+                if ((inputRepeat & PADLdown) && !moved) {
                     sendSpuCommand(1);
                     ctx->charQty -= step;
                     ctx->partnerQty += step;
                 }
             }
         }
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             ctx->drawFlags &= ~MAGIC_DRAW_QTY_EDITOR;
             func_801E5B00(ctx->charIdx, 0);
             func_801E5B00(ctx->partnerCharIdx, 1);
             *statePtr = ctx->pageReturnState;
         }
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             if (func_801E5D64(ctx->charIdx, ctx->partnerCharIdx,
                               ctx->slotCursor[ctx->charIdx], ctx->slotCursor[ctx->partnerCharIdx]) == 0) {
                 ctx->messageReturnState = 0x3F;
@@ -1882,7 +1883,7 @@ dispatch:
         return;
     case 0x44:
         ctx->messageTimer--;
-        if (inputNew & 0x50) {
+        if (inputNew & (PADRup | PADRdown)) {
             func_801F7BEC(inputNew);
             ctx->messageTimer = 0;
         }
@@ -1915,14 +1916,14 @@ dispatch:
     case 0x48:
         ctx->sortCursor = func_801F6768(inputRepeat, ctx->sortOptionCount, ctx->sortCursor);
         ctx->itemPtr = func_801F08D4(1, 8, ctx->sortCursor + 15, 1);
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             sendSpuCommand(2);
             if (func_801E64FC(ctx->charIdx, ctx->sortCursor) == 0) {
                 *statePtr = 0x4B;
             } else {
                 *statePtr = 0x49;
             }
-        } else if (inputNew & 0x10) {
+        } else if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0x49;
         }
@@ -1990,17 +1991,17 @@ dispatch:
         func_801E69EC(ctx, 0, ctx->commandIdx);
         func_801E6940(ctx, 0, ctx->sortCursor);
         func_801E68A0(1, ctx->upperSlot);
-        if (inputRepeat & 0x8000) {
+        if (inputRepeat & PADLleft) {
             *statePtr = 0x50;
             return;
         }
-        if (inputRepeat & 0x2000) {
+        if (inputRepeat & PADLright) {
             *statePtr = 0x52;
             return;
         }
         if (popcount(func_80036EC0()) >= 2) {
             ctx->drawFlags |= MAGIC_DRAW_SUB_CURSOR;
-            if (inputRepeat & 4) {
+            if (inputRepeat & PADL1) {
                 ctx->upperSlot = 0;
                 ctx->headerCursorActive = 0;
                 ctx->refreshHelpText = 0;
@@ -2012,7 +2013,7 @@ dispatch:
                 state = 4;
                 goto dispatch;
             }
-            if (inputRepeat & 8) {
+            if (inputRepeat & PADR1) {
                 ctx->upperSlot = 0;
                 ctx->headerCursorActive = 0;
                 ctx->refreshHelpText = 0;
@@ -2026,15 +2027,15 @@ dispatch:
             }
         }
         ctx->itemPtr = getSpellEntityData(func_801E6648(ctx->charIdx, ctx->upperSlot));
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0x5B;
         }
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             sendSpuCommand(2);
             *statePtr = 0x54;
         }
-        if (inputNew & 0x80) {
+        if (inputNew & PADRleft) {
             s32 slot;
             s32 spellId;
             s32 qty;
@@ -2086,10 +2087,10 @@ dispatch:
             ctx->upperPageSlide = 0;
             *statePtr = 0x4E;
         }
-        if (inputNew & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 0x52;
         }
-        if (inputNew & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 0x50;
         }
         break;
@@ -2123,10 +2124,10 @@ dispatch:
             ctx->upperPageSlide = 0;
             *statePtr = 0x4E;
         }
-        if (inputNew & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 0x52;
         }
-        if (inputNew & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 0x50;
         }
         break;
@@ -2150,20 +2151,20 @@ dispatch:
             func_801E6940(ctx, 0, ctx->sortCursor);
             func_801E68A0(0, ctx->upperSlot);
             func_801E68F0(1, ctx->lowerSlot);
-            if (inputRepeat & 0x8000) {
+            if (inputRepeat & PADLleft) {
                 *statePtr = 0x56;
                 return;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputRepeat & PADLright) {
                 *statePtr = 0x58;
                 return;
             }
             ctx->itemPtr = getSpellEntityData(func_801E6648(ctx->charIdx, ctx->lowerSlot));
-            if (inputNew & 0x10) {
+            if (inputNew & PADRup) {
                 sendSpuCommand(3);
                 *statePtr = 0x4E;
             }
-            if (inputNew & 0x40) {
+            if (inputNew & PADRdown) {
                 srcSpell = func_801E6648(ctx->charIdx, ctx->upperSlot);
                 dstSpell = func_801E6648(ctx->charIdx, ctx->lowerSlot);
                 if (dstSpell == srcSpell && dstSpell == 0) {
@@ -2205,10 +2206,10 @@ dispatch:
             ctx->lowerPageSlide = 0;
             *statePtr = 0x55;
         }
-        if (inputNew & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 0x58;
         }
-        if (inputNew & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 0x56;
         }
         break;
@@ -2242,10 +2243,10 @@ dispatch:
             ctx->lowerPageSlide = 0;
             *statePtr = 0x55;
         }
-        if (inputNew & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 0x58;
         }
-        if (inputNew & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 0x56;
         }
         break;
@@ -2303,7 +2304,7 @@ dispatch:
     case 0x61:
         ctx->itemPtr = func_801F08D4(1, 8, 12, 0);
         ctx->drawFlags |= MAGIC_DRAW_SUB_CURSOR;
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             sendSpuCommand(2);
             if (ctx->charIdx == ctx->partnerCharIdx) {
                 ctx->partnerCharIdx = func_801F56E4(ctx->charIdx, func_80036EC0() & ~(1 << ctx->charIdx));
@@ -2311,7 +2312,7 @@ dispatch:
             state = 0x62;
             goto dispatch;
         }
-        if (inputRepeat & 0x8004) {
+        if (inputRepeat & (PADL1 | PADLleft)) {
             ctx->headerCursorActive = 1;
             ctx->drawMode = 3;
             ctx->refreshHelpText = 0;
@@ -2319,7 +2320,7 @@ dispatch:
             state = 4;
             goto dispatch;
         }
-        if (inputRepeat & 0x2008) {
+        if (inputRepeat & (PADR1 | PADLright)) {
             ctx->headerCursorActive = 1;
             ctx->drawMode = 3;
             ctx->refreshHelpText = 0;
@@ -2329,7 +2330,7 @@ dispatch:
         }
         func_801E69EC(ctx, 0, ctx->commandIdx);
         func_801E6A9C(1);
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             ctx->drawMode = 0;
             *statePtr = 3;
@@ -2351,20 +2352,20 @@ dispatch:
         func_801E6AC4(1);
         if (popcount(func_80036EC0() & ~(1 << ctx->charIdx)) >= 2) {
             ctx->drawFlags |= MAGIC_DRAW_SUB_CURSOR;
-            if (inputRepeat & 0x8004) {
+            if (inputRepeat & (PADL1 | PADLleft)) {
                 *statePtr = 0x64;
                 break;
             }
-            if (inputRepeat & 0x2008) {
+            if (inputRepeat & (PADR1 | PADLright)) {
                 *statePtr = 0x66;
                 break;
             }
         }
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             ctx->drawFlags &= ~MAGIC_DRAW_LR_ARROWS;
             *statePtr = 0x68;
         }
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             ctx->drawMode = 3;
             ctx->drawFlags &= ~MAGIC_DRAW_LR_ARROWS;
@@ -2400,10 +2401,10 @@ dispatch:
             ctx->partnerSlideOffset = 0;
             *statePtr = 0x63;
         }
-        if (inputNew & 0x8004) {
+        if (inputNew & (PADL1 | PADLleft)) {
             *statePtr = 0x64;
         }
-        if (inputNew & 0x2008) {
+        if (inputNew & (PADR1 | PADLright)) {
             *statePtr = 0x66;
         }
         break;
@@ -2433,10 +2434,10 @@ dispatch:
             ctx->partnerSlideOffset = 0;
             *statePtr = 0x63;
         }
-        if (inputNew & 0x8004) {
+        if (inputNew & (PADL1 | PADLleft)) {
             *statePtr = 0x64;
         }
-        if (inputNew & 0x2008) {
+        if (inputNew & (PADR1 | PADLright)) {
             *statePtr = 0x66;
         }
         break;
@@ -2474,14 +2475,14 @@ dispatch:
         func_801E69EC(ctx, 0, ctx->commandIdx);
         ctx->yesNoCursor = func_801F6768(inputRepeat, 2, ctx->yesNoCursor);
         func_801F6F88(ctx->yesNoCursor | 0x80);
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             ctx->drawFlags &= ~MAGIC_DRAW_YES_NO;
             *statePtr = ctx->exitState;
             state = ctx->exitState;
             goto dispatch;
         }
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             sendSpuCommand(2);
             ctx->drawFlags &= ~MAGIC_DRAW_YES_NO;
             if (ctx->yesNoCursor != 0) {
@@ -2509,12 +2510,12 @@ dispatch:
         return;
     case 0x6D:
         ctx->yesNoCursor = func_801F6768(inputRepeat, 2, ctx->yesNoCursor);
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             ctx->discardPromptOpen = 0;
             *statePtr = ctx->discardReturnState;
         }
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             sendSpuCommand(2);
             if (ctx->yesNoCursor != 0) {
                 ctx->discardPromptOpen = 0;
@@ -2542,12 +2543,12 @@ dispatch:
         return;
     case 0x6F:
         ctx->yesNoCursor = func_801F6768(inputRepeat, 2, ctx->yesNoCursor);
-        if (inputNew & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             ctx->discardPromptOpen = 0;
             *statePtr = ctx->discardReturnState;
         }
-        if (inputNew & 0x40) {
+        if (inputNew & PADRdown) {
             sendSpuCommand(2);
             if (ctx->yesNoCursor != 0) {
                 ctx->discardPromptOpen = 0;

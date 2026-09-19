@@ -87,7 +87,7 @@ typedef struct {
     /* 0x65 */ u8 prevCharIdx;         /**< Character sliding out of whichever panel is switching; shared by both panels. */
     /* 0x66 */ u8 pad66[0x1];          /**< Padding; no reader in menumgc. */
     /* 0x67 */ u8 commandMask;         /**< Bitmask of selectable top commands, rebuilt by func_801E66C0; func_801F76E0 skips the clear bits. */
-    /* 0x68 */ u8 exchangeMode;        /**< Pooling direction in the low bits (non-zero: the partner's slot keeps the pooled stock); 0x80 marks a direction chosen through the three-choice prompt. */
+    /* 0x68 */ u8 exchangeMode;        /**< Pooling direction plus the prompt that chose it; see the @c MAGIC_EXCHANGE_ bits below. */
     /* 0x69 */ u8 headerCursorActive;  /**< While set, the switch states draw the character panel cursor (func_801E6A9C) and keep taking left/right during the slide. */
     /* 0x6A */ u8 refreshHelpText;     /**< While set, a character switch re-fetches the current command's description into itemPtr. */
     /* 0x6B */ u8 pad6B[0x1];          /**< Padding; no reader in menumgc. */
@@ -108,6 +108,13 @@ typedef struct {
 #define MAGIC_DRAW_LR_ARROWS    0x20  /**< Draw the L/R character-switch arrows. */
 #define MAGIC_DRAW_SUB_CURSOR   0x40  /**< A sub-screen owns the cursor, so the command row parks its own. */
 #define MAGIC_DRAW_MESSAGE      0x80  /**< Timed refusal message is up. */
+
+/** @brief Bits of MagicMenuCtx.exchangeMode, set when a transfer prompt is answered. */
+#define MAGIC_EXCHANGE_TO_PARTNER   0x01  /**< Pool into the partner's slot instead of this character's. */
+#define MAGIC_EXCHANGE_THREE_CHOICE 0x80  /**< The three-choice prompt chose the direction, so reopen that one. */
+
+/** @brief The direction field of MagicMenuCtx.exchangeMode; only bit 0 is ever set. */
+#define MAGIC_EXCHANGE_DIR_MASK 0x7F
 
 /* ======================================================================== */
 /* Data owned by this unit                                                  */
