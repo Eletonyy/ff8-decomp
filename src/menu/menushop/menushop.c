@@ -1541,7 +1541,7 @@ s32 func_801E8058(s32 arg0) {
 }
 
 /**
- * @brief Render shop item entry at computed Y position with width 0x24.
+ * @brief Render shop item entry at computed Y position with width 36.
  * @param a0 X position parameter
  * @param a1 Row index (multiplied by 13 and offset by 80 for Y position)
  */
