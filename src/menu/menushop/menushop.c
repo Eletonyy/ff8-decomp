@@ -1546,7 +1546,7 @@ s32 func_801E8058(s32 arg0) {
  * @param a1 Row index (multiplied by 13 and offset by 0x50 for Y position)
  */
 void func_801E8134(s32 a0, s32 a1) {
-    func_801F0A34(a0, 0, 0x24, a1 * 13 + 0x50);
+    func_801F0A34(a0, 0, 36, a1 * 13 + 80);
 }
 
 /**
