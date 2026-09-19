@@ -12,8 +12,14 @@
 /*
  * menumain.h must not be included here: its `u16 func_801F22F4(void)` and,
  * through card.h, `u16 func_80036EC0(void)` truncate this unit's calls to both
- * (measured: 4 bytes of menumgc.ovl). Its other helpers, popcount and
- * findNthSetBit are called with the file-scope prototypes below or none at all.
+ * (measured: 4 bytes of menumgc.ovl). Its other helpers get the file-scope
+ * prototypes below instead.
+ *
+ * Three of them deliberately have none, because declaring them the way they are
+ * defined changes this unit's code: func_801F22F4 and func_80036EC0 for the u16
+ * returns above, and func_801F5868 for its `s16` second parameter, which makes
+ * the call truncate (measured). Leave those three implicit -- `-Wall` reports
+ * them, and that is the cheaper half of the trade.
  */
 
 extern s32 getMagicNamePtr(s32 a0);
@@ -28,9 +34,29 @@ typedef struct {
 
 extern FlagEntry D_801F87B8[];
 extern GfData g_gfData;
-extern void func_801F1B4C(s32 a0);
-extern void func_801F5400(s32 a0);
+extern s32 func_801EFBB4(s32 a0, s32 a1, s32 a2);
 extern u8 *func_801F08D4(s32 a0, s32 a1, s32 a2, s32 a3);
+extern void func_801F0A34(s32 a0, s32 a1, s32 a2, s32 a3);
+extern void func_801F0A78(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4);
+extern s32 func_801F0BB0(void);
+extern void func_801F1B4C(s32 a0);
+extern s32 func_801F5150(s32 a0, s32 a1, s32 a2);
+extern void func_801F537C(s32 charIdx, BattleCharData *dst);
+extern void func_801F5400(s32 a0);
+extern s32 func_801F565C(s32 charIdx, s32 mask);
+extern s32 func_801F56E4(s32 charIdx, s32 mask);
+extern void func_801F576C(s32 a0, s32 a1);
+extern s32 func_801F57A4(s32 a0);
+extern s32 func_801F58EC(s32 a0);
+extern s32 func_801F6768(u16 flags, s32 max, s32 current);
+extern void func_801F6F88(s32 a0);
+extern s32 func_801F76E0(s32 flags, s32 a1, s32 a2);
+extern void func_801F7B10(s32 a0);
+extern void func_801F7BEC(s32 a0);
+
+extern s32 menumain_getPartyMemberMask(void);
+extern s32 popcount(s32 a0);
+extern s32 findNthSetBit(s32 a0, s32 a1);
 
 /* --- Prototypes for this unit's own functions --- */
 s32 func_801E5D64(s32 charA, s32 charB, s32 slotA, s32 slotB);
