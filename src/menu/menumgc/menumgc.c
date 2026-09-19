@@ -3,30 +3,24 @@
 #include "gamestate.h"
 #include "gf.h"
 #include "menu.h"
+#include "menumgc.h"
+#include "numstr.h"
 
 extern s32 getMagicNamePtr(s32 a0);
 extern u8 *getCharName(s32 a0);
 extern void copyString(s32 a0, s32 a1);
-extern u8 D_801EC814[];
-
-extern void decodeMessage(s32 itemId, u8 *dst, s32 arg3);
 
 typedef struct {
     u8 flags;
     u8 pad[3];
 } FlagEntry;
 
-typedef struct { u8 unk00[0x14]; } Unk14;
-typedef struct { u8 unk00[0x40]; } Unk40;
 typedef struct { u8 unk00[0x98]; } Unk98;
 
 extern FlagEntry D_801F87B8[];
 extern GfData g_gfData;
 extern Unk98 D_80077818[];
 extern Unk98 D_80077864[];
-extern Unk14 D_801ECF60[];
-extern Unk40 D_801ECF90[];
-extern s16 D_801ED010[];
 extern void func_801F1B4C(s32 a0);
 extern void func_801F5400(s32 a0);
 
@@ -562,14 +556,14 @@ INCLUDE_ASM("asm/ovl/menumgc/nonmatchings/menumgc", func_801EB0F4);
 s32 func_801EB1A0(void *ctx, s32 arg1, s32 index, s32 a3_unused, s32 xExtra) {
     u8 buf[0x80];
     s32 result = arg1;
-    s32 itemId = ((s32 *)g_menuDisplayCfg.dataPtr)[index];
+    u8 *itemText = ((u8 **)g_menuDisplayCfg.dataPtr)[index];
 
-    if (itemId != 0) {
+    if (itemText != 0) {
         s32 deltaX = xExtra + 0xA;
         s32 x = g_menuDisplayCfg.x + deltaX;
         s32 y = g_menuDisplayCfg.y + 9;
 
-        decodeMessage(itemId, buf, -1);
+        decodeMessage(itemText, buf, -1);
         result = func_801F0FEC(ctx, arg1, x, y, buf, 7);
     }
     return result;

@@ -8,7 +8,7 @@
 [![Markdown Logo](https://img.shields.io/discord/1499425449984393438?style=plastic&logo=discord&label=Discord)](https://discord.gg/juRjsHgXuV)
 
 
-This is a work-in-progress decompilation project of Final Fantasy VIII (PS1, USA — `SLUS_008.92`).
+This is a work-in-progress decompilation project of Final Fantasy VIII (PS1, USA `SLUS_008.92`).
 
 ## Progress
 
@@ -163,45 +163,48 @@ A more detailed progress report is available on [decomp.dev](https://decomp.dev/
 
 ## Development
 
-Any help is greatly appreciated! Below are some basic steps to get started and building the project.
+Any help is greatly appreciated! Before opening a pull request, please read the
+[contribution guidelines](CONTRIBUTE.md).
 
-1. **Clone the repo with submodules**:
+Below are some basic steps to get started and building the project.
+
+1. **Prerequisites**. This "guide" is for devs using debian/ubuntu or on Windows using **WSL 2**
+   ```bash
+   sudo apt update
+   sudo apt install git make cpp binutils-mipsel-linux-gnu python3 python3-venv
+   ```
+
+   The following distributions have been tested for building the project:
+
+   |    Distro    | Can build? |
+   |:------------:|:----------:|
+   | Debian 12    |     ✅     |
+   | Ubuntu-22.04 |     ✅     |
+   | Ubuntu-24.04 |     ✅     |
+   | Ubuntu-26.04 |     ❌     |
+
+2. **Clone the repo with submodules**:
    ```bash
    git clone --recursive https://github.com/roengstrom/ff8-decomp.git
    cd ff8-decomp
    ```
-    - **Note:** If you are using Windows, you must use **WSL 2** to build the project.
 
-      The following distributions have been tested for building the project:
-
-      |    Distro    | Can build? |
-      |:------------:|:----------:|
-      | Ubuntu-22.04 |     ✅     |
-      | Ubuntu-24.04 |     ✅     |
-      | Ubuntu-26.04 |     ❌     |
-
-      On a fresh installation, run the following commands to install the packages required to build the project:
-      ```bash
-      sudo apt update
-      sudo apt install python3-venv make build-essential binutils-mipsel-linux-gnu
-      ```
-
-2. **Create a Python venv and install splat**:
+3. **Create a Python venv and install splat**:
    ```bash
    python3 -m venv .venv
    .venv/bin/pip install -e "tools/splat[mips]"
    ```
 
-3. **Provide your own disc image** — You need a BIN/CUE of
+4. **Provide your own disc image** — You need a BIN/CUE of
    FF8 Disc 1 (USA, SLUS-00892).
 
-4. **Extract game data from the disc**:
+5. **Extract game data from the disc**:
    ```bash
    python3 tools/extract.py /path/to/ff8-disc1.bin
    ```
    This verifies the disc SHA1, then extracts `SLUS_008.92`, all executables and overlays.
 
-5. **Full build**:
+6. **Full build**:
    ```bash
    make full
    ```
@@ -217,7 +220,7 @@ Any help is greatly appreciated! Below are some basic steps to get started and b
    make verify EFFECTS=all   # ... including all 343 battle effect overlays
    ```
 
-6. **objdiff GUI** (optional). To diff against the original in
+7. **objdiff GUI** (optional). To diff against the original in
    [objdiff](https://github.com/encounter/objdiff):
    ```bash
    make expected       # builds the target objects, on a verified tree
