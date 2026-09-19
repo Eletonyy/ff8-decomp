@@ -69,10 +69,10 @@ s32 func_801E583C(ShopMenuState* a0, s32 a1, s32 a2) {
  * @param a2 Item index
  * @return Description string pointer, or 0 if invalid
  */
-s32 func_801E58A0(s32 a0, s32 a1, s32 a2) {
-    s32 result = func_801E583C((ShopMenuState *)a0, a1, a2);
+s32 func_801E58A0(ShopMenuState *a0, s32 a1, s32 a2) {
+    s32 result = func_801E583C(a0, a1, a2);
     if (result != 0) {
-        return getStatDesc(func_801E5800((ShopMenuState *)a0, a1, a2));
+        return getStatDesc(func_801E5800(a0, a1, a2));
     }
     return 0;
 }
@@ -921,21 +921,21 @@ s32 func_801E6E0C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 }
 
 s32 func_801E6EB0(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
-    u8 buffer[0x80];
+    u8 buffer[128];
     s32 msg;
-    s32 temp_s0;
-    s32 temp_s1;
-    s32 temp_v0;
+    s32 x;
+    s32 y;
+    s32 xOffset;
     s32 result;
 
     msg = ((s32 *)(g_menuDisplayCfg.dataPtr))[arg2];
     result = arg1;
     if (msg != 0) {
-        temp_v0 = (arg4 + 0xA);
-        temp_s0 = g_menuDisplayCfg.x + temp_v0;
-        temp_s1 = g_menuDisplayCfg.y + 5;
+        xOffset = arg4 + 10;
+        x = g_menuDisplayCfg.x + xOffset;
+        y = g_menuDisplayCfg.y + 5;
         decodeMessage(msg, buffer, -1);
-        result = func_801F0FEC(arg0, arg1, temp_s0, temp_s1, (s32)buffer, 7);
+        result = func_801F0FEC(arg0, arg1, x, y, buffer, 7);
     }
     return result;
 }
@@ -1079,7 +1079,7 @@ s32 func_801E722C(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     return func_801EF9AC(arg1, arg2, 0x1000, g_menuColor);
 }
 
-s32 func_801E7374(ShopMenuState *arg0, void *arg1, void* arg2, s32 arg3, s32 arg4) {
+s32 func_801E7374(ShopMenuState *arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     g_menuDisplayCfg.iconType = 0x4C;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = arg3;
@@ -1093,34 +1093,33 @@ s32 func_801E7374(ShopMenuState *arg0, void *arg1, void* arg2, s32 arg3, s32 arg
     g_menuDisplayCfg.dataPtr = (s32)arg0;
 
     if (arg0->unk46 == 0) {
-        arg2 = (void *)func_8002FF34(arg1, arg2, 0x47, arg3 + 0xA8, arg4, g_menuColor);
-        arg2 = (void *)func_801F5F30((s32)arg1, (s32)arg2, arg3 + 0x1C, arg4, g_menuColor, (s32) (s8) arg0->unk40);
+        arg2 = func_8002FF34(arg1, arg2, 0x47, arg3 + 0xA8, arg4, g_menuColor);
+        arg2 = func_801F5F30(arg1, arg2, arg3 + 0x1C, arg4, g_menuColor, (s8)arg0->unk40);
     }
     else {
-        arg2 = (void *)func_8002FF34(arg1, arg2, 0x47, arg3 + 0x80, arg4, g_menuColor);
-        arg2 = (void *)func_8002FF34(arg1, arg2, 0x4D, arg3 + 0xD6, arg4, g_menuColor);
-        arg2 = (void *)func_801F5EFC((s32)arg1, (s32)arg2, arg3 + 0x1C, arg4, g_menuColor, (s32) (s8) arg0->unk40);
+        arg2 = func_8002FF34(arg1, arg2, 0x47, arg3 + 0x80, arg4, g_menuColor);
+        arg2 = func_8002FF34(arg1, arg2, 0x4D, arg3 + 0xD6, arg4, g_menuColor);
+        arg2 = func_801F5EFC(arg1, arg2, arg3 + 0x1C, arg4, g_menuColor, (s8)arg0->unk40);
     }
     
-    arg2 = (void *)func_801F5F60((s32)arg1, (s32)arg2, g_menuColor, 3);
-    return func_801EFBB4((s32)arg1, (s32)arg2, (s32)func_801E6FD8);
+    arg2 = func_801F5F60(arg1, arg2, g_menuColor, 3);
+    return func_801EFBB4(arg1, arg2, func_801E6FD8);
 }
 
-s32 func_801E7508(ShopMenuState *arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
-    s32 s6;
-    s32 s5;
-    s32 v0;
+s32 func_801E7508(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+    s32 x;
+    s32 y;
 
-    s6 = arg4 + 6;
-    s5 = arg3 + 0xD0;
-    arg2 = func_801F0FEC(arg1, arg2, s5, s6, func_801F6AA4(0x33), 7);
+    x = arg3 + 0xD0;
+    y = arg4 + 6;
+    arg2 = func_801F0FEC(arg1, arg2, x, y, func_801F6AA4(0x33), 7);
 
-    v0 = s6 << 0x10;
-    s5 = arg3 + 0x142;
-    arg2 = drawColorByMenuPalette(arg1, arg2, v0 | (s5 & 0xFFFF), arg0->gil, 7);
+    x = arg3 + 0x142;
+    arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), s->gil, 7);
 
-    s6 = arg4 + 8;
-    arg2 = func_8002FF34(arg1, arg2, 0xB, arg3 + 0x143, s6, g_menuColor);
+    x = arg3 + 0x143;
+    y = arg4 + 8;
+    arg2 = func_8002FF34(arg1, arg2, 0xB, x, y, g_menuColor);
 
     g_menuDisplayCfg.iconType = 0x57;
     g_menuDisplayCfg.iconSubType = 0;
@@ -1234,14 +1233,12 @@ s32 func_801E77EC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
 }
 
 void func_801E791C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
-    s32 var_v0;
     MenuDisplayConfig *cfg;
 
     cfg = &g_menuDisplayCfg;
 
-    var_v0 = arg2;
     if (arg0 != 0) {
-        var_v0 = func_801F0FEC(arg1, var_v0, arg3 + 0xC, arg4 + 5, arg0, 7);
+        arg2 = func_801F0FEC(arg1, arg2, arg3 + 0xC, arg4 + 5, arg0, 7);
     }
     cfg->iconType = 0;
     cfg->iconSubType = 0;
@@ -1249,7 +1246,7 @@ void func_801E791C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     cfg->w = 0xDA;
     cfg->y = (s16) arg4;
     cfg->h = 0x15;
-    func_801EF9AC(arg1, var_v0, 0x1000, g_menuColor);
+    func_801EF9AC(arg1, arg2, 0x1000, g_menuColor);
 }
 
 s32 func_801E79D4(ShopMenuState *s, s32 arg1, s32 arg2) {
@@ -1300,20 +1297,20 @@ s32 func_801E79D4(ShopMenuState *s, s32 arg1, s32 arg2) {
 }
 
 void func_801E7B9C(s32 a0) {
-    ShopMenuState *temp_s0;
+    ShopMenuState *s;
 
-    temp_s0 = (ShopMenuState *)func_801F179C((s32)func_801E5E90, (s32)func_801E79D4);
+    s = (ShopMenuState *)func_801F179C((s32)func_801E5E90, (s32)func_801E79D4);
     func_801F1D2C(0, "shop.bin", (s32)D_801EA170);
     func_801F1D2C(0, "price.bin", (s32)D_801EA3F0);
     func_801F1D2C(0, "mitem.bin", (s32)D_801EA70C);
-    if (temp_s0 != NULL) {
-        temp_s0->unk2C = D_80077EBC;
-        temp_s0->unk36 = 0x1000;
-        temp_s0->union30.unk30_s32 = 0;
-        temp_s0->gil = func_801E5D28();
-        temp_s0->unk45 = D_801E9B6C[func_801EFFF0()];
-        func_801E6D54(temp_s0->unk45);
-        func_801E5E90(temp_s0);
+    if (s != NULL) {
+        s->unk2C = D_80077EBC;
+        s->unk36 = 0x1000;
+        s->union30.unk30_s32 = 0;
+        s->gil = func_801E5D28();
+        s->unk45 = D_801E9B6C[func_801EFFF0()];
+        func_801E6D54(s->unk45);
+        func_801E5E90(s);
         if (func_801EFFB8() == 0x17) {
             func_801F1D84();
         }
@@ -1488,13 +1485,13 @@ s32 func_801E7F4C(s32 arg0, s32 arg1) {
     if ((0x3F >> arg0) & 1) {
         for (i = 0; i < 28; i++) {
             if (arg0 == ptr3[i].unk4) {
-                s32 var_s0;
-                var_s0 = (func_801E7E4C(i) != 0) << 6;
+                s32 mask;
+                mask = (func_801E7E4C(i) != 0) << 6;
                 if (func_801E7E98(i, arg1) != 0) {
-                    var_s0 |= 0x80;
+                    mask |= 0x80;
                 }
-                if (var_s0 != 0) {
-                    *ptr2 = i | var_s0;
+                if (mask != 0) {
+                    *ptr2 = i | mask;
                     ptr2++;
                     count++;
                 }
@@ -1507,8 +1504,8 @@ s32 func_801E7F4C(s32 arg0, s32 arg1) {
 
 s32 func_801E8058(s32 arg0) {
     Struct_func_801E7F4C *ptr;
-    s32 temp_s0;
-    s32 temp_s4;
+    s32 availableChars;
+    s32 charBit;
     s32 ret;
     s32 i;
 
@@ -1517,21 +1514,21 @@ s32 func_801E8058(s32 arg0) {
     }
 
     ptr = D_8007C3B8;
-    temp_s4 = func_80036EC0() & 0x3F;
+    availableChars = func_80036EC0() & 0x3F;
     ret = 0;
 
     for (i = 0; i < 28; i++) {
-        temp_s0 = 1 << ptr[i].unk4;
-        if (temp_s4 & temp_s0) {
+        charBit = 1 << ptr[i].unk4;
+        if (availableChars & charBit) {
             s32 val;
             val = func_801E7E4C(i);
             if (val) {
-                ret |= temp_s0;
+                ret |= charBit;
                 continue;
             } else {
                 val = func_801E7E98(i, arg0);
                 if (val) {
-                    ret |= temp_s0;
+                    ret |= charBit;
                 }
             }
         }

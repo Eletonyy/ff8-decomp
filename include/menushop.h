@@ -35,7 +35,7 @@ typedef struct {
     u8 pad12[0x8];
     s16 unk1C;
     u8 pad1D[0x3];      /**< 0x12 */
-    s32 field_20;       /**< 0x20 */
+    void *field_20;     /**< 0x20 */
     s32 field_24;       /**< 0x24 */
     u32 gil;            /**< 0x28: gil */
     u8 *unk2C;          /**< 0x2C: pointer to D_80077EBC */
@@ -102,9 +102,51 @@ extern s32 D_801EB2E4;
 extern s32 D_801EB2E8;
 extern u8 D_801F7F98[];
 extern s32 g_menuColor;
-extern void func_801E5E90(ShopMenuState*);
-extern s32 func_801E79D4(ShopMenuState*, s32, s32);
 extern s32 func_801EFBB4(s32, s32, s32);
-extern s32 func_801E6FD8(s32, s32, s32, s32, s32);
+
+/* ======================================================================== */
+/* Private prototypes                                                       */
+/* ======================================================================== */
+
+s32 func_801E5800(ShopMenuState*, s32, s32);
+s32 func_801E583C(ShopMenuState*, s32, s32);
+s32 func_801E58A0(ShopMenuState*, s32, s32);
+s32 func_801E5904(s32);
+void func_801E5930(s32, s32, ShopMenuState*);
+s32 func_801E59D8(s16*, s16*, s32);
+s32 func_801E5A8C(s32, s32, s32, s32, s32, s16*, s32);
+void func_801E5BA4(s32, s32);
+void func_801E5C08(s32);
+s32 func_801E5D28(void);
+void func_801E5DBC(void);
+void func_801E5E88(u8);
+void func_801E5E90(ShopMenuState*);
+void func_801E6A68(s32);
+void func_801E6ACC(void);
+void func_801E6C3C(s32);
+void func_801E6D54(s32);
+s32 func_801E6E0C(s32, s32, s32, s32);
+s32 func_801E6EB0(s32, s32, s32, s32, s32);
+s32 func_801E6F60(ShopMenuState*, s32, s32, s32, s32);
+s32 func_801E6FD8(s32, s32, s32, s32, s32);
+s32 func_801E722C(ShopMenuState*, s32, s32, s32, s32);
+s32 func_801E7374(ShopMenuState*, s32, s32, s32, s32);
+s32 func_801E7508(ShopMenuState*, s32, s32, s32, s32);
+s32 func_801E7628(ShopMenuState*, s32, s32, s32, s32);
+s32 func_801E77EC(s32, s32, s32, s32, s32);
+void func_801E791C(s32, s32, s32, s32, s32);
+s32 func_801E79D4(ShopMenuState*, s32, s32);
+void func_801E7B9C(s32);
+void func_801E7C8C(s32);
+u8* func_801E7CFC(s32);
+void func_801E7D30(u8*, u8*);
+s32 func_801E7E1C(s32);
+s32 func_801E7E4C(s32);
+s32 func_801E7E68(s32, u32);
+s32 func_801E7E98(s32, s32);
+s32 func_801E7F4C(s32, s32);
+s32 func_801E8058(s32);
+void func_801E8134(s32, s32);
+void func_801E816C(s32, s32);
 
 #endif /* MENUSHOP_H */

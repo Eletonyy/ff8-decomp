@@ -12,7 +12,7 @@ void func_801E81A4(ShopMenuState *s) {
 
     switch (*statePtr) {
     case 0:
-        s->field_20 = (s32)NULL;
+        s->field_20 = NULL;
         s->unk34 = 0;
         *statePtr = 1;
         /* fallthrough */
@@ -103,7 +103,7 @@ void func_801E81A4(ShopMenuState *s) {
     case 7:
         func_801E816C(1, (s8) s->unk41);
         s->unk41 = func_801F6768(btnFlags, (u8) s->union3C.unk3C_s8[3], (s8) s->unk41);
-        s->field_20 = (s32)func_801E7CFC((s32) D_801EB150[(s8)s->unk41]);
+        s->field_20 = func_801E7CFC((s32)D_801EB150[(s8)s->unk41]);
         if (cfgFlags & 0x10) {
             sendSpuCommand(3);
             s->unk43 = 0;
@@ -158,7 +158,7 @@ void func_801E81A4(ShopMenuState *s) {
         }
         break;
     case 8:
-        s->field_20 = (s32)NULL;
+        s->field_20 = NULL;
         s->union30.unk30_s16[1] += 0x100;
         if ((s16) s->union30.unk30_s16[1] >= 0x1000) {
             s32 k = 0x45;
@@ -471,7 +471,7 @@ INCLUDE_ASM("asm/ovl/menushop/nonmatchings/menushop2", func_801E90F8);
  * @param a3 X position for display config.
  * @param arg4 Y position for display config.
  */
-s32 func_801E9554(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
+s32 func_801E9554(ShopMenuState *a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
     s32 result;
 
     result = func_801E90F8(a0, a1, a2, a3, arg4);
@@ -556,7 +556,7 @@ s32 func_801E9684(ShopMenuState *s, s32 arg1, s32 arg2) {
 
         param1 = 0x18;
         param2 = 0xB2;
-        pkt = func_801E9554((s32)s, arg1, pkt, param1, param2);
+        pkt = func_801E9554(s, arg1, pkt, param1, param2);
     }
 
     func_801F1B10();
