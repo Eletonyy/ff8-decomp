@@ -1688,8 +1688,8 @@ void buildMagicLookupTable(s32 charIdx) {
  * @param ctx Junction menu context (JunctionMenuCtx *).
  */
 void junctionMenuUpdate(JunctionMenuCtx *ctx) {
-    u16 inputNew = g_menuDisplayCfg.inputNew;
     u16 inputRepeat = g_menuDisplayCfg.inputRepeat;
+    u16 inputNew = g_menuDisplayCfg.inputNew;
     u16 *statePtr;
     u16 state;
     s32 var_a2;
@@ -1733,7 +1733,7 @@ dispatch:
                 ctx->unk4E = 0;
             }
             if (popcount(ctx->parentParam) >= 2) {
-                if (inputNew & 4) {
+                if (inputRepeat & 4) {
                     if ((ctx->unk61 == 0) ||
                         (g_junctionChars[ctx->charIdx].currentHp <= g_gameState.chars[ctx->charIdx].currentHp)) {
                         restoreCommandAbilityBackup(ctx->charIdx, 1);
@@ -1749,7 +1749,7 @@ dispatch:
                     *statePtr = 0x2B;
                     break;
                 }
-                if (inputNew & 8) {
+                if (inputRepeat & 8) {
                     if ((ctx->unk61 == 0) ||
                         (g_junctionChars[ctx->charIdx].currentHp <= g_gameState.chars[ctx->charIdx].currentHp)) {
                         restoreCommandAbilityBackup(ctx->charIdx, 1);
@@ -1767,7 +1767,7 @@ dispatch:
                 }
             }
             renderStatValueBar(ctx, 1, ctx->unk4E);
-            if (inputRepeat & 0x40) {
+            if (inputNew & 0x40) {
                 sendSpuCommand(2);
                 switch (ctx->unk4E) {
                 case 0:
@@ -1788,7 +1788,7 @@ dispatch:
                 break;
             }
         block35_fall:
-            if (inputRepeat & 0x10) {
+            if (inputNew & 0x10) {
                 if ((ctx->unk61 != 0) &&
                     (g_junctionChars[ctx->charIdx].currentHp > g_gameState.chars[ctx->charIdx].currentHp)) {
                     ctx->returnState = 3;
@@ -1803,11 +1803,11 @@ dispatch:
                     applyJunctedGfs(ctx->charIdx);
                     snapshotJunctionPreview(ctx->charIdx);
                     *statePtr = 0x48;
-                    ctx->unk4E = func_801F76E0(inputNew, ctx->unk5A, ctx->unk4E);
+                    ctx->unk4E = func_801F76E0(inputRepeat, ctx->unk5A, ctx->unk4E);
                     ctx->itemPtr = renderInnerPanelAlt(D_801EEB1C[ctx->unk4E]);
                 }
             } else {
-                ctx->unk4E = func_801F76E0(inputNew, ctx->unk5A, ctx->unk4E);
+                ctx->unk4E = func_801F76E0(inputRepeat, ctx->unk5A, ctx->unk4E);
                 ctx->itemPtr = renderInnerPanelAlt(D_801EEB1C[ctx->unk4E]);
             }
             break;
@@ -1836,10 +1836,10 @@ dispatch:
                 ctx->slideOffset = 0;
                 *statePtr = 3;
             }
-            if (inputRepeat & 4) {
+            if (inputNew & 4) {
                 *statePtr = 4;
             }
-            if (inputRepeat & 8) {
+            if (inputNew & 8) {
                 *statePtr = 6;
             }
             break;
@@ -1868,10 +1868,10 @@ dispatch:
                 ctx->slideOffset = 0;
                 *statePtr = 3;
             }
-            if (inputRepeat & 4) {
+            if (inputNew & 4) {
                 *statePtr = 4;
             }
-            if (inputRepeat & 8) {
+            if (inputNew & 8) {
                 *statePtr = 6;
             }
             break;
@@ -1926,12 +1926,12 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatDeltaEntry(ctx, 1, ctx->unk4C);
             ctx->itemPtr = renderInnerPanelAlt(D_801EEB38[ctx->unk4C]);
-            ctx->unk4C = func_801F6800(inputNew, 3, ctx->unk4C);
-            if (inputRepeat & 0x10) {
+            ctx->unk4C = func_801F6800(inputRepeat, 3, ctx->unk4C);
+            if (inputNew & 0x10) {
                 sendSpuCommand(3);
                 *statePtr = 8;
             }
-            if (inputRepeat & 0x40) {
+            if (inputNew & 0x40) {
                 playSoundEffect(0x11);
                 autoJunctionAll(ctx->charIdx, ctx->unk4C);
                 previewJunctionChange(ctx->charIdx, -1, -1, -1);
@@ -1962,14 +1962,14 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatDeltaEntry(ctx, 1, ctx->unk4B);
             if (ctx->statInfo[1] == 3) {
-                ctx->unk4B = func_801F6800(inputNew, 2, ctx->unk4B);
+                ctx->unk4B = func_801F6800(inputRepeat, 2, ctx->unk4B);
             }
             ctx->itemPtr = renderInnerPanelAlt(D_801EEB30[ctx->unk4B]);
-            if (inputRepeat & 0x10) {
+            if (inputNew & 0x10) {
                 sendSpuCommand(3);
                 *statePtr = 8;
             }
-            if (inputRepeat & 0x40) {
+            if (inputNew & 0x40) {
                 sendSpuCommand(2);
                 if (ctx->unk4B != 0) {
                     *statePtr = 0x10;
@@ -1993,9 +1993,9 @@ dispatch:
             *statePtr = 0x12;
             break;
         case 0x12:
-            ctx->unk5C = func_801F6768(inputNew, 2, ctx->unk5C);
+            ctx->unk5C = func_801F6768(inputRepeat, 2, ctx->unk5C);
             func_801F6F88(ctx->unk5C);
-            if (inputRepeat & 0x40) {
+            if (inputNew & 0x40) {
                 ctx->unk42 = 0;
                 ctx->unk61 = 1;
                 switch (ctx->unk5C) {
@@ -2010,7 +2010,7 @@ dispatch:
                     *statePtr = 0xE;
                     break;
                 default:
-                    if (inputRepeat & 0x10) {
+                    if (inputNew & 0x10) {
                         sendSpuCommand(3);
                         ctx->unk5C = -1;
                         ctx->unk42 = 0;
@@ -2019,7 +2019,7 @@ dispatch:
                     break;
                 }
             } else {
-                if (inputRepeat & 0x10) {
+                if (inputNew & 0x10) {
                     sendSpuCommand(3);
                     ctx->unk5C = -1;
                     ctx->unk42 = 0;
@@ -2106,7 +2106,7 @@ dispatch:
             s32 col;
             s32 fr;
             renderStatValueBar(ctx, 0, ctx->unk4E);
-            fr = func_801F6768(inputNew, ctx->unk5F, ctx->unk5E);
+            fr = func_801F6768(inputRepeat, ctx->unk5F, ctx->unk5E);
             ctx->unk5E = fr;
             renderStatColumnEntry(1, ctx->unk5E, 0);
             if (fr < 3) {
@@ -2126,15 +2126,15 @@ dispatch:
                 ctx->itemPtr = 0;
             }
             ctx->unk44 = ctx->statByte[ctx->unk56] / 11;
-            if (inputRepeat & 0x10) {
+            if (inputNew & 0x10) {
                 sendSpuCommand(3);
                 *statePtr = 0x19;
             }
-            if (inputRepeat & 0x40) {
+            if (inputNew & 0x40) {
                 sendSpuCommand(2);
                 *statePtr = 0x1B;
             }
-            if (inputRepeat & 0x80) {
+            if (inputNew & 0x80) {
                 s32 e5 = ctx->unk5E;
                 if (e5 >= 3) {
                     if (g_gameState.chars[ctx->charIdx].commands[e5 + 1] != 0) {
@@ -2168,15 +2168,15 @@ dispatch:
             {
                 s32 d = ctx->statByte[ctx->unk56] / 11;
                 s32 m = ctx->statByte[ctx->unk56] % 11;
-                ctx->statByte[ctx->unk56] = d * 0xB + func_801F6768(inputNew, 0xB, m);
+                ctx->statByte[ctx->unk56] = d * 0xB + func_801F6768(inputRepeat, 0xB, m);
             }
             ctx->itemPtr = getAbilityNamePtr(ctx->unk56, ctx->statByte[ctx->unk56]);
             if (ctx->unk57 >= 0xC) {
-                if (inputNew & 0x8000) {
+                if (inputRepeat & 0x8000) {
                     state = 0x1D;
                     goto dispatch;
                 }
-                if (inputNew & 0x2000) {
+                if (inputRepeat & 0x2000) {
                     state = 0x1F;
                     goto dispatch;
                 }
@@ -2184,10 +2184,10 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatColumnEntry(0, ctx->unk5E, 0);
             renderStatListEntry(1, ctx->statByte[ctx->unk56]);
-            if (inputRepeat & 0x40) {
+            if (inputNew & 0x40) {
                 if (ctx->statByte[ctx->unk56] >= (s32)ctx->unk57) {
                     sendSpuCommand(5);
-                    if (inputRepeat & 0x10) {
+                    if (inputNew & 0x10) {
                         sendSpuCommand(3);
                         *statePtr = 0x18;
                     }
@@ -2195,7 +2195,7 @@ dispatch:
                     state = 0x21;
                     goto dispatch;
                 }
-            } else if (inputRepeat & 0x10) {
+            } else if (inputNew & 0x10) {
                 sendSpuCommand(3);
                 *statePtr = 0x18;
             }
@@ -2232,10 +2232,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x1C;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & 0x2000) {
                 *statePtr = 0x1F;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & 0x8000) {
                 *statePtr = 0x1D;
             }
             break;
@@ -2270,10 +2270,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x1C;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & 0x2000) {
                 *statePtr = 0x1F;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & 0x8000) {
                 *statePtr = 0x1D;
             }
             break;
@@ -2347,10 +2347,10 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatDeltaEntry(ctx, 1, ctx->unk4A);
             if (g_junctionChars[ctx->charIdx].availFlags != 0) {
-                ctx->unk4A = func_801F6800(inputNew, 2, ctx->unk4A);
+                ctx->unk4A = func_801F6800(inputRepeat, 2, ctx->unk4A);
             }
             ctx->itemPtr = renderInnerPanelAlt(D_801EEB28[ctx->unk4A]);
-            if (inputRepeat & 0x10) {
+            if (inputNew & 0x10) {
                 sendSpuCommand(3);
                 ctx->unk5A = getJunctionCapabilities(ctx->charIdx);
                 if (ctx->unk62 != 0) {
@@ -2376,7 +2376,7 @@ dispatch:
                     *statePtr = 8;
                 }
             }
-            if (inputRepeat & 0x40) {
+            if (inputNew & 0x40) {
                 sendSpuCommand(2);
                 if (ctx->unk4A != 0) {
                     *statePtr = 0x31;
@@ -2416,7 +2416,7 @@ dispatch:
             }
             //tmp = (s8)(slot - (col >> 2) * 4);
             tmp = (s8) (slot - (((unsigned long long) (col >> 2)) * 4)); // Fixme
-            ctx->statSlot = (col >> 2) * 4 + func_801F6768(inputNew, 4, tmp);
+            ctx->statSlot = (col >> 2) * 4 + func_801F6768(inputRepeat, 4, tmp);
             ctx->unk58 = 0xA;
             ctx->unk38 = getAbilityScrollOffset(0xA);
             {
@@ -2429,11 +2429,11 @@ dispatch:
                 previewJunctionChange(ctx->charIdx, arg1, -1, -1);
             }
             if (ctx->discCount >= 5) {
-                if (inputNew & 0x8000) {
+                if (inputRepeat & 0x8000) {
                     state = 0x2D;
                     goto dispatch;
                 }
-                if (inputNew & 0x2000) {
+                if (inputRepeat & 0x2000) {
                     state = 0x2F;
                     goto dispatch;
                 }
@@ -2441,19 +2441,19 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatDeltaEntry(ctx, 0, ctx->unk4A);
             renderStatEffectBar(1, ctx);
-            if (inputRepeat & 0x40) {
+            if (inputNew & 0x40) {
                 if (ctx->statSlot < (s32)ctx->discCount) {
                     state = 0x42;
                     goto dispatch;
                 }
                 sendSpuCommand(5);
             }
-            if (inputRepeat & 0x10) {
+            if (inputNew & 0x10) {
                 sendSpuCommand(3);
                 previewJunctionChange(ctx->charIdx, -1, -1, -1);
                 saveCommandAbilityBackup(ctx->charIdx, 1);
                 *statePtr = 0x2A;
-            } else if (inputRepeat & 0x80) {
+            } else if (inputNew & 0x80) {
                 if (ctx->statSlot < (s32)ctx->discCount) {
                     sendSpuCommand(2);
                     *statePtr = 0x45;
@@ -2482,9 +2482,9 @@ dispatch:
             *statePtr = 0x2C;
             break;
         case 0x2C:
-            ctx->unk5C = func_801F6768(inputNew, 2, ctx->unk5C);
+            ctx->unk5C = func_801F6768(inputRepeat, 2, ctx->unk5C);
             func_801F6F88(ctx->unk5C);
-            if (inputRepeat & 0x40) {
+            if (inputNew & 0x40) {
                 sendSpuCommand(2);
                 syncCharacterHp(ctx->charIdx);
                 ctx->statSlot = -1;
@@ -2553,10 +2553,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x29;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & 0x8000) {
                 *statePtr = 0x2D;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & 0x2000) {
                 *statePtr = 0x2F;
             }
             break;
@@ -2607,10 +2607,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x29;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & 0x8000) {
                 *statePtr = 0x2D;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & 0x2000) {
                 *statePtr = 0x2F;
             }
             break;
@@ -2647,7 +2647,7 @@ dispatch:
             }
             col = ctx->unk58 % 5;
             grp = ctx->unk58 / 5;
-            if (inputNew & 0x4000) {
+            if (inputRepeat & 0x4000) {
                 ctx->statScale = 0x1000;
                 sendSpuCommand(1);
                 col += 1;
@@ -2655,7 +2655,7 @@ dispatch:
                     col = (grp == 3);
                 }
             }
-            if (inputNew & 0x1000) {
+            if (inputRepeat & 0x1000) {
                 ctx->statScale = 0x1000;
                 sendSpuCommand(1);
                 col -= 1;
@@ -2672,26 +2672,26 @@ dispatch:
             renderStatDeltaEntry(ctx, 0, ctx->unk4A);
             renderAbilityEntry(1, ctx->unk58);
             previewJunctionChange(ctx->charIdx, -1, -1, -1);
-            if (inputNew & 0x8000) {
+            if (inputRepeat & 0x8000) {
                 if (grp != 0) {
                     ctx->statScale = 0x1000;
                     state = 0x35;
                     goto dispatch;
                 }
             }
-            if ((inputNew & 0x2000) && (grp < 3)) {
+            if ((inputRepeat & 0x2000) && (grp < 3)) {
                 ctx->statScale = 0x1000;
                 state = 0x37;
                 goto dispatch;
             }
             ctx->dataPtr2 = buildMagicAvailMask(ctx->charIdx, ctx->unk58);
-            if (inputRepeat & 0x10) {
+            if (inputNew & 0x10) {
                 ctx->statScale = 0x1000;
                 sendSpuCommand(3);
                 previewJunctionChange(ctx->charIdx, -1, -1, -1);
                 *statePtr = 0x39;
             } else {
-                if (inputRepeat & 0x40) {
+                if (inputNew & 0x40) {
                     ctx->statScale = 0x1000;
                     if (getJunctionSlotFlags(ctx->charIdx, ctx->unk58) != 0) {
                         sendSpuCommand(2);
@@ -2700,7 +2700,7 @@ dispatch:
                         sendSpuCommand(5);
                     }
                 }
-                if (inputRepeat & 0x80) {
+                if (inputNew & 0x80) {
                     ctx->statScale = 0x1000;
                     if (getJunctionSlotFlags(ctx->charIdx, ctx->unk58) != 0) {
                         s32 idx = D_801EEAC0[ctx->unk58];
@@ -2837,12 +2837,12 @@ dispatch:
                 col += 3;
             }
             tmp = (s8) (slot - (((unsigned long long) (col >> 2)) * 4));
-            ctx->unk50 = (col >> 2) * 4 + func_801F6768(inputNew, 4, tmp) ;
-            if (inputNew & 0x8000) {
+            ctx->unk50 = (col >> 2) * 4 + func_801F6768(inputRepeat, 4, tmp) ;
+            if (inputRepeat & 0x8000) {
                 state = 0x3C;
                 goto dispatch;
             }
-            if (!(inputNew & 0x2000)) {
+            if (!(inputRepeat & 0x2000)) {
                 renderStatValueBar(ctx, 0, ctx->unk4E);
                 renderStatDeltaEntry(ctx, 0, ctx->unk4A);
                 renderAbilityEntry(0, ctx->unk58);
@@ -2855,7 +2855,7 @@ dispatch:
                   } else {
                     previewJunctionChange(ctx->charIdx, -1, cc, grp);
                   } }
-                if (inputRepeat & 0x40) {
+                if (inputNew & 0x40) {
                     s32 mm2 = 1 << ctx->unk50;
                     if (ctx->dataPtr2 & mm2) {
                         playSoundEffect(0x11);
@@ -2864,7 +2864,7 @@ dispatch:
                     }
                     sendSpuCommand(5);
                 }
-                if (inputRepeat & 0x10) {
+                if (inputNew & 0x10) {
                     sendSpuCommand(3);
                     previewJunctionChange(ctx->charIdx, -1, -1, -1);
                     *statePtr = 0x34;
@@ -2919,10 +2919,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x3B;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & 0x8000) {
                 *statePtr = 0x3C;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & 0x2000) {
                 *statePtr = 0x3E;
             }
             break;
@@ -2969,10 +2969,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x3B;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & 0x8000) {
                 *statePtr = 0x3C;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & 0x2000) {
                 *statePtr = 0x3E;
             }
             break;
@@ -3033,8 +3033,8 @@ dispatch:
             break;
         case 0x44:
             ctx->unk66 -= 1;
-            if (inputRepeat & 0x50) {
-                func_801F7BEC(inputRepeat);
+            if (inputNew & 0x50) {
+                func_801F7BEC(inputNew);
                 ctx->unk66 = 0;
             }
             if ((s16)ctx->unk66 <= 0) {
@@ -3054,11 +3054,11 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatDeltaEntry(ctx, 0, ctx->unk4A);
             renderStatEffectBar(1, ctx);
-            if (inputRepeat & 0x10) {
+            if (inputNew & 0x10) {
                 sendSpuCommand(3);
                 *statePtr = 0x47;
             }
-            if (inputRepeat & 0xC0) {
+            if (inputNew & 0xC0) {
                 sendSpuCommand(2);
                 *statePtr = 0x47;
             }

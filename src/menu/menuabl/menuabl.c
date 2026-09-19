@@ -183,8 +183,8 @@ void func_801E2990(void) {
 void func_801E2A34(SoundMenuState *s) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
     u16 *statePtr = &s->state;
-    u16 btnFlags = cfg->inputNew;
-    u32 cfgFlags = cfg->inputRepeat;
+    u16 btnFlags = cfg->inputRepeat;
+    u32 cfgFlags = cfg->inputNew;
     u16 state = s->state;
     s32 newSel;
     s32 slot;

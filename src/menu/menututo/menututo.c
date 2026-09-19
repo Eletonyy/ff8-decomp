@@ -328,8 +328,8 @@ void func_801E30C4(TutoState *ctx) {
  * @param ctx Tutorial state context.
  */
 void func_801E3140(TutoState *ctx) {
-    u16 inputNew = g_menuDisplayCfg.inputNew;
     u16 inputRepeat = g_menuDisplayCfg.inputRepeat;
+    u16 inputNew = g_menuDisplayCfg.inputNew;
     u16 *statePtr = &ctx->state;
     u16 state = ctx->state;
 
@@ -367,7 +367,7 @@ top:
         TutoEntry *entry;
         u8 section;
 
-        section = func_801F6768(inputNew, 8, ctx->sectionIndex);
+        section = func_801F6768(inputRepeat, 8, ctx->sectionIndex);
         ctx->sectionIndex = section;
         func_801F12F0();
 
@@ -378,7 +378,7 @@ top:
         }
         func_801E293C(1, ctx->sectionIndex);
 
-        if (inputRepeat & 0x40) {
+        if (inputNew & 0x40) {
             D_801E4EC0 = 0xFF;
 
             if ((&D_801E4E18[ctx->sectionIndex])->panelId == 0x3D) {
@@ -407,7 +407,7 @@ top:
             }
         }
 
-        if (inputRepeat & 0x10) {
+        if (inputNew & 0x10) {
             sendSpuCommand(3);
             *statePtr = 0x20;
         }
@@ -434,27 +434,27 @@ top:
         s8 rem = val % 10;
         s8 newRem;
 
-        newRem = func_801F6768(inputNew, 10, rem);
+        newRem = func_801F6768(inputRepeat, 10, rem);
         ctx->entryIndex = page * 10;
         ctx->entryIndex = ctx->entryIndex + newRem;
         func_801E293C(0, ctx->sectionIndex);
         func_801E29F8(1, ctx);
 
         if (D_800780AB >= 0xB) {
-            if (inputNew & 0x2000) {
+            if (inputRepeat & 0x2000) {
                 *statePtr = 0xA;
             }
-            if (inputNew & 0x8000) {
+            if (inputRepeat & 0x8000) {
                 *statePtr = 8;
             }
         }
 
-        if (inputRepeat & 0x10) {
+        if (inputNew & 0x10) {
             sendSpuCommand(3);
             *statePtr = 0xC;
         }
 
-        if (inputRepeat & 0x40) {
+        if (inputNew & 0x40) {
             if (ctx->entryIndex < D_800780AB) {
                 s32 index = ctx->entryIndex;
                 sendSpuCommand(2);
@@ -503,10 +503,10 @@ top:
             ctx->scrollAnim = 0;
             *statePtr = 7;
         }
-        if (inputRepeat & 0x8000) {
+        if (inputNew & 0x8000) {
             *statePtr = 8;
         }
-        if (inputRepeat & 0x2000) {
+        if (inputNew & 0x2000) {
             *statePtr = 0xA;
         }
         break;
@@ -547,10 +547,10 @@ top:
             ctx->scrollAnim = 0;
             *statePtr = 7;
         }
-        if (inputRepeat & 0x8000) {
+        if (inputNew & 0x8000) {
             *statePtr = 8;
         }
-        if (inputRepeat & 0x2000) {
+        if (inputNew & 0x2000) {
             *statePtr = 0xA;
         }
         break;
@@ -759,7 +759,7 @@ top:
         u8 slotIdx;
         u8 entryIdx;
 
-        slotIdx = func_801F6768(inputNew, ctx->availCount, ctx->cursorPos);
+        slotIdx = func_801F6768(inputRepeat, ctx->availCount, ctx->cursorPos);
         ctx->cursorPos = slotIdx;
         func_801E293C(0, ctx->sectionIndex);
         func_801E296C(1, ctx);
@@ -768,12 +768,12 @@ top:
         table = &table[entryIdx];
         ctx->panelHandle = func_801E2910(table->sectionId);
 
-        if (inputRepeat & 0x40) {
+        if (inputNew & 0x40) {
             sendSpuCommand(2);
             state = 0x1C;
             goto top;
         }
-        if (inputRepeat & 0x10) {
+        if (inputNew & 0x10) {
             sendSpuCommand(3);
             state = 0x1E;
             goto top;
@@ -1298,7 +1298,7 @@ void func_801E47F8(void) {
  *
  * Handles loading, displaying, and navigating tutorial pages.
  * Uses D_801E4EAC as a page sequence table terminated by 0xFFFF.
- * Button masks from D_801FAB1C control navigation:
+ * Button masks from g_menuDisplayCfg.inputNew control navigation:
  *   0x8004 = previous page, 0x2008 = next page,
  *   0x40 = confirm/advance, 0x10 = cancel/exit.
  *
@@ -1306,7 +1306,7 @@ void func_801E47F8(void) {
  */
 void func_801E48C0(TutoState *self) {
 
-    u16 buttons = D_801FAB1C;
+    u16 buttons = g_menuDisplayCfg.inputNew;
     u16 *state = &self->state;
 
     switch (*state) {
