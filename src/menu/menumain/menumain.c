@@ -1381,20 +1381,16 @@ void func_801F5340(void) {
     }
 }
 
-/** @brief Recalculate stats for a party slot and copy result table to dst. */
-void func_801F537C(s32 a0, CopyBlock16 *a1) {
-    CopyBlock16 *src;
-    CopyBlock16 *end;
-
+/**
+ * @brief Recalculate party slot @p a0's stats and copy the result to @p dst.
+ *
+ * @param a0  Party slot to recalculate.
+ * @param dst Receives the computed stat sheet (g_battleChars' first entry).
+ */
+void func_801F537C(s32 a0, BattleCharData *dst) {
     func_801F5300();
     func_801F5190(a0);
-
-    src = (CopyBlock16 *)&g_battleChars;
-    end = (CopyBlock16 *)((u8 *)&g_battleChars + 0x1D0);
-    do {
-        *a1++ = *src++;
-    } while (src != end);
-
+    *dst = g_battleChars.chars[0];
     func_801F5340();
     recalcPartyStats();
 }
