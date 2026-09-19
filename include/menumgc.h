@@ -48,8 +48,8 @@ typedef struct {
     /* 0x1C */ u16 promptCancelState;  /**< State to resume when a transfer prompt is cancelled. */
     /* 0x1E */ u16 messageReturnState; /**< State to resume when the timed refusal message closes. */
     /* 0x20 */ u8 pad20[0x4];          /**< Padding; func_801EC43C stores the parent menu context pointer here (its 0x22 seeds charIdx). */
-    /* 0x24 */ u32 itemPtr;            /**< Text handle for the description line: the spell under the cursor, or the current command's help string; func_801EB250 hands &itemPtr to the panel as its two-entry item list. */
-    /* 0x28 */ u32 itemPtr2;           /**< Previous itemPtr, kept so the outgoing row still draws while a page slides. */
+    /* 0x24 */ u8 *itemPtr;            /**< Text handle for the description line: the spell under the cursor, or the current command's help string; func_801EB250 hands &itemPtr to the panel as its two-entry item list. */
+    /* 0x28 */ u8 *itemPtr2;           /**< Previous itemPtr, kept so the outgoing row still draws while a page slides. */
     /* 0x2C */ s16 *sortOptionList;   /**< Sort popup option table (D_801EC820, a -1 terminated list of text ids) while the popup is up, 0 once it is closed. */
     /* 0x30 */ s16 sortPopupSlide;     /**< Sort popup slide, stepped by 0x100 from 0 (closed) to 0x1000 (open). */
     /* 0x32 */ u8 discardCharIdx;      /**< Character whose magic slot the discard prompt clears. */

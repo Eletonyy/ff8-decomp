@@ -30,6 +30,7 @@ extern FlagEntry D_801F87B8[];
 extern GfData g_gfData;
 extern void func_801F1B4C(s32 a0);
 extern void func_801F5400(s32 a0);
+extern u8 *func_801F08D4(s32 a0, s32 a1, s32 a2, s32 a3);
 
 /* --- Prototypes for this unit's own functions --- */
 s32 func_801E5D64(s32 charA, s32 charB, s32 slotA, s32 slotB);
@@ -43,7 +44,7 @@ void func_801E6810(MagicMenuCtx *ctx, s32 a1, s32 row);
 void func_801E6858(MagicMenuCtx *ctx, s32 a1, s32 row);
 void func_801E6940(MagicMenuCtx *ctx, s32 a1, s32 row);
 s32 func_801E6DD0(s32 charIdx, s32 spellId, s32 targetMask);
-s32 func_801E6F54(s32 charIdx, s32 slot, s32 page);
+u8 *func_801E6F54(s32 charIdx, s32 slot, s32 page);
 
 /**
  * @brief Format a string with escape sequence substitution.
