@@ -652,9 +652,9 @@ void func_801F177C(s32 *a0) {
  *
  * @param tickCb Update callback stored in the task (func_801F1584).
  * @param drawCb Per-frame draw callback (func_801F16AC).
- * @return The claimed task as an s32, or 0 when the pool is full.
+ * @return The claimed task as void*, or NULL when the pool is full.
  */
-s32 func_801F179C(s32 tickCb, s32 drawCb) {
+void* func_801F179C(s32 tickCb, s32 drawCb) {
     MenuTask *node;
     MenuTask *n = D_801FA550;
     MenuTask *first;
@@ -676,7 +676,7 @@ s32 func_801F179C(s32 tickCb, s32 drawCb) {
         n++;
     }
     if (node == 0) {
-        return 0;
+        return NULL;
     }
     head = (MenuTask *)&D_801FA450;
     first = head->next;
@@ -688,7 +688,7 @@ s32 func_801F179C(s32 tickCb, s32 drawCb) {
     node->tickCb = tickCb;
     node->drawCb = (s32 (*)(MenuTask *, s32, s32))drawCb;
     node->state = 0;
-    return (s32)node;
+    return node;
 }
 
 /**

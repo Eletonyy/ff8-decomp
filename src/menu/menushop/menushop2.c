@@ -1,7 +1,51 @@
 #include "common.h"
+#include "psxsdk/libetc.h"
+#include "menumain.h"
 #include "menushop2.h"
 
-void func_801E81A4(ShopMenuState *s) {
+typedef struct {
+    u8 pad00[0x10];                 /* 0x00 */
+    u16 state;                      /**< 0x10: state machine current state (0-16). */
+    u8 pad12[0xD];                  /* 0x12 */
+    u8 *weaponName;                 /**< 0x20: pointer to the weapon name. */
+    u8 pad24[4];                    /* 0x24 */
+    u32 gil;                        /**< 0x28: gil */
+    u8 *unk2C;                      /**< 0x2C: pointer to a string */
+    s16 unk30;                      /* 0x30 */
+    s16 unk32;                      /* 0x32 */
+    s16 unk34;                      /* 0x34 */
+    u16 unk36;                      /* 0x36 */
+    u16 availableCharactersMask;    /**< 0x38: bit mask of the available characters. */
+    u16 listedCharactersMask;       /**< 0x3A: bit mask of the listed characters in the junk shop. */
+    u8 pad3C[2];                    /* 0x3C */
+    u8 characterCount;              /**< 0x3E: character list count. */
+    u8 weaponCount;                 /**< 0x3F: weapon list count. */
+    s8 selCharacterIndex;           /**< 0x40: selected index of the character list. */
+    s8 selWeaponIndex;              /**< 0x41: selected index of the weapon list. */
+    s8 cursorPosition;              /**< 0x42: cursor position. */
+    u8 unk43;                       /* 0x43 */
+    s8 equippedWeapons[8];          /**< 0x44: equipped weapons of the listed characters. */
+    u16 unk4C;                      /* 0x4C */ 
+} JunkShopMenuState;
+
+extern s32 D_801EB160;
+extern s32 D_801EB260[30]; /**< Strenght per weapon id. */
+
+static void func_801E81A4(JunkShopMenuState*);
+static s32 func_801E8978(s32, s32, s32, s32, s32, s32);
+static s32 func_801E8AB0(s32, s32, s32, s32, s32);
+static s32 func_801E8B60(JunkShopMenuState*, s32, s32, s32, s32);
+static s32 func_801E8BD8(JunkShopMenuState*, s32, s32, s32, s32);
+static s32 func_801E8D84(JunkShopMenuState*, s32, s32, s32, s32);
+static s32 func_801E8FF8(s32, s32);
+static void func_801E9020(s32);
+static void func_801E90BC(void);
+static s32 func_801E90F8(JunkShopMenuState*, s32, s32, s32, s32);
+static s32 func_801E9554(JunkShopMenuState*, s32, s32, s32, s32);
+static s32 func_801E95DC(s32, s32, s32, s32, s32);
+static s32 func_801E9684(JunkShopMenuState*, s32, s32);
+
+static void func_801E81A4(JunkShopMenuState *s) {
     u16 btnFlags;
     u32 cfgFlags;
     u16 *statePtr;
@@ -12,7 +56,7 @@ void func_801E81A4(ShopMenuState *s) {
 
     switch (*statePtr) {
     case 0:
-        s->field_20 = NULL;
+        s->weaponName = NULL;
         s->unk34 = 0;
         *statePtr = 1;
         /* fallthrough */
@@ -22,42 +66,42 @@ void func_801E81A4(ShopMenuState *s) {
             s->unk34 = 0x1000U;
             *statePtr = 2;
         }
-        if (s->unk38 != 0) {
-            func_801E8134(1, (s32) (s8) s->unk40);
+        if (s->availableCharactersMask != 0) {
+            func_801E8134(1, s->selCharacterIndex);
         }
         break;
     case 2:
-        if (s->unk38 == 0) {
+        if (s->availableCharactersMask == 0) {
             *statePtr = 0xC;
             break;
         }
         s->unk2C = (u8*)func_801F6AA4(0x45);
         *statePtr = 3;
     case 3:
-        if (btnFlags & 0x4000) {
+        if (btnFlags & PADLdown) {
             sendSpuCommand(1);
-            s->unk40++;
-            if ((s8) s->unk40 >= (s32) (u8)s->union3C.unk3C_s8[2]) {
-                s->unk40 = 0;
+            s->selCharacterIndex++;
+            if (s->selCharacterIndex >= s->characterCount) {
+                s->selCharacterIndex = 0;
             }
         }
-        if (btnFlags & 0x1000) {
+        if (btnFlags & PADLup) {
             sendSpuCommand(1);
-            s->unk40--;
-            if ((s8)s->unk40 << 0x18 < 0) {
-                s->unk40 = s->union3C.unk3C_s8[2] - 1;
+            s->selCharacterIndex--;
+            if (s->selCharacterIndex << 0x18 < 0) {
+                s->selCharacterIndex = s->characterCount - 1;
             }
         }
-        s->union3C.unk3C_s8[3] = func_801E7F4C(findNthSetBit(s->unk38, (s8) s->unk40), s->gil);
-        func_801E8134(1, (s32) (s8) s->unk40);
-        if (cfgFlags & 0x10) {
+        s->weaponCount = func_801E7F4C(findNthSetBit(s->availableCharactersMask, s->selCharacterIndex), s->gil);
+        func_801E8134(1, s->selCharacterIndex);
+        if (cfgFlags & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0xF;
         }
-        if (cfgFlags & 0x40) {
+        if (cfgFlags & PADRdown) {
             s32 result;
-            result = findNthSetBit(s->unk38, (s8) s->unk40);
-            if ((D_8007809A & 1) || !(((u16) s->unk3A >> result) & 1)) {
+            result = findNthSetBit(s->availableCharactersMask, s->selCharacterIndex);
+            if ((D_8007809A & 1) || !(((u16) s->listedCharactersMask >> result) & 1)) {
                 sendSpuCommand(5);
                 if (!((0x3F >> result) & 1)) {
                     s32 tmp;
@@ -77,7 +121,7 @@ void func_801E81A4(ShopMenuState *s) {
         break;
     case 4:
         s->unk4C -= 1;
-        if (cfgFlags & 0x50) {
+        if (cfgFlags & (PADRup | PADRdown)) {
             func_801F7BEC(cfgFlags);
             s->unk4C = 0;
         }
@@ -88,33 +132,34 @@ void func_801E81A4(ShopMenuState *s) {
         break;
     case 5:
         s->unk43 = 1;
-        s->unk41 = 0;
-        s->union30.unk30_s16[1] = 0x1000U;
+        s->selWeaponIndex = 0;
+        s->unk32 = 0x1000U;
         s->unk2C = (u8*)func_801F6AA4(0x4B);
         *statePtr = 6;
         /* fallthrough */
     case 6:
-        s->union30.unk30_s16[1] -= 0x100;
-        if ((s->union30.unk30_s16[1] << 0x10) <= 0) {
-            s->union30.unk30_s16[1] = 0U;
+        s->unk32 -= 0x100;
+        if ((s->unk32 << 0x10) <= 0) {
+            s->unk32 = 0U;
             *statePtr = 7;
         }
         break;
     case 7:
-        func_801E816C(1, (s8) s->unk41);
-        s->unk41 = func_801F6768(btnFlags, (u8) s->union3C.unk3C_s8[3], (s8) s->unk41);
-        s->field_20 = func_801E7CFC((s32)D_801EB150[(s8)s->unk41]);
-        if (cfgFlags & 0x10) {
+        func_801E816C(1, (s8) s->selWeaponIndex);
+        s->selWeaponIndex = func_801F6768(btnFlags, s->weaponCount, s->selWeaponIndex);
+        s->weaponName = func_801E7CFC((s32)D_801EB150[s->selWeaponIndex]);
+        if (cfgFlags & PADRup) {
             sendSpuCommand(3);
             s->unk43 = 0;
             *statePtr = 8;
         }
-        if (cfgFlags & 0x40) {
+        if (cfgFlags & PADRdown) {
             u8 val1;
-            val1 = D_801EB150[(s8)s->unk41];
+            val1 = D_801EB150[(s8)s->selWeaponIndex];
             if (val1 & 0x80) {
                 s32 val2;
-                val2 = *(s8*)(((s32)s + (s8)s->unk40) + 0x44);
+                val2 = s->equippedWeapons[s->selCharacterIndex];
+                
                 if ((val1 & 0x3F) == val2) {
                     s32 tmp;
                     sendSpuCommand(5);
@@ -148,7 +193,7 @@ void func_801E81A4(ShopMenuState *s) {
         break;
     case 9:
         s->unk4C -= 1;
-        if (cfgFlags & 0x50) {
+        if (cfgFlags & (PADRup | PADRdown)) {
             func_801F7BEC(cfgFlags);
             s->unk4C = 0;
         }
@@ -158,11 +203,11 @@ void func_801E81A4(ShopMenuState *s) {
         }
         break;
     case 8:
-        s->field_20 = NULL;
-        s->union30.unk30_s16[1] += 0x100;
-        if ((s16) s->union30.unk30_s16[1] >= 0x1000) {
+        s->weaponName = NULL;
+        s->unk32 += 0x100;
+        if ((s16) s->unk32 >= 0x1000) {
             s32 k = 0x45;
-            s->union30.unk30_s16[1] = 0x1000;
+            s->unk32 = 0x1000;
             s->unk2C = (u8*)func_801F6AA4(k);
             *statePtr = 3;
         }
@@ -171,11 +216,11 @@ void func_801E81A4(ShopMenuState *s) {
         s32 ret;
         s32 *ptrE4;
         s32 *ptrE8;
-        s->unk42 = 1;
+        s->cursorPosition = 1;
         ptrE4 = &D_801EB2E4;
         ptrE8 = &D_801EB2E8;
-        ret = findNthSetBit(s->unk38, (s8) s->unk40);
-        *ptrE4 = D_801EB150[(s8)s->unk41] & 0x3F;
+        ret = findNthSetBit(s->availableCharactersMask, s->selCharacterIndex);
+        *ptrE4 = D_801EB150[(s8)s->selWeaponIndex] & 0x3F;
         *ptrE8 = ret;
         func_801E7D30((u8 *)func_801F6AA4(0x3B), (u8 *)&D_801EB160);
         func_801F728C((s32) &D_801EB160, 0x4B);
@@ -183,21 +228,21 @@ void func_801E81A4(ShopMenuState *s) {
         /* fallthrough */
     }
     case 11:
-        s->unk42 = func_801F6768(btnFlags, 2, (s8) s->unk42);
-        func_801F6F88((s32)s->unk42);
+        s->cursorPosition = func_801F6768(btnFlags, 2, (s8) s->cursorPosition);
+        func_801F6F88((s32)s->cursorPosition);
         
-        if (cfgFlags & 0x10) {
-            s->unk42 = -1;
+        if (cfgFlags & PADRup) {
+            s->cursorPosition = -1;
             sendSpuCommand(3);
             *statePtr = 7;
         }
         
-        if (cfgFlags & 0x40) {
-            if (s->unk42 == 0) {
+        if (cfgFlags & PADRdown) {
+            if (s->cursorPosition == 0) {
                 u8 val1;
-                val1 = D_801EB150[(s8)s->unk41];
+                val1 = D_801EB150[(s8)s->selWeaponIndex];
                 if (val1 & 0x80) {
-                    Struct_func_801E7CFC *basePtr;
+                    WeaponRecipe *basePtr;
                     u8 *ptr;
                     s32 val2;
                     s32 charIdx;
@@ -205,17 +250,17 @@ void func_801E81A4(ShopMenuState *s) {
 
                     playSoundEffect(0x19);
                     val2 = val1 & 0x3F;
-                    s->gil -= ((u32)func_801E7E1C(val2) * s->union30.unk30_s16[0]) / 1000;
-                    charIdx = findNthSetBit(s->unk38, (s8) s->unk40);
+                    s->gil -= ((u32)func_801E7E1C(val2) * s->unk30) / 1000;
+                    charIdx = findNthSetBit(s->availableCharactersMask, s->selCharacterIndex);
                     
                     basePtr = D_801E9BA0;
                     basePtr += val2;
                     
-                    ptr = basePtr->unk4;
-                    
-                    g_gameState.chars[charIdx].weaponId = (u8) val2;
-                    *(s8*)(((s32)s + (s8)s->unk40) + 0x44) = (s8) val2;
-                    
+                    ptr = basePtr->items;
+
+                    g_gameState.chars[charIdx].weaponId = val2;
+                    s->equippedWeapons[s->selCharacterIndex] = val2;
+
                     for (i = 0; i < 4; i++) {
                         s32 unk0;
                         s32 unk1;
@@ -237,7 +282,7 @@ void func_801E81A4(ShopMenuState *s) {
                 sendSpuCommand(2);
             }
 
-            s->unk42 = -1;
+            s->cursorPosition = -1;
             *statePtr = 7;
         }
                 
@@ -245,19 +290,19 @@ void func_801E81A4(ShopMenuState *s) {
     case 12:
         sendSpuCommand(5);
         s->unk43 = 2;
-        s->union30.unk30_s16[1] = 0x1000U;
+        s->unk32 = 0x1000U;
         *statePtr = 0xD;
         break;
     case 13:
-        if (cfgFlags & 0x50) {
+        if (cfgFlags & (PADRup | PADRdown)) {
             func_801F7BEC(cfgFlags);
             *statePtr = 0xE;
         }
         break;
     case 14:
-        s->union30.unk30_s16[1] -= 0x100;
-        if ((s->union30.unk30_s16[1] << 0x10) <= 0) {
-            s->union30.unk30_s16[1] = 0U;
+        s->unk32 -= 0x100;
+        if ((s->unk32 << 0x10) <= 0) {
+            s->unk32 = 0U;
             *statePtr = 0xF;
         }
         break;
@@ -274,16 +319,16 @@ void func_801E81A4(ShopMenuState *s) {
             func_801F18FC(s);
             func_801F0BB0();
         }
-        if (s->unk38 != 0) {
-            func_801E8134(1, (s32) (s8) s->unk40);
+        if (s->availableCharactersMask != 0) {
+            func_801E8134(1, s->selCharacterIndex);
         }
         break;
     }
 
-    func_801F0948((s32) (s16) s->unk34);
+    func_801F0948(s->unk34);
 }
 
-s32 func_801E8978(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5) {
+static s32 func_801E8978(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5) {
     MenuDisplayConfig *cfg;
     s32 x;
     s32 y;
@@ -320,7 +365,7 @@ s32 func_801E8978(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5) {
     return arg1;
 }
 
-s32 func_801E8AB0(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+static s32 func_801E8AB0(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     MenuDisplayConfig *cfg;
     u8 buffer[128];
     s32 dataVal;
@@ -356,7 +401,7 @@ s32 func_801E8AB0(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
  * @param a3 Y position for the display configuration.
  * @param a4 X position for the display configuration.
  */
-s32 func_801E8B60(ShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
+static s32 func_801E8B60(JunkShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
     g_menuDisplayCfg.iconType = 0;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = a3;
@@ -367,13 +412,13 @@ s32 func_801E8B60(ShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
     g_menuDisplayCfg.pageEnd = 1;
     g_menuDisplayCfg.y = a4;
     g_menuDisplayCfg.scrollOffset = s->unk36;
-    g_menuDisplayCfg.dataPtr = (s32)&s->field_20;
+    g_menuDisplayCfg.dataPtr = (s32)&s->weaponName;
     {
         return func_801EFBB4(a1, a2, (s32)&func_801E8AB0);
     }
 }
 
-s32 func_801E8BD8(ShopMenuState* arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+static s32 func_801E8BD8(JunkShopMenuState* arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     MenuDisplayConfig *cfg;
     s32 x;
     s32 y;
@@ -403,7 +448,7 @@ s32 func_801E8BD8(ShopMenuState* arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
                 }
                 arg2 = func_801F0FEC(arg1, arg2, x, y, getLevelCurveData(val & 0x3F), color);
                 x = arg3 + 0xBD;
-                result = ((u32)func_801E7E1C(val & 0x3F) * arg0->union30.unk30_s16[0]) / 1000;
+                result = ((u32)func_801E7E1C(val & 0x3F) * arg0->unk30) / 1000;
                 arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), result, color);
                 y += 0xD;
             }
@@ -424,19 +469,19 @@ s32 func_801E8BD8(ShopMenuState* arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
 INCLUDE_ASM("asm/ovl/menushop/nonmatchings/menushop2", func_801E8D84);
 
 /** @brief Return color code: 7 (equal), 3 (a0 > a1), 2 (a0 < a1). */
-s32 func_801E8FF8(s32 a0, s32 a1) {
+static s32 func_801E8FF8(s32 a0, s32 a1) {
     s32 color = 7;
     if (a0 > a1) color = 3;
     if (a0 < a1) color = 2;
     return color;
 }
 
-void func_801E9020(s32 arg0) {
+static void func_801E9020(s32 arg0) {
     u8 buf[460];
     u8 charId;
     u8 weaponId;
 
-    charId = D_8007C3B8[arg0].unk4;
+    charId = D_8007C3B8[arg0].characterId;
     weaponId = g_gameState.chars[charId].weaponId;
     g_gameState.chars[charId].weaponId = arg0;
     func_801F537C(charId, buf);
@@ -449,7 +494,7 @@ void func_801E9020(s32 arg0) {
  *
  * Calls func_801E9020 for indices 0 through 29.
  */
-void func_801E90BC(void) {
+static void func_801E90BC(void) {
     s32 i;
     for (i = 0; i < 30; i++) {
         func_801E9020(i);
@@ -471,7 +516,7 @@ INCLUDE_ASM("asm/ovl/menushop/nonmatchings/menushop2", func_801E90F8);
  * @param a3 X position for display config.
  * @param arg4 Y position for display config.
  */
-s32 func_801E9554(ShopMenuState *a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
+static s32 func_801E9554(JunkShopMenuState *a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
     s32 result;
 
     result = func_801E90F8(a0, a1, a2, a3, arg4);
@@ -484,7 +529,7 @@ s32 func_801E9554(ShopMenuState *a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
     return func_801EF9AC(a1, result, 0x1000, g_menuColor);
 }
 
-s32 func_801E95DC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+static s32 func_801E95DC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     if (arg0 != 0) {
         arg2 = func_801F0FEC(arg1, arg2, arg3 + 0xC, arg4 + 5, arg0, 7);
     }
@@ -497,7 +542,7 @@ s32 func_801E95DC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     return func_801EF9AC(arg1, arg2, 0x1000, g_menuColor);
 }
 
-s32 func_801E9684(ShopMenuState *s, s32 arg1, s32 arg2) {
+static s32 func_801E9684(JunkShopMenuState *s, s32 arg1, s32 arg2) {
     s32 val1;
     s16 idx;
     s32 pkt;
@@ -508,8 +553,8 @@ s32 func_801E9684(ShopMenuState *s, s32 arg1, s32 arg2) {
     func_801F1AFC();
     setMenuColorIntensity(s->unk34);
     
-    if ((s->unk43 & 2) && (s->union30.unk30_s16[1] != 0) && (s->unk34 == 0x1000)) {
-        arg2 = func_801F4168(arg1, arg2, func_801F6AA4(0x3D), 0xC0, 0x52, s->union30.unk30_s16[1], 0);
+    if ((s->unk43 & 2) && (s->unk32 != 0) && (s->unk34 == 0x1000)) {
+        arg2 = func_801F4168(arg1, arg2, func_801F6AA4(0x3D), 0xC0, 0x52, s->unk32, 0);
     }
 
     param2 = 0x32;
@@ -531,13 +576,13 @@ s32 func_801E9684(ShopMenuState *s, s32 arg1, s32 arg2) {
     arg2 = func_801E95DC((s32)s->unk2C, arg1, arg2, param1, param2);
 
     if (!(s->unk43 & 2)) {
-        if (s->unk42 >= 0) {
+        if (s->cursorPosition >= 0) {
             arg2 = func_801F6FE4(arg1, arg2, 1, 0x1000);
         }
 
         param1 = 0x18;
         param2 = 0x47;
-        idx = s->union30.unk30_s16[1];
+        idx = s->unk32;
         if (idx != 0x1000) {
             val1 = D_801FA3C8[idx / 64] * 0x96;
             if (val1 < 0) {
@@ -548,7 +593,7 @@ s32 func_801E9684(ShopMenuState *s, s32 arg1, s32 arg2) {
 
         param1 = 0x18;
         param2 = 0x47;
-        arg2 = func_801E8978(arg1, arg2, param1, param2, s->unk38, (u16)s->unk3A);
+        arg2 = func_801E8978(arg1, arg2, param1, param2, s->availableCharactersMask, (u16)s->listedCharactersMask);
         
         param1 = 0xA0;
         param2 = 0x47;
@@ -564,30 +609,30 @@ s32 func_801E9684(ShopMenuState *s, s32 arg1, s32 arg2) {
     return arg2;
 }
 
-void func_801E9900(void) {
+void func_801E9900(s32 arg0) {
     u8 buffer[460];
-    ShopMenuState* s;
+    JunkShopMenuState* s;
     s32 i;
     u8* ptr;
 
-    s = (ShopMenuState *)func_801F179C((s32) func_801E81A4, (s32) &func_801E9684);
+    s = func_801F179C((s32) func_801E81A4, (s32) &func_801E9684);
     func_801F1D2C(0, "mwepon.bin", (s32) D_801E9BA0);
     func_801F1D2C(0, "mwepon.msg", (s32) D_801E9D2C);
     func_801F0948(0);
     func_801E90BC();
     if (s != NULL) {
         s->gil = func_801E5D28();
-        s->unk38 = func_80036EC0();
-        s->unk3A = func_801E8058((s32) s->gil);
+        s->availableCharactersMask = func_80036EC0();
+        s->listedCharactersMask = func_801E8058((s32) s->gil);
         if (func_801EFFB8() == 0x17) {
-            s->unk38 = (u16) s->unk3A;
+            s->availableCharactersMask = s->listedCharactersMask;
         }
-        s->union3C.unk3C_s8[2] = popcount(s->unk38);
-        func_801E7F4C(findNthSetBit(s->unk38, 0), (s32) s->gil);
-        s->union30.unk30_s16[0] = 0x3E8;
-        s->union30.unk30_s16[1] = 0x1000;
-        s->unk42 = -1;
-        if (s->unk38 != 0) {
+        s->characterCount = popcount(s->availableCharactersMask);
+        func_801E7F4C(findNthSetBit(s->availableCharactersMask, 0), (s32) s->gil);
+        s->unk30 = 0x3E8;
+        s->unk32 = 0x1000;
+        s->cursorPosition = -1;
+        if (s->availableCharactersMask != 0) {
             s->unk43 = 0;
             s->unk2C = (u8 *)func_801F6AA4(0x45);
         } else {
@@ -595,11 +640,11 @@ void func_801E9900(void) {
             s->unk2C = NULL;
         }
         if (func_801F72B4() & 1) {
-            s->union30.unk30_s16[0] = 0x2EE;
+            s->unk30 = 0x2EE;
         }
 
-        for (i = 0, ptr = &s->unk44; i < 8; i++) {
-            if (((s32) s->unk38 >> i) & 1) {
+        for (i = 0, ptr = s->equippedWeapons; i < 8; i++) {
+            if (((s32) s->availableCharactersMask >> i) & 1) {
                 func_801F537C(i, buffer);
                 *ptr = buffer[442];
                 ptr++;

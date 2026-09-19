@@ -1,8 +1,106 @@
 #include "common.h"
+#include "psxsdk/libetc.h"
 #include "gamestate.h"
 #include "menu.h"
 #include "menushop.h"
 #include "menumain.h"
+
+#define SHOP_ITEM_COUNT 16
+#define ITEM_SLOT_COUNT 198
+
+typedef struct {
+    u8 pad00[0x10];
+    u16 state;          /**< 0x10: state machine current state (0-17). */
+    u8 pad12[0xD];      /**< 0x12 */
+    u8 *field_20;       /**< 0x20: pointer to a string. */
+    u8 *field_24;       /**< 0x24: previus pointer stored by field_20. */
+    u32 gil;            /**< 0x28: gil. */
+    u8 *unk2C;          /**< 0x2C: pointer to the item slot inventory. */
+    u8 *unk30;          /**< 0x30: pointer to a string. */
+    u8 pad34[2];        /* 0x34 */
+    u16 unk36;          /* 0x36 */
+    u16 unk38;          /* 0x38 */
+    s16 unk3A;          /**< 0x3A: scroll offset. */
+    s16 rowCount[2];    /**< 0x3C: row count for buy and sell list. */
+    u8 currentPage;     /**< 0x40: current page. */
+    u8 previousPage;    /**< 0x41: previous page. */
+    s8 unk42;           /**< 0x42: index to the row count (0 = buy, 1 = sell) */
+    u8 pad43[2];        /* 0x43 */
+    u8 unk45;           /* 0x45 */
+    u8 unk46;           /**< 0x46: previous index to the row count (0 = buy, 1 = sell). */
+    s8 pageCount;       /**< 0x47: page count. */
+    u8 unk48;           /**< 0x48: item quantity to buy or sell */
+    u8 unk49;           /**< 0x49: item quantity in the inventory. */
+    u8 unk4A;           /* 0x4A */
+    u8 pad4B[1];        /* 0x4B */
+    u16 unk4C;          /* 0x4C */
+    u16 unk4E;          /* 0x4E */
+} ShopMenuState;
+
+typedef struct {
+    u8 itemId;      /**< 0x0: item ID. */
+    u8 rarity;      /**< 0x1: item rarity (0x00 = Rare, 0xFF = Common). */
+} ShopItemRarity; /* 0x2 = 2 bytes */
+
+typedef struct {
+    u8 itemId;      /**< 0x0: item ID. */
+    u8 visible;     /**< 0x1: item visibility flag. */
+} ShopItemVisibility; /* 0x2 = 2 bytes */
+
+typedef struct {
+    u16 basePrice;  /**< 0x0: base price. */
+    u8 sellRate;    /**< 0x2: sell rate. */
+} ShopItemPrice; /* 0x3 = 3 bytes */
+
+typedef struct {
+    u8 type;    /**< 0x0: item type. */
+    u8 flags;   /**< 0x1: targeting and usability bitfield. */
+    u8 param1;  /**< 0x2: type-dependent (heal amount, GF id, ability id, magazine start page). */
+    u8 param2;  /**< 0x3: type-dependent (status mask, stat mask, compatibility amount, magazine end page). */
+} MItemEntry; /* 0x4 = 4 bytes */
+
+extern ShopData D_80077CC8[SHOP_COUNT]; /**< Shop data table. */
+extern s32 D_80077E70;
+extern u8 D_80077EBC[ITEM_SLOT_COUNT]; /**< Item slot inventory. */
+extern u8 D_801F7F98[];
+extern u16 D_801E9B64[4];
+extern u8 D_801E9B6C[52];
+extern ShopItemRarity D_801EA170[SHOP_COUNT][SHOP_ITEM_COUNT]; /**< Shop item rarity tables (shop.bin content). */
+extern ShopItemPrice D_801EA3F0[ITEM_PRICE_COUNT]; /**< Item price table (price.bin content). */
+extern MItemEntry D_801EA70C[199]; /**< Field-menu item table (mitem.bin content). */
+extern ShopItemVisibility D_801EAA28[SHOP_ITEM_COUNT]; /**< Shop item visibility table. */
+extern s32 D_801EAA48[ITEM_PRICE_COUNT]; /**< Item sell prices. */
+extern s32 D_801EAD68[ITEM_PRICE_COUNT]; /**< Item buy prices. */
+
+static s32 func_801E5800(ShopMenuState*, s32, s32);
+static s32 func_801E583C(ShopMenuState*, s32, s32);
+static s32 func_801E58A0(ShopMenuState*, s32, s32);
+static s32 func_801E5904(s32);
+static void func_801E5930(s32, s32, ShopMenuState*);
+static s32 func_801E59D8(s16*, s16*, s32);
+static s32 func_801E5A8C(s32, s32, s32, s32, s32, s16*, s32);
+static void func_801E5BA4(s32, s32);
+static void func_801E5DBC(void);
+static void func_801E5E88(u8);
+static void func_801E5E90(ShopMenuState*);
+static void func_801E6A68(s32);
+static void func_801E6ACC(void);
+static void func_801E6C3C(s32);
+static void func_801E6D54(s32);
+static s32 func_801E6E0C(s32, s32, s32, s32);
+static s32 func_801E6EB0(s32, s32, s32, s32, s32);
+static s32 func_801E6F60(ShopMenuState*, s32, s32, s32, s32);
+static s32 func_801E6FD8(s32, s32, s32, s32, s32);
+static s32 func_801E722C(ShopMenuState*, s32, s32, s32, s32);
+static s32 func_801E7374(ShopMenuState*, s32, s32, s32, s32);
+static s32 func_801E7508(ShopMenuState*, s32, s32, s32, s32);
+static s32 func_801E7628(ShopMenuState*, s32, s32, s32, s32);
+static void func_801E791C(s32, s32, s32, s32, s32);
+static s32 func_801E79D4(ShopMenuState*, s32, s32);
+static void func_801E7B9C(s32);
+static void func_801E7C8C(s32);
+static s32 func_801E7E4C(s32);
+static s32 func_801E7E98(s32, s32);
 
 /**
  * @brief Look up a shop item byte from a table or item data.
@@ -16,7 +114,7 @@
  * @param a2 Item index.
  * @return Item byte value, or 0 if out of range.
  */
-s32 func_801E5800(ShopMenuState *arg0, s32 arg1, s32 arg2) {
+static s32 func_801E5800(ShopMenuState *arg0, s32 arg1, s32 arg2) {
     if (arg2 >= 198) {
         return 0;
     }
@@ -42,7 +140,7 @@ s32 func_801E5800(ShopMenuState *arg0, s32 arg1, s32 arg2) {
  * @param a2 Item index.
  * @return Category byte value, or 0 if not found.
  */
-s32 func_801E583C(ShopMenuState* a0, s32 a1, s32 a2) {
+static s32 func_801E583C(ShopMenuState* a0, s32 a1, s32 a2) {
     s32 itemId;
 
     if (a1 == 0) {
@@ -69,7 +167,7 @@ s32 func_801E583C(ShopMenuState* a0, s32 a1, s32 a2) {
  * @param a2 Item index
  * @return Description string pointer, or 0 if invalid
  */
-s32 func_801E58A0(ShopMenuState *a0, s32 a1, s32 a2) {
+static s32 func_801E58A0(ShopMenuState *a0, s32 a1, s32 a2) {
     s32 result = func_801E583C(a0, a1, a2);
     if (result != 0) {
         return getStatDesc(func_801E5800(a0, a1, a2));
@@ -86,11 +184,11 @@ s32 func_801E58A0(ShopMenuState *a0, s32 a1, s32 a2) {
  * @param a0 Shop item index.
  * @return Property byte value.
  */
-s32 func_801E5904(s32 a0) {
+static s32 func_801E5904(s32 a0) {
     return D_801F7F98[D_801EA70C[a0].type];
 }
 
-void func_801E5930(s32 arg0, s32 arg1, ShopMenuState* arg2) {
+static void func_801E5930(s32 arg0, s32 arg1, ShopMenuState* arg2) {
     s32 unk36;
     s32 aux2;
     s32 aux1;
@@ -104,7 +202,7 @@ void func_801E5930(s32 arg0, s32 arg1, ShopMenuState* arg2) {
     func_801F0A34(arg0, 0, aux2 + 0x23, aux1);
 }
 
-s32 func_801E59D8(s16* arg0, s16* arg1, s32 arg2) {
+static s32 func_801E59D8(s16* arg0, s16* arg1, s32 arg2) {
     s32 sum;
     s32 count;
     s16 val;
@@ -135,7 +233,7 @@ s32 func_801E59D8(s16* arg0, s16* arg1, s32 arg2) {
     return count;
 }
 
-s32 func_801E5A8C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s16* arg5, s32 arg6) {
+static s32 func_801E5A8C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s16* arg5, s32 arg6) {
     s16 buffer[36];
     s32 i;
     s32 count;
@@ -170,7 +268,7 @@ s32 func_801E5A8C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s16* arg5, s
  * @param a0 Render context / X position parameter.
  * @param a1 Index into the decoded position table.
  */
-void func_801E5BA4(s32 a0, s32 a1) {
+static void func_801E5BA4(s32 a0, s32 a1) {
     s16 buf[36];
     func_801E59D8(D_801E9B64, buf, 3);
     func_801F0A34(a0, 0, buf[a1] + 0x24, 0x22);
@@ -241,7 +339,6 @@ void func_801E5C08(s32 gil) {
 s32 func_801E5D28(void) {
     s32 result;
     u8* ptr1;
-    u8* ptr2;
     s32 i;
     s32 val1;
     s32 val2;
@@ -281,7 +378,7 @@ s32 func_801E5D28(void) {
  * the beginning of the table in their original order, while all
  * remaining entries are cleared.
  */
-void func_801E5DBC(void) {
+static void func_801E5DBC(void) {
     u8 sp[SHOP_ITEM_COUNT];
     s32 counter;
     s32 i;
@@ -311,10 +408,10 @@ void func_801E5DBC(void) {
     }
 }
 
-void func_801E5E88(u8 arg0) {
+static void func_801E5E88(u8 arg0) {
 }
 
-void func_801E5E90(ShopMenuState *s) {
+static void func_801E5E90(ShopMenuState *s) {
     u16 btnFlags;
     u32 cfgFlags;
     u16 *statePtr;
@@ -328,7 +425,7 @@ void func_801E5E90(ShopMenuState *s) {
 restart:
     switch (state & 0xFFFF) {
     case 0:
-        s->union30.unk30_s32 = func_801F6AA4(0x40);
+        s->unk30 = func_801F6AA4(0x40);
         s->unk38 = 0;
         *statePtr = 1;
         break;
@@ -339,54 +436,54 @@ restart:
             s->unk38 = 0x1000;
             *statePtr = 2;
         }
-        func_801E5BA4(1, (s8)s->unk42);
+        func_801E5BA4(1, s->unk42);
         break;
 
     case 2:
         s->unk42 = 0;
         *statePtr = 3;
-        func_801E5BA4(1, (s8)s->unk42);
+        func_801E5BA4(1, s->unk42);
         break;
 
     case 3:
-        if (btnFlags & 0x2000) {
+        if (btnFlags & PADLright) {
             sendSpuCommand(1);
-            s->unk42 = func_80035B28(7, (s8)s->unk42);
+            s->unk42 = func_80035B28(7, s->unk42);
         }
 
-        if (btnFlags & 0x8000) {
+        if (btnFlags & PADLleft) {
             sendSpuCommand(1);
-            s->unk42 = func_80035B70(7, (s8)s->unk42);
+            s->unk42 = func_80035B70(7, s->unk42);
         }
 
-        func_801E5BA4(1, (s8)s->unk42);
+        func_801E5BA4(1, s->unk42);
 
-        if (cfgFlags & 0x10) {
+        if (cfgFlags & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0x10;
         }
 
-        if (!(cfgFlags & 0x40)) {
+        if (!(cfgFlags & PADRdown)) {
             break;
         }
 
         sendSpuCommand(2);
 
-        if ((s8)s->unk42 == 2) {
+        if (s->unk42 == 2) {
             state = 16;
             goto restart;
         }
 
         s->unk46 = s->unk42;
         if (s->unk46 == 0) {
-            s->union30.unk30_s32 = func_801F6AA4(0x42);
-            s->unk47 = 2;
+            s->unk30 = func_801F6AA4(0x42);
+            s->pageCount = 2;
         } else {
-            s->union30.unk30_s32 = func_801F6AA4(0x41);
-            s->unk47 = 0x19;
+            s->unk30 = func_801F6AA4(0x41);
+            s->pageCount = 25;
         }
 
-        s->unk40 = s->union3C.unk3C_s16[s->unk46] / 8;
+        s->currentPage = s->rowCount[s->unk46] / 8;
         func_801E5C08(s->gil);
         s->gil = func_801E5D28();
         *statePtr = 4;
@@ -403,8 +500,8 @@ restart:
             s->unk36 = 0;
             *statePtr = 6;
         }
-        func_801E5BA4(0, (s8)s->unk42);
-        func_801E5930(1, s->union3C.unk3C_s16[s->unk46], s);
+        func_801E5BA4(0, s->unk42);
+        func_801E5930(1, s->rowCount[s->unk46], s);
         break;
 
     case 6: {
@@ -420,41 +517,41 @@ restart:
         param = 0x4A;
         if (s->unk4E != 0) {
             s->unk4E--;
-            s->union30.unk30_s32 = func_801F6AA4(param);
+            s->unk30 = func_801F6AA4(param);
         } else {
             param = 0x41;
             if (s->unk46 == 0) {
                 param = 0x42;
             }
-            s->union30.unk30_s32 = func_801F6AA4(param);
+            s->unk30 = func_801F6AA4(param);
         }
 
-        dividend = s->union3C.unk3C_s16[s->unk46];
+        dividend = s->rowCount[s->unk46];
         rest = (s16)(dividend % 8);
         quotient = dividend / 8;
-        s->union3C.unk3C_s16[s->unk46]  = func_801F6768(btnFlags, 8, rest) + quotient * 8;
+        s->rowCount[s->unk46]  = func_801F6768(btnFlags, 8, rest) + quotient * 8;
 
-        s->field_20 = func_801E58A0((s32)s, s->unk46, s->union3C.unk3C_s16[s->unk46]);
+        s->field_20 = func_801E58A0(s, s->unk46, s->rowCount[s->unk46]);
 
-        if (btnFlags & 0x8000) {
+        if (btnFlags & PADLleft) {
             state = 7;
             goto restart;
         }
-        if (btnFlags & 0x2000) {
+        if (btnFlags & PADLright) {
             state = 9;
             goto restart;
         }
-        func_801E5BA4(0, (s8)s->unk42);
-        func_801E5930(1, s->union3C.unk3C_s16[s->unk46], s);
-        if (cfgFlags & 0x10) {
+        func_801E5BA4(0, s->unk42);
+        func_801E5930(1, s->rowCount[s->unk46], s);
+        if (cfgFlags & PADRup) {
             sendSpuCommand(3);
             s->field_20 = 0;
-            s->union30.unk30_s32 = func_801F6AA4(0x40);
+            s->unk30 = func_801F6AA4(0x40);
             *statePtr = 14;
         }
-        if (cfgFlags & 0x40) {
-            if (func_801E583C(s, s->unk46, s->union3C.unk3C_s16[s->unk46])) {
-                if (s->unk46 == 1 && s->union3C.unk3C_s16[s->unk46] >= 0xC6) {
+        if (cfgFlags & PADRdown) {
+            if (func_801E583C(s, s->unk46, s->rowCount[s->unk46])) {
+                if (s->unk46 == 1 && s->rowCount[s->unk46] >= 0xC6) {
                     sendSpuCommand(5);
                     break;
                 }
@@ -471,7 +568,7 @@ restart:
         u32 price;
         u32 count;
 
-        index = func_801E5800(s, s->unk46, s->union3C.unk3C_s16[s->unk46]);
+        index = func_801E5800(s, s->unk46, s->rowCount[s->unk46]);
         s->unk48 = 1;
         price = D_801EAD68[index];
 
@@ -524,9 +621,9 @@ restart:
         s->unk49 = count;
         s->unk4A = 0x40;
         if (s->unk46 == 0) {
-            s->union30.unk30_s32 = func_801F6AA4(0x46);
+            s->unk30 = func_801F6AA4(0x46);
         } else {
-            s->union30.unk30_s32 = func_801F6AA4(0x47);
+            s->unk30 = func_801F6AA4(0x47);
         }
         *statePtr = 12;
         break;
@@ -534,7 +631,7 @@ restart:
 
     case 15:
         s->unk4C -= 1;
-        if (cfgFlags & 0x50) {
+        if (cfgFlags & (PADRup | PADRdown)) {
             func_801F7BEC(cfgFlags);
             s->unk4C = 0;
         }
@@ -545,24 +642,24 @@ restart:
         break;
 
     case 12:
-        func_801E5BA4(0, (s8)s->unk42);
-        func_801E5930(0, s->union3C.unk3C_s16[s->unk46], s);
+        func_801E5BA4(0, s->unk42);
+        func_801E5930(0, s->rowCount[s->unk46], s);
 
-        if (btnFlags & 0x2000) {
+        if (btnFlags & PADLright) {
             if ((s8)s->unk48 < (s8)s->unk49) {
                 s->unk48++;
                 sendSpuCommand(1);
             }
         }
 
-        if (btnFlags & 0x8000) {
+        if (btnFlags & PADLleft) {
             if ((s8)s->unk48 >= 2) {
                 s->unk48--;
                 sendSpuCommand(1);
             }
         }
 
-        if (btnFlags & 0x4000) {
+        if (btnFlags & PADLdown) {
             if ((s8)s->unk48 >= 2) {
                 sendSpuCommand(1);
                 s->unk48 -= 10;
@@ -572,9 +669,9 @@ restart:
             }
         }
 
-        if (btnFlags & 0x1000) {
+        if (btnFlags & PADLup) {
             if ((s8)s->unk48 < (s8)s->unk49) {
-                s->unk48 += 0xA;
+                s->unk48 += 10;
                 sendSpuCommand(1);
                 if ((s8)s->unk48 > (s8)s->unk49) {
                     s->unk48 = s->unk49;
@@ -582,29 +679,29 @@ restart:
             }
         }
 
-        if (cfgFlags & 0x10) {
+        if (cfgFlags & PADRup) {
             sendSpuCommand(3);
             *statePtr = 13;
         }
 
-        if (cfgFlags & 0x40) {
+        if (cfgFlags & PADRdown) {
             s32 index;
             s32 price;
             if (s->unk46 == 0) {
                 playSoundEffect(0x14);
-                index = func_801E5800(s, s->unk46, s->union3C.unk3C_s16[s->unk46]);
+                index = func_801E5800(s, s->unk46, s->rowCount[s->unk46]);
                 price = D_801EAD68[index];
                 price *= (s8)s->unk48;
                 s->gil -= price;
                 D_801EB088[index] += s->unk48;
             } else {
-                if (s->union3C.unk3C_s16[s->unk46] >= 0xC6) {
+                if (s->rowCount[s->unk46] >= 0xC6) {
                     sendSpuCommand(5);
                     break;
                 }
 
                 playSoundEffect(0x14);
-                index = func_801E5800(s, s->unk46, s->union3C.unk3C_s16[s->unk46]);
+                index = func_801E5800(s, s->unk46, s->rowCount[s->unk46]);
                 price = D_801EAA48[index];
                 price *= (s8)s->unk48;
                 s->gil += price;
@@ -620,41 +717,41 @@ restart:
         break;
 
     case 13:
-        func_801E5BA4(0, (s8)s->unk42);
-        func_801E5930(0, s->union3C.unk3C_s16[s->unk46], s);
+        func_801E5BA4(0, s->unk42);
+        func_801E5930(0, s->rowCount[s->unk46], s);
         s->unk4A = 0;
         *statePtr = 6;
         break;
 
     case 14:
-        func_801E5BA4(0, (s8)s->unk42);
+        func_801E5BA4(0, s->unk42);
         s->unk36 += 0x100;
         if ((s16)s->unk36 >= 0x1000) {
             s->unk36 = 0x1000;
             *statePtr = 3;
         }
-        func_801E5BA4(0, (s8)s->unk42);
-        func_801E5930(1, s->union3C.unk3C_s16[s->unk46], s);
+        func_801E5BA4(0, s->unk42);
+        func_801E5930(1, s->rowCount[s->unk46], s);
         break;
 
     case 7: {
         s32 dividend;
         s32 rest;
         s32 quotient;
-        func_801E5BA4(0, (s8)s->unk42);
-        func_801E5930(1, s->union3C.unk3C_s16[s->unk46], s);
+        func_801E5BA4(0, s->unk42);
+        func_801E5930(1, s->rowCount[s->unk46], s);
         s->field_24 = s->field_20;
-        dividend = s->union3C.unk3C_s16[s->unk46];
+        dividend = s->rowCount[s->unk46];
         rest = (s16)(dividend % 8);
         quotient = dividend / 8;
-        s->unk41 = quotient;
+        s->previousPage = quotient;
         quotient--;
         if (quotient < 0) {
-            quotient = (u8)s->unk47 - 1;
+            quotient = (u8)s->pageCount - 1;
         }
-        s->union3C.unk3C_s16[s->unk46] = rest + quotient * 8;
-        s->unk40 = quotient;
-        s->field_20 = func_801E58A0((s32)s, s->unk46, s->union3C.unk3C_s16[s->unk46]);
+        s->rowCount[s->unk46] = rest + quotient * 8;
+        s->currentPage = quotient;
+        s->field_20 = func_801E58A0(s, s->unk46, s->rowCount[s->unk46]);
         s->unk3A = -0xE67;
         sendSpuCommand(1);
         *statePtr = 8;
@@ -662,17 +759,17 @@ restart:
     }
 
     case 8:
-        func_801E5BA4(0, (s8)s->unk42);
-        func_801E5930(1,  s->union3C.unk3C_s16[s->unk46], s);
+        func_801E5BA4(0, s->unk42);
+        func_801E5930(1,  s->rowCount[s->unk46], s);
         s->unk3A += 0x199;
         if (s->unk3A >= 0) {
             s->unk3A = 0;
             *statePtr = 6;
         }
-        if (cfgFlags & 0x8000) {
+        if (cfgFlags & PADLleft) {
             *statePtr = 7;
         }
-        if (cfgFlags & 0x2000) {
+        if (cfgFlags & PADLright) {
             *statePtr = 9;
         }
         break;
@@ -681,20 +778,20 @@ restart:
         s32 dividend;
         s32 rest;
         s32 quotient;
-        func_801E5BA4(0, (s8)s->unk42);
-        func_801E5930(1, s->union3C.unk3C_s16[s->unk46], s);
+        func_801E5BA4(0, s->unk42);
+        func_801E5930(1, s->rowCount[s->unk46], s);
         s->field_24 = s->field_20;
-        dividend = s->union3C.unk3C_s16[s->unk46];
+        dividend = s->rowCount[s->unk46];
         rest = (s16)(dividend % 8);
         quotient = dividend / 8;
-        s->unk41 = quotient;
+        s->previousPage = quotient;
         quotient++;
-        if (quotient >= (u8)s->unk47) {
+        if (quotient >= (u8)s->pageCount) {
             quotient = 0;
         }
-        s->union3C.unk3C_s16[s->unk46] = rest + quotient * 8;
-        s->unk40 = quotient;
-        s->field_20 = func_801E58A0((s32)s, s->unk46, s->union3C.unk3C_s16[s->unk46]);
+        s->rowCount[s->unk46] = rest + quotient * 8;
+        s->currentPage = quotient;
+        s->field_20 = func_801E58A0(s, s->unk46, s->rowCount[s->unk46]);
         s->unk3A = 0x0E67;
         sendSpuCommand(1);
         *statePtr = 10;
@@ -702,23 +799,23 @@ restart:
     }
 
     case 10:
-        func_801E5BA4(0, (s8)s->unk42);
-        func_801E5930(1,  s->union3C.unk3C_s16[s->unk46], s);
+        func_801E5BA4(0, s->unk42);
+        func_801E5930(1,  s->rowCount[s->unk46], s);
         s->unk3A -= 0x199;
         if (s->unk3A <= 0) {
             s->unk3A = 0;
             *statePtr = 6;
         }
-        if (cfgFlags & 0x8000) {
+        if (cfgFlags & PADLleft) {
             *statePtr = 7;
         }
-        if (cfgFlags & 0x2000) {
+        if (cfgFlags & PADLright) {
             *statePtr = 9;
         }
         break;
 
     case 16:
-        s->union30.unk30_s32 = func_801F6AA4(0x44);
+        s->unk30 = func_801F6AA4(0x44);
         *statePtr = 17;
         /* fallthrough */
 
@@ -733,7 +830,7 @@ restart:
             func_801F18FC(s);
             func_801F0BB0();
         }
-        func_801E5BA4(1, (s8)s->unk42);
+        func_801E5BA4(1, s->unk42);
         break;
 
     }
@@ -747,7 +844,7 @@ restart:
  * Copies item IDs from the shop's rarity table and visibility flags from
  * the shop inventory into the shared visibility table.
  */
-void func_801E6A68(s32 shopId) {
+static void func_801E6A68(s32 shopId) {
     ShopItemVisibility *visibility;
     ShopItemRarity *rarity;
     ShopData *shop;
@@ -777,7 +874,7 @@ void func_801E6A68(s32 shopId) {
  * Prices are calculated using integer arithmetic and are clamped to a
  * minimum value of 1.
  */
-void func_801E6ACC(void) {
+static void func_801E6ACC(void) {
     ShopItemPrice *itemPrice;
     s32 result;
     s32 i;
@@ -823,7 +920,7 @@ void func_801E6ACC(void) {
  * 
  * @param shopId Index of the shop to update.
  */
-void func_801E6C3C(s32 shopId) {
+static void func_801E6C3C(s32 shopId) {
     ShopItemRarity* rarity;
     ShopItemVisibility* p;
     ShopData *shop;
@@ -865,7 +962,7 @@ void func_801E6C3C(s32 shopId) {
     }
 }
 
-void func_801E6D54(s32 arg0) {
+static void func_801E6D54(s32 arg0) {
     GameState *gs;
     s32 visited;
     s32 sum;
@@ -888,7 +985,7 @@ void func_801E6D54(s32 arg0) {
 
         // Dead code
         visited &= 0xFFFF;
-        if (sum < (u32)visited) {
+        if (sum < visited) {
             sum += 0x10000;
         }
         sum -= visited;
@@ -907,7 +1004,7 @@ void func_801E6D54(s32 arg0) {
     }
 }
 
-s32 func_801E6E0C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
+static s32 func_801E6E0C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     s32 result;
 
     result = func_801E5A8C(arg0, arg1, arg2 + 0xC, arg3 + 5, 3, D_801E9B64, 7);
@@ -920,7 +1017,7 @@ s32 func_801E6E0C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     return func_801EF9AC(arg0, result, 0x1000, g_menuColor);
 }
 
-s32 func_801E6EB0(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+static s32 func_801E6EB0(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     u8 buffer[128];
     s32 msg;
     s32 x;
@@ -954,7 +1051,7 @@ s32 func_801E6EB0(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
  * @param a3 Y position for the display configuration.
  * @param arg5 X position for the display configuration.
  */
-s32 func_801E6F60(ShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 arg5) {
+static s32 func_801E6F60(ShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 arg5) {
     g_menuDisplayCfg.iconType = 0;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = a3;
@@ -971,7 +1068,7 @@ s32 func_801E6F60(ShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 arg5) {
     }
 }
 
-s32 func_801E6FD8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+static s32 func_801E6FD8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     MenuDisplayConfig *cfg;
     ShopMenuState *s;
     s32 index;
@@ -1038,7 +1135,7 @@ s32 func_801E6FD8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     return arg1;
 }
 
-s32 func_801E722C(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+static s32 func_801E722C(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     MenuDisplayConfig *cfg;
     s32 color;
 
@@ -1050,7 +1147,6 @@ s32 func_801E722C(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
         s32 y;
         s32 result;
         s32 index;
-        s32 count;
 
         x = 8 + arg3;
         y = 9 + arg4;
@@ -1064,7 +1160,7 @@ s32 func_801E722C(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
         /* FIXME: Keep `s` live here to force allocation to the $v0 register. */
         KEEP_ALIVE(s);
 
-        index = func_801E5800(s, s->unk46, s->union3C.unk3C_s16[s->unk46]);
+        index = func_801E5800(s, s->unk46, s->rowCount[s->unk46]);
         y = 0x16 + arg4;
         arg2 = drawColorByMenuPalette(arg1, result, (y << 0x10) | (x & 0xFFFF), D_801EB088[index], color);
     }
@@ -1079,7 +1175,7 @@ s32 func_801E722C(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     return func_801EF9AC(arg1, arg2, 0x1000, g_menuColor);
 }
 
-s32 func_801E7374(ShopMenuState *arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+static s32 func_801E7374(ShopMenuState *arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     g_menuDisplayCfg.iconType = 0x4C;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = arg3;
@@ -1087,26 +1183,26 @@ s32 func_801E7374(ShopMenuState *arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     g_menuDisplayCfg.h = 0x77;
     g_menuDisplayCfg.columnCount = 8;
     g_menuDisplayCfg.y = arg4;
-    g_menuDisplayCfg.pageStart = arg0->unk40;
-    g_menuDisplayCfg.pageEnd = arg0->unk41;
+    g_menuDisplayCfg.pageStart = arg0->currentPage;
+    g_menuDisplayCfg.pageEnd = arg0->previousPage;
     g_menuDisplayCfg.scrollOffset = arg0->unk3A;
     g_menuDisplayCfg.dataPtr = (s32)arg0;
 
     if (arg0->unk46 == 0) {
         arg2 = func_8002FF34(arg1, arg2, 0x47, arg3 + 0xA8, arg4, g_menuColor);
-        arg2 = func_801F5F30(arg1, arg2, arg3 + 0x1C, arg4, g_menuColor, (s8)arg0->unk40);
+        arg2 = func_801F5F30(arg1, arg2, arg3 + 0x1C, arg4, g_menuColor, (s8)arg0->currentPage);
     }
     else {
         arg2 = func_8002FF34(arg1, arg2, 0x47, arg3 + 0x80, arg4, g_menuColor);
         arg2 = func_8002FF34(arg1, arg2, 0x4D, arg3 + 0xD6, arg4, g_menuColor);
-        arg2 = func_801F5EFC(arg1, arg2, arg3 + 0x1C, arg4, g_menuColor, (s8)arg0->unk40);
+        arg2 = func_801F5EFC(arg1, arg2, arg3 + 0x1C, arg4, g_menuColor, (s8)arg0->currentPage);
     }
     
     arg2 = func_801F5F60(arg1, arg2, g_menuColor, 3);
     return func_801EFBB4(arg1, arg2, func_801E6FD8);
 }
 
-s32 func_801E7508(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+static s32 func_801E7508(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     s32 x;
     s32 y;
 
@@ -1131,8 +1227,7 @@ s32 func_801E7508(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     return func_801EF9AC(arg1, arg2, 0x1000, g_menuColor);
 }
 
-s32 func_801E7628(ShopMenuState* s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
-    s32 result;
+static s32 func_801E7628(ShopMenuState* s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     s32 x;
     s32 y;
     s32 index;
@@ -1159,7 +1254,7 @@ s32 func_801E7628(ShopMenuState* s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
 
     y = arg4 + 0x32;
 
-    index = func_801E5800(s, s->unk46, s->union3C.unk3C_s16[s->unk46]);
+    index = func_801E5800(s, s->unk46, s->rowCount[s->unk46]);
     if (s->unk46 == 0) {
         price = D_801EAD68[index];
     } else {
@@ -1232,7 +1327,7 @@ s32 func_801E77EC(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     return func_801EF9AC(arg1, arg2, 0x1000, g_menuColor);
 }
 
-void func_801E791C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+static void func_801E791C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     MenuDisplayConfig *cfg;
 
     cfg = &g_menuDisplayCfg;
@@ -1249,7 +1344,7 @@ void func_801E791C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     func_801EF9AC(arg1, arg2, 0x1000, g_menuColor);
 }
 
-s32 func_801E79D4(ShopMenuState *s, s32 arg1, s32 arg2) {
+static s32 func_801E79D4(ShopMenuState *s, s32 arg1, s32 arg2) {
     s32 result;
     s32 x;
     s32 y;
@@ -1284,7 +1379,7 @@ s32 func_801E79D4(ShopMenuState *s, s32 arg1, s32 arg2) {
     result = func_801E722C(s, arg1, result, x, y);
 
     x = (val * 0x168 / 0x1000) + 0x18;
-    arg2 = func_801E7374(s, (void *)arg1, (void *)arg2, x, y);
+    arg2 = func_801E7374(s, arg1, arg2, x, y);
 
     x = (val * 0x168 / 0x1000);
     x += 0x18;
@@ -1306,7 +1401,7 @@ void func_801E7B9C(s32 a0) {
     if (s != NULL) {
         s->unk2C = D_80077EBC;
         s->unk36 = 0x1000;
-        s->union30.unk30_s32 = 0;
+        s->unk30 = 0;
         s->gil = func_801E5D28();
         s->unk45 = D_801E9B6C[func_801EFFF0()];
         func_801E6D54(s->unk45);
@@ -1327,7 +1422,7 @@ void func_801E7B9C(s32 a0) {
  *
  * @param a0 Shop context parameter passed to the handler.
  */
-void func_801E7C8C(s32 a0) {
+static void func_801E7C8C(s32 a0) {
     s32 off;
     func_801F0948(0);
     func_801F7B60();
@@ -1340,14 +1435,14 @@ void func_801E7C8C(s32 a0) {
 }
 
 u8* func_801E7CFC(s32 arg0) {
-    Struct_func_801E7CFC *ptr1;
+    WeaponRecipe *ptr1;
     u8 *ptr2;
 
     ptr1 = D_801E9BA0;
     ptr2 = D_801E9D2C;
 
     ptr1 += arg0 & ~0xC0;
-    ptr2 += ptr1->unk0;
+    ptr2 += ptr1->nameId;
 
     return ptr2;
 }
@@ -1404,10 +1499,10 @@ void func_801E7D30(u8* src, u8* dst) {
  * @return Computed price value.
  */
 s32 func_801E7E1C(s32 arg0) {
-    Struct_func_801E7CFC* ptr;
+    WeaponRecipe* ptr;
     ptr = D_801E9BA0;
     ptr += arg0;
-    return  ptr->unk3 * 10;
+    return  ptr->basePrice * 10;
 }
 
 /**
@@ -1416,7 +1511,7 @@ s32 func_801E7E1C(s32 arg0) {
  * @param a0 Bit index.
  * @return 1 if bit is set, 0 otherwise.
  */
-s32 func_801E7E4C(s32 a0) {
+static s32 func_801E7E4C(s32 a0) {
     s32 mask = 1 << a0;
     s32 val = D_80077E70 & mask;
     return val != 0;
@@ -1427,8 +1522,8 @@ s32 func_801E7E68(s32 a0, u32 a1) {
     return a1 >= (u32)func_801E7E1C(a0);
 }
 
-s32 func_801E7E98(s32 arg0, s32 arg1) {
-    Struct_func_801E7CFC *basePtr;
+static s32 func_801E7E98(s32 arg0, s32 arg1) {
+    WeaponRecipe *basePtr;
     u8 *ptr;
     s32 i;
 
@@ -1439,7 +1534,7 @@ s32 func_801E7E98(s32 arg0, s32 arg1) {
     basePtr = D_801E9BA0;
     basePtr += arg0;
 
-    ptr = basePtr->unk4;
+    ptr = basePtr->items;
 
     for (i = 0; i < 4; i++) {
         s32 unk0;
@@ -1464,7 +1559,7 @@ s32 func_801E7F4C(s32 arg0, s32 arg1) {
     s32 i;
     u8* ptr1;
     u8* ptr2;
-    Struct_func_801E7F4C *ptr3;
+    WeaponInfo *ptr3;
     u8 value;
 
     count = 0;
@@ -1484,7 +1579,7 @@ s32 func_801E7F4C(s32 arg0, s32 arg1) {
 
     if ((0x3F >> arg0) & 1) {
         for (i = 0; i < 28; i++) {
-            if (arg0 == ptr3[i].unk4) {
+            if (arg0 == ptr3[i].characterId) {
                 s32 mask;
                 mask = (func_801E7E4C(i) != 0) << 6;
                 if (func_801E7E98(i, arg1) != 0) {
@@ -1503,7 +1598,7 @@ s32 func_801E7F4C(s32 arg0, s32 arg1) {
 }
 
 s32 func_801E8058(s32 arg0) {
-    Struct_func_801E7F4C *ptr;
+    WeaponInfo *ptr;
     s32 availableChars;
     s32 charBit;
     s32 ret;
@@ -1518,7 +1613,7 @@ s32 func_801E8058(s32 arg0) {
     ret = 0;
 
     for (i = 0; i < 28; i++) {
-        charBit = 1 << ptr[i].unk4;
+        charBit = 1 << ptr[i].characterId;
         if (availableChars & charBit) {
             s32 val;
             val = func_801E7E4C(i);
