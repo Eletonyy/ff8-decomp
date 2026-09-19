@@ -1,6 +1,7 @@
 #include "common.h"
 #include "gamestate.h"
 #include "overlay.h"
+#include "menumain.h"
 #include "menututo.h"
 #include "numstr.h"
 #include "psxsdk/libetc.h"
