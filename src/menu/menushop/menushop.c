@@ -964,7 +964,7 @@ static void func_801E6C3C(s32 shopId) {
 
 static void func_801E6D54(s32 arg0) {
     GameState *gs;
-    s32 visited;
+    u32 visited;
     s32 sum;
 
     if (arg0 != 0x15) {
