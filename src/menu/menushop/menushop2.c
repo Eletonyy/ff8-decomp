@@ -474,8 +474,8 @@ static s32 func_801E8BD8(JunkShopMenuState* arg0, s32 arg1, s32 arg2, s32 arg3, 
  * currently in the inventory for that item.
  *
  * @param s Pointer to source data structure.
- * @param a1 First callback parameter (passed as a0 to func_801F0FEC, func_8002C56C and func_801EF9AC).
- * @param a2 Second callback parameter (passed as a1 to func_801F0FEC, func_8002C56C and func_801EF9AC).
+ * @param a1 First callback parameter.
+ * @param a2 Second callback parameter.
  * @param a3 X position for the display configuration.
  * @param a4 Y position for the display configuration.
  * @return The updated value of a1 after rendering all items.
