@@ -4,6 +4,13 @@
 #include "menumain.h"
 #include "menushop2.h"
 
+#define WHITE  7
+#define RED    2
+#define YELLOW 3
+
+#define ICON_UP_ARROW   109
+#define ICON_DOWN_ARROW 110
+
 typedef struct {
     u8 pad00[0x10];                 /* 0x00 */
     u16 state;                      /**< 0x10: state machine current state (0-16). */
@@ -30,7 +37,7 @@ typedef struct {
 } JunkShopMenuState;
 
 extern s32 D_801EB160;
-extern s32 D_801EB260[30]; /**< Strenght per weapon id. */
+extern s32 D_801EB260[30]; /**< Strength per weapon id. */
 
 static void func_801E81A4(JunkShopMenuState*);
 static s32 func_801E8978(s32, s32, s32, s32, s32, s32);
@@ -257,22 +264,20 @@ static void func_801E81A4(JunkShopMenuState *s) {
                     basePtr = D_801E9BA0;
                     basePtr += val2;
                     
-                    ptr = basePtr->items;
+                    ptr = basePtr->ingredients;
 
                     g_gameState.chars[charIdx].weaponId = val2;
                     s->equippedWeapons[s->selCharacterIndex] = val2;
 
                     for (i = 0; i < 4; i++) {
-                        s32 unk0;
-                        s32 unk1;
+                        s32 itemId;
+                        s32 quantity;
                         
-                        unk0 = *ptr;
-                        ptr++;
-                        unk1 = *ptr;
-                        ptr++;
+                        itemId = *ptr++;
+                        quantity = *ptr++;
                         
-                        if (unk0 != 0) {
-                            D_801EB088[unk0] -= unk1;
+                        if (itemId != 0) {
+                            D_801EB088[itemId] -= quantity;
                         }
                     }
                     func_801E7F4C(charIdx, s->gil);
@@ -501,7 +506,7 @@ static s32 func_801E8D84(JunkShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
     cfg = &g_menuDisplayCfg;
     weaponRecipe = D_801E9BA0;
     weaponRecipe += D_801EB150[s->selWeaponIndex] & 0x3F;
-    itemsPtr = weaponRecipe->items;
+    itemsPtr = (u8 *)weaponRecipe->ingredients;
     x = a3 + 12;
     y = a4 + 9;
 
@@ -580,7 +585,152 @@ static void func_801E90BC(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/menushop/nonmatchings/menushop2", func_801E90F8);
+/**
+ * @brief Draws the gil amount and the comparison values between weapons.
+ * 
+ * The color of the displayed weapon strength and hit values are determined by
+ * the result of func_801E8FF8. Aditionally, if the selected weapon's value is
+ * higher or lower, an arrow icon is drawn next to the value to indicate the
+ * change.
+ * @param s Pointer to source data structure.
+ * @param arg1 First callback parameter.
+ * @param arg2 Second callback parameter.
+ * @param arg3 X position for the display configuration.
+ * @param arg4 Y position for the display configuration.
+ * @return The updated value of arg1 after rendering all items.
+ */
+static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
+    s32 oldWeaponId;
+    s32 newWeaponId;
+    s32 oldWeaponStrength;
+    s32 newWeaponStrength;
+    s32 oldWeaponHit;
+    s32 newWeaponHit;
+    s32 color;
+    s32 x;
+    s32 y;
+    s32 y2;
+    s32 tmp;
+    WeaponInfo *weapons;
+
+    color = WHITE;
+
+    findNthSetBit(s->availableCharactersMask, s->selCharacterIndex);
+
+    oldWeaponId = s->equippedWeapons[s->selCharacterIndex];
+
+    weapons = D_8007C3B8;
+    oldWeaponStrength = D_801EB260[oldWeaponId];
+    oldWeaponHit = weapons[oldWeaponId].hit;
+
+    tmp = func_801F6AA4(0x33);
+    x = arg3 + 249;
+    y = arg4 + 7;
+    arg2 = func_801F0FEC(arg1, arg2, x, y, tmp, color);
+
+    x = arg3 + 322;
+    y = arg4 + 21;
+    arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), s->gil, color);
+
+    x = arg3 + 323;
+    y = arg4 + 23;
+    arg2 = func_8002FF34(arg1, arg2, 0xB, x, y, g_menuColor);
+
+    x = arg3 + 128;
+    y = arg4 + 5;
+    arg2 = func_800300F8(arg1, arg2, 0x131, x, y, g_menuColor, 0x80);
+
+    x = arg3 + 184;
+    y = arg4 + 7;
+    arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), oldWeaponStrength, color);
+
+    // Dead code added to match with the original game binary.
+    while (0);
+
+    func_801F6AA4(0x3A);
+
+    x = arg3 + 128;
+    y = arg4 + 19;
+    arg2 = func_800300F8(arg1, arg2, 311, x, y, g_menuColor, 0x80);
+
+    x = arg3 + 184;
+    y = arg4 + 21;
+    arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), func_801F7BE4(oldWeaponHit), color);
+
+    // Dead code added to match with the original game binary.
+    if (color == YELLOW) {
+        color++; color--;
+    } else if (color == RED) {
+        color++; color--;
+    }
+
+    tmp = func_801F6AFC(0x14);
+    y2 = arg4 + 23;
+    arg2 = func_8002C56C(arg1, arg2, x, y2, tmp, color);
+
+    tmp = getLevelCurveData(oldWeaponId);
+    x = arg3 + 12;
+    y = arg4 + 7;
+    arg2 = func_801F0FEC(arg1, arg2, x, y, tmp, color);
+
+    if (s->unk43 & 1) {
+        newWeaponId = D_801EB150[s->selWeaponIndex];
+        newWeaponId &= 0x3F;
+
+        // Unreachable code retained to match with the original game binary.
+        if (newWeaponId == 0xFF) {
+            return arg2;
+        }
+
+        newWeaponStrength = D_801EB260[newWeaponId];
+        newWeaponHit = weapons[newWeaponId].hit;
+
+        color = func_801E8FF8(oldWeaponStrength, newWeaponStrength);
+    
+        x = arg3 + 232;
+        arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), newWeaponStrength, color);
+        
+        x = arg3 + 195;
+        y = arg4 + 9;
+
+        tmp = 0;
+        if (color == YELLOW) {
+            tmp = ICON_UP_ARROW;
+        }
+        if (color == RED) {
+            tmp = ICON_DOWN_ARROW;
+        }
+        if (tmp != 0) {
+            arg2 = func_800300F8(arg1, arg2, tmp, x, y, g_menuColor, (color * 64) + 2);
+        }
+
+        color = func_801E8FF8(oldWeaponHit, newWeaponHit);
+    
+        y = arg4 + 21;
+        x = arg3 + 232;
+        tmp = func_801F7BE4(newWeaponHit);
+        arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), tmp, color);
+
+        tmp = func_801F6AFC(0x14);
+        arg2 = func_8002C56C(arg1, arg2, x, y2, tmp, color);
+        
+        x = arg3 + 195;
+        y = y2;
+        
+        tmp = 0;
+        if (color == YELLOW) {
+            tmp = ICON_UP_ARROW;
+        }
+        if (color == RED) {
+            tmp = ICON_DOWN_ARROW;
+        }
+        if (tmp != 0) {
+            arg2 = func_800300F8(arg1, arg2, tmp, x, y, g_menuColor, (color * 64) + 2);
+        }
+    }
+    
+    return arg2;
+}
 
 /**
  * @brief Configure shop display and render with g_menuDisplayCfg settings.

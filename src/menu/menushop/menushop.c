@@ -1534,18 +1534,16 @@ static s32 func_801E7E98(s32 arg0, s32 arg1) {
     basePtr = D_801E9BA0;
     basePtr += arg0;
 
-    ptr = basePtr->items;
+    ptr = (u8 *)basePtr->ingredients;
 
     for (i = 0; i < 4; i++) {
-        s32 unk0;
-        s32 unk1;
+        s32 itemId;
+        s32 quantity;
 
-        unk0 = *ptr;
-        ptr++;
-        unk1 = *ptr;
-        ptr++;
+        itemId = *ptr++;
+        quantity = *ptr++;
 
-        if (unk0 != 0 && unk1 > D_801EB088[unk0]) {
+        if (itemId != 0 && quantity > D_801EB088[itemId]) {
             return 0;
         }
     }
