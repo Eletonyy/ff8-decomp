@@ -8,7 +8,7 @@
 
 /* Public prototypes (junction-menu entry points + magic-list callback). */
 extern void junctionMenuUpdate();
-extern void renderJunctionMenu();
+s32 renderJunctionMenu(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY);
 extern s32 renderMagicItemCallback();
 
 /* Private typedefs/structs (menujnc2-internal layout descriptors). */
@@ -136,17 +136,17 @@ s32 getAbilityNamePtr(s32 type, s32 index);
 s32 getJunctionCapabilities(s32 charIdx);
 void buildMagicLookupTable(s32 charIdx);
 s32 encodeBattleAbilityFlags(BattleCharData *charData);
-void renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase);
-void renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase);
-void renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase);
-void renderStatTableD(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase);
-void renderStatGrid(s32 renderCtx, s32 cursorY, s32 x, s32 y);
+s32 renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junction, s32 magicId);
+s32 renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase);
+s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junction, s32 magicId);
+s32 renderStatTableD(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase);
+s32 renderStatGrid(s32 renderCtx, s32 cursorY, s32 x, s32 y);
 s32 renderStatDeltaBar(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
 s32 renderStatDeltaBarExt(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
-void setupMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 callbackParam, s16 x, s16 y);
-void renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase);
+s32 setupMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 callbackParam, s16 x, s16 y);
+s32 renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase);
 s32 renderGfMagicEntry(s32 renderCtx, s32 cursorY, s32 col, s32 row, s32 xOff);
-void renderGfMagicPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
+s32 renderGfMagicPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
 s32 checkJunctionCompat(s32 currentMask, s32 availMask, s32 abilityBit);
 s32 renderHpJunctionSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32 gfIdx);
 s32 renderStatusDefSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32 gfIdx);
@@ -155,16 +155,16 @@ s32 renderElemDefSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32
 s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32 gfIdx);
 s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32 gfIdx);
 s32 renderJunctionStatPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 showGf);
-void setupStatBorderPanel(s32 ctx, s32 mode, s32 x, s32 y, s32 renderParam);
+s32 setupStatBorderPanel(s32 ctx, s32 mode, s32 x, s32 y, s32 renderParam);
 s32 renderJunctionHeader(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
-void renderJunctionComposite(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 scale, s32 showGf);
+s32 renderJunctionComposite(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 scale, s32 showGf);
 s32 renderMagicJunctionEntry(s32 renderCtx, s32 cursorY, s32 col, s32 row, s32 xOff);
-void renderMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
+s32 renderMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
 s32 renderAbilityListEntry(s32 ctx, s32 cursorY, s32 row, s32 col, s32 panelX);
-void renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
-s32 renderStatRowGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
-s32 renderGfCompatGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
-void renderCharSwitchPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
+s32 renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
+s32 renderStatRowGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
+s32 renderGfCompatGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
+s32 renderCharSwitchPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y);
 s32 renderCharNameBar(s32 renderCtx, s32 cursorY, s32 x, s32 height, s32 charIdx);
 void initJunctionGfTable(void);
 void initJunctionMenu(MenuParentCtx *parentCtx);
