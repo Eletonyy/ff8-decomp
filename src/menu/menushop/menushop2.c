@@ -1,6 +1,8 @@
 #include "common.h"
 #include "psxsdk/libetc.h"
 #include "menumain.h"
+#include "btl_anim.h"
+#include "btl_anim_packet.h"
 #include "menushop2.h"
 
 typedef struct {
