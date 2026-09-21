@@ -1745,8 +1745,8 @@ s32 func_8009F65C(s32 arg0, s32 arg1) {
 
 
     for (i = 0; i < 4; i++) {
-        if (arg1 == data->unk104[D_800EE9E8.subEntries[arg0 - 3].unk46].unk0[i].unk0) {
-            return data->unk104[D_800EE9E8.subEntries[arg0 - 3].unk46].unk0[i].unk1;
+        if (arg1 == data->unk104[0][D_800EE9E8.subEntries[arg0 - 3].unk46].sub[i].unk0) {
+            return data->unk104[0][D_800EE9E8.subEntries[arg0 - 3].unk46].sub[i].unk1;
         }
     }
     

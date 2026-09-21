@@ -446,7 +446,7 @@ void func_800AB054(s32 arg0) {
     TaskEntry* td = &D_800ED148.taskData[arg0];
     
     if (td->timer == 0) {
-        func_8009AF3C(td->unk4, 0x1E, 3, 0xF0, 0);
+        func_8009AF3C(td->unk4, 30, 3, 240, 0);
         td->done = 1;
     }
     

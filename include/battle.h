@@ -17,9 +17,9 @@
 /** @brief Battle command config (g_battleConfig). */
 typedef struct {
     u16 battleSceneId;
-    u16 unk2;            // Flags?, when first bit is set, escape it not possible
+    u16 unk2;            // Flags?, when first bit is set, escape it not possible (D_80082C0A)
     u8  unk4[3];         // Post battle command queue?
-    u8  result;          /**< Battle result (BATTLE_RESULT_*). */
+    u8  result;          /**< Battle result (BATTLE_RESULT_*). (D_80082C0F) */
     u8  unk8;
     u8  unk9;            /**< Bit 0 toggles the @c FieldVars.soundBankSelector at field-VM init. */
 } BattleConfig;
@@ -157,7 +157,7 @@ typedef struct {
 } subStruct;
 
 typedef struct {
-    subStruct unk0[4];
+    subStruct sub[4];
 } Struct_func_800A8794;
 
 /**
@@ -226,8 +226,10 @@ typedef struct {
     u8 unkFE;
     u8 unkFF;
     u8 pad100[4];
-    Struct_func_800A8794 unk104[1];       /* size unknown, probably struct, used in func_8009F65C */
-    u8 pad10C[0x14F - 0x10C];
+    Struct_func_800A8794 unk104[3][3];
+    u8 unk14C;
+    u8 unk14D;
+    u8 pad14E;
     u8 unk14F;          /* byte read by func_800AF988. */
     u16 unk150[1];
     u8 pad152[0xE];
@@ -506,7 +508,7 @@ typedef struct {
     /* 0x12F7 */ u8 unk12F7;
     /* 0x12F8 */ u8 unk12F8;
     /* 0x12F9 */ u8 unk12F9;
-    /* 0x12FA */ u8 pad12FA;
+    /* 0x12FA */ u8 unk12FA;
     /* 0x12FB */ u8 unk12FB; // used as index for entities (max 7)
     /* 0x12FC */ u8 unk12FC; // used as index for unkD54,unkD14 (max 8)
     /* 0x12FD */ u8 unk12FD;
@@ -745,7 +747,9 @@ typedef struct {
     u8 pad2;
     u8 unk3;
     u8 abilityFlags;    /* party ability flags (used in entry 15). */
-    u8 pad5[7];
+    u8 pad5;
+    u8 unk6;
+    u8 pad7[5];
 } BattleLevelEntry;
 
 typedef struct{
@@ -766,7 +770,7 @@ typedef struct {
     /* 0x610 */ BattleGfEntry gfEntries[1];       /* hp sub-array (stride 12, 16 entries) */
     /* 0x61C */ u8 pad61C[0x620 - 0x61C];
     /* 0x620 */ BattleLevelEntry levelEntries[16]; /* 16 × 12 bytes */
-} BattleCharState;/* 0x6E0 */
+} BattleCharState; /* 0x6E0 */
 
 
 /**
@@ -1060,6 +1064,13 @@ typedef struct {
     u8 pad3[5];
 } structE8;
 
+
+typedef struct {
+    u8 unk4B0C;
+    u8 unk4B0D;
+} Struct_4B0C;
+
+
 /**
  * @brief Battle scene data buffer at D_80078E00 (loaded from disc, ~0x9E08 bytes).
  *
@@ -1123,7 +1134,9 @@ typedef struct {
     /* 0x4A5E */ BattleSceneRow8 rows8[1];      /**< stride 8 (size unknown, index past). */
     /* 0x4A66 */ u8 pad4A66[0x4A6C - 0x4A66];
     /* 0x4A6C */ Struct_4A6C array4A6C[1];
-    /* 0x4A80 */ u8 pad4A80[0x4C0C - 0x4A80];
+    /* 0x4A80 */ u8 pad4A80[0x4AD0 - 0x4A80];
+    /* 0x4AD0 */ u8 unk4AD0[5][12]; 
+    /* 0x4B0C */ Struct_4B0C unk4B0C_arr[16][8];
     /* 0x4C0C */ Struct_4C0C unk4C0C[1];
     /* 0x4C18 */ u8 pad4C18[0x4CCC - 0x4C18];
     /* 0x4CCC */ u8 unk4CCC[16]; // confirmed to be atleast 14
@@ -1229,18 +1242,19 @@ typedef struct {
  *  Battle data symbols (battle overlay region).
  * ---------------------------------------------------------------- */
 
-extern BattleCharState g_battleChars;
-extern BattleConfig    g_battleConfig;
 extern s16             D_8005F11C;
+extern s16             D_8005F146;
+extern s16             D_8005F158;
 extern u8              D_80077E58;
-extern u8              D_80077E92;
 extern u8              D_80077E59;
+extern u8              D_80077E92;
+extern u8              D_80077EBC[];
 extern u8              D_8007809A;
 extern u8              D_800786D9;
-extern u8              D_80078DF8;
+extern BattleCharState g_battleChars; // 0x80078720
+//extern u8            D_80078DF8;  g_battleChars.levelEntries[15].abilityFlags
 extern BattleSceneData D_80078E00;
-extern u16             D_80082C0A;
-extern u8              D_80082C0F;
+extern BattleConfig    g_battleConfig; // 0x80082C08
 extern MsgFormatConfig D_80083858;
 extern u8              D_80098030[];
 extern BattleSceneCtx* D_800D244C;
@@ -1249,9 +1263,9 @@ extern s32             D_800E19BC[];
 extern u16             D_800E3CA4[];
 extern BattlePosXZ     D_800E3CA8[];
 extern BattlePosXZ     D_800E3CB0[];
+extern u8              D_800E3CBC[];
 extern u8              D_800E3CC5;
 extern u8              D_800E3CC6;
-extern u8              D_800E3CBC[];
 extern u8              D_800E3CE8;
 extern u8              D_800E3CEC[];
 extern BattleSystem    D_800ED148;

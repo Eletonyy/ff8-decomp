@@ -80,7 +80,7 @@ void func_80099D30(void) {
                 func_800A63DC();
             }
             
-            if ((D_800ED148.unk12EB != 0) && (D_800ED148.unk12FD == 0) && (D_800ED148.entities[0].stateMachine.unk0 == 0) && (D_80082C0F == 0)) {
+            if ((D_800ED148.unk12EB != 0) && (D_800ED148.unk12FD == 0) && (D_800ED148.entities[0].stateMachine.unk0 == 0) && (g_battleConfig.result == 0)) {
                 func_800B0C08();
                 func_800B2038();
             }
@@ -288,11 +288,11 @@ void func_8009A3BC(void) {
 /**
  * @brief Conditionally apply vibration feedback.
  *
- * If bit 2 of D_80082C0A is set, calls setCameraVibrateIntensity(0x1000) and
+ * If bit 2 of g_battleConfig.unk2 is set, calls setCameraVibrateIntensity(0x1000) and
  * setCameraVibrateState(1) to trigger controller vibration.
  */
 void func_8009A3F4(void) {
-    if (D_80082C0A & 4) {
+    if (g_battleConfig.unk2 & 4) {
         setCameraVibrateIntensity(0x1000);
         setCameraVibrateState(1);
     }
@@ -554,7 +554,7 @@ void func_8009A990(s32 arg0) {
 void func_8009AA2C(void) {
     s32 i;
 
-    if ((D_80082C0F == 0) && ((D_800ED148.unk12F9 == 1) || ((func_800AE730() != 255) && (func_800AE788() != 255)))) {
+    if ((g_battleConfig.result == 0) && ((D_800ED148.unk12F9 == 1) || ((func_800AE730() != 255) && (func_800AE788() != 255)))) {
         for (i = 0; i < D_800ED148.unk12F8; i++) {
             func_8009A990(i);
         }
@@ -892,12 +892,12 @@ void func_8009B088(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 /**
  * @brief Conditionally play a timed sound effect.
  *
- * If bit 1 of D_80082C0A is clear, plays a timed sound via
+ * If bit 1 of g_battleConfig.unk2 is clear, plays a timed sound via
  * sndCmdC1 using D_8005F11C as the sound ID.
  * @param a0 Duration parameter for the timed sound.
  */
 void func_8009B0F8(s32 a0) {
-    if (!(D_80082C0A & 2)) {
+    if (!(g_battleConfig.unk2 & 2)) {
         sndCmdC1(D_8005F11C, a0, 0);
     }
 }
@@ -928,7 +928,7 @@ SoundCmd* func_8009B134(s32 arg0, s32 arg1, void* unused) {
  * the corresponding byte from D_80098030.
  * @return Random byte value from the lookup table.
  */
-s32 func_8009B15C(void) { // returns u8
+s32 func_8009B15C(void) {
     u8 index;
 
     index = D_800EEBA8[D_800EEBB0]++;
