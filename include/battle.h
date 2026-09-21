@@ -722,7 +722,7 @@ typedef struct {
     /* 0x1B6 */ u16 atkStatusHit;      /**< Attack status hit chance. */
     /* 0x1B8 */ u8 level;              /**< Battle level (from findCharXpLevel). */
     /* 0x1B9 */ u8 unk1B9;
-    /* 0x1BA */ u8 classId;            /**< Entity-class index into the @c D_80078E00 ability tables (stride 12 at @c 0x35C1). */
+    /* 0x1BA */ u8 classId;            /**< Equipped weapon ID. Used as index into the @c D_80078E00 ability tables (stride 12 at @c 0x35C1). */
     /* 0x1BB */ u8 stats[8];           /**< Battle stats: STR, VIT, MAG, SPR, SPD, ?, hit (0x1C0), eva (0x1C1). 0x1C2 = ? */
     /* 0x1C3 */ u8 characterId;
     /* 0x1C4 */ u8 atkElemBase;        /**< Attack element base. */
