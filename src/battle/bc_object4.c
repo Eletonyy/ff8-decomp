@@ -1438,7 +1438,7 @@ s32 func_800A8B7C(s32 arg0) {
     temp_s0 = &g_battleChars.chars[arg0];
     func_800A8A48(temp_s0, 2, 0, 1);
 
-    switch (temp_s0->unk188 & 393216) {
+    switch (temp_s0->unk188 & 0x60000) {
         case 0:
             return 0;
         
