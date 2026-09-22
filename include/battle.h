@@ -319,7 +319,7 @@ typedef struct {
     u16 unk96;
     u8 unk98;
     u8 unk99;
-    u8 pad9A;
+    u8 unk9A;
     u8 unk9B;
     u8 unk9C;
     u8 unk9D;
@@ -425,6 +425,7 @@ typedef struct {
     u8 unk2;
 } Struct_12CC; /* used in func_8009D594 */
 
+// arrayDE8[i][j][k], i++ = 0x108, j++ = 0x18, k++ = 0xC
 typedef struct {
     TaskLink link;
     u16 unk4;
@@ -498,9 +499,9 @@ typedef struct {
     /* 0x12ED */ u8 volatile unk12ED;               /**< Misc state byte. */
     /* 0x12EE */ u8 volatile unk12EE;               /**< Misc state byte. */
     /* 0x12EF */ u8 volatile unk12EF;
-    /* 0x12EF */ u8 unk12F0;
-    /* 0x12EF */ u8 unk12F1;                        /* used as index for BattleEntity unkC8 in func_800AE414 */
-    /* 0x12EF */ u8 unk12F2;                        /* used as index for unkD64 and unk1100 in func_800A57E0 */
+    /* 0x12F0 */ u8 unk12F0;
+    /* 0x12F1 */ u8 unk12F1;                        /* used as index for BattleEntity unkC8 in func_800AE414 */
+    /* 0x12F2 */ u8 unk12F2;                        /* used as index for unkD64 and unk1100 in func_800A57E0 */
     /* 0x12F3 */ u8 unk12F3;                        /* used as index for entities in func_8009F824 */
     /* 0x12F4 */ u8 unk12F4;
     /* 0x12F5 */ u8 unk12F5;

@@ -7,6 +7,12 @@
 #include "battle/bc_object6.h"
 
 
+extern void func_8009BC28;
+extern void func_8009BCE4;
+extern void func_800A2F54;
+extern void func_800A65B0;
+
+
 void sndStopAll(void);
 void resetCdDrive(void);
 
@@ -500,7 +506,136 @@ s32 func_800ADEA0(s32 arg0, s32 arg1) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object6", func_800ADF08);
+s32 func_800ADF08(s32 arg0, s32 arg1) {
+    BattleUnkDE8* temp_s0;
+    s32 result;
+    s32 i;
+    s32 var_s4;
+    s32 temp_s6;
+    
+    D_800ED148.entities[0].slot8.initFlags = 0;
+    D_800ED148.unk132B = 0;
+    D_800ED148.unk12F1 = arg1;
+    temp_s0 = &D_800ED148.arrayDE8[D_800ED148.unk12F2][arg0][arg1];
+
+    if (temp_s0->link.fwd == 255) {
+        return 0;
+    }
+    
+    D_800ED148.entities[0].entityRef = temp_s0->link.fwd;
+    D_800ED148.unk1310 = temp_s0->link.bwd;
+    
+    if (temp_s0->link.bwd == 255) {
+        func_800ACF84(temp_s0->link.fwd, temp_s0->unk4);
+        
+        if (temp_s0->unk4 == 1) {
+            if (D_800ED148.entities[temp_s0->link.fwd].unk9A == temp_s0->unk4) {
+                D_800ED148.entities[temp_s0->link.fwd].flags &= ~(1 << 23);
+                func_8009B088(temp_s0->link.fwd, 1, 23, 0);
+            }
+        }
+    }
+
+    else {
+        if (func_800ADEA0(temp_s0->link.fwd, arg1) != 0) {
+            return 0;
+        }
+    
+        func_8009AE08(5);
+        temp_s6 = D_800ED148.unk5C0;
+        D_800ED148.unk12F0 = 0;
+        result = func_800ADDAC(temp_s0);
+        var_s4 = 0;
+    
+        for (i = 0; i < 3; i++) {
+            if (temp_s0->unk6[i] != 0) {
+                if (i == 0) {
+                    func_800AD7A4(temp_s0, arg0);
+                }
+            
+                if (func_800A30F8(temp_s0->link.fwd, temp_s0->link.bwd, temp_s0->unk4, temp_s0->link.unk2, temp_s0->link.unk3, temp_s0->unk6[i], 0, 0) != 0) {
+                    func_8009AE08(7);
+                    return 1;
+                }
+                
+                func_800A4C84(temp_s0->unk6[i]);
+                D_800ED148.unk12F0++;
+                
+                if (!(D_800ED148.entities[temp_s0->link.fwd].flags & 0x02000000) && (D_800EE4C0.unk1 == 2) && (D_800ED148.unk12F4 == 0)) {
+                    if ((g_battleChars.chars[temp_s0->link.fwd].statusFlags & 0x20) && (result == 2)) {
+                        var_s4 = 1;
+                    } 
+                        
+                    else if ((g_battleChars.chars[temp_s0->link.fwd].statusFlags & 0x40) && (result == 3)) {
+                        var_s4 = 1;
+                    }
+                        
+                    else {
+                        var_s4 = 0;
+                        if (i == (D_800ED148.unk12F0 - 1) && func_800AF358(D_800EE4C0.unk0, D_800ED148.unk132A, 1) == 255) {
+                            break;
+                        }
+                    }
+                }
+                
+                if (D_800ED148.unk132B == 0) {
+                    if (D_800ED148.unk130C == 0) {
+                        func_800AD5D4(temp_s0->link.fwd, D_800ED148.entities[0].slot8.initFlags);
+                    }            
+                }
+                    
+                else {
+                    break;
+                }   
+            }
+                
+            else {
+                break;
+            }
+        }
+        
+        if (var_s4 != 0) {
+            func_800AF358(D_800EE4C0.unk0, D_800ED148.unk132A, 1);
+        }
+        
+        D_800ED148.entries[temp_s6].unk11 = D_800ED148.unk12F0 - 1;
+        if ((D_800EE4C0.unk1 == 4) || (D_800EE4C0.unk1 == 244)) {
+            func_800AE414(temp_s0->link.fwd);
+        } 
+        
+        else {
+            func_800AE4A0(temp_s0->link.fwd);
+        }
+        
+        func_800ADC48(temp_s0->link.fwd);
+        func_800AE524(temp_s6);
+    }
+    
+
+    if (D_800ED148.unk131C == 1) {
+        func_8009AF14(&func_800A65B0);
+    }
+    
+    else if (D_800ED148.unk1304 != 0) {
+        if (D_800ED148.unk132E == 3) {
+            func_8009AF14(&func_8009BC28);
+        } 
+        
+        else {
+            func_8009AF14(&func_8009BCE4);
+        }
+      
+        D_800ED148.unk1304 = 0;
+    } 
+    
+    else if (D_800ED148.unk1325 == 1) {
+        func_8009AF14(&func_800A2F54);
+    }
+    
+    D_800ED148.unk12F0 = 0;
+    
+    return 0;
+}
 
 /**
  * @brief Search D_800EE9E8 table for an entry matching the given value.
