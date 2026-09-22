@@ -106,14 +106,10 @@ extern s32 g_menuColor[2];
 extern u8 D_800834D8[];
 void func_8002D970(void);
 void func_8002DBF8(void);
-void func_8002CAE0(P_TAG *ot, SfxEntry *entry);
-TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y);
+static void func_8002CAE0(P_TAG *ot, SfxEntry *entry);
+static TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y);
 void func_8002CC4C(s32 idx, s32 arg0);
 void func_8002CDE4(RECT *rect, s32 scale, s32 arg2);
-void setBattleEntityBoundRect(s32 idx, RECT *src);
-void setBattleEntityRectClamp(s32 idx, RECT *src);
-void func_8002E064(s32 index, RECT *srcRect);
-void func_8002E1B4(s32 index, s32 value);
 
 
 /**
@@ -289,7 +285,7 @@ s32 getSfxField1C(s32 idx) {
  * @param ot    Ordering-table slot the sprites are linked into.
  * @param entry SFX entry (message window) the marker belongs to.
  */
-void func_8002CAE0(P_TAG *ot, SfxEntry *entry) {
+static void func_8002CAE0(P_TAG *ot, SfxEntry *entry) {
     GlyphTable *table;
     GlyphCell *cell;
     TSPRT *p;
@@ -312,7 +308,7 @@ void func_8002CAE0(P_TAG *ot, SfxEntry *entry) {
 
     table = &D_80052A68;
     head = getDisplayListHead();
-    cell = (GlyphCell *)table;
+    cell = (GlyphCell *)table; /* seeding the cursor from its own copy keeps the offset add in the delay slot */
     p = (TSPRT *)head;
     word = table->descriptors[GLYPH_WINDOW_MARKER];
     n = word >> 16;
@@ -956,7 +952,7 @@ void dispatchSfxAnimSpeed(s32 idx) {
  * @param y    Top edge of the glyph.
  * @return The first free packet after the ones written.
  */
-TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
+static TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
     GlyphTable *table;
     GlyphCell *cell;
     TSPRT *p;
@@ -969,7 +965,7 @@ TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
 
     p = head;
     table = &D_80052A68;
-    cell = (GlyphCell *)table;
+    cell = (GlyphCell *)table; /* seeded from its own copy, see func_8002CAE0 */
     word = table->descriptors[idx];
     n = word >> 16;
     word &= 0xFFFF;
