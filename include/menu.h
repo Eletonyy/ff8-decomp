@@ -116,7 +116,7 @@ typedef struct {
     /* 0x61 */ u8 unk61;               /**< Modified flag (set when junction changed). */
     /* 0x62 */ u8 unk62;               /**< Sub-mode flag. */
     /* 0x63 */ u8 unk63;               /**< Unjunction-all flag. */
-    /* 0x64 */ u16 unk64;              /**< GF confirm timer. */
+    /* 0x64 */ s16 unk64;              /**< GF confirm timer. */
     /* 0x66 */ u16 unk66;              /**< Message display timer. */
 } JunctionMenuCtx; /* 0x68 bytes */
 
