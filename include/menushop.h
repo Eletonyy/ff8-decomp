@@ -15,10 +15,15 @@ typedef struct {
 } WeaponInfo; /* 12 bytes */
 
 typedef struct {
-    u16 nameId;     /**< 0x00: index of the weapon name. */
-    u8 pad3;        /* 0x02 */
-    u8 basePrice;   /**< 0x03: weapon base price. */
-    u8 items[8];    /**< 0x04: items required to craft the weapon (id - quantity). */
+    u8 itemId;      /**< 0x00: item id. */
+    u8 quantity;    /**< 0x01: item quantity. */
+} WeaponRecipeIngredient; /* 2 bytes */
+
+typedef struct {
+    u16 nameId;                            /**< 0x00: index of the weapon name. */
+    u8 pad3;                               /* 0x02 */
+    u8 basePrice;                          /**< 0x03: weapon base price. */
+    WeaponRecipeIngredient ingredients[4]; /**< 0x04: ingredients required to craft the weapon. */
 } WeaponRecipe; /* 12 bytes */
 
 extern WeaponInfo D_8007C3B8[28]; /**< Weapon attributes. */

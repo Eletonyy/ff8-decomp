@@ -11,6 +11,7 @@
 #include "ability_list.h"
 
 #include "menujnc2.h"
+#include "btl_sfx.h"
 #include "card.h"
 #include "psxsdk/libetc.h"
 
@@ -41,6 +42,12 @@
 #define JNC_W_RIGHT_COL     70   /**< Width of right stat column. */
 #define JNC_W_ABILITY       40   /**< Width of ability entries. */
 #define JNC_W_ABILITY_WIDE  200  /**< Width of wide ability entries (page 3). */
+
+#define JNC_STAT_TABLE_SLIDE_X  0    /**< Horizontal travel of the stat table (it only slides vertically). */
+#define JNC_STAT_TABLE_SLIDE_Y  100  /**< Vertical travel of the stat table. */
+
+static inline s32 fixedToInt(s32 v);
+static inline s32 signedEase(s32 t);
 
 /**
  * @brief Decode FF8 encoded text string with escape sequence handling.
@@ -3049,7 +3056,7 @@ dispatch:
             /* fallthrough */
         case 0x46:
             ctx->unk64 += 0xAA;
-            if ((s16)ctx->unk64 >= 0x1000) {
+            if (ctx->unk64 >= 0x1000) {
                 ctx->unk64 = 0x1000;
             }
             renderStatValueBar(ctx, 0, ctx->unk4E);
@@ -3130,8 +3137,11 @@ s32 encodeBattleAbilityFlags(BattleCharData *charData) {
  * @param cursorY Current cursor Y position.
  * @param xBase Base X position (offset +0x88 applied).
  * @param yBase Base Y position (offset +0x7F applied).
+ * @param junction Spell junctioned to the slot (unused).
+ * @param magicId Spell under the magic-list cursor (unused).
+ * @return Updated draw cursor.
  */
-void renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
+s32 renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junction, s32 magicId) {
     StatTableEntry *entry;
     MenuDisplayConfig *cfg;
     s32 i;
@@ -3221,7 +3231,7 @@ void renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
     cfg->y = yBase;
     cfg->w = 0xDA;
     cfg->h = 0x59;
-    func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
 }
 
 /**
@@ -3233,8 +3243,9 @@ void renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
  * @param cursorY Current cursor Y position.
  * @param xBase Base X position (offset +0x88 applied).
  * @param yBase Base Y position (offset +0x78 applied).
+ * @return Updated draw cursor.
  */
-void renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
+s32 renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
     StatTableEntry *entry;
     MenuDisplayConfig *cfg;
     s32 fmtResult;
@@ -3303,7 +3314,7 @@ void renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
     cfg->y = yBase;
     cfg->w = 0xDA;
     cfg->h = 0x60;
-    func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
 }
 
 /**
@@ -3319,8 +3330,11 @@ void renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
  * @param cursorY Current cursor Y position.
  * @param xBase Base X position (offset +0x88 applied).
  * @param yBase Base Y position (offset +0x93 applied).
+ * @param junction Spell junctioned to the slot (unused).
+ * @param magicId Spell under the magic-list cursor (unused).
+ * @return Updated draw cursor.
  */
-void renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
+s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junction, s32 magicId) {
     StatTableEntry *entry;
     MenuDisplayConfig *cfg;
     s32 fmtResult;
@@ -3405,7 +3419,7 @@ void renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
     cfg->y = yBase;
     cfg->w = 0xDA;
     cfg->h = 0x43;
-    func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
 }
 
 /**
@@ -3422,8 +3436,9 @@ void renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
  * @param cursorY Current cursor Y position.
  * @param xBase Base X position (offset +0x88 applied).
  * @param yBase Base Y position (offset +0x93 applied).
+ * @return Updated draw cursor.
  */
-void renderStatTableD(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
+s32 renderStatTableD(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
     StatTableEntry *entry;
     MenuDisplayConfig *cfg;
     s32 fmtResult;
@@ -3501,7 +3516,7 @@ void renderStatTableD(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
     cfg->y = yBase;
     cfg->w = 0xDA;
     cfg->h = 0x43;
-    func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
 }
 
 /**
@@ -3515,8 +3530,9 @@ void renderStatTableD(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
  * @param cursorY Current cursor Y position.
  * @param x Base X position.
  * @param y Base Y position.
+ * @return Updated draw cursor.
  */
-void renderStatGrid(s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+s32 renderStatGrid(s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     s32 i = 0;
     s32 row, rem;
     s32 xPos, yPos;
@@ -3553,7 +3569,7 @@ void renderStatGrid(s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     cfg->w = 0x150;
     cfg->y = y;
     cfg->h = 0xA0;
-    func_801EF9AC(ctx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(ctx, cursorY, 0x1000, g_menuColor);
 }
 
 /**
@@ -3741,8 +3757,9 @@ s32 renderMagicItemCallback(s32 renderCtx, s32 cursorY, s32 itemIdx, s32 columnI
  * @param callbackParam Parameter passed through to rendering callback.
  * @param x Panel x position.
  * @param y Panel y position.
+ * @return Updated draw cursor.
  */
-void setupMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 callbackParam, s16 x, s16 y) {
+s32 setupMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 callbackParam, s16 x, s16 y) {
     g_menuDisplayCfg.iconType = 0x55;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = x;
@@ -3766,7 +3783,7 @@ void setupMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 callbackParam,
         g_menuDisplayCfg.scrollOffset = 0;
     }
 
-    func_801EFBB4(renderCtx, callbackParam, renderMagicItemCallback);
+    return func_801EFBB4(renderCtx, callbackParam, renderMagicItemCallback);
 }
 
 /**
@@ -3778,13 +3795,14 @@ void setupMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 callbackParam,
  * appropriate color. After the loop, sets up g_menuDisplayCfg and
  * calls func_801EF9AC for the panel border.
  *
- * @param ctx Junction menu context (charIdx at +0x43).
+ * @param ctx Junction menu context.
  * @param renderCtx Render context.
  * @param cursorY Current cursor Y position.
  * @param xBase Base X position.
  * @param yBase Base Y position.
+ * @return Updated draw cursor.
  */
-void renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
+s32 renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
     s32 i = 0;
     s32 color;
@@ -3831,7 +3849,7 @@ void renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBa
     cursorY++;
     cursorY--;
     cfg->h = 0x5E;
-    func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
 }
 
 /**
@@ -3897,8 +3915,9 @@ s32 renderGfMagicEntry(s32 renderCtx, s32 cursorY, s32 col, s32 row, s32 xOff) {
  * @param cursorY Current cursor Y position.
  * @param x Base X position.
  * @param y Base Y position (on stack).
+ * @return Updated draw cursor.
  */
-void renderGfMagicPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+s32 renderGfMagicPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     s32 result;
 
     g_menuDisplayCfg.iconType = 0x50;
@@ -3921,7 +3940,7 @@ void renderGfMagicPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x,
     }
 
     result = func_801F5F30(renderCtx, result, x + 0x16, y, g_menuColor, ctx->unk44);
-    func_801EFBB4(renderCtx, result, renderGfMagicEntry);
+    return func_801EFBB4(renderCtx, result, renderGfMagicEntry);
 }
 
 /**
@@ -4428,15 +4447,16 @@ s32 renderJunctionStatPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s3
  * @param x X position for the display panel.
  * @param y Y position for the display panel.
  * @param renderParam Render parameter passed to func_801EF9AC (on stack).
+ * @return Updated draw cursor.
  */
-void setupStatBorderPanel(s32 ctx, s32 mode, s32 x, s32 y, s32 renderParam) {
+s32 setupStatBorderPanel(s32 ctx, s32 mode, s32 x, s32 y, s32 renderParam) {
     g_menuDisplayCfg.iconType = 0;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = x;
     g_menuDisplayCfg.w = 0x150;
     g_menuDisplayCfg.h = 0x48;
     g_menuDisplayCfg.y = y;
-    func_801EF9AC(ctx, mode, renderParam, g_menuColor);
+    return func_801EF9AC(ctx, mode, renderParam, g_menuColor);
 }
 
 /**
@@ -4516,8 +4536,9 @@ s32 renderJunctionHeader(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x
  * @param y Panel Y position (on stack).
  * @param scale Scale factor (on stack); when 0x1000 a scroll-indicator panel is drawn.
  * @param showGf Whether to show GF index info (passed to renderJunctionStatPanel).
+ * @return Updated draw cursor.
  */
-void renderJunctionComposite(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 scale, s32 showGf) {
+s32 renderJunctionComposite(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 scale, s32 showGf) {
     s32 result;
 
     result = func_801EF8D8(renderCtx, cursorY);
@@ -4538,7 +4559,7 @@ void renderJunctionComposite(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s
         result = func_801EF800(renderCtx, result, &rect);
     }
 
-    setupStatBorderPanel(renderCtx, result, x, y, scale);
+    return setupStatBorderPanel(renderCtx, result, x, y, scale);
 }
 
 /**
@@ -4616,8 +4637,9 @@ s32 renderMagicJunctionEntry(s32 renderCtx, s32 cursorY, s32 col, s32 row, s32 x
  * @param cursorY Current cursor Y position.
  * @param x Panel X position.
  * @param y Panel Y position (on stack).
+ * @return Updated draw cursor.
  */
-void renderMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+s32 renderMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     g_menuDisplayCfg.iconType = 0x4A;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = x;
@@ -4637,7 +4659,7 @@ void renderMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 
 
     cursorY = func_8002FF34(renderCtx, cursorY, 0x4D, x + 0x54, y, g_menuColor);
     cursorY = func_801F5F30(renderCtx, cursorY, x + 0x24, y, g_menuColor, ctx->unk44);
-    func_801EFBB4(renderCtx, cursorY, renderMagicJunctionEntry);
+    return func_801EFBB4(renderCtx, cursorY, renderMagicJunctionEntry);
 }
 
 /**
@@ -4755,8 +4777,9 @@ s32 renderAbilityListEntry(s32 ctx, s32 cursorY, s32 row, s32 col, s32 panelX) {
  * @param cursorY Current cursor Y position.
  * @param x Panel X position.
  * @param y Panel Y position (on stack).
+ * @return Updated draw cursor.
  */
-void renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+s32 renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
     s32 panelX = x + 0xC6;
     s32 type;
@@ -4796,13 +4819,13 @@ void renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s3
         cursorY = func_801F5F60(renderCtx, cursorY, g_menuColor, 3);
     }
 
-    func_801EFBB4(renderCtx, cursorY, renderAbilityListEntry);
+    return func_801EFBB4(renderCtx, cursorY, renderAbilityListEntry);
 }
 
 /**
  * @brief Render the character's 3 equipped-command rows with junction highlighting.
  *
- * Reads the character index from @c ctx[0x43], renders the character title (looked
+ * Reads the character index from @c ctx->charIdx, renders the character title (looked
  * up via @c func_80020EF4 from @c g_charMenuInfo[charIdx].unk12), then loops over the
  * 3 equipped commands (@c g_gameState.chars[charIdx].commands[i]). Each command is
  * drawn with its category icon (@c getAbilityCategory) and name (@c getAbilityName),
@@ -4810,14 +4833,14 @@ void renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s3
  * per-category via @c func_801F79F8(mask) — matches the command id (0x14-0x18). The
  * surrounding panel is closed via @c func_801EF9AC.
  *
- * @param ctx Junction menu context (byte 0x43 = character index).
+ * @param ctx Junction menu context.
  * @param renderCtx Render context.
  * @param cursorY Current display-list cursor.
  * @param x Panel X position.
  * @param y Panel Y position (on stack).
  * @return Updated display-list cursor from @c func_801EF9AC.
  */
-s32 renderStatRowGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+s32 renderStatRowGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
     /* FIXME: regalloc hack — the inline base-pointer assignment below (a pointer to the
      * whole array, not an element) is what forces g_charMenuInfo's base into the register
@@ -4837,13 +4860,13 @@ s32 renderStatRowGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     xPos = x + 0x21;
     yPos = y + 9;
     highlight = 7;
-    title = func_80020EF4((*(cmiTable = &g_charMenuInfo))[ctx[0x43]].unk12);
+    title = func_80020EF4((*(cmiTable = &g_charMenuInfo))[ctx->charIdx].unk12);
     cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, title, highlight);
 
     for (i = 0; i < 3; i++) {
         highlight = 7;
         yPos = (y + 0x16) + (i * 0xD);
-        cmdId = g_gameState.chars[ctx[0x43]].commands[i];
+        cmdId = g_gameState.chars[ctx->charIdx].commands[i];
 
         tmp = func_801F79F8(2);
         if (tmp && cmdId == 0x14) highlight = 1;
@@ -4882,14 +4905,14 @@ s32 renderStatRowGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
 /**
  * @brief Render the character's ability grid (icon + name per row).
  *
- * Reads the character index from @c ctx[0x43] and renders up to
+ * Reads the character index from @c ctx->charIdx and renders up to
  * @c g_junctionChars[charIdx].abilityRows ability rows for that character. Each nonzero
  * ability slot draws a category icon (via @c getAbilityCategory) and the
  * ability name (via @c getAbilityName), plus a fixed separator glyph; the
  * running display-list pointer is threaded through @c func_8002FF34 /
  * @c func_801F0FEC and the surrounding panel is closed with @c func_801EF9AC.
  *
- * @param ctx       Junction menu context (byte 0x43 = character index).
+ * @param ctx       Junction menu context.
  * @param renderCtx Render context.
  * @param cursorY   Current display-list cursor.
  * @param x         Panel X position.
@@ -4898,12 +4921,12 @@ s32 renderStatRowGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
  * @note The @c result++/result-- pair is a no-op that pins the accumulator to
  *       the register the original codegen used; it emits no instructions.
  */
-s32 renderGfCompatGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+s32 renderGfCompatGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     MenuDisplayConfig *cfg;
     s32 result;
     s32 gf, y2, i;
     s32 new_var = 7;
-    s32 charIdx = ctx[0x43];
+    s32 charIdx = ctx->charIdx;
 
     cfg = &g_menuDisplayCfg;
     result = cursorY;
@@ -4950,8 +4973,9 @@ s32 renderGfCompatGrid(u8 *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
  * @param cursorY   Draw cursor position, chained through func_801F65F0.
  * @param x         Panel X position.
  * @param y         Panel Y position (on stack).
+ * @return Updated draw cursor.
  */
-void renderCharSwitchPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
+s32 renderCharSwitchPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     s16 slide;
     s32 scale;
     s32 idx;
@@ -4993,7 +5017,7 @@ void renderCharSwitchPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32
     chr = ctx->charIdx;
     rec = &D_80077808[chr];
     info = &g_charMenuInfo[chr];
-    func_801F65F0(renderCtx, cursorY, x2, y2, rec, info);
+    return func_801F65F0(renderCtx, cursorY, x2, y2, rec, info);
 }
 
 /**
@@ -5033,26 +5057,178 @@ s32 renderCharNameBar(s32 renderCtx, s32 cursorY, s32 x, s32 height, s32 charIdx
 }
 
 /**
+ * @brief Convert a 20.12 fixed-point value to an integer, rounding toward zero.
+ *
+ * @param v Fixed-point value (0x1000 = 1.0).
+ * @return Integer part of @p v.
+ */
+static inline s32 fixedToInt(s32 v) {
+    return v / 0x1000;
+}
+
+/**
+ * @brief Eased slide factor for a signed animation counter.
+ *
+ * Looks the magnitude of @p t up in the D_801FA3C8 falloff table and gives
+ * the result the sign of @p t, so a panel can slide in from either side.
+ *
+ * @param t Animation counter (-0x1000..0x1000).
+ * @return Eased factor with the sign of @p t (0x1000 = full travel).
+ */
+static inline s32 signedEase(s32 t) {
+    s32 v;
+
+    if (t < 0) {
+        v = -D_801FA3C8[-t / 64];
+    } else {
+        v = D_801FA3C8[t / 64];
+    }
+    return v;
+}
+
+/**
  * @brief Render callback for the junction menu.
  *
- * Main rendering dispatcher for all junction menu states. Computes a
- * stat scale factor from ctx->statScale via a lookup table (D_801FA3C8),
- * then switches on ctx->unk42 to render the appropriate panel:
- *   - Case 1: stat bars at full scale (0x1000)
- *   - Case 3: stat bars at current scale
- *   - Case 4: GF junction panel (scrolling slots, GF-to-character mapping)
- *   - Case 6: ability junction panel (nested switch on ability type 9–18)
- *   - Case 7: summary panel (stat delta bars)
- * After the switch, renders the common bottom panel, cursor overlay,
- * and help text. Returns the updated Y cursor position.
+ * Main rendering dispatcher for all junction menu states. Eases
+ * ctx->statScale through the D_801FA3C8 falloff table into a slide factor,
+ * draws the two stat delta bars, then switches on ctx->unk42 to render the
+ * panel of the current mode:
+ *   - Case 1: func_801F6FE4 at full scale, only while ctx->unk5C is not negative
+ *   - Case 3: func_801F6FE4 at the current stat scale
+ *   - Case 4: GF junction panels (stat grid, GF list, GF magic, owner name bar)
+ *   - Case 6: junction stat table (nested switch on the JunctionType of the slot)
+ *             plus the magic list sliding in from the right
+ *   - Case 7: ability list, command rows and GF compatibility grid
+ * After the switch it renders the composite stat panel, the magic list
+ * frame, the header (modes 5 and 6) and the character-switch panel.
+ *
+ * The slide offsets are recomputed with fixedToInt() for every panel rather
+ * than cached, which is what keeps the scale product alive across the calls.
  *
  * @param ctx Junction menu context.
  * @param renderCtx Render context handle.
- * @param cursorY Current Y cursor position.
- * @return Updated Y cursor position after rendering.
- * @note Non-matching — see https://decomp.me/scratch/xG3NK
+ * @param cursorY Draw cursor, chained through every panel renderer.
+ * @return Updated draw cursor.
+ * @note Case 6 evaluates signedEase(ctx->unk36) for the panel's X offset and
+ *       discards it (JNC_STAT_TABLE_SLIDE_X is 0); the original binary still
+ *       carries the dead load of ctx->unk36 that this leaves behind.
  */
-INCLUDE_ASM("asm/ovl/menujnc2/nonmatchings/menujnc2", renderJunctionMenu);
+s32 renderJunctionMenu(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY) {
+    s32 dl;
+    s32 scale;
+    s32 x;
+    s32 pos;
+    s32 showGf;
+    s32 type;
+    s32 row;
+    s32 magicId;
+    s32 ease;
+    s32 junction;
+
+    dl = getDisplayListHead();
+    scale = ctx->statScale;
+    scale = 0x1000 - scale;
+    scale = D_801FA3C8[scale / 64];
+    pos = 10;
+    func_801F1AFC();
+    setMenuColorIntensity(ctx->unk3A);
+    showGf = 0;
+    dl = renderStatDeltaBarExt(ctx, renderCtx, dl, 0x18, pos);
+    cursorY = renderStatDeltaBar(ctx, renderCtx, cursorY, 0x18, pos);
+
+    switch (ctx->unk42) {
+    case 0:
+        break;
+    case 1:
+        if (ctx->unk5C >= 0) {
+            cursorY = func_801F6FE4(renderCtx, cursorY, 1, 0x1000);
+        }
+        break;
+    case 3:
+        cursorY = func_801F6FE4(renderCtx, cursorY, 1, ctx->statScale);
+        break;
+    case 4:
+        if (ctx->unk64 != 0) {
+            cursorY = renderStatGrid(renderCtx, cursorY,
+                                     fixedToInt(D_801FA3C8[0x40 - ctx->unk64 / 64] * 0x180) + 0x18, 0x38);
+        }
+        if (scale < 0x1000) {
+            pos = 0x18;
+            row = 0x35;
+            pos -= fixedToInt(scale * 150);
+            cursorY = renderGfMagicGrid(ctx, renderCtx, cursorY, pos, row);
+            pos = 0xC8;
+            row = 0x38;
+            pos += fixedToInt(scale * 150);
+            cursorY = renderGfMagicPanel(ctx, renderCtx, cursorY, pos, row);
+            pos = 0xC8;
+            row = 0x79;
+            pos += fixedToInt(scale * 150);
+            /* `table[i].charIdx` picks different address temporaries (measured);
+               `(&table[i])->charIdx` is the spelling that matches. */
+            cursorY = renderCharNameBar(renderCtx, cursorY, pos, row,
+                                        ctx->statSlot < ctx->discCount
+                                            ? (&g_junctionGfTable[D_801EEDE0[ctx->statSlot]])->charIdx
+                                            : 0xFF);
+            showGf = 1;
+        }
+        break;
+    case 6:
+        type = D_801EEAC0[ctx->unk58];
+        junction = g_gameState.chars[ctx->charIdx].junctions[type];
+        magicId = g_gameState.chars[ctx->charIdx].magic[ctx->unk50].magicId;
+        ease = ctx->unk36;
+        x = fixedToInt(signedEase(ease) * JNC_STAT_TABLE_SLIDE_X);
+        ease = D_801FA3C8[ctx->unk36 / 64];
+        pos = fixedToInt(ease * JNC_STAT_TABLE_SLIDE_Y);
+        switch (type) {
+        case JUNCTION_ATK_STATUS:
+            dl = renderStatTableA(renderCtx, dl, x, pos, junction, magicId);
+            break;
+        case JUNCTION_DEF_STATUS_0:
+        case JUNCTION_DEF_STATUS_1:
+        case JUNCTION_DEF_STATUS_2:
+        case JUNCTION_DEF_STATUS_3:
+            dl = renderStatTableB(renderCtx, dl, x, pos);
+            break;
+        case JUNCTION_ATK_ELEM:
+            dl = renderStatTableC(renderCtx, dl, x, pos, junction, magicId);
+            break;
+        case JUNCTION_DEF_ELEM_0:
+        case JUNCTION_DEF_ELEM_1:
+        case JUNCTION_DEF_ELEM_2:
+        case JUNCTION_DEF_ELEM_3:
+            dl = renderStatTableD(renderCtx, dl, x, pos);
+            break;
+        }
+        if (scale < 0x1000) {
+            row = 0x38;
+            cursorY = renderMagicListPanel(ctx, renderCtx, cursorY, fixedToInt(scale * -140) + 0x4E, row);
+        }
+        break;
+    case 7:
+        scale = fixedToInt(scale * 192);
+        cursorY = renderAbilityListPanel(ctx, renderCtx, cursorY, scale, 0);
+        pos = -scale;
+        cursorY = renderStatRowGrid(ctx, renderCtx, cursorY, pos, 0);
+        cursorY = renderGfCompatGrid(ctx, renderCtx, cursorY, pos, 0);
+        break;
+    }
+
+    row = 0x90;
+    cursorY = renderJunctionComposite(ctx, renderCtx, cursorY, 0x18, row, 0x1000, showGf);
+    pos = 0x1D;
+    dl = setupMagicListPanel(ctx, renderCtx, dl, 0x1E, pos);
+    pos = x = 0;
+    if (ctx->unk42 == 5 || ctx->unk42 == 6) {
+        row = fixedToInt(scale * 30) + 0x79;
+        cursorY = renderJunctionHeader(ctx, renderCtx, cursorY, 0x18, row);
+    }
+    cursorY = renderCharSwitchPanel(ctx, renderCtx, cursorY, x, pos);
+    func_801F1B10();
+    storeGpuPacket(dl);
+    return cursorY;
+}
 
 /**
  * @brief Initialize the junction GF table.
