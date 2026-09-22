@@ -915,7 +915,55 @@ s32 func_800AE8A0(void) {
     return 0;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object6", func_800AE90C);
+void func_800AE90C(void) {
+    s32 var_s0;
+    s32 i;
+    s32 var_a1;
+
+    switch (D_800ED148.unk1308) {
+        case 1:
+        case 2:
+            var_s0 = 16;
+            break;
+        case 3:
+        case 4:
+            var_s0 = 255;
+            break;
+        
+        default:
+            
+        var_a1 = 0;
+        for (i = 3; i < 7; i++) {
+            if (!(D_800ED148.entities[i].status & 0x25) && !(D_800ED148.entities[i].flags & 0x4001)) {
+                var_a1++;
+            }
+        }
+    
+        if (var_a1 != 0) {
+            if (func_800AE83C(16, 100) == 100) {
+                var_s0 = 16;
+            } 
+            
+            else {
+                if (func_800AE83C(8, 100) == 0) {
+                    var_s0 = 64;
+                }
+                    
+                else {
+                    var_s0 = 128;
+                }
+            }
+        }
+        
+        else {
+            var_s0 = 255;
+        }
+    }
+
+    if ((func_800AE8A0() != 0) && (func_8009B79C(var_s0, 255) != 0)) {
+        D_800ED148.unk12E8 = 1;
+    }
+}
 
 void func_800AEA0C(void) {
     s32 result;
