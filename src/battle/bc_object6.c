@@ -11,7 +11,7 @@ extern void func_8009BC28;
 extern void func_8009BCE4;
 extern void func_800A2F54;
 extern void func_800A65B0;
-
+extern u8 func_800ADAC0(s32);
 
 void sndStopAll(void);
 void resetCdDrive(void);
@@ -372,7 +372,42 @@ void func_800AD960(void) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object6", func_800AD9C0);
+void func_800AD9C0(void) {
+    s32 i;
+    s32 j;
+
+    D_800ED148.unk1304 = 0;
+    D_800ED148.unk1306 = 0;
+    
+    if (D_800ED148.entities[0].stateMachine.unk0 != 0) {
+        return;
+    }
+    
+    for (i = 0; i < 3; i++) {
+        D_800ED148.unk12F2 = i;
+        D_800ED148.unk12F8 = 0;
+        
+        for(j = 0; j < 11; j++) {
+            if (D_800ED148.unkD64[i][j].fwd != 255) {
+                continue;
+            }
+            
+            while(1) {
+                if (func_800ADAC0(j) == 0) {
+                    func_800A57E0(j);
+                    return;
+                }
+                
+                j = D_800ED148.unkD64[i][j].bwd;
+                if (j == 255) {
+                    goto found;
+                }
+            }
+        }
+        // amazing
+        found:
+    }
+}
 
 u8 func_800ADAC0(s32 arg0) {
     s32 i;
