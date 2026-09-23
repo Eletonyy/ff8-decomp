@@ -272,40 +272,6 @@ typedef struct {
 } BattleHeader; /* 0x10 */
 
 typedef struct {
-    /* 0x00 */ union {
-        s32 unk0;
-        struct {
-            u8 unk0;
-            u8 unk1;
-            u8 unk2;
-            u8 unk3;
-        } bytes;
-    } stateMachine;
-    /* 0x04 */ union {
-        s32 volatile word;
-        struct { u8 b0; u8 b1; u8 b2; u8 trigType; } bytes;
-    } state;
-    /* 0x08 */ union {
-        struct {
-            u8 trigKey;
-            u8 unk9;
-            u8 unkA;
-            u8 padB;
-        } byteView;
-        s32 initFlags;
-    } slot8;
-    /* 0x0C */ union {
-        struct {
-            u8 volatile timer;
-            u8 control;
-        } SplitTimer;
-        u16 bigTimer;
-    } timers;
-    /* 0x0E */ u8 unkE;
-    /* 0x0F */ u8 entityRef;
-} BattleSlotTail; /* 0x10 */
-
-typedef struct {
     /* 0x00 */ BattleEntityData** entityData;
     /* 0x04 */ s32 pad14;
     /* 0x08 */ s32 flags;
@@ -364,11 +330,24 @@ typedef struct {
     /* 0xB2 */ u8 padC2[6];
     /* 0xB8 */ u8 unkC8[3];
     /* 0xBB */ u8 linkedIdx;
-    /* 0xBC */ u8 unkCC;
+    /* 0xBC */ u8 unkBC;
     /* 0xBD */ u8 unkCD[1];        /* 0xBD: stat byte used in case-0 damage formula (squared). */
     /* 0xBE */ u8 unkCE;
     /* 0xBF */ u8 unkCF;        /* 0xBF: stat byte averaged with arg2 in func_8009DEF0 mode-7. */
-    /* 0xC0 */ BattleSlotTail tail;
+    /* 0xC0 */ u8 unkC0;
+    /* 0xC1 */ u8 spd;
+    /* 0xC2 */ u8 unkC2;
+    /* 0xC3 */ u8 unkC3;
+    /* 0xC4 */ u8 unkC4;
+    /* 0xC5 */ u8 unkC5;
+    /* 0xC6 */ u8 unkC6;
+    /* 0xC7 */ u8 trigType;
+    /* 0xC8 */ u8 trigKey;
+    /* 0xC9 */ u8 unkC9;
+    /* 0xCA */ u8 crisisLevel;
+    /* 0xCB */ u8 padCB;
+    /* 0xCC */ u16 unkCC;
+    /* 0xCE */ u8 padCE[2];
 } BattleEntity; /* 208 bytes */
 
 /**

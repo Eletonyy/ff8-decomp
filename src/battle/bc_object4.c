@@ -489,7 +489,7 @@ s32 func_800A6DD8(void) {
     for (i = 0; i < 3; i++) {
         if (D_800ED148.entities[i].linkedIdx != 255) {
             var_a2++;
-            var_v1 += D_800ED148.entities[i].unkCC;
+            var_v1 += D_800ED148.entities[i].unkBC;
         }
     }
     

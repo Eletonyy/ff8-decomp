@@ -522,20 +522,20 @@ void func_8009A990(s32 arg0) {
     s32 i;
 
     for (i = 0; i < 7; i++) {
-        if (D_800ED148.entities[i].tail.slot8.byteView.trigKey == arg0) {
-            if (D_800ED148.entities[i].tail.state.bytes.trigType != 0) {
-                if (D_800ED148.entities[i].tail.state.bytes.trigType == 2) {
+        if (D_800ED148.entities[i].trigKey == arg0) {
+            if (D_800ED148.entities[i].trigType != 0) {
+                if (D_800ED148.entities[i].trigType == 2) {
                     if (!(D_800ED148.entities[i].status & 1)) {
-                        func_800A59AC(i, D_800ED148.entities[i].tail.state.bytes.trigType, 0);
+                        func_800A59AC(i, D_800ED148.entities[i].trigType, 0);
                     }
                 }
 
                 else {
-                    func_800A59AC(i, D_800ED148.entities[i].tail.state.bytes.trigType, 0);
+                    func_800A59AC(i, D_800ED148.entities[i].trigType, 0);
                 }
 
-                D_800ED148.entities[i].tail.slot8.byteView.trigKey = 0;
-                D_800ED148.entities[i].tail.state.bytes.trigType = 0;
+                D_800ED148.entities[i].trigKey = 0;
+                D_800ED148.entities[i].trigType = 0;
                 return;
             }
         }
