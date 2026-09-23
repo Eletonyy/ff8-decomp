@@ -344,15 +344,8 @@ s32 func_8009A514(s32 arg0, s32 arg1) {
  * Snapshots entity state via func_8009AFF0 and func_800A1CFC, then plays
  * sound 0x67 targeting the entity. Stores idx + flag (cmd->unk2.b.lo = 1,
  * .b.hi = 1 if entity controlFlags bit 1 set, else 0). Then copies the
- * @p off-th hit-type byte (@c D_800ED148.unkD14) into @c entity->linkedIdx
+ * @p off-th hit-type byte (@c D_800ED148.unkD14) into @c entity->comFileId
  * and the @p off-th position (@c D_800ED148.unkCE4) into @c entity->animParam1/2/3.
- *
- * @note The @c (s32)&D_800ED148.entities[idx].linkedPtr expression for the
- * @c func_8009B134 argument is equivalent to @c (s32)&D_800ED158.slots[idx]
- * (since @c BattleEntity::linkedPtr is at offset @c 0x10 and
- * @c D_800ED158 = @c D_800ED148 + @c 0x10), but writing it relative to
- * @c D_800ED148 lets gcc share one @c lui+addiu base register across the
- * @c func_8009B134 arg and the post-call entity field accesses.
  *
  * @param idx Entity slot index.
  * @param off Source entity index for the hit-type / position lookup.
@@ -370,7 +363,7 @@ void func_8009A528(s32 idx, s32 off) {
     } else {
         cmd->unk2.b.hi = 0;
     }
-    D_800ED148.entities[idx].linkedIdx = D_800ED148.unkD14[off];
+    D_800ED148.entities[idx].comFileId = D_800ED148.unkD14[off];
     D_800ED148.entities[idx].animParam1 = D_800ED148.unkCE4[off].x;
     D_800ED148.entities[idx].animParam2 = D_800ED148.unkCE4[off].y;
     D_800ED148.entities[idx].animParam3 = D_800ED148.unkCE4[off].z;
@@ -398,15 +391,8 @@ void func_8009A638(void) {
  * @brief Queue a return-to-position animation for an entity.
  *
  * Snapshots animation state via @c func_800A240C / @c func_8009AFF0 /
- * @c func_800A1AB8 with the entity's @c status / @c flags / @c unk28,
+ * @c func_800A1AB8 with the entity's @c status / @c flags / @c currentHp,
  * then plays sound @c 0x67 with both parameter bytes cleared.
- *
- * @note The @c (s32)&D_800ED148.entities[idx].linkedPtr expression is
- * equivalent to @c (s32)&D_800ED158.slots[idx] (since @c BattleEntity::linkedPtr
- * is at offset @c 0x10 and @c D_800ED158 = @c D_800ED148 + @c 0x10), but
- * writing it relative to @c D_800ED148 lets gcc share one @c lui+addiu
- * base register across the @c func_8009B134 arg and the entity field
- * accesses.
  *
  * @note The local @c entities cache for the middle @c func_800A1AB8 call
  * shifts gcc's @c s2/s3 register allocation to match the target.
@@ -416,7 +402,7 @@ void func_8009A638(void) {
 void func_8009A6A8(s32 idx) {
     SoundCmd *cmd;
 
-    func_800A240C(idx, D_800ED148.entities[idx].unk28, &D_800ED148.entities[idx].status);
+    func_800A240C(idx, D_800ED148.entities[idx].currentHp, &D_800ED148.entities[idx].status);
     func_8009AFF0(idx);
     func_800A1AB8(idx, D_800ED148.entities[idx].status, D_800ED148.entities[idx].flags);
     cmd = func_8009B134(0x67, 0x80, &D_800ED148.entities[idx].entityData);
@@ -428,7 +414,7 @@ void func_8009A6A8(s32 idx) {
 /**
  * @brief Lay out party-side battle slots and play the start-of-encounter sound.
  *
- * Counts active entities in the first 3 slots (those with @c linkedIdx
+ * Counts active entities in the first 3 slots (those with @c comFileId
  * != @c 0xFF), plays sound @c 0xD at volume @c 0x80, then iterates the same
  * 3 slots calling @c func_8009A6A8 for each active one. For each, clears
  * @c animParam2 (y) and sets @c animParam1 (x) / @c animParam3 (z) from a
@@ -447,14 +433,14 @@ void func_8009A74C(void) {
 
     activeCount = 0;
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].linkedIdx != 255) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             activeCount++;
         }
     }
     func_8009B134(0xD, 0x80, 0);
     posIdx = 0;
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].linkedIdx != 0xFF) {
+        if (D_800ED148.entities[i].comFileId != 0xFF) {
             func_8009A6A8(i);
             D_800ED148.entities[i].animParam2 = 0;
             switch (activeCount) {
@@ -489,7 +475,7 @@ void func_8009A74C(void) {
 void func_8009A8B4(s32 idx) {
     SoundCmd *cmd = func_8009B134(0x66, 0x80, &D_800ED148.entities[idx].entityData);
     cmd->unk0 = idx;
-    cmd->unk2.hword = D_800ED148.entities[idx].linkedIdx;
+    cmd->unk2.hword = D_800ED148.entities[idx].comFileId;
 }
 
 /**
@@ -502,7 +488,7 @@ void func_8009A928(void) {
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].linkedIdx != 255) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             func_8009A8B4(i);
         }
     }
@@ -1338,7 +1324,7 @@ s32 func_8009B7BC(s32 a0) {
 s32 func_8009B7F4(s32 arg0, s32 arg1) {
     s32 max;
 
-    if ((D_800EE4C0.unk1 == 237) && (D_800ED148.entities[arg1].unk28 == 0)) {
+    if ((D_800EE4C0.unk1 == 237) && (D_800ED148.entities[arg1].currentHp == 0)) {
         return 0;
     }
 

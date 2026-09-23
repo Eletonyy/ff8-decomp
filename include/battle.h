@@ -273,20 +273,16 @@ typedef struct {
 
 typedef struct {
     /* 0x00 */ BattleEntityData** entityData;
-    /* 0x04 */ s32 pad14;
+    /* 0x04 */ s32 monsterAiSection;
     /* 0x08 */ s32 flags;
     /* 0x0C */ s32 flagsBackup;
-    /* 0x10 */ s32 unk20;
-    /* 0x14 */ s32 volatile unk24;
-    /* 0x18 */ s32 unk28;
-    /* 0x1C */ s32 unk2C;
-    /* 0x20 */ s32 unk30;
-    /* 0x24 */ u8 pad34[0x20];
-    /* 0x44 */ u16 unk54[1];  /* used in  func_8009C598 */
-    /* 0x46 */ u8 unk56;
-    /* 0x47 */ u8 unk57;
-    /* 0x48 */ u16 unk58;
-    /* 0x4A */ u8 pad59[10];
+    /* 0x10 */ s32 maxAtb;
+    /* 0x14 */ s32 volatile curAtb;
+    /* 0x18 */ s32 currentHp;
+    /* 0x1C */ s32 maxHp;
+    /* 0x20 */ s32 unk20;
+    /* 0x24 */ u8 pad24[0x20];
+    /* 0x44 */ u16 elemDef[8];
     /* 0x54: byte-bit-slot view (14 halfwords, indexed by lowest set bit
     of a flag mask). The trailing 4 bytes (@c 0x6C-0x6F) are also
     read/written as a 4-byte slot flag word during init. */
@@ -296,44 +292,37 @@ typedef struct {
             s16 perBitLow[12];          /* 0x54-0x6B (12 halfwords). */
             s32 slotFlags;              /* 0x6C-0x6F as a single word. */
         } slotInit;
-    } field64;
+    } timers;
     /* 0x70: written 16-bit (mirror of @c BattleCharData.displayStatus)
     and later read 32-bit (with a bitmask test). */
     /* 0x70 */ union {
         u16 slotDisplay;     /* 0x70-0x71 (write path). */
         s32 word;            /* 0x70-0x73 (read path). */
-    } at0x80;
+    } unk70;
     /* 0x74 */ u16 animParam1;
     /* 0x76 */ u16 animParam2;
     /* 0x78 */ u16 animParam3;
-    /* 0x7A */ u8 pad8A[2];
+    /* 0x7A */ u8 pad7A[2];
     /* 0x7C */ volatile ControlFlags controlFlags;
     /* 0x80 */ u16 status;
     /* 0x82 */ u16 statusBackup;
     /* 0x84 */ s16 hpDisplay;     /* 0x84: HP value mirrored from BattleCharData.currentHp. */
-    /* 0x86 */ u16 unk96;
-    /* 0x88 */ u8 unk98;
-    /* 0x89 */ u8 unk99;
-    /* 0x8A */ u8 pad9A;
-    /* 0x8B */ u8 unk9B;
-    /* 0x8C */ u8 unk9C;
-    /* 0x8D */ u8 unk9D;
-    /* 0x8E */ u8 unk9E;
-    /* 0x8F */ u8 unk9F;
-    /* 0x90 */ u8 unkA0[1];
-    /* 0x91 */ u8 padA1[22];
-    /* 0xA7 */ u8 unkB7;
-    /* 0xA8 */ u8 padB8[3];
-    /* 0xAB */ u8 linkedIdx2;
-    /* 0xAC */ u8 padBC[5];
-    /* 0xB1 */ u8 unkC1;
-    /* 0xB2 */ u8 padC2[6];
-    /* 0xB8 */ u8 unkC8[3];
-    /* 0xBB */ u8 linkedIdx;
-    /* 0xBC */ u8 unkBC;
-    /* 0xBD */ u8 unkCD[1];        /* 0xBD: stat byte used in case-0 damage formula (squared). */
-    /* 0xBE */ u8 unkCE;
-    /* 0xBF */ u8 unkCF;        /* 0xBF: stat byte averaged with arg2 in func_8009DEF0 mode-7. */
+    /* 0x86 */ u16 hitStatus1;
+    /* 0x88 */ u8 unk88;
+    /* 0x89 */ u8 unk89;
+    /* 0x8A */ u8 pad8A;
+    /* 0x8B */ u8 unk8B;
+    /* 0x8C */ u8 unk8C;
+    /* 0x8D */ u8 unk8D;
+    /* 0x8E */ u8 unk8E;
+    /* 0x8F */ u8 unk8F;
+    /* 0x90 */ u8 mentalRes[40];
+    /* 0xB8 */ u8 unkB8[3];
+    /* 0xBB */ u8 comFileId;
+    /* 0xBC */ u8 level;
+    /* 0xBD */ u8 unkBD[1];        /* 0xBD: stat byte used in case-0 damage formula (squared). */
+    /* 0xBE */ u8 unkBE;
+    /* 0xBF */ u8 unkBF;        /* 0xBF: stat byte averaged with arg2 in func_8009DEF0 mode-7. */
     /* 0xC0 */ u8 unkC0;
     /* 0xC1 */ u8 spd;
     /* 0xC2 */ u8 unkC2;
@@ -1293,7 +1282,7 @@ extern u8              D_800EEBE0[7];
 
 /** @brief Apply a status flag, ORing it into the flag word. */
 
-/** @brief Set @c field64[lowest-bit-of-a1] = -0x457 on entity @p a0. */
+/** @brief Set @c timers[lowest-bit-of-a1] = -0x457 on entity @p a0. */
 
 u16 func_800B1050(s32 stat);
 

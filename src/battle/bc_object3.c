@@ -36,8 +36,8 @@ void func_800A1940(s32 arg0) {
     func_800A18E0(arg0);
     func_800A589C(arg0);
 
-    D_800ED148.entities[arg0].unk24 = 0;
-    g_battleChars.chars[arg0].unk184 = D_800ED148.entities[arg0].unk24;
+    D_800ED148.entities[arg0].curAtb = 0;
+    g_battleChars.chars[arg0].unk184 = D_800ED148.entities[arg0].curAtb;
 }
 
 void func_800A19BC(s32 arg0, u16 arg1, s32 arg2) {
@@ -113,7 +113,7 @@ void func_800A1AB8(s32 arg0, u16 arg1, s32 arg2) {
  * @param a0 Entity index (stride 0xD0).
  */
 void func_800A1C98(s32 arg0) {
-    D_800ED148.entities[arg0].unk24 = 0;
+    D_800ED148.entities[arg0].curAtb = 0;
     D_800ED148.entities[arg0].controlFlags &= ~8;
     D_800ED148.entities[arg0].controlFlags &= ~4;
     func_800A589C(arg0);
@@ -277,7 +277,7 @@ s32 func_800A21B0(s32 arg0) {
     u8 temp_s2;
 
     temp_s3 = &g_battleChars.chars[arg0];
-    temp_s2 = D_80078E00.array37A6[D_800ED148.entities[arg0].linkedIdx].unk0;
+    temp_s2 = D_80078E00.array37A6[D_800ED148.entities[arg0].comFileId].unk0;
 
     if (!(D_80082C10 & 0x20)) {
         if (!(temp_s3->unk188 & 0x200)) {      
@@ -341,10 +341,10 @@ void func_800A240C(s32 arg0, s32 arg1, u16* status) {
     *status &= ~0x300;
     
     if (arg1 != 0) {
-        if (arg1 < (D_800ED148.entities[arg0].unk2C >> 1)) {
+        if (arg1 < (D_800ED148.entities[arg0].maxHp >> 1)) {
             *status = temp_a3 | 0x200;
             
-            if (arg1 < (D_800ED148.entities[arg0].unk2C >> 2)) {
+            if (arg1 < (D_800ED148.entities[arg0].maxHp >> 2)) {
                 *status = temp_a3 | 0x300;
             }
         }
@@ -399,11 +399,11 @@ void func_800A2598(s32 arg0, s8 arg1) {
 
     bs = &D_800ED148;
     
-    bs->entities[arg0].unk98 = D_800EE4C0.unk0;
-    bs->entities[arg0].unk9D = D_800ED148.entities[D_800EE4C0.unk0].linkedIdx;
-    bs->entities[arg0].unk9B = D_800ED148.unk1310;
-    bs->entities[arg0].unk9F = D_800EE4C0.statusCode;
-    bs->entities[arg0].unk9C = D_800EEBB9;
+    bs->entities[arg0].unk88 = D_800EE4C0.unk0;
+    bs->entities[arg0].unk8D = D_800ED148.entities[D_800EE4C0.unk0].comFileId;
+    bs->entities[arg0].unk8B = D_800ED148.unk1310;
+    bs->entities[arg0].unk8F = D_800EE4C0.statusCode;
+    bs->entities[arg0].unk8C = D_800EEBB9;
     bs->entities[arg0].trigType = arg1;
     bs->entities[arg0].trigKey = D_800ED148.unk12F8;
     D_800ED148.unk12F8++;
@@ -412,11 +412,11 @@ void func_800A2598(s32 arg0, s8 arg1) {
 void func_800A2638(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     if (arg2 == 0) {
         if (!(arg1 & 1) && (arg0 != 0)) {
-            D_800ED148.entities[arg3].unk9E = 0;
+            D_800ED148.entities[arg3].unk8E = 0;
             return;
         }
         
-        D_800ED148.entities[arg3].unk9E = 1;
+        D_800ED148.entities[arg3].unk8E = 1;
     }
 }
 
@@ -446,7 +446,7 @@ void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u
         func_8009B924(arg0, 16, 0);
     }
 
-    var_s1 = D_800ED148.entities[arg0].unk28;
+    var_s1 = D_800ED148.entities[arg0].currentHp;
     if ((arg0 < 3) && (D_800ED148.entities[arg0].hpDisplay != 0) && (D_800ED148.entities[arg0].flags < 0) && !(*arg3 & 1) && (g_battleChars.chars[arg0].unk14 != 0) && !(*arg2 & 1)) {
         var_a0 = D_800ED148.entities[arg0].hpDisplay - arg1;
         if (var_a0 < 0) {
@@ -458,15 +458,15 @@ void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u
             g_gameState.gfs[g_battleChars.chars[arg0].unk1D - 64].kos++;
         }
         
-        func_800A2480(arg0, D_800ED148.entities[arg0].unk28, &D_800ED148.entities[arg0].status);
+        func_800A2480(arg0, D_800ED148.entities[arg0].currentHp, &D_800ED148.entities[arg0].status);
         *arg2 |= 0x20;
     } 
     
     else {
         if (*arg2 & 1) {
             var_s1 += arg1;
-            if (D_800ED148.entities[arg0].unk2C < var_s1) {
-                var_s1 = D_800ED148.entities[arg0].unk2C;
+            if (D_800ED148.entities[arg0].maxHp < var_s1) {
+                var_s1 = D_800ED148.entities[arg0].maxHp;
             }
         }
         
@@ -489,7 +489,7 @@ void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u
 
     if ((var_s1 == 0) || (D_800ED148.entities[arg0].status & 1) || (D_800ED148.entities[arg0].flags & 0x10000)) {
         BattleSystem* bs = &D_800ED148;
-        D_800ED148.entities[arg0].unk28 = 0;
+        D_800ED148.entities[arg0].currentHp = 0;
         
         if ((D_800ED148.unk1300 == 0) && (bs->entities[arg0].unkC9 == 0)) {
             D_800ED148.entities[arg0].status |= 1;
@@ -531,7 +531,7 @@ void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u
     } 
     
     else {
-        D_800ED148.entities[arg0].unk28 = var_s1;
+        D_800ED148.entities[arg0].currentHp = var_s1;
         if ((arg8 == 0) && (D_800ED148.unk12F5 == 0)) {
             if (arg0 < 3) {
                 func_800A2598(arg0, 2);
@@ -1518,7 +1518,7 @@ s32 func_800A4844(s32 arg0) {
 }
 
 s32 func_800A4898(s32 arg0) {
-    if (D_800ED148.entities[arg0].linkedIdx != 255) {
+    if (D_800ED148.entities[arg0].comFileId != 255) {
         if ((g_battleChars.chars[arg0].statusFlags & 0x10) && (func_800A4844(arg0) != 0)) {
             return arg0;
         }
@@ -2032,7 +2032,7 @@ void func_800A559C(u32 arg0) {
  * @param idx Entity index (stride 0xD0).
  */
 void func_800A565C(s32 arg0) {
-    D_800ED148.entities[arg0].unk24 = 0;
+    D_800ED148.entities[arg0].curAtb = 0;
 }
 
 s32 func_800A5688(s32 arg0) {
@@ -2183,7 +2183,7 @@ void func_800A5A7C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, u16 arg4, s32 arg5, I
     }
     
     if (arg1 == 4) {
-        D_800ED148.entities[arg0].padC2[6] = arg2;
+        D_800ED148.entities[arg0].unkB8[0] = arg2;
     }
 }
 
@@ -2238,7 +2238,7 @@ void func_800A5C48(InternalStruct* arg0) {
                     func_800A5AF4(p->unk2);
                 }
 
-                D_800ED148.entities[p->unk2].unkC8[i] = p->unk4;
+                D_800ED148.entities[p->unk2].unkB8[i] = p->unk4;
                 var_s2 = i;
                 break;
 
