@@ -151,13 +151,13 @@ void func_800A63DC(void) {
  */
 void func_800A64E4(s32 arg0, u16 arg1) {
     if (arg0 == 0) {
-        func_800B0754(D_800ED148.entities[0].entityRef, 237, D_800ED148.unk1324, arg1);
+        func_800B0754(D_800ED148.header.entityRef, 237, D_800ED148.unk1324, arg1);
         decrementItemByType(D_800ED148.unk1324 + 101);
         func_8009AF14(func_800E1850);
         return;
     }
     
-    func_800B0754(D_800ED148.entities[0].entityRef, 238, D_800ED148.unk1324, func_800AA4E8());
+    func_800B0754(D_800ED148.header.entityRef, 238, D_800ED148.unk1324, func_800AA4E8());
     func_8009AE08(8);
 }
 
@@ -176,7 +176,7 @@ void func_800A65B0(void) {
     val = D_800ED148.unk12EF;
     if (val == 255) {
         D_800ED148.unk12EF = 254;
-        func_800B0754(D_800ED148.entities[0].entityRef, 241, 65532, D_800ED148.unk12E2);
+        func_800B0754(D_800ED148.header.entityRef, 241, 65532, D_800ED148.unk12E2);
         func_800A6588();
         return;
     }
@@ -192,14 +192,14 @@ void func_800A65B0(void) {
     D_800ED148.unk131B = val;
     
     if (val < 6) {
-        func_800B0754(D_800ED148.entities[0].entityRef, 241, D_800ED148.unk131B, D_800ED148.unk12E2);
+        func_800B0754(D_800ED148.header.entityRef, 241, D_800ED148.unk131B, D_800ED148.unk12E2);
         func_8009AF14(func_800A65B0);
         return;
     }
     
-    func_800A30F8(D_800ED148.entities[0].entityRef, 241, 65530, D_800ED148.unk131B, D_800ED148.entities[0].entityRef, D_800ED148.unk12E2, 0);
+    func_800A30F8(D_800ED148.header.entityRef, 241, 65530, D_800ED148.unk131B, D_800ED148.header.entityRef, D_800ED148.unk12E2, 0);
     func_800B06DC(D_800ED148.unk12E2);
-    func_800B0754(D_800ED148.entities[0].entityRef, 239, D_800ED148.unk131B, func_8009BA5C(D_800ED148.unk131B, D_800ED148.unk12E2));
+    func_800B0754(D_800ED148.header.entityRef, 239, D_800ED148.unk131B, func_8009BA5C(D_800ED148.unk131B, D_800ED148.unk12E2));
     func_800A6588();
 }
 
@@ -767,7 +767,7 @@ void func_800A71C0(s32 idx) {
     }
     
     func_800A240C(idx, D_800ED148.entities[idx].unk28, &D_800ED148.entities[idx].status);
-    if (D_800ED148.entities[0].state.word == 4) {
+    if (D_800ED148.header.state.word == 4) {
         if (D_800ED148.entities[idx].status & 0x100) {
             func_8009B088(idx, 0, 8, 1);
         }
