@@ -151,13 +151,13 @@ void func_800A63DC(void) {
  */
 void func_800A64E4(s32 arg0, u16 arg1) {
     if (arg0 == 0) {
-        func_800B0754(D_800ED148.entities[0].entityRef, 237, D_800ED148.unk1324, arg1);
+        func_800B0754(D_800ED148.header.entityRef, 237, D_800ED148.unk1324, arg1);
         decrementItemByType(D_800ED148.unk1324 + 101);
         func_8009AF14(func_800E1850);
         return;
     }
     
-    func_800B0754(D_800ED148.entities[0].entityRef, 238, D_800ED148.unk1324, func_800AA4E8());
+    func_800B0754(D_800ED148.header.entityRef, 238, D_800ED148.unk1324, func_800AA4E8());
     func_8009AE08(8);
 }
 
@@ -176,7 +176,7 @@ void func_800A65B0(void) {
     val = D_800ED148.unk12EF;
     if (val == 255) {
         D_800ED148.unk12EF = 254;
-        func_800B0754(D_800ED148.entities[0].entityRef, 241, 65532, D_800ED148.unk12E2);
+        func_800B0754(D_800ED148.header.entityRef, 241, 65532, D_800ED148.unk12E2);
         func_800A6588();
         return;
     }
@@ -192,14 +192,14 @@ void func_800A65B0(void) {
     D_800ED148.unk131B = val;
     
     if (val < 6) {
-        func_800B0754(D_800ED148.entities[0].entityRef, 241, D_800ED148.unk131B, D_800ED148.unk12E2);
+        func_800B0754(D_800ED148.header.entityRef, 241, D_800ED148.unk131B, D_800ED148.unk12E2);
         func_8009AF14(func_800A65B0);
         return;
     }
     
-    func_800A30F8(D_800ED148.entities[0].entityRef, 241, 65530, D_800ED148.unk131B, D_800ED148.entities[0].entityRef, D_800ED148.unk12E2, 0);
+    func_800A30F8(D_800ED148.header.entityRef, 241, 65530, D_800ED148.unk131B, D_800ED148.header.entityRef, D_800ED148.unk12E2, 0);
     func_800B06DC(D_800ED148.unk12E2);
-    func_800B0754(D_800ED148.entities[0].entityRef, 239, D_800ED148.unk131B, func_8009BA5C(D_800ED148.unk131B, D_800ED148.unk12E2));
+    func_800B0754(D_800ED148.header.entityRef, 239, D_800ED148.unk131B, func_8009BA5C(D_800ED148.unk131B, D_800ED148.unk12E2));
     func_800A6588();
 }
 
@@ -232,11 +232,11 @@ void func_800A6724(void) {
 void func_800A6780(s32 arg0) {
   
     if (!(D_800ED148.entities[arg0].status & 1) && !(D_800ED148.entities[arg0].status & 4)) {
-        D_800ED148.entities[arg0].unk24 = D_800ED148.entities[arg0].unk20;
+        D_800ED148.entities[arg0].curAtb = D_800ED148.entities[arg0].maxAtb;
         return;
     }
     
-    D_800ED148.entities[arg0].unk24 = 0;
+    D_800ED148.entities[arg0].curAtb = 0;
 }
 
 void func_800A67FC(s32 arg0) {
@@ -273,7 +273,7 @@ void func_800A68AC(s32 arg0) {
         case 1:
             for (i = 0; i < 3; i++) {
                 if (!(g_battleChars.chars[i].statusFlags & 0x10000)) {
-                    D_800ED148.entities[i].unk24 = 0;
+                    D_800ED148.entities[i].curAtb = 0;
                 }
             }
             break;
@@ -286,7 +286,7 @@ void func_800A68AC(s32 arg0) {
 
         case 3:
             for (i = 3; i < 7; i++) {
-                D_800ED148.entities[i].unk24 = 0;
+                D_800ED148.entities[i].curAtb = 0;
             }
             break;
 
@@ -487,9 +487,9 @@ s32 func_800A6DD8(void) {
     var_v1 = 0;
     
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].linkedIdx != 255) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             var_a2++;
-            var_v1 += D_800ED148.entities[i].unkCC;
+            var_v1 += D_800ED148.entities[i].level;
         }
     }
     
@@ -766,8 +766,8 @@ void func_800A71C0(s32 idx) {
         temp_a0->unk90[0] = 200;
     }
     
-    func_800A240C(idx, D_800ED148.entities[idx].unk28, &D_800ED148.entities[idx].status);
-    if (D_800ED148.entities[0].state.word == 4) {
+    func_800A240C(idx, D_800ED148.entities[idx].currentHp, &D_800ED148.entities[idx].status);
+    if (D_800ED148.header.state.word == 4) {
         if (D_800ED148.entities[idx].status & 0x100) {
             func_8009B088(idx, 0, 8, 1);
         }
@@ -827,7 +827,7 @@ void func_800A7518(s32 arg0) {
 
     if (!(temp_s0->unk80 & 4) && !(temp_s0->unk80 & 1)) {
         if (temp_s1->statusFlags & 0x10000) {
-            D_800ED148.entities[arg0].unk24 = D_800ED148.entities[arg0].unk20;
+            D_800ED148.entities[arg0].curAtb = D_800ED148.entities[arg0].maxAtb;
         }
         
         else {
@@ -925,9 +925,9 @@ void func_800A7934(void) {
     
     for (i = 0; i < 3; i++) {
         GameState* gs = &g_gameState;
-        if (D_800ED148.entities[i].linkedIdx != 255) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             CharacterData* character = gs->chars;
-            character[g_gameState.mainData.party.party[i]].currentHp = D_800ED148.entities[i].unk28;
+            character[g_gameState.mainData.party.party[i]].currentHp = D_800ED148.entities[i].currentHp;
         }
     }
 }
@@ -1806,7 +1806,7 @@ void func_800A960C(s32 arg0) {
     s32 result;
 
     if (D_800ED148.entities[arg0].status & 0x200) {
-        result = D_800ED148.entities[arg0].unk2C - D_800ED148.entities[arg0].unk28;
+        result = D_800ED148.entities[arg0].maxHp - D_800ED148.entities[arg0].currentHp;
         if (result <= 200) {
             return;
         }
@@ -1974,7 +1974,7 @@ u16 func_800A9888(void) {
 */
 
 u16 func_800A9904(s32 arg0) {
-    return (1 << D_800ED148.entities[arg0].unk98);
+    return (1 << D_800ED148.entities[arg0].unk88);
 }
 
 /**
@@ -2076,7 +2076,7 @@ void func_800A9AC0(s32 arg0, s32 arg1) {
         idx = arg0 - 0xCD;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                u8* cd = D_800ED148.entities[i].unkCD;
+                u8* cd = D_800ED148.entities[i].unkBD;
                 if (val < cd[idx]) {
                     val = cd[idx];
                 }
@@ -2089,7 +2089,7 @@ void func_800A9AC0(s32 arg0, s32 arg1) {
         idx = arg0 - 0xD5;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                u8* cd = D_800ED148.entities[i].unkCD;
+                u8* cd = D_800ED148.entities[i].unkBD;
                 if (cd[idx] < val){
                     val = cd[idx];
                 }
@@ -2098,7 +2098,7 @@ void func_800A9AC0(s32 arg0, s32 arg1) {
     }
 
     for (i = 0; i < 7; i++) {
-        u8* cd = D_800ED148.entities[i].unkCD;
+        u8* cd = D_800ED148.entities[i].unkBD;
         if (val == cd[idx]) {
             D_800EEBE0[i] = 1;
         }
@@ -2121,8 +2121,8 @@ void func_800A9C68(s32 arg0, s32 arg1) {
         idx = arg0 - 221;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                if (val < D_800ED148.entities[i].unk54[idx]) {
-                    val = D_800ED148.entities[i].unk54[idx];
+                if (val < D_800ED148.entities[i].elemDef[idx]) {
+                    val = D_800ED148.entities[i].elemDef[idx];
                 }
             }
         }
@@ -2133,8 +2133,8 @@ void func_800A9C68(s32 arg0, s32 arg1) {
         idx = arg0 - 229;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                if (D_800ED148.entities[i].unk54[idx] < val) {
-                    val = D_800ED148.entities[i].unk54[idx];
+                if (D_800ED148.entities[i].elemDef[idx] < val) {
+                    val = D_800ED148.entities[i].elemDef[idx];
                 }
             }
         }       
@@ -2142,7 +2142,7 @@ void func_800A9C68(s32 arg0, s32 arg1) {
 
 
     for (i = 0; i < 7; i++) {
-        if (val == D_800ED148.entities[i].unk54[idx]) {
+        if (val == D_800ED148.entities[i].elemDef[idx]) {
             D_800EEBE0[i] = 1;
         }
         
@@ -2162,8 +2162,8 @@ void func_800A9E08(s32 arg0, s32 arg1) {
         val = 0;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                if (val < D_800ED148.entities[i].unk28) {
-                    val = D_800ED148.entities[i].unk28;
+                if (val < D_800ED148.entities[i].currentHp) {
+                    val = D_800ED148.entities[i].currentHp;
                 }
             }
         }
@@ -2173,15 +2173,15 @@ void func_800A9E08(s32 arg0, s32 arg1) {
         val = 0x7FFFFFFF;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                if ((D_800ED148.entities[i].unk28 < val) && (D_800ED148.entities[i].unk28 != 0)) {
-                    val = D_800ED148.entities[i].unk28;
+                if ((D_800ED148.entities[i].currentHp < val) && (D_800ED148.entities[i].currentHp != 0)) {
+                    val = D_800ED148.entities[i].currentHp;
                 }
             }
         }
     }
 
     for (i = 0; i < 7; i++) {
-        if (val == D_800ED148.entities[i].unk28) {
+        if (val == D_800ED148.entities[i].currentHp) {
             D_800EEBE0[i]= 1;
         } 
         
@@ -2293,7 +2293,7 @@ u16 func_800AA034(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
             default:
                 do {
                     i = func_800A97A4(7);
-                } while ((D_800EEBE0[i] == 0) || D_800ED148.entities[i].linkedIdx != arg1);
+                } while ((D_800EEBE0[i] == 0) || D_800ED148.entities[i].comFileId != arg1);
                 result = func_800A97FC(i);
                 break;
         }
@@ -2320,7 +2320,7 @@ u16 func_800AA034(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
             
             default:
                 for (i = 0; i < 7; i++) {
-                    if ((D_800ED148.entities[i].linkedIdx == arg1) && (D_800EEBE0[i] != 0)) {
+                    if ((D_800ED148.entities[i].comFileId == arg1) && (D_800EEBE0[i] != 0)) {
                         result |= func_800A97FC(i);
                     }
                 }
@@ -2355,7 +2355,7 @@ s32 func_800AA368(s32 arg0) {
             
         default:
             for (i = 0; i < 7; i++) {
-                if ((D_800ED148.entities[i].linkedIdx == arg0) && !(D_800ED148.entities[i].status & 1)) {
+                if ((D_800ED148.entities[i].comFileId == arg0) && !(D_800ED148.entities[i].status & 1)) {
                     val++;
                 }
             }   
@@ -2404,7 +2404,7 @@ s32 func_800AA4F8(s32 arg0) {
     s32 i;
 
     for (i = 0; i < 7; i++) {
-        if (D_800ED148.entities[i].linkedIdx == arg0) {
+        if (D_800ED148.entities[i].comFileId == arg0) {
             return i;
         }
     }
@@ -2423,7 +2423,7 @@ s32 func_800AA530(s32 arg0) {
     s32 i;
 
     for (i = 0; i < 7; i++) {
-        if (!(D_800ED148.entities[i].status & 1) && ((D_800ED148.entities[i].linkedIdx == arg0))) {
+        if (!(D_800ED148.entities[i].status & 1) && ((D_800ED148.entities[i].comFileId == arg0))) {
             return i;
         }
     }

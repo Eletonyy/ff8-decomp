@@ -334,7 +334,7 @@ s32 func_800AACD0(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 
         default:
             for (i = 0; i < 7; i++) {
-                if (D_800ED148.entities[i].linkedIdx == arg0) {
+                if (D_800ED148.entities[i].comFileId == arg0) {
                     result = func_800AABEC(var_s2, arg2, result, i, arg3);
                 }
             }

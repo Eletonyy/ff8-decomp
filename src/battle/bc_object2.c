@@ -91,15 +91,13 @@ BattleEntry* func_8009BBD0(void) {
 }
 
 void func_8009BC28(void) {
-    BattleEntity* slot;
     SubEntry* subs;
     s32 count;
     s32 i;
     
     count = D_80078E00.array3750[D_800ED148.unk132E].unk0;
     subs = func_8009BBD0()->subEntries;
-    slot = &D_800ED148.entities[subs->unk0]; // entity[1]
-    slot[1].slot8.byteView.unk9 = count;
+    D_800ED148.entities[subs->unk0].unkC9 = count;
     
     for (i = 0; i < count; i++) {
         func_800A09D0(subs->unk0);
@@ -155,10 +153,8 @@ s32 func_8009BDD0(s32 unused, s32 arg1) {
  */
 void func_8009BE24(s32 arg0, s32 unused) {
     BattleSystem* bs;
-    BattleEntity* entity;
     bs = &D_800ED148;
-    entity = &bs->entities[arg0]; // entity[1]
-    if (func_8009B79C(entity[1].stateMachine.bytes.unk2 + D_800EEBBC, 255)) {
+    if (func_8009B79C(bs->entities[arg0].unkC2 + D_800EEBBC, 255)) {
         D_800ED148.unk1307 = 1;
         D_800EE4C0.flags6 |= 2;
     } 
@@ -170,18 +166,15 @@ void func_8009BE24(s32 arg0, s32 unused) {
 
 s32 func_8009BEA4(s32 arg0, s32 arg1) {
     BattleSystem *bs = &D_800ED148;
-    BattleEntity *slotA = &bs->entities[arg0];
-    BattleEntity *slotB;
     s32 baseVal;
     s32 result;
     
-    if (slotA->status & 8) {
+    if (bs->entities[arg0].status & 8) {
         D_800EEBBB = D_800EEBBB / 4;
     }
     
-    baseVal = D_800EEBBB + (slotA[1].stateMachine.bytes.unk2 / 2); // entity[1]
-    slotB = &bs->entities[arg1];
-    result = baseVal - slotB[1].stateMachine.bytes.unk3 - slotB[1].stateMachine.bytes.unk2;
+    baseVal = D_800EEBBB + (bs->entities[arg0].unkC2 / 2);
+    result = baseVal - bs->entities[arg1].unkC3 - bs->entities[arg1].unkC2;
 
     if (result < 0) {
         result = 0;
@@ -296,12 +289,12 @@ s32 func_8009C104(s32 unused, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5, 
 
 
     if (arg7 != 255) {
-        if (D_800ED148.entities[arg1].unkA0[arg2] >= 200) {
+        if (D_800ED148.entities[arg1].mentalRes[arg2] >= 200) {
             goto bail;
         }
 
-        if ((arg7 + 300 + (arg5 / 4) - D_800ED148.entities[arg1].unkA0[arg2] - (arg6 / 4) <= 300) || 
-            (arg7 < 250 && func_8009B79C((arg7 + (arg5 / 4) - D_800ED148.entities[arg1].unkA0[arg2] - (arg6 / 4)) * 255 / 100, 255) == 0)) {
+        if ((arg7 + 300 + (arg5 / 4) - D_800ED148.entities[arg1].mentalRes[arg2] - (arg6 / 4) <= 300) || 
+            (arg7 < 250 && func_8009B79C((arg7 + (arg5 / 4) - D_800ED148.entities[arg1].mentalRes[arg2] - (arg6 / 4)) * 255 / 100, 255) == 0)) {
             return 0;
         }
     }
@@ -318,14 +311,13 @@ s32 func_8009C104(s32 unused, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5, 
 
 s32 func_8009C300(s32 arg0, s32 arg1) {
     u8 result;
-    s32 index = 1;
     
     if (arg1 == 0) {
-        result = D_800ED148.entities[arg0].unkCE;
+        result = D_800ED148.entities[arg0].unkBE;
     } 
     
     else {
-        result = (D_800ED148.entities + arg0 + index)->stateMachine.unk0; // entity[1]
+        result = D_800ED148.entities[arg0].unkC0;
     }
     
     if (D_800ED148.entities[arg0].flags & BATTLE_ENTITY_FLAG_BIT_24) {
@@ -342,20 +334,18 @@ u8 func_8009C390(s32 arg0, s32 arg1, s32 arg2) {
     s32 var_s2;
     s32 var_s5;
     s32 sp20;
-    BattleEntity* entities;
     
     var_s2 = 0;
-    entities = D_800ED148.entities; // entity[1]
-    if (entities[arg1 + 1].slot8.byteView.unk9 == 0) { 
-        sp20 = entities[arg1].flags;
+    if (D_800ED148.entities[arg1].unkC9 == 0) { 
+        sp20 = D_800ED148.entities[arg1].flags;
         
         if (arg2 == 0) {
-            var_s5 = entities[arg0].unkCD[0];
+            var_s5 = D_800ED148.entities[arg0].unkBD[0];
             temp_s3 = func_8009C300(arg1, 0);
         } 
         
         else {
-            var_s5 = entities[arg0].unkCF;
+            var_s5 = D_800ED148.entities[arg0].unkBF;
             temp_s3 = func_8009C300(arg1, 1);
         }
         
@@ -402,7 +392,7 @@ s32 func_8009C598(s32 arg0, s32 arg1) {
         }
     }
 
-    return D_800ED148.entities[arg0].unk54[arg1];
+    return D_800ED148.entities[arg0].elemDef[arg1];
 }
 
 s32 func_8009C610(s32 arg0, s32 arg1, s32 arg2) {    
@@ -444,7 +434,7 @@ void func_8009C6E4(s32 arg0, s32 arg1, s32 arg2) {
     s32 temp_v3;
     
     D_800EE4C0.unk7 = arg0;
-    temp_v1 = D_800EEBBA - D_800ED148.entities[arg1].unkB7;
+    temp_v1 = D_800EEBBA - D_800ED148.entities[arg1].mentalRes[23];
     if (temp_v1 > 0) {
         temp_v2 = (arg2 * temp_v1) / 100;
         temp_v3 = func_8009C610(arg0, arg1, temp_v2);
@@ -467,7 +457,7 @@ void func_8009C798(s32 arg0, s32 unused, s32 unused2) {
         var_a2 = D_800EE4C0.unk14;
     }
 
-    var_a2 += (D_800ED148.entities[arg0].unk2C / 10) * (900 - D_800ED148.entities[arg0].unk58) / 100;
+    var_a2 += (D_800ED148.entities[arg0].maxHp / 10) * (900 - D_800ED148.entities[arg0].elemDef[2]) / 100;
 
     
     if (var_a2 < 0) {
@@ -548,12 +538,11 @@ void func_8009CA14(s32 arg0) {
  * @param srcIdx Source entity slot index.
  * @param dstIdx Target entity slot index.
  */
-void func_8009CAD8(s32 arg0, s32 arg1) { //entity[1]
+void func_8009CAD8(s32 arg0, s32 arg1) {
     u8 sp10[8];
     u8 sp18;
     u8 sp19;
     BattleSystem* bs;
-    BattleEntity* entity; 
     u8* result;
 
     D_800ED148.actionType = 0;
@@ -564,8 +553,7 @@ void func_8009CAD8(s32 arg0, s32 arg1) { //entity[1]
 
     
     bs = &D_800ED148;
-    entity = &bs->entities[arg0];
-    switch (func_800AF134(arg1, &sp18, &sp19, entity[1].stateMachine.bytes.unk1)) {
+    switch (func_800AF134(arg1, &sp18, &sp19, bs->entities[arg0].spd)) {
     case 1:
         D_800ED148.actionType = 1;
         D_800ED148.actionByte0 = sp18;
@@ -681,7 +669,7 @@ s32 func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, u32 type) {
             defense = 0;
         case 0:
             mod = func_8009CF18();
-            stat = D_800ED148.entities[attackerIdx].unkCD[0];
+            stat = D_800ED148.entities[attackerIdx].unkBD[0];
             sq = stat * stat / 16 + stat;
             dmg = sq * (265 - defense) / 256 * power / 16 * mod / 256;
             break;
@@ -693,12 +681,12 @@ s32 func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, u32 type) {
             } 
             
             else {
-                dmg = D_800ED148.entities[targetIdx].unk28 * power / 16;
+                dmg = D_800ED148.entities[targetIdx].currentHp * power / 16;
             }    
             break;
 
         case 3:
-            dmg = D_800ED148.entities[attackerIdx].unk2C * 5;
+            dmg = D_800ED148.entities[attackerIdx].maxHp * 5;
             break;
 
         case 16:
@@ -767,9 +755,9 @@ s32 func_8009D228(s32 arg0, s32 arg1, s32 arg2) {
         result1 = func_8009C300(arg1, 0);
         result2 = func_8009CF18();
         
-        var_v1 = D_800ED148.entities[arg0].unkCD[0] * D_800ED148.entities[arg0].unkCD[0];
+        var_v1 = D_800ED148.entities[arg0].unkBD[0] * D_800ED148.entities[arg0].unkBD[0];
         
-        var2 = ((var_v1 / 16) + D_800ED148.entities[arg0].unkCD[0]) * (265 - result1);
+        var2 = ((var_v1 / 16) + D_800ED148.entities[arg0].unkBD[0]) * (265 - result1);
         
         var1 = (var2 / 256) * arg2;
         
@@ -871,7 +859,7 @@ s32 func_8009D6C4(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
                 break;
 
             case 12:
-                arg0 = D_800ED148.entities[arg1].unk28 - 1;
+                arg0 = D_800ED148.entities[arg1].currentHp - 1;
                 break;
 
             case 13:
@@ -909,7 +897,7 @@ s32 func_8009D7D8(s32 arg0, s32 arg1, s32 arg2, u32 arg3) {
 
     switch (arg3) {
     case 10:
-        if ((D_800ED148.entities[arg1].unkCC % D_800EEBBB) != 0) {
+        if ((D_800ED148.entities[arg1].level % D_800EEBBB) != 0) {
             D_800EE4C0.flags6 |= 4;
             return 0;
         }
@@ -921,7 +909,7 @@ s32 func_8009D7D8(s32 arg0, s32 arg1, s32 arg2, u32 arg3) {
     case 0: case_0:
         temp_v1 = func_8009CF18();
 
-        var_a0 = (D_800ED148.entities[arg0].unkCF + arg2) * (265 - var_s0);
+        var_a0 = (D_800ED148.entities[arg0].unkBF + arg2) * (265 - var_s0);
 
         var_v0_2 = ((var_a0 / 4)* arg2) / 256;
 
@@ -935,7 +923,7 @@ s32 func_8009D7D8(s32 arg0, s32 arg1, s32 arg2, u32 arg3) {
 
     case 1:
         if (!(D_800ED148.entities[arg1].controlFlags & BATTLE_ENTITY_FLAG_BIT_16)) {
-            var_s0 = (D_800ED148.entities[arg1].unk28 * arg2) / 16;
+            var_s0 = (D_800ED148.entities[arg1].currentHp * arg2) / 16;
             break;
         } 
 
@@ -958,7 +946,7 @@ s32 func_8009D7D8(s32 arg0, s32 arg1, s32 arg2, u32 arg3) {
             break;
         }
 
-        var_s0 = (D_800ED148.entities[arg1].unk2C * D_800EEBBF) / ((D_800EEBBD + 100) - D_800EEBBE);
+        var_s0 = (D_800ED148.entities[arg1].maxHp * D_800EEBBF) / ((D_800EEBBD + 100) - D_800EEBBE);
         break;
 
     case 17:
@@ -1008,20 +996,18 @@ s32 func_8009DCCC(s32 unused, s32 arg1, s32 arg2) {
 
 void func_8009DD2C(s32 arg0, s32 arg1, u16 sp10, s32 arg3) {
     s32 i;
-    BattleEntity* entities;
     BattleEntity* entity;
     s32 mask;
     s32 var_s2;
 
 
-    entities = D_800ED148.entities; // entity[1]
-    if (entities[arg0 + 1].slot8.byteView.unk9 == 0) {
+    if (D_800ED148.entities[arg0].unkC9 == 0) {
         func_8009B878(arg0, &sp10, &D_800EEBC4, 0);
         var_s2 = 0;
         
         mask = 1;
         for(i = 0; i < 7; i++) {
-            if ((sp10 & mask) && (entities[arg0].status & mask)) {
+            if ((sp10 & mask) && (D_800ED148.entities[arg0].status & mask)) {
                 var_s2 = 1;
             }
             
@@ -1102,13 +1088,13 @@ s32 func_8009DEF0(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     switch (arg3) {
     case 7:
         cf = func_8009CF18();
-        t = (D_800ED148.entities[arg0].unkCF + arg2) / 2;
+        t = (D_800ED148.entities[arg0].unkBF + arg2) / 2;
         t *= arg2;
         s1 = (t * cf) / 256;
         break;
 
     case 8:
-        s1 = (D_800ED148.entities[arg1].unk2C * arg2) / 16;
+        s1 = (D_800ED148.entities[arg1].maxHp * arg2) / 16;
         break;
     }
 
@@ -1141,11 +1127,11 @@ s32 func_8009E110(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
             break;
 
         case 15:
-            var_s1 = (D_800ED148.entities[arg1].unk2C * arg2) / 16;
+            var_s1 = (D_800ED148.entities[arg1].maxHp * arg2) / 16;
             break;
 
         case 9:
-            var_s1 = D_800ED148.entities[arg0].unk2C - g_battleChars.chars[arg0].unk172;
+            var_s1 = D_800ED148.entities[arg0].maxHp - g_battleChars.chars[arg0].unk172;
             break;
         }
 
@@ -1207,9 +1193,9 @@ s32 func_8009E418(s32 arg0, s32 arg1, s32 arg2) {
     }
     
 
-    var_a1 = D_800ED148.entities[arg1].unk2C / 8;
+    var_a1 = D_800ED148.entities[arg1].maxHp / 8;
     if ((D_800EE4C0.unk1 == 4 || D_800EE4C0.unk1 == 13) && arg0 < 3 && g_battleChars.chars[arg0].statusFlags & 2) {
-        var_a1 = D_800ED148.entities[arg1].unk2C / 4;
+        var_a1 = D_800ED148.entities[arg1].maxHp / 4;
     }
     
     if (var_a1 == 0) {
@@ -1231,11 +1217,11 @@ s32 func_8009E528(s32 arg0, s32 arg1, s32 arg2) {
         return ret;
     }
     
-    if (D_800ED148.entities[arg1].unk2C == 0) {
+    if (D_800ED148.entities[arg1].maxHp == 0) {
         return 1;
     }
     
-    return D_800ED148.entities[arg1].unk2C;
+    return D_800ED148.entities[arg1].maxHp;
 }
 
 void func_8009E5C0(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
@@ -1269,7 +1255,7 @@ s32 func_8009E684(s32 unused, s32 arg1, s32 arg2, s32 arg3) {
         temp_s0 = D_800EEBBA;
         
         if (func_8009B15C() < temp_s0) {
-            temp_a1 = D_800ED148.entities[arg1].unkCC;
+            temp_a1 = D_800ED148.entities[arg1].level;
             
             var_a0 = temp_a1 * arg2 / 8; 
             if (var_a0 == 0) {
@@ -1280,7 +1266,7 @@ s32 func_8009E684(s32 unused, s32 arg1, s32 arg2, s32 arg3) {
                 var_a0 = 100;
             }
             
-            D_800ED148.entities[arg1].unkCC = var_a0;
+            D_800ED148.entities[arg1].level = var_a0;
             func_8009E5C0(var_a0, temp_a1, arg3, arg1);
             func_800A8430(arg1);
             D_800ED148.unk1318 = 1;
@@ -1444,7 +1430,7 @@ s32 func_8009ED2C(s32 arg0) {
         return 0;
     }
     
-    if (func_8009B79C(256 - (D_800ED148.entities[arg0].unk28 * 255 / D_800ED148.entities[arg0].unk2C), 255) != 0) {
+    if (func_8009B79C(256 - (D_800ED148.entities[arg0].currentHp * 255 / D_800ED148.entities[arg0].maxHp), 255) != 0) {
         if (func_8009B15C() < 16) {
             D_800ED148.unk1315 = temp_s0->unkFA;
         }
@@ -1517,8 +1503,8 @@ s32 func_8009F040(s32 arg0, s32 arg1, s32 unused) {
     s32 entity1;
     
 
-    entity0 = D_800ED148.entities[arg0].unk28;
-    entity1 = D_800ED148.entities[arg1].unk28;
+    entity0 = D_800ED148.entities[arg0].currentHp;
+    entity1 = D_800ED148.entities[arg1].currentHp;
     
     if (entity0 >= entity1) {
         if (func_8009B79C(((entity0 - entity1) * 255 / entity0), 255)) {
@@ -1586,7 +1572,7 @@ s32 func_8009F23C(s32 arg0, s32 arg1) {
     s32 temp_a3;
 
     temp_a3 = D_80078E00.unk4C0C[D_800ED148.unk1327].unk3;
-    var_s2 = D_800ED148.entities[arg1].unk2C * temp_a3 / 16;
+    var_s2 = D_800ED148.entities[arg1].maxHp * temp_a3 / 16;
     
     switch (D_80078E00.unk4C0C[D_800ED148.unk1327].unk2) {
     case 30:
@@ -1614,7 +1600,7 @@ s32 func_8009F350(s32 arg0) {
 
     do {} while(0); // hack
     
-    return D_800ED148.entities[arg0].unk2C * (val + 5) / 100;
+    return D_800ED148.entities[arg0].maxHp * (val + 5) / 100;
 }
 
 /**
@@ -1626,14 +1612,12 @@ s32 func_8009F350(s32 arg0) {
  * @param entityIdx Entity index.
  * @return Pending damage value divided by 4.
  */
-s32 func_8009F3F8(s32 arg0) { // entity[1]
+s32 func_8009F3F8(s32 arg0) {
     BattleSystem* bs;
-    BattleEntity* temp_v1;
     u16 temp_v0;
     bs = &D_800ED148;
-    temp_v1 = &bs->entities[arg0];
-    temp_v0 = temp_v1[1].timers.bigTimer / 4; //timer is u16 instead of u8
-    temp_v1[1].timers.bigTimer = 0;
+    temp_v0 = bs->entities[arg0].unkCC / 4;
+    bs->entities[arg0].unkCC = 0;
     return temp_v0;
 }
 
@@ -1660,7 +1644,7 @@ s32 func_8009F3F8(s32 arg0) { // entity[1]
  * @return Entity field value divided by 5.
  */
 s32 func_8009F428(s32 arg0) {
-    return D_800ED148.entities[arg0].unk2C / 10;
+    return D_800ED148.entities[arg0].maxHp / 10;
 }
 
 /**
@@ -1684,7 +1668,7 @@ s32 func_8009F4BC(s32 arg0) {
         D_800EE4C0.flags6 |= 1;
     }
 
-    return D_800ED148.entities[arg0].unk2C / 20;
+    return D_800ED148.entities[arg0].maxHp / 20;
 }
 
 /**
@@ -1730,11 +1714,11 @@ void func_8009F570(s32 arg0) {
 }
 
 void func_8009F5B4(s32 arg0) {
-    if (!(g_gameState.config.flags & CONFIG_SCAN) && (func_8009F52C(D_800ED148.entities[arg0].linkedIdx))) {
+    if (!(g_gameState.config.flags & CONFIG_SCAN) && (func_8009F52C(D_800ED148.entities[arg0].comFileId))) {
         D_800EE4C0.flags5 |= 2;
     }
 
-    func_8009F570(D_800ED148.entities[arg0].linkedIdx);
+    func_8009F570(D_800ED148.entities[arg0].comFileId);
 }
 
 s32 func_8009F65C(s32 arg0, s32 arg1) {
@@ -1776,8 +1760,8 @@ s32 func_8009F718(s32 arg0, s32 arg1, s32 arg2) {
     temp = func_8009F65C(arg1, arg2);
     var = 10;
     
-    var2 = D_800ED148.entities[arg0].unkCC - (D_800ED148.entities[arg1].unkCC - var);
-    var3 = (var2 >> 1) + temp_s4 + D_800ED148.entities[arg0].unkCF;
+    var2 = D_800ED148.entities[arg0].level - (D_800ED148.entities[arg1].level - var);
+    var3 = (var2 >> 1) + temp_s4 + D_800ED148.entities[arg0].unkBF;
     result = ((var3 - temp_s3) / 5) - temp;
     
     if (result < 0) {
@@ -1793,7 +1777,7 @@ s32 func_8009F718(s32 arg0, s32 arg1, s32 arg2) {
 
 void func_8009F824(void) {
     if (D_800EE4C0.flags6 & 4) {
-        if (D_800ED148.entities[D_800ED148.unk12F3].unk99 == 0) {
+        if (D_800ED148.entities[D_800ED148.unk12F3].unk89 == 0) {
             D_800EE4C0.unk4 = 9;
         } 
         
@@ -1896,9 +1880,9 @@ s32 func_8009F930(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
             break;
 
         case 16:  
-            var_s1 = D_800ED148.entities[arg2].unk2C - D_800ED148.entities[arg2].unk28;
+            var_s1 = D_800ED148.entities[arg2].maxHp - D_800ED148.entities[arg2].currentHp;
             func_8009E684(arg1, arg2, arg3, 1);
-            D_800ED148.entities[arg2].unk28 = D_800ED148.entities[arg2].unk2C - var_s1;
+            D_800ED148.entities[arg2].currentHp = D_800ED148.entities[arg2].maxHp - var_s1;
             var_s1 = 0;
             break;
 
@@ -1987,7 +1971,7 @@ s32 func_8009F930(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
  */
 void func_8009FCF4(u8 arg0) {
     D_800ED148.unk130E = arg0;
-    D_800ED148.entities[D_800ED148.unk12F3].unk99 = arg0 & 3;
+    D_800ED148.entities[D_800ED148.unk12F3].unk89 = arg0 & 3;
 }
 
 s32 func_8009FD28(s32 arg0, s32 arg1) {
@@ -2022,19 +2006,16 @@ s32 func_8009FDD4(s32 val) {
  * @param a1 Multiplier input.
  * @return Computed offset value.
  */
-s32 func_8009FDE0(s32 arg0, s32 arg1) { // entity[1]
+s32 func_8009FDE0(s32 arg0, s32 arg1) {
     BattleSystem* bs;
-    BattleEntity* entity;
     s32 var;
     
     var = (arg1 * 4) - 1;
     bs = &D_800ED148;
-    entity = &bs->entities[arg0];
-    return var + entity[1].slot8.byteView.unkA;
+    return var + bs->entities[arg0].crisisLevel;
 }
 
 void func_8009FE14(s32 arg0) {
-    BattleEntity* temp_v0_2;
     BattleSystem* bs;
     s32 index;
 
@@ -2207,13 +2188,12 @@ void func_8009FE14(s32 arg0) {
 
     default:
         bs = &D_800ED148;
-        temp_v0_2 = &bs->entities[arg0]; // entity[1]
-        D_800EEBB8 = temp_v0_2[1].state.bytes.b2;
-        D_800EEBB9 = temp_v0_2[1].state.bytes.b1;
-        D_800EEBBA = temp_v0_2[0].unkC8[2];
-        D_800EEBC2 = temp_v0_2[0].unk96;
-        D_800EEBC4 = temp_v0_2[0].unk30;
-        D_800EEBBB = temp_v0_2[1].state.bytes.b0;
+        D_800EEBB8 = bs->entities[arg0].unkC6;
+        D_800EEBB9 = bs->entities[arg0].unkC5;
+        D_800EEBBA = bs->entities[arg0].unkB8[2];
+        D_800EEBC2 = bs->entities[arg0].hitStatus1;
+        D_800EEBC4 = bs->entities[arg0].unk20;
+        D_800EEBBB = bs->entities[arg0].unkC4;
         D_800EEBBC = D_80078E00.array35BD[g_battleChars.chars[arg0].classId].unk5;
         break;
     }
@@ -2286,16 +2266,14 @@ void func_800A0978(s32 arg0) {
 
 void func_800A09D0(s32 arg0) {
     BattleSystem* bs;
-    BattleEntity* temp_a0;
     s32 temp_s4;
     u8 var_a0;
     u8 var_s3;
 
     bs = &D_800ED148;
-    temp_a0 = &bs->entities[arg0];
-    temp_a0->controlFlags &= ~BATTLE_ENTITY_FLAG_BIT_14;
-    if (temp_a0[1].slot8.byteView.unk9 != 0) { // entity[1]
-        temp_a0[1].slot8.byteView.unk9--;
+    bs->entities[arg0].controlFlags &= ~BATTLE_ENTITY_FLAG_BIT_14;
+    if (bs->entities[arg0].unkC9 != 0) {
+        bs->entities[arg0].unkC9--;
     }
 
     D_800ED148.unk1329 = 0;
@@ -2400,7 +2378,7 @@ void func_800A09D0(s32 arg0) {
         /* fallthrough */
     case 1:        
     case 28:
-        if (D_800ED148.entities[temp_s4].linkedIdx != 0 && D_800ED148.entities[temp_s4].linkedIdx != 6) {
+        if (D_800ED148.entities[temp_s4].comFileId != 0 && D_800ED148.entities[temp_s4].comFileId != 6) {
             func_8009FCF4(0);
             var_s3 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk1;
             D_800EE4C0.unk4 = 4;

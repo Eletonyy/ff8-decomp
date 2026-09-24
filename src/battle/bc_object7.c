@@ -54,7 +54,7 @@ extern void func_800AF6BC(s32 a0);
  *        into the matching @c BattleCharData and refresh its anim table entry.
  *
  * Walks @c D_800ED148.entities[0..2] (BattleSystem block) — for any slot whose
- * @c linkedIdx is not 0xFF, calls @c func_800AF6BC(i) (which copies the
+ * @c comFileId is not 0xFF, calls @c func_800AF6BC(i) (which copies the
  * entity's animation halfwords into the per-character anim cache) and then
  * mirrors @c entity->status into @c g_battleChars.chars[i].displayStatus.
  * Finishes by calling @c func_800AF654 to rebuild the global anim list.
@@ -63,7 +63,7 @@ void func_800AF740(void) {
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].linkedIdx != 0xFF) {
+        if (D_800ED148.entities[i].comFileId != 0xFF) {
             func_800AF6BC(i);
             g_battleChars.chars[i].displayStatus = D_800ED148.entities[i].status;
         }
@@ -323,7 +323,7 @@ void func_800B0574(s32 arg0, u32 arg1) {
     if (temp_v0 < 14) {
         u8 val = D_80078E00.unk4CCC[temp_v0];
         s32 temp = ((g_gameState.config.battleSpeed + 1) * 4);
-        D_800ED148.entities[arg0].field64.perBit[temp_v0] = val * temp;
+        D_800ED148.entities[arg0].timers.perBit[temp_v0] = val * temp;
     }
 }
 
@@ -332,12 +332,12 @@ void func_800B0574(s32 arg0, u32 arg1) {
  *        halfword slot indexed by the lowest set bit of @p a1.
  *
  * @param a0 Entity index into @c D_800ED148.entities.
- * @param a1 Bitmask whose lowest set bit selects the slot in @c field64.
+ * @param a1 Bitmask whose lowest set bit selects the slot in @c timers.
  */
 void func_800B0600(s32 a0, s32 a1) {
     s32 bitPos = func_800B054C(a1);
     if (bitPos < 14) {
-        D_800ED148.entities[a0].field64.perBit[bitPos] = -0x457;
+        D_800ED148.entities[a0].timers.perBit[bitPos] = -0x457;
     }
 }
 
@@ -346,13 +346,13 @@ void func_800B0600(s32 a0, s32 a1) {
  *        lowest set bit of @p a1) currently holds the reset sentinel.
  *
  * @param a0 Entity index into @c D_800ED148.entities.
- * @param a1 Bitmask whose lowest set bit selects the slot in @c field64.
- * @return 1 if @c field64[bitPos] == -0x457, 0 otherwise.
+ * @param a1 Bitmask whose lowest set bit selects the slot in @c timers.
+ * @return 1 if @c timers[bitPos] == -0x457, 0 otherwise.
  */
 s32 func_800B0668(s32 a0, s32 a1) {
     s32 bitPos = func_800B054C(a1);
     if (bitPos < 14) {
-        if (D_800ED148.entities[a0].field64.perBit[bitPos] == -0x457) {
+        if (D_800ED148.entities[a0].timers.perBit[bitPos] == -0x457) {
             return 1;
         }
     }
@@ -371,7 +371,7 @@ s32 func_800B0668(s32 a0, s32 a1) {
  */
 void func_800B06DC(u16 arg0) {
     func_800A4C84(arg0);
-    if (D_800ED148.entities[0].unkE == 0) {
+    if (D_800ED148.header.unkE == 0) {
         func_8009AE08(5);
         func_800AE524(D_800ED148.unk5C0 - 1);
         D_800ED148.entries[D_800ED148.unk5C0 - 1].unk11 = 0;

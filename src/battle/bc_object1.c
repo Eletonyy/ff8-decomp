@@ -43,8 +43,8 @@ void func_80099D30(void) {
     s32 i;
 
     func_80099FE8();
-    while (D_800ED148.entities[0].timers.SplitTimer.timer != 0) {
-        switch (D_800ED148.entities[0].state.word) {
+    while (D_800ED148.header.timers.SplitTimer.timer != 0) {
+        switch (D_800ED148.header.state.word) {
        
         case 1:
             func_8009A160();
@@ -80,7 +80,7 @@ void func_80099D30(void) {
                 func_800A63DC();
             }
             
-            if ((D_800ED148.unk12EB != 0) && (D_800ED148.unk12FD == 0) && (D_800ED148.entities[0].stateMachine.unk0 == 0) && (D_80082C0F == 0)) {
+            if ((D_800ED148.unk12EB != 0) && (D_800ED148.unk12FD == 0) && (D_800ED148.header.stateMachine.unk0 == 0) && (D_80082C0F == 0)) {
                 func_800B0C08();
                 func_800B2038();
             }
@@ -99,13 +99,13 @@ void func_80099D30(void) {
 }
 
 void func_80099F18(void) {
-    if ((D_800ED148.entities[0].timers.SplitTimer.timer != 255) && (D_800ED148.entities[0].timers.SplitTimer.timer != 0)) {
-        D_800ED148.entities[0].timers.SplitTimer.timer--;
+    if ((D_800ED148.header.timers.SplitTimer.timer != 255) && (D_800ED148.header.timers.SplitTimer.timer != 0)) {
+        D_800ED148.header.timers.SplitTimer.timer--;
     }
 }
 
 void func_80099F58(void) {
-    if (D_800ED148.entities[0].timers.SplitTimer.control != 0) {
+    if (D_800ED148.header.timers.SplitTimer.control != 0) {
         func_8009AF3C(getMenuString(4), 1, 2, 0xF0, 0x56);
     }
 }
@@ -132,9 +132,9 @@ void func_80099FE8(void) {
     func_8009B428();
 
     D_800ED148.unk5C3 = 1;
-    D_800ED148.entities[0].state.word = 0;
+    D_800ED148.header.state.word = 0;
     D_800ED148.unk12EC = 255;
-    D_800ED148.entities[0].timers.SplitTimer.timer = 255;
+    D_800ED148.header.timers.SplitTimer.timer = 255;
     g_battleConfig.result = BATTLE_RESULT_UNDETERMINED;
     D_800ED148.unk1319 = 255;
 
@@ -187,7 +187,7 @@ void func_8009A160(void) {
     func_800A69BC();
     func_8009B134(112, 128, 0);
     func_8009AF14(func_8009ABE4);
-    D_800ED148.entities[0].state.word = 2;
+    D_800ED148.header.state.word = 2;
 }
 
 /**
@@ -207,7 +207,7 @@ void func_8009A1E0(void) {
     func_800B1ACC();
     func_800B2084();
     func_800B2024();
-    D_800ED148.entities[0].state.word = 4;
+    D_800ED148.header.state.word = 4;
 }
 
 /**
@@ -344,15 +344,8 @@ s32 func_8009A514(s32 arg0, s32 arg1) {
  * Snapshots entity state via func_8009AFF0 and func_800A1CFC, then plays
  * sound 0x67 targeting the entity. Stores idx + flag (cmd->unk2.b.lo = 1,
  * .b.hi = 1 if entity controlFlags bit 1 set, else 0). Then copies the
- * @p off-th hit-type byte (@c D_800ED148.unkD14) into @c entity->linkedIdx
+ * @p off-th hit-type byte (@c D_800ED148.unkD14) into @c entity->comFileId
  * and the @p off-th position (@c D_800ED148.unkCE4) into @c entity->animParam1/2/3.
- *
- * @note The @c (s32)&D_800ED148.entities[idx].linkedPtr expression for the
- * @c func_8009B134 argument is equivalent to @c (s32)&D_800ED158.slots[idx]
- * (since @c BattleEntity::linkedPtr is at offset @c 0x10 and
- * @c D_800ED158 = @c D_800ED148 + @c 0x10), but writing it relative to
- * @c D_800ED148 lets gcc share one @c lui+addiu base register across the
- * @c func_8009B134 arg and the post-call entity field accesses.
  *
  * @param idx Entity slot index.
  * @param off Source entity index for the hit-type / position lookup.
@@ -370,7 +363,7 @@ void func_8009A528(s32 idx, s32 off) {
     } else {
         cmd->unk2.b.hi = 0;
     }
-    D_800ED148.entities[idx].linkedIdx = D_800ED148.unkD14[off];
+    D_800ED148.entities[idx].comFileId = D_800ED148.unkD14[off];
     D_800ED148.entities[idx].animParam1 = D_800ED148.unkCE4[off].x;
     D_800ED148.entities[idx].animParam2 = D_800ED148.unkCE4[off].y;
     D_800ED148.entities[idx].animParam3 = D_800ED148.unkCE4[off].z;
@@ -398,15 +391,8 @@ void func_8009A638(void) {
  * @brief Queue a return-to-position animation for an entity.
  *
  * Snapshots animation state via @c func_800A240C / @c func_8009AFF0 /
- * @c func_800A1AB8 with the entity's @c status / @c flags / @c unk28,
+ * @c func_800A1AB8 with the entity's @c status / @c flags / @c currentHp,
  * then plays sound @c 0x67 with both parameter bytes cleared.
- *
- * @note The @c (s32)&D_800ED148.entities[idx].linkedPtr expression is
- * equivalent to @c (s32)&D_800ED158.slots[idx] (since @c BattleEntity::linkedPtr
- * is at offset @c 0x10 and @c D_800ED158 = @c D_800ED148 + @c 0x10), but
- * writing it relative to @c D_800ED148 lets gcc share one @c lui+addiu
- * base register across the @c func_8009B134 arg and the entity field
- * accesses.
  *
  * @note The local @c entities cache for the middle @c func_800A1AB8 call
  * shifts gcc's @c s2/s3 register allocation to match the target.
@@ -416,7 +402,7 @@ void func_8009A638(void) {
 void func_8009A6A8(s32 idx) {
     SoundCmd *cmd;
 
-    func_800A240C(idx, D_800ED148.entities[idx].unk28, &D_800ED148.entities[idx].status);
+    func_800A240C(idx, D_800ED148.entities[idx].currentHp, &D_800ED148.entities[idx].status);
     func_8009AFF0(idx);
     func_800A1AB8(idx, D_800ED148.entities[idx].status, D_800ED148.entities[idx].flags);
     cmd = func_8009B134(0x67, 0x80, &D_800ED148.entities[idx].entityData);
@@ -428,7 +414,7 @@ void func_8009A6A8(s32 idx) {
 /**
  * @brief Lay out party-side battle slots and play the start-of-encounter sound.
  *
- * Counts active entities in the first 3 slots (those with @c linkedIdx
+ * Counts active entities in the first 3 slots (those with @c comFileId
  * != @c 0xFF), plays sound @c 0xD at volume @c 0x80, then iterates the same
  * 3 slots calling @c func_8009A6A8 for each active one. For each, clears
  * @c animParam2 (y) and sets @c animParam1 (x) / @c animParam3 (z) from a
@@ -447,30 +433,29 @@ void func_8009A74C(void) {
 
     activeCount = 0;
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].linkedIdx != 255) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             activeCount++;
         }
     }
     func_8009B134(0xD, 0x80, 0);
     posIdx = 0;
     for (i = 0; i < 3; i++) {
-        BattleEntity *e = &D_800ED148.entities[i];
-        if (e->linkedIdx != 0xFF) {
+        if (D_800ED148.entities[i].comFileId != 0xFF) {
             func_8009A6A8(i);
-            e->animParam2 = 0;
+            D_800ED148.entities[i].animParam2 = 0;
             switch (activeCount) {
             case 1:
-                e->animParam1 = D_800E3CA4[0];
-                e->animParam3 = D_800E3CA4[1];
+                D_800ED148.entities[i].animParam1 = D_800E3CA4[0];
+                D_800ED148.entities[i].animParam3 = D_800E3CA4[1];
                 break;
             case 2:
-                e->animParam1 = D_800E3CA8[posIdx].x;
-                e->animParam3 = D_800E3CA8[posIdx].z;
+                D_800ED148.entities[i].animParam1 = D_800E3CA8[posIdx].x;
+                D_800ED148.entities[i].animParam3 = D_800E3CA8[posIdx].z;
                 posIdx++;
                 break;
             case 3:
-                e->animParam1 = D_800E3CB0[posIdx].x;
-                e->animParam3 = D_800E3CB0[posIdx].z;
+                D_800ED148.entities[i].animParam1 = D_800E3CB0[posIdx].x;
+                D_800ED148.entities[i].animParam3 = D_800E3CB0[posIdx].z;
                 posIdx++;
                 break;
             }
@@ -490,7 +475,7 @@ void func_8009A74C(void) {
 void func_8009A8B4(s32 idx) {
     SoundCmd *cmd = func_8009B134(0x66, 0x80, &D_800ED148.entities[idx].entityData);
     cmd->unk0 = idx;
-    cmd->unk2.hword = D_800ED148.entities[idx].linkedIdx;
+    cmd->unk2.hword = D_800ED148.entities[idx].comFileId;
 }
 
 /**
@@ -503,7 +488,7 @@ void func_8009A928(void) {
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].linkedIdx != 255) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             func_8009A8B4(i);
         }
     }
@@ -523,22 +508,20 @@ void func_8009A990(s32 arg0) {
     s32 i;
 
     for (i = 0; i < 7; i++) {
-        BattleEntity* entity = &D_800ED148.entities[i];
-        
-        if ((entity + 1)->slot8.byteView.trigKey == arg0) {
-            if ((entity + 1)->state.bytes.trigType != 0) {
-                if ((entity + 1)->state.bytes.trigType == 2) {
-                    if (!(entity->status & 1)) {
-                        func_800A59AC(i, (entity + 1)->state.bytes.trigType, 0);
+        if (D_800ED148.entities[i].trigKey == arg0) {
+            if (D_800ED148.entities[i].trigType != 0) {
+                if (D_800ED148.entities[i].trigType == 2) {
+                    if (!(D_800ED148.entities[i].status & 1)) {
+                        func_800A59AC(i, D_800ED148.entities[i].trigType, 0);
                     }
-                } 
-                
-                else {
-                    func_800A59AC(i, (entity + 1)->state.bytes.trigType, 0);
                 }
-                
-                (entity + 1)->slot8.byteView.trigKey = 0;
-                (entity + 1)->state.bytes.trigType = 0;
+
+                else {
+                    func_800A59AC(i, D_800ED148.entities[i].trigType, 0);
+                }
+
+                D_800ED148.entities[i].trigKey = 0;
+                D_800ED148.entities[i].trigType = 0;
                 return;
             }
         }
@@ -604,7 +587,7 @@ void func_8009AB54(s32 arg0) {
  * func_800AED9C, func_800AEB50.
  */
 void func_8009AB98(void) {
-    if (D_800ED148.entities[0].stateMachine.unk0 == 0) {
+    if (D_800ED148.header.stateMachine.unk0 == 0) {
         func_800AECD4();
         func_800AED30();
         func_800AEC04();
@@ -619,7 +602,7 @@ void func_8009AB98(void) {
  * Writes value 3 to D_800ED148 offset 0x4 (entity state field).
  */
 void func_8009ABE4(void) {
-    D_800ED148.entities[0].state.word = 3;
+    D_800ED148.header.state.word = 3;
 }
 
 /**
@@ -629,7 +612,7 @@ void func_8009ABE4(void) {
  *
  */
 void func_8009ABFC(void) {
-    D_800ED148.entities[0].state.word = 1;
+    D_800ED148.header.state.word = 1;
 }
 
 /**
@@ -648,7 +631,7 @@ void func_8009AC14(void) {
  * func_800A30E4 (animation), and func_800A79A0 (state reset).
  */
 void func_8009AC34(void) {
-    D_800ED148.entities[0].stateMachine.unk0 = 0;
+    D_800ED148.header.stateMachine.unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
@@ -662,11 +645,11 @@ void func_8009AC34(void) {
  * calls func_800AF8A4 with it.
  */
 void func_8009AC68(void) {
-    D_800ED148.entities[0].stateMachine.unk0 = 0;
+    D_800ED148.header.stateMachine.unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
-    func_800AF8A4(D_800ED148.entities[0].entityRef);
+    func_800AF8A4(D_800ED148.header.entityRef);
 }
 
 /**
@@ -676,7 +659,7 @@ void func_8009AC68(void) {
  * If inactive, calls func_8009AC68 for full reset.
  */
 void func_8009ACB4(void) {
-    if (func_800B1930(D_800ED148.entities[0].entityRef) == 0) {
+    if (func_800B1930(D_800ED148.header.entityRef) == 0) {
         func_8009AC68();
     }
 }
@@ -693,7 +676,7 @@ void func_8009ACEC(void) {
     s32 i;
     
     D_800ED148.unk12E8 = 2;
-    D_800ED148.entities[0].timers.SplitTimer.control = 0;
+    D_800ED148.header.timers.SplitTimer.control = 0;
     D_800ED148.unk12FD = 1;
     D_800ED148.unk12EA = 0;
     D_800ED148.unk5C2 = 0;
@@ -731,7 +714,7 @@ void func_8009AD7C(void) {
     }
 
     func_8009AB54(frames - 15);
-    D_800ED148.entities[0].timers.SplitTimer.timer = frames;
+    D_800ED148.header.timers.SplitTimer.timer = frames;
 }
 
 /**
@@ -747,7 +730,7 @@ void func_8009AD7C(void) {
 void func_8009AE08(s32 cmd) {
     switch (cmd) {
         case 5:
-            D_800ED148.entities[0].stateMachine.unk0 = 1;
+            D_800ED148.header.stateMachine.unk0 = 1;
             break;
         case 6:
             func_8009AF14(func_8009AC14);
@@ -1341,7 +1324,7 @@ s32 func_8009B7BC(s32 a0) {
 s32 func_8009B7F4(s32 arg0, s32 arg1) {
     s32 max;
 
-    if ((D_800EE4C0.unk1 == 237) && (D_800ED148.entities[arg1].unk28 == 0)) {
+    if ((D_800EE4C0.unk1 == 237) && (D_800ED148.entities[arg1].currentHp == 0)) {
         return 0;
     }
 
