@@ -7,6 +7,7 @@
 #include "field.h"
 #include "card.h"
 #include "cdread.h"
+#include "battle.h"
 
 extern u8 D_8007809B[];
 extern u8 g_chocoboWorld;
@@ -18,9 +19,6 @@ extern s32 D_80085220;
 extern u8 D_8005644B[];
 extern u16 D_800562C8[];
 extern s32 D_800562D4;
-extern u8 D_80077EBC;
-extern u16 D_80082C0A;
-extern u16 D_8005F11C;
 extern s32 findNthSetBit(s32, s32, u8 *, s32);
 extern s32 func_80021300(void);
 
@@ -693,7 +691,7 @@ INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037FB0);
 void func_80038030(s32 arg0) {
     FieldVars *ptr = (FieldVars *)D_800780D8;
 
-    if (!(D_80082C0A & 0x10)) {
+    if (!(g_battleConfig.unk2 & 0x10)) {
         while (sndGetStatus() == 2) {
             func_800393C8();
         }

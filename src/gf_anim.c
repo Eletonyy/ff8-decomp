@@ -4,7 +4,6 @@
 #include "gamestate.h"
 #include "gf.h"
 
-extern u8 D_80078DF8;
 extern u8 D_80082C10;
 extern CharacterData g_characters[];
 
@@ -322,7 +321,7 @@ void recalcAllGfStats(void) {
 void recalcPartyStats(void) {
     s32 i;
 
-    D_80078DF8 = 0;
+    g_battleChars.levelEntries[15].abilityFlags = 0;
 
     for (i = 0; i < 3; i++) {
         func_80022E08(g_gameState.mainData.party.party[i], i);
