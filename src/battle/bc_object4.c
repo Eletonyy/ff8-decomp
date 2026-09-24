@@ -1000,7 +1000,7 @@ u8 func_800A7AB8(s32 arg0) {
  * @return Byte value at the end of the pointer chain.
  */
 s32 func_800A7AF4(s32 idx) {
-    Unk4Struct *script = *D_800ED148.entities[idx].unk4;
+    Unk4Struct *script = *D_800ED148.entities[idx].monsterAiSection;
     Unk4Struct *ai = GET_OFFSET(Unk4Struct, script, script->unk4);
 
     return *((u8*)ai + ai->unkC);

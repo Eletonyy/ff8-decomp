@@ -255,7 +255,7 @@ typedef struct {
 
 typedef struct {
     /* 0x00 */ BattleEntityData** entityData;
-    /* 0x04 */ Unk4Struct** unk4;
+    /* 0x04 */ Unk4Struct** monsterAiSection;
     /* 0x08 */ s32 flags;
     /* 0x0C */ s32 flagsBackup;
     /* 0x10 */ s32 maxAtb;

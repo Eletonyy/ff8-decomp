@@ -611,7 +611,7 @@ void func_800AB3E0(void) {
 void func_800AB3FC(s32 arg0, s32 arg1, s32 arg2) {
     Unk4Struct* temp_v1;
 
-    temp_v1 = *D_800ED148.entities[arg0].unk4;
+    temp_v1 = *D_800ED148.entities[arg0].monsterAiSection;
     func_8009AF3C(func_800B0398(func_800A9784(*(arg1 + GET_OFFSET(u16, temp_v1, temp_v1->unk8)),GET_OFFSET(s32, temp_v1, temp_v1->unkC))), arg2, 3, 240, 0);
 }
 
