@@ -901,17 +901,14 @@ s32 func_800AE83C(s32 arg0, s32 arg1) {
  * @return 1 if a matching entity was found, 0 otherwise.
  */
 s32 func_800AE8A0(void) {
-    s32 i = 0;
-    u8 *base = (u8 *)&D_800ED148;
-    do {
-        if (*(s32 *)(base + 0x8C) & 1) {
-            if (func_800ACED4(i) != 0) {
-                return 1;
-            }
+    s32 i;
+
+    for (i = 0; i < 3; i++){
+        if ((D_800ED148.entities[i].controlFlags & 1) && (func_800ACED4(i) != 0)) {
+            return 1;
         }
-        i++;
-        base += 0xD0;
-    } while (i < 3);
+    }
+    
     return 0;
 }
 
