@@ -43,8 +43,8 @@ void func_80099D30(void) {
     s32 i;
 
     func_80099FE8();
-    while (D_800ED148.header.timers.SplitTimer.timer != 0) {
-        switch (D_800ED148.header.state.word) {
+    while (D_800ED148.header.timer != 0) {
+        switch (D_800ED148.header.unk4) {
        
         case 1:
             func_8009A160();
@@ -80,7 +80,7 @@ void func_80099D30(void) {
                 func_800A63DC();
             }
             
-            if ((D_800ED148.unk12EB != 0) && (D_800ED148.unk12FD == 0) && (D_800ED148.header.stateMachine.unk0 == 0) && (g_battleConfig.result == 0)) {
+            if ((D_800ED148.unk12EB != 0) && (D_800ED148.unk12FD == 0) && (D_800ED148.header.unk0 == 0) && (g_battleConfig.result == 0)) {
                 func_800B0C08();
                 func_800B2038();
             }
@@ -99,14 +99,14 @@ void func_80099D30(void) {
 }
 
 void func_80099F18(void) {
-    if ((D_800ED148.header.timers.SplitTimer.timer != 255) && (D_800ED148.header.timers.SplitTimer.timer != 0)) {
-        D_800ED148.header.timers.SplitTimer.timer--;
+    if ((D_800ED148.header.timer != 255) && (D_800ED148.header.timer != 0)) {
+        D_800ED148.header.timer--;
     }
 }
 
 void func_80099F58(void) {
-    if (D_800ED148.header.timers.SplitTimer.control != 0) {
-        func_8009AF3C(getMenuString(4), 1, 2, 0xF0, 0x56);
+    if (D_800ED148.header.control != 0) {
+        func_8009AF3C(getMenuString(4), 1, 2, 240, 86);
     }
 }
 
@@ -132,9 +132,9 @@ void func_80099FE8(void) {
     func_8009B428();
 
     D_800ED148.unk5C3 = 1;
-    D_800ED148.header.state.word = 0;
+    D_800ED148.header.unk4 = 0;
     D_800ED148.unk12EC = 255;
-    D_800ED148.header.timers.SplitTimer.timer = 255;
+    D_800ED148.header.timer = 255;
     g_battleConfig.result = BATTLE_RESULT_UNDETERMINED;
     D_800ED148.unk1319 = 255;
 
@@ -187,7 +187,7 @@ void func_8009A160(void) {
     func_800A69BC();
     func_8009B134(112, 128, 0);
     func_8009AF14(func_8009ABE4);
-    D_800ED148.header.state.word = 2;
+    D_800ED148.header.unk4 = 2;
 }
 
 /**
@@ -207,7 +207,7 @@ void func_8009A1E0(void) {
     func_800B1ACC();
     func_800B2084();
     func_800B2024();
-    D_800ED148.header.state.word = 4;
+    D_800ED148.header.unk4 = 4;
 }
 
 /**
@@ -587,7 +587,7 @@ void func_8009AB54(s32 arg0) {
  * func_800AED9C, func_800AEB50.
  */
 void func_8009AB98(void) {
-    if (D_800ED148.header.stateMachine.unk0 == 0) {
+    if (D_800ED148.header.unk0 == 0) {
         func_800AECD4();
         func_800AED30();
         func_800AEC04();
@@ -602,7 +602,7 @@ void func_8009AB98(void) {
  * Writes value 3 to D_800ED148 offset 0x4 (entity state field).
  */
 void func_8009ABE4(void) {
-    D_800ED148.header.state.word = 3;
+    D_800ED148.header.unk4 = 3;
 }
 
 /**
@@ -612,7 +612,7 @@ void func_8009ABE4(void) {
  *
  */
 void func_8009ABFC(void) {
-    D_800ED148.header.state.word = 1;
+    D_800ED148.header.unk4 = 1;
 }
 
 /**
@@ -631,7 +631,7 @@ void func_8009AC14(void) {
  * func_800A30E4 (animation), and func_800A79A0 (state reset).
  */
 void func_8009AC34(void) {
-    D_800ED148.header.stateMachine.unk0 = 0;
+    D_800ED148.header.unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
@@ -645,7 +645,7 @@ void func_8009AC34(void) {
  * calls func_800AF8A4 with it.
  */
 void func_8009AC68(void) {
-    D_800ED148.header.stateMachine.unk0 = 0;
+    D_800ED148.header.unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
@@ -676,7 +676,7 @@ void func_8009ACEC(void) {
     s32 i;
     
     D_800ED148.unk12E8 = 2;
-    D_800ED148.header.timers.SplitTimer.control = 0;
+    D_800ED148.header.control = 0;
     D_800ED148.unk12FD = 1;
     D_800ED148.unk12EA = 0;
     D_800ED148.unk5C2 = 0;
@@ -714,7 +714,7 @@ void func_8009AD7C(void) {
     }
 
     func_8009AB54(frames - 15);
-    D_800ED148.header.timers.SplitTimer.timer = frames;
+    D_800ED148.header.timer = frames;
 }
 
 /**
@@ -730,7 +730,7 @@ void func_8009AD7C(void) {
 void func_8009AE08(s32 cmd) {
     switch (cmd) {
         case 5:
-            D_800ED148.header.stateMachine.unk0 = 1;
+            D_800ED148.header.unk0 = 1;
             break;
         case 6:
             func_8009AF14(func_8009AC14);

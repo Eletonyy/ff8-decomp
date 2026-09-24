@@ -608,19 +608,13 @@ void func_800AB3E0(void) {
 * @param a2 Y position for display.
 */
 
-void func_800AB3FC(s32 a0, s32 a1, s32 a2) {
-    volatile u8 *base = (u8 *)&D_800ED148;
-    u8 *entity = (u8 *)base + a0 * 0xD0;
-    s32 sub = *(s32 *)(entity + 0x14);
-    s32 tbl = *(s32 *)sub;
-    s32 offTab = *(s32 *)(tbl + 8) + tbl;
-    s32 dataOff = *(s32 *)(tbl + 0xC);
-    s32 result;
-    a1 = a1 * 2 + offTab;
-    result = func_800A9784(*(u16 *)a1, dataOff + tbl);
-    result = func_800B0398(result);
-    func_8009AF3C(result, a2, 3, 0xF0, 0);
+void func_800AB3FC(s32 arg0, s32 arg1, s32 arg2) {
+    Unk4Struct* temp_v1;
+
+    temp_v1 = *D_800ED148.entities[arg0].unk4;
+    func_8009AF3C(func_800B0398(func_800A9784(*(arg1 + GET_OFFSET(u16, temp_v1, temp_v1->unk8)),GET_OFFSET(s32, temp_v1, temp_v1->unkC))), arg2, 3, 240, 0);
 }
+
 
 /**
 * @brief Call func_800AB3FC with a fixed duration of 0x1E.

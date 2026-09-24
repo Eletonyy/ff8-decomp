@@ -310,7 +310,6 @@ void func_800AD7A4(BattleUnkDE8* arg0, s32 arg1) {
     s32 sp18;
     s32 sp1C;
     u16 sp20;
-    BattleEntity* temp_v1;
     s32 temp_a1;
     u8 temp_a0;
 
@@ -379,7 +378,7 @@ void func_800AD9C0(void) {
     D_800ED148.unk1304 = 0;
     D_800ED148.unk1306 = 0;
     
-    if (D_800ED148.header.stateMachine.unk0 != 0) {
+    if (D_800ED148.header.unk0 != 0) {
         return;
     }
     
@@ -548,7 +547,7 @@ s32 func_800ADF08(s32 arg0, s32 arg1) {
     s32 var_s4;
     s32 temp_s6;
     
-    D_800ED148.header.slot8.initFlags = 0;
+    D_800ED148.header.initFlags = 0;
     D_800ED148.unk132B = 0;
     D_800ED148.unk12F1 = arg1;
     temp_s0 = &D_800ED148.arrayDE8[D_800ED148.unk12F2][arg0][arg1];
@@ -615,7 +614,7 @@ s32 func_800ADF08(s32 arg0, s32 arg1) {
                 
                 if (D_800ED148.unk132B == 0) {
                     if (D_800ED148.unk130C == 0) {
-                        func_800AD5D4(temp_s0->link.fwd, D_800ED148.header.slot8.initFlags);
+                        func_800AD5D4(temp_s0->link.fwd, D_800ED148.header.initFlags);
                     }            
                 }
                     
@@ -965,11 +964,11 @@ void func_800AE90C(void) {
 void func_800AEA0C(void) {
     s32 result;
 
-    D_800ED148.header.timers.SplitTimer.control = 0;
+    D_800ED148.header.control = 0;
     D_800ED148.unk12ED = func_800CED4C();
     if (D_800ED148.unk12ED != 0) {
         if (g_battleConfig.unk2 & 1) {
-            D_800ED148.header.timers.SplitTimer.control = 1;
+            D_800ED148.header.control = 1;
             return;
         }
 

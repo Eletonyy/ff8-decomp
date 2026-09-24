@@ -767,7 +767,7 @@ void func_800A71C0(s32 idx) {
     }
     
     func_800A240C(idx, D_800ED148.entities[idx].currentHp, &D_800ED148.entities[idx].status);
-    if (D_800ED148.header.state.word == 4) {
+    if (D_800ED148.header.unk4 == 4) {
         if (D_800ED148.entities[idx].status & 0x100) {
             func_8009B088(idx, 0, 8, 1);
         }
@@ -999,17 +999,11 @@ u8 func_800A7AB8(s32 arg0) {
  * @param a0 Entity index (stride 208).
  * @return Byte value at the end of the pointer chain.
  */
-s32 func_800A7AF4(s32 a0) {
-    s32 base = (s32)&D_800ED148;
-    s32 ptr;
-    s32 p2;
-    ptr = *(s32 *)(base + a0 * 208 + 0x14);
-    p2 = *(s32 *)ptr;
-    ptr = *(s32 *)(p2 + 4);
-    ptr += p2;
-    p2 = *(s32 *)(ptr + 0xC);
-    ptr += p2;
-    return *(u8 *)ptr;
+s32 func_800A7AF4(s32 idx) {
+    Unk4Struct *script = *D_800ED148.entities[idx].unk4;
+    Unk4Struct *ai = GET_OFFSET(Unk4Struct, script, script->unk4);
+
+    return *((u8*)ai + ai->unkC);
 }
 
 void func_800A7B48(void) {
@@ -1210,7 +1204,7 @@ void func_800A8320(s32 arg0) {
 
     temp_s1 = &D_800EE9E8.subEntries[arg0 - 3];
     temp_s2 = *D_800ED148.entities[arg0].entityData;
-    temp_s0 =  (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    temp_s0 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
     
     temp_s0->unkBD = func_800A82A0(temp_s1, temp_s2, temp_s0, 0);
     temp_s0->unkBE = func_800A82A0(temp_s1, temp_s2, temp_s0, 1);
@@ -1298,7 +1292,7 @@ void func_800A864C(void) {
         idx = g_gameState.mainData.itemSlots[i].id;
         
         if ((idx != 0) && (idx < 33)) {
-            temp_v0 = &D_800EE9E8.animSlots[g_gameState.mainData.limitBreaks.angeloPoints[idx+7]]; // not much sense, size 8
+            temp_v0 = &D_800EE9E8.animSlots[g_gameState.mainData.limitBreaks.angeloPoints[idx+7]]; // hack, not much sense, size 8
             temp_v0->value = g_gameState.mainData.itemSlots[i].count;
             temp_v0->id = idx;
         }
@@ -2121,7 +2115,7 @@ void func_800A9AC0(s32 arg0, s32 arg1) {
             if (!(D_800ED148.entities[i].status & 1)) {
                 u8* cd = D_800ED148.entities[i].unkBD;
                 if (val < cd[idx]) {
-                    val = cd[idx]; // doesnt make sense, idx goes from 0-7
+                    val = cd[idx];
                 }
             }
         }
@@ -2134,7 +2128,7 @@ void func_800A9AC0(s32 arg0, s32 arg1) {
             if (!(D_800ED148.entities[i].status & 1)) {
                 u8* cd = D_800ED148.entities[i].unkBD;
                 if (cd[idx] < val){
-                    val = cd[idx]; // doesnt make sense, idx goes from 0-7
+                    val = cd[idx];
                 }
             }
         }

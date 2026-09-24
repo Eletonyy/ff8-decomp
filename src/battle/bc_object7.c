@@ -323,7 +323,7 @@ void func_800B0574(s32 arg0, u32 arg1) {
     if (temp_v0 < 14) {
         u8 val = D_80078E00.unk4CCC[temp_v0];
         s32 temp = ((g_gameState.config.battleSpeed + 1) * 4);
-        D_800ED148.entities[arg0].timers.perBit[temp_v0] = val * temp;
+        D_800ED148.entities[arg0].perBit[temp_v0] = val * temp;
     }
 }
 
@@ -337,7 +337,7 @@ void func_800B0574(s32 arg0, u32 arg1) {
 void func_800B0600(s32 a0, s32 a1) {
     s32 bitPos = func_800B054C(a1);
     if (bitPos < 14) {
-        D_800ED148.entities[a0].timers.perBit[bitPos] = -0x457;
+        D_800ED148.entities[a0].perBit[bitPos] = -0x457;
     }
 }
 
@@ -352,7 +352,7 @@ void func_800B0600(s32 a0, s32 a1) {
 s32 func_800B0668(s32 a0, s32 a1) {
     s32 bitPos = func_800B054C(a1);
     if (bitPos < 14) {
-        if (D_800ED148.entities[a0].timers.perBit[bitPos] == -0x457) {
+        if (D_800ED148.entities[a0].perBit[bitPos] == -0x457) {
             return 1;
         }
     }

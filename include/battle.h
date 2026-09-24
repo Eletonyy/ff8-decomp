@@ -13,6 +13,7 @@
 #define BATTLE_RESULT_ESCAPED       2
 #define BATTLE_RESULT_WIN           4
 
+#define GET_OFFSET(type, ptr, var) ((type*)(var + (intrptr_t)ptr))
 
 /** @brief Battle command config (g_battleConfig). */
 typedef struct {
@@ -137,7 +138,6 @@ typedef struct {
 } MsgFormatConfig;
 
 
-
 typedef enum {
     CTRL_ACTIVE     = 0x01,
     CTRL_FLAG_02    = 0x02,
@@ -149,7 +149,6 @@ typedef enum {
     CTRL_FLAG_100   = 0x100,
     CTRL_FLAG_400   = 0x400
 } ControlFlags;
-
 
 typedef struct {
     u8 unk0;
@@ -237,45 +236,26 @@ typedef struct {
     u8 unk168[40];// possibly size taken from func_800A7FD0 while calling func_800A7EE0
 } BattleEntityData;
 
-#define ENTITY_FLAG_1 1
-#define ENTITY_FLAG_4 8
 typedef struct {
-    /* 0x00 */ union {
-        s32 unk0;
-        struct {
-            u8 unk0;
-            u8 unk1;
-            u8 unk2;
-            u8 unk3;
-        } bytes;
-    } stateMachine;
-    /* 0x04 */ union {
-        s32 volatile word;
-        struct { u8 b0; u8 b1; u8 b2; u8 trigType; } bytes;
-    } state;
-    /* 0x08 */ union {
-        struct {
-            u8 trigKey;
-            u8 unk9;
-            u8 unkA;
-            u8 padB;
-        } byteView;
-        s32 initFlags;
-    } slot8;
-    /* 0x0C */ union {
-        struct {
-            u8 volatile timer;
-            u8 control;
-        } SplitTimer;
-        u16 bigTimer;
-    } timers;
+    /* 0x00 */ s32 unk0;
+    /* 0x04 */ s32 volatile unk4;
+    /* 0x08 */ s32 initFlags;
+    /* 0x0C */ u8 volatile timer;
+    /* 0x0D */ u8 control;
     /* 0x0E */ u8 unkE;
     /* 0x0F */ u8 entityRef;
-} BattleHeader; /* 0x10 */
+} BattleHeader; /* 16 bytes */
+
+typedef struct {
+    /* 0x00 */ s32 unk0;
+    /* 0x04 */ s32 unk4;
+    /* 0x08 */ s32 unk8;
+    /* 0x0C */ s32 unkC;
+} Unk4Struct;
 
 typedef struct {
     /* 0x00 */ BattleEntityData** entityData;
-    /* 0x04 */ s32 monsterAiSection;
+    /* 0x04 */ Unk4Struct** unk4;
     /* 0x08 */ s32 flags;
     /* 0x0C */ s32 flagsBackup;
     /* 0x10 */ s32 maxAtb;
@@ -285,22 +265,8 @@ typedef struct {
     /* 0x20 */ s32 unk20;
     /* 0x24 */ u8 pad24[0x20];
     /* 0x44 */ u16 elemDef[8];
-    /* 0x54: byte-bit-slot view (14 halfwords, indexed by lowest set bit
-    of a flag mask). The trailing 4 bytes (@c 0x6C-0x6F) are also
-    read/written as a 4-byte slot flag word during init. */
-    /* 0x54 */ union {
-        s16 perBit[14];                 /* 0x54-0x6F as 14 halfwords. */
-        struct {
-            s16 perBitLow[12];          /* 0x54-0x6B (12 halfwords). */
-            s32 slotFlags;              /* 0x6C-0x6F as a single word. */
-        } slotInit;
-    } timers;
-    /* 0x70: written 16-bit (mirror of @c BattleCharData.displayStatus)
-    and later read 32-bit (with a bitmask test). */
-    /* 0x70 */ union {
-        u16 slotDisplay;     /* 0x70-0x71 (write path). */
-        s32 word;            /* 0x70-0x73 (read path). */
-    } unk70;
+    /* 0x54 */ s16 perBit[14];
+    /* 0x70 */ u8 pad70[4];
     /* 0x74 */ u16 animParam1;
     /* 0x76 */ u16 animParam2;
     /* 0x78 */ u16 animParam3;
@@ -322,14 +288,7 @@ typedef struct {
     /* 0xB8 */ u8 unkB8[3];
     /* 0xBB */ u8 comFileId;
     /* 0xBC */ u8 level;
-    /* 0xBD */ u8 unkBD[1];        /* 0xBD: stat byte used in case-0 damage formula (squared). */
-    /* 0xBE */ u8 unkBE;
-    /* 0xBF */ u8 unkBF;        /* 0xBF: stat byte averaged with arg2 in func_8009DEF0 mode-7. */
-    /* 0xC0 */ u8 unkC0;
-    /* 0xC1 */ u8 spd;
-    /* 0xC2 */ u8 unkC2;
-    /* 0xC3 */ u8 unkC3;
-    /* 0xC4 */ u8 unkC4;
+    /* 0xBD */ u8 unkBD[8];
     /* 0xC5 */ u8 unkC5;
     /* 0xC6 */ u8 unkC6;
     /* 0xC7 */ u8 trigType;
@@ -417,7 +376,7 @@ typedef struct {
     u8 unkD;
     u8 unkE;
     u8 done;        /* completion flag (1 = ready to free). */
-} TaskEntry; /* 0x10 */
+} TaskEntry; /* 16 bytes */
 
 typedef struct {
     u8 unk0;
@@ -1253,7 +1212,7 @@ extern u8              D_80077EBC[];
 extern u8              D_8007809A;
 extern u8              D_800786D9;
 extern BattleCharState g_battleChars; // 0x80078720
-//extern u8            D_80078DF8;  g_battleChars.levelEntries[15].abilityFlags
+//D_80078DF8 = g_battleChars.levelEntries[15].abilityFlags
 extern BattleSceneData D_80078E00;
 extern BattleConfig    g_battleConfig; // 0x80082C08
 extern MsgFormatConfig D_80083858;
