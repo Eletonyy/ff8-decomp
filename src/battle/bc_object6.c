@@ -233,17 +233,10 @@ void func_800AD4A4(s32 arg0) {
  *
  * @param a0 Entity index (stride 0xD0).
  */
-void func_800AD50C(s32 a0) {
-    func_800AD4A4(a0);
-    {
-        volatile u8 *base = (u8 *)&D_800ED148;
-        u8 *entity = (u8 *)base + a0 * 0xD0;
-        *(s32 *)(entity + 0x8C) &= ~1;
-    }
+void func_800AD50C(s32 arg0) {
+    func_800AD4A4(arg0);
+    D_800ED148.entities[arg0].controlFlags &= ~1;
 }
-
-s32 func_800A9784(s32, s32);
-void func_800B0398(s32);
 
 /**
  * @brief Look up animation data for entity and process it.
@@ -257,17 +250,11 @@ void func_800B0398(s32);
  * @param a0 Entity index (stride 0xD0).
  * @param a1 Sub-index for u16 table lookup.
  */
-void func_800AD564(s32 a0, s32 a1) {
-    volatile u8 *base = (u8 *)&D_800ED148;
-    u8 *entity = (u8 *)base + a0 * 0xD0;
-    s32 sub = *(s32 *)(entity + 0x14);
-    s32 tbl = *(s32 *)sub;
-    s32 offTab = *(s32 *)(tbl + 8) + tbl;
-    s32 dataOff;
-    a1 = a1 * 2 + offTab;
-    dataOff = *(s32 *)(tbl + 0xC);
-    a0 = func_800A9784(*(u16 *)a1, dataOff + tbl);
-    func_800B0398(a0);
+void func_800AD564(s32 arg0, s32 arg1) {
+    Unk4Struct* temp_v1;
+
+    temp_v1 = *D_800ED148.entities[arg0].monsterAiSection;
+    func_800B0398(func_800A9784(*(arg1 + GET_OFFSET(u16, temp_v1, temp_v1->unk8)), GET_OFFSET(s32, temp_v1, temp_v1->unkC)));
 }
 
 void func_800AD5D4(s32 partySlot, u8* arg1) {
@@ -363,11 +350,9 @@ s32 func_800AD8E4(s32 arg0) {
  * then clears the action pointer.
  */
 void func_800AD960(void) {
-    s32 base = (s32)&D_800ED148;
-    if (*(volatile s32 *)(base + 0x12DC) != 0) {
-        u8 byte = g_gameState.config.battleMsgSpeed;
-        func_8009AF3C(*(volatile s32 *)(base + 0x12DC), (s32)byte * 8 + 8, 3, 0x80, 0x56);
-        *(s32 *)(base + 0x12DC) = 0;
+    if (D_800ED148.unk12DC != 0) {
+        func_8009AF3C(D_800ED148.unk12DC, (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
+        D_800ED148.unk12DC = 0;
     }
 }
 
@@ -461,10 +446,13 @@ u16 func_800ADC10(s32 count) {
     s32 result;
     if (count >= 3) {
         result = func_800A980C();
-    } else {
+    } 
+    
+    else {
         result = func_800A9888();
     }
-    return (u16)result;
+
+    return result;
 }
 
 void func_800ADC48(s32 arg0) {
@@ -528,7 +516,6 @@ s32 func_800ADDAC(BattleUnkDE8* arg0) {
         }
     }
  
-    
     return i;
 }
 
@@ -699,18 +686,19 @@ s32 func_800AE390(s32 arg0) {
  *
  * @param a0 Value to search for and clear.
  */
-void func_800AE3D4(s32 a0) {
-    u8 *base = D_80077EBC;
-    s32 i = 0;
-    do {
-        if (base[0] == a0) {
-            base[0] = 0;
-            base[1] = 0;
+void func_800AE3D4(s32 arg0) {
+    s32 i;
+    ItemSlot* slot = g_gameState.mainData.itemSlots;
+    for (i = 0; i < 198; i++) {
+
+        if (slot->id == arg0) {
+            slot->id = 0;
+            slot->count = 0;
             return;
         }
-        i++;
-        base += 2;
-    } while (i < 0xC6);
+        
+        slot++;
+    }
 }
 
 void func_800AE414(s32 arg0) {
@@ -805,10 +793,8 @@ s32 func_800AE64C(void) {
  * then calls func_800AE64C, stores result to g_battleChars[0x572].
  */
 void func_800AE6C0(void) {
-    s32 val = func_800AE5D8();
-    u8 *base = (u8 *)&g_battleChars;
-    *(u16 *)(base + 0x570) = val;
-    *(u16 *)(base + 0x572) = func_800AE64C();
+    g_battleChars.unk570 = func_800AE5D8();
+    g_battleChars.unk572 = func_800AE64C();
 }
 
 /**
@@ -1030,28 +1016,12 @@ void func_800AEB50(void) {
  * D_800EE449, and registers func_8009AD7C as callback.
  */
 void func_800AEC04(void) {
-    u8 *base = (u8 *)&g_battleConfig;
-
-    if (base[7] != 0) {
-        return;
+    if ((g_battleConfig.result == 0) && (g_battleConfig.unk2 & 4) && (g_gameState.mainData.countdownTimer == 0) && (g_battleConfig.battleSceneId != 317)) {
+        func_800AEACC(-1);
+        g_battleConfig.result = 3;
+        D_800ED148.unk1301 = 3;
+        func_8009AF14(&func_8009AD7C);
     }
-    if (!(*(u16 *)(base + 2) & 4)) {
-        return;
-    }
-    {
-        s32 gstate = (s32)&g_gameState;
-        REGALLOC_BARRIER(gstate);
-        if (*(s32 *)(gstate + 0xCD4) != 0) {
-            return;
-        }
-    }
-    if (*(u16 *)base == 0x13D) {
-        return;
-    }
-    func_800AEACC(-1);
-    base[7] = 3;
-    D_800ED148.unk1301 = 3;
-    func_8009AF14(func_8009AD7C);
 }
 
 /**
@@ -1063,7 +1033,7 @@ void func_800AEC04(void) {
 void func_800AEC98(void) {
     g_battleConfig.result = 1;
     D_800ED148.unk1301 = 3;
-    func_8009AF14(func_8009AD7C);
+    func_8009AF14(&func_8009AD7C);
 }
 
 /**
@@ -1074,19 +1044,10 @@ void func_800AEC98(void) {
  * calls func_800AEACC(-1) and func_800AEC98.
  */
 void func_800AECD4(void) {
-    s32 base;
-    if (g_battleConfig.result != 0) {
-        return;
+    if ((g_battleConfig.result == 0) && (D_800ED148.unk12F9 != 1) && (D_800ED148.unk132D != 0)) {
+        func_800AEACC(-1);
+        func_800AEC98();
     }
-    base = (s32)&D_800ED148;
-    if (*(u8 *)(base + 0x12F9) == 1) {
-        return;
-    }
-    if (*(u8 *)(base + 0x132D) == 0) {
-        return;
-    }
-    func_800AEACC(-1);
-    func_800AEC98();
 }
 
 /**
@@ -1155,12 +1116,9 @@ void func_800AED9C(void) {
  * resetCdDrive for cleanup.
  */
 void func_800AEE64(void) {
-    SetDispMask(0);
+    func_80048BB8(0);
     g_battleConfig.result = 5;
-    {
-        volatile u8 *base = (u8 *)&D_800ED148;
-        base[0xC] = 0;
-    }
+    D_800ED148.header.timer = 0;
     sndStopAll();
     resetCdDrive();
 }

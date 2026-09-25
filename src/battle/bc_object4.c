@@ -1913,7 +1913,7 @@ u8* func_800A9784(u16 arg0, s32 arg1) {
         return D_800E3CEC;
     }
     
-    return arg0 + arg1; // weird
+    return GET_OFFSET(u8, arg1, arg0);
 }
 
 /**

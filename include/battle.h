@@ -519,7 +519,7 @@ typedef struct {
     /* 0x132A */ u8 unk132A;
     /* 0x132B */ u8 unk132B;
     /* 0x132C */ u8 unk132C;
-    /* 0x132D */ u8 pad132D;
+    /* 0x132D */ u8 unk132D;
     /* 0x132E */ u8 unk132E;
     /* 0x132F */ u8 pad132F;
     /* 0x1330 */ u16 unk1330[3];
@@ -720,7 +720,8 @@ typedef struct{
 /** @brief Complete battle character/GF state block. */
 typedef struct {
     /* 0x000 */ BattleCharData chars[3];          /* 3 party members × 0x1D0 */
-    /* 0x570 */ u8 pad570[4];
+    /* 0x570 */ u16 unk570;
+    /* 0x572 */ u16 unk572;
     /* 0x574 */ u16 unk574[3];
     /* 0x57A */ u16 unk57A[3];
     /* 0x580 */ u16 unk580[16];
