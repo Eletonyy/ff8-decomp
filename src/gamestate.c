@@ -41,9 +41,9 @@ void func_800370AC(s32 itemId) {
         usedOrderMask = 0;
 
         for (i = 0; i < ITEM_SLOT_COUNT; i++) {
-            inventoryItemId = *inventory++; // inventory->id == 0
+            inventoryItemId = *inventory++; // inventoryItemId = inventory->id
             
-            if (*inventory++ == 0) { // inventory->quantity == 0
+            if (*inventory++ == 0) { // if inventory->quantity == 0, inventoryItemId = 0
                 inventoryItemId = 0;
             }
             
