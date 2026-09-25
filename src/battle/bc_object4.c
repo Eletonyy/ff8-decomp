@@ -298,19 +298,19 @@ void func_800A68AC(s32 arg0) {
 void func_800A69BC(void) {
     switch (D_800ED148.unk1308) {
         case 1:
-            func_8009AF3C(getMenuString(0x2E), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2E), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
         
         case 2:
-            func_8009AF3C(getMenuString(0x2D), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2D), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
         
         case 3:
-            func_8009AF3C(getMenuString(0x2C), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2C), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
         
         case 4:
-            func_8009AF3C(getMenuString(0x2F), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2F), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
     }
 }
@@ -2270,7 +2270,7 @@ u16 func_800AA034(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     var_s0 = 0;
     
     switch (arg3) {
-        case 200: case 201:
+        case 200 ... 201:
             func_800A9970(arg3);
             break;
         

@@ -239,7 +239,7 @@ typedef struct {
 typedef struct {
     /* 0x00 */ s32 unk0;
     /* 0x04 */ s32 volatile unk4;
-    /* 0x08 */ s32 initFlags;
+    /* 0x08 */ u8* unk8; // stores D_80078E00.spells[arg2].unk26 or D_80078E00.rows132[arg2 - 64].unk70
     /* 0x0C */ u8 volatile timer;
     /* 0x0D */ u8 control;
     /* 0x0E */ u8 unkE;
@@ -541,7 +541,7 @@ typedef struct {
     u8 unk0;
     u8 unk1;
     u8 unk2;
-    u8 pad3;
+    u8 unk3;
 } drawSlot;
 
 
@@ -783,9 +783,9 @@ typedef struct {
     u32 unkC;
     u16 unk10;
     u8 unk12;
-    u8 pad13[18];
-    s16 unk26;
-    u8 pad6[20];
+    u8 pad13[19];
+    u8 unk26[16];
+    u8 pad36[6];
 } BattleSpellRow; /* 60 bytes */
 
 /**
@@ -874,10 +874,10 @@ typedef struct {
     u8 pad14[7];
     u8 unk1B;
     u8 pad1C[0x70 - 0x1C];
-    u8 unk70;
-    u8 pad71[0x82 - 0x71];
+    u8 unk70[16];
+    u8 pad80[2];
+    u8 unk82;
     u8 unk83;
-    u8 unk84;
 } BattleSceneRow;       /* 132 bytes */
 
 /**
@@ -1206,12 +1206,6 @@ typedef struct {
 extern s16             D_8005F11C;
 extern s16             D_8005F146;
 extern s16             D_8005F158;
-extern u8              D_80077E58;
-extern u8              D_80077E59;
-extern u8              D_80077E92;
-extern u8              D_80077EBC[];
-extern u8              D_8007809A;
-extern u8              D_800786D9;
 extern BattleCharState g_battleChars; // 0x80078720
 //D_80078DF8 = g_battleChars.levelEntries[15].abilityFlags
 extern BattleSceneData D_80078E00;

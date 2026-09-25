@@ -45,53 +45,52 @@ void func_80099D30(void) {
     func_80099FE8();
     while (D_800ED148.header.timer != 0) {
         switch (D_800ED148.header.unk4) {
-       
-        case 1:
-            func_8009A160();
-            break;
-        
-        case 0:
-        case 2:
-            func_8009A308();
-            break;
+            case 1:
+                func_8009A160();
+                break;
             
-        case 3:
-            func_8009A1E0();
-            break;
-            
-        case 4:  
-            func_800DC664();
-            D_800ED148.unk5C3 = 1;
-            func_8009AB98();
-            func_8009AE9C();
-            for(i = 0; i < 3; i++) {
-                func_800A5C48(&D_800ED148.unk1244[i].unk0[0]);
-            }
-            
-            func_800A5BC4();
-            if (D_800ED148.unk12FE != 0) {
-                func_800A86F0(1);
-                func_800A86F0(2);
-                func_800A86F0(0);
-            }
-            
-            if (D_800ED148.unk12FD == 0) {
-                func_800AD9C0();
-                func_800A63DC();
-            }
-            
-            if ((D_800ED148.unk12EB != 0) && (D_800ED148.unk12FD == 0) && (D_800ED148.header.unk0 == 0) && (g_battleConfig.result == 0)) {
-                func_800B0C08();
-                func_800B2038();
-            }
-            
-            func_8009B478();
-            func_8009B520();
-            D_800ED148.unk5C3 = 0;
-            func_8009A308();
-            func_80099F18();
-            func_80099F58();
-            break;
+            case 0:
+            case 2:
+                func_8009A308();
+                break;
+                
+            case 3:
+                func_8009A1E0();
+                break;
+                
+            case 4:  
+                func_800DC664();
+                D_800ED148.unk5C3 = 1;
+                func_8009AB98();
+                func_8009AE9C();
+                for(i = 0; i < 3; i++) {
+                    func_800A5C48(&D_800ED148.unk1244[i].unk0[0]);
+                }
+                
+                func_800A5BC4();
+                if (D_800ED148.unk12FE != 0) {
+                    func_800A86F0(1);
+                    func_800A86F0(2);
+                    func_800A86F0(0);
+                }
+                
+                if (D_800ED148.unk12FD == 0) {
+                    func_800AD9C0();
+                    func_800A63DC();
+                }
+                
+                if ((D_800ED148.unk12EB != 0) && (D_800ED148.unk12FD == 0) && (D_800ED148.header.unk0 == 0) && (g_battleConfig.result == 0)) {
+                    func_800B0C08();
+                    func_800B2038();
+                }
+                
+                func_8009B478();
+                func_8009B520();
+                D_800ED148.unk5C3 = 0;
+                func_8009A308();
+                func_80099F18();
+                func_80099F58();
+                break;
         }
     }
     
@@ -358,11 +357,15 @@ void func_8009A528(s32 idx, s32 off) {
     cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED148.entities[idx].entityData);
     cmd->unk0 = idx;
     cmd->unk2.b.lo = 1;
+    
     if (D_800ED148.entities[idx].controlFlags & 2) {
         cmd->unk2.b.hi = 1;
-    } else {
+    } 
+    
+    else {
         cmd->unk2.b.hi = 0;
     }
+
     D_800ED148.entities[idx].comFileId = D_800ED148.unkD14[off];
     D_800ED148.entities[idx].animParam1 = D_800ED148.unkCE4[off].x;
     D_800ED148.entities[idx].animParam2 = D_800ED148.unkCE4[off].y;
@@ -437,27 +440,31 @@ void func_8009A74C(void) {
             activeCount++;
         }
     }
+
     func_8009B134(0xD, 0x80, 0);
     posIdx = 0;
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].comFileId != 0xFF) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             func_8009A6A8(i);
             D_800ED148.entities[i].animParam2 = 0;
+            
             switch (activeCount) {
-            case 1:
-                D_800ED148.entities[i].animParam1 = D_800E3CA4[0];
-                D_800ED148.entities[i].animParam3 = D_800E3CA4[1];
-                break;
-            case 2:
-                D_800ED148.entities[i].animParam1 = D_800E3CA8[posIdx].x;
-                D_800ED148.entities[i].animParam3 = D_800E3CA8[posIdx].z;
-                posIdx++;
-                break;
-            case 3:
-                D_800ED148.entities[i].animParam1 = D_800E3CB0[posIdx].x;
-                D_800ED148.entities[i].animParam3 = D_800E3CB0[posIdx].z;
-                posIdx++;
-                break;
+                case 1:
+                    D_800ED148.entities[i].animParam1 = D_800E3CA4[0];
+                    D_800ED148.entities[i].animParam3 = D_800E3CA4[1];
+                    break;
+
+                case 2:
+                    D_800ED148.entities[i].animParam1 = D_800E3CA8[posIdx].x;
+                    D_800ED148.entities[i].animParam3 = D_800E3CA8[posIdx].z;
+                    posIdx++;
+                    break;
+                    
+                case 3:
+                    D_800ED148.entities[i].animParam1 = D_800E3CB0[posIdx].x;
+                    D_800ED148.entities[i].animParam3 = D_800E3CB0[posIdx].z;
+                    posIdx++;
+                    break;
             }
         }
     }
@@ -702,12 +709,15 @@ void func_8009AD7C(void) {
         case 0:
             frames = 60;
             break;
+
         case 1:
             frames = 30;
             break;
+
         case 2:
             frames = 40;
             break;
+
         case 3:
             frames = 60;
             break;
@@ -732,18 +742,23 @@ void func_8009AE08(s32 cmd) {
         case 5:
             D_800ED148.header.unk0 = 1;
             break;
+
         case 6:
             func_8009AF14(func_8009AC14);
             break;
+
         case 7:
             func_8009AF14(func_8009AC34);
             break;
+
         case 8:
             func_8009AF14(func_8009ACB4);
             break;
+
         case 9:
             func_8009AF14(func_8009AC68);
             break;
+            
         case 10:
             func_8009AF14(func_8009ACEC);
             break;

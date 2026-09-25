@@ -6,7 +6,6 @@
 static s32 func_800B054C(u32 arg0);
 
 extern u8 D_800EE490[];
-extern u8 D_80077EBC[];
 extern u8 D_800EEBE8[];
 s32 func_800B0204(u8 *, s32, s32, s32);
 void func_800A4C84(s32);
@@ -14,6 +13,45 @@ void func_800AE524(s32);
 extern u8 D_800E3CF0[];
 extern u8 D_800EE4E8[];
 void func_800AE4A0(void);
+
+void func_800AF254(void) {
+    func_800AF740();
+    
+    switch (g_battleConfig.result) {
+    case 2:
+        g_gameState.mainData.fieldCE2++;
+        D_8005F158 = 5;
+        break;
+        
+    case 4:
+        g_gameState.mainData.fieldCDC++;
+        if (D_800ED148.unkCDD & 0x10) {
+            D_8005F158 = 100;
+        }
+            
+        else {
+            D_8005F158 = 5;
+        }
+        
+        break;
+        
+    case 1:
+    case 3:
+        g_gameState.mainData.fieldCE0++;
+        D_8005F158 = 100;
+        break;
+        
+    case 5:
+        D_8005F158 = 100;
+        break;
+    }
+    
+    sndCmdF1();
+    D_8005F146 = 0;
+    func_80042634(2);
+    func_80048C50(0);
+    func_800D0B24();
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF358);
 
@@ -27,10 +65,10 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF5E0);
  *        @c func_800AF5E0.
  */
 void func_800AF654(void) {
-    u8 *constPtr = D_80077EBC;
+    ItemSlot* item = g_gameState.mainData.itemSlots;
     s32 i;
-    for (i = 0; i < 0x20; i++) {
-        func_800AF5E0(D_800EE9E8.animSlots[i].id, D_800EE9E8.animSlots[i].value, constPtr);
+    for (i = 0; i < 32; i++) {
+        func_800AF5E0(D_800EE9E8.animSlots[i].id, D_800EE9E8.animSlots[i].value, item);
     }
 }
 

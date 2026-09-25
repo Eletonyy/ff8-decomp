@@ -199,11 +199,11 @@ s32 func_800AA980(s32 arg0, s32 arg1) {
 
 s32 func_800AA9C8(s32 arg0, s32 arg1) {
     if (arg0 == 0) {
-        return (D_8007809A >> arg1) & 1;
+        return (g_gameState.mainData.partyLockFlag >> arg1) & 1;
     }
 
     if (arg0 == 3) {
-        return ((D_8007809A >> arg1) & 1) ^ 1;
+        return ((g_gameState.mainData.partyLockFlag >> arg1) & 1) ^ 1;
     }
 }
 

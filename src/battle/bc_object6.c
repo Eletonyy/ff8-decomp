@@ -90,7 +90,7 @@ void func_800AB6F4(s32 arg0) {
                     getMenuString(0x76)
                 )
             ),
-            (D_80077E59 * 8) + 8,
+            (g_gameState.config.battleMsgSpeed * 8) + 8,
             3,
             128,
             86
@@ -110,7 +110,7 @@ void func_800AB6F4(s32 arg0) {
                     getMenuString(8)
                 )
             ),
-            (D_80077E59 * 8) + 8,
+            (g_gameState.config.battleMsgSpeed * 8) + 8,
             3,
             128,
             86
@@ -125,7 +125,7 @@ void func_800AB844(s32 arg0) {
     temp_s1 = func_800B0248(getBattleCharName(arg0), 7, getMenuString(0x1B));
     temp_s1_2 = func_800B0248(temp_s1, *getMenuString(0xB), getMagicNamePtr(D_800ED148.actionByte0));
 
-    func_8009AF3C(func_800B02AC(func_800B0248(temp_s1_2, *getMenuString(0xB), getMenuString(117))), (D_80077E59 * 8) + 8, 3, 128, 86);
+    func_8009AF3C(func_800B02AC(func_800B0248(temp_s1_2, *getMenuString(0xB), getMenuString(117))), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
 }
 
 s32 func_800AB914(s32 arg0, s32 arg1) {
@@ -534,7 +534,7 @@ s32 func_800ADF08(s32 arg0, s32 arg1) {
     s32 var_s4;
     s32 temp_s6;
     
-    D_800ED148.header.initFlags = 0;
+    D_800ED148.header.unk8 = NULL; // sets the pointer to null and takes the reference in func_800A30F8
     D_800ED148.unk132B = 0;
     D_800ED148.unk12F1 = arg1;
     temp_s0 = &D_800ED148.arrayDE8[D_800ED148.unk12F2][arg0][arg1];
@@ -601,7 +601,7 @@ s32 func_800ADF08(s32 arg0, s32 arg1) {
                 
                 if (D_800ED148.unk132B == 0) {
                     if (D_800ED148.unk130C == 0) {
-                        func_800AD5D4(temp_s0->link.fwd, D_800ED148.header.initFlags);
+                        func_800AD5D4(temp_s0->link.fwd, D_800ED148.header.unk8);
                     }            
                 }
                     
@@ -689,15 +689,12 @@ s32 func_800AE390(s32 arg0) {
 void func_800AE3D4(s32 arg0) {
     s32 i;
     ItemSlot* slot = g_gameState.mainData.itemSlots;
-    for (i = 0; i < 198; i++) {
-
+    for (i = 0; i < 198; i++, slot++) {
         if (slot->id == arg0) {
             slot->id = 0;
             slot->count = 0;
-            return;
+            break;
         }
-        
-        slot++;
     }
 }
 
@@ -1207,5 +1204,3 @@ s32 func_800AF134(s32 arg0, u8* arg1, u8* arg2, s32 arg3) {
     
     return 2;
 }
-
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object6", func_800AF254);

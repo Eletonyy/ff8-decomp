@@ -434,7 +434,7 @@ void func_800C4A74(void) {
  *         func_800C48C0();
  *         func_800C492C();
  *     }
- *     if (D_8007809A & 1) return;
+ *     if (g_gameState.mainData.partyLockFlag & 1) return;
  *     if (!(g_fieldVars->stateFlags & 8)) {
  *         g_fieldVars->seedExpStepAcc += stepDelta;
  *         if ((u32)g_fieldVars->seedExpStepAcc >= 0x6000u) {
@@ -448,7 +448,7 @@ void func_800C4A74(void) {
  *         if ((s16)g_fieldVars->levelUpDisplayTimer == 0) setTransitionPhase7();
  *         g_fieldVars->levelUpDisplayTimer--;
  *     }
- *     if (D_8007809A & 0x10) return;
+ *     if (g_gameState.mainData.partyLockFlag & 0x10) return;
  *     if ((u32)g_fieldVars->angeloLearnStepAcc >= 0x250u) {
  *         g_fieldVars->angeloLearnStepAcc = 0;
  *         func_800C49CC();
