@@ -43,55 +43,54 @@ void func_80099D30(void) {
     s32 i;
 
     func_80099FE8();
-    while (D_800ED148.header.timers.SplitTimer.timer != 0) {
-        switch (D_800ED148.header.state.word) {
-       
-        case 1:
-            func_8009A160();
-            break;
-        
-        case 0:
-        case 2:
-            func_8009A308();
-            break;
+    while (D_800ED148.header.timer != 0) {
+        switch (D_800ED148.header.unk4) {
+            case 1:
+                func_8009A160();
+                break;
             
-        case 3:
-            func_8009A1E0();
-            break;
-            
-        case 4:  
-            func_800DC664();
-            D_800ED148.unk5C3 = 1;
-            func_8009AB98();
-            func_8009AE9C();
-            for(i = 0; i < 3; i++) {
-                func_800A5C48(&D_800ED148.unk1244[i].unk0[0]);
-            }
-            
-            func_800A5BC4();
-            if (D_800ED148.unk12FE != 0) {
-                func_800A86F0(1);
-                func_800A86F0(2);
-                func_800A86F0(0);
-            }
-            
-            if (D_800ED148.unk12FD == 0) {
-                func_800AD9C0();
-                func_800A63DC();
-            }
-            
-            if ((D_800ED148.unk12EB != 0) && (D_800ED148.unk12FD == 0) && (D_800ED148.header.stateMachine.unk0 == 0) && (D_80082C0F == 0)) {
-                func_800B0C08();
-                func_800B2038();
-            }
-            
-            func_8009B478();
-            func_8009B520();
-            D_800ED148.unk5C3 = 0;
-            func_8009A308();
-            func_80099F18();
-            func_80099F58();
-            break;
+            case 0:
+            case 2:
+                func_8009A308();
+                break;
+                
+            case 3:
+                func_8009A1E0();
+                break;
+                
+            case 4:  
+                func_800DC664();
+                D_800ED148.unk5C3 = 1;
+                func_8009AB98();
+                func_8009AE9C();
+                for(i = 0; i < 3; i++) {
+                    func_800A5C48(&D_800ED148.unk1244[i].unk0[0]);
+                }
+                
+                func_800A5BC4();
+                if (D_800ED148.unk12FE != 0) {
+                    func_800A86F0(1);
+                    func_800A86F0(2);
+                    func_800A86F0(0);
+                }
+                
+                if (D_800ED148.unk12FD == 0) {
+                    func_800AD9C0();
+                    func_800A63DC();
+                }
+                
+                if ((D_800ED148.unk12EB != 0) && (D_800ED148.unk12FD == 0) && (D_800ED148.header.unk0 == 0) && (g_battleConfig.result == 0)) {
+                    func_800B0C08();
+                    func_800B2038();
+                }
+                
+                func_8009B478();
+                func_8009B520();
+                D_800ED148.unk5C3 = 0;
+                func_8009A308();
+                func_80099F18();
+                func_80099F58();
+                break;
         }
     }
     
@@ -99,14 +98,14 @@ void func_80099D30(void) {
 }
 
 void func_80099F18(void) {
-    if ((D_800ED148.header.timers.SplitTimer.timer != 255) && (D_800ED148.header.timers.SplitTimer.timer != 0)) {
-        D_800ED148.header.timers.SplitTimer.timer--;
+    if ((D_800ED148.header.timer != 255) && (D_800ED148.header.timer != 0)) {
+        D_800ED148.header.timer--;
     }
 }
 
 void func_80099F58(void) {
-    if (D_800ED148.header.timers.SplitTimer.control != 0) {
-        func_8009AF3C(getMenuString(4), 1, 2, 0xF0, 0x56);
+    if (D_800ED148.header.control != 0) {
+        func_8009AF3C(getMenuString(4), 1, 2, 240, 86);
     }
 }
 
@@ -132,9 +131,9 @@ void func_80099FE8(void) {
     func_8009B428();
 
     D_800ED148.unk5C3 = 1;
-    D_800ED148.header.state.word = 0;
+    D_800ED148.header.unk4 = 0;
     D_800ED148.unk12EC = 255;
-    D_800ED148.header.timers.SplitTimer.timer = 255;
+    D_800ED148.header.timer = 255;
     g_battleConfig.result = BATTLE_RESULT_UNDETERMINED;
     D_800ED148.unk1319 = 255;
 
@@ -187,7 +186,7 @@ void func_8009A160(void) {
     func_800A69BC();
     func_8009B134(112, 128, 0);
     func_8009AF14(func_8009ABE4);
-    D_800ED148.header.state.word = 2;
+    D_800ED148.header.unk4 = 2;
 }
 
 /**
@@ -207,7 +206,7 @@ void func_8009A1E0(void) {
     func_800B1ACC();
     func_800B2084();
     func_800B2024();
-    D_800ED148.header.state.word = 4;
+    D_800ED148.header.unk4 = 4;
 }
 
 /**
@@ -288,11 +287,11 @@ void func_8009A3BC(void) {
 /**
  * @brief Conditionally apply vibration feedback.
  *
- * If bit 2 of D_80082C0A is set, calls setCameraVibrateIntensity(0x1000) and
+ * If bit 2 of g_battleConfig.unk2 is set, calls setCameraVibrateIntensity(0x1000) and
  * setCameraVibrateState(1) to trigger controller vibration.
  */
 void func_8009A3F4(void) {
-    if (D_80082C0A & 4) {
+    if (g_battleConfig.unk2 & 4) {
         setCameraVibrateIntensity(0x1000);
         setCameraVibrateState(1);
     }
@@ -358,11 +357,15 @@ void func_8009A528(s32 idx, s32 off) {
     cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED148.entities[idx].entityData);
     cmd->unk0 = idx;
     cmd->unk2.b.lo = 1;
+    
     if (D_800ED148.entities[idx].controlFlags & 2) {
         cmd->unk2.b.hi = 1;
-    } else {
+    } 
+    
+    else {
         cmd->unk2.b.hi = 0;
     }
+
     D_800ED148.entities[idx].comFileId = D_800ED148.unkD14[off];
     D_800ED148.entities[idx].animParam1 = D_800ED148.unkCE4[off].x;
     D_800ED148.entities[idx].animParam2 = D_800ED148.unkCE4[off].y;
@@ -437,27 +440,31 @@ void func_8009A74C(void) {
             activeCount++;
         }
     }
+
     func_8009B134(0xD, 0x80, 0);
     posIdx = 0;
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].comFileId != 0xFF) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             func_8009A6A8(i);
             D_800ED148.entities[i].animParam2 = 0;
+            
             switch (activeCount) {
-            case 1:
-                D_800ED148.entities[i].animParam1 = D_800E3CA4[0];
-                D_800ED148.entities[i].animParam3 = D_800E3CA4[1];
-                break;
-            case 2:
-                D_800ED148.entities[i].animParam1 = D_800E3CA8[posIdx].x;
-                D_800ED148.entities[i].animParam3 = D_800E3CA8[posIdx].z;
-                posIdx++;
-                break;
-            case 3:
-                D_800ED148.entities[i].animParam1 = D_800E3CB0[posIdx].x;
-                D_800ED148.entities[i].animParam3 = D_800E3CB0[posIdx].z;
-                posIdx++;
-                break;
+                case 1:
+                    D_800ED148.entities[i].animParam1 = D_800E3CA4[0];
+                    D_800ED148.entities[i].animParam3 = D_800E3CA4[1];
+                    break;
+
+                case 2:
+                    D_800ED148.entities[i].animParam1 = D_800E3CA8[posIdx].x;
+                    D_800ED148.entities[i].animParam3 = D_800E3CA8[posIdx].z;
+                    posIdx++;
+                    break;
+                    
+                case 3:
+                    D_800ED148.entities[i].animParam1 = D_800E3CB0[posIdx].x;
+                    D_800ED148.entities[i].animParam3 = D_800E3CB0[posIdx].z;
+                    posIdx++;
+                    break;
             }
         }
     }
@@ -537,7 +544,7 @@ void func_8009A990(s32 arg0) {
 void func_8009AA2C(void) {
     s32 i;
 
-    if ((D_80082C0F == 0) && ((D_800ED148.unk12F9 == 1) || ((func_800AE730() != 255) && (func_800AE788() != 255)))) {
+    if ((g_battleConfig.result == 0) && ((D_800ED148.unk12F9 == 1) || ((func_800AE730() != 255) && (func_800AE788() != 255)))) {
         for (i = 0; i < D_800ED148.unk12F8; i++) {
             func_8009A990(i);
         }
@@ -587,7 +594,7 @@ void func_8009AB54(s32 arg0) {
  * func_800AED9C, func_800AEB50.
  */
 void func_8009AB98(void) {
-    if (D_800ED148.header.stateMachine.unk0 == 0) {
+    if (D_800ED148.header.unk0 == 0) {
         func_800AECD4();
         func_800AED30();
         func_800AEC04();
@@ -602,7 +609,7 @@ void func_8009AB98(void) {
  * Writes value 3 to D_800ED148 offset 0x4 (entity state field).
  */
 void func_8009ABE4(void) {
-    D_800ED148.header.state.word = 3;
+    D_800ED148.header.unk4 = 3;
 }
 
 /**
@@ -612,7 +619,7 @@ void func_8009ABE4(void) {
  *
  */
 void func_8009ABFC(void) {
-    D_800ED148.header.state.word = 1;
+    D_800ED148.header.unk4 = 1;
 }
 
 /**
@@ -631,7 +638,7 @@ void func_8009AC14(void) {
  * func_800A30E4 (animation), and func_800A79A0 (state reset).
  */
 void func_8009AC34(void) {
-    D_800ED148.header.stateMachine.unk0 = 0;
+    D_800ED148.header.unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
@@ -645,7 +652,7 @@ void func_8009AC34(void) {
  * calls func_800AF8A4 with it.
  */
 void func_8009AC68(void) {
-    D_800ED148.header.stateMachine.unk0 = 0;
+    D_800ED148.header.unk0 = 0;
     func_8009AA2C();
     func_800A30E4();
     func_800A79A0();
@@ -676,7 +683,7 @@ void func_8009ACEC(void) {
     s32 i;
     
     D_800ED148.unk12E8 = 2;
-    D_800ED148.header.timers.SplitTimer.control = 0;
+    D_800ED148.header.control = 0;
     D_800ED148.unk12FD = 1;
     D_800ED148.unk12EA = 0;
     D_800ED148.unk5C2 = 0;
@@ -702,19 +709,22 @@ void func_8009AD7C(void) {
         case 0:
             frames = 60;
             break;
+
         case 1:
             frames = 30;
             break;
+
         case 2:
             frames = 40;
             break;
+
         case 3:
             frames = 60;
             break;
     }
 
     func_8009AB54(frames - 15);
-    D_800ED148.header.timers.SplitTimer.timer = frames;
+    D_800ED148.header.timer = frames;
 }
 
 /**
@@ -730,20 +740,25 @@ void func_8009AD7C(void) {
 void func_8009AE08(s32 cmd) {
     switch (cmd) {
         case 5:
-            D_800ED148.header.stateMachine.unk0 = 1;
+            D_800ED148.header.unk0 = 1;
             break;
+
         case 6:
             func_8009AF14(func_8009AC14);
             break;
+
         case 7:
             func_8009AF14(func_8009AC34);
             break;
+
         case 8:
             func_8009AF14(func_8009ACB4);
             break;
+
         case 9:
             func_8009AF14(func_8009AC68);
             break;
+            
         case 10:
             func_8009AF14(func_8009ACEC);
             break;
@@ -875,12 +890,12 @@ void func_8009B088(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 /**
  * @brief Conditionally play a timed sound effect.
  *
- * If bit 1 of D_80082C0A is clear, plays a timed sound via
+ * If bit 1 of g_battleConfig.unk2 is clear, plays a timed sound via
  * sndCmdC1 using D_8005F11C as the sound ID.
  * @param a0 Duration parameter for the timed sound.
  */
 void func_8009B0F8(s32 a0) {
-    if (!(D_80082C0A & 2)) {
+    if (!(g_battleConfig.unk2 & 2)) {
         sndCmdC1(D_8005F11C, a0, 0);
     }
 }
@@ -911,7 +926,7 @@ SoundCmd* func_8009B134(s32 arg0, s32 arg1, void* unused) {
  * the corresponding byte from D_80098030.
  * @return Random byte value from the lookup table.
  */
-s32 func_8009B15C(void) { // returns u8
+s32 func_8009B15C(void) {
     u8 index;
 
     index = D_800EEBA8[D_800EEBB0]++;

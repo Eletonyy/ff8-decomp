@@ -20,6 +20,8 @@
 #define BATTLE_ENTITY_FLAG_BIT_25  (1 << 25) /* 0x02000000 */
 #define BATTLE_ENTITY_FLAG_BIT_26  (1 << 26) /* 0x04000000 */
                                                 
+#define ENTITY_FLAG_1 1
+#define ENTITY_FLAG_4 8
 
 
 
