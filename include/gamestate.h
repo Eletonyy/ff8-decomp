@@ -223,17 +223,10 @@ typedef struct {
     u8 count;    /**< Item quantity (0-100). */
 } ItemSlot; /* 2 bytes */
 
-/**
- * @brief Item inventory (428 bytes).
- *
- * At g_gameState + 0xB24 (0x80077E9C).
- */
-typedef struct {
-    /* 0x00 */ u8 battleOrder[32];     /**< Battle item menu ordering (indices). */
-    /* 0x20 */ ItemSlot items[198];    /**< Item slots (ID + count pairs). */
-} ItemData; /* 0x1AC = 428 bytes */
 
 #define ITEM_SLOT_COUNT 198
+#define BATTLE_ITEM_COUNT 0x20
+#define BATTLE_ITEM_ID_LIMIT (BATTLE_ITEM_COUNT + 1)
 
 /* ======================================================================== */
 /* Triple Triad Cards                                                       */

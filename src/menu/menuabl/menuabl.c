@@ -20,7 +20,6 @@ extern void func_801F1AFC(void);
 extern void func_801F1B10(void);
 extern s32  func_801F72B4(void);
 
-extern u8 D_8007809A;
 
 extern s32  func_801F6768(u16 flags, s32 max, s32 current);
 extern void func_801EFFE4(s32 trackId);
@@ -240,7 +239,7 @@ restart:
                 trackType = ptr[5];
                 if (trackType != 0xFF) {
                     if (trackType == 0x81) {
-                        if (D_8007809A & 1) {
+                        if (g_gameState.mainData.partyLockFlag & 1) {
                             ptr = (u8 *)func_801F6AA4(0x4F);
                             func_801F23D0(0, 0x68, (void *)ptr);
                             initSfxPlayback(0, ptr);
@@ -728,7 +727,7 @@ s32 func_801E36AC(s32 ctx, s32 pkt, s32 col, s32 row, s32 scrollOffset) {
         entry = func_801E2920(abilityId);
         if (entry->status == 0xFF
             || (entry->status == 0x80 && func_801E2934() == 0)
-            || (entry->status == 0x81 && (D_8007809A & 1))) {
+            || (entry->status == 0x81 && (g_gameState.mainData.partyLockFlag & 1))) {
             color = 1;
         } else {
             color = 7;

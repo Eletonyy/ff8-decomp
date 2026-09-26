@@ -6,7 +6,6 @@
 static s32 func_800B054C(u32 arg0);
 
 extern u8 D_800EE490[];
-extern u8 D_80077EBC[];
 extern u8 D_800EEBE8[];
 s32 func_800B0204(u8 *, s32, s32, s32);
 void func_800A4C84(s32);
@@ -14,6 +13,45 @@ void func_800AE524(s32);
 extern u8 D_800E3CF0[];
 extern u8 D_800EE4E8[];
 void func_800AE4A0(void);
+
+void func_800AF254(void) {
+    func_800AF740();
+    
+    switch (g_battleConfig.result) {
+    case 2:
+        g_gameState.mainData.fieldCE2++;
+        D_8005F158 = 5;
+        break;
+        
+    case 4:
+        g_gameState.mainData.fieldCDC++;
+        if (D_800ED148.unkCDD & 0x10) {
+            D_8005F158 = 100;
+        }
+            
+        else {
+            D_8005F158 = 5;
+        }
+        
+        break;
+        
+    case 1:
+    case 3:
+        g_gameState.mainData.fieldCE0++;
+        D_8005F158 = 100;
+        break;
+        
+    case 5:
+        D_8005F158 = 100;
+        break;
+    }
+    
+    sndCmdF1();
+    D_8005F146 = 0;
+    func_80042634(2);
+    func_80048C50(0);
+    func_800D0B24();
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF358);
 
@@ -27,10 +65,10 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF5E0);
  *        @c func_800AF5E0.
  */
 void func_800AF654(void) {
-    u8 *constPtr = D_80077EBC;
+    ItemSlot* item = g_gameState.mainData.itemSlots;
     s32 i;
-    for (i = 0; i < 0x20; i++) {
-        func_800AF5E0(D_800EE9E8.animSlots[i].id, D_800EE9E8.animSlots[i].value, constPtr);
+    for (i = 0; i < 32; i++) {
+        func_800AF5E0(D_800EE9E8.animSlots[i].id, D_800EE9E8.animSlots[i].value, item);
     }
 }
 
@@ -54,7 +92,7 @@ extern void func_800AF6BC(s32 a0);
  *        into the matching @c BattleCharData and refresh its anim table entry.
  *
  * Walks @c D_800ED148.entities[0..2] (BattleSystem block) — for any slot whose
- * @c linkedIdx is not 0xFF, calls @c func_800AF6BC(i) (which copies the
+ * @c comFileId is not 0xFF, calls @c func_800AF6BC(i) (which copies the
  * entity's animation halfwords into the per-character anim cache) and then
  * mirrors @c entity->status into @c g_battleChars.chars[i].displayStatus.
  * Finishes by calling @c func_800AF654 to rebuild the global anim list.
@@ -63,7 +101,7 @@ void func_800AF740(void) {
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].linkedIdx != 0xFF) {
+        if (D_800ED148.entities[i].comFileId != 0xFF) {
             func_800AF6BC(i);
             g_battleChars.chars[i].displayStatus = D_800ED148.entities[i].status;
         }
@@ -323,7 +361,7 @@ void func_800B0574(s32 arg0, u32 arg1) {
     if (temp_v0 < 14) {
         u8 val = D_80078E00.unk4CCC[temp_v0];
         s32 temp = ((g_gameState.config.battleSpeed + 1) * 4);
-        D_800ED148.entities[arg0].field64.perBit[temp_v0] = val * temp;
+        D_800ED148.entities[arg0].perBit[temp_v0] = val * temp;
     }
 }
 
@@ -332,12 +370,12 @@ void func_800B0574(s32 arg0, u32 arg1) {
  *        halfword slot indexed by the lowest set bit of @p a1.
  *
  * @param a0 Entity index into @c D_800ED148.entities.
- * @param a1 Bitmask whose lowest set bit selects the slot in @c field64.
+ * @param a1 Bitmask whose lowest set bit selects the slot in @c timers.
  */
 void func_800B0600(s32 a0, s32 a1) {
     s32 bitPos = func_800B054C(a1);
     if (bitPos < 14) {
-        D_800ED148.entities[a0].field64.perBit[bitPos] = -0x457;
+        D_800ED148.entities[a0].perBit[bitPos] = -0x457;
     }
 }
 
@@ -346,13 +384,13 @@ void func_800B0600(s32 a0, s32 a1) {
  *        lowest set bit of @p a1) currently holds the reset sentinel.
  *
  * @param a0 Entity index into @c D_800ED148.entities.
- * @param a1 Bitmask whose lowest set bit selects the slot in @c field64.
- * @return 1 if @c field64[bitPos] == -0x457, 0 otherwise.
+ * @param a1 Bitmask whose lowest set bit selects the slot in @c timers.
+ * @return 1 if @c timers[bitPos] == -0x457, 0 otherwise.
  */
 s32 func_800B0668(s32 a0, s32 a1) {
     s32 bitPos = func_800B054C(a1);
     if (bitPos < 14) {
-        if (D_800ED148.entities[a0].field64.perBit[bitPos] == -0x457) {
+        if (D_800ED148.entities[a0].perBit[bitPos] == -0x457) {
             return 1;
         }
     }
@@ -371,7 +409,7 @@ s32 func_800B0668(s32 a0, s32 a1) {
  */
 void func_800B06DC(u16 arg0) {
     func_800A4C84(arg0);
-    if (D_800ED148.entities[0].unkE == 0) {
+    if (D_800ED148.header.unkE == 0) {
         func_8009AE08(5);
         func_800AE524(D_800ED148.unk5C0 - 1);
         D_800ED148.entries[D_800ED148.unk5C0 - 1].unk11 = 0;

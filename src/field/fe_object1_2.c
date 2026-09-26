@@ -1,6 +1,7 @@
 #include "common.h"
 #include "field.h"
 #include "gamestate.h"
+#include "battle.h"
 #include "main.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libgpu.h"
@@ -2481,11 +2482,11 @@ void func_800A5D28(void) {
     if (D_8005F116 == 1) {
         return;
     }
-    if (D_80078DF8 & 8) {
+    if (g_battleChars.levelEntries[15].abilityFlags & 8) {
         return;
     }
     rate = *D_800C71F4;
-    if (D_80078DF8 & 4) {
+    if (g_battleChars.levelEntries[15].abilityFlags & 4) {
         D_8005F164 += *rate >> 1;
     } else {
         D_8005F164 += *rate;

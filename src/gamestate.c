@@ -7,6 +7,7 @@
 #include "field.h"
 #include "card.h"
 #include "cdread.h"
+#include "battle.h"
 
 extern u8 D_8007809B[];
 extern u8 g_chocoboWorld;
@@ -18,10 +19,7 @@ extern s32 D_80085220;
 extern u8 D_8005644B[];
 extern u16 D_800562C8[];
 extern s32 D_800562D4;
-extern u8 D_80077EBC;
-extern u16 D_80082C0A;
-extern u16 D_8005F11C;
-extern s32 findNthSetBit(s32, s32, u8 *, s32);
+extern s32 findNthSetBit(s32, s32);
 extern s32 func_80021300(void);
 
 /** @brief 0x20-byte free-id table immediately before the D_80077EBC pair list. */
@@ -29,52 +27,47 @@ typedef struct {
     /* 0x000 */ u8 freeIds[0x20];
 } FreeIdTable; /* sizeof == 0x20 */
 
-#define FREE_ID_TABLE_SIZE 0x20
-#define FREE_ID_LIMIT     (FREE_ID_TABLE_SIZE + 1)
-#define FREE_ID_ENTRIES   0xC6
-
-void func_800370AC(s32 arg0)
-{
-    u8 *ptr;
-    u8 *base;
-    s32 mask;
+void func_800370AC(s32 itemId) {
     s32 i;
-    s32 val;
-    s32 found;
-    s32 one;
-    s32 zero;
-    zero = 0;
-    if (arg0 < FREE_ID_LIMIT) {
-        ptr = &D_80077EBC;
-        base = ((FreeIdTable *)ptr)[-1].freeIds;
-        mask = 0;
-        i = 0;
-        one = 1;
-        do {
-            val = *ptr++;
-            if (*ptr++ == 0) {
-                val = 0;
+    u8 *inventory;
+    u8 *battleOrder;
+    s32 usedOrderMask;    
+    s32 inventoryItemId;
+    s32 unusedOrder;
+
+    if (itemId < BATTLE_ITEM_ID_LIMIT) {
+        inventory = &g_gameState.mainData.itemSlots[0].id;
+        battleOrder = g_gameState.mainData.battleOrder;
+        usedOrderMask = 0;
+
+        for (i = 0; i < ITEM_SLOT_COUNT; i++) {
+            inventoryItemId = *inventory++; // inventoryItemId = inventory->id
+            
+            if (*inventory++ == 0) { // if inventory->quantity == 0, inventoryItemId = 0
+                inventoryItemId = 0;
             }
-            if (val != 0 && val < FREE_ID_LIMIT) {
-                if (arg0 == val) {
+            
+            if (inventoryItemId != 0 && inventoryItemId < BATTLE_ITEM_ID_LIMIT) {
+                if (itemId == inventoryItemId) {
                     return;
                 }
-                mask |= (one << base[val - 1]);
+
+                usedOrderMask |= 1 << battleOrder[inventoryItemId - 1];
             }
-            i++;
-        } while (i < FREE_ID_ENTRIES);
-        found = findNthSetBit(~mask, zero, ptr, one);
-        arg0 -= 1;
-        i = 0;
-        do {
-            if (found == base[i]) {
-                u8 tmp = base[arg0];
-                base[arg0] = found;
-                base[i] = tmp;
+        }
+
+        unusedOrder = findNthSetBit(~usedOrderMask, 0);
+        itemId--;
+
+        for (i = 0; i < BATTLE_ITEM_COUNT; i++) {
+            if (unusedOrder == battleOrder[i]) {
+                u8 tmp = battleOrder[itemId];
+
+                battleOrder[itemId] = battleOrder[i];
+                battleOrder[i] = tmp;
                 return;
             }
-            i++;
-        } while (i < FREE_ID_TABLE_SIZE);
+        }
     }
 }
 
@@ -693,7 +686,7 @@ INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037FB0);
 void func_80038030(s32 arg0) {
     FieldVars *ptr = (FieldVars *)D_800780D8;
 
-    if (!(D_80082C0A & 0x10)) {
+    if (!(g_battleConfig.unk2 & 0x10)) {
         while (sndGetStatus() == 2) {
             func_800393C8();
         }

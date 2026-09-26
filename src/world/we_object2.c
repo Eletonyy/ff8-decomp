@@ -342,7 +342,7 @@ void func_8009D44C(s32 marker) {
     D_80082C8C.unk03 = (s8)((u32)marker >> 8);
     D_80082C8C.cmd = D_800C4D38;
     func_800B3FD4(D_800D226C, 3);
-    D_80082C0A = 0;
+    g_battleConfig.unk2 = 0;
     for (i = 0; i < 13; i++) {
         s32 sfx = D_800C526C[i].field02;
         D_800C526C[i].field00 = -1;

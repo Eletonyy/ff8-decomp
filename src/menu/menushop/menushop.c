@@ -61,7 +61,6 @@ typedef struct {
 
 extern ShopData D_80077CC8[SHOP_COUNT]; /**< Shop data table. */
 extern s32 D_80077E70;
-extern u8 D_80077EBC[ITEM_SLOT_COUNT]; /**< Item slot inventory. */
 extern u8 D_801F7F98[];
 extern u16 D_801E9B64[4];
 extern u8 D_801E9B6C[52];
@@ -293,7 +292,7 @@ void func_801E5C08(s32 gil) {
         g_gameState.mainData.party.gil = gil;
     }
 
-    constPtr = (ItemSlot *)D_80077EBC;
+    constPtr = g_gameState.mainData.itemSlots;
     p = constPtr;
     
     for (i = 0; i < ITEM_SLOT_COUNT; i++, p++) {
@@ -337,33 +336,32 @@ void func_801E5C08(s32 gil) {
  * @return The current gil amount (dream gil if party is locked, otherwise normal gil).
  */
 s32 func_801E5D28(void) {
-    s32 result;
-    u8* ptr1;
     s32 i;
-    s32 val1;
-    s32 val2;
+    s32 result;
+    u8* inventory;
+    s32 itemId;
+    s32 itemQuantity;
 
     if (g_gameState.mainData.partyLockFlag & 1) {
         result = g_gameState.mainData.party.dreamGil;
-    } else {
+    } 
+    
+    else {
         result = g_gameState.mainData.party.gil;
     }
     
-    ptr1 = D_80077EBC;
+    inventory = &g_gameState.mainData.itemSlots[0].id;
     
     for (i = 0; i < ITEM_PRICE_COUNT; i++) {
         D_801EB088[i] = 0;
     }
 
     for (i = 0; i < ITEM_SLOT_COUNT; i++) {
-        val1 = *ptr1;
-        ptr1++;
+        itemId = *inventory++;
+        itemQuantity = *inventory++;
         
-        val2 = *ptr1;
-        ptr1++;
-        
-        if (val1 != 0) {
-            D_801EB088[val1] = val2;
+        if (itemId != 0) {
+            D_801EB088[itemId] = itemQuantity;
         }
     }
 
@@ -1399,7 +1397,7 @@ void func_801E7B9C(s32 a0) {
     func_801F1D2C(0, "price.bin", (s32)D_801EA3F0);
     func_801F1D2C(0, "mitem.bin", (s32)D_801EA70C);
     if (s != NULL) {
-        s->unk2C = D_80077EBC;
+        s->unk2C = g_gameState.mainData.itemSlots;
         s->unk36 = 0x1000;
         s->unk30 = 0;
         s->gil = func_801E5D28();
@@ -1602,7 +1600,7 @@ s32 func_801E8058(s32 arg0) {
     s32 ret;
     s32 i;
 
-    if (D_8007809A & 1) {
+    if (g_gameState.mainData.partyLockFlag & 1) {
         return 0;
     }
 
