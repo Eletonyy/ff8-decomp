@@ -267,14 +267,14 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
         if (func_800B5990()) {
             i = getPackedField2Bit(fieldIdx);
             if (i == 3 || getPackedField2Bit(fieldIdx) == 2) {
-                text = func_800B574C(func_8003974C(D_8005630C, 3));
+                text = func_800B574C(getOffsetTableEntry(&D_8005630C, 3));
             } else {
-                text = func_800B574C(func_8003974C(D_8005630C, 2));
+                text = func_800B574C(getOffsetTableEntry(&D_8005630C, 2));
                 text = func_800B578C(0xC, tableResult & 0x3F);
                 sndPlaySfx(0x42, 0, 0x80, 0x7F);
             }
         } else {
-            text = func_800B574C(func_8003974C(D_8005630C, 7));
+            text = func_800B574C(getOffsetTableEntry(&D_8005630C, 7));
         }
 
         initSfxPlayback(6, text);
@@ -331,7 +331,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
             }
         }
 
-        text = func_800B574C(func_8003974C(D_8005630C, 4));
+        text = func_800B574C(getOffsetTableEntry(&D_8005630C, 4));
         text = func_800B57E8(D_800DE4D4, tableResult & 0x3F);
         dims = func_8002E680(text);
         rect[2] = (dims & 0xFFFF) + 0x30;
@@ -400,13 +400,13 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
             func_8002E1B4(7, i);
 
             if (i != 0) {
-                text = func_800B574C(func_8003974C(D_8005630C, 5));
+                text = func_800B574C(getOffsetTableEntry(&D_8005630C, 5));
             } else {
-                text = func_800B574C(func_8003974C(D_8005630C, 6));
+                text = func_800B574C(getOffsetTableEntry(&D_8005630C, 6));
                 actor->field_0x204 = 0;
             }
         } else {
-            text = func_800B574C(func_8003974C(D_8005630C, 6));
+            text = func_800B574C(getOffsetTableEntry(&D_8005630C, 6));
             actor->field_0x204 = 0;
         }
 
@@ -561,13 +561,13 @@ s32 opHandler_SETPLACE(ScriptContext *context) {
 }
 
 /**
- * @brief Pop a value and store to both D_80082C0A and WorldContext field_0xB6.
+ * @brief Pop a value and store to both g_battleConfig.unk2 and WorldContext field_0xB6.
  *
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
 s32 opHandler_BATTLEMODE(ScriptContext *context) {
-    D_80082C0A = g_fieldVars->fieldB6 = POP(context);
+    g_battleConfig.unk2 = g_fieldVars->fieldB6 = POP(context);
     do {} while (0);
     return 2;
 }
@@ -582,7 +582,7 @@ s32 opHandler_BATTLE(ScriptContext *context) {
     if (D_800704A8.mode == 0) {
         D_800704A8.mode = 3;
     }
-    D_80082C0A = POP(context);
+    g_battleConfig.unk2 = POP(context);
     D_800704A8.counter = POP(context);
     return 3;
 }
@@ -594,7 +594,7 @@ s32 opHandler_BATTLE(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_BATTLERESULT(ScriptContext *context) {
-    context->resultSlots[0] = D_80082C0F;
+    context->resultSlots[0] = g_battleConfig.result;
     return 2;
 }
 

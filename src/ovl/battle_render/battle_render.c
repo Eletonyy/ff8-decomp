@@ -30,10 +30,7 @@ extern s32 D_800ABA08;
 extern void func_800275D4(s32 a0);
 extern s32 getAnimFrameParam(s32 idx, s32 offset);
 extern void func_8009AF64(void *cmd, ...);
-
 extern s16 D_800D3C70;
-extern u8 D_80077E92;
-extern u8 D_8007809A;
 extern u8 D_8009801C[];
 extern u8 D_80098020[];
 extern u8 D_8009B5B4[];
@@ -209,19 +206,19 @@ void func_80098920(s32 idx, s32 flag) {
 void func_80098958(void) {
     s32 i;
 
-    if (D_8007809A & 0x10) {
+    if (g_gameState.mainData.partyLockFlag & 0x10) {
         D_800D3C35 = 1;
     } else {
         D_800D3C35 = 0;
     }
 
-    if (D_8007809A & 0x2) {
+    if (g_gameState.mainData.partyLockFlag & 0x2) {
         D_800D3C36 = 1;
     } else {
         D_800D3C36 = 0;
     }
 
-    if (D_8007809A & 0x20) {
+    if (g_gameState.mainData.partyLockFlag & 0x20) {
         D_800D3C38 = 1;
     } else {
         D_800D3C38 = 0;
@@ -269,37 +266,37 @@ void func_80098958(void) {
         D_800D3C3F = 0;
     }
 
-    if (D_80077E92 & 0x2) {
+    if (g_gameState.mainData.limitBreaks.angeloCompleted & 0x2) {
         D_800D3C44 = 1;
     } else {
         D_800D3C44 = 0;
     }
 
-    if (D_80077E92 & 0x4) {
+    if (g_gameState.mainData.limitBreaks.angeloCompleted & 0x4) {
         D_800D3C45 = 1;
     } else {
         D_800D3C45 = 0;
     }
 
-    if (D_80077E92 & 0x8) {
+    if (g_gameState.mainData.limitBreaks.angeloCompleted & 0x8) {
         D_800D3C46 = 1;
     } else {
         D_800D3C46 = 0;
     }
 
-    if (D_80077E92 & 0x20) {
+    if (g_gameState.mainData.limitBreaks.angeloCompleted & 0x20) {
         D_800D3C47 = 1;
     } else {
         D_800D3C47 = 0;
     }
 
-    if (D_80077E92 & 0x40) {
+    if (g_gameState.mainData.limitBreaks.angeloCompleted & 0x40) {
         D_800D3C48 = 1;
     } else {
         D_800D3C48 = 0;
     }
 
-    if (D_80077E92 & 0x80) {
+    if (g_gameState.mainData.limitBreaks.angeloCompleted & 0x80) {
         D_800D3C49 = 1;
     } else {
         D_800D3C49 = 0;
