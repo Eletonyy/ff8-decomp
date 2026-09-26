@@ -1623,20 +1623,20 @@ void func_800A9084(u8* arg0, u8* arg1) {
     
     temp_v0 = func_8009B15C();
     
-    
-    if (temp_v0 < 0x27) {
+
+    if (temp_v0 < 39) {
         var_v1_2 = 0;
     }
         
-    else if (temp_v0 < 0x9F) {
+    else if (temp_v0 < 159) {
         var_v1_2 = 1;
     }
         
-    else if (temp_v0 < 0xD1) {
+    else if (temp_v0 < 209) {
         var_v1_2 = 2;
     }
         
-    else if (temp_v0 < 0xF9) {
+    else if (temp_v0 < 249) {
         var_v1_2 = 3;
     }
         
