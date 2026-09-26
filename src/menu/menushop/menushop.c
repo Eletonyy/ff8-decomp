@@ -6,6 +6,8 @@
 #include "menumain.h"
 #include "game.h"
 #include "btl_color.h"
+#include "btl_anim.h"
+#include "btl_anim_packet.h"
 
 #define SHOP_ITEM_COUNT 16
 #define ITEM_SLOT_COUNT 198
