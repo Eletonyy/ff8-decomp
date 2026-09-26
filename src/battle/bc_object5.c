@@ -199,11 +199,11 @@ s32 func_800AA980(s32 arg0, s32 arg1) {
 
 s32 func_800AA9C8(s32 arg0, s32 arg1) {
     if (arg0 == 0) {
-        return (D_8007809A >> arg1) & 1;
+        return (g_gameState.mainData.partyLockFlag >> arg1) & 1;
     }
 
     if (arg0 == 3) {
-        return ((D_8007809A >> arg1) & 1) ^ 1;
+        return ((g_gameState.mainData.partyLockFlag >> arg1) & 1) ^ 1;
     }
 }
 
@@ -446,7 +446,7 @@ void func_800AB054(s32 arg0) {
     TaskEntry* td = &D_800ED148.taskData[arg0];
     
     if (td->timer == 0) {
-        func_8009AF3C(td->unk4, 0x1E, 3, 0xF0, 0);
+        func_8009AF3C(td->unk4, 30, 3, 240, 0);
         td->done = 1;
     }
     
@@ -608,19 +608,13 @@ void func_800AB3E0(void) {
 * @param a2 Y position for display.
 */
 
-void func_800AB3FC(s32 a0, s32 a1, s32 a2) {
-    volatile u8 *base = (u8 *)&D_800ED148;
-    u8 *entity = (u8 *)base + a0 * 0xD0;
-    s32 sub = *(s32 *)(entity + 0x14);
-    s32 tbl = *(s32 *)sub;
-    s32 offTab = *(s32 *)(tbl + 8) + tbl;
-    s32 dataOff = *(s32 *)(tbl + 0xC);
-    s32 result;
-    a1 = a1 * 2 + offTab;
-    result = func_800A9784(*(u16 *)a1, dataOff + tbl);
-    result = func_800B0398(result);
-    func_8009AF3C(result, a2, 3, 0xF0, 0);
+void func_800AB3FC(s32 arg0, s32 arg1, s32 arg2) {
+    Unk4Struct* temp_v1;
+
+    temp_v1 = *D_800ED148.entities[arg0].monsterAiSection;
+    func_8009AF3C(func_800B0398(func_800A9784(*(arg1 + GET_OFFSET(u16, temp_v1, temp_v1->unk8)),GET_OFFSET(s32, temp_v1, temp_v1->unkC))), arg2, 3, 240, 0);
 }
+
 
 /**
 * @brief Call func_800AB3FC with a fixed duration of 0x1E.

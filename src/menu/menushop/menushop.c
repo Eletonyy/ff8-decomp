@@ -359,7 +359,7 @@ void func_801E5C08(u32 gil) {
         g_gameState.mainData.party.gil = gil;
     }
 
-    itemSlots = (ItemSlot *)g_gameState.mainData.itemSlots;
+    itemSlots = g_gameState.mainData.itemSlots;
     p = itemSlots;
     
     for (i = 0; i < ITEM_SLOT_COUNT; i++, p++) {
@@ -498,7 +498,7 @@ static void func_801E5E90(ShopMenuState *s) {
     state = s->state;
 
 restart:
-    switch (state & 0xFFFF) {
+    switch (state) {
     case 0:
         s->shopkeeperMessage = func_801F6AA4(STRING_SHOP_WELCOME);
         s->menuColorIntensity = 0;
@@ -1238,14 +1238,14 @@ static s32 func_801E6FD8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
 
         if (s->shopAction == SHOP_BUY) {
             x = xBase + 240;
-            arg1 = drawColorByMenuPalette(arg0, arg1, (y << 0x10) | (x & 0xffff), price, color);
+            arg1 = drawColorByMenuPalette(arg0, arg1, (y << 0x10) | (x & 0xFFFF), price, color);
         }
 
         else {
             x = xBase + 200;
-            arg1 = drawColorByMenuPalette(arg0, arg1, (y << 0x10) | (x & 0xffff), price, color);
+            arg1 = drawColorByMenuPalette(arg0, arg1, (y << 0x10) | (x & 0xFFFF), price, color);
             x = xBase + 240;
-            arg1 = drawColorByMenuPalette(arg0, arg1, (y << 0x10) | (x & 0xffff), count, color);
+            arg1 = drawColorByMenuPalette(arg0, arg1, (y << 0x10) | (x & 0xFFFF), count, color);
         }
     }
 
@@ -1892,7 +1892,7 @@ s32 func_801E8058(u32 gil) {
     s32 ret;
     s32 i;
 
-    if (D_8007809A & 1) {
+    if (g_gameState.mainData.partyLockFlag & 1) {
         return 0;
     }
 

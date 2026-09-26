@@ -13,8 +13,6 @@
 #include "battle/bc_object6.h"
 #include "battle/bc_object7.h"
 
-
-
 /**
  * @brief Look up entity ability flags with index-based table lookup.
  *
@@ -152,9 +150,7 @@ s32 func_8009BDD0(s32 unused, s32 arg1) {
  * @param a0 Entity index (stride 0xD0).
  */
 void func_8009BE24(s32 arg0, s32 unused) {
-    BattleSystem* bs;
-    bs = &D_800ED148;
-    if (func_8009B79C(bs->entities[arg0].unkC2 + D_800EEBBC, 255)) {
+    if (func_8009B79C(D_800ED148.entities[arg0].unkBD[5] + D_800EEBBC, 255)) {
         D_800ED148.unk1307 = 1;
         D_800EE4C0.flags6 |= 2;
     } 
@@ -165,16 +161,15 @@ void func_8009BE24(s32 arg0, s32 unused) {
 }
 
 s32 func_8009BEA4(s32 arg0, s32 arg1) {
-    BattleSystem *bs = &D_800ED148;
     s32 baseVal;
     s32 result;
     
-    if (bs->entities[arg0].status & 8) {
+    if (D_800ED148.entities[arg0].status & 8) {
         D_800EEBBB = D_800EEBBB / 4;
     }
     
-    baseVal = D_800EEBBB + (bs->entities[arg0].unkC2 / 2);
-    result = baseVal - bs->entities[arg1].unkC3 - bs->entities[arg1].unkC2;
+    baseVal = D_800EEBBB + (D_800ED148.entities[arg0].unkBD[5] / 2);
+    result = baseVal - D_800ED148.entities[arg1].unkBD[6] - D_800ED148.entities[arg1].unkBD[5];
 
     if (result < 0) {
         result = 0;
@@ -313,11 +308,11 @@ s32 func_8009C300(s32 arg0, s32 arg1) {
     u8 result;
     
     if (arg1 == 0) {
-        result = D_800ED148.entities[arg0].unkBE;
+        result = D_800ED148.entities[arg0].unkBD[1];
     } 
     
     else {
-        result = D_800ED148.entities[arg0].unkC0;
+        result = D_800ED148.entities[arg0].unkBD[3];
     }
     
     if (D_800ED148.entities[arg0].flags & BATTLE_ENTITY_FLAG_BIT_24) {
@@ -345,7 +340,7 @@ u8 func_8009C390(s32 arg0, s32 arg1, s32 arg2) {
         } 
         
         else {
-            var_s5 = D_800ED148.entities[arg0].unkBF;
+            var_s5 = D_800ED148.entities[arg0].unkBD[2];
             temp_s3 = func_8009C300(arg1, 1);
         }
         
@@ -542,7 +537,6 @@ void func_8009CAD8(s32 arg0, s32 arg1) {
     u8 sp10[8];
     u8 sp18;
     u8 sp19;
-    BattleSystem* bs;
     u8* result;
 
     D_800ED148.actionType = 0;
@@ -551,36 +545,34 @@ void func_8009CAD8(s32 arg0, s32 arg1) {
         return;
     }
 
-    
-    bs = &D_800ED148;
-    switch (func_800AF134(arg1, &sp18, &sp19, bs->entities[arg0].spd)) {
-    case 1:
-        D_800ED148.actionType = 1;
-        D_800ED148.actionByte0 = sp18;
-        D_800ED148.actionByte1 = sp19;
-        D_800ED148.entities[arg1].controlFlags |= BATTLE_ENTITY_FLAG_BIT_11;
+    switch (func_800AF134(arg1, &sp18, &sp19, D_800ED148.entities[arg0].unkBD[4])) {
+        case 1:
+            D_800ED148.actionType = 1;
+            D_800ED148.actionByte0 = sp18;
+            D_800ED148.actionByte1 = sp19;
+            D_800ED148.entities[arg1].controlFlags |= BATTLE_ENTITY_FLAG_BIT_11;
 
-        
-        if (sp19 == 1) {
-            result = func_800B0248(func_800B0248(getMenuString(0x13), *getMenuString(0xB), func_800B04A0(sp19, sp10)), *getMenuString(0xB), getMenuString(0x47));
-            result = func_800B0248(func_800B0248(result, 7, getStatName(sp18)), 7, getMenuString(0x73));
-            func_800A4320(func_800B02AC(result));
-        } 
-        
-        else {
-            result = func_800B0248(func_800B0248(getMenuString(0x13), *getMenuString(0xB), func_800B04A0(sp19, sp10)), *getMenuString(0xB), getMenuString(0x47));
-            result = func_800B0248(func_800B0248(func_800B0248(result, 7, getStatName(sp18)), 7, getMenuString(0x77)), 7, getMenuString(0x73));
-            func_800A4320(func_800B02AC(result));
-        }
-        break;
-        
-    case 0:
-        func_800A432C(0x11);
-        break;
-        
-    case 2:
-        func_800A432C(0x12);
-        break;
+            
+            if (sp19 == 1) {
+                result = func_800B0248(func_800B0248(getMenuString(0x13), *getMenuString(0xB), func_800B04A0(sp19, sp10)), *getMenuString(0xB), getMenuString(0x47));
+                result = func_800B0248(func_800B0248(result, 7, getStatName(sp18)), 7, getMenuString(0x73));
+                func_800A4320(func_800B02AC(result));
+            } 
+            
+            else {
+                result = func_800B0248(func_800B0248(getMenuString(0x13), *getMenuString(0xB), func_800B04A0(sp19, sp10)), *getMenuString(0xB), getMenuString(0x47));
+                result = func_800B0248(func_800B0248(func_800B0248(result, 7, getStatName(sp18)), 7, getMenuString(0x77)), 7, getMenuString(0x73));
+                func_800A4320(func_800B02AC(result));
+            }
+            break;
+            
+        case 0:
+            func_800A432C(17);
+            break;
+            
+        case 2:
+            func_800A432C(18);
+            break;
     }
 }
 
@@ -665,39 +657,40 @@ s32 func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, u32 type) {
 
     if (type < 20) {
         switch (type) {
-        case 19:
-            defense = 0;
-        case 0:
-            mod = func_8009CF18();
-            stat = D_800ED148.entities[attackerIdx].unkBD[0];
-            sq = stat * stat / 16 + stat;
-            dmg = sq * (265 - defense) / 256 * power / 16 * mod / 256;
-            break;
+            case 19:
+                defense = 0;
+                /* Fallthrough */
+            case 0:
+                mod = func_8009CF18();
+                stat = D_800ED148.entities[attackerIdx].unkBD[0];
+                sq = stat * stat / 16 + stat;
+                dmg = sq * (265 - defense) / 256 * power / 16 * mod / 256;
+                break;
 
-        case 1:
-            if (D_800ED148.entities[targetIdx].controlFlags & BATTLE_ENTITY_FLAG_BIT_16) {
-                dmg = 0;
-                D_800EE4C0.flags6 |= 4;
-            } 
-            
-            else {
-                dmg = D_800ED148.entities[targetIdx].currentHp * power / 16;
-            }    
-            break;
+            case 1:
+                if (D_800ED148.entities[targetIdx].controlFlags & BATTLE_ENTITY_FLAG_BIT_16) {
+                    dmg = 0;
+                    D_800EE4C0.flags6 |= 4;
+                } 
+                
+                else {
+                    dmg = D_800ED148.entities[targetIdx].currentHp * power / 16;
+                }    
+                break;
 
-        case 3:
-            dmg = D_800ED148.entities[attackerIdx].maxHp * 5;
-            break;
+            case 3:
+                dmg = D_800ED148.entities[attackerIdx].maxHp * 5;
+                break;
 
-        case 16:
-            if (targetIdx < 3) {
-                dmg = g_gameState.chars[g_gameState.mainData.party.party[targetIdx]].kills * power;
-            } 
-            
-            else {
-                dmg = 0;
-            }
-            break;
+            case 16:
+                if (targetIdx < 3) {
+                    dmg = g_gameState.chars[g_gameState.mainData.party.party[targetIdx]].kills * power;
+                } 
+                
+                else {
+                    dmg = 0;
+                }
+                break;
         }
     }
 
@@ -896,66 +889,66 @@ s32 func_8009D7D8(s32 arg0, s32 arg1, s32 arg2, u32 arg3) {
     var_s0 = func_8009C300(arg1, 1);
 
     switch (arg3) {
-    case 10:
-        if ((D_800ED148.entities[arg1].level % D_800EEBBB) != 0) {
-            D_800EE4C0.flags6 |= 4;
-            return 0;
-        }
+        case 10:
+            if ((D_800ED148.entities[arg1].level % D_800EEBBB) != 0) {
+                D_800EE4C0.flags6 |= 4;
+                return 0;
+            }
 
-        goto case_0;
-    case 6:
-        var_s0 = 0;
-        /* Fallthrough */
-    case 0: case_0:
-        temp_v1 = func_8009CF18();
+            goto case_0;
+        case 6:
+            var_s0 = 0;
+            /* Fallthrough */
+        case 0: case_0:
+            temp_v1 = func_8009CF18();
 
-        var_a0 = (D_800ED148.entities[arg0].unkBF + arg2) * (265 - var_s0);
+            var_a0 = (D_800ED148.entities[arg0].unkBD[2] + arg2) * (265 - var_s0);
 
-        var_v0_2 = ((var_a0 / 4)* arg2) / 256;
+            var_v0_2 = ((var_a0 / 4)* arg2) / 256;
 
-        var_v1 = var_v0_2 * temp_v1 / 256;
+            var_v1 = var_v0_2 * temp_v1 / 256;
 
-        var_s0 = var_v1;
-        if (arg0 > 2) {
-            var_s0 = var_v1 >> 1;
-        }
-        break;
-
-    case 1:
-        if (!(D_800ED148.entities[arg1].controlFlags & BATTLE_ENTITY_FLAG_BIT_16)) {
-            var_s0 = (D_800ED148.entities[arg1].currentHp * arg2) / 16;
+            var_s0 = var_v1;
+            if (arg0 > 2) {
+                var_s0 = var_v1 >> 1;
+            }
             break;
-        } 
 
-        var_s0 = 0;
-        D_800EE4C0.flags6 |= 4;
-        break;
+        case 1:
+            if (!(D_800ED148.entities[arg1].controlFlags & BATTLE_ENTITY_FLAG_BIT_16)) {
+                var_s0 = (D_800ED148.entities[arg1].currentHp * arg2) / 16;
+                break;
+            } 
 
-    case 5:
-        var_s0 = 0;
-        /* Fallthrough */
-    case 2:
-       var_s0 = (D_800EEBBD + D_800EEBBE * D_800EEBBF / 10 + arg2) * (265 - var_s0) / 8 * arg2 / 256 * D_800EEBC8 / 100 * (D_800EEBC0 + 100) / 100 * func_8009CF18() / 256;
-        func_8009D68C();
-        break;    
-
-    case 4:
-        if (D_800ED148.entities[arg1].controlFlags & BATTLE_ENTITY_FLAG_BIT_16) {
             var_s0 = 0;
             D_800EE4C0.flags6 |= 4;
             break;
-        }
 
-        var_s0 = (D_800ED148.entities[arg1].maxHp * D_800EEBBF) / ((D_800EEBBD + 100) - D_800EEBBE);
-        break;
+        case 5:
+            var_s0 = 0;
+            /* Fallthrough */
+        case 2:
+        var_s0 = (D_800EEBBD + D_800EEBBE * D_800EEBBF / 10 + arg2) * (265 - var_s0) / 8 * arg2 / 256 * D_800EEBC8 / 100 * (D_800EEBC0 + 100) / 100 * func_8009CF18() / 256;
+            func_8009D68C();
+            break;    
 
-    case 17:
-        var_s0 = (D_80082C14 / 1000) * arg2;
-        break;
+        case 4:
+            if (D_800ED148.entities[arg1].controlFlags & BATTLE_ENTITY_FLAG_BIT_16) {
+                var_s0 = 0;
+                D_800EE4C0.flags6 |= 4;
+                break;
+            }
 
-    default: 
-        var_s0 = 0; 
-        break;
+            var_s0 = (D_800ED148.entities[arg1].maxHp * D_800EEBBF) / ((D_800EEBBD + 100) - D_800EEBBE);
+            break;
+
+        case 17:
+            var_s0 = (D_80082C14 / 1000) * arg2;
+            break;
+
+        default: 
+            var_s0 = 0; 
+            break;
     }
 
     if (((D_800ED148.unk130E & 3) == 1) && (var_s0 != 0) && (D_800ED148.entities[arg1].flags & CTRL_FLAG_40)) {
@@ -996,7 +989,6 @@ s32 func_8009DCCC(s32 unused, s32 arg1, s32 arg2) {
 
 void func_8009DD2C(s32 arg0, s32 arg1, u16 sp10, s32 arg3) {
     s32 i;
-    BattleEntity* entity;
     s32 mask;
     s32 var_s2;
 
@@ -1086,16 +1078,16 @@ s32 func_8009DEF0(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     }
 
     switch (arg3) {
-    case 7:
-        cf = func_8009CF18();
-        t = (D_800ED148.entities[arg0].unkBF + arg2) / 2;
-        t *= arg2;
-        s1 = (t * cf) / 256;
-        break;
+        case 7:
+            cf = func_8009CF18();
+            t = (D_800ED148.entities[arg0].unkBD[2] + arg2) / 2;
+            t *= arg2;
+            s1 = (t * cf) / 256;
+            break;
 
-    case 8:
-        s1 = (D_800ED148.entities[arg1].maxHp * arg2) / 16;
-        break;
+        case 8:
+            s1 = (D_800ED148.entities[arg1].maxHp * arg2) / 16;
+            break;
     }
 
     if ((D_800ED148.entities[arg1].flags & CTRL_FLAG_40) && s1) {
@@ -1122,17 +1114,17 @@ s32 func_8009E110(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     temp_s0 = D_800EEBBB;
     if (func_8009B7BC(100) < temp_s0) {
         switch (arg3) {
-        case 14:
-            var_s1 = arg2 * 50;
-            break;
+            case 14:
+                var_s1 = arg2 * 50;
+                break;
 
-        case 15:
-            var_s1 = (D_800ED148.entities[arg1].maxHp * arg2) / 16;
-            break;
+            case 15:
+                var_s1 = (D_800ED148.entities[arg1].maxHp * arg2) / 16;
+                break;
 
-        case 9:
-            var_s1 = D_800ED148.entities[arg0].maxHp - g_battleChars.chars[arg0].unk172;
-            break;
+            case 9:
+                var_s1 = D_800ED148.entities[arg0].maxHp - g_battleChars.chars[arg0].unk172;
+                break;
         }
 
         if (((D_800ED148.unk130E & 3) == 2) && (arg0 < 3)) {
@@ -1343,18 +1335,18 @@ s32 func_8009E95C(void) {
 }
 
 s32 func_8009EA08(s32 unused, s32 arg1) {
-    s32 var_a1;
+    s32 count;
     s32 index;
-    TaskEntry sp10; // not confirmed to be this type
+    u8 sp10[16];
     
     D_800EE4C0.flags5 |= 1;
 
     if (!(D_800ED148.entities[arg1].status & 1)) {
         
-        var_a1 = func_800AF918(arg1, &sp10);
+        count = func_800AF918(arg1, sp10);
         
-        if (var_a1 != 0) {
-            for (index = 0; index < var_a1; index++) {
+        if (count != 0) {
+            for (index = 0; index < count; index++) {
                 D_800ED148.entities[arg1].controlFlags |= BATTLE_ENTITY_FLAG_BIT_17;
             }
         }
@@ -1362,7 +1354,7 @@ s32 func_8009EA08(s32 unused, s32 arg1) {
     
     if (D_800ED148.unk1322 == 0) {
         func_800A4320(getMenuString(0x36));
-        D_800ED148.unk1322 += 1;
+        D_800ED148.unk1322++;
     }
     
     return 0; 
@@ -1385,7 +1377,6 @@ s32 func_8009EA08(s32 unused, s32 arg1) {
  */
 void func_8009EAEC(s32 charIdx) {
     u8 sp10[16];
-    BattleEntity* entry;
     s32 count, i, j;
     s32 id, amount;
 
@@ -1474,17 +1465,17 @@ s32 func_8009EF64(s32 arg0) {
 
     curr = *D_800ED148.entities[arg0].entityData;
     switch (D_800EE9E8.subEntries[arg0 - 3].unk46) {
-    case 0:
-        result = curr->unkFB;
-        break;
+        case 0:
+            result = curr->unkFB;
+            break;
 
-    case 1:
-        result = curr->unkFC;
-        break;
+        case 1:
+            result = curr->unkFC;
+            break;
 
-    case 2:
-        result = curr->unkFD;
-        break;
+        case 2:
+            result = curr->unkFD;
+            break;
     }
     
     if (result == 255) {
@@ -1575,15 +1566,15 @@ s32 func_8009F23C(s32 arg0, s32 arg1) {
     var_s2 = D_800ED148.entities[arg1].maxHp * temp_a3 / 16;
     
     switch (D_80078E00.unk4C0C[D_800ED148.unk1327].unk2) {
-    case 30:
-        D_800EE4C0.flags6 |= 1;
-        func_8009DD2C(arg1, temp_a3, D_800EEBC2, D_800EEBC4);
-        func_8009F168(arg1, D_800ED148.unk1327);
-        break;
+        case 30:
+            D_800EE4C0.flags6 |= 1;
+            func_8009DD2C(arg1, temp_a3, D_800EEBC2, D_800EEBC4);
+            func_8009F168(arg1, D_800ED148.unk1327);
+            break;
 
-    case 31:
-        func_8009C8B8(1, arg0, arg1, temp_a3, var_s2);
-        break;
+        case 31:
+            func_8009C8B8(1, arg0, arg1, temp_a3, var_s2);
+            break;
     }
     
     return var_s2;
@@ -1613,26 +1604,12 @@ s32 func_8009F350(s32 arg0) {
  * @return Pending damage value divided by 4.
  */
 s32 func_8009F3F8(s32 arg0) {
-    BattleSystem* bs;
-    u16 temp_v0;
-    bs = &D_800ED148;
-    temp_v0 = bs->entities[arg0].unkCC / 4;
-    bs->entities[arg0].unkCC = 0;
-    return temp_v0;
-}
+    s32 temp_v0;
 
-/*
-s32 func_8009F3F8(s32 arg0) { // entity[1]
-    BattleSystem* bs;
-    BattleEntity* temp_v1;
-    u16 temp_v0;
-    bs = &D_800ED148;
-    temp_v1 = &bs->entities[arg0];
-    temp_v0 = temp_v1[1].timer / 4; //timer is u16 instead of u8
-    temp_v1[1].timer = 0;
+    temp_v0 = D_800ED148.entities[arg0].unkCC / 4;
+    D_800ED148.entities[arg0].unkCC = 0;
     return temp_v0;
 }
-*/
 
 /**
  * @brief Read entity field at offset 0x2C and divide by 5.
@@ -1729,8 +1706,8 @@ s32 func_8009F65C(s32 arg0, s32 arg1) {
 
 
     for (i = 0; i < 4; i++) {
-        if (arg1 == data->unk104[D_800EE9E8.subEntries[arg0 - 3].unk46].unk0[i].unk0) {
-            return data->unk104[D_800EE9E8.subEntries[arg0 - 3].unk46].unk0[i].unk1;
+        if (arg1 == data->unk104[0][D_800EE9E8.subEntries[arg0 - 3].unk46].sub[i].unk0) {
+            return data->unk104[0][D_800EE9E8.subEntries[arg0 - 3].unk46].sub[i].unk1;
         }
     }
     
@@ -1761,7 +1738,7 @@ s32 func_8009F718(s32 arg0, s32 arg1, s32 arg2) {
     var = 10;
     
     var2 = D_800ED148.entities[arg0].level - (D_800ED148.entities[arg1].level - var);
-    var3 = (var2 >> 1) + temp_s4 + D_800ED148.entities[arg0].unkBF;
+    var3 = (var2 >> 1) + temp_s4 + D_800ED148.entities[arg0].unkBD[2];
     result = ((var3 - temp_s3) / 5) - temp;
     
     if (result < 0) {
@@ -2007,16 +1984,13 @@ s32 func_8009FDD4(s32 val) {
  * @return Computed offset value.
  */
 s32 func_8009FDE0(s32 arg0, s32 arg1) {
-    BattleSystem* bs;
-    s32 var;
+    s32 result;
     
-    var = (arg1 * 4) - 1;
-    bs = &D_800ED148;
-    return var + bs->entities[arg0].crisisLevel;
+    result = (arg1 * 4) - 1;
+    return result + D_800ED148.entities[arg0].crisisLevel;
 }
 
 void func_8009FE14(s32 arg0) {
-    BattleSystem* bs;
     s32 index;
 
     D_800EEBBB = 255;
@@ -2024,178 +1998,177 @@ void func_8009FE14(s32 arg0) {
     D_800EEBB8 = 0;
 
     switch (D_800EE4C0.unk1) {
-    case 239:
-        D_800EEBB8 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C6;
-        D_800EEBB9 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C5;
-        D_800EEBBA = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C7;
-        D_800EEBC2 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D2;
-        D_800EEBC4 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D4;
-        break;
-
-    case 241:
-    {
-        s32 val_min = 65530;
-        s32 val_max = 65532;
-        if ((D_800EE4C0.statusCode <= val_max) && (D_800EE4C0.statusCode >= val_min)) {
-            D_800EEBB8 = 0;
-            D_800EEBB9 = 0;
-            D_800EEBBA = 0;
-            D_800EEBC2 = 0;
-            D_800EEBC4 = 0;
-        }
-
-        else { 
+        case 239:
             D_800EEBB8 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C6;
             D_800EEBB9 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C5;
             D_800EEBBA = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C7;
             D_800EEBC2 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D2;
             D_800EEBC4 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D4;
+            break;
+
+        case 241:
+        {
+            s32 val_min = 65530;
+            s32 val_max = 65532;
+            if ((D_800EE4C0.statusCode <= val_max) && (D_800EE4C0.statusCode >= val_min)) {
+                D_800EEBB8 = 0;
+                D_800EEBB9 = 0;
+                D_800EEBBA = 0;
+                D_800EEBC2 = 0;
+                D_800EEBC4 = 0;
+            }
+
+            else { 
+                D_800EEBB8 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C6;
+                D_800EEBB9 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C5;
+                D_800EEBBA = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C7;
+                D_800EEBC2 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D2;
+                D_800EEBC4 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D4;
+            }
+            break;
         }
-        break;
-    }
 
-    case 240:
-    case 244:
-    case 245:
-        D_800EEBC0 = 0;
-        D_800EEBBB = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk13;
-        D_800EEBB9 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unkB;
-        D_800EEBBA = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk6;
-        D_800EEBC2 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk10;
-        D_800EEBC4 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unkC;
-        break;
+        case 240:
+        case 244:
+        case 245:
+            D_800EEBC0 = 0;
+            D_800EEBBB = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk13;
+            D_800EEBB9 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unkB;
+            D_800EEBBA = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk6;
+            D_800EEBC2 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk10;
+            D_800EEBC4 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unkC;
+            break;
 
-    case 254:
-        D_800EEBC0 = g_battleChars.levelEntries[D_800EE4C0.statusCode - 64].unk1;
-        D_800EEBB9 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkD;
-        D_800EEBBA = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk1B;
-        D_800EEBC2 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkE;
-        D_800EEBC4 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk10;
-        break;
+        case 254:
+            D_800EEBC0 = g_battleChars.levelEntries[D_800EE4C0.statusCode - 64].unk1;
+            D_800EEBB9 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkD;
+            D_800EEBBA = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk1B;
+            D_800EEBC2 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkE;
+            D_800EEBC4 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk10;
+            break;
 
-    case 7:  
-    case 23 ... 27: 
-    case 29 ... 34: 
-    case 38: 
-        D_800EEBB9 = D_80078E00.array4020[D_800EE4C0.statusCode].unk8;
-        D_800EEBBA = D_80078E00.array4020[D_800EE4C0.statusCode].unk9;
-        D_800EEBC2 = D_80078E00.array4020[D_800EE4C0.statusCode].unkA;
-        D_800EEBC4 = D_80078E00.array4020[D_800EE4C0.statusCode].unkC;
-        break;
+        case 7:  
+        case 23 ... 27: 
+        case 29 ... 34: 
+        case 38: 
+            D_800EEBB9 = D_80078E00.array4020[D_800EE4C0.statusCode].unk8;
+            D_800EEBBA = D_80078E00.array4020[D_800EE4C0.statusCode].unk9;
+            D_800EEBC2 = D_80078E00.array4020[D_800EE4C0.statusCode].unkA;
+            D_800EEBC4 = D_80078E00.array4020[D_800EE4C0.statusCode].unkC;
+            break;
 
-    case 2:
-    case 6:
-    case 16:
-    case 247:
-        D_800EEBB9 = D_80078E00.spells[D_800EE4C0.statusCode].unkA;
-        D_800EEBBA = D_80078E00.spells[D_800EE4C0.statusCode].unk12;
-        D_800EEBC2 = D_80078E00.spells[D_800EE4C0.statusCode].unk10;
-        D_800EEBC4 = D_80078E00.spells[D_800EE4C0.statusCode].unkC;
-        break;
+        case 2:
+        case 6:
+        case 16:
+        case 247:
+            D_800EEBB9 = D_80078E00.spells[D_800EE4C0.statusCode].unkA;
+            D_800EEBBA = D_80078E00.spells[D_800EE4C0.statusCode].unk12;
+            D_800EEBC2 = D_80078E00.spells[D_800EE4C0.statusCode].unk10;
+            D_800EEBC4 = D_80078E00.spells[D_800EE4C0.statusCode].unkC;
+            break;
 
-    case 19:
-        D_800EEBB8 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A78;
-        D_800EEBB9 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A77;
-        D_800EEBBA = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A79;
-        D_800EEBC2 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A7A;
-        D_800EEBC4 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A7C;
-        break;
+        case 19:
+            D_800EEBB8 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A78;
+            D_800EEBB9 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A77;
+            D_800EEBBA = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A79;
+            D_800EEBC2 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A7A;
+            D_800EEBC4 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A7C;
+            break;
 
-    case 17:
-    case 18:
-    case 20:
-    case 21:
-    case 22:
-        D_800EEBB8 = D_80078E00.array4484[D_800EE4C0.statusCode].unkA;
-        D_800EEBB9 = D_80078E00.array4484[D_800EE4C0.statusCode].unk9;
-        D_800EEBBA = D_80078E00.array4484[D_800EE4C0.statusCode].unkB;
-        D_800EEBC2 = D_80078E00.array4484[D_800EE4C0.statusCode].unkC;
-        D_800EEBC4 = D_80078E00.array4484[D_800EE4C0.statusCode].unk10;
-        break;
+        case 17:
+        case 18:
+        case 20:
+        case 21:
+        case 22:
+            D_800EEBB8 = D_80078E00.array4484[D_800EE4C0.statusCode].unkA;
+            D_800EEBB9 = D_80078E00.array4484[D_800EE4C0.statusCode].unk9;
+            D_800EEBBA = D_80078E00.array4484[D_800EE4C0.statusCode].unkB;
+            D_800EEBC2 = D_80078E00.array4484[D_800EE4C0.statusCode].unkC;
+            D_800EEBC4 = D_80078E00.array4484[D_800EE4C0.statusCode].unk10;
+            break;
 
-    case 15:
-        D_800EEBB9 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk8;
-        D_800EEBBA = D_80078E00.array44FC[D_800EE4C0.statusCode].unk9;
-        index = func_8009FDE0(arg0, D_800EE4C0.statusCode);
-        D_800EEBC2 = D_80078E00.array45F8[index].unk4;
-        D_800EEBC4 = D_80078E00.array45F8[index].unk0;
-        D_800EEBBB = D_80078E00.array45F8[index].unk7;
-        D_800EEBBC = D_80078E00.array44FC[D_800EE4C0.statusCode].unkA;
-        break;
+        case 15:
+            D_800EEBB9 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk8;
+            D_800EEBBA = D_80078E00.array44FC[D_800EE4C0.statusCode].unk9;
+            index = func_8009FDE0(arg0, D_800EE4C0.statusCode);
+            D_800EEBC2 = D_80078E00.array45F8[index].unk4;
+            D_800EEBC4 = D_80078E00.array45F8[index].unk0;
+            D_800EEBBB = D_80078E00.array45F8[index].unk7;
+            D_800EEBBC = D_80078E00.array44FC[D_800EE4C0.statusCode].unkA;
+            break;
 
-    case 14:
-    case 237:
-    case 238:
-        D_800EEBB8 = D_80078E00.array47FC[D_800ED148.unk1324].unkA;
-        D_800EEBB9 = D_80078E00.array47FC[D_800ED148.unk1324].unk9;
-        D_800EEBBA = D_80078E00.array47FC[D_800ED148.unk1324].unkB; 
-        D_800EEBC2 = D_80078E00.array47FC[D_800ED148.unk1324].unkC;
-        D_800EEBC4 = D_80078E00.array47FC[D_800ED148.unk1324].unk10;
-        D_800EEBBC = D_80078E00.array47FC[D_800ED148.unk1324].unkF;
-        break;
+        case 14:
+        case 237:
+        case 238:
+            D_800EEBB8 = D_80078E00.array47FC[D_800ED148.unk1324].unkA;
+            D_800EEBB9 = D_80078E00.array47FC[D_800ED148.unk1324].unk9;
+            D_800EEBBA = D_80078E00.array47FC[D_800ED148.unk1324].unkB; 
+            D_800EEBC2 = D_80078E00.array47FC[D_800ED148.unk1324].unkC;
+            D_800EEBC4 = D_80078E00.array47FC[D_800ED148.unk1324].unk10;
+            D_800EEBBC = D_80078E00.array47FC[D_800ED148.unk1324].unkF;
+            break;
 
-    case 4:
-    case 13:
-        D_800EEBBB = D_80078E00.abilities[D_800EE4C0.statusCode].unkC;
-        D_800EEBB9 = D_80078E00.abilities[D_800EE4C0.statusCode].unkF;
-        D_800EEBBA = D_80078E00.abilities[D_800EE4C0.statusCode].unk5;
-        D_800EEBC2 = D_80078E00.abilities[D_800EE4C0.statusCode].unk6;
-        D_800EEBC4 = D_80078E00.abilities[D_800EE4C0.statusCode].unk8;
-        break;
-
-    case 8:
-    case 236:
-        D_800EEBB9 = D_80078E00.entries17[D_800EE4C0.statusCode].unkA;
-        D_800EEBBA = D_80078E00.entries17[D_800EE4C0.statusCode].unkC; 
-        D_800EEBC2 = D_80078E00.entries17[D_800EE4C0.statusCode].unkE;       
-        D_800EEBC4 = D_80078E00.entries17[D_800EE4C0.statusCode].unk10;
-        D_800EEBBB = D_80078E00.entries17[D_800EE4C0.statusCode].unkD;
-        D_800EEBBC = D_80078E00.entries17[D_800EE4C0.statusCode].unkB;
-        break;
-
-    case 0:
-        switch (D_800EE4C0.statusCode) {
-        case 10:
-            D_800EEBB9 = 0;    
-            D_800EEBBA = 200;
-            D_800EEBC2 = D_80078E00.unk4C0C[D_800ED148.unk1327].unk8;
-            D_800EEBC4 = D_80078E00.unk4C0C[D_800ED148.unk1327].unk5;
+        case 4:
+        case 13:
+            D_800EEBBB = D_80078E00.abilities[D_800EE4C0.statusCode].unkC;
+            D_800EEBB9 = D_80078E00.abilities[D_800EE4C0.statusCode].unkF;
+            D_800EEBBA = D_80078E00.abilities[D_800EE4C0.statusCode].unk5;
+            D_800EEBC2 = D_80078E00.abilities[D_800EE4C0.statusCode].unk6;
+            D_800EEBC4 = D_80078E00.abilities[D_800EE4C0.statusCode].unk8;
             break;
 
         case 8:
+        case 236:
+            D_800EEBB9 = D_80078E00.entries17[D_800EE4C0.statusCode].unkA;
+            D_800EEBBA = D_80078E00.entries17[D_800EE4C0.statusCode].unkC; 
+            D_800EEBC2 = D_80078E00.entries17[D_800EE4C0.statusCode].unkE;       
+            D_800EEBC4 = D_80078E00.entries17[D_800EE4C0.statusCode].unk10;
+            D_800EEBBB = D_80078E00.entries17[D_800EE4C0.statusCode].unkD;
+            D_800EEBBC = D_80078E00.entries17[D_800EE4C0.statusCode].unkB;
+            break;
+
+        case 0:
+            switch (D_800EE4C0.statusCode) {
+            case 10:
+                D_800EEBB9 = 0;    
+                D_800EEBBA = 200;
+                D_800EEBC2 = D_80078E00.unk4C0C[D_800ED148.unk1327].unk8;
+                D_800EEBC4 = D_80078E00.unk4C0C[D_800ED148.unk1327].unk5;
+                break;
+
+            case 8:
+                D_800EEBB9 = 0;
+                D_800EEBBA = 255;
+                D_800EEBC2 = 1;
+                D_800EEBC4 = 0;
+                break;
+            }
+            break;
+
+        case 249:
+            D_800EEBB8 = D_80078E00.array3750[D_800EE4C0.unk3].unk2;
+            D_800EEBB9 = D_80078E00.array3750[D_800EE4C0.unk3].unk1;
+            D_800EEBBA = D_80078E00.array3750[D_800EE4C0.unk3].unk3;
+            D_800EEBC2 = D_80078E00.array3750[D_800EE4C0.unk3].unk6;
+            D_800EEBC4 = D_80078E00.array3750[D_800EE4C0.unk3].unk8;
+            break;
+
+        case 251:
             D_800EEBB9 = 0;
-            D_800EEBBA = 255;
-            D_800EEBC2 = 1;
+            D_800EEBBA = 0;
+            D_800EEBC2 = 0;
             D_800EEBC4 = 0;
             break;
-        }
-        break;
 
-    case 249:
-        D_800EEBB8 = D_80078E00.array3750[D_800EE4C0.unk3].unk2;
-        D_800EEBB9 = D_80078E00.array3750[D_800EE4C0.unk3].unk1;
-        D_800EEBBA = D_80078E00.array3750[D_800EE4C0.unk3].unk3;
-        D_800EEBC2 = D_80078E00.array3750[D_800EE4C0.unk3].unk6;
-        D_800EEBC4 = D_80078E00.array3750[D_800EE4C0.unk3].unk8;
-        break;
-
-    case 251:
-        D_800EEBB9 = 0;
-        D_800EEBBA = 0;
-        D_800EEBC2 = 0;
-        D_800EEBC4 = 0;
-        break;
-
-    default:
-        bs = &D_800ED148;
-        D_800EEBB8 = bs->entities[arg0].unkC6;
-        D_800EEBB9 = bs->entities[arg0].unkC5;
-        D_800EEBBA = bs->entities[arg0].unkB8[2];
-        D_800EEBC2 = bs->entities[arg0].hitStatus1;
-        D_800EEBC4 = bs->entities[arg0].unk20;
-        D_800EEBBB = bs->entities[arg0].unkC4;
-        D_800EEBBC = D_80078E00.array35BD[g_battleChars.chars[arg0].classId].unk5;
-        break;
+        default:
+            D_800EEBB8 = D_800ED148.entities[arg0].unkC6;
+            D_800EEBB9 = D_800ED148.entities[arg0].unkC5;
+            D_800EEBBA = D_800ED148.entities[arg0].unkB8[2];
+            D_800EEBC2 = D_800ED148.entities[arg0].hitStatus1;
+            D_800EEBC4 = D_800ED148.entities[arg0].unk20;
+            D_800EEBBB = D_800ED148.entities[arg0].unkBD[7];
+            D_800EEBBC = D_80078E00.array35BD[g_battleChars.chars[arg0].classId].unk5;
+            break;
     }
 }
 
@@ -2217,7 +2190,7 @@ s32 func_800A085C(void) {
 u8 func_800A08C0(void) {
     u8 var_v0;
 
-    var_v0 = D_800786D9;
+    var_v0 = g_gameState.chocobo.level;
     if (var_v0 == 0) {
         return 1;
     }
@@ -2265,15 +2238,13 @@ void func_800A0978(s32 arg0) {
 }
 
 void func_800A09D0(s32 arg0) {
-    BattleSystem* bs;
     s32 temp_s4;
     u8 var_a0;
     u8 var_s3;
 
-    bs = &D_800ED148;
-    bs->entities[arg0].controlFlags &= ~BATTLE_ENTITY_FLAG_BIT_14;
-    if (bs->entities[arg0].unkC9 != 0) {
-        bs->entities[arg0].unkC9--;
+    D_800ED148.entities[arg0].controlFlags &= ~BATTLE_ENTITY_FLAG_BIT_14;
+    if (D_800ED148.entities[arg0].unkC9 != 0) {
+        D_800ED148.entities[arg0].unkC9--;
     }
 
     D_800ED148.unk1329 = 0;
@@ -2296,289 +2267,289 @@ void func_800A09D0(s32 arg0) {
     func_8009FE14(temp_s4);
 
     switch (D_800EE4C0.unk1) {
-    case 0:        
-        D_800ED148.unk12F5 = 1;
-        switch (D_800EE4C0.statusCode) {
-        case 10:
-            D_800EE4C0.unkC = func_8009F23C(temp_s4, arg0);
+        case 0:        
+            D_800ED148.unk12F5 = 1;
+            switch (D_800EE4C0.statusCode) {
+                case 10:
+                    D_800EE4C0.unkC = func_8009F23C(temp_s4, arg0);
+                    break;
+
+                case 8:
+                    D_800EE4C0.unkC = func_8009E418(temp_s4, arg0, 0);
+                    break;
+
+                case 4:
+                    D_800EE4C0.unkC = func_8009F4BC(arg0);
+                    break;
+
+                case 2:
+                    D_800EE4C0.unkC = func_8009F350(arg0);
+                    break;
+
+                case 5:
+                    D_800EE4C0.unkC = func_8009F3F8(arg0);
+                    break;
+
+                case 6:
+                    D_800EE4C0.unkC = func_8009F428(arg0);
+                    break;
+
+                case 7:
+                    D_800EE4C0.unkC = func_8009F46C(arg0);
+                    break;
+
+                case 3:
+                    D_800EE4C0.flags5 |= 1;
+                    D_800EE4C0.unk4 = D_800EE4C0.unk2;
+                    break;         
+            }
+
+        default:         
             break;
 
-        case 8:
-            D_800EE4C0.unkC = func_8009E418(temp_s4, arg0, 0);
-            break;
-
-        case 4:
-            D_800EE4C0.unkC = func_8009F4BC(arg0);
-            break;
-
-        case 2:
-            D_800EE4C0.unkC = func_8009F350(arg0);
-            break;
-
-        case 5:
-            D_800EE4C0.unkC = func_8009F3F8(arg0);
-            break;
-
-        case 6:
-            D_800EE4C0.unkC = func_8009F428(arg0);
-            break;
-
-        case 7:
-            D_800EE4C0.unkC = func_8009F46C(arg0);
-            break;
-
-        case 3:
-            D_800EE4C0.flags5 |= 1;
-            D_800EE4C0.unk4 = D_800EE4C0.unk2;
-            break;         
-        }
-
-    default:         
-        break;
-
-    case 5:        
-    case 11:        
-    case 250:       
-        D_800ED148.unk1300 = 1;
-        break;
-
-    case 239:       
-        D_800ED148.unk1300 = 0;
-        goto not_another_goto;
-
-    case 241:       
-        switch (D_800EE4C0.statusCode) {     
-        case 65530:
+        case 5:        
+        case 11:        
+        case 250:       
             D_800ED148.unk1300 = 1;
-            D_800EE4C0.flags5 |= 1;
             break;
 
-        case 65532:
-            D_800EE4C0.unk7 = temp_s4;
+        case 239:       
             D_800ED148.unk1300 = 0;
-            D_800EE4C0.flags5 |= 1;
-            D_800EE4C0.unk9 |= 1;
-            break;
-
-        default:    
-            D_800ED148.unk1300 = 1;
             goto not_another_goto;
-        }       
-        break;
-        not_another_goto:
-        func_8009FCF4(D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C3);
-        var_s3 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48BF;
 
-        D_800EE4C0.unk4 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C0;
-        D_800EE4C0.unkC = func_8009F930(D_80078E00.array48BC[D_800EE4C0.statusCode].unk48BE, temp_s4, arg0, var_s3);
-        break;
+        case 241:       
+            switch (D_800EE4C0.statusCode) {     
+            case 65530:
+                D_800ED148.unk1300 = 1;
+                D_800EE4C0.flags5 |= 1;
+                break;
 
-    case 12:        
-        func_8009CAD8(temp_s4, arg0);
-        /* fallthrough */
-    case 1:        
-    case 28:
-        if (D_800ED148.entities[temp_s4].comFileId != 0 && D_800ED148.entities[temp_s4].comFileId != 6) {
-            func_8009FCF4(0);
-            var_s3 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk1;
-            D_800EE4C0.unk4 = 4;
-            var_a0 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk0;
-            D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
-        } 
+            case 65532:
+                D_800EE4C0.unk7 = temp_s4;
+                D_800ED148.unk1300 = 0;
+                D_800EE4C0.flags5 |= 1;
+                D_800EE4C0.unk9 |= 1;
+                break;
 
-        else {
-            D_800ED148.unk1300 = 1;
-        }
+            default:    
+                D_800ED148.unk1300 = 1;
+                goto not_another_goto;
+            }       
+            break;
+            not_another_goto:
+            func_8009FCF4(D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C3);
+            var_s3 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48BF;
 
-        func_800A0978(temp_s4);
-        break;
-
-    case 29:       
-        func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk6);
-        var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk5;
-        D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk3;
-        var_a0 = D_80078E00.array4020[D_800EE4C0.statusCode].unk4;
-        D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
-        break;
-
-    case 6:        
-        switch (D_800EE4C0.unk3) {           
-        case 9:     
-            D_800EE4C0.unkC = (func_8009FD28(arg0, temp_s4) * (func_8009B15C() + 10)) / 150;
+            D_800EE4C0.unk4 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C0;
+            D_800EE4C0.unkC = func_8009F930(D_80078E00.array48BC[D_800EE4C0.statusCode].unk48BE, temp_s4, arg0, var_s3);
             break;
 
-        case 10:    
+        case 12:        
+            func_8009CAD8(temp_s4, arg0);
+            /* fallthrough */
+        case 1:        
+        case 28:
+            if (D_800ED148.entities[temp_s4].comFileId != 0 && D_800ED148.entities[temp_s4].comFileId != 6) {
+                func_8009FCF4(0);
+                var_s3 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk1;
+                D_800EE4C0.unk4 = 4;
+                var_a0 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk0;
+                D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
+            } 
+
+            else {
+                D_800ED148.unk1300 = 1;
+            }
+
+            func_800A0978(temp_s4);
+            break;
+
+        case 29:       
+            func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk6);
+            var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk5;
+            D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk3;
+            var_a0 = D_80078E00.array4020[D_800EE4C0.statusCode].unk4;
+            D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
+            break;
+
+        case 6:        
+            switch (D_800EE4C0.unk3) {           
+            case 9:     
+                D_800EE4C0.unkC = (func_8009FD28(arg0, temp_s4) * (func_8009B15C() + 10)) / 150;
+                break;
+
+            case 10:    
+                D_800EE4C0.unkC = 0;
+                D_800EE4C0.flags5 |= 1;
+                break;
+            }
+            break;
+
+        case 244:       
+            if (D_800ED148.unk1321 != 0) {
+                D_800EEBBF = func_800A08C0();
+            } 
+
+            else {
+            case 38:   
+            case 240:   
+            case 245:   
+                D_800EEBBF = func_800A085C();
+            }
+
+            D_800EEBC8 = 100;
+            D_800EEBBD = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk12;
+            D_800EEBBE = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk13;
+            func_8009FCF4(D_80078E00.entriesA0[D_800EE4C0.statusCode].unk8);
+            var_s3 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk5;
+            D_800EE4C0.unk4 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk9;
+            var_a0 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk4;
+            D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
+            break;
+
+        case 246:       
+            D_800ED148.entities[arg0].status |= 1;
             D_800EE4C0.unkC = 0;
             D_800EE4C0.flags5 |= 1;
             break;
-        }
-        break;
 
-    case 244:       
-        if (D_800ED148.unk1321 != 0) {
-            D_800EEBBF = func_800A08C0();
-        } 
+        case 2:        
+        case 16:       
+        case 247:       
+            D_800EE4C0.unkC = func_8009FD28(arg0, temp_s4);
+            break;
 
-        else {
-        case 38:   
-        case 240:   
-        case 245:   
-            D_800EEBBF = func_800A085C();
-        }
+        case 19:       
+            func_8009FCF4(D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A75);
+            var_s3 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A71;
+            D_800EE4C0.unk4 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A72;
+            var_a0 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A70;
+            D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
+            break;
 
-        D_800EEBC8 = 100;
-        D_800EEBBD = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk12;
-        D_800EEBBE = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk13;
-        func_8009FCF4(D_80078E00.entriesA0[D_800EE4C0.statusCode].unk8);
-        var_s3 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk5;
-        D_800EE4C0.unk4 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk9;
-        var_a0 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk4;
-        D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
-        break;
+        case 17:       
+        case 18:       
+        case 20:       
+        case 21:       
+        case 22:       
+            func_8009FCF4(D_80078E00.array4484[D_800EE4C0.statusCode].unk7);
+            var_s3 = D_80078E00.array4484[D_800EE4C0.statusCode].unk3;
+            D_800EE4C0.unk4 = D_80078E00.array4484[D_800EE4C0.statusCode].unk4;
+            var_a0 = D_80078E00.array4484[D_800EE4C0.statusCode].unk2;
+            D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
+            break;
 
-    case 246:       
-        D_800ED148.entities[arg0].status |= 1;
-        D_800EE4C0.unkC = 0;
-        D_800EE4C0.flags5 |= 1;
-        break;
+        case 15:        
+            func_8009FCF4(D_80078E00.array44FC[D_800EE4C0.statusCode].unk6);
+            var_s3 = D_80078E00.array45F8[func_8009FDE0(temp_s4, D_800EE4C0.statusCode)].unk6;
+            D_800EE4C0.unk4 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk2;
+            var_a0 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk3;
+            D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
+            break;
 
-    case 2:        
-    case 16:       
-    case 247:       
-        D_800EE4C0.unkC = func_8009FD28(arg0, temp_s4);
-        break;
+        case 4:        
+        case 13:        
+            func_8009FCF4(D_80078E00.abilities[D_800EE4C0.statusCode].unk2);
+            var_s3 = D_80078E00.array3920[D_800EE4C0.statusCode].unk17;
+            D_800EE4C0.unk4 = D_80078E00.abilities[D_800EE4C0.statusCode].unk3;
+            var_a0 = D_80078E00.array3920[D_800EE4C0.statusCode].unk16;
+            D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
+            break;
 
-    case 19:       
-        func_8009FCF4(D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A75);
-        var_s3 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A71;
-        D_800EE4C0.unk4 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A72;
-        var_a0 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A70;
-        D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
-        break;
+        case 7:        
+        case 23 ... 27:             
+        case 30 ... 34:           
+            func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk6);
+            var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk5;
+            D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk3;
+            var_a0 = D_80078E00.array4020[D_800EE4C0.statusCode].unk4;
+            D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
+            break;
 
-    case 17:       
-    case 18:       
-    case 20:       
-    case 21:       
-    case 22:       
-        func_8009FCF4(D_80078E00.array4484[D_800EE4C0.statusCode].unk7);
-        var_s3 = D_80078E00.array4484[D_800EE4C0.statusCode].unk3;
-        D_800EE4C0.unk4 = D_80078E00.array4484[D_800EE4C0.statusCode].unk4;
-        var_a0 = D_80078E00.array4484[D_800EE4C0.statusCode].unk2;
-        D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
-        break;
-
-    case 15:        
-        func_8009FCF4(D_80078E00.array44FC[D_800EE4C0.statusCode].unk6);
-        var_s3 = D_80078E00.array45F8[func_8009FDE0(temp_s4, D_800EE4C0.statusCode)].unk6;
-        D_800EE4C0.unk4 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk2;
-        var_a0 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk3;
-        D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
-        break;
-
-    case 4:        
-    case 13:        
-        func_8009FCF4(D_80078E00.abilities[D_800EE4C0.statusCode].unk2);
-        var_s3 = D_80078E00.array3920[D_800EE4C0.statusCode].unk17;
-        D_800EE4C0.unk4 = D_80078E00.abilities[D_800EE4C0.statusCode].unk3;
-        var_a0 = D_80078E00.array3920[D_800EE4C0.statusCode].unk16;
-        D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
-        break;
-
-    case 7:        
-    case 23 ... 27:             
-    case 30 ... 34:           
-        func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk6);
-        var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk5;
-        D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk3;
-        var_a0 = D_80078E00.array4020[D_800EE4C0.statusCode].unk4;
-        D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
-        break;
-
-    case 14:        
-        D_800ED148.unk1300 = 1;
-        D_800EE4C0.unk4 = 0;
-        D_800ED148.unk12F5 = 1;
-        goto ohno_plz_halp;
-
-    case 238:       
-        D_800ED148.unk1300 = 0;
-        if (D_800ED148.entities[arg0].status & 1) {
-            D_800EE4C0.unk4 = D_80078E00.array47FC[D_800ED148.unk1324].unk4;
-        } 
-
-        else {
+        case 14:        
+            D_800ED148.unk1300 = 1;
             D_800EE4C0.unk4 = 0;
-        }
+            D_800ED148.unk12F5 = 1;
+            goto ohno_plz_halp;
 
-        ohno_plz_halp:
-        D_800EE4C0.unkC = 0;
-        D_800EE4C0.flags5 |= 1;
-        break;
+        case 238:       
+            D_800ED148.unk1300 = 0;
+            if (D_800ED148.entities[arg0].status & 1) {
+                D_800EE4C0.unk4 = D_80078E00.array47FC[D_800ED148.unk1324].unk4;
+            } 
 
-    case 237:       
-        D_800ED148.unk1300 = 1;
-        func_8009FCF4(D_80078E00.array47FC[D_800ED148.unk1324].unk7);
-        var_s3 = D_80078E00.array47FC[D_800ED148.unk1324].unk3;
-        D_800EE4C0.unk4 = D_80078E00.array47FC[D_800ED148.unk1324].unk4;
-        var_a0 = D_80078E00.array47FC[D_800ED148.unk1324].unk2;
-        D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3); 
-        break;
+            else {
+                D_800EE4C0.unk4 = 0;
+            }
 
-    case 8:        
-    case 236:       
-        func_8009FCF4(D_80078E00.entries17[D_800EE4C0.statusCode].unk8);
-        var_s3 = D_80078E00.entries17[D_800EE4C0.statusCode].unk7;
-        D_800EE4C0.unk4 = D_80078E00.entries17[D_800EE4C0.statusCode].unk5;
-        var_a0 = D_80078E00.entries17[D_800EE4C0.statusCode].unk6;
-        D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
-        break;
+            ohno_plz_halp:
+            D_800EE4C0.unkC = 0;
+            D_800EE4C0.flags5 |= 1;
+            break;
 
-    case 252:       
-        D_800EE4C0.flags5 |= 1;
-        break;
-
-    case 254:       
-        if (D_800ED148.unk131E != 0) {
-            D_800EEBBD = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk83;
-            D_800EEBBE = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk84;
-            D_800EEBBF = g_battleChars.levelEntries[D_800EE4C0.statusCode - 64].level;
-            func_8009FCF4(D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkA);
-            var_s3 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk7;
-            D_800EE4C0.unk4 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkB;
-            var_a0 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk6;
+        case 237:       
+            D_800ED148.unk1300 = 1;
+            func_8009FCF4(D_80078E00.array47FC[D_800ED148.unk1324].unk7);
+            var_s3 = D_80078E00.array47FC[D_800ED148.unk1324].unk3;
+            D_800EE4C0.unk4 = D_80078E00.array47FC[D_800ED148.unk1324].unk4;
+            var_a0 = D_80078E00.array47FC[D_800ED148.unk1324].unk2;
             D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3); 
-            break; 
-        }       
-        break;
+            break;
 
-    case 249:       
-        D_800ED148.unk1300 = 0;
-        func_8009FCF4(D_80078E00.unk3738[D_800EE4C0.unk3].unk17);
-        var_s3 = D_80078E00.unk3738[D_800EE4C0.unk3].unk14;
-        D_800EE4C0.unk4 = D_80078E00.unk3738[D_800EE4C0.unk3].unk15;
-        var_a0 = D_80078E00.unk3738[D_800EE4C0.unk3].unk12;
-        D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3); 
-        break;
+        case 8:        
+        case 236:       
+            func_8009FCF4(D_80078E00.entries17[D_800EE4C0.statusCode].unk8);
+            var_s3 = D_80078E00.entries17[D_800EE4C0.statusCode].unk7;
+            D_800EE4C0.unk4 = D_80078E00.entries17[D_800EE4C0.statusCode].unk5;
+            var_a0 = D_80078E00.entries17[D_800EE4C0.statusCode].unk6;
+            D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
+            break;
 
-    case 251:       
-        var_s3 = D_80078E00.array37A6[g_gameState.chars[g_gameState.mainData.party.party[temp_s4]].characterId].unk3;
-        goto wait_oh_god_make_it_stop;
+        case 252:       
+            D_800EE4C0.flags5 |= 1;
+            break;
 
-    case 243:       
-    case 248:       
-    case 253:       
-        var_s3 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk1;
-        wait_oh_god_make_it_stop:
-        func_8009FCF4(0);
-        D_800EE4C0.unk4 = 4;
-        if (func_8009FDD4(D_800ED148.unk1294) != 0) {
-            D_800EE4C0.flags6 |= 2;
-        }
+        case 254:       
+            if (D_800ED148.unk131E != 0) {
+                D_800EEBBD = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk82;
+                D_800EEBBE = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk83;
+                D_800EEBBF = g_battleChars.levelEntries[D_800EE4C0.statusCode - 64].level;
+                func_8009FCF4(D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkA);
+                var_s3 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk7;
+                D_800EE4C0.unk4 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkB;
+                var_a0 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk6;
+                D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3); 
+                break; 
+            }       
+            break;
 
-        D_800EE4C0.unkC = func_8009F930(10, temp_s4, arg0, var_s3);
-        func_800A0978(temp_s4);
-        break;   
+        case 249:       
+            D_800ED148.unk1300 = 0;
+            func_8009FCF4(D_80078E00.unk3738[D_800EE4C0.unk3].unk17);
+            var_s3 = D_80078E00.unk3738[D_800EE4C0.unk3].unk14;
+            D_800EE4C0.unk4 = D_80078E00.unk3738[D_800EE4C0.unk3].unk15;
+            var_a0 = D_80078E00.unk3738[D_800EE4C0.unk3].unk12;
+            D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3); 
+            break;
+
+        case 251:       
+            var_s3 = D_80078E00.array37A6[g_gameState.chars[g_gameState.mainData.party.party[temp_s4]].characterId].unk3;
+            goto wait_oh_god_make_it_stop;
+
+        case 243:       
+        case 248:       
+        case 253:       
+            var_s3 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk1;
+            wait_oh_god_make_it_stop:
+            func_8009FCF4(0);
+            D_800EE4C0.unk4 = 4;
+            if (func_8009FDD4(D_800ED148.unk1294) != 0) {
+                D_800EE4C0.flags6 |= 2;
+            }
+
+            D_800EE4C0.unkC = func_8009F930(10, temp_s4, arg0, var_s3);
+            func_800A0978(temp_s4);
+            break;   
     }
 
     if ((D_800EE4C0.unk1 == 243) || (D_800EE4C0.unk1 == 28)) {

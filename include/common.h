@@ -9,7 +9,7 @@ typedef unsigned short u16;
 typedef short s16;
 typedef unsigned int u32;
 typedef int s32;
-
+typedef int intrptr_t;
 #ifndef NULL
 #define NULL ((void *)0)
 #endif
