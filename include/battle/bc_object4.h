@@ -164,7 +164,7 @@ s32 func_800A8FDC(BattleCharData*);
 
 s32 func_800A9064(BattleCharData*);
 
-// func_800A9084
+void func_800A9084(u8*, u8*); 
 
 s32 func_800A9240(s32);
 
@@ -182,7 +182,7 @@ void func_800A95A0(s32, s32);
 
 void func_800A960C(s32);
 
-s32 func_800A972C(s32);
+u16 func_800A972C(s32);
 
 u8* func_800A9784(u16, s32);
 

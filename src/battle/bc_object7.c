@@ -544,7 +544,7 @@ s32 func_800B0F3C(s32 a0) {
  * @param arg0 Ability flags.
  * @return Bitmask with bits 14 and/or 13 set.
  */
-u16 func_800B0F7C(s32 arg0) {
+s32 func_800B0F7C(s32 arg0) {
     s32 temp_v1;
     int new_var;
     s32 var_v0;

@@ -1,9 +1,10 @@
 #include "common.h"
+#include "battle.h"
 #include "psxsdk/libgte.h"
 #include "battle/bc_object8.h"
 #include "battle/bc_object9.h"
 #include "battle/bc_object10.h"
-#include "battle.h"
+
 
 extern u8 D_800EF72C[];
 extern u8 D_800F05C8[];

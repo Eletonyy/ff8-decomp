@@ -1,4 +1,5 @@
 #include "common.h"
+#include "battle.h"
 #include "psxsdk/libgte.h"
 #include "battle/bc_object8.h"
 #include "battle/bc_object12.h"

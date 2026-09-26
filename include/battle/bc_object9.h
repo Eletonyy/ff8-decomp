@@ -1,8 +1,6 @@
 #ifndef BATTLE_BC_OBJECT9_H
 #define BATTLE_BC_OBJECT9_H
 
-#include "common.h"
-
 /**
  * @file
  * @brief Battle audio buffers and their task pool.
@@ -20,5 +18,7 @@ void func_800B6A9C(void);
  * @return The task's storage.
  */
 void *func_800B853C(void *task);
+
+SoundCmd* func_800B8564(s16, u8);
 
 #endif /* BATTLE_BC_OBJECT9_H */
