@@ -6,7 +6,7 @@
 #include "battle/bc_object3.h"
 #include "battle/bc_object7.h"
 
-SoundCmd* func_8009B134(s16 arg0, u8 arg1, s32 unused);
+SoundCmd* func_8009B134(s32 arg0, s32 arg1, void* unused); // cant include bc_object1.h
 
 
 /**
