@@ -5,6 +5,7 @@
 #include "menushop2.h"
 #include "btl_color.h"
 #include "btl_sfx.h"
+#include "game.h"
 
 #define SYMBOL_PERCENT 20 // Passed as argument to func_801F6AFC
 
@@ -576,8 +577,8 @@ static s32 func_801E8D84(JunkShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
 
             text = func_801F6AFC(50);
 
-            intToDecStringShort(quantity, numStr, ((u8 *)getMenuString(11))[1]);
-            replaceLeadingZeros(numStr, 4, ((u8 *)getMenuString(11))[1], ((u8 *)getMenuString(11))[0]);
+            intToDecStringShort(quantity, numStr, getMenuString(11)[1]);
+            replaceLeadingZeros(numStr, 4, getMenuString(11)[1], getMenuString(11)[0]);
 
             y2 = y + 13;
             y += 23;
@@ -585,8 +586,8 @@ static s32 func_801E8D84(JunkShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
             copyString(buffer, numStr + 2);
             btlStrcat2(buffer, text);
 
-            intToDecStringShort(D_801EB088[itemId], numStr, ((u8 *)getMenuString(11))[1]);
-            replaceLeadingZeros(numStr, 4, ((u8 *)getMenuString(11))[1], ((u8 *)getMenuString(11))[0]);
+            intToDecStringShort(D_801EB088[itemId], numStr, getMenuString(11)[1]);
+            replaceLeadingZeros(numStr, 4, getMenuString(11)[1], getMenuString(11)[0]);
 
             btlStrcat2(buffer, numStr + 2);
 
