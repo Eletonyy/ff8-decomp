@@ -2,6 +2,8 @@
 #include "psxsdk/libetc.h"
 #include "battle.h"
 #include "menumain.h"
+#include "btl_anim.h"
+#include "btl_anim_packet.h"
 #include "menushop2.h"
 #include "btl_color.h"
 #include "btl_sfx.h"
