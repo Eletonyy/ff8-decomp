@@ -2,16 +2,13 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libc.h"
 #include "battle.h"
+#include "game.h"
+#include "gamestate.h"
 #include "numstr.h"
 
 extern u8 D_8008386C;
 
 extern u8 D_80052A30[];
-extern u8 D_800773A8[];
-extern u8 D_80077E74[];
-extern u8 D_800773B4[];
-extern u8 D_80083857[];
-extern u8 D_80083868;
 extern u8 D_8008369C[];
 extern SfxSystem g_sfxEntries;
 extern u8 *getMagicNamePtr(s32 magicId);
@@ -25,6 +22,18 @@ extern void func_8002F4B0(u8 *buf, s32 separator);
 extern u32 D_800529F4[];
 extern u32 D_80052A08[];
 extern s32 D_800834CC;
+
+/** @brief Reference kinds carried in bits 8 and up of an insertArgString code. */
+enum {
+    MSG_ARG_BATTLE_CHAR = 0,    /* low 5 bits: battle character slot */
+    MSG_ARG_NAME = 3,           /* low byte: character, Angelo, Griever or Boko name */
+    MSG_ARG_NUMBER = 4          /* low byte: format and SFX value slot */
+};
+
+static inline u8 *appendString(u8 *dst, u8 *str);
+static inline u8 *getNameString(s32 code, u8 *buf);
+static inline u8 *getNumberString(s32 code, u8 *buf);
+static inline u8 *insertArgString(u8 *dst, s32 code, u8 *buf);
 
 /**
  * @brief Convert an unsigned integer to a decimal digit string using divisor table D_800529F4.
@@ -323,6 +332,152 @@ u8 *func_8002F610(s32 index, u8 *dst) {
 
 
 /**
+ * @brief Copy @p str to @p dst and return the position just past the copy.
+ *
+ * @param dst Destination write position.
+ * @param str Null-terminated string to copy.
+ * @return @p dst advanced by the length of @p str.
+ */
+static inline u8 *appendString(u8 *dst, u8 *str) {
+    copyString(dst, str);
+    return dst + btlStrlen(str);
+}
+
+/**
+ * @brief Resolve a name reference code to its string.
+ *
+ * MSG_ARG_BATTLE_CHAR is a battle character slot. MSG_ARG_NAME selects by the
+ * low byte a character name (0x20-0x22, 0x30-0x3F), the player-chosen Angelo
+ * (0x40), Griever (0x50) or Boko (0x60) name, or D_80052A30 for anything
+ * else. Any other kind leaves @p buf untouched.
+ *
+ * @param code Reference code: kind in bits 8+, selector in the low byte.
+ * @param buf  Caller's scratch buffer, returned when nothing is looked up.
+ * @return The resolved string, or @p buf.
+ *
+ * @note Every arm assigns through @p buf and the function has a single
+ *       return. A parameter that is written to makes gcc copy the argument
+ *       into a fresh pseudo when it expands the inline, which is the
+ *       `v0 = s1` copy at the head of each expansion; the single return is
+ *       what gives the four direct-pointer arms their one shared `s1 = v0`.
+ */
+static inline u8 *getNameString(s32 code, u8 *buf) {
+    s32 low;
+
+    low = code & 0xFF;
+    switch (code >> 8) {
+    case MSG_ARG_BATTLE_CHAR:
+        buf = getBattleCharNameWrapper(code & 0x1F);
+        break;
+    case MSG_ARG_NAME:
+        switch (low) {
+        case 0x20: case 0x21: case 0x22:
+            buf = getCharNameWrapper2((low - 0x20) & 0x1F);
+            break;
+        case 0x30: case 0x31: case 0x32: case 0x33:
+        case 0x34: case 0x35: case 0x36: case 0x37:
+        case 0x38: case 0x39: case 0x3A: case 0x3B:
+        case 0x3C: case 0x3D: case 0x3E: case 0x3F:
+            buf = getCharNameWrapper((low - 0x30) & 0x1F);
+            break;
+        case 0x40:
+            buf = g_gameState.angeloName;
+            break;
+        case 0x50:
+            buf = g_gameState.mainData.party.grieverName;
+            break;
+        case 0x60:
+            buf = g_gameState.bokoName;
+            break;
+        default:
+            buf = D_80052A30;
+            break;
+        }
+        break;
+    }
+    return buf;
+}
+
+/**
+ * @brief Format one of the SFX message values into @p buf.
+ *
+ * The low byte of @p code picks both the format and the value slot:
+ * 0x20-0x27 decimal with thousands separator, 0x30-0x37 plain decimal,
+ * 0x40-0x47 hexadecimal. u32ToHexTiles is asked for tiles 1-16 so that a zero
+ * nibble does not terminate the string, which is why the glyph table is
+ * indexed from one entry before its start.
+ *
+ * @param code Reference code; only the low byte is used.
+ * @param buf  Buffer that receives the digits (left empty for other codes).
+ * @return @p buf.
+ */
+static inline u8 *getNumberString(s32 code, u8 *buf) {
+    SfxSystem *sfx;
+    s32 valIdx;
+    u8 *hexPtr;
+
+    sfx = &g_sfxEntries;
+    getDigitBaseCode();
+    valIdx = code & 0xFF;
+    *buf = 0;
+    switch (valIdx) {
+    case 0x20: case 0x21: case 0x22: case 0x23:
+    case 0x24: case 0x25: case 0x26: case 0x27:
+        valIdx -= 0x20;
+        intToDecString(sfx->msgValues[valIdx], buf, D_80083858.digits[0]);
+        func_8002F320(buf, 10, D_80083858.digits[0]);
+        func_8002F4B0(buf, D_80083858.separator);
+        break;
+    case 0x30: case 0x31: case 0x32: case 0x33:
+    case 0x34: case 0x35: case 0x36: case 0x37:
+        valIdx -= 0x30;
+        intToDecString(sfx->msgValues[valIdx], buf, D_80083858.digits[0]);
+        func_8002F320(buf, 10, D_80083858.digits[0]);
+        break;
+    case 0x40: case 0x41: case 0x42: case 0x43:
+    case 0x44: case 0x45: case 0x46: case 0x47:
+        valIdx -= 0x40;
+        u32ToHexTiles(sfx->msgValues[valIdx], buf, 1);
+        for (hexPtr = buf; *hexPtr != 0; hexPtr++) {
+            *hexPtr = (D_80083858.digits - 1)[*hexPtr];
+        }
+        break;
+    }
+    return buf;
+}
+
+/**
+ * @brief Expand a name or number reference into the output text.
+ *
+ * @param dst  Write position in the decoded text.
+ * @param code Reference code: kind in bits 8+, selector in the low byte.
+ * @param buf  Scratch buffer for formatted numbers.
+ * @return The write position after the inserted string.
+ *
+ * @note `src` has to be its own local: selecting through @p buf directly
+ *       changes which register carries the string across the two calls.
+ */
+static inline u8 *insertArgString(u8 *dst, s32 code, u8 *buf) {
+    u8 *src;
+
+    src = buf;
+    switch (code >> 8) {
+    case MSG_ARG_BATTLE_CHAR:
+    case MSG_ARG_NAME:
+        src = getNameString(code, src);
+        break;
+    case MSG_ARG_NUMBER:
+        src = getNumberString(code, src);
+        break;
+    }
+    if (src != 0) {
+        dst = appendString(dst, src);
+    }
+    return dst;
+}
+
+
+/**
  * @brief Decode a control-code-encoded text string into an output buffer.
  *
  * Processes an input byte stream containing printable characters (0x19-0xE7)
@@ -337,27 +492,31 @@ u8 *func_8002F610(s32 index, u8 *dst) {
  *   0x0D + byte — GF/item stat name lookup via getStatName
  *   0x0E + byte — Character name table set 0 (idx * 224 + subByte)
  *   0x0F + byte — Character name table set 1 (idx * 224 + subByte)
- *   0x10-0x1F   — Direct name lookup via getBattleCharNameWrapper (type 0)
+ *   0x10-0x18   — Direct name lookup via getBattleCharNameWrapper (type 0);
+ *                 the test is ch < 0x20, but 0x19-0x1F are already printable
  *   0xE8-0xFF   — Double-byte character from D_8008369C lookup table
  *
- * Types 3, 4, and 0x10-0x1F share a sub-command dispatch based on cmd >> 8:
- *   hiCmd 0: getBattleCharNameWrapper(cmd & 0x1F) — direct name pointer
- *   hiCmd 3: Name lookup switch (65-entry jump table, 0x20-0x60):
+ * Types 3, 4, and 0x10-0x18 all expand a reference code through
+ * insertArgString, which dispatches on code >> 8:
+ *   MSG_ARG_BATTLE_CHAR: getBattleCharNameWrapper(code & 0x1F) — direct name pointer
+ *   MSG_ARG_NAME: getNameString's lookup switch (65-entry jump table, 0x20-0x60):
  *     0x20-0x22 → getCharNameWrapper2 (character name type A)
  *     0x30-0x3F → getCharNameWrapper (character name type B)
- *     0x40 → D_800773A8, 0x50 → D_80077E74, 0x60 → D_800773B4
+ *     0x40 → Angelo's name, 0x50 → Griever's name, 0x60 → Boko's name
  *     default  → D_80052A30
- *   hiCmd 4: SFX numeric format switch (40-entry jump table, 0x20-0x47):
+ *   MSG_ARG_NUMBER: getNumberString's format switch (40-entry jump table, 0x20-0x47):
  *     0x20-0x27 → Decimal with separator (intToDecString + F320 + F4B0)
  *     0x30-0x37 → Decimal plain (intToDecString + F320)
- *     0x40-0x47 → Hex with D_80083857 char remap (u32ToHexTiles)
+ *     0x40-0x47 → Hex, remapped to the D_80083858 digit glyphs (u32ToHexTiles)
  *
- * The dispatch is repeated 3 times (for types 3, 4, 0x10-0x1F), producing
- * 6 separate jump tables. Handler code is shared across dispatches via
+ * insertArgString is inlined at its three call sites, producing 6 separate
+ * jump tables. Handler code is shared across the expansions via
  * cross-jumping, except the hex remap handler (contains a loop, 3 copies).
  *
- * After dispatch, the result string is copied to writePos via copyString,
- * and the output pointer advances by the string length.
+ * @note The control byte itself has already been stored when its handler
+ *       runs, so every handler that expands a code overwrites it and writes
+ *       from `output - 1`; the two-byte escape codes keep it and append their
+ *       argument after it.
  *
  * Overflow: if output >= end, writes null to *end. If maxLen < 0, prints
  * "MESSAGE DATA OVER RUN" via printf before returning.
@@ -365,62 +524,115 @@ u8 *func_8002F610(s32 index, u8 *dst) {
  * @param input   Source byte stream with embedded control codes.
  * @param output  Destination buffer for decoded text.
  * @param maxLen  Maximum output length, or -1 for default limit (128 bytes).
- * @see https://decomp.me/scratch/7Ruwy
  */
-INCLUDE_ASM("asm/nonmatchings/numstr", decodeMessage);
+void decodeMessage(u8 *input, u8 *output, s32 maxLen) {
+    u8 tmpBuf[16];
+    u8 *end;
+    u8 *cmdPair;
+    s32 ch;
+    s32 lowCmd;
+
+    if (input == 0) {
+        *output = 0;
+        return;
+    }
+    if (maxLen >= 0) {
+        end = output + maxLen;
+    } else {
+        end = output + 128;
+    }
+    while (1) {
+        ch = *input++;
+        if (output >= end) {
+            *end = 0;
+            if (maxLen < 0) {
+                printf("MESSAGE DATA OVER RUN\n");
+            }
+            return;
+        }
+        *output++ = ch;
+        if (ch >= 0x19 && ch < 0xE8) {
+            continue;
+        }
+        if (ch == 2 || ch == 0 || ch == 1 || ch == 7) {
+            return;
+        }
+        if (ch < 0x10) {
+            if (ch == 3) {
+                ch = *input++ | (MSG_ARG_NAME << 8);
+                output = insertArgString(output - 1, ch, tmpBuf);
+            } else if (ch == 4) {
+                ch = *input++ | (MSG_ARG_NUMBER << 8);
+                output = insertArgString(output - 1, ch, tmpBuf);
+            } else if (ch == 0xC) {
+                ch = *input++;
+                output = appendString(output - 1, getMagicNamePtr(ch - 0x20));
+            } else if (ch == 0xD) {
+                ch = *input++;
+                output = appendString(output - 1, getStatName(ch - 0x20));
+            } else if (ch == 0xE || ch == 0xF) {
+                ch = (ch - 0xE) * 224;
+                lowCmd = *input++;
+                output = func_8002F610(ch + ((lowCmd - 0x20) & 0xFF), output - 1);
+            } else {
+                *output++ = *input++;
+            }
+        } else if (ch >= 0x10 && ch < 0x20) {
+            output = insertArgString(output - 1, ch, tmpBuf);
+        } else if (ch >= 0xE8) {
+            cmdPair = D_8008369C;
+            cmdPair += (ch - 0xE8) * 2;
+            output--;
+            output[0] = cmdPair[0];
+            output[1] = cmdPair[1];
+            output += 2;
+        }
+    }
+}
 
 
 /**
- * @brief Skip past control codes in the message stream and decode the remaining message.
+ * @brief Skip the leading segments of a message and decode the one that follows.
  *
- * Reads skipCount and streamPtr from the MsgState structure.
- * Calls func_8002F548 skipCount times to advance past that many type-2
- * delimiters. Then calls decodeMessage with the current position and stores
- * the result in storedPtr.
+ * Advances past @c skipCount segment breaks with func_8002F548, decodes from
+ * there, and records where decoding started in @c storedPtr.
  *
- * @param a0 Pointer to the message state structure.
- * @param a1 Output buffer for decodeMessage.
+ * @param msg    Message cursor.
+ * @param output Output buffer for decodeMessage.
  */
-void func_8002FD28(s32 *a0, u8 *a1) {
-    s32 skip = ((MsgState *)a0)->skipCount;
-    u8 *stream = (u8 *)((MsgState *)a0)->streamPtr;
+void func_8002FD28(MsgState *msg, u8 *output) {
+    s32 skip = msg->skipCount;
+    u8 *stream = msg->streamPtr;
     while (skip > 0) {
         stream = func_8002F548(stream);
         skip--;
     }
-    decodeMessage((s32)stream, (s32)a1, -1);
-    ((MsgState *)a0)->storedPtr = (s32)stream;
+    decodeMessage(stream, output, -1);
+    msg->storedPtr = stream;
 }
 
 
 /**
- * @brief Process and dispatch a rendering command.
+ * @brief Step the cursor to its next segment and decode it.
  *
- * Calls func_8002F548 on the fourth element of the input array to update it,
- * then dispatches the result along with a1 and -1 via decodeMessage.
- *
- * @param a0 Pointer to a 4-element s32 array; element [3] is processed in-place.
- * @param a1 Second parameter passed to the dispatch function.
- * @note Purpose uncertain -- appears to advance and render a display list primitive.
+ * @param msg    Message cursor; @c storedPtr is advanced with func_8002F548.
+ * @param output Output buffer for decodeMessage.
  */
-void advanceAndDecodeMessage(s32 *a0, s32 a1) {
-    s32 result = func_8002F548(a0[3]);
-    a0[3] = result;
-    decodeMessage(result, a1, -1);
+void advanceAndDecodeMessage(MsgState *msg, u8 *output) {
+    u8 *next = func_8002F548(msg->storedPtr);
+    msg->storedPtr = next;
+    decodeMessage(next, output, -1);
 }
 
 
 /**
- * @brief Dispatch a rendering command without processing.
+ * @brief Decode the segment the cursor currently points at, without advancing.
  *
- * Calls decodeMessage directly with the fourth element of the array, a1, and -1.
- * Unlike advanceAndDecodeMessage, does not call func_8002F548 to update element [3] first.
- *
- * @param a0 Pointer to a 4-element s32 array; element [3] is read but not modified.
- * @param a1 Second parameter passed to the dispatch function.
+ * @param msg    Message cursor; @c storedPtr is read but not modified.
+ * @param output Output buffer for decodeMessage.
  */
-void decodeMessageDirect(s32 *a0, s32 a1) {
-    decodeMessage(a0[3], a1, -1);
+void decodeMessageDirect(MsgState *msg, u8 *output) {
+    decodeMessage(msg->storedPtr, output, -1);
 }
 
 

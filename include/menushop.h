@@ -2,66 +2,102 @@
 #define MENUSHOP_H
 
 #include "gamestate.h"
+#include "menushop2.h"
 
-#define SHOP_ITEM_COUNT 16
+#define WEAPON_INFO_COUNT 28
+#define WEAPON_RECIPE_COUNT 33
+#define WEAPON_RECIPE_INGREDIENT_COUNT 4
 #define ITEM_PRICE_COUNT 200
-#define ITEM_SLOT_COUNT 198 
+
+/** @brief String codes passed as argument to func_801F6AA4. */
+typedef enum {
+    STRING_JUNK_SHOP_ABILITY = 48,
+    STRING_QUANTITY = 50,
+    STRING_MONEY = 51,
+    STRING_QUANTITY2 = 55,
+    STRING_PRICE = 56,
+    STRING_HIT = 58,
+    STRING_JUNK_SHOP_REMODEL_WEAPON_TO = 59,
+    STRING_JUNK_SHOP_NOT_ENOUGH_ITEMS_COME_BACK_LATER = 61,
+    STRING_JUNK_SHOP_NOT_ENOUGH_ITEMS = 62,
+    STRING_JUNK_SHOP_NOT_ENOUGH_MONEY = 63,
+    STRING_SHOP_WELCOME = 64,
+    STRING_SHOP_WHAT_DO_YOU_WANT_TO_SELL = 65,
+    STRING_SHOP_WHAT_DO_YOU_WANT_TO_BUY = 66,
+    STRING_SHOP_COME_BACK_SOON = 68,
+    STRING_JUNK_SHOP_WELCOME_WHO_NEEDS_TO_REMODEL = 69,
+    STRING_SHOP_BUY_HOW_MANY = 70,
+    STRING_SHOP_SELL_HOW_MANY = 71,
+    STRING_SHOP_CANT_CARRY_ANY_MORE = 72,
+    STRING_SHOP_NOT_ENOUGH_MONEY = 73,
+    STRING_SHOP_WELCOME2 = 74,
+    STRING_JUNK_SHOP_REMODEL_TO_WHICH_WEAPON = 75,
+    STRING_JUNK_SHOP_YOU_HAVE_IT_ALREADY = 76,
+    STRING_JUNK_SHOP_COME_BACK_SOON = 77,
+    STRING_JUNK_SHOP_CANT_REMODEL_YOUR_WEAPON = 78,
+} StringCode;
+
+/** @brief Colors used to draw text in the menu. */
+typedef enum {
+    COLOR_GRAY = 1,
+    COLOR_RED = 2,
+    COLOR_YELLOW = 3,
+    COLOR_WHITE = 7,
+} Color;
+
+/** @brief Icon types used in the menu. */
+typedef enum {
+    ICON_NONE = 0,
+    ICON_GIL = 11,
+    ICON_PRICE = 71,
+    ICON_NAME = 73,
+    ICON_ITEM = 76,
+    ICON_NUM = 77,
+    ICON_INFO = 87,
+    ICON_ARROW_UP = 109,
+    ICON_ARROW_DOWN = 110,
+    ICON_STR = 305,
+    ICON_HIT = 311,
+} IconType;
 
 typedef struct {
-    u8 itemId;      /**< 0x0: item ID. */
-    u8 rarity;      /**< 0x1: item rarity (0x00 = Rare, 0xFF = Common). */
-} ShopItemRarity; /* 0x2 = 2 bytes */
+    u8 pad0[4];
+    u8 characterId; /**< 0x04: character id who uses this weapon. */
+    u8 pad5[2];     /* 0x05 */
+    u8 hit;         /**< 0x07: weapon hit. */
+    u8 pad8[4];     /* 0x08 */
+} WeaponInfo; /* 12 bytes */
 
 typedef struct {
-    u8 itemId;      /**< 0x0: item ID. */
-    u8 visible;     /**< 0x1: item visibility flag. */
-} ShopItemVisibility; /* 0x2 = 2 bytes */
+    u8 itemId;      /**< 0x00: item id. */
+    u8 quantity;    /**< 0x01: item quantity. */
+} WeaponRecipeIngredient; /* 2 bytes */
 
 typedef struct {
-    u16 basePrice;  /**< 0x0: base price. */
-    u8 sellRate;    /**< 0x2: sell rate. */
-} ShopItemPrice; /* 0x3 = 3 bytes */
+    u16 nameId;                            /**< 0x00: index of the weapon name. */
+    u8 pad3;                               /* 0x02 */
+    u8 basePrice;                          /**< 0x03: weapon base price. */
+    WeaponRecipeIngredient ingredients[WEAPON_RECIPE_INGREDIENT_COUNT]; /**< 0x04: ingredients required to craft the weapon. */
+} WeaponRecipe; /* 12 bytes */
 
-typedef struct {
-    u8 pad000[0x20];
-    s32 *unk20; /**< 0x20: pointer to data. */
-    u8 pad024[0x12];
-    u16 unk36; /**< 0x36: scroll offset. */
-} Struct_801E8B60;
-
-typedef struct {
-    u8 pad000[0x3A];
-    s16 unk3A; /**< 0x3A: scroll offset. */
-    u8 pad03D[0x4];
-    u8 unk40; /**< 0x40: page start. */
-    u8 unk41; /**< 0x41: page end. */
-    u8 pad041[0x4];
-    u8 unk46; /**< 0x46: orientation (left if equals 0, right otherwise). */
-} Struct_801E7374;
-
-typedef struct {
-    u8 pad000[0x28];
-    s32 unk28; /**< 0x28: passed to drawColorByMenuPalette as 4th argument. */
-} Struct_801E7508;
-
-extern ShopData D_80077CC8[SHOP_COUNT]; /**< Shop data table. */
-extern u8 D_80077EBC[ITEM_SLOT_COUNT]; /**< Item slot inventory. */
-extern ShopItemPrice D_801EA3F0[ITEM_PRICE_COUNT]; /**< Item price table. */
-extern u8 D_801EA70C[];
-extern u8 D_801F7F98[];
-extern u8 D_801E9B64[];
-extern u8 D_801E9B6C[];
-extern ShopItemRarity D_801EA170[SHOP_COUNT][SHOP_ITEM_COUNT]; /**< Shop item rarity tables. */
-extern ShopItemVisibility D_801EAA28[SHOP_ITEM_COUNT]; /**< Shop item visibility table. */
-extern s32 D_801EAA48[ITEM_PRICE_COUNT]; /**< Item sell prices. */
-extern s32 D_801EAD68[ITEM_PRICE_COUNT]; /**< Item buy prices. */
+extern WeaponInfo D_8007C3B8[WEAPON_INFO_COUNT]; /**< Weapon attributes. */
+extern WeaponRecipe D_801E9BA0[WEAPON_RECIPE_COUNT]; /**< Junk shop weapon recipes (mwepon.bin content). */
+extern u8 D_801E9D2C[68]; /**< Weapon names (mwepon.msg content). */
 extern u8 D_801EB088[ITEM_PRICE_COUNT]; /**< Item quantities. */
-extern s32 g_menuColor;
-extern s32 D_80077E70;
-extern s32 func_801E8AB0;
-extern void func_801E5E90(void*);
-extern s32 func_801E79D4(void*, s32, s32);
-extern s32 func_801EFBB4(s32, s32, s32);
-extern void* func_801E6FD8(void);
+extern u8 D_801EB150[8]; /**< Weapon ID's listed at junk shop for the selected character. */
+extern s32 D_801EB2E4; /**< ID of the selected weapon at the junk shop. */
+extern s32 D_801EB2E8; /**< ID of the selected character at the junk shop. */
+
+void func_801E5C08(u32);
+s32 func_801E5D28(void);
+s32 func_801E77EC(s32, s32, s32, s32, s32);
+u8* func_801E7CFC(s32);
+void func_801E7D30(u8*, u8*);
+u32 func_801E7E1C(s32);
+s32 func_801E7E68(s32, u32);
+s32 func_801E7F4C(s32, u32);
+s32 func_801E8058(u32);
+void func_801E8134(s32, s32);
+void func_801E816C(s32, s32);
 
 #endif /* MENUSHOP_H */

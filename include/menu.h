@@ -30,8 +30,8 @@ typedef struct {
     /* 0x16 */ u8 pageStart;      /**< First visible page/row index */
     /* 0x17 */ u8 pageEnd;        /**< Last visible page/row index */
     /* 0x18 */ u16 inputRaw;      /**< Raw button input state */
-    /* 0x1A */ u16 inputNew;      /**< Newly pressed buttons (edges) */
-    /* 0x1C */ u16 inputRepeat;   /**< Buttons with auto-repeat applied */
+    /* 0x1A */ u16 inputRepeat;   /**< Held buttons with auto-repeat applied (func_801F0E5C). */
+    /* 0x1C */ u16 inputNew;      /**< Newly pressed buttons: (cur ^ prev) & cur. */
     /* 0x1E */ u8 itemId;         /**< Current item/card ID for rendering */
     /* 0x1F */ u8 itemAttr;       /**< Item attribute byte */
     /* 0x20 */ s32 dataPtr;       /**< Pointer to item data array */
@@ -116,7 +116,7 @@ typedef struct {
     /* 0x61 */ u8 unk61;               /**< Modified flag (set when junction changed). */
     /* 0x62 */ u8 unk62;               /**< Sub-mode flag. */
     /* 0x63 */ u8 unk63;               /**< Unjunction-all flag. */
-    /* 0x64 */ u16 unk64;              /**< GF confirm timer. */
+    /* 0x64 */ s16 unk64;              /**< GF confirm timer. */
     /* 0x66 */ u16 unk66;              /**< Message display timer. */
 } JunctionMenuCtx; /* 0x68 bytes */
 

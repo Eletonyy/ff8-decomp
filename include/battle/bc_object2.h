@@ -1,8 +1,6 @@
 #ifndef BC_OBJECT2_H
 #define BC_OBJECT2_H
 
-#include "game.h"
-
 
 #define BATTLE_ENTITY_FLAG_BIT_0   (1 << 0)  /* 0x00000000 */
 #define BATTLE_ENTITY_FLAG_BIT_10  (1 << 10) /* 0x00000400 */
@@ -22,6 +20,8 @@
 #define BATTLE_ENTITY_FLAG_BIT_25  (1 << 25) /* 0x02000000 */
 #define BATTLE_ENTITY_FLAG_BIT_26  (1 << 26) /* 0x04000000 */
                                                 
+#define ENTITY_FLAG_1 1
+#define ENTITY_FLAG_4 8
 
 
 
@@ -195,4 +195,4 @@ void func_800A184C(s32 idx, u16 attr, s32 flags);
 
 void func_800A1888(s32 arg0);
 
-#endif
+#endif /* BC_OBJECT2_H */

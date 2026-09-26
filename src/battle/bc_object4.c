@@ -3,9 +3,7 @@
 #include "gf.h"
 #include "gamestate.h"
 #include "battle/bc_object4.h"
-
 extern void func_800E1850(void);
-
 
 
 void func_800A6184(s32 arg0, s32 arg1, s32 arg2, u16 arg3) {
@@ -153,13 +151,13 @@ void func_800A63DC(void) {
  */
 void func_800A64E4(s32 arg0, u16 arg1) {
     if (arg0 == 0) {
-        func_800B0754(D_800ED148.entities[0].entityRef, 237, D_800ED148.unk1324, arg1);
+        func_800B0754(D_800ED148.header.entityRef, 237, D_800ED148.unk1324, arg1);
         decrementItemByType(D_800ED148.unk1324 + 101);
         func_8009AF14(func_800E1850);
         return;
     }
     
-    func_800B0754(D_800ED148.entities[0].entityRef, 238, D_800ED148.unk1324, func_800AA4E8());
+    func_800B0754(D_800ED148.header.entityRef, 238, D_800ED148.unk1324, func_800AA4E8());
     func_8009AE08(8);
 }
 
@@ -178,7 +176,7 @@ void func_800A65B0(void) {
     val = D_800ED148.unk12EF;
     if (val == 255) {
         D_800ED148.unk12EF = 254;
-        func_800B0754(D_800ED148.entities[0].entityRef, 241, 65532, D_800ED148.unk12E2);
+        func_800B0754(D_800ED148.header.entityRef, 241, 65532, D_800ED148.unk12E2);
         func_800A6588();
         return;
     }
@@ -194,14 +192,14 @@ void func_800A65B0(void) {
     D_800ED148.unk131B = val;
     
     if (val < 6) {
-        func_800B0754(D_800ED148.entities[0].entityRef, 241, D_800ED148.unk131B, D_800ED148.unk12E2);
+        func_800B0754(D_800ED148.header.entityRef, 241, D_800ED148.unk131B, D_800ED148.unk12E2);
         func_8009AF14(func_800A65B0);
         return;
     }
     
-    func_800A30F8(D_800ED148.entities[0].entityRef, 241, 65530, D_800ED148.unk131B, D_800ED148.entities[0].entityRef, D_800ED148.unk12E2, 0);
+    func_800A30F8(D_800ED148.header.entityRef, 241, 65530, D_800ED148.unk131B, D_800ED148.header.entityRef, D_800ED148.unk12E2, 0);
     func_800B06DC(D_800ED148.unk12E2);
-    func_800B0754(D_800ED148.entities[0].entityRef, 239, D_800ED148.unk131B, func_8009BA5C(D_800ED148.unk131B, D_800ED148.unk12E2));
+    func_800B0754(D_800ED148.header.entityRef, 239, D_800ED148.unk131B, func_8009BA5C(D_800ED148.unk131B, D_800ED148.unk12E2));
     func_800A6588();
 }
 
@@ -234,11 +232,11 @@ void func_800A6724(void) {
 void func_800A6780(s32 arg0) {
   
     if (!(D_800ED148.entities[arg0].status & 1) && !(D_800ED148.entities[arg0].status & 4)) {
-        D_800ED148.entities[arg0].unk24 = D_800ED148.entities[arg0].unk20;
+        D_800ED148.entities[arg0].curAtb = D_800ED148.entities[arg0].maxAtb;
         return;
     }
     
-    D_800ED148.entities[arg0].unk24 = 0;
+    D_800ED148.entities[arg0].curAtb = 0;
 }
 
 void func_800A67FC(s32 arg0) {
@@ -275,7 +273,7 @@ void func_800A68AC(s32 arg0) {
         case 1:
             for (i = 0; i < 3; i++) {
                 if (!(g_battleChars.chars[i].statusFlags & 0x10000)) {
-                    D_800ED148.entities[i].unk24 = 0;
+                    D_800ED148.entities[i].curAtb = 0;
                 }
             }
             break;
@@ -288,7 +286,7 @@ void func_800A68AC(s32 arg0) {
 
         case 3:
             for (i = 3; i < 7; i++) {
-                D_800ED148.entities[i].unk24 = 0;
+                D_800ED148.entities[i].curAtb = 0;
             }
             break;
 
@@ -300,23 +298,20 @@ void func_800A68AC(s32 arg0) {
 void func_800A69BC(void) {
     switch (D_800ED148.unk1308) {
         case 1:
-            func_8009AF3C(getMenuString(0x2E), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2E), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
         
         case 2:
-            func_8009AF3C(getMenuString(0x2D), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2D), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
         
         case 3:
-            func_8009AF3C(getMenuString(0x2C), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2C), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
         
         case 4:
-            func_8009AF3C(getMenuString(0x2F), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2F), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
-        
-        default:
-            return;
     }
 }
 
@@ -423,15 +418,15 @@ s32 func_800A6C34(void) {
     s32 var_s1;
 
 
-    if (D_80082C0A & 0x80) {
+    if (g_battleConfig.unk2 & 0x80) {
         return 0;
     }
       
-    if (D_80082C0A & 0x20) {
+    if (g_battleConfig.unk2 & 0x20) {
         return 1;
     }
     
-    if (D_80082C0A & 0x40) {
+    if (g_battleConfig.unk2 & 0x40) {
         return 2;
     }
     
@@ -439,7 +434,7 @@ s32 func_800A6C34(void) {
     var_s0 += func_800A6B6C(2, -20);
     var_s0 += func_8009B15C();
     
-    if (D_80078DF8 & 1) {
+    if (g_battleChars.levelEntries[15].abilityFlags & 1) {
         var_s0 -= 20;
     }
     
@@ -451,7 +446,7 @@ s32 func_800A6C34(void) {
         }
     }
     
-    if ((D_80078DF8 & 1) && (var_s1 == 2)) {
+    if ((g_battleChars.levelEntries[15].abilityFlags & 1) && (var_s1 == 2)) {
         var_s1 = 1;
     }
     
@@ -492,9 +487,9 @@ s32 func_800A6DD8(void) {
     var_v1 = 0;
     
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].linkedIdx != 255) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             var_a2++;
-            var_v1 += D_800ED148.entities[i].unkCC;
+            var_v1 += D_800ED148.entities[i].level;
         }
     }
     
@@ -600,6 +595,7 @@ s32 func_800A703C(s32 a0) {
     if (a0 < limit) {
         return a0;
     }
+
     return limit;
 }
 
@@ -770,8 +766,8 @@ void func_800A71C0(s32 idx) {
         temp_a0->unk90[0] = 200;
     }
     
-    func_800A240C(idx, D_800ED148.entities[idx].unk28, &D_800ED148.entities[idx].status);
-    if (D_800ED148.entities[0].state.word == 4) {
+    func_800A240C(idx, D_800ED148.entities[idx].currentHp, &D_800ED148.entities[idx].status);
+    if (D_800ED148.header.unk4 == 4) {
         if (D_800ED148.entities[idx].status & 0x100) {
             func_8009B088(idx, 0, 8, 1);
         }
@@ -831,7 +827,7 @@ void func_800A7518(s32 arg0) {
 
     if (!(temp_s0->unk80 & 4) && !(temp_s0->unk80 & 1)) {
         if (temp_s1->statusFlags & 0x10000) {
-            D_800ED148.entities[arg0].unk24 = D_800ED148.entities[arg0].unk20;
+            D_800ED148.entities[arg0].curAtb = D_800ED148.entities[arg0].maxAtb;
         }
         
         else {
@@ -912,7 +908,7 @@ void func_800A7884(void) {
     }
 
     func_800A77E8();
-    D_80078DF8 = 0;
+    g_battleChars.levelEntries[15].abilityFlags = 0;
 
     for (i = 0; i < 3; i++) {
         func_80022E08(g_gameState.mainData.party.party[i], i);
@@ -929,9 +925,9 @@ void func_800A7934(void) {
     
     for (i = 0; i < 3; i++) {
         GameState* gs = &g_gameState;
-        if (D_800ED148.entities[i].linkedIdx != 255) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             CharacterData* character = gs->chars;
-            character[g_gameState.mainData.party.party[i]].currentHp = D_800ED148.entities[i].unk28;
+            character[g_gameState.mainData.party.party[i]].currentHp = D_800ED148.entities[i].currentHp;
         }
     }
 }
@@ -1003,17 +999,11 @@ u8 func_800A7AB8(s32 arg0) {
  * @param a0 Entity index (stride 208).
  * @return Byte value at the end of the pointer chain.
  */
-s32 func_800A7AF4(s32 a0) {
-    s32 base = (s32)&D_800ED148;
-    s32 ptr;
-    s32 p2;
-    ptr = *(s32 *)(base + a0 * 208 + 0x14);
-    p2 = *(s32 *)ptr;
-    ptr = *(s32 *)(p2 + 4);
-    ptr += p2;
-    p2 = *(s32 *)(ptr + 0xC);
-    ptr += p2;
-    return *(u8 *)ptr;
+s32 func_800A7AF4(s32 idx) {
+    Unk4Struct *script = *D_800ED148.entities[idx].monsterAiSection;
+    Unk4Struct *ai = GET_OFFSET(Unk4Struct, script, script->unk4);
+
+    return *((u8*)ai + ai->unkC);
 }
 
 void func_800A7B48(void) {
@@ -1071,13 +1061,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A7D8C);
 
 u8 func_800A7EE0(BattleEntityData* arg0, s32 arg1) {
     switch (arg1) {
-        case 0:
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-        case 6:
+        case 0 ... 6:
             return arg0->unk168[arg1];
 
         case 8:
@@ -1133,8 +1117,8 @@ void func_800A7FD0(s32 arg0, s32 arg1, s32 arg2) {
 
 
     temp_s3 = *D_800ED148.entities[arg0].entityData;
-    D_800EE9E8.subEntries[arg0 - 3].unk10 = 0;
     temp_s1 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    D_800EE9E8.subEntries[arg0 - 3].unk10 = 0;
     temp_s1->unkBC = func_800A7154(arg1);
     temp_s1->unk7C = 17;
     if (temp_s3->immunityFlags & 0x10) {
@@ -1220,7 +1204,7 @@ void func_800A8320(s32 arg0) {
 
     temp_s1 = &D_800EE9E8.subEntries[arg0 - 3];
     temp_s2 = *D_800ED148.entities[arg0].entityData;
-    temp_s0 =  (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    temp_s0 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
     
     temp_s0->unkBD = func_800A82A0(temp_s1, temp_s2, temp_s0, 0);
     temp_s0->unkBE = func_800A82A0(temp_s1, temp_s2, temp_s0, 1);
@@ -1308,7 +1292,7 @@ void func_800A864C(void) {
         idx = g_gameState.mainData.itemSlots[i].id;
         
         if ((idx != 0) && (idx < 33)) {
-            temp_v0 = &D_800EE9E8.animSlots[g_gameState.mainData.limitBreaks.angeloPoints[idx+7]]; // not much sense, size 8
+            temp_v0 = &D_800EE9E8.animSlots[g_gameState.mainData.limitBreaks.angeloPoints[idx+7]]; // hack, not much sense, size 8
             temp_v0->value = g_gameState.mainData.itemSlots[i].count;
             temp_v0->id = idx;
         }
@@ -1346,7 +1330,7 @@ void func_800A8794(void) {
             arr0 = D_800EE9E8.subEntries[i].array0;
 
             for (j = 0; j < 4; j++) {
-                idx = temp_s2->unk104[D_800EE9E8.subEntries[i].unk46].unk0[j].unk0;
+                idx = temp_s2->unk104[0][D_800EE9E8.subEntries[i].unk46].sub[j].unk0;
                 if (idx < 64) {
                     arr0[j].unk0 = idx;
                     arr0[j].unk2 = 0;
@@ -1439,3 +1423,1049 @@ s32 func_800A8AFC(s32 arg0) {
     
     return 2;
 }
+
+#include "battle/bc_object7.h"
+
+s32 func_800A8B7C(s32 arg0) {
+    BattleCharData* temp_s0;
+
+    temp_s0 = &g_battleChars.chars[arg0];
+    func_800A8A48(temp_s0, 2, 0, 1);
+
+    switch (temp_s0->unk188 & 0x60000) {
+        case 0:
+            return 0;
+        
+         case 0x60000:
+            func_800A8A48(temp_s0, 0, 35, 1);
+            func_800A8A48(temp_s0, 1, 36, 1);
+            func_800A8A48(temp_s0, 2, 37, 1);
+            return 3;
+            
+         case 0x20000:
+            func_800A8A48(temp_s0, 0, 35, 1);
+            func_800A8A48(temp_s0, 1, 36, 1);
+            return 2;
+            
+         case 0x40000:
+            func_800A8A48(temp_s0, 0, 35, 1);
+            func_800A8A48(temp_s0, 1, 37, 1);
+            return 2;
+    }
+}
+
+void func_800A8CA4(s32 characterId, s32 targetId) {
+    BattleAnimSubEntry* var_s0;
+    s32 i;
+
+    if (D_800ED148.entities[targetId].controlFlags & 1) {
+        for (i = 0; i < 4; i++) {
+            var_s0 = &D_800EE9E8.subEntries[targetId - 3];
+            if (var_s0->array0[i].unk0 < 64) {
+                if (hasJunctionedAbility(characterId, var_s0->array0[i].unk0) != 0) {
+                    var_s0->array0[i].unk1 |= 4;
+                } 
+                
+                else {
+                    var_s0->array0[i].unk1 &= 0xFB;
+                }
+            }
+        }
+    }
+}
+
+void func_800A8D7C(s32 arg0, s32 arg1) {
+    BattleCharData* temp_s0;
+
+    temp_s0 = &g_battleChars.chars[arg0];
+    temp_s0->pad0[0] = 10;
+    temp_s0->pad0[1] = D_80078E00.unk0139;
+    temp_s0->pad0[2] = D_80078E00.unk013A;
+    temp_s0->pad0[3] = 0;
+    if (arg1 < 64) {
+        temp_s0->pad0[4] = 9;
+        temp_s0->pad0[5] = D_80078E00.spells[arg1].unk5;
+        temp_s0->pad0[6] = D_80078E00.spells[arg1].magicId;
+        temp_s0->pad0[7] = 0;
+        
+        if (D_80078E00.spells[arg1].unk7 & 0x80) {
+            temp_s0->pad0[7] = 1;
+            
+            if (D_80078E00.spells[arg1].unk7 & 0x80) {
+                temp_s0->pad0[3] |= 1;
+            }
+        }
+        
+        if (func_800A89B8(arg0, arg1) != 0) {
+            temp_s0->pad0[3] |= 2;
+        }
+    } 
+    
+    else {
+        temp_s0->pad0[4] = 9;
+        temp_s0->pad0[5] = 0;
+        temp_s0->pad0[6] = 0;
+        temp_s0->pad0[7] = 2;
+    }
+}
+
+void func_800A8E90(BattleCharData* arg0, s32 arg1) {
+    arg0->testSlots[0].unk0 = arg1;
+    arg0->testSlots[0].unk2 = D_80078E00.array4484[arg1].unk5;
+    arg0->testSlots[0].unk3 = D_80078E00.array4484[arg1].unk6;
+    arg0->testSlots[0].unk4 = 0;
+    arg0->testSlots[0].unk1 = 1;
+    
+    if (D_80078E00.array4484[arg1].unk7 & 0x80) {
+        arg0->testSlots[0].unk4 |= 1;
+    }
+}
+
+s32 func_800A8EFC(BattleCharData* arg0) {
+    s32 bit;
+    s32 i;
+    s32 val;
+
+    val = 0; 
+    bit = 1; 
+
+    for (i = 0; i < 16; i++) {
+        if (g_gameState.mainData.limitBreaks.quistisLimits & bit) {
+            arg0->testSlots[val].unk0 = i;
+            arg0->testSlots[val].unk2 = D_80078E00.array44FC[i].unk4;
+            arg0->testSlots[val].unk3 = D_80078E00.array44FC[i].unk5;
+            arg0->testSlots[val].unk4 = 0;
+            arg0->testSlots[val].unk1 = 1;
+            arg0->testSlots[val].unk4 &= 0xEF;
+            
+            if (D_80078E00.array44FC[i].unk6 & 0x80) {
+                arg0->testSlots[val].unk4 |= 1;
+            }
+            
+            val++;
+        }
+
+        bit <<= 1;
+    }
+    
+    return val;
+}
+
+/**
+* @brief Initialize entity ability fields from the ability table.
+*
+* Writes a1 as the ability ID at offset 0x32 of the entity entry
+* (computed as a0 + a2*5). Looks up ability data in D_80078E00
+* (offset 0x4A60, stride 8) and copies two bytes to offsets 0x34-0x35.
+* Clears offset 0x36 and sets offset 0x33 to 1.
+*
+* @param a0 Base entity pointer (as integer).
+* @param a1 Ability ID.
+* @param a2 Slot index (multiplied by 5 for stride).
+*/
+
+void func_800A8F98(BattleCharData* arg0, s32 arg1, s32 arg2) {
+    arg0->testSlots[arg2].unk0 = arg1;
+    arg0->testSlots[arg2].unk2 = D_80078E00.rows8[arg1].unk2;
+    arg0->testSlots[arg2].unk3 = D_80078E00.rows8[arg1].unk3;
+    arg0->testSlots[arg2].unk4 = 0;
+    arg0->testSlots[arg2].unk1 = 1;
+}
+
+s32 func_800A8FDC(BattleCharData* arg0) {
+    s32 val = 0;
+
+    if (!(g_gameState.mainData.partyLockFlag & 0x10)) {
+        val++;
+        func_800A8F98(arg0, 0, 0);
+    }
+    
+    if (g_gameState.mainData.partyLockFlag & 0x20) {
+        func_800A8F98(arg0, 1, val++);
+    }
+    
+    return val;
+}
+
+
+/**
+* @brief Initialize three type bytes in an entity structure.
+*
+* @param a0 Pointer to entity data.
+* @return Always 3.
+*/
+
+s32 func_800A9064(BattleCharData* arg0) {
+    arg0->testSlots[0].unk0 = 65;
+    arg0->testSlots[1].unk0 = 67;
+    arg0->testSlots[2].unk0 = 66;
+    
+    return 3;
+}
+
+void func_800A9084(u8* arg0, u8* arg1) {
+    s32 i;
+    s32 temp_ret;
+    s32 temp_a1;
+    s32 temp_v0;
+    s32 var_v1_2;
+    s32 idx;
+    
+    for (i = 0; i < 3; i++) {
+        if (g_battleChars.chars[i].characterId == 5) {
+            break; 
+        }
+    }
+
+    temp_ret = func_8009B15C();
+
+    temp_a1 = ((D_800ED148.entities[i].level / 10) + (temp_ret % 5) + D_800ED148.entities[i].crisisLevel) - 1;
+    
+    temp_v0 = func_8009B15C();
+    
+
+    if (temp_v0 < 39) {
+        var_v1_2 = 0;
+    }
+        
+    else if (temp_v0 < 159) {
+        var_v1_2 = 1;
+    }
+        
+    else if (temp_v0 < 209) {
+        var_v1_2 = 2;
+    }
+        
+    else if (temp_v0 < 249) {
+        var_v1_2 = 3;
+    }
+        
+    else {
+        var_v1_2 = 4;
+    }
+    
+    idx = D_80078E00.unk4AD0[var_v1_2][temp_a1];
+    temp_v0 = func_8009B15C() % 8;
+
+    D_800ED148.unk131F = *arg0 = D_80078E00.unk4B0C_arr[idx][temp_v0].unk4B0C;
+    D_800ED148.unk1320 = *arg1 = (func_8009B15C() % D_80078E00.unk4B0C_arr[idx][temp_v0].unk4B0D) + 1;
+}
+
+/**
+* @brief Search g_gameState+0xB44 table for entry matching a given byte.
+*
+* Iterates up to 198 entries (stride 2) in g_gameState at offset 0xB44.
+* If byte[0] matches a0, returns byte[1]. Returns 0 if not found.
+*
+* @param a0 Value to search for.
+* @return Unsigned byte at offset 1 of matching entry, or 0 if not found.
+*/
+
+s32 func_800A9240(s32 arg0) {
+    s32 i;
+    
+    for (i = 0; i < 198; i++) {
+        if (g_gameState.mainData.itemSlots[i].id == arg0) {
+            return g_gameState.mainData.itemSlots[i].count;
+        }
+    }
+    
+    return 0;
+}
+
+s32 func_800A9284(BattleCharData* arg0) {
+    s32 i;
+    u16 mask;
+    s32 val;
+    s32 temp_a0;
+    s32 var_s1;
+
+    val = 0;
+    mask = 1;
+    var_s1 = 101;
+        
+    for (i = 0; i < 8; i++) {
+        temp_a0 = func_800A9240(var_s1);
+        if ((g_gameState.mainData.limitBreaks.irvineLimits & mask) || (temp_a0 != 0)) {
+            arg0->testSlots[val].unk0 = var_s1;
+            arg0->testSlots[val].unk2 = 128;
+            arg0->testSlots[val].unk3 = D_80078E00.unk015A;
+            arg0->testSlots[val].unk4 = 0;
+            arg0->testSlots[val].unk1 = temp_a0;
+            arg0->testSlots[val].unk4 &= 0xEF;
+            
+            if (temp_a0 == 0) {
+                arg0->testSlots[val].unk4 |= 2;
+            }
+          
+            val++;
+        }
+        
+        var_s1++;
+        mask <<= 1;
+    }
+    
+    return val;
+}
+
+s32 func_800A9370(s32 arg0) {
+    BattleCharData* temp_a0;
+    s32 i;
+
+    temp_a0 = &g_battleChars.chars[arg0];
+    
+    for (i = 0; i < 16; i++) {
+        temp_a0->testSlots[i].unk4 = 0;
+        temp_a0->testSlots[i].unk1 = 0;
+        temp_a0->testSlots[i].unk3 = 0;
+        temp_a0->testSlots[i].unk2 = 0;
+        temp_a0->testSlots[i].unk0 = 0;
+        temp_a0->testSlots[i].unk4 |= 0x10;
+    }
+    
+    switch (temp_a0->characterId) {
+        case 0:
+        case 1:
+            return 0;
+            
+        case 2:
+            return func_800A9284(temp_a0);
+            
+        case 3:
+            return func_800A8EFC(temp_a0);
+            
+        case 4:
+            return func_800A8FDC(temp_a0);
+            
+        case 5:
+            return func_800A9064(temp_a0);
+            
+        case 6:
+            func_800A8E90(temp_a0, 0);
+            return 1;
+            
+        case 7:         
+            func_800A8E90(temp_a0, 1);
+            return 1;
+            
+        case 8:         
+            func_800A8E90(temp_a0, 2);
+            return 1;
+            
+        case 9:   
+            func_800A8E90(temp_a0, 3);
+            return 1;
+            
+        case 10:
+            func_800A8E90(temp_a0, 4);
+            return 1;
+    }
+}
+
+void func_800A9490(void) {
+    s32 i;
+
+    for (i = 0; i < 3; i++) {
+        g_battleChars.unk57A[i] = 0;
+        g_battleChars.unk574[i] = 0;
+    }
+
+    for (i = 0; i < 16; i++) {
+        g_battleChars.unk5A0[i] = 0;
+        g_battleChars.unk580[i] = 0;
+    }
+}
+
+void func_800A94E0(void) {
+    s32 i;
+
+    func_800A9490();
+    
+    for (i = 0; i < 16; i++) {
+        g_battleChars.unk5C0[i] = 0;
+    }
+
+    for (i = 0; i < 24; i++) {
+        g_battleChars.unk5E0[i].unk1 = 0;
+        g_battleChars.unk5E0[i].unk0 = 0;
+    }
+
+
+
+    for (i = 0; i < 8; i++) {
+        g_battleChars.gfEntries[0].unk0[i] = 255;
+    }
+}
+
+/**
+* @brief Search D_800EE9E8 table for a matching byte value.
+*
+* Iterates up to 32 entries (stride 5) in D_800EE9E8, comparing
+* the first byte of each entry to a0.
+*
+* @param a0 Value to search for.
+* @return 1 if found, 0 if not found.
+*/
+
+s32 func_800A9568(s32 arg0) {
+    s32 i;
+
+    for (i = 0; i < 32; i++) {
+        if (D_800EE9E8.animSlots[i].id == arg0) {
+            return 1; 
+        }
+    }
+    
+    return 0;
+}
+
+/**
+* @brief Set up entity action with sound and visual effects.
+*
+* Calls func_800A97FC to get a value, then triggers entity action
+* via func_800B0754, sets animation via func_800AF4BC, and
+* conditionally calls func_800AE3D4 based on func_800AE390 result.
+*
+* @param a0 Entity index passed to func_800A97FC and func_800B0754.
+* @param a1 Mode parameter for func_800B0754 and subsequent calls.
+*/
+
+void func_800A95A0(s32 arg0, s32 arg1) {
+    func_800B0754(arg0, 4, arg1, func_800A97FC(arg0));
+    func_800AF4BC(arg1, 1);
+    
+    if (func_800AE390(arg1) == 0) {
+        func_800AE3D4(arg1);
+    }
+}
+
+void func_800A960C(s32 arg0) {
+    s32 result;
+
+    if (D_800ED148.entities[arg0].status & 0x200) {
+        result = D_800ED148.entities[arg0].maxHp - D_800ED148.entities[arg0].currentHp;
+        if (result <= 200) {
+            return;
+        }
+        
+        if (result > 1000) {
+            if (func_800A9568(3) != 0) {
+                func_800A95A0(arg0, 3);
+            } 
+            
+            else if (func_800A9568(1) != 0) {
+                func_800A95A0(arg0, 1);
+            } 
+            
+            else if (func_800A9568(2) != 0) {
+                func_800A95A0(arg0, 2);
+            } 
+            
+            else if (func_800A9568(4) != 0) {
+                func_800A95A0(arg0, 4);
+            } 
+            
+            else if (func_800A9568(5) != 0) {
+                func_800A95A0(arg0, 5);
+            } 
+            
+            else if (func_800A9568(9) != 0) {
+                func_800A95A0(arg0, 9);
+            }
+        }
+            
+        else {
+            if (func_800A9568(1) != 0) {
+                func_800A95A0(arg0, 1);
+            }
+        }
+    }
+}
+
+/**
+* @brief Compute paired lookup results from entity table and return combined.
+*
+* Computes D_80078E00 + a0 * 20 as the base address, loads the byte at
+* offset 0x3EE7, calls func_800B0F9C and func_800B0F7C with it, and
+* returns the bitwise OR of both results masked to 16 bits.
+*
+* @param a0 Entity index (stride 20 in D_80078E00).
+* @return Combined result from both lookups, masked to u16.
+*/
+
+s32 func_800A972C(s32 arg0) {
+    return func_800B0F9C(D_80078E00.entriesA0[arg0].unk7) | func_800B0F7C(D_80078E00.entriesA0[arg0].unk7);
+}
+
+/**
+* @brief Resolve a 16-bit offset to an address.
+*
+* If the offset is 0xFFFF (sentinel), returns D_800E3CEC.
+* Otherwise returns offset + base.
+*
+* @param offset 16-bit offset value (0xFFFF = invalid).
+* @param base Base address to add offset to.
+* @return Resolved address.
+*/
+
+u8* func_800A9784(u16 arg0, s32 arg1) {
+    if (arg0 == 65535) {
+        return D_800E3CEC;
+    }
+    
+    return GET_OFFSET(u8, arg1, arg0);
+}
+
+/**
+* @brief Return a random number modulo @p a0.
+*
+* @param a0 Divisor (also the modulo bound).
+* @return Remainder of @c func_8009B15C() / @p a0.
+*/
+
+s32 func_800A97A4(s32 arg0) {
+    return func_8009B15C() % arg0;
+}
+
+/**
+* @brief Clear 8 entity word fields in the battle entity table.
+*
+* Zeros 8 consecutive words at offset 0x12B4 down to 0x1298
+* relative to D_800ED148.
+*/
+
+void func_800A97D4(void) {
+    s32 i;
+    
+    for (i = 0; i < 8; i++) {
+        D_800ED148.unk1298[i] = 0;
+    }
+}
+
+/**
+* @brief Compute a single-bit mask at the given position.
+*
+* @param bitPos Bit position (0-15).
+* @return 16-bit mask with bit at bitPos set.
+*/
+
+s32 func_800A97FC(s32 arg0) {
+    return (u16)(1 << arg0); // functions in this folder break with u16 return prototype
+}
+
+/**
+* @brief Find a random available entity (among first 3) and return its bitmask.
+*
+* Calls func_800AE730 to get entity count. If 0xFF, returns 0.
+* Otherwise loops calling func_800A97A4(3) to pick random indices,
+* checking entity[0x90] bit 0 (busy flag). Returns (1 << idx) & 0xFFFF
+* when an available entity is found.
+*
+* @return Bitmask of selected entity, or 0 if none available.
+*/
+
+u16 func_800A980C(void) {
+    s32 idx;
+
+    if (func_800AE730() == 255) {
+        return 0;
+    }
+
+    do {
+        idx = func_800A97A4(3);
+    } while (D_800ED148.entities[idx].status & 1);
+    
+    return (1 << idx);
+}
+
+/**
+* @brief Find a random available entity (among 4, offset by 3) and return its bitmask.
+*
+* Calls func_800AE788 to get entity count. If 0xFF, returns 8.
+* Otherwise loops calling func_800A97A4(4), adds 3 to the index,
+* checks entity[0x90] bit 0 (busy flag). Returns (1 << (idx+3)) & 0xFFFF
+* when an available entity is found.
+*
+* @return Bitmask of selected entity, or 8 if none available.
+*/
+
+u16 func_800A9888(void) {
+    s32 idx;
+
+    if (func_800AE788() == 255) {
+        return 8;
+    }
+    
+    do {
+        idx = func_800A97A4(4) + 3;
+    } while (D_800ED148.entities[idx].status & 1);
+    
+    return (1 << idx);
+}
+
+/**
+* @brief Compute a bitmask from an entity's byte at offset 0x98.
+*
+* @param a0 Entity index (stride 0xD0).
+* @return 16-bit mask with one bit set at the position given by entity[0x98].
+*/
+
+u16 func_800A9904(s32 arg0) {
+    return (1 << D_800ED148.entities[arg0].unk88);
+}
+
+/**
+* @brief Toggle the least significant bit of 7 bytes in D_800EEBE0.
+*/
+
+void func_800A9938(void) {
+    s32 i;
+
+    for (i = 0; i < 7; i++) {
+        D_800EEBE0[i] = ~D_800EEBE0[i] & 1;
+    }
+}
+
+/**
+* @brief Populate entity alive flags array from status bits.
+*
+* Iterates over 7 entities at stride 0xD0 from D_800ED148. For each,
+* checks bit 8 (0x100) of the flags word at offset 0x8C. Writes 1 to
+* D_800EEBE0[i] if the bit is set, 0 otherwise. If a0 equals 0xC8,
+* calls func_800A9938 to toggle the result bits.
+*
+* @param a0 Trigger value — if 0xC8, post-processes the flags.
+*/
+
+void func_800A9970(s32 arg0) {
+    s32 i;
+
+    for (i = 0; i < 7; i++) {
+        if (D_800ED148.entities[i].controlFlags & 0x100) {
+            D_800EEBE0[i] = 1;
+        } 
+        
+        else {
+            D_800EEBE0[i] = 0;
+        }
+    }
+    
+    if (arg0 == 200) {
+        func_800A9938();
+    }
+}
+
+void func_800A99E8(s32 arg0) {
+    s32 i;
+
+    for (i = 0; i < 7; i++) {
+        if (arg0 < 16) {
+            if ((D_800ED148.entities[i].status >> arg0) & 1) {
+                D_800EEBE0[i] = 1;
+            } 
+            
+            else {
+                D_800EEBE0[i] = 0;
+            }
+        }
+            
+        else {
+            s32 result = 1 << (arg0 - 16);
+            if (D_800ED148.entities[i].flags & result) {
+                D_800EEBE0[i] = 1;
+            } 
+            
+            else {
+                D_800EEBE0[i] = 0;
+            }
+        }
+    }
+}
+
+void func_800A9A6C(s32 arg0) {
+    switch (arg0) {
+        case 200:
+            D_800EEBD8 = 0;
+            D_800EEBDC = 3;
+            break;
+        
+        case 201:
+            D_800EEBD8 = 3;
+            D_800EEBDC = 7;
+            break;
+        
+        default:
+            D_800EEBD8 = 0;
+            D_800EEBDC = 7;
+            break;
+    }
+}
+
+void func_800A9AC0(s32 arg0, s32 arg1) {
+    s32 i;
+    s32 val;
+    s32 idx;
+
+    func_800A9A6C(arg1);
+    
+    if (arg0 < 213) {
+        val = 0;
+        idx = arg0 - 205;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                u8* cd = D_800ED148.entities[i].unkBD;
+                if (val < cd[idx]) {
+                    val = cd[idx];
+                }
+            }
+        }
+    }
+    
+    else {
+        val = 255;
+        idx = arg0 - 213;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                u8* cd = D_800ED148.entities[i].unkBD;
+                if (cd[idx] < val){
+                    val = cd[idx];
+                }
+            }
+        }
+    }
+
+    for (i = 0; i < 7; i++) {
+        u8* cd = D_800ED148.entities[i].unkBD;
+        if (val == cd[idx]) {
+            D_800EEBE0[i] = 1;
+        }
+        
+        else {
+            D_800EEBE0[i] = 0;
+        }
+    }
+}
+
+void func_800A9C68(s32 arg0, s32 arg1) {
+    s32 i;
+    u16 val;
+    s32 idx;
+
+    func_800A9A6C(arg1);
+    
+    if (arg0 < 229) {
+        val = 0;
+        idx = arg0 - 221;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                if (val < D_800ED148.entities[i].elemDef[idx]) {
+                    val = D_800ED148.entities[i].elemDef[idx];
+                }
+            }
+        }
+    }
+    
+    else {
+        val = 65535;
+        idx = arg0 - 229;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                if (D_800ED148.entities[i].elemDef[idx] < val) {
+                    val = D_800ED148.entities[i].elemDef[idx];
+                }
+            }
+        }       
+    }
+
+
+    for (i = 0; i < 7; i++) {
+        if (val == D_800ED148.entities[i].elemDef[idx]) {
+            D_800EEBE0[i] = 1;
+        }
+        
+        else {
+            D_800EEBE0[i] = 0;
+        }
+    }
+}
+
+void func_800A9E08(s32 arg0, s32 arg1) {
+    s32 i;
+    s32 val;
+
+    func_800A9A6C(arg1);
+    
+    if (arg0 == 203) {
+        val = 0;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                if (val < D_800ED148.entities[i].currentHp) {
+                    val = D_800ED148.entities[i].currentHp;
+                }
+            }
+        }
+    }
+    
+    else {
+        val = 0x7FFFFFFF;
+        for (i = D_800EEBD8; i < D_800EEBDC; i++) {
+            if (!(D_800ED148.entities[i].status & 1)) {
+                if ((D_800ED148.entities[i].currentHp < val) && (D_800ED148.entities[i].currentHp != 0)) {
+                    val = D_800ED148.entities[i].currentHp;
+                }
+            }
+        }
+    }
+
+    for (i = 0; i < 7; i++) {
+        if (val == D_800ED148.entities[i].currentHp) {
+            D_800EEBE0[i]= 1;
+        } 
+        
+        else {
+             D_800EEBE0[i] = 0;
+        }
+    }
+}
+
+/**
+* @brief Clear D_800EEBE0 entries for inactive entities.
+*
+* Loops over 7 entities at D_800ED148 (stride 0xD0). If bit 0 of the
+* word at offset 0x8C is not set, clears D_800EEBE0[i] to zero.
+*/
+
+void func_800A9F98(void) {
+    s32 i;
+    
+    for (i = 0; i < 7; i++) {
+        if (!(D_800ED148.entities[i].controlFlags & 1)) {
+            D_800EEBE0[i] = 0;
+        }
+    }
+}
+
+/**
+* @brief Clear D_800EEBE0 entries for inactive or dead entities.
+*
+* Iterates 7 entities (stride 0xD0 in D_800ED148). Clears
+* D_800EEBE0[i] to zero unless the entity is both active and alive.
+*/
+
+void func_800A9FDC(void) {
+    s32 i;
+
+    for (i = 0; i < 7; i++) {
+        if (!(D_800ED148.entities[i].controlFlags & 1) || (D_800ED148.entities[i].status & 1)) {
+            D_800EEBE0[i] = 0;
+        }
+    }
+}
+
+u16 func_800AA034(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
+    s32 i;
+    s32 result;
+    s32 var_s0;
+
+    var_s0 = 0;
+    
+    switch (arg3) {
+        case 200 ... 201:
+            func_800A9970(arg3);
+            break;
+        
+        case 0:
+            var_s0 = 1;
+            /* fallthrough */
+        case 1  ... 9:
+        case 16 ... 42:
+        case 46 ... 47:
+            func_800A99E8(arg3);
+            break;
+        
+        case 205 ... 220:
+            func_800A9AC0(arg3, arg1);
+            break;
+
+        case 221 ... 236:
+            func_800A9C68(arg3, arg1);
+            break;
+        
+        case 203 ... 204:
+            func_800A9E08(arg3, arg1);
+            break;
+        
+        default:
+            break;
+    }
+    
+    if (arg2 == 3) {
+        func_800A9938();
+    }
+    
+    if (var_s0 == 0) {
+        func_800A9FDC();
+    }
+        
+    else {
+        func_800A9F98();
+    }
+    
+    if (arg0 == 0) {
+        switch (arg1) {
+            case 200:
+                do {
+                    i = func_800A97A4(3);
+                } while (D_800EEBE0[i] == 0);
+                result = func_800A97FC(i);
+                break;
+            
+            case 201:
+                do {
+                    i = func_800A97A4(4) + 3;
+                } while (D_800EEBE0[i] == 0);
+                result = func_800A97FC(i);
+                break;
+                
+            default:
+                do {
+                    i = func_800A97A4(7);
+                } while ((D_800EEBE0[i] == 0) || D_800ED148.entities[i].comFileId != arg1);
+                result = func_800A97FC(i);
+                break;
+        }
+    }
+        
+    else {
+        result = 32768;
+        switch (arg1) {
+            case 200:
+                for (i = 0; i < 3; i++) {
+                    if (D_800EEBE0[i] != 0) {
+                        result |= func_800A97FC(i);
+                    }
+                }
+                break;
+            
+            case 201:
+                for (i = 3; i < 7; i++) {
+                    if (D_800EEBE0[i] != 0) {
+                        result |= func_800A97FC(i);
+                    }
+                }
+                break;
+            
+            default:
+                for (i = 0; i < 7; i++) {
+                    if ((D_800ED148.entities[i].comFileId == arg1) && (D_800EEBE0[i] != 0)) {
+                        result |= func_800A97FC(i);
+                    }
+                }
+                break;
+        }
+    }
+    
+    return result;
+}
+
+s32 func_800AA368(s32 arg0) {
+    s32 i;
+    s32 val;
+
+    val = 0;
+    switch(arg0) {
+        case 200:
+            for (i = 0; i < 3; i++) {
+                if (!(D_800ED148.entities[i].status & 1)) {
+                    val++;
+                }
+            }
+            break;
+            
+        case 201:
+            for (i = 3; i < 7; i++) {
+                if (!(D_800ED148.entities[i].status & 1)) {
+                    val++;
+                }
+            }
+            break;
+            
+        default:
+            for (i = 0; i < 7; i++) {
+                if ((D_800ED148.entities[i].comFileId == arg0) && !(D_800ED148.entities[i].status & 1)) {
+                    val++;
+                }
+            }   
+            break;
+    }
+    
+    return val;
+}
+
+u16 func_800AA44C(s32 arg0) {
+    s32 bit;
+
+    if (func_800AA368(201) == 1) {
+        bit = arg0;
+    }
+    
+    else {
+        do {
+            bit = func_800A97A4(4) + 3;
+        } while (bit == arg0 || (D_800ED148.entities[bit].status & 1));
+    }
+    
+    return (1 << bit);
+}
+
+s32 func_800AA4E0(void) {
+    return 32775;
+}
+
+s32 func_800AA4E8(void) {
+    return 33016;
+}
+
+s32 func_800AA4F0(void) {
+    return 33023;
+}
+
+/**
+* @brief Search entity table for a matching byte at offset 0xCB.
+*
+* @param a0 Value to search for.
+* @return Entity index (0-6) if found, or 0xFF if not found.
+*/
+
+s32 func_800AA4F8(s32 arg0) {
+    s32 i;
+
+    for (i = 0; i < 7; i++) {
+        if (D_800ED148.entities[i].comFileId == arg0) {
+            return i;
+        }
+    }
+
+    return 255;    
+}
+
+/**
+ * @brief Search entity table for active entity linked to index a0.
+ *
+ * @param a0 Link index to search for.
+ * @return Entity index if found, 0xFF otherwise.
+ */
+
+s32 func_800AA530(s32 arg0) {
+    s32 i;
+
+    for (i = 0; i < 7; i++) {
+        if (!(D_800ED148.entities[i].status & 1) && ((D_800ED148.entities[i].comFileId == arg0))) {
+            return i;
+        }
+    }
+    
+    return 255;
+}
+
+INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800AA57C);

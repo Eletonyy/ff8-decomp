@@ -2,38 +2,38 @@
 #include "psxsdk/libetc.h"
 #include "battle.h"
 #include "battle/bc_object8.h"
+#include "gamestate.h"
+
+void func_800B3164(void);
+void func_800B2F3C(void);
+void func_800B304C(void);
+s32 func_800AE788(void);
+s32 func_800AA4E0(void);
+u16 func_800A97FC(s32);
 
 extern u8 *D_800EEED8;
-void func_800B304C();
 extern u8 D_8007DADB[];
 extern u8 D_800EE42C[];
-extern u8 D_800EEEC4[];
-extern u8 D_800E3D0C[];
+extern u8 D_800EEEC4;
+extern u8 D_800E3D0C;
 extern u8 D_800EF4A4[];
-extern u8 D_800EEEC8[];
-extern u8 D_800EEECC[];
+extern s32 D_800EEEC8;
+extern s32 D_800EEECC;
 extern u8 D_800EEEB8[];
 extern u8 D_800EEEBC[];
 extern u8 D_800EEEC0[];
-extern u8 g_gameState[];
-void func_800B3164(void);
-void func_800B2F3C(void);
-extern u8 D_8007809A[];
 extern u8 D_800EE45C[];
 extern u8 D_800EEDD8[];
 extern u8 D_800EEDE8[];
 extern u8 D_800EE465[];
-extern u8 D_80082C11[];
-extern u8 D_8005F388[];
-extern u8 D_80063388[];
+extern u8 D_8005F388;
+extern u8 D_80063388;
 extern u8 D_800EF020[];
 extern u8 D_800EEFB0[];
 extern u8 D_800EF724[];
 extern u8 D_800EE454[];
-s32 func_800AE788(void);
-s32 func_800AA4E0(void);
-extern u8 D_800EEED0[];
-extern u8 D_800EEED4[];
+extern u8* D_800EEED0;
+extern u8 D_800EEED4;
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B1624);
 
@@ -139,22 +139,26 @@ top:
 }
 
 /**
- * @brief Check battle conditions and trigger entity action sequence.
- *
- * Checks bit 1 of D_8007809A. If set, calls func_800B1A78 to validate.
- * If valid, calls func_8009B79C(0x20, 0xFF) to test entity availability.
- * If available, clears D_800EE45C and calls func_800B1A48 to start action.
- */
+* @brief Check battle conditions and trigger entity action sequence.
+*
+* Checks bit 1 of D_8007809A. If set, calls func_800B1A78 to validate.
+* If valid, calls func_8009B79C(0x20, 0xFF) to test entity availability.
+* If available, clears D_800EE45C and calls func_800B1A48 to start action.
+*/
+
 void func_800B1ACC(void) {
-    if (!(*(u8 *)D_8007809A & 2)) {
+    if (!(g_gameState.mainData.partyLockFlag & 2)) {
         return;
     }
+    
     if (func_800B1A78() == 0) {
         return;
     }
-    if (func_8009B79C(0x20, 0xFF) == 0) {
+    
+    if (func_8009B79C(32, 255) == 0) {
         return;
     }
+    
     D_800ED148.unk1314 = 0;
     func_800B1A48();
 }
@@ -272,19 +276,19 @@ void func_800B2038(void) {
 }
 
 /**
- * @brief Check battle mode flag and conditionally trigger entity processing.
- *
- * Checks bit 3 of D_8007809A. If set, calls func_8009B79C(8, 0xFF) to test
- * entity availability. If available, calls func_800B1B68 and returns.
- * Otherwise (bit not set or entity unavailable), clears D_800EE465.
- */
+* @brief Check battle mode flag and conditionally trigger entity processing.
+*
+* Checks bit 3 of D_8007809A. If set, calls func_8009B79C(8, 0xFF) to test
+* entity availability. If available, calls func_800B1B68 and returns.
+* Otherwise (bit not set or entity unavailable), clears D_800EE465.
+*/
+
 void func_800B2084(void) {
-    if (*(u8 *)D_8007809A & 8) {
-        if (func_8009B79C(8, 0xFF) != 0) {
-            func_800B1B68();
-            return;
-        }
+    if (g_gameState.mainData.partyLockFlag & 8 && func_8009B79C(8, 255) != 0) {
+        func_800B1B68();
+        return;
     }
+    
     D_800ED148.unk131D = 0;
 }
 
@@ -309,33 +313,41 @@ top:
 }
 
 /**
- * @brief Check if conditions are met to initiate an auto-battle action.
- *
- * Checks a chain of conditions: whether func_800AE788 returns the sentinel
- * 0xFF, whether func_800B20D8 indicates busy, bit 2 of D_8007809A flags,
- * whether g_battleConfig matches 0x13D, and whether entity slot 0x40 is
- * available via func_8009B79C. If all pass, sets D_800EE45C to 1 and
- * calls func_800B1A48 to start the action.
- *
- * @return 1 if action was initiated, 0 otherwise.
- */
+* @brief Check if conditions are met to initiate an auto-battle action.
+*
+* Checks a chain of conditions: whether func_800AE788 returns the sentinel
+* 0xFF, whether func_800B20D8 indicates busy, bit 2 of D_8007809A flags,
+* whether g_battleConfig matches 0x13D, and whether entity slot 0x40 is
+* available via func_8009B79C. If all pass, sets D_800EE45C to 1 and
+* calls func_800B1A48 to start the action.
+*
+* @return 1 if action was initiated, 0 otherwise.
+*/
+
 s32 func_800B2128(void) {
-    if (func_800AE788() == 0xFF) {
+    if (func_800AE788() == 255) {
         return 0;
     }
+    
     if (func_800B20D8() != 0) {
         return 0;
     }
-    if (*(u8 *)D_8007809A & 4) {
-        if (*(u16 *)&g_battleConfig != 0x13D) {
-            if (func_8009B79C(0x40, 0xFF) != 0) {
-                D_800ED148.unk1314 = 1;
-                func_800B1A48();
-                return 1;
-            }
-        }
+    
+    if (!(g_gameState.mainData.partyLockFlag & 4)) {
+        return 0;
     }
-    return 0;
+    
+    if (g_battleConfig.battleSceneId == 0x13D) {
+        return 0;
+    }
+    
+    if (func_8009B79C(64, 255) == 0) { 
+        return 0;
+    }
+    
+    D_800ED148.unk1314 = 1;
+    func_800B1A48();
+    return 1;
 }
 
 /**
@@ -345,14 +357,11 @@ s32 func_800B2128(void) {
  * for i = 0, 1, 2.
  */
 void func_800B21B4(void) {
-    s32 i = 0;
-    u8 *src = g_gameState;
-    u8 *dst = (u8 *)&D_800EE9E8;
-    do {
-        dst[0xA3] = src[i + 0xAF4];
-        i++;
-        dst += 0x47;
-    } while (i < 3);
+    s32 i;
+    
+    for (i = 0; i < 3; i++) {
+        D_800EE9E8.subEntries[i].array0[0].unk3 = g_gameState.mainData.party.party[i];
+    }
 }
 
 /**
@@ -601,10 +610,10 @@ void func_800B3270(s32 *a0, u8 *a1) {
  * @param a1 Value to store to D_800EEECC.
  */
 void func_800B32E0(s32 a0, s32 a1) {
-    *(u8 *)D_800EEEC4 = 1;
-    *(u8 *)D_800E3D0C = 3;
-    *(s32 *)D_800EEEC8 = a0;
-    *(s32 *)D_800EEECC = a1;
+    D_800EEEC4 = 1;
+    D_800E3D0C = 3;
+    D_800EEEC8 = a0;
+    D_800EEECC = a1;
 }
 
 /**
@@ -613,9 +622,9 @@ void func_800B32E0(s32 a0, s32 a1) {
  * @param a0 Value to store to D_800EEEC8.
  */
 void func_800B330C(s32 a0) {
-    *(u8 *)D_800EEEC4 = 1;
-    *(u8 *)D_800E3D0C = 4;
-    *(s32 *)D_800EEEC8 = a0;
+    D_800EEEC4 = 1;
+    D_800E3D0C = 4;
+    D_800EEEC8 = a0;
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3330);
@@ -627,14 +636,16 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3330);
  * D_8005F388 (if D_80082C11 is zero) or D_80063388 (if non-zero).
  */
 void func_800B3470(void) {
-    u8 flag = *(u8 *)D_80082C11;
-    *(u8 *)D_800EEEC4 = 0;
-    if (flag == 0) {
-        *(s32 *)D_800EEED0 = (s32)D_8005F388;
-    } else {
-        *(s32 *)D_800EEED0 = (s32)D_80063388;
+    D_800EEEC4 = 0;
+    if (g_battleConfig.unk9 == 0) {
+        D_800EEED0 = &D_8005F388;
+    } 
+    
+    else {
+        D_800EEED0 = &D_80063388;
     }
-    *(u8 *)D_800EEED4 = 0;
+    
+    D_800EEED4 = 0;
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B34B0);

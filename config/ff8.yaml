@@ -62,10 +62,9 @@ binaries:
     - [0x130, .rodata, bc_object2]
     - [0xA84, .rodata, bc_object3]
     - [0xECC, .rodata, bc_object4]
-    - [0xF48, pad]
-    - [0xF4C, .rodata, bc_object5]
+    - [0xF78, .rodata, bc_object5]
     - [0xF90, .rodata, bc_object6]
-    - [0x14C0, .rodata, bc_object7]
+    - [0x14AC, .rodata, bc_object7]
     - [0x14E8, .rodata, bc_object8]
     - [0x1520, .rodata, bc_object9]
     - [0x156C, .rodata, bc_object11]
@@ -83,9 +82,9 @@ binaries:
     - [0x3AC4, c, bc_object2]
     - [0x98E0, c, bc_object3]
     - [0xE184, c, bc_object4]
-    - [0x10B7C, c, bc_object5]
+    - [0x1268C, c, bc_object5]
     - [0x134A8, c, bc_object6]
-    - [0x17358, c, bc_object7]
+    - [0x17254, c, bc_object7]
     - [0x19624, c, bc_object8]
     - [0x1C9D8, c, bc_object9]
     - [0x2072C, c, bc_object10]
@@ -390,6 +389,7 @@ binaries:
   options:
     target_path: original/menushop.ovl
     src_path: src/menu/menushop
+    section_order: [.text, .rodata, .data, .bss]
   segments:
   - name: menushop
     type: code
@@ -397,7 +397,9 @@ binaries:
     vram: 0x801E5800
     subsegments:
     - [0x0, c, menushop]
+    - [0x29A4, c, menushop2]
     - [0x429C, .rodata, menushop]
+    - [0x4308, .rodata, menushop2]
     - [0x4364, rodata]
     - [0x4570, data]
   - [0x5228]

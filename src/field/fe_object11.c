@@ -26,7 +26,7 @@
  *     (unless @c g_battleConfig.unk2 bit @c 0x10 is set) start the
  *     bank file or send the @ref D_8005F11C fade command depending
  *     on whether @c audioChannel0State is armed. Always writes
- *     @c D_80082C0A and pulses @ref sndCmd45.
+ *     @c g_battleConfig.unk2 and pulses @ref sndCmd45.
  *   - @c mode @c == @c 1 — full slot reset: zero the 16-byte
  *     @c D_800704A8.unkActive180 region, walk the @ref D_80085224
  *     Actor pool and clear the cleanup-trigger bytes / @c flags @c & @c ~8
@@ -128,7 +128,7 @@ void func_800BF718(s32 mode) {
                 g_fieldVars->soundHandle0 = sndCmd1A(v, 0x3C, g_fieldVars->musicVolume);
             }
         }
-        D_80082C0A = g_fieldVars->fieldB6;
+        g_battleConfig.unk2 = g_fieldVars->fieldB6;
         sndCmd45();
         break;
     case 2:
@@ -154,7 +154,7 @@ void func_800BF718(s32 mode) {
     for (i = 0; i < getMaxBattleEntities(); i++) {
         setSfxPitch(i, D_800562C8[g_gameState.config.fieldMsgSpeed]);
     }
-    g_fieldVars->field58 = (D_80078DF8 & 0x10) >> 4;
+    g_fieldVars->field58 = (g_battleChars.levelEntries[15].abilityFlags & 0x10) >> 4;
     if (g_fieldVars->fieldF0 != 0) {
         func_800A4550(g_fieldVars->fieldF1 | g_fieldVars->field58);
     }
@@ -261,7 +261,7 @@ s32 *func_800BFBBC(u8 *entity, Eline *eline, u16 *a2, s32 mode) {
         D_80085391 = D_800DE8D8;
         D_800852F0 = (u16 *)D_800DE4E4;
         D_80085380 = (s32 *)D_800DE4E8;
-        D_80082C0A = g_fieldVars->fieldB6;
+        g_battleConfig.unk2 = g_fieldVars->fieldB6;
         D_80085384 = (Dline *)func_800BE7F4((Eline *)eline);
         D_800852F4 = (Bganime *)func_800BEA84(D_80085384);
         D_80085224 = (Actor *)func_800BE924(D_800852F4);

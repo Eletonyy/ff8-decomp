@@ -19,7 +19,6 @@ extern s32 D_8008384C;
 extern u16 D_80083850;
 extern u16 g_configFlags;
 extern u8 D_80077E6C[];
-extern u8 D_80077EBC[];
 extern u16 D_800780E8;
 extern u8 D_80056290[];
 extern u8 D_800562A4;
@@ -652,9 +651,9 @@ void func_801F177C(s32 *a0) {
  *
  * @param tickCb Update callback stored in the task (func_801F1584).
  * @param drawCb Per-frame draw callback (func_801F16AC).
- * @return The claimed task as an s32, or 0 when the pool is full.
+ * @return The claimed task as void*, or NULL when the pool is full.
  */
-s32 func_801F179C(s32 tickCb, s32 drawCb) {
+void* func_801F179C(s32 tickCb, s32 drawCb) {
     MenuTask *node;
     MenuTask *n = D_801FA550;
     MenuTask *first;
@@ -676,7 +675,7 @@ s32 func_801F179C(s32 tickCb, s32 drawCb) {
         n++;
     }
     if (node == 0) {
-        return 0;
+        return NULL;
     }
     head = (MenuTask *)&D_801FA450;
     first = head->next;
@@ -688,7 +687,7 @@ s32 func_801F179C(s32 tickCb, s32 drawCb) {
     node->tickCb = tickCb;
     node->drawCb = (s32 (*)(MenuTask *, s32, s32))drawCb;
     node->state = 0;
-    return (s32)node;
+    return node;
 }
 
 /**
@@ -1193,7 +1192,7 @@ void func_801F3994(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
  */
 void func_801F39D0(s32 val, s32 ctx, s32 dl, s32 y, s32 a4, s32 a5) {
     u8 buf[16];
-    s32 digits = D_80083858.digitBase;
+    s32 digits = D_80083858.digits[0];
     s32 cursor;
     u8 *str;
 
@@ -1381,20 +1380,16 @@ void func_801F5340(void) {
     }
 }
 
-/** @brief Recalculate stats for a party slot and copy result table to dst. */
-void func_801F537C(s32 a0, CopyBlock16 *a1) {
-    CopyBlock16 *src;
-    CopyBlock16 *end;
-
+/**
+ * @brief Recalculate party slot @p a0's stats and copy the result to @p dst.
+ *
+ * @param a0  Party slot to recalculate.
+ * @param dst Receives the computed stat sheet (g_battleChars' first entry).
+ */
+void func_801F537C(s32 a0, BattleCharData *dst) {
     func_801F5300();
     func_801F5190(a0);
-
-    src = (CopyBlock16 *)&g_battleChars;
-    end = (CopyBlock16 *)((u8 *)&g_battleChars + 0x1D0);
-    do {
-        *a1++ = *src++;
-    } while (src != end);
-
+    *dst = g_battleChars.chars[0];
     func_801F5340();
     recalcPartyStats();
 }
@@ -1778,20 +1773,20 @@ s32 func_801F6234(s32 ctx, s32 dl, s32 x, s32 y, s32 mask) {
 /* ======================================================================== */
 
 /** @brief Look up string resource pointer by index from D_801F8BB8 table. */
-s32 func_801F6324(s32 a0) {
+u8 *func_801F6324(s32 a0) {
     u16 *table = (u16 *)D_801F8BB8;
 
     if (a0 >= table[0]) {
         a0 = 0;
     }
     a0 += 1;
-    return table[a0] + (s32)table;
+    return (u8 *)table + table[a0];
 }
 
 /** @brief Decode and render an indexed string resource to screen. */
 s32 func_801F6358(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4) {
     u8 buf[256];
-    s32 ptr = func_801F6324(a4);
+    u8 *ptr = func_801F6324(a4);
     decodeMessage(ptr, buf, -1);
     func_801F0FEC(a0, a1, a2, a3, buf, 7);
 }
@@ -1878,15 +1873,13 @@ void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 charIdx) {
 }
 
 /**
- * @brief Adjust cursor position based on D-pad input with wrapping and guard.
+ * @brief Step a cursor down or up the D-pad, wrapping at both ends.
  *
  * If max == 1 (single option), returns 0 immediately.
- * Checks bit flags for up (0x4000) and down (0x1000) input.
- * On up: increments position, wraps to 0 if >= max.
- * On down: decrements position, wraps to max-1 if < 0.
+ * Down advances the cursor and wraps to 0; up retreats it and wraps to max-1.
  * Plays a sound effect on each valid input.
  *
- * @param flags   Input button flags.
+ * @param flags   One of the g_menuDisplayCfg input words.
  * @param max     Maximum position value (exclusive).
  * @param current Current cursor position.
  * @return Updated cursor position, or 0 if max == 1.
@@ -1895,14 +1888,14 @@ s32 func_801F6768(u16 flags, s32 max, s32 current) {
     if (max == 1) {
         return 0;
     }
-    if (flags & 0x4000) {
+    if (flags & PADLdown) {
         sendSpuCommand(1);
         current++;
         if (current >= max) {
             current = 0;
         }
     }
-    if (flags & 0x1000) {
+    if (flags & PADLup) {
         sendSpuCommand(1);
         current--;
         if (current < 0) {
@@ -1913,27 +1906,25 @@ s32 func_801F6768(u16 flags, s32 max, s32 current) {
 }
 
 /**
- * @brief Adjust cursor position based on D-pad input with wrapping.
+ * @brief Step a cursor right or left the D-pad, wrapping at both ends.
  *
- * Checks bit flags for right (0x2000) and left (0x8000) input.
- * On right: increments position, wraps to 0 if >= max.
- * On left: decrements position, wraps to max-1 if < 0.
+ * Right advances the cursor and wraps to 0; left retreats it and wraps to max-1.
  * Plays a sound effect on each valid input.
  *
- * @param flags   Input button flags.
+ * @param flags   One of the g_menuDisplayCfg input words.
  * @param max     Maximum position value (exclusive).
  * @param current Current cursor position.
  * @return Updated cursor position.
  */
 s32 func_801F6800(u16 flags, s32 max, s32 current) {
-    if (flags & 0x2000) {
+    if (flags & PADLright) {
         sendSpuCommand(1);
         current++;
         if (current >= max) {
             current = 0;
         }
     }
-    if (flags & 0x8000) {
+    if (flags & PADLleft) {
         sendSpuCommand(1);
         current--;
         if (current < 0) {
@@ -2176,19 +2167,18 @@ void func_801F76A8(s32 a0) {
 }
 
 /**
- * @brief Handle left/right D-pad input for value adjustment.
+ * @brief Nudge a value right or left with the D-pad.
  *
- * If right pressed (0x2000), increments; if left (0x8000), decrements.
  * Plays a sound effect if the value changed.
  */
 s32 func_801F76E0(s32 flags, s32 a1, s32 a2) {
     s32 result = a2;
     s32 orig = a2;
 
-    if (flags & 0x2000) {
+    if (flags & PADLright) {
         result = func_80035B28(a1, result);
     }
-    if (flags & 0x8000) {
+    if (flags & PADLleft) {
         result = func_80035B70(a1, orig);
     }
     if (result != orig) {
@@ -2353,22 +2343,23 @@ void func_801F7B10(s32 a0) {
  * ID; if ID is 0, clears the quantity.
  */
 void func_801F7B60(void) {
-    u8 *a0 = D_80077EBC;
-    s32 a2 = 0;
-    u8 *v1 = a0 + 1;
-    do {
-        u8 b = *v1;
-        u8 a = *a0;
-        if (b == 0) {
-            *a0 = 0;
+    s32 i;
+    ItemSlot* itemSlot;
+
+    itemSlot = g_gameState.mainData.itemSlots;
+    
+    for (i = 0; i < 198; i++, itemSlot++) {
+        u8 id = itemSlot->id;
+        u8 qt = itemSlot->count;
+        
+        if (qt == 0) {
+            itemSlot->id = 0;
         }
-        if (a == 0) {
-            *v1 = 0;
+        
+        if (id == 0) {
+            itemSlot->count = 0;
         }
-        a2++;
-        v1 += 2;
-        a0 += 2;
-    } while (a2 < 198);
+    }
 }
 
 /** @brief Convert 0-255 value to 0-100 percentage. */
@@ -2381,9 +2372,9 @@ s32 func_801F7BE4(s32 a0) {
     return a0;
 }
 
-/** @brief Play toggle sound effect (sound 2 if bit 6 set, else sound 3). */
+/** @brief Click confirm or cancel, from a press-edge input word. */
 void func_801F7BEC(s32 a0) {
-    if (a0 & 0x40) {
+    if (a0 & PADRdown) {
         sendSpuCommand(2);
     } else {
         sendSpuCommand(3);

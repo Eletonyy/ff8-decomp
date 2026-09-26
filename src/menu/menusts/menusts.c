@@ -6,7 +6,7 @@
 #include "gamestate.h"
 #include "btl_color.h"
 #include "btl_entity.h"
-#include "battle/bc_object2.h"
+#include "game.h"
 
 /* menumain is called at a fixed overlay address, so its prototype stays
  * file-local here (overlay-conflict rule, as in the other sub-overlays). */
@@ -56,20 +56,16 @@ s32 func_801E586C(s32 index) {
 }
 
 /**
- * @brief Wrapper that calls getMagicNamePtr with a0 offset by 0x33.
- *
- * @param a0 Base pointer to a menu entry structure.
+ * @brief Wrapper that calls getMagicNamePtr with @p a0 offset by 0x33.
  */
-void func_801E5890(u8 *a0) {
+void func_801E5890(s32 a0) {
     getMagicNamePtr(a0 + 0x33);
 }
 
 /**
- * @brief Wrapper that calls getSpellEntityData with a0 offset by 0x33.
- *
- * @param a0 Base pointer to a menu entry structure.
+ * @brief Wrapper that calls getSpellEntityData with @p a0 offset by 0x33.
  */
-void func_801E58B0(u8 *a0) {
+void func_801E58B0(s32 a0) {
     getSpellEntityData(a0 + 0x33);
 }
 
@@ -163,7 +159,7 @@ s32 func_801E72D8(s32 displayList, s32 ot, s32 x, s32 y, s32 mode) {
     u8 strBuf[16];
     StatusEntry *entry = D_801E95CC;
     s32 i = 0;
-    s32 digitBase = D_80083858.digitBase;
+    s32 digitBase = D_80083858.digits[0];
     s32 drawn;
     s32 yStep;
     MenuDisplayConfig *cfgPtr;

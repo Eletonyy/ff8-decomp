@@ -5,6 +5,7 @@ func_80027C90 = 0x80027C90;
 getDisplayListHead = 0x8002A888;
 storeGpuPacket = 0x8002A8B8;
 func_8002C56C = 0x8002C56C;
+setMenuColorIntensity = 0x8002E7C4;
 intToDecString = 0x8002F23C;
 intToDecStringShort = 0x8002F294;
 replaceLeadingZeros = 0x8002F2EC;

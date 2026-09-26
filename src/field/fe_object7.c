@@ -561,13 +561,13 @@ s32 opHandler_SETPLACE(ScriptContext *context) {
 }
 
 /**
- * @brief Pop a value and store to both D_80082C0A and WorldContext field_0xB6.
+ * @brief Pop a value and store to both g_battleConfig.unk2 and WorldContext field_0xB6.
  *
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
  */
 s32 opHandler_BATTLEMODE(ScriptContext *context) {
-    D_80082C0A = g_fieldVars->fieldB6 = POP(context);
+    g_battleConfig.unk2 = g_fieldVars->fieldB6 = POP(context);
     do {} while (0);
     return 2;
 }
@@ -582,7 +582,7 @@ s32 opHandler_BATTLE(ScriptContext *context) {
     if (D_800704A8.mode == 0) {
         D_800704A8.mode = 3;
     }
-    D_80082C0A = POP(context);
+    g_battleConfig.unk2 = POP(context);
     D_800704A8.counter = POP(context);
     return 3;
 }
@@ -594,7 +594,7 @@ s32 opHandler_BATTLE(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_BATTLERESULT(ScriptContext *context) {
-    context->resultSlots[0] = D_80082C0F;
+    context->resultSlots[0] = g_battleConfig.result;
     return 2;
 }
 
