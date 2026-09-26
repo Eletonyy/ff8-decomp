@@ -109,7 +109,7 @@ static void func_801E81A4(JunkShopMenuState *s) {
         if (cfgFlags & PADRdown) {
             s32 result;
             result = findNthSetBit(s->availableCharactersMask, s->selCharacterIndex);
-            if ((D_8007809A & 1) || !(((u16) s->listedCharactersMask >> result) & 1)) {
+            if ((g_gameState.mainData.partyLockFlag & 1) || !(((u16) s->listedCharactersMask >> result) & 1)) {
                 sendSpuCommand(5);
                 if (!((0x3F >> result) & 1)) {
                     s32 tmp;
@@ -437,7 +437,7 @@ static s32 func_801E8BD8(JunkShopMenuState* arg0, s32 arg1, s32 arg2, s32 arg3, 
 
     cfg = &g_menuDisplayCfg;
 
-    if (!(D_8007809A & 1)) {
+    if (!(g_gameState.mainData.partyLockFlag & 1)) {
         y = arg4 + 8;
         ptr = D_801EB150;
 

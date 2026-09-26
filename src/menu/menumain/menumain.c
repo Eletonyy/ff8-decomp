@@ -19,7 +19,6 @@ extern s32 D_8008384C;
 extern u16 D_80083850;
 extern u16 g_configFlags;
 extern u8 D_80077E6C[];
-extern u8 D_80077EBC[];
 extern u16 D_800780E8;
 extern u8 D_80056290[];
 extern u8 D_800562A4;
@@ -2344,22 +2343,23 @@ void func_801F7B10(s32 a0) {
  * ID; if ID is 0, clears the quantity.
  */
 void func_801F7B60(void) {
-    u8 *a0 = D_80077EBC;
-    s32 a2 = 0;
-    u8 *v1 = a0 + 1;
-    do {
-        u8 b = *v1;
-        u8 a = *a0;
-        if (b == 0) {
-            *a0 = 0;
+    s32 i;
+    ItemSlot* itemSlot;
+
+    itemSlot = g_gameState.mainData.itemSlots;
+    
+    for (i = 0; i < 198; i++, itemSlot++) {
+        u8 id = itemSlot->id;
+        u8 qt = itemSlot->count;
+        
+        if (qt == 0) {
+            itemSlot->id = 0;
         }
-        if (a == 0) {
-            *v1 = 0;
+        
+        if (id == 0) {
+            itemSlot->count = 0;
         }
-        a2++;
-        v1 += 2;
-        a0 += 2;
-    } while (a2 < 198);
+    }
 }
 
 /** @brief Convert 0-255 value to 0-100 percentage. */
