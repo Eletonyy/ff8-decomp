@@ -23,13 +23,21 @@ typedef struct {
     /* 0x2F */ u8 unk2F;
 } TestMenuState;
 
+/** @brief Position func_801E59B4 records for a marker in the laid-out text, relative to the text origin. */
+typedef struct {
+    s16 x;
+    s16 y;
+    s16 code;   /**< Marker code minus 0x20. */
+    s16 pad06;
+} TestTextMark;
+
 extern s16 D_801E7ABC;
 extern u8 D_801E7ABE;
 extern s32 D_801E7ACC[2];
 extern u8 D_801E7ADC;
 extern u8 D_801E69BC[];
 extern u8 D_801E71BC;
-extern u8 D_801E79BC;
+extern TestTextMark D_801E79BC[];
 extern MenuDisplayConfig g_menuDisplayCfg;
 extern u8 D_801FABD4;
 extern s32 g_menuColor;
@@ -48,33 +56,30 @@ u8 *func_801E5800(s32 a0) {
 }
 
 /**
- * Computes a scroll-adjusted Y position from D_801E79BC table entries and
- * D_801FA3C8 animation table, then calls func_801F0A34 to apply it.
+ * Places the cursor on text marker @c state->unk2F: its D_801E79BC position
+ * from the text origin (0x22, 0x23), slid left by the D_801FA3C8 falloff of
+ * @c state->scroll, passed to func_801F0A34.
  * @param a0 Display mode parameter (passed through to func_801F0A34)
  * @param state Test menu state.
- * @note Separating load and add (e.g. `yOff = *(s16*)entry; yOff += 0x22;`)
- *       makes the compiler load directly into the target register (t0/a3),
- *       rather than through intermediary v0/v1.
  */
 void func_801E582C(s32 a0, TestMenuState *state) {
-    s32 base = (s32)&D_801E79BC;
+    TestTextMark *marks = D_801E79BC;
     s32 idx = state->unk2F;
     s32 scroll = state->scroll;
-    s32 entry = base + idx * 8;
-    s32 yOff;
-    s32 height;
+    s32 x;
+    s32 y;
     s32 v0;
     s32 v1;
 
-    yOff = *(s16 *)entry;
-    height = *(s16 *)(entry + 2);
-    yOff += 0x22;
-    height += 0x23;
+    x = marks[idx].x; // load and add kept apart so the loads go straight into t0/a3
+    y = marks[idx].y;
+    x += 0x22;
+    y += 0x23;
     if (scroll < 0) scroll += 0x3F;
-    v1 = *(u16 *)((s32)&D_801FA3C8 + (scroll >> 6) * 2);
+    v1 = D_801FA3C8[scroll >> 6];
     v0 = (v1 * 3) << 7;
     if (v0 < 0) v0 += 0xFFF;
-    func_801F0A34(a0, 0, yOff - (v0 >> 12), height);
+    func_801F0A34(a0, 0, x - (v0 >> 12), y);
 }
 
 /**
@@ -142,7 +147,7 @@ void func_801E5D18(s32 a0, s32 a1) {
     offset = *(u16 *)(a0 + a1 * 2 + 2);
     code = *(u8 *)(a0 + offset);
     *(u8 *)&D_801E7ABE = code;
-    *(s16 *)&D_801E7ABC = func_801E59B4(a0 + offset + 1, D_801E69BC, &D_801E79BC);
+    *(s16 *)&D_801E7ABC = func_801E59B4(a0 + offset + 1, D_801E69BC, D_801E79BC);
 }
 
 /**
@@ -156,9 +161,6 @@ void func_801E5D18(s32 a0, s32 a1) {
  * @c scroll, tracks @c entry, @c unk2E and @c unk2F, sets @c text, and dispatches
  * rendering via func_801E582C, func_801E5D18, func_801E58B8, func_801F6800.
  * @param state Test menu state (s1 = state, s2 = &state->state, s3/s0 from g_menuDisplayCfg)
- * @note Scrambled prologue (s1,s2,ra,s3,s0) with s-reg assignment locked by graph
- *       coloring — C compiler cannot reproduce the exact register allocation.
- *       See asm/ovl/menutest/nonmatchings/menutest/func_801E5D74.s.
  */
 INCLUDE_ASM("asm/ovl/menutest/nonmatchings/menutest", func_801E5D74);
 
@@ -194,7 +196,7 @@ s32 func_801E64B4(s32 a0, s32 a1) {
 /**
  * Sets up GPU display for the scrollable text body area.
  * Computes scroll offset from D_801FA3C8 animation table (same pattern as
- * func_801E582C), draws text at scroll-adjusted Y position via func_8002EAD0,
+ * func_801E582C), draws text at the scroll-adjusted X position via func_8002EAD0,
  * then configures two g_menuDisplayCfg display regions:
  * first (0x1C, 0x21, 0x148, 0x9F) submitted via func_801EF800,
  * second (0x18, 0x1D, 0x150, 0xA7) submitted via func_801EF9AC.
@@ -205,33 +207,33 @@ s32 func_801E64B4(s32 a0, s32 a1) {
  */
 s32 func_801E6570(TestMenuState *state, s32 a1, s32 a2) {
     s32 disp = a1;
-    s32 yPos = 0x22;
-    s32 buf = (s32)&g_menuDisplayCfg;
+    s32 x = 0x22;
+    MenuDisplayConfig *cfg = &g_menuDisplayCfg;
     s32 scroll = a2 + state->scroll - a2; // liveness trick: the extra uses of a2 put it in s0
     s32 v0;
     s32 v1;
 
     if (scroll < 0) scroll += 0x3F;
-    v1 = *(u16 *)((s32)&D_801FA3C8 + (scroll >> 6) * 2); // own variable: puts the lhu result in v0 for the multiply
+    v1 = D_801FA3C8[scroll >> 6]; // own variable: puts the lhu result in v0 for the multiply
     v0 = (v1 * 3) << 7;
     if (v0 < 0) v0 += 0xFFF;
-    yPos -= v0 >> 12;
+    x -= v0 >> 12;
 
     a2 = func_801EF8D8(disp, a2);
-    func_8002EAD0(disp, yPos, 0x23, D_801E69BC);
+    func_8002EAD0(disp, x, 0x23, D_801E69BC);
 
-    *(s16 *)&g_menuDisplayCfg = 0x1C;     /* x */
-    *(s16 *)(buf + 2) = 0x21;       /* y */
-    *(s16 *)(buf + 4) = 0x148;      /* w */
-    *(s16 *)(buf + 6) = 0x9F;       /* h */
-    v0 = func_801EF800(disp, a2, buf);
+    cfg->x = 0x1C;
+    cfg->y = 0x21;
+    cfg->w = 0x148;
+    cfg->h = 0x9F;
+    v0 = func_801EF800(disp, a2, cfg);
 
-    *(u8 *)(buf + 0x10) = 0;        /* iconType */
-    *(u8 *)(buf + 0x11) = 0;        /* iconSubType */
-    *(s16 *)&g_menuDisplayCfg = 0x18;     /* x */
-    *(s16 *)(buf + 2) = 0x1D;       /* y */
-    *(s16 *)(buf + 4) = 0x150;      /* w */
-    *(s16 *)(buf + 6) = 0xA7;       /* h */
+    cfg->iconType = 0;
+    cfg->iconSubType = 0;
+    cfg->x = 0x18;
+    cfg->y = 0x1D;
+    cfg->w = 0x150;
+    cfg->h = 0xA7;
     return func_801EF9AC(disp, v0, 0x1000, g_menuColor);
 }
 
@@ -313,7 +315,7 @@ void func_801E67F0(void) {
         state->entryPicked = 0;
         state->entry = D_800780AB;
         text = func_801E5800(0x11);
-        func_801E59B4(text, &D_801E71BC, &D_801E79BC);
+        func_801E59B4(text, &D_801E71BC, D_801E79BC);
         text = func_801E5800(0x1A);
     } else {
         state->entryPicked = 1;
@@ -322,7 +324,7 @@ void func_801E67F0(void) {
         D_801E7ACC[0] = state->entry;
         D_801E7ACC[1] = state->entry + 1;
         text = func_801E5800(0x16);
-        func_801E59B4(text, &D_801E71BC, &D_801E79BC);
+        func_801E59B4(text, &D_801E71BC, D_801E79BC);
         text = func_801E5800(0x1B);
     }
     state->text = text;
