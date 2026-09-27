@@ -956,8 +956,8 @@ void func_800A79A0(void) {
  * @brief Look up the per-class @c field09 byte for the entity at @p a0.
  *
  * Reads @c BattleCharData[a0].classId, then returns
- * @c g_gfData.levelCurve12[classId].field09 (offset @c 0x35C1 in the
- * shared @c D_80078E00 / @c g_gfData block).
+ * @c g_kernel.weapons[classId].field09 (offset @c 0x35C1 in the
+ * shared @c D_80078E00 / @c g_kernel block).
  *
  * @param a0 Entity index (stride 0x1D0 in @c g_battleChars).
  * @return The @c field09 byte for that entity's class.

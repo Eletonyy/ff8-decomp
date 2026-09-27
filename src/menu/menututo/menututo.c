@@ -87,13 +87,13 @@ s32 func_801E28D4(void) {
     return D_801E4EC0;
 }
 
-/** @brief Draw inner panel with section id 0xD and clear flag. */
-s32 func_801E28E4(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 0xD. */
+u8 *func_801E28E4(s32 a0) {
     return func_801F08D4(1, 0xD, a0, 0);
 }
 
-/** @brief Draw inner panel with section id 0xD and set flag. */
-s32 func_801E2910(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 0xD, with the last flag set. */
+u8 *func_801E2910(s32 a0) {
     return func_801F08D4(1, 0xD, a0, 1);
 }
 
@@ -880,7 +880,7 @@ top:
  */
 s32 func_801E3EC0(s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
-    s32 textAddr;
+    u8 *textAddr;
     s32 xOff = x + 0x20;
     s32 yOff = y + 6;
 
@@ -918,10 +918,10 @@ u32 func_801E3F8C(TutoState *state, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     s32 w = 0x144;
     s32 h = 0x1A;
 
-    if (state->panelHandle != 0) {
+    if (state->panelHandle != NULL) {
         u8 textBuf[128];
-        decodeMessage((u8 *)state->panelHandle, textBuf, -1);
-        cursorY = func_801F0FEC(renderCtx, cursorY, xOff, yOff, (s32)textBuf, 7);
+        decodeMessage(state->panelHandle, textBuf, -1);
+        cursorY = func_801F0FEC(renderCtx, cursorY, xOff, yOff, textBuf, 7);
     }
 
     cfg->iconType = 0x55;
@@ -958,7 +958,7 @@ u32 func_801E4080(void *state, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     s32 yOff = y + 5;
     s32 i;
     s32 color;
-    s32 textAddr;
+    u8 *textAddr;
 
     for (i = 0; i < 8; i++) {
         color = 1;
@@ -1110,13 +1110,13 @@ s32 func_801E43D4(TutoState *state, s32 renderCtx, s32 cursorY) {
         i = 0;
 
         if (state->availCount != 0) {
-            s32 textAddr = (s32)textBuf;
+            u8 *textAddr = textBuf;
             u8 entryIdx;
-            s32 msgPtr;
+            u8 *msgPtr;
             do {
                 entryIdx = state->availSlots[i];
                 msgPtr = func_801E28E4(sectionTable[entryIdx].sectionId);
-                decodeMessage((u8 *)msgPtr, textBuf, -1);
+                decodeMessage(msgPtr, textBuf, -1);
                 cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, textAddr, 7);
                 i++;
                 yPos += 15;

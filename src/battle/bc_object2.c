@@ -555,13 +555,13 @@ void func_8009CAD8(s32 arg0, s32 arg1) {
             
             if (sp19 == 1) {
                 result = func_800B0248(func_800B0248(getMenuString(0x13), *getMenuString(0xB), func_800B04A0(sp19, sp10)), *getMenuString(0xB), getMenuString(0x47));
-                result = func_800B0248(func_800B0248(result, 7, getStatName(sp18)), 7, getMenuString(0x73));
+                result = func_800B0248(func_800B0248(result, 7, getItemName(sp18)), 7, getMenuString(0x73));
                 func_800A4320(func_800B02AC(result));
             } 
             
             else {
                 result = func_800B0248(func_800B0248(getMenuString(0x13), *getMenuString(0xB), func_800B04A0(sp19, sp10)), *getMenuString(0xB), getMenuString(0x47));
-                result = func_800B0248(func_800B0248(func_800B0248(result, 7, getStatName(sp18)), 7, getMenuString(0x77)), 7, getMenuString(0x73));
+                result = func_800B0248(func_800B0248(func_800B0248(result, 7, getItemName(sp18)), 7, getMenuString(0x77)), 7, getMenuString(0x73));
                 func_800A4320(func_800B02AC(result));
             }
             break;
@@ -1329,7 +1329,7 @@ s32 func_8009E95C(void) {
     D_800ED148.actionByte1 = 1;
     D_800EE4C0.flags5 |= 1;
 
-    temp_s0 = func_800B0248(getMenuString(0x47), 7, getStatName(D_800ED148.actionByte0));
+    temp_s0 = func_800B0248(getMenuString(0x47), 7, getItemName(D_800ED148.actionByte0));
     func_800A4320(func_800B02AC(func_800B0248(temp_s0, 7, getMenuString(0x40))));
     return 0;
 }

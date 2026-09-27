@@ -183,7 +183,7 @@ static s32 func_801E583C(ShopMenuState *s, ShopAction action, s32 index) {
  * @brief Look up shop item and get its description string.
  *
  * Calls func_801E583C to validate the item, then if valid, calls
- * func_801E5800 to get item ID and getStatDesc to get its
+ * func_801E5800 to get item ID and getItemDesc to get its
  * description string.
  *
  * @param s Shop context parameter.
@@ -194,7 +194,7 @@ static s32 func_801E583C(ShopMenuState *s, ShopAction action, s32 index) {
 static u8* func_801E58A0(ShopMenuState *s, ShopAction action, s32 index) {
     s32 valid = func_801E583C(s, action, index);
     if (valid) {
-        return getStatDesc(func_801E5800(s, action, index));
+        return getItemDesc(func_801E5800(s, action, index));
     }
     return NULL;
 }
@@ -308,7 +308,7 @@ static s32 func_801E5A8C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s16 *
     s32 x;
     s32 y;
     s32 color;
-    s32 str;
+    u8 *str;
     s32 mask;
 
     y = arg3;
@@ -1219,7 +1219,7 @@ static s32 func_801E6FD8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
 
     if (itemId != 0 && count != 0) {
         s32 color;
-        s32 itemName;
+        u8 *itemName;
         s32 itemGlyph;
         s32 x;
         s32 y;
@@ -1229,7 +1229,7 @@ static s32 func_801E6FD8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
             color = COLOR_GRAY;
         }
 
-        itemName = getStatName(itemId);
+        itemName = getItemName(itemId);
         itemGlyph = func_801E5904(itemId) + 223;
 
         arg1 = func_8002FF34(arg0, arg1, itemGlyph, xBase + 11, yBase + 8, g_menuColor);
@@ -1461,7 +1461,7 @@ static s32 func_801E7628(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
  */
 s32 func_801E77EC(s32 fieldShopId, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     MenuDisplayConfig *cfg;
-    s32 name;
+    u8 *name;
     s32 x;
     s32 y;
     s32 flag;
@@ -1718,7 +1718,7 @@ void func_801E7D30(u8 *src, u8 *dst) {
 
             switch (srcVal) {
             case 0x26:
-                copyString(bufferPtr, getLevelCurveData(D_801EB2E4));
+                copyString(bufferPtr, getWeaponName(D_801EB2E4));
                 break;
             case 0x27:
                 copyString(bufferPtr, getCharName(D_801EB2E8));

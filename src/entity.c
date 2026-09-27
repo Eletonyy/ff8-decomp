@@ -41,7 +41,7 @@ void func_8003228C(s32 arg0, u8 *arg1)
             if (c == 0) break;
         }
     } else {
-        copyString(dst, getStatName(arg0));
+        copyString(dst, getItemName(arg0));
     }
 }
 
@@ -81,18 +81,18 @@ s32 pollItemPresent(s32 a0, s32 retries) {
 
 
 /**
- * @brief Guarded entity lookup: return 0 if bit 8 is set, otherwise call getStatDesc.
+ * @brief Guarded entity lookup: return 0 if bit 8 is set, otherwise call getItemDesc.
  *
  * Checks whether bit 0x100 is set in the input. If so, returns 0 immediately
- * (invalid/out-of-range entity). Otherwise delegates to getStatDesc for the
+ * (invalid/out-of-range entity). Otherwise delegates to getItemDesc for the
  * actual lookup.
  *
  * @param a0 Entity index or ID to look up.
- * @return 0 if bit 8 is set, otherwise result of getStatDesc(a0).
+ * @return 0 if bit 8 is set, otherwise result of getItemDesc(a0).
  */
 s32 guardedEntityLookup(s32 a0) {
     if (a0 & 0x100) return 0;
-    return getStatDesc(a0);
+    return getItemDesc(a0);
 }
 
 

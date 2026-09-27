@@ -20,7 +20,7 @@ typedef struct {
     u8 abilityIndex;   /**< Ability index within the GF's learn table. */
     u8 type;           /**< Slot type (learned/eligible/chained). */
     u8 category;       /**< Ability category (0-6, from getAbilityCategory). */
-    u8 gfDataValue;    /**< Data value from g_gfData ability table. */
+    u8 gfDataValue;    /**< Data value from g_kernel ability table. */
     u8 gsValue;        /**< Current ability level from GF save data. */
     u8 pad[2];         /**< Padding to 8-byte stride. */
 } AbilityListEntry; /* 8 bytes */

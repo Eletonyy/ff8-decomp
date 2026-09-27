@@ -7,9 +7,9 @@
 #include "character.h"
 #include "card.h"
 
-/* @c g_gfData is also declared in gf.h as a GfData struct; this unit walks it
- * as raw bytes. Unifying the two views must be byte-verified separately. */
-extern u8 g_gfData[];
+/* @c g_kernel is declared in kernel.h as a Kernel; this unit walks it by the
+ * byte offsets in its ability-category table instead. */
+extern u8 g_kernel[];
 extern CharacterData g_characters[];
 extern u16 D_80078894;
 extern u8 D_800780B0[];
@@ -196,7 +196,7 @@ s32 getAbilityCategory(s32 slotIndex) {
  *
  * Populates a slot buffer with learned, level-eligible, and chained abilities,
  * then iterates the filled slots to build output entries with ability index,
- * category, data lookup value from g_gfData, and current ability level from
+ * category, data lookup value from g_kernel, and current ability level from
  * the GF's save data. Returns the total number of available abilities.
  *
  * @param gfIndex          GF index (0-15).
@@ -231,7 +231,7 @@ s32 func_800369CC(s32 gfIndex, AbilityListEntry *output, s32 includeJunction) {
 
             if (output->abilityIndex < 0xFF) {
                 AbilityCategoryInfo *info = &D_80053C3C[output->category];
-                u8 *entry = g_gfData;
+                u8 *entry = g_kernel;
                 entry = (u8 *)(info->dataOffset + (s32)entry);
                 entry += info->stride * (slotIndex - info->startIndex);
                 output->gfDataValue = entry[4];

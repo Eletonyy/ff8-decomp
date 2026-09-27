@@ -377,7 +377,7 @@ static s32 func_801E8978(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 availableCh
     s32 i;
     s32 mask;
     s32 color;
-    s32 charName;
+    u8 *charName;
 
     cfg = &g_menuDisplayCfg;
     x = arg2 + 12;
@@ -511,7 +511,7 @@ static s32 func_801E8BD8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
                 if (weaponId & 0x80) {
                     color = COLOR_WHITE;
                 }
-                arg2 = func_801F0FEC(arg1, arg2, x, y, getLevelCurveData(weaponId & 0x3F), color);
+                arg2 = func_801F0FEC(arg1, arg2, x, y, getWeaponName(weaponId & 0x3F), color);
                 x = arg3 + 189;
                 price = func_801E7E1C(weaponId & 0x3F) * s->priceMultiplier / 1000;
                 arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), price, color);
@@ -574,7 +574,7 @@ static s32 func_801E8D84(JunkShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
         quantity = *itemsPtr++;
 
         if (itemId) {
-            text = getStatName(itemId);
+            text = getItemName(itemId);
             a2 = func_801F0FEC(a1, a2, x, y, text, COLOR_WHITE);
 
             text = func_801F6AFC(50);
@@ -681,6 +681,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
     s32 y;
     s32 y2;
     s32 tmp;
+    u8 *text;
     WeaponInfo *weapons;
 
     color = COLOR_WHITE;
@@ -693,10 +694,10 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
     oldWeaponStrength = D_801EB260[oldWeaponId];
     oldWeaponHit = weapons[oldWeaponId].hit;
 
-    tmp = func_801F6AA4(STRING_MONEY);
+    text = func_801F6AA4(STRING_MONEY);
     x = arg3 + 249;
     y = arg4 + 7;
-    arg2 = func_801F0FEC(arg1, arg2, x, y, tmp, color);
+    arg2 = func_801F0FEC(arg1, arg2, x, y, text, color);
 
     x = arg3 + 322;
     y = arg4 + 21;
@@ -738,10 +739,10 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
     y2 = arg4 + 23;
     arg2 = func_8002C56C(arg1, arg2, x, y2, tmp, color);
 
-    tmp = getLevelCurveData(oldWeaponId);
+    text = getWeaponName(oldWeaponId);
     x = arg3 + 12;
     y = arg4 + 7;
-    arg2 = func_801F0FEC(arg1, arg2, x, y, tmp, color);
+    arg2 = func_801F0FEC(arg1, arg2, x, y, text, color);
 
     if (s->menuPhase & 1) {
         newWeaponId = D_801EB150[s->selWeaponIndex];

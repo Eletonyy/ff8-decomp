@@ -63,10 +63,10 @@ void func_801E5890(s32 a0) {
 }
 
 /**
- * @brief Wrapper that calls getSpellEntityData with @p a0 offset by 0x33.
+ * @brief Wrapper that calls getSpellDesc with @p a0 offset by 0x33.
  */
 void func_801E58B0(s32 a0) {
-    getSpellEntityData(a0 + 0x33);
+    getSpellDesc(a0 + 0x33);
 }
 
 /** @brief Draw inner panel with section id 0x7 and clear flag. */

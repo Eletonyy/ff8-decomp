@@ -347,9 +347,9 @@ void func_8009A60C(void) {
 }
 
 /**
- * @brief Compute checksum of g_gfData buffer.
+ * @brief Compute checksum of g_kernel buffer.
  *
- * Sums 0x9E08 bytes from g_gfData and returns the total.
+ * Sums 0x9E08 bytes from g_kernel and returns the total.
  *
  * @return Byte sum of the buffer.
  */

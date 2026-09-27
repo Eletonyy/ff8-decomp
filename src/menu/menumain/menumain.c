@@ -1154,7 +1154,7 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F3824);
  * the panel border via func_801EF9AC.
  */
 void func_801F38F8(s32 a0, s32 a1, s32 a2) {
-    s32 ret1;
+    u8 *ret1;
     s32 ret2;
 
     ret1 = func_801F6AD0(*(u8 *)(a0 + 0x46));
@@ -1168,8 +1168,8 @@ void func_801F38F8(s32 a0, s32 a1, s32 a2) {
 }
 
 /** @brief Render text with explicit parameters (arg-reorder wrapper for func_801F0FEC). */
-void func_801F3994(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
-    func_801F0FEC(a1, a2, a3, a4, a0, a5);
+void func_801F3994(u8 *text, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
+    func_801F0FEC(a1, a2, a3, a4, text, a5);
 }
 
 /**
@@ -1838,12 +1838,12 @@ s32 func_801F65F0(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
 }
 
 /**
- * @brief Draw a character's level number in its status panel slot.
+ * @brief Draw a weapon's name in its status panel slot.
  *
  * Anchors g_menuDisplayCfg at (x+200, y+121) with a 154x22 box and no
- * icon, renders the level value from getLevelCurveData(charIdx) as a
- * 7-glyph field at (x+209, y+128) via func_801F0FEC, then draws the
- * panel frame with func_801EF9AC at full intensity.
+ * icon, draws the name from getWeaponName(weaponId) at (x+209, y+128)
+ * via func_801F0FEC, then draws the panel frame with func_801EF9AC at
+ * full intensity.
  *
  * @note @p x and @p y are advanced in place — reassigning the parameters
  *       restores their true live lengths so px/py keep s0/s1 (allocation
@@ -1853,10 +1853,10 @@ s32 func_801F65F0(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
  * @param dl      Display-list cursor.
  * @param x       Panel base X.
  * @param y       Panel base Y.
- * @param charIdx Level-curve entry to display.
+ * @param weaponId Weapon to display.
  */
-void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 charIdx) {
-    s32 lvl;
+void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 weaponId) {
+    u8 *name;
 
     x += 0xC8;
     y += 0x79;
@@ -1868,8 +1868,8 @@ void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 charIdx) {
     g_menuDisplayCfg.y = y;
     g_menuDisplayCfg.h = 0x16;
     y += 7;
-    lvl = getLevelCurveData(charIdx);
-    dl = func_801F0FEC(ctx, dl, x, y, lvl, 7);
+    name = getWeaponName(weaponId);
+    dl = func_801F0FEC(ctx, dl, x, y, name, 7);
     func_801EF9AC(ctx, dl, 0x1000, g_menuColor);
 }
 
@@ -1989,14 +1989,14 @@ s32 func_801F6A5C(void) {
     return val;
 }
 
-/** @brief Look up ability/command name string (category 3). */
-void func_801F6AA4(s32 a0) {
-    func_801F08D4(1, 3, a0, 0);
+/** @brief Look up string @p a0 in menu text category 3. */
+u8 *func_801F6AA4(s32 a0) {
+    return func_801F08D4(1, 3, a0, 0);
 }
 
-/** @brief Look up character name string. */
-s32 func_801F6AD0(s32 a0) {
-    func_801F08D4(0, 0, a0, 1);
+/** @brief Look up string @p a0 in menu text category 0, with the last flag set. */
+u8 *func_801F6AD0(s32 a0) {
+    return func_801F08D4(0, 0, a0, 1);
 }
 
 /** @brief Look up character description string. */

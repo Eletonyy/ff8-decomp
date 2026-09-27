@@ -819,7 +819,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
     
     switch (arg1) {                                
         case 29:                                     
-            var_s2 = getAbilityEntryName(arg1);
+            var_s2 = getBattleCommandName(arg1);
             func_800A4FC4(func_800A4EA0(arg5, 0), &sp2A);
             if (func_8009ED2C(sp2A) == 0) {
                 func_800A42DC(50, &arg1, &arg6, &sp2E, &arg2);
@@ -843,12 +843,12 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
                         arg6 = D_800E3CC5;
                         var_s3 = D_80078E00.spells[arg2].unk9;
                         sp2E = D_80078E00.spells[arg2].unk0;
-                        var_s2 = func_800B02AC(func_800B0248(getAbilityEntryName(9), *getMenuString(0xB), getMagicNamePtr(arg2)));
+                        var_s2 = func_800B02AC(func_800B0248(getBattleCommandName(9), *getMenuString(0xB), getMagicNamePtr(arg2)));
                         D_800ED148.header.unk8 = D_80078E00.spells[arg2].unk26;
                     } 
                     
                     else {
-                        var_s2 = getAbilityEntryName(arg1);
+                        var_s2 = getBattleCommandName(arg1);
                         func_800A42DC(5, &arg1, &arg6, &sp2E, &arg2);
                     }
                     
@@ -866,7 +866,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
                             
                             arg6 = D_800E3CBC[arg3];
                             sp2E = 15;
-                            var_s2 = getAbilityEntryName(arg1);
+                            var_s2 = getBattleCommandName(arg1);
                             
                             if (i == 1) {
                                 func_800A4320(
@@ -911,7 +911,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
                             break;
                         }
                         
-                        var_s2 = getAbilityEntryName(arg1);
+                        var_s2 = getBattleCommandName(arg1);
                         func_800A42DC(5, &arg1, &arg6, &sp2E, &arg2);
                         break;
                     }
@@ -922,7 +922,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
                         D_800ED148.unk1318 = 1;
                         sp2E = 15;
                         arg6 = D_800E3CC6;
-                        var_s2 = getAbilityEntryName(arg1);
+                        var_s2 = getBattleCommandName(arg1);
                         func_800A4320(
                             func_800B02AC(
                                 func_800B0248(
@@ -939,21 +939,21 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
                     } 
                     
                     else {
-                        var_s2 = getAbilityEntryName(arg1);
+                        var_s2 = getBattleCommandName(arg1);
                         func_800A42DC(5, &arg1, &arg6, &sp2E, &arg2);
                     }
                     
                     break;
                     
                 default:
-                    var_s2 = getAbilityEntryName(arg1);
+                    var_s2 = getBattleCommandName(arg1);
                     func_800A42DC(5, &arg1, &arg6, &sp2E, &arg2);
                     break;
                 }
             }
             
             else {
-                var_s2 = getAbilityEntryName(arg1);
+                var_s2 = getBattleCommandName(arg1);
                 func_800A42DC(5, &arg1, &arg6, &sp2E, &arg2);
             }
             break;
@@ -1032,7 +1032,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             break;
             
         case 244:                                     
-            var_s2 = getStatName(arg3);
+            var_s2 = getItemName(arg3);
             switch (arg2) {                            
                 case 65528:                                
                     func_800A42DC(55, &arg1, &arg6, &sp2E, &arg2);
@@ -1062,13 +1062,13 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
         case 13:                                      
             var_s3 = D_80078E00.abilities[arg2].unkE;
             sp2E = D_80078E00.array3920[arg2].unk14;
-            var_s2 = getStatName(arg2);
+            var_s2 = getItemName(arg2);
             break;
             
         case 250:                                     
             var_s3 = D_80078E00.array3750[arg3].unk0;
             sp2E = D_80078E00.unk3738[arg3].unk10;
-            var_s2 = getElementName(arg3);
+            var_s2 = getRenzokukenFinisherName(arg3);
             break;
             
         case 16:                                     
@@ -1084,7 +1084,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             D_800ED148.unk1325 = 1;
             D_800EEBD0 = func_800A9240(arg2);
             D_800ED148.unk1324 = arg2 - 101;
-            var_s2 = getStatusEffectName(D_800ED148.unk1324);
+            var_s2 = getShotName(D_800ED148.unk1324);
             goto dummy;
             break;
             
@@ -1105,27 +1105,27 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
         case 19:                                     
             var_s3 = D_80078E00.array4A6C[arg3].unk4A76;
             sp2E = D_80078E00.array4A6C[arg3].unk4A6E;
-            var_s2 = getGfSummonData(arg3);
+            var_s2 = getRinoaLimitBreak2Name(arg3);
             break;
             
         case 17 ... 18:                                   
         case 20 ... 22:                                
             var_s3 = D_80078E00.array4484[arg2].unk8;
             sp2E = D_80078E00.array4484[arg2].unk0;
-            var_s2 = getJuncCategoryName(arg2);
+            var_s2 = getTempLimitBreakName(arg2);
             break;
             
         case 15:                                      
             var_s3 = D_80078E00.array44FC[arg2].unk7;
             sp2E = D_80078E00.array44FC[arg2].unk0;
-            var_s2 = getJuncEffectName(arg2);
+            var_s2 = getBlueMagicName(arg2);
             break;
             
         case 5:                                      
             arg5 = func_800A4EA0(arg5, 0);
             func_800A4FC4(arg5, &sp2A);
             sp2E = func_800A2E48(*D_800ED148.entities[sp2A].entityData, arg0);
-            var_s2 = getAbilityEntryName(arg1);
+            var_s2 = getBattleCommandName(arg1);
             if (func_800A2310(arg0) == 0) {
                 D_800ED148.unk1303 = 0;
                 arg2 = 65533;
@@ -1175,7 +1175,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
                 default:
                     var_s3 = D_80078E00.array48BC[arg2].unk48C4;
                     sp2E = D_80078E00.array48BC[arg2].unk48BC;
-                    var_s2 = getMagicEffectName(arg2);
+                    var_s2 = getDuelName(arg2);
                     D_800ED148.unk131C++;
                     break;
             }
@@ -1184,7 +1184,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
         case 239:                                     
             var_s3 = D_80078E00.array48BC[arg2].unk48C4;
             sp2E = D_80078E00.array48BC[arg2].unk48BC;
-            var_s2 = getMagicEffectName(arg2);
+            var_s2 = getDuelName(arg2);
             break;
             
         case 8:                                      
@@ -1203,7 +1203,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             break;
             
         case 38:                                     
-            var_s2 = getAbilityEntryName(arg1);
+            var_s2 = getBattleCommandName(arg1);
             switch (func_800A2D24()) {                    
                 case 0:                                     
                     func_800A42DC(72, &arg1, &arg6, &sp2E, &arg2);
@@ -1224,7 +1224,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             break;
         
         case 7:                                      
-            var_s2 = getAbilityEntryName(arg1);
+            var_s2 = getBattleCommandName(arg1);
             D_800ED148.unk1326 = 0;
             func_800A4FC4(func_800A4EA0(arg5, 0), &sp2A);
             
@@ -1245,7 +1245,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             arg2 = D_80078E00.unkE8[arg1].unk0;
             var_s3 = D_80078E00.array4020[arg2].unk7;
             sp2E = D_80078E00.array4020[arg2].unk0;
-            var_s2 = getAbilityEntryName(arg1);
+            var_s2 = getBattleCommandName(arg1);
             break;
             
         case 252:                                     
@@ -1254,7 +1254,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             break;
             
         case 28:                                     
-            var_s2 = getAbilityEntryName(arg1);
+            var_s2 = getBattleCommandName(arg1);
             sp2E = 0;
             break;
             
