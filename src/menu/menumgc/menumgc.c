@@ -34,7 +34,6 @@ typedef struct {
 
 extern FlagEntry D_801F87B8[];
 extern s32 func_801EFBB4(s32 a0, s32 a1, s32 a2);
-extern u8 *func_801F08D4(s32 a0, s32 a1, s32 a2, s32 a3);
 extern void func_801F0A34(s32 a0, s32 a1, s32 a2, s32 a3);
 extern void func_801F0A78(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4);
 extern s32 func_801F0BB0(void);

@@ -68,15 +68,18 @@ void func_801E58B4(s32 a0, s32 a1) {
 }
 
 /**
- * Selects a menu icon based on card count ranges.
- * Validates the card with func_80023B14, then maps the count
- * to one of four icon indices (9-12) based on thresholds.
- * @param a0 Card identifier
- * @return func_801E5800 result for the selected icon, or 0 if invalid
+ * @brief Look up the menu text for card @p a0's level group.
+ *
+ * Picks entry 9 of menu text category 0xD for cards 0-54 (levels 1-5),
+ * 10 for 55-76 (levels 6-7), 11 for 77-98 (levels 8-9) and 12 for the rest
+ * (level 10).
+ *
+ * @param a0 Card ID.
+ * @return The text, or NULL when func_80023B14 returns a negative value for the card.
  */
 u8 *func_801E591C(s32 a0) {
     if (func_80023B14(a0) < 0) {
-        return 0;
+        return NULL;
     }
     if (a0 < 0x37) {
         return func_801E5800(9);

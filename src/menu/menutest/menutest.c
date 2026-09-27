@@ -296,7 +296,7 @@ void func_801E67F0(void) {
         *(u8 *)(s0 + 0x2C) = 0;
         *(u8 *)(s0 + 0x2D) = *(u8 *)&D_800780AB;
         text = func_801E5800(0x11);
-        func_801E59B4(text, (s32)&D_801E71BC, (s32)&D_801E79BC);
+        func_801E59B4(text, &D_801E71BC, &D_801E79BC);
         text = func_801E5800(0x1A);
     } else {
         *(u8 *)(s0 + 0x2C) = 1;
@@ -305,7 +305,7 @@ void func_801E67F0(void) {
         *(s32 *)&D_801E7ACC = *(u8 *)(s0 + 0x2D);
         *(s32 *)((s32)&D_801E7ACC + 4) = *(u8 *)(s0 + 0x2D) + 1;
         text = func_801E5800(0x16);
-        func_801E59B4(text, (s32)&D_801E71BC, (s32)&D_801E79BC);
+        func_801E59B4(text, &D_801E71BC, &D_801E79BC);
         text = func_801E5800(0x1B);
     }
     *(u8 **)(s0 + 0x20) = text;
