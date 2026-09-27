@@ -10,9 +10,9 @@
  */
 typedef struct {
     /* 0x00 */ u8 pad00[0x10];
-    /* 0x10 */ u16 state;        /**< State machine state (func_801E5D74). */
+    /* 0x10 */ u16 state;
     /* 0x12 */ u8 pad12[0xE];
-    /* 0x20 */ u8 *text;         /**< Text centred along the bottom panel (func_801E66A8). */
+    /* 0x20 */ u8 *text;         /**< Text drawn centred in the bottom panel. */
     /* 0x24 */ s16 unk24;
     /* 0x26 */ s16 unk26;
     /* 0x28 */ u8 pad28[2];
@@ -224,7 +224,7 @@ s32 func_801E6570(s32 a0, s32 a1, s32 a2) {
     yPos -= v0 >> 12;
 
     a2 = func_801EF8D8(disp, a2);
-    func_8002EAD0(disp, yPos, 0x23, (s32)D_801E69BC);
+    func_8002EAD0(disp, yPos, 0x23, D_801E69BC);
 
     *(s16 *)&g_menuDisplayCfg = 0x1C;     /* x */
     *(s16 *)(buf + 2) = 0x21;       /* y */
@@ -293,11 +293,10 @@ s32 func_801E6760(s32 a0, s32 a1, s32 a2) {
 /**
  * @brief Test menu overlay entry: allocate the task state and run its first tick.
  *
- * Registers func_801E5D74 (tick) and func_801E6760 (draw) with func_801F179C
- * and waits for pending CD reads. With no tutorial entry picked
- * (func_801E28D4() returns 0xFF) it shows entry tutoEntryCount; otherwise it
- * shows the picked entry and stores it and the next one in D_801E7ACC.
- * Entries below 30 load their sub-overlay (0x60 + entry).
+ * func_801E5D74 is the task's tick callback and func_801E6760 its draw
+ * callback. Shows the tutorial entry the player picked, or entry
+ * tutoEntryCount (D_800780AB) when the tutorial menu picked none
+ * (func_801E28D4() returns 0xFF).
  */
 void func_801E67F0(void) {
     TestMenuState *state;
@@ -337,7 +336,7 @@ void func_801E67F0(void) {
     state->unk2E = 0;
     state->unk26 = 0;
     D_801E69BC[0] = 0;
-    if (state->entry < 0x1E) {
+    if (state->entry < 30) {
         loadSubOverlay(state->entry + 0x60, MENU_SUBOVERLAY_ADDR);
     }
     state->scroll = 0;
