@@ -168,9 +168,7 @@ u8* func_800AFF30(s32 a0) {
  * @param a0 Index into @c g_kernel.junctionableGfs, offset by @c 0x40.
  */
 u8* func_800AFF70(s32 a0) {
-    Kernel *kernel = &g_kernel;
-    a0 -= 0x40;
-    return resolveKernelPtr(kernel->junctionableGfs[a0].nameOffset, kernel->junctionableGfsText);
+    return resolveKernelPtr(g_kernel.junctionableGfs[a0 - 0x40].nameOffset, g_kernel.junctionableGfsText);
 }
 
 /**
