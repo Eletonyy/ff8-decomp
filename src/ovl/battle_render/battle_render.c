@@ -2,6 +2,7 @@
 #include "psxsdk/libetc.h"
 #include "psxsdk/libgpu.h"
 #include "gamestate.h"
+#include "battle_render.h"
 
 /** @brief Battle render command block (linked-list node, 0x10 bytes). */
 typedef struct CmdBlk_ {
@@ -346,9 +347,9 @@ void func_8009A60C(void) {
 }
 
 /**
- * @brief Compute checksum of D_80078E00 buffer.
+ * @brief Compute checksum of g_gfData buffer.
  *
- * Sums 0x9E08 bytes from D_80078E00 and returns the total.
+ * Sums 0x9E08 bytes from g_gfData and returns the total.
  *
  * @return Byte sum of the buffer.
  */

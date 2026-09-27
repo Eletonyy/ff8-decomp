@@ -108,7 +108,7 @@ binaries:
   options:
     target_path: original/battle_render.bin
     src_path: src/ovl/battle_render
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.battle_render.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle_render.txt]
     section_order: [.rodata, .text, .data, .bss]
   segments:
   - name: battle_render

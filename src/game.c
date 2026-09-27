@@ -4,6 +4,7 @@
 #include "gf.h"
 #include "gamestate.h"
 #include "ability.h"
+#include "battle_render.h"
 
 u8 *resolveKernelPtr(u16 a0, s32 a1);
 
@@ -18,7 +19,6 @@ void dispatchScratchpadThread(void);
 s32 getRenderCompleteFlag(void);
 void cdReadSync(s32, s32, s32, s32);
 void func_8001F5C8(void);
-void func_80098238(void);
 void setCameraVibrateIntensity(s32);
 s32 func_80021300(void);
 void func_80023D60(s32);
