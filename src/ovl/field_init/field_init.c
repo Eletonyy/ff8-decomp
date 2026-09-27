@@ -88,7 +88,7 @@ void func_80098000(void) {
  *
  * Clears the battle config, fills the 3 command slots with 0xFF,
  * then reads battle data from disc into a scratch buffer and copies
- * it to the battle data buffer (g_gfData).
+ * it to the battle data buffer (g_kernel).
  */
 void func_80098028(void) {
     s32 i;
@@ -103,7 +103,7 @@ void func_80098028(void) {
     }
 
     cdReadSync(D_80097800.sector, D_80097800.size, 0x801A0000, 0);
-    memcopy((u8 *)0x801A0000, &g_gfData, D_80097800.size);
+    memcopy((u8 *)0x801A0000, &g_kernel, D_80097800.size);
 }
 
 /**

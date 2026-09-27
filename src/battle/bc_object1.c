@@ -1441,7 +1441,7 @@ void func_8009B924(s32 slot, s32 clearMask, s32 applyMask) {
 /**
  * @brief Get combined status flags for an entity from ability data.
  *
- * Reads ability flags for the given entity slot from g_gfData,
+ * Reads ability flags for the given entity slot from g_kernel,
  * queries two flag lookup functions, OR's results together.
  * If bit 15 is set in the combined result, returns it masked to u16;
  * otherwise returns defaultStatus masked to u16.

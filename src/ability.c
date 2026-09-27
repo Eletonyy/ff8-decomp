@@ -12,24 +12,24 @@
  */
 s32 GetAbilityCap(s32 abilityId) {
     if (abilityId < ABILITY_MAGIC) {
-        return g_gfData.abilityRangeI[abilityId].cap;
+        return g_kernel.junctionAbilities[abilityId].cap;
     }
     if ((u32)(abilityId - ABILITY_MAGIC) < 19) {
-        return g_gfData.abilityRangeJ[abilityId - ABILITY_MAGIC].cap;
+        return g_kernel.commandAbilities[abilityId - ABILITY_MAGIC].cap;
     }
     if ((u32)(abilityId - ABILITY_HP_20) < 19) {
-        return g_gfData.abilityRangeK[abilityId - ABILITY_HP_20].cap;
+        return g_kernel.statPercentAbilities[abilityId - ABILITY_HP_20].cap;
     }
     if ((u32)(abilityId - ABILITY_MUG) < 20) {
-        return g_gfData.abilityRangeL[abilityId - ABILITY_MUG].cap;
+        return g_kernel.characterAbilities[abilityId - ABILITY_MUG].cap;
     }
     if ((u32)(abilityId - ABILITY_ALERT) < 5) {
-        return g_gfData.abilityRangeM[abilityId - ABILITY_ALERT].cap;
+        return g_kernel.partyAbilities[abilityId - ABILITY_ALERT].cap;
     }
     if ((u32)(abilityId - ABILITY_SUMMAG_10) < 9) {
-        return g_gfData.abilityRangeN[abilityId - ABILITY_SUMMAG_10].cap;
+        return g_kernel.gfAbilities[abilityId - ABILITY_SUMMAG_10].cap;
     }
-    return g_gfData.abilityRangeO[abilityId - ABILITY_HAGGLE].cap;
+    return g_kernel.menuAbilities[abilityId - ABILITY_HAGGLE].cap;
 }
 
 
@@ -44,7 +44,7 @@ s32 FindAbilitySlot(s32 gfIdx, s32 abilityId) {
 
     for (i = 0; i < GF_ABILITY_SLOT_COUNT; i++)
     {
-        if (g_gfData.abilityTable132[gfIdx].abilities[i].abilityId == abilityId) {
+        if (g_kernel.junctionableGfs[gfIdx].abilities[i].abilityId == abilityId) {
             return i;
         }
     }

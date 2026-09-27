@@ -51,11 +51,11 @@ typedef struct {
 /**
  * @brief Ability category lookup info (4 bytes, indexed by category 0-6).
  *
- * Maps ability categories to offsets within @c g_gfData for looking up
+ * Maps ability categories to offsets within @c g_kernel for looking up
  * ability-specific data (e.g. AP cost, stat modifiers).
  */
 typedef struct {
-    u16 dataOffset;    /**< Byte offset into @c g_gfData for this category's table. */
+    u16 dataOffset;    /**< Byte offset into @c g_kernel for this category's table. */
     u8 startIndex;     /**< First slot index in this category range. */
     u8 stride;         /**< Byte stride between entries in the data table. */
 } AbilityCategoryInfo;
@@ -64,7 +64,7 @@ typedef struct {
 /* Data symbols                                                             */
 /* ======================================================================== */
 
-/** @brief GF learn tables (@c g_gfData + 0xF78). */
+/** @brief GF learn tables (@c g_kernel + 0xF78). */
 extern GfLearnData D_80079D78[];
 
 /** @brief Ability category lookup table, indexed by category 0-6. */

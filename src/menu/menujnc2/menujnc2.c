@@ -1563,7 +1563,7 @@ void previewJunctionChange(s32 charIdx, s32 gfIdx, s32 slot, s32 abilityId) {
  * @brief Look up ability/command name string by type and index.
  *
  * For type 1 (commands): looks up command ID from D_801EEF10, finds
- * the GF ability index in g_gfData, and returns the name via getAbilityEntryDesc.
+ * the GF ability index in g_kernel, and returns the name via getAbilityEntryDesc.
  * For type 2 (abilities): looks up ability ID from D_801EEF40 and
  * returns the name via getAbilityDesc.
  *
@@ -1583,9 +1583,9 @@ s32 getAbilityNamePtr(s32 type, s32 index) {
     case 1:
         if (index < D_801EEF38) {
             u8 cmdId = D_801EEF10[index * 2];
-            gfData = (u8 *)&g_gfData;
+            gfData = (u8 *)&g_kernel;
             stride = 8;
-            /* g_gfData ability range J: typeField at offset 0x4180 + 5 = 0x4185 */
+            /* g_kernel ability range J: typeField at offset 0x4180 + 5 = 0x4185 */
             result = getAbilityEntryDesc(gfData[(cmdId - 0x14) * stride + 0x4185]);
         } else {
             result = 0;
@@ -2126,7 +2126,7 @@ dispatch:
             }
             if (col != 0) {
                 if (fr < 3) {
-                    { s32 b = (s32)&g_gfData; u8 *p = (u8 *)((col - 0x14) * 8 + b); ctx->itemPtr = getAbilityEntryDesc(p[0x4185]); }
+                    { s32 b = (s32)&g_kernel; u8 *p = (u8 *)((col - 0x14) * 8 + b); ctx->itemPtr = getAbilityEntryDesc(p[0x4185]); }
                 } else {
                     ctx->itemPtr = getAbilityDesc(col);
                 }

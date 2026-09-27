@@ -50,7 +50,7 @@ extern SceneState D_80082C8C;   /**< Scene-state block (mode/cmd/markers). */
  *
  * 16 entries at g_gameState + 0x50 (0x800773C8).
  * This is the persistent save-file GF data — distinct from the runtime
- * ability tables in g_gfData (0x80078E00, see gf.h).
+ * ability tables in g_kernel (0x80078E00, see gf.h).
  */
 typedef struct {
     /* 0x00 */ u8 name[12];              /**< GF name (null-terminated). */
