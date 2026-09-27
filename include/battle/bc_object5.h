@@ -24,9 +24,9 @@ s32 func_800AAA10(s32);
 
 s32 func_800AAA50(s32, s32, s32);
 
-s32 func_800AAA9C(s32, u32, BattleEntityData*);
+s32 func_800AAA9C(s32, u32, BattleEntity*);
 
-s32 func_800AAB50(s32, u32, BattleEntityData*);
+s32 func_800AAB50(s32, u32, BattleEntity*);
 
 s32 func_800AABEC(s32, s32, s32, s32, s32);
 

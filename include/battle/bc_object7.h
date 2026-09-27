@@ -13,7 +13,7 @@ extern void func_800AFFF4(void);
 extern void func_800B0014(void);
 extern void func_800B0034(void);
 extern void func_800B0054(void);
-extern s32 func_800B0074(s32 idx);
+extern BattleEntityData* func_800B0074(s32 idx);
 extern void func_800B00A8(void);
 extern void func_800B00C8(void);
 extern u8 *func_800B0248(u8* a0, u8 a1, u8* a2);
