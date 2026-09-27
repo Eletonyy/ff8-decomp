@@ -191,7 +191,7 @@ binaries:
     elf_path: build/intro/intro.elf
     asm_path: asm/intro
     src_path: src
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.intro.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.intro.txt]
     build_path: build/intro
     ld_bss_is_noload: true
     section_order: [.text, .rodata, .data, .bss]
