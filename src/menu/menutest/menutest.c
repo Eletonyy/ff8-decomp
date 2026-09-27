@@ -14,36 +14,55 @@ typedef struct {
     /* 0x12 */ u8 pad12[0xE];
     /* 0x20 */ u8 *text;         /**< Text drawn centred in the bottom panel. */
     /* 0x24 */ s16 intensity;    /**< Menu color intensity. */
-    /* 0x26 */ s16 unk26;
+    /* 0x26 */ s16 score;        /**< Questions answered correctly. */
     /* 0x28 */ u8 pad28[2];
     /* 0x2A */ s16 scroll;       /**< Scroll position, looked up in the D_801FA3C8 falloff table. */
-    /* 0x2C */ u8 entryPicked;   /**< 1 when the tutorial menu picked an entry (func_801E28D4() != 0xFF). */
-    /* 0x2D */ u8 entry;         /**< Tutorial entry to show; below 30 it has sub-overlay 0x60 + entry. */
+    /* 0x2C */ u8 levelPicked;   /**< 1 when the tutorial menu picked a level (func_801E28D4() != 0xFF). */
+    /* 0x2D */ u8 level;         /**< Test level, 0-based. */
     /* 0x2E */ u8 unk2E;
-    /* 0x2F */ u8 unk2F;
+    /* 0x2F */ u8 choice;        /**< Choice under the cursor: 0 = Yes, 1 = No. */
 } TestMenuState;
 
-/** @brief String table: an entry count, then each entry's byte offset from the start of the table. */
+/** @brief Number of SeeD test levels. */
+#define TEST_LEVEL_COUNT 30
+
+/**
+ * @brief mngrp.bin slice holding level 1's questions; level n is this plus n.
+ *
+ * Each level's slice is a TestQuestionTable.
+ */
+#define TEST_FIRST_SLICE 0x60
+
+/**
+ * @brief A level's questions: a count, then each TestQuestion's byte offset from
+ *        the start of the table (the layout of menumain's D_801F8BB8 text table too).
+ */
 typedef struct {
     u16 count;
     u16 offsets[1];
-} TestTextTable;
+} TestQuestionTable;
 
-/** @brief Position func_801E59B4 records for a marker in the laid-out text, relative to the text origin. */
+/** @brief A SeeD test question, one entry of a TestQuestionTable. */
+typedef struct {
+    u8 answer;   /**< Correct answer: 0 = Yes, 1 = No. */
+    u8 text[1];  /**< Question text in FF8 encoding; a 0x0B marker precedes each choice. */
+} TestQuestion;
+
+/** @brief Position func_801E59B4 records for a choice marker, relative to the text origin. */
 typedef struct {
     s16 x;
     s16 y;
-    s16 code;   /**< Marker code minus 0x20. */
+    s16 choice;  /**< Choice the marker belongs to: its code minus 0x20. */
     s16 pad06;
-} TestTextMark;
+} TestChoiceMark;
 
-extern s16 D_801E7ABC;
-extern u8 D_801E7ABE;
+extern s16 g_testChoiceCount;
+extern u8 g_testAnswer;
 extern s32 D_801E7ACC[2];
 extern u8 D_801E7ADC;
-extern u8 D_801E69BC[];
-extern u8 D_801E71BC;
-extern TestTextMark D_801E79BC[];
+extern u8 g_testQuestionText[];
+extern u8 g_testHeaderText[];
+extern TestChoiceMark g_testChoiceMarks[];
 extern MenuDisplayConfig g_menuDisplayCfg;
 extern u8 D_801FABD4;
 extern s32 g_menuColor;
@@ -62,15 +81,15 @@ u8 *func_801E5800(s32 a0) {
 }
 
 /**
- * Places the cursor on text marker @c state->unk2F: its D_801E79BC position
+ * Places the cursor on choice @c state->choice: its g_testChoiceMarks position
  * from the text origin (0x22, 0x23), slid left by the D_801FA3C8 falloff of
  * @c state->scroll, passed to func_801F0A34.
  * @param a0 Display mode parameter (passed through to func_801F0A34)
  * @param state Test menu state.
  */
 void func_801E582C(s32 a0, TestMenuState *state) {
-    TestTextMark *marks = D_801E79BC;
-    s32 idx = state->unk2F;
+    TestChoiceMark *marks = g_testChoiceMarks;
+    s32 idx = state->choice;
     s32 scroll = state->scroll;
     s32 x;
     s32 y;
@@ -142,16 +161,17 @@ void func_801E58B8(void) {
 INCLUDE_ASM("asm/ovl/menutest/nonmatchings/menutest", func_801E59B4);
 
 /**
- * @brief Lay out entry @p index of @p table: its first byte goes to D_801E7ABE,
- *        and func_801E59B4's result for the text after it to D_801E7ABC.
- * @param table String table.
- * @param index Entry to lay out.
+ * @brief Lay out question @p index of a level's @p table: its answer goes to
+ *        g_testAnswer, its text to g_testQuestionText, its choice markers to
+ *        g_testChoiceMarks and their count to g_testChoiceCount.
+ * @param table The level's questions.
+ * @param index Question to lay out.
  */
-void func_801E5D18(TestTextTable *table, s32 index) {
-    u8 *entry = (u8 *)table + table->offsets[index];
+void func_801E5D18(TestQuestionTable *table, s32 index) {
+    TestQuestion *question = (TestQuestion *)((u8 *)table + table->offsets[index]);
 
-    D_801E7ABE = entry[0];
-    D_801E7ABC = func_801E59B4(entry + 1, D_801E69BC, D_801E79BC);
+    g_testAnswer = question->answer;
+    g_testChoiceCount = func_801E59B4(question->text, g_testQuestionText, g_testChoiceMarks);
 }
 
 /**
@@ -162,8 +182,9 @@ void func_801E5D18(TestTextTable *table, s32 index) {
  * text decode (9), scroll animation (13,14,19,20,25,26), page navigation (16,17),
  * confirmation (21,22), and cleanup/exit (27).
  * Reads input via func_801F0948/pollCdReadStatus, fades @c intensity, moves
- * @c scroll, tracks @c entry, @c unk2E and @c unk2F, sets @c text, and dispatches
- * rendering via func_801E582C, func_801E5D18, func_801E58B8, func_801F6800.
+ * @c scroll, tracks @c level, @c unk2E and @c choice, counts @c score, sets
+ * @c text, and dispatches rendering via func_801E582C, func_801E5D18,
+ * func_801E58B8, func_801F6800.
  * @param state Test menu state (s1 = state, s2 = &state->state, s3/s0 from g_menuDisplayCfg)
  */
 INCLUDE_ASM("asm/ovl/menutest/nonmatchings/menutest", func_801E5D74);
@@ -180,7 +201,7 @@ INCLUDE_ASM("asm/ovl/menutest/nonmatchings/menutest", func_801E5D74);
 s32 func_801E64B4(s32 a0, s32 a1) {
     s32 disp = a0;
     s32 ot = a1;
-    s32 text = (s32)&D_801E71BC;
+    u8 *text = g_testHeaderText;
     s32 maxW;
     s32 v0;
     s32 buf;
@@ -224,7 +245,7 @@ s32 func_801E6570(TestMenuState *state, s32 a1, s32 a2) {
     x -= v0 >> 12;
 
     a2 = func_801EF8D8(disp, a2);
-    func_8002EAD0(disp, x, 0x23, D_801E69BC);
+    func_8002EAD0(disp, x, 0x23, g_testQuestionText);
 
     cfg->x = 0x1C;
     cfg->y = 0x21;
@@ -293,9 +314,9 @@ s32 func_801E6760(TestMenuState *state, s32 a1, s32 a2) {
  * @brief Test menu overlay entry: allocate the task state and run its first tick.
  *
  * func_801E5D74 is the task's tick callback and func_801E6760 its draw
- * callback. Shows the tutorial entry the player picked, or entry
- * tutoEntryCount (D_800780AB) when the tutorial menu picked none
- * (func_801E28D4() returns 0xFF).
+ * callback. Runs the level the player picked in the tutorial menu, or level
+ * tutoEntryCount (D_800780AB) when none was picked (func_801E28D4() returns
+ * 0xFF), and loads that level's questions.
  */
 void func_801E67F0(void) {
     TestMenuState *state;
@@ -311,32 +332,32 @@ void func_801E67F0(void) {
     if (state == NULL) {
         return;
     }
-    state->unk26 = 0;
+    state->score = 0;
     func_801F1D34(&D_801E69B8);
     func_801F1DB0(0);
     v0 = func_801E28D4();
     if (v0 == 0xFF) {
-        state->entryPicked = 0;
-        state->entry = D_800780AB;
+        state->levelPicked = 0;
+        state->level = D_800780AB;
         text = func_801E5800(0x11);
-        func_801E59B4(text, &D_801E71BC, D_801E79BC);
+        func_801E59B4(text, g_testHeaderText, g_testChoiceMarks);
         text = func_801E5800(0x1A);
     } else {
-        state->entryPicked = 1;
+        state->levelPicked = 1;
         v0 = func_801E28D4();
-        state->entry = v0;
-        D_801E7ACC[0] = state->entry;
-        D_801E7ACC[1] = state->entry + 1;
+        state->level = v0;
+        D_801E7ACC[0] = state->level;
+        D_801E7ACC[1] = state->level + 1;
         text = func_801E5800(0x16);
-        func_801E59B4(text, &D_801E71BC, D_801E79BC);
+        func_801E59B4(text, g_testHeaderText, g_testChoiceMarks);
         text = func_801E5800(0x1B);
     }
     state->text = text;
     state->unk2E = 0;
-    state->unk26 = 0;
-    D_801E69BC[0] = 0;
-    if (state->entry < 30) {
-        loadSubOverlay(state->entry + 0x60, MENU_SUBOVERLAY_ADDR);
+    state->score = 0;
+    g_testQuestionText[0] = 0;
+    if (state->level < TEST_LEVEL_COUNT) {
+        loadSubOverlay(state->level + TEST_FIRST_SLICE, MENU_SUBOVERLAY_ADDR);
     }
     state->scroll = 0;
     func_801E5D74(state);
