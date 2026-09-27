@@ -448,13 +448,13 @@ typedef struct {
 
 /* --- GPU function declarations --- */
 
-void ResetGraph(s32 mode);
+s32 ResetGraph(s32 mode);
 void SetGraphDebug(s32 level);
 s32 DrawSync(s32 mode);
 void SetDispMask(s32 mask);
 void ClearOTag(u32 *ot, s32 n);
 void ClearOTagR(u32 *ot, s32 n);
-void DrawOTag(void *p);
+void DrawOTag(u32 *p);
 void DrawPrim(void *p);
 void LoadImage(RECT *rect, u32 *data);
 void StoreImage(RECT *rect, u32 *data);
@@ -466,9 +466,9 @@ void SetDrawLoad(DR_LOAD *p, RECT *rect);
 void SetDrawEnv(DR_ENV *dr_env, DRAWENV *env);
 DRAWENV *SetDefDrawEnv(DRAWENV *env, s32 x, s32 y, s32 w, s32 h);
 DISPENV *SetDefDispEnv(DISPENV *env, s32 x, s32 y, s32 w, s32 h);
-void PutDrawEnv(void *env);
-void PutDispEnv(void *env);
-void ClearImage(void *rect, u8 r, u8 g, u8 b);
+DRAWENV *PutDrawEnv(DRAWENV *env);
+DISPENV *PutDispEnv(DISPENV *env);
+s32 ClearImage(RECT *rect, u8 r, u8 g, u8 b);
 void SetDrawStp(u32 *p, s32 dfe);
 void AddPrim(void *ot, void *p);
 void AddPrims(s32 *ot, void *p0, void *p1);

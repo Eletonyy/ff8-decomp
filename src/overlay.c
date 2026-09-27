@@ -36,9 +36,9 @@ extern OvlCmdEntry g_ovlCmdQueue[];
 extern u32 load_table[];
 extern u32 D_80097420[];
 extern u32 D_80053D08[][2];
-extern u8 D_80053CF0[];
-extern u8 D_80053CF8[];
-extern u8 D_80053D00[];
+extern RECT D_80053CF0;
+extern RECT D_80053CF8;
+extern RECT D_80053D00;
 extern DISPENV D_80085150;
 extern s32 D_8005F138;
 extern void func_80035E8C(void);
@@ -307,10 +307,10 @@ s32 isOverlayQueueEmpty(void) {
 void saveAndClearFramebuffer(s32 a0) {
     DrawSync(0);
     VSync(0);
-    StoreImage(D_80053CF0, (u32 *)0x801BF000);
+    StoreImage(&D_80053CF0, (u32 *)0x801BF000);
     DrawSync(0);
     VSync(0);
-    ClearImage(D_80053CF0, 0, 0, 0);
+    ClearImage(&D_80053CF0, 0, 0, 0);
     DrawSync(0);
     VSync(0);
     if (a0 < 0) {
@@ -331,11 +331,11 @@ extern s32 func_800432D8(void);
 void func_8003631C(s32 a0) {
     RECT rect;
 
-    ClearImage(D_80053CF8, 0, 0, 0);
-    ClearImage(D_80053D00, 0, 0, 0);
+    ClearImage(&D_80053CF8, 0, 0, 0);
+    ClearImage(&D_80053D00, 0, 0, 0);
     DrawSync(0);
     VSync(0);
-    LoadImage((RECT *)D_80053CF0, (u32 *)0x801BF000);
+    LoadImage(&D_80053CF0, (u32 *)0x801BF000);
     DrawSync(0);
     VSync(0);
 

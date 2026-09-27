@@ -570,7 +570,7 @@ void drawTextChar(u8 ch) {
     prim->h = 5;
     prim->w = 5;
 
-    AddPrim((u32 *)g_textOtPtr, prim);
+    AddPrim(g_textOtPtr, prim);
 
     g_textFbPtr = (u8 *)(prim + 1);
     g_textCursorX += 6;
