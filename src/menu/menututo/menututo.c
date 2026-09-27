@@ -1012,7 +1012,7 @@ u32 func_801E4080(void *state, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
  * @param x Base X coordinate (5th arg, passed on stack).
  * @return Updated OT cursor position (unchanged if entry out of range).
  */
-u32 func_801E4214(s32 renderCtx, s32 cursorY, s32 index, s32 startY, s32 x) {
+s32 func_801E4214(s32 renderCtx, s32 cursorY, s32 index, s32 startY, s32 x) {
     s32 panelX;
     u16 xCoord;
     s32 yPos;
@@ -1071,7 +1071,7 @@ u32 func_801E431C(TutoState *state, s32 renderCtx, s32 cursorY, s16 x, s16 y) {
         cursorY = func_801F5F60(renderCtx, cursorY, g_menuColor, 3);
     }
 
-    return func_801EFBB4(renderCtx, cursorY, (s32)func_801E4214);
+    return func_801EFBB4(renderCtx, cursorY, func_801E4214);
 }
 
 /**

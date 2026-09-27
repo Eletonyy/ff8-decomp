@@ -575,7 +575,7 @@ void func_801E8180(u8 *a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
     g_menuDisplayCfg.y = arg4;
     g_menuDisplayCfg.scrollOffset = *(u16 *)(a0 + 0x48) + *(u16 *)(a0 + 0x4C) + *(u16 *)(a0 + 0x50);
     g_menuDisplayCfg.dataPtr = (s32)(a0 + 0x28);
-    func_801EFBB4(a1, a2, (s32)func_801E80D0);
+    func_801EFBB4(a1, a2, func_801E80D0);
 }
 
 INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem", func_801E820C);

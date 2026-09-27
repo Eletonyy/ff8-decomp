@@ -33,7 +33,6 @@ typedef struct {
 } FlagEntry;
 
 extern FlagEntry D_801F87B8[];
-extern s32 func_801EFBB4(s32 a0, s32 a1, s32 a2);
 extern u8 *func_801F08D4(s32 a0, s32 a1, s32 a2, s32 a3);
 extern void func_801F0A34(s32 a0, s32 a1, s32 a2, s32 a3);
 extern void func_801F0A78(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4);
@@ -2625,7 +2624,7 @@ INCLUDE_ASM("asm/ovl/menumgc/nonmatchings/menumgc", func_801EB0F4);
  * @param arg4 Additional Y offset from caller (5th stack arg, at sp+0xC0).
  * @return Updated display state from func_801F0FEC, or a1 if item is null.
  */
-s32 func_801EB1A0(void *ctx, s32 arg1, s32 index, s32 a3_unused, s32 xExtra) {
+s32 func_801EB1A0(s32 ctx, s32 arg1, s32 index, s32 a3_unused, s32 xExtra) {
     u8 buf[0x80];
     s32 result = arg1;
     u8 *itemText = ((u8 **)g_menuDisplayCfg.dataPtr)[index];
@@ -2668,7 +2667,7 @@ void func_801EB250(u8 *a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
     *(s16 *)(cfg + 0x02) = arg4;
     *(s16 *)(cfg + 0x14) = *(u16 *)(a0 + 0x34) + *(u16 *)(a0 + 0x44);
     *(s32 *)(cfg + 0x20) = (s32)(a0 + 0x24);
-    func_801EFBB4(a1, a2, (s32)func_801EB1A0);
+    func_801EFBB4(a1, a2, func_801EB1A0);
 }
 
 INCLUDE_ASM("asm/ovl/menumgc/nonmatchings/menumgc", func_801EB2D4);

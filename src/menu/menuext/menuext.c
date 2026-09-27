@@ -6,7 +6,7 @@
 extern u8 D_801E8C10[];
 extern u8 D_801E8C20[];
 extern u8 D_801E9600[];
-extern s32 func_801E7D88;
+s32 func_801E7D88(s32, s32, s32, s32, s32);
 
 /**
  * @brief Clear 8 bytes of extension state at D_801E8C10.
@@ -425,7 +425,7 @@ void func_801E7E38(u8 *a0, s32 a1, s32 a2, s32 a3, s32 arg5) {
     *(s16 *)(cfg + 0x14) = *(u16 *)(a0 + 0x3A);
     *(s32 *)(cfg + 0x20) = (s32)(a0 + 0x28);
     {
-        func_801EFBB4(a1, a2, (s32)&func_801E7D88);
+        func_801EFBB4(a1, a2, func_801E7D88);
     }
 }
 
