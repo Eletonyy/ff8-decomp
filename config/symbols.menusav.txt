@@ -1,6 +1,3 @@
-cdTick = 0x8004DFF4;
-sfxUpdate = 0x8004E720;
-sfxInit = 0x80050BC4;
 func_801E2860 = 0x801E2860; // type:func
 func_801E292C = 0x801E292C; // type:func
 func_801E2958 = 0x801E2958; // type:func

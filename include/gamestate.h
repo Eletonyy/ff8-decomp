@@ -465,7 +465,7 @@ extern void enableChocoboWorld(void);
 /** @brief Resolve a character ID (e.g. party slot) to its global character code. */
 extern s32 func_80037C6C(s32 charId);
 
-extern CharacterData D_80077808[];
+extern CharacterData g_characters[];
 extern u8 D_800788E4;
 extern u8 D_800788E5;
 
