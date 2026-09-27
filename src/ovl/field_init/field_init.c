@@ -1,6 +1,9 @@
 #include "common.h"
 #include "cd.h"
 #include "battle.h"
+#include "main.h"
+#include "gf.h"
+#include "field_init.h"
 #include "field_init_font.h"
 #include "psxsdk/libapi.h"
 
@@ -59,11 +62,9 @@ typedef struct {
 
 /* --- Externs (sorted by address) --- */
 
-extern s8 D_8005F170;
 extern BattleConfig g_battleConfig;
 extern CardDataBlock g_cardData;
 extern u8 D_8008369C[];
-extern CdFileDesc D_80097800;
 
 /* --- Forward declarations --- */
 void func_800983B8(void);
@@ -83,13 +84,13 @@ void func_80098000(void) {
 }
 
 /**
- * @brief Initialize battle command state and load battle data from CD.
+ * @brief Reset the battle config and load kernel.bin into @c g_kernel.
  *
- * Clears the battle config, fills the 3 command slots with 0xFF,
- * then reads battle data from disc into a scratch buffer and copies
- * it to the battle data buffer (D_80078E00).
+ * Clears the battle config and fills the 3 command slots with 0xFF, then
+ * reads kernel.bin from disc into a scratch buffer and copies it to
+ * @c g_kernel.
  */
-void func_80098028(void) {
+void loadKernel(void) {
     s32 i;
 
     g_battleConfig.battleSceneId = 0;
@@ -101,15 +102,15 @@ void func_80098028(void) {
         g_battleConfig.unk4[i] = 0xFF;
     }
 
-    cdReadSync(D_80097800.sector, D_80097800.size, 0x801A0000, 0);
-    memcopy((u8 *)0x801A0000, (u8 *)&D_80078E00, D_80097800.size);
+    cdReadSync(g_kernelFileDesc.sector, g_kernelFileDesc.size, 0x801A0000, 0);
+    memcopy((u8 *)0x801A0000, &g_kernel, g_kernelFileDesc.size);
 }
 
 /**
- * @brief Wrapper that calls func_80098028 (field init step).
+ * @brief Wrapper that calls loadKernel.
  */
 void func_800980B0(void) {
-    func_80098028();
+    loadKernel();
 }
 
 /**
@@ -125,8 +126,8 @@ void func_800980D0(void) {
     setCardFlag(-1);
     func_8004D8C4(0);
     func_8004D930();
-    func_800471A4();
-    func_8004D844(0);
+    _bu_init();
+    _card_auto(0);
     func_800472E4();
 
     g_cardData.events[0] = OpenEvent(0xF4000001, 4, 0x2000, 0);

@@ -3,16 +3,15 @@
 #include "battle.h"
 #include "gamestate.h"
 
-extern TripleTriadData g_tripleTriad;
 extern u16 D_8005EC3E[];
 
 /**
  * @brief Return a pointer to the global Triple Triad card collection data.
  *
  * @c g_tripleTriad is the same memory as @c g_gameState.cards (offset
- * @c 0x12E0); it is declared as a standalone extern so accesses emit a
- * clean @c lui + @c addiu instead of folding the @c g_gameState symbol
- * and the @c 0x12E0 offset together.
+ * @c 0x12E0); it is a symbol of its own so accesses emit a clean
+ * @c lui + @c addiu instead of folding the @c g_gameState symbol and the
+ * @c 0x12E0 offset together.
  */
 TripleTriadData *getTripleTriadData(void) {
     return &g_tripleTriad;

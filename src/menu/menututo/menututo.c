@@ -1,8 +1,10 @@
 #include "common.h"
 #include "gamestate.h"
 #include "overlay.h"
+#include "menumain.h"
 #include "menututo.h"
 #include "numstr.h"
+#include "psxsdk/libetc.h"
 
 /**
  * @brief Read tutorial column index 1.
@@ -85,13 +87,13 @@ s32 func_801E28D4(void) {
     return D_801E4EC0;
 }
 
-/** @brief Draw inner panel with section id 0xD and clear flag. */
-s32 func_801E28E4(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 0xD. */
+u8 *func_801E28E4(s32 a0) {
     return func_801F08D4(1, 0xD, a0, 0);
 }
 
-/** @brief Draw inner panel with section id 0xD and set flag. */
-s32 func_801E2910(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 0xD, with the last flag set. */
+u8 *func_801E2910(s32 a0) {
     return func_801F08D4(1, 0xD, a0, 1);
 }
 
@@ -328,8 +330,8 @@ void func_801E30C4(TutoState *ctx) {
  * @param ctx Tutorial state context.
  */
 void func_801E3140(TutoState *ctx) {
-    u16 inputNew = g_menuDisplayCfg.inputNew;
     u16 inputRepeat = g_menuDisplayCfg.inputRepeat;
+    u16 inputNew = g_menuDisplayCfg.inputNew;
     u16 *statePtr = &ctx->state;
     u16 state = ctx->state;
 
@@ -367,7 +369,7 @@ top:
         TutoEntry *entry;
         u8 section;
 
-        section = func_801F6768(inputNew, 8, ctx->sectionIndex);
+        section = func_801F6768(inputRepeat, 8, ctx->sectionIndex);
         ctx->sectionIndex = section;
         func_801F12F0();
 
@@ -378,7 +380,7 @@ top:
         }
         func_801E293C(1, ctx->sectionIndex);
 
-        if (inputRepeat & 0x40) {
+        if (inputNew & PADRdown) {
             D_801E4EC0 = 0xFF;
 
             if ((&D_801E4E18[ctx->sectionIndex])->panelId == 0x3D) {
@@ -407,7 +409,7 @@ top:
             }
         }
 
-        if (inputRepeat & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0x20;
         }
@@ -434,27 +436,27 @@ top:
         s8 rem = val % 10;
         s8 newRem;
 
-        newRem = func_801F6768(inputNew, 10, rem);
+        newRem = func_801F6768(inputRepeat, 10, rem);
         ctx->entryIndex = page * 10;
         ctx->entryIndex = ctx->entryIndex + newRem;
         func_801E293C(0, ctx->sectionIndex);
         func_801E29F8(1, ctx);
 
         if (D_800780AB >= 0xB) {
-            if (inputNew & 0x2000) {
+            if (inputRepeat & PADLright) {
                 *statePtr = 0xA;
             }
-            if (inputNew & 0x8000) {
+            if (inputRepeat & PADLleft) {
                 *statePtr = 8;
             }
         }
 
-        if (inputRepeat & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0xC;
         }
 
-        if (inputRepeat & 0x40) {
+        if (inputNew & PADRdown) {
             if (ctx->entryIndex < D_800780AB) {
                 s32 index = ctx->entryIndex;
                 sendSpuCommand(2);
@@ -503,10 +505,10 @@ top:
             ctx->scrollAnim = 0;
             *statePtr = 7;
         }
-        if (inputRepeat & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 8;
         }
-        if (inputRepeat & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 0xA;
         }
         break;
@@ -547,10 +549,10 @@ top:
             ctx->scrollAnim = 0;
             *statePtr = 7;
         }
-        if (inputRepeat & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 8;
         }
-        if (inputRepeat & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 0xA;
         }
         break;
@@ -759,7 +761,7 @@ top:
         u8 slotIdx;
         u8 entryIdx;
 
-        slotIdx = func_801F6768(inputNew, ctx->availCount, ctx->cursorPos);
+        slotIdx = func_801F6768(inputRepeat, ctx->availCount, ctx->cursorPos);
         ctx->cursorPos = slotIdx;
         func_801E293C(0, ctx->sectionIndex);
         func_801E296C(1, ctx);
@@ -768,12 +770,12 @@ top:
         table = &table[entryIdx];
         ctx->panelHandle = func_801E2910(table->sectionId);
 
-        if (inputRepeat & 0x40) {
+        if (inputNew & PADRdown) {
             sendSpuCommand(2);
             state = 0x1C;
             goto top;
         }
-        if (inputRepeat & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             state = 0x1E;
             goto top;
@@ -878,7 +880,7 @@ top:
  */
 s32 func_801E3EC0(s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
-    s32 textAddr;
+    u8 *textAddr;
     s32 xOff = x + 0x20;
     s32 yOff = y + 6;
 
@@ -916,10 +918,10 @@ u32 func_801E3F8C(TutoState *state, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     s32 w = 0x144;
     s32 h = 0x1A;
 
-    if (state->panelHandle != 0) {
+    if (state->panelHandle != NULL) {
         u8 textBuf[128];
-        decodeMessage((u8 *)state->panelHandle, textBuf, -1);
-        cursorY = func_801F0FEC(renderCtx, cursorY, xOff, yOff, (s32)textBuf, 7);
+        decodeMessage(state->panelHandle, textBuf, -1);
+        cursorY = func_801F0FEC(renderCtx, cursorY, xOff, yOff, textBuf, 7);
     }
 
     cfg->iconType = 0x55;
@@ -956,7 +958,7 @@ u32 func_801E4080(void *state, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     s32 yOff = y + 5;
     s32 i;
     s32 color;
-    s32 textAddr;
+    u8 *textAddr;
 
     for (i = 0; i < 8; i++) {
         color = 1;
@@ -1010,7 +1012,7 @@ u32 func_801E4080(void *state, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
  * @param x Base X coordinate (5th arg, passed on stack).
  * @return Updated OT cursor position (unchanged if entry out of range).
  */
-u32 func_801E4214(s32 renderCtx, s32 cursorY, s32 index, s32 startY, s32 x) {
+s32 func_801E4214(s32 renderCtx, s32 cursorY, s32 index, s32 startY, s32 x) {
     s32 panelX;
     u16 xCoord;
     s32 yPos;
@@ -1069,7 +1071,7 @@ u32 func_801E431C(TutoState *state, s32 renderCtx, s32 cursorY, s16 x, s16 y) {
         cursorY = func_801F5F60(renderCtx, cursorY, g_menuColor, 3);
     }
 
-    return func_801EFBB4(renderCtx, cursorY, (s32)func_801E4214);
+    return func_801EFBB4(renderCtx, cursorY, func_801E4214);
 }
 
 /**
@@ -1108,13 +1110,13 @@ s32 func_801E43D4(TutoState *state, s32 renderCtx, s32 cursorY) {
         i = 0;
 
         if (state->availCount != 0) {
-            s32 textAddr = (s32)textBuf;
+            u8 *textAddr = textBuf;
             u8 entryIdx;
-            s32 msgPtr;
+            u8 *msgPtr;
             do {
                 entryIdx = state->availSlots[i];
                 msgPtr = func_801E28E4(sectionTable[entryIdx].sectionId);
-                decodeMessage((u8 *)msgPtr, textBuf, -1);
+                decodeMessage(msgPtr, textBuf, -1);
                 cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, textAddr, 7);
                 i++;
                 yPos += 15;
@@ -1206,7 +1208,7 @@ void func_801E46DC(void) {
     TutoState *ctx;
     u8 *p;
 
-    ctx = (TutoState *)func_801F179C((s32)func_801E3140, (s32)func_801E4598);
+    ctx = func_801F179C(func_801E3140, func_801E4598);
     NOP();
 
     ctx->isReentry = 0;
@@ -1266,7 +1268,7 @@ void func_801E47F8(void) {
     TutoState *ctx;
     u8 *p;
 
-    ctx = (TutoState *)func_801F179C((s32)func_801E3140, (s32)func_801E4598);
+    ctx = func_801F179C(func_801E3140, func_801E4598);
     NOP();
     ctx->isReentry = 1;
     ctx->fadeProgress = 0;
@@ -1296,17 +1298,13 @@ void func_801E47F8(void) {
 /**
  * @brief Tutorial page navigation state machine.
  *
- * Handles loading, displaying, and navigating tutorial pages.
- * Uses D_801E4EAC as a page sequence table terminated by 0xFFFF.
- * Button masks from D_801FAB1C control navigation:
- *   0x8004 = previous page, 0x2008 = next page,
- *   0x40 = confirm/advance, 0x10 = cancel/exit.
+ * Walks D_801E4EAC, the page sequence table, which ends at 0xFFFF.
  *
  * @param self Pointer to tutorial callback context.
  */
 void func_801E48C0(TutoState *self) {
 
-    u16 buttons = D_801FAB1C;
+    u16 buttons = g_menuDisplayCfg.inputNew;
     u16 *state = &self->state;
 
     switch (*state) {
@@ -1335,7 +1333,7 @@ void func_801E48C0(TutoState *self) {
             self->fadeAlpha = 0x1000;
         }
 
-        if (buttons & 0x8004) {
+        if (buttons & (PADL1 | PADLleft)) {
             sendSpuCommand(2);
             val = self->pageIndex.hword - 1;
             self->pageIndex.hword = val;
@@ -1351,7 +1349,7 @@ void func_801E48C0(TutoState *self) {
             *state = 4;
         }
 
-        if (buttons & 0x2008) {
+        if (buttons & (PADR1 | PADLright)) {
             sendSpuCommand(2);
             val = self->pageIndex.hword + 1;
             self->pageIndex.hword = val;
@@ -1361,7 +1359,7 @@ void func_801E48C0(TutoState *self) {
             *state = 4;
         }
 
-        if (buttons & 0x40) {
+        if (buttons & PADRdown) {
             sendSpuCommand(2);
             val = self->pageIndex.hword + 1;
             self->pageIndex.hword = val;
@@ -1372,7 +1370,7 @@ void func_801E48C0(TutoState *self) {
             *state = 4;
         }
 
-        if (buttons & 0x10) {
+        if (buttons & PADRup) {
             sendSpuCommand(3);
             *state = 6;
         }
@@ -1529,7 +1527,7 @@ s32 func_801E4CB0(TutoState *state, s32 renderCtx, s32 cursorY) {
  * calls func_801F010C(0x140) for display setup, then enters via func_801E48C0.
  */
 void func_801E4CE4(void) {
-    TutoState *ctx = (TutoState *)func_801F179C((s32)func_801E48C0, (s32)func_801E4CB0);
+    TutoState *ctx = func_801F179C(func_801E48C0, func_801E4CB0);
 
     if (ctx != NULL) {
         ctx->fadeAlpha = 0;

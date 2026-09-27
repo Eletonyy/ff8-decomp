@@ -7,6 +7,7 @@
 #include "psxsdk/libetc.h"
 #include "field/fe_object1.h"
 #include "field/fe_object1_2.h"
+#include "field/fe_object1b.h"
 #include "field/fe_object10.h"
 #include "thread.h"
 
@@ -19,29 +20,30 @@
  * first buffer pair as the live one.
  */
 void func_80098314(void) {
-    SetDefDrawEnv(&D_80067388[0],   0, 0, 320, 224);
-    SetDefDrawEnv(&D_80067388[1], 512, 0, 320, 224);
-    SetDefDispEnv(&D_80067440[0], 512, 0, 320, 224);
-    SetDefDispEnv(&D_80067440[1],   0, 0, 320, 224);
+    SetDefDrawEnv(&g_drawEnvs[0],   0, 0, 320, 224);
+    SetDefDrawEnv(&g_drawEnvs[1], 512, 0, 320, 224);
+    SetDefDispEnv(&g_dispEnvs[0], 512, 0, 320, 224);
+    SetDefDispEnv(&g_dispEnvs[1],   0, 0, 320, 224);
 
-    D_80067388[0].dtd  = 1;
-    D_80067388[1].dtd  = 1;
-    D_80067388[0].isbg = 0;
-    D_80067388[1].isbg = 0;
+    g_drawEnvs[0].dtd  = 1;
+    g_drawEnvs[1].dtd  = 1;
+    g_drawEnvs[0].isbg = 0;
+    g_drawEnvs[1].isbg = 0;
 
-    D_80067440[0].screen.y = 8;
-    D_80067440[1].screen.y = 8;
-    D_80067440[0].screen.h = 224;
-    D_80067440[1].screen.h = 224;
+    g_dispEnvs[0].screen.y = 8;
+    g_dispEnvs[1].screen.y = 8;
+    g_dispEnvs[0].screen.h = 224;
+    g_dispEnvs[1].screen.h = 224;
 
-    PutDispEnv(&D_80067440[0]);
-    PutDrawEnv(&D_80067388[0]);
+    PutDispEnv(&g_dispEnvs[0]);
+    PutDrawEnv(&g_drawEnvs[0]);
 }
 
-/** @brief Tag written into a field-file header that carries no script section. */
-#define FIELD_HEADER_EMPTY 0x2020
-/** @brief Size of the fixed field-file header the script region starts after. */
-#define FIELD_HEADER_SIZE 0x5F24
+/**
+ * @brief What a field without particles stores in its particle member: two ASCII
+ *        spaces, read where the first record's first step would begin.
+ */
+#define FIELD_PARTICLES_NONE 0x2020
 
 /**
  * @brief CD landing area for the field bundle: a small parameter header
@@ -58,6 +60,15 @@ void func_80098314(void) {
 #define FIELD_BUNDLE_TIM     (FIELD_BUNDLE_BUF + 0x4) /**< Halfword staging buffer for @c func_800A2D2C. */
 #define FIELD_BUNDLE_SLOT    (FIELD_BUNDLE_BUF + 0x8) /**< VRAM column slot for @c func_800A2D2C. */
 #define FIELD_BUNDLE_STRIPS  (FIELD_BUNDLE_BUF + 0xC) /**< VRAM restore strips for @c func_800A0D6C. */
+
+/**
+ * @brief The field data archive the second read decompresses into
+ *        @c FIELD_BUNDLE_BUF.
+ *
+ * Only slot addresses are taken from it: @c &FIELD_DATA->info folds to the
+ * same literal constant the original loads.
+ */
+#define FIELD_DATA ((FieldData *)FIELD_BUNDLE_BUF)
 
 /** @brief High-RAM staging area the script region is copied into. */
 #define FIELD_SCRIPT_STAGE 0x801B0000
@@ -76,10 +87,10 @@ void func_80098314(void) {
  * @brief Load/refresh the active field map's asset bundle from CD.
  *
  * Either issues a fresh CD read (when @c D_8005F14A is 0 or the current area
- * @c D_8005F14E differs from the cached @c D_8005F100) or restores from the
- * cached pointer @c D_8005F104. Then loads the secondary asset, snapshots
- * pointer-table headers into globals (@c D_800C7208, @c D_800D5EA4 family,
- * etc.), copies script data to the @c FIELD_SCRIPT_STAGE staging region, and
+ * @c g_currentMusicTrack differs from the cached @c D_8005F100) or restores from the
+ * cached pointer @c D_8005F104. Then loads the field data archive, latches
+ * its members into globals (@c g_curFieldInfo, @c g_curFieldSfx, @c g_fieldEntity),
+ * copies the script member to the @c FIELD_SCRIPT_STAGE staging region, and
  * dispatches the field-VM pool setup via @c func_800BFBBC and friends.
  *
  * @return Pointer past the last block laid out after the bundle.
@@ -91,26 +102,31 @@ void func_80098314(void) {
  *       it twice. The @c func_800A1CC0 guard is
  *       @c ((state != 1 && state != 6) || unk0D == 1), the call fires for
  *       every state outside {1,6}, not only inside them.
- * @note @c ptr is deliberately re-read into itself (@c ptr++/@c ptr--) after
+ * @note @c ptr holds the particle system typed, while @c buf takes the same
+ *       address as the loader's byte cursor: it reads the @c 0x2020 placeholder
+ *       and steps over the whole @ref FieldParticles to the next free address.
+ *       @c ptr is deliberately re-read into itself (@c ptr++/@c ptr--) after
  *       @c buf is copied from it, and is reused for the return value at the
  *       end. Both are load-bearing for the register allocation gcc 2.7.2
  *       produces here: the bump splits the two pointers into separate registers
- *       (without it they share one, and the header pointer is loaded straight
+ *       (without it they share one, and the particle pointer is loaded straight
  *       into the callee-saved register instead of @c a0), and the trailing
  *       reuse of @c ptr keeps @c buf from being picked as the shared name for
- *       the pair, which is what puts the @c D_800C7200 address in @c s0.
+ *       the pair, which is what puts the @c g_curFieldParticles address in @c s0.
+ *       Reading the placeholder through @c ptr, or giving the particle section
+ *       its own typed locals, loses the same split.
  */
 s32 *func_800983F0(void) {
     s32 stageBase;
-    u8 *ptr;
+    FieldParticles *ptr;
     u8 *buf;
     u32 tag;
     s32 size;
     u8 *heapEnd;
 
-    if (D_8005F14A == 0 || D_8005F14E != D_8005F100) {
-        func_80038868(D_800C0900[D_800C2568[D_8005F14E] * 6],
-                      D_800C0900[D_800C2568[D_8005F14E] * 6 + 1], (u8 *)FIELD_BUNDLE_BUF,
+    if (D_8005F14A == 0 || g_currentMusicTrack != D_8005F100) {
+        func_80038868(D_800C0900[D_800C2568[g_currentMusicTrack] * 6],
+                      D_800C0900[D_800C2568[g_currentMusicTrack] * 6 + 1], (u8 *)FIELD_BUNDLE_BUF,
                       NULL);
         while (func_800393C8() != 0) {}
     } else {
@@ -125,41 +141,41 @@ s32 *func_800983F0(void) {
 
     D_8005F100 = 0;
     D_8005F142 = 0;
-    func_80038868(D_800C0908[D_800C2568[D_8005F14E] * 6],
-                  D_800C0908[D_800C2568[D_8005F14E] * 6 + 1], (u8 *)FIELD_BUNDLE_BUF, NULL);
+    func_80038868(D_800C0908[D_800C2568[g_currentMusicTrack] * 6],
+                  D_800C0908[D_800C2568[g_currentMusicTrack] * 6 + 1], (u8 *)FIELD_BUNDLE_BUF, NULL);
     while (func_800393C8() != 0) {}
 
-    D_8005F0F8 = (EventQueue *)*D_800C7208;
-    D_800D5EA4 = *D_800C71EC;
+    g_curFieldInfo = *g_fieldInfo;
+    g_curFieldSfx = *g_fieldSfxTable;
     stageBase = FIELD_SCRIPT_STAGE;
-    D_800704A8.unk018 = *D_800D5EAC;
-    size = *D_800D5E8C - *D_800D5ED4;
-    func_80039678(FIELD_SCRIPT_STAGE, (s32)*D_800D5ED4, size);
+    g_fieldEntity.fieldMessages = *g_fieldMessages;
+    size = *g_fieldDataEnd - *g_fieldScript;
+    func_80039678(FIELD_SCRIPT_STAGE, (s32)*g_fieldScript, size);
     D_8005F13C = stageBase + size;
 
-    ptr = *D_800D5E94;
-    buf = ptr;
+    ptr = *g_fieldParticles;
+    buf = (u8 *)ptr;
     ptr++;
     ptr--;
     tag = *(s16 *)buf;
-    D_800C7200 = (FieldSubsceneBuffer *)ptr;
-    if (tag != FIELD_HEADER_EMPTY) {
+    g_curFieldParticles = ptr;
+    if (tag != FIELD_PARTICLES_NONE) {
         func_800A2EE0(ptr);
-        buf += FIELD_HEADER_SIZE;
-        *D_800D5ED4 = buf;
+        buf += sizeof(FieldParticles);
+        *g_fieldScript = buf;
         if (D_8005F14C != 3 && D_8005F14C != 6 && D_8005F14C != 0xA) {
-            func_800A2F28((s32)D_800C7200, (u8 *)&D_800704A8);
+            func_800A2F28(g_curFieldParticles, &g_fieldEntity);
         }
     } else {
-        D_800C7200 = NULL;
+        g_curFieldParticles = NULL;
     }
 
     D_800704B2 = 20;
 
     if (D_8005F14C == 3) {
-        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (Eline *)0x80090800, (u16 *)*D_800D5ED4, 0);
+        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (Eline *)0x80090800, (u16 *)*g_fieldScript, 0);
     } else {
-        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (Eline *)0x80090800, (u16 *)*D_800D5ED4, 1);
+        buf = (u8 *)func_800BFBBC((u8 *)FIELD_SCRIPT_STAGE, (Eline *)0x80090800, (u16 *)*g_fieldScript, 1);
     }
 
     D_800C6D98[0] = buf;
@@ -167,7 +183,7 @@ s32 *func_800983F0(void) {
     D_800C6D98[1] = buf;
     buf = (u8 *)func_800A0640((SPRT_16 *)buf);
 
-    if (D_8005F0F8->unk0E == 1) {
+    if (g_curFieldInfo->movieMask == 1) {
         D_800D5EC8[0] = buf;
         buf = (u8 *)func_800A29C0((func_800A29C0_arg0 *)buf);
         D_800D5EC8[1] = buf;
@@ -178,7 +194,7 @@ s32 *func_800983F0(void) {
         buf = (u8 *)func_800A2A30((func_800A2A30_item *)buf);
     }
 
-    if ((D_8005F14C != 1 && D_8005F14C != 6) || D_8005F0F8->unk0D == 1) {
+    if ((D_8005F14C != 1 && D_8005F14C != 6) || g_curFieldInfo->unk0D == 1) {
         func_800A1CC0();
     }
 
@@ -188,42 +204,36 @@ s32 *func_800983F0(void) {
         heapEnd = (u8 *)FIELD_CMD_AREA_END;
     }
 
-    if (D_8005F0F8->unk0D == 0) {
+    if (g_curFieldInfo->unk0D == 0) {
         buf = (u8 *)func_800AA8A0(buf, buf + 0x20000, D_800C30DC, D_800C311C,
-                                  (u8 *)&D_800C0910[D_800C2568[D_8005F14E] * 3], 0, D_800C06A0,
+                                  (u8 *)&D_800C0910[D_800C2568[g_currentMusicTrack] * 3], 0, D_800C06A0,
                                   heapEnd);
     } else {
         buf = (u8 *)func_800AA8A0(buf, buf + 0x20000, D_800C30DC, D_800C315C,
-                                  (u8 *)&D_800C0910[D_800C2568[D_8005F14E] * 3], 0, D_800C06A0,
+                                  (u8 *)&D_800C0910[D_800C2568[g_currentMusicTrack] * 3], 0, D_800C06A0,
                                   heapEnd);
     }
 
     if (D_8007064D == 0) {
-        while (D_8005F116 != 0) {}
+        while (g_fadeMode != 0) {}
     }
-    while (D_8005F146 == 4) {}
+    while (g_renderMode == 4) {}
     while (DrawSync(1) != 0) {}
 
     if (D_8005F14C == 3 || D_8005F14C == 0) {
         SetDispMask(0);
     }
 
-    ptr = buf;
+    ptr = (FieldParticles *)buf;
     return (s32 *)ptr;
 }
 
-/**
- * Zero 0x40 bytes at D_800704A8+0x1B8 (backwards loop).
- */
+/** @brief Clear all 512 bits of @c g_fieldEntity.statusBits. */
 void func_80098934(void) {
-    s32 i = 0x3F;
-    volatile u8 *base = (u8 *)&D_800704A8;
-    u8 *ptr = (u8 *)base + 0x3F;
-    do {
-        *(u8 *)(ptr + 0x1B8) = 0;
-        i--;
-        ptr--;
-    } while (i >= 0);
+    s32 i;
+    for (i = 0; i < 0x40; i++) {
+        g_fieldEntity.statusBits[i] = 0;
+    }
 }
 
 /**
@@ -232,7 +242,7 @@ void func_80098934(void) {
  * Runs the per-frame outer init/reset loop for the field engine. The whole
  * function dispatches on @c D_8005F14C (the field load mode, 0=fresh,
  * 1=normal, 2=new-area, 3=movie, 6=transition, 0xA=skip-transition) and on
- * @c D_800704A8.mode (the engine-level state byte that picks one of several
+ * @c g_fieldEntity.mode (the engine-level state byte that picks one of several
  * exit paths at the end of each iteration: 4=quit, 5/6=copyFramebuffer +
  * flag-reset, 7=sndCmd21 + snapshot, 1=loop back, 3/8/etc.=plain exit).
  *
@@ -248,21 +258,20 @@ void func_80098934(void) {
  *     @c ClearImage.
  *   - For modes 1/2 (with @c sys->unk1A5 == 0 for mode 1): kick a
  *     framebuffer copy and set the post-copy state flags.
- *   - For all modes except 6: snapshot 12 consecutive pointer-table fields
- *     from the freshly-loaded overlay at @c 0x800E1000 into the
- *     @c D_800C7208 / @c D_800C71E8 / @c D_800D5E* globals, then call
+ *   - For all modes except 6: point the 12 @c g_field* handles at the slots
+ *     of the field data archive header at @c 0x800E1000, then call
  *     @c func_800983F0 to install the actor pool.
  *   - Compute centered screen rectangles into @c D_800C7210 / @c D_800C7214
- *     from @c D_8005F0F8 's bounding-box fields, then derive
- *     @c D_800C71F0 (entry-table start = @c *D_800C7204 + 4) and
- *     @c D_800D5E98 (entry-table end = @c D_800C71F0 + count * 3 vertices).
+ *     from @c g_curFieldInfo 's bounding-box fields, then derive
+ *     @c g_fieldWalkmeshVerts (entry-table start = @c *g_fieldWalkmesh + 4) and
+ *     @c g_fieldWalkmeshAdjacency (entry-table end = @c g_fieldWalkmeshVerts + count * 3 vertices).
  *   - Dispatch @c func_800BF718 with a mode argument that maps
  *     @c D_8005F14C ∈ {6→2, 0xA→3, 3→0, default→1}.
  *
  * @note Two source shapes carry this to a byte match, and both are the
  *       opposite of what reads naturally:
  *
- *       1. Every @c SystemState access goes through @c D_800704A8 directly
+ *       1. Every @c SystemState access goes through @c g_fieldEntity directly
  *          rather than a cached @c SystemState @c *sys. With a pointer local,
  *          gcc builds the address in two pseudos (@c lui @c -> @c fp,
  *          @c addiu @c -> @c s2) and the original has three, cse only
@@ -281,13 +290,13 @@ void func_80098934(void) {
  *          set-override and switch spelling tried.
  *
  *       Several semantic bugs were caught during decomp: the
- *       @c D_800704A8.mode = 0 dispatch had an inverted condition;
+ *       @c g_fieldEntity.mode = 0 dispatch had an inverted condition;
  *       @c func_800BF718 's argument mapping had 0xA->2 (should be 3) and
  *       3->3 (should be 0); state==7 was missing the @c field_0x120 save;
- *       @c D_800D5E98 was missing the @c +4 offset. Three more surfaced
+ *       @c g_fieldWalkmeshAdjacency was missing the @c +4 offset. Three more surfaced
  *       while closing the last 2%: both @c isrgb24 clears on the
  *       @c DISPENV pair were absent before @c PutDispEnv; state==1 stored
- *       @c D_8005F14E after @c sndCmd21 instead of before (the original
+ *       @c g_currentMusicTrack after @c sndCmd21 instead of before (the original
  *       loads @c counter first and lets dbr sink the store into the jal
  *       delay slot, so doing it after reads a post-call value); and the
  *       loop body ended in an unconditional @c break, dropping out of the
@@ -295,16 +304,16 @@ void func_80098934(void) {
  */
 void func_8009895C(void) {
     u8 *p;
-    EventQueue *q;
+    FieldInfo *q;
     u8 state;
     u8  header[16];
 
     /* Copy 8-byte header from D_80098000 (lwl/lwr unaligned copy in asm), dead store, kept for codegen match */
     memcpy(header, D_80098000, 8);
-    func_80012870();
+    InitClearTiles();
 
-    D_800704A8.dialogState = 0;
-    D_800704A8.unk1A1 = 0;
+    g_fieldEntity.dialogState = 0;
+    g_fieldEntity.unk1A1 = 0;
 
     while (1) {
         if ((s16)D_8005F14C != 6) {
@@ -312,56 +321,56 @@ void func_8009895C(void) {
         }
 
         if (D_8005F14C == 0 || (s16)D_8005F14C == 1 || (s16)D_8005F14C == 2) {
-            D_800704A8.unk1A6 = 0;
-            D_800704A8.unk1A9 = 0;
-            D_800704A8.unk1A7 = 1;
-            D_800704A8.unk1A2 = 0;
-            D_800704A8.unk1AA = 0;
-            D_800704A8.unk015 = 0;
-            D_800704A8.fieldStepDelta = 0;
-            D_800704A8.unk1AE = 0x1C;
-            D_800704A8.unk1B0 = 0;
-            D_800704A8.unk1B1 = 0;
-            D_800704A8.unk104 = 0;
-            D_800704A8.unk106 = 0;
-            func_800A17A4(&D_800704A8.oscillators[0]);
-            func_800A17A4(&D_800704A8.oscillators[1]);
+            g_fieldEntity.unk1A6 = 0;
+            g_fieldEntity.unk1A9 = 0;
+            g_fieldEntity.unk1A7 = 1;
+            g_fieldEntity.unk1A2 = 0;
+            g_fieldEntity.unk1AA = 0;
+            g_fieldEntity.unk015 = 0;
+            g_fieldEntity.fieldStepDelta = 0;
+            g_fieldEntity.unk1AE = 0x1C;
+            g_fieldEntity.unk1B0 = 0;
+            g_fieldEntity.unk1B1 = 0;
+            g_fieldEntity.unk104 = 0;
+            g_fieldEntity.unk106 = 0;
+            func_800A17A4(&g_fieldEntity.oscillators[0]);
+            func_800A17A4(&g_fieldEntity.oscillators[1]);
             func_800A44D8();
             func_80098934();
         }
 
         if (D_8005F14C == 0) {
             func_80098314();
-            ClearImage(&D_80067388[0].clip, 0, 0, 0);
-            ClearImage(&D_80067388[1].clip, 0, 0, 0);
+            ClearImage(&g_drawEnvs[0].clip, 0, 0, 0);
+            ClearImage(&g_drawEnvs[1].clip, 0, 0, 0);
         }
 
-        if (((s16)D_8005F14C == 1 && D_800704A8.unk1A5 == 0) || (s16)D_8005F14C == 2) {
-            func_80042634(0);
+        if (((s16)D_8005F14C == 1 && g_fieldEntity.unk1A5 == 0) || (s16)D_8005F14C == 2) {
+            VSync(0);
             func_80098314();
             if ((s16)D_8005F14C == 2) {
                 g_bufferIndex = 1;
             }
             copyFramebuffer();
-            D_8005F116 = 1;
-            D_8005F0FC = 0;
+            g_fadeMode = 1;
+            g_fadeCounter = 0;
             D_8005F11E = 0;
-            D_8005F146 = 1;
+            g_renderMode = 1;
         }
 
         if ((s16)D_8005F14C != 6) {
-            D_800C7208 = (u8 **)0x800E1000;
-            D_800C71E8 = (FieldView **)0x800E1004;
-            D_800C7204 = (TriangleList **)0x800E1008;
-            D_800D5E90 = (ScriptList *)0x800E100C;
-            D_800D5E9C = (u16 **)0x800E1010;
-            D_800C71F4 = (u8 **)0x800E1014;
-            D_800C720C = (u16 **)0x800E1018;
-            D_800C71EC = (u8 **)0x800E101C;
-            D_800D5EAC = (s32 *)0x800E1020;
-            D_800D5E94 = (u8 **)0x800E1024;
-            D_800D5ED4 = (u8 **)0x800E1028;
-            D_800D5E8C = (u8 **)0x800E102C;
+            g_fieldInfo = &FIELD_DATA->info;
+            g_fieldViews = &FIELD_DATA->views;
+            g_fieldWalkmesh = &FIELD_DATA->walkmesh;
+            g_fieldTileMap = &FIELD_DATA->tileMap;
+            g_fieldMovieMask = &FIELD_DATA->movieMask;
+            g_fieldEncounterRate = &FIELD_DATA->encounterRate;
+            g_fieldFormations = &FIELD_DATA->formations;
+            g_fieldSfxTable = &FIELD_DATA->sfxTable;
+            g_fieldMessages = &FIELD_DATA->messages;
+            g_fieldParticles = &FIELD_DATA->particles;
+            g_fieldScript = &FIELD_DATA->script;
+            g_fieldDataEnd = &FIELD_DATA->end;
             p = func_800983F0();
             D_8005F104 = (s32)p;
             D_8005F13C = (s32)p;
@@ -369,30 +378,30 @@ void func_8009895C(void) {
 
         func_800A1BB8();
         func_80098314();
-        func_80049B78(D_800CC118, &D_80067388[0]);
-        func_80049B78(&D_800CC118[0x6638], &D_80067388[1]);
-        func_80049B78(&D_800CC118[0x40], &D_80067388[0]);
-        func_80049B78(&D_800CC118[0x6678], &D_80067388[1]);
+        SetDrawEnv(&D_800C7218[0].unk4F00, &g_drawEnvs[0]);
+        SetDrawEnv(&D_800C7218[1].unk4F00, &g_drawEnvs[1]);
+        SetDrawEnv(&D_800C7218[0].unk4F40, &g_drawEnvs[0]);
+        SetDrawEnv(&D_800C7218[1].unk4F40, &g_drawEnvs[1]);
 
         if (D_8005F14C == 0
             || (s16)D_8005F14C == 3
             || (s16)D_8005F14C == 6
             || (s16)D_8005F14C == 0xA) {
-            *(u8 *)&D_800704A8 = 0;
+            g_fieldEntity.mode = 0;
         }
 
-        if (D_800C7200 != 0) {
-            func_800A3FE0(D_800C7200);
+        if (g_curFieldParticles != 0) {
+            func_800A3FE0(g_curFieldParticles);
         }
 
         if (D_8005F14C == 0 || (s16)D_8005F14C == 1 || (s16)D_8005F14C == 2) {
-            func_800A62EC(D_8005F0F8->segs);
-            q = D_8005F0F8;
-            D_800704A8.unk1A4 = 0;
-            D_800704A8.unk1A8 = q->unk09;
-            D_800704A8.unk100 = q->unk09;
+            func_800A62EC(g_curFieldInfo->triggers);
+            q = g_curFieldInfo;
+            g_fieldEntity.unk1A4 = 0;
+            g_fieldEntity.unk1A8 = q->unk09[0];
+            g_fieldEntity.unk100 = q->unk09[0];
         } else {
-            D_800704A8.unk010 = 2;
+            g_fieldEntity.unk010 = 2;
         }
 
         func_800A42EC(D_800CD1B0, &D_800CD1B0[0x5A0]);
@@ -400,15 +409,14 @@ void func_8009895C(void) {
         func_800A2128(D_800CD1B0 - 0x5F98);
         func_800A2128(&D_800CD1B0[0x6A0]);
 
-        func_80048B58(D_800982F0);
+        DrawSyncCallback(D_800982F0);
         D_8005F14A = 0;
-        D_800C7210 = ((D_8005F0F8->rect_b[0].f4 - D_8005F0F8->rect_b[0].f6) / 2) + D_8005F0F8->rect_b[0].f6;
-        D_800C7214 = ((D_8005F0F8->rect_b[0].f2 - D_8005F0F8->rect_b[0].f0) / 2) + D_8005F0F8->rect_b[0].f0;
-        /* *D_800C7204 points to a header: { u16 count; pad[2]; entries[count][24]; }.
-         * D_800C71F0 skips past the count to the entry array.
-         * D_800D5E98 ends up one-past-the-last entry. */
-        D_800C71F0 = (SVert *)((u8 *)*D_800C7204 + 4);
-        D_800D5E98 = (AdjRec *)((u8 *)D_800C71F0 + (*(u16 *)*D_800C7204) * 24);
+        D_800C7210 = ((g_curFieldInfo->screenRanges[0].right - g_curFieldInfo->screenRanges[0].left) / 2) + g_curFieldInfo->screenRanges[0].left;
+        D_800C7214 = ((g_curFieldInfo->screenRanges[0].bottom - g_curFieldInfo->screenRanges[0].top) / 2) + g_curFieldInfo->screenRanges[0].top;
+        /* The adjacency records follow the triangles. The count is read as a
+         * halfword: reading the full word turns the lhu into lw. */
+        g_fieldWalkmeshVerts = (*g_fieldWalkmesh)->tris[0].v;
+        g_fieldWalkmeshAdjacency = (AdjRec *)&((Triangle *)g_fieldWalkmeshVerts)[(u16)(*g_fieldWalkmesh)->count];
 
         if ((s16)D_8005F14C != 6 && (s16)D_8005F14C != 3) {
             func_8009AEC0();
@@ -429,21 +437,21 @@ void func_8009895C(void) {
         }
 
         func_80099348();
-        func_80048B58(0);
+        DrawSyncCallback(0);
         while (DrawSync(1) != 0) {}
-        func_80042634(0);
+        VSync(0);
         func_80098314();
 
-        D_80067440[0].isrgb24 = 0;
-        D_80067440[1].isrgb24 = 0;
-        func_80049480(&D_80067440[(s16)g_bufferIndex]);
-        func_800492B4(&D_80067388[(s16)g_bufferIndex]);
+        g_dispEnvs[0].isrgb24 = 0;
+        g_dispEnvs[1].isrgb24 = 0;
+        PutDispEnv(&g_dispEnvs[(s16)g_bufferIndex]);
+        PutDrawEnv(&g_drawEnvs[(s16)g_bufferIndex]);
 
-        state = *(u8 *)&D_800704A8;
+        state = g_fieldEntity.mode;
         D_8005F14C = 1;
 
         if (state == 4) {
-            func_80042634(0);
+            VSync(0);
             SetDispMask(0);
             D_8005F14A = 0;
             break;
@@ -454,44 +462,44 @@ void func_8009895C(void) {
         }
         if (state == 5 || state == 6) {
             copyFramebuffer();
-            D_8005F116 = 9;
-            D_8005F0FC = 0;
+            g_fadeMode = 9;
+            g_fadeCounter = 0;
             D_8005F11E = 0;
-            D_8005F146 = 1;
+            g_renderMode = 1;
             D_8005F14A = 0;
             break;
         }
         if (state == 7) {
-            *(u8 *)&D_800704A8 = 0;
-            D_8005F158 = 2;
-            D_800704A8.field_0x120 = D_8005F14E;
-            D_80082C8C.unk02 = *(u8 *)&D_800704A8.counter;
-            D_80082C8C.cmd = *(u8 *)&D_800704A8.spawnTriIdx;
-            D_80082C8C.unk03 = *(u8 *)&D_800704A8.anim_state;
+            g_fieldEntity.mode = 0;
+            g_vsyncRate = 2;
+            g_fieldEntity.field_0x120 = g_currentMusicTrack;
+            D_80082C8C.unk02 = g_fieldEntity.counter;
+            D_80082C8C.cmd = g_fieldEntity.spawnTriIdx;
+            D_80082C8C.unk03 = g_fieldEntity.anim_state;
             sndCmd21(-1, 0);
             break;
         }
         if (state == 1) {
-            *(u8 *)&D_800704A8 = 0;
-            D_800704A8.field_0x120 = D_8005F14E;
-            D_8005F14E = D_800704A8.counter;
-            sndCmd21(-2, D_800704A8.field1B4);
-            if (D_800704A8.unk1B0 != 1) {
+            g_fieldEntity.mode = 0;
+            g_fieldEntity.field_0x120 = g_currentMusicTrack;
+            g_currentMusicTrack = g_fieldEntity.counter;
+            sndCmd21(-2, g_fieldEntity.field1B4);
+            if (g_fieldEntity.unk1B0 != 1) {
                 func_800ACB10();
-            } else if (D_8005F0F8->unk0D == 0) {
+            } else if (g_curFieldInfo->unk0D == 0) {
                 func_800A1CC0();
             } else {
                 func_800ACB10();
             }
             D_8005F14A = 0;
-            func_800308B0(-1);
+            deactivateBattleCmd(-1);
             func_80027448();
         }
     }
 
-    func_800308B0(-1);
+    deactivateBattleCmd(-1);
     func_80027448();
-    func_80042634(0);
+    VSync(0);
 }
 
 
@@ -521,7 +529,7 @@ void func_8009912C(void) {
 
 extern s32  getAnimFrameParam(s32 slot, s32 sub); /* per-pad input-frame param (s32 view) */
 extern s32  func_80027A58(s32 a, s32 b);          /* per-pad newly-pressed input */
-extern s32  func_80030F10(s32 arg);               /* map pad input word to a button mask */
+extern s32  remapControllerInput(s32 arg);        /* s32 view: btl_color.h's u16 (u16) masks arg and result, changing codegen */
 
 /**
  * @brief Per-tick controller-input sampling for the field engine's two pad slots.
@@ -536,41 +544,41 @@ extern s32  func_80030F10(s32 arg);               /* map pad input word to a but
  * Y read (axis 3) sets 0x1000 / 0x4000. Each bit is OR'd into @c padHeld always
  * and into @c padPressed only when it was not held last tick (edge detect).
  *
- * Finally derives the held/pressed button masks (@c func_80030F10) into
+ * Finally derives the held/pressed button masks (@c remapControllerInput) into
  * @c unk150 / @c ambientFlags.
  */
 void func_80099180(void) {
     s32 r;
 
-    D_800704A8.padHeldPrev = D_800704A8.padHeld;
-    D_800704A8.unk154 = D_800704A8.unk150;
+    g_fieldEntity.padHeldPrev = g_fieldEntity.padHeld;
+    g_fieldEntity.unk154 = g_fieldEntity.unk150;
     func_800275D4();
-    D_800704A8.padHeld = getAnimFrameParam(0, 0);
-    D_800704A8.padPressed = func_80027A58(0, 0);
-    D_800704A8.field_0x160 = getAnimFrameParam(1, 0);
-    D_800704A8.field_0x168 = func_80027A58(1, 0);
+    g_fieldEntity.padHeld = getAnimFrameParam(0, 0);
+    g_fieldEntity.padPressed = func_80027A58(0, 0);
+    g_fieldEntity.field_0x160 = getAnimFrameParam(1, 0);
+    g_fieldEntity.field_0x168 = func_80027A58(1, 0);
 
-    if (!(D_800704A8.padHeld & 0xF000) && func_80027DB4(0, PAD_AXIS_X, 0) != -1) {
+    if (!(g_fieldEntity.padHeld & 0xF000) && func_80027DB4(0, PAD_AXIS_X, 0) != -1) {
         r = (s16)func_80027DB4(0, PAD_AXIS_X, 0);
         if (r < 0x40) {
-            D_800704A8.padHeld |= 0x8000;
-            if (!(D_800704A8.padHeldPrev & 0x8000)) D_800704A8.padPressed |= 0x8000;
+            g_fieldEntity.padHeld |= 0x8000;
+            if (!(g_fieldEntity.padHeldPrev & 0x8000)) g_fieldEntity.padPressed |= 0x8000;
         } else if (r >= 0xC1) {
-            D_800704A8.padHeld |= 0x2000;
-            if (!(D_800704A8.padHeldPrev & 0x2000)) D_800704A8.padPressed |= 0x2000;
+            g_fieldEntity.padHeld |= 0x2000;
+            if (!(g_fieldEntity.padHeldPrev & 0x2000)) g_fieldEntity.padPressed |= 0x2000;
         }
         r = (s16)func_80027DB4(0, PAD_AXIS_Y, 0);
         if (r < 0x40) {
-            D_800704A8.padHeld |= 0x1000;
-            if (!(D_800704A8.padHeldPrev & 0x1000)) D_800704A8.padPressed |= 0x1000;
+            g_fieldEntity.padHeld |= 0x1000;
+            if (!(g_fieldEntity.padHeldPrev & 0x1000)) g_fieldEntity.padPressed |= 0x1000;
         } else if (r >= 0xC1) {
-            D_800704A8.padHeld |= 0x4000;
-            if (!(D_800704A8.padHeldPrev & 0x4000)) D_800704A8.padPressed |= 0x4000;
+            g_fieldEntity.padHeld |= 0x4000;
+            if (!(g_fieldEntity.padHeldPrev & 0x4000)) g_fieldEntity.padPressed |= 0x4000;
         }
     }
 
-    D_800704A8.unk150 = func_80030F10(D_800704A8.padHeld);
-    D_800704A8.ambientFlags = func_80030F10(D_800704A8.padPressed);
+    g_fieldEntity.unk150 = remapControllerInput(g_fieldEntity.padHeld);
+    g_fieldEntity.ambientFlags = remapControllerInput(g_fieldEntity.padPressed);
 }
 
 /* Park the real stack pointer at 0x1F8003FC and run the next call with its
@@ -601,41 +609,41 @@ void func_80099180(void) {
  *
  * It then checks the two ways the player can leave, the soft-reset pad combo
  * (@c 0x90F held on both this tick and the last) and the menu button, picks
- * the camera view (the battle overlay's when it owns the screen, otherwise the
- * field's, offset by @c 0x28 in sub-scene mode), and runs the render chain:
- * entity update, targeting, oscillators, projection, character shadows, the
- * shimmer ribbons, the walkmesh debug overlay, and the sub-scene sprite pool.
+ * the camera view (the playing movie's camera while one runs, otherwise the
+ * field's first or second camera, chosen by @c SystemState::unk1A6), and runs
+ * the render chain: entity update, targeting, oscillators, projection,
+ * character shadows, the shimmer ribbons, the background tiles (or, while a
+ * movie plays, the movie mask), and the sub-scene sprite pool.
  * Finally it programs the draw environment from the field's clip rectangle,
  * links the two extra prims into the OT, presents, and dispatches on
  * @c SystemState::mode, modes 3, 4, 6, 8 and the menu leave the loop with a
- * code in @ref D_8005F158, mode 1/7 waits for the DMA to drain and leaves, and
+ * code in @ref g_vsyncRate, mode 1/7 waits for the DMA to drain and leaves, and
  * anything else draws the OT and goes round again.
  *
- * @note @c SystemState::dialogState and @ref D_8005F158 are @c volatile: the
+ * @note @c SystemState::dialogState and @ref g_vsyncRate are @c volatile: the
  *       original re-reads @c dialogState for each of the seven comparisons
- *       instead of caching one load, and keeps the @c D_8005F158 stores out of
+ *       instead of caching one load, and keeps the @c g_vsyncRate stores out of
  *       branch delay slots.
  * @note The four loop-head assignments are ordered buffer / previous-dispenv /
  *       draw-env / dispenv. That order matters: it keeps the lifetime of
  *       @c D_8005F138 's @c %hi short enough that gcc does not hoist it out of
  *       the loop, which would exhaust the loop-invariant budget before
- *       @c D_800C71F8 (see the memory note on @c threshold @c -= @c 3).
+ *       @c g_curFieldView (see the memory note on @c threshold @c -= @c 3).
  */
 void func_80099348(void) {
     s32 mode;
     s16 i;
     s16 frames;
-    u8 *eq;
 
-    if (D_800704A8.unk1A5 == 0) {
-        ClearImage(&D_80067388[0].clip, 0, 0, 0);
-        ClearImage(&D_80067388[1].clip, 0, 0, 0);
+    if (g_fieldEntity.unk1A5 == 0) {
+        ClearImage(&g_drawEnvs[0].clip, 0, 0, 0);
+        ClearImage(&g_drawEnvs[1].clip, 0, 0, 0);
     } else {
-        D_800704A8.unk1A5 = 0;
+        g_fieldEntity.unk1A5 = 0;
     }
     frames = 2;
     activateBattleAnim(0);
-    func_8009A920(&D_80085224[D_800704A8.entityIndex[0]], D_8008538C);
+    func_8009A920(&D_80085224[g_fieldEntity.entityIndex[0]], D_8008538C);
 
     while (1) {
         func_80099180();
@@ -643,8 +651,8 @@ void func_80099348(void) {
         g_bufferIndex &= 1;
         D_800C71E0 = &D_800C7218[(s16)g_bufferIndex];
         D_8005F110 = D_8005F138;
-        g_activeDrawEnv = &D_80067388[(s16)g_bufferIndex];
-        D_8005F138 = (s32)&D_80067440[(s16)g_bufferIndex];
+        g_activeDrawEnv = &g_drawEnvs[(s16)g_bufferIndex];
+        D_8005F138 = (s32)&g_dispEnvs[(s16)g_bufferIndex];
         ClearOTagR(D_800C71E0->ot, 0x1000);
 
         SCRATCH_STACK_ENTER();
@@ -654,165 +662,163 @@ void func_80099348(void) {
         /* The whole 0x90F button set held on this tick and the last: tear the
            field down (mode 4) and hand control back to the engine. The bit
            layout of padHeld is not decoded, so the buttons are left unnamed. */
-        if ((D_800704A8.padHeld & 0x90F) == 0x90F
-            && (D_800704A8.padHeldPrev & 0x90F) == 0x90F) {
-            D_800704A8.counter = 0;
-            D_800704A8.mode = 4;
-            D_800704A8.spawnTriIdx = 0x7FFF;
+        if ((g_fieldEntity.padHeld & 0x90F) == 0x90F
+            && (g_fieldEntity.padHeldPrev & 0x90F) == 0x90F) {
+            g_fieldEntity.counter = 0;
+            g_fieldEntity.mode = 4;
+            g_fieldEntity.spawnTriIdx = 0x7FFF;
             sndStopAll();
             func_800A59D0();
-            func_80042634(0);
+            VSync(0);
             SetDispMask(0);
             break;
         }
 
-        if ((D_800704A8.unk150 & 0x20) && func_800BE274() == 0
-            && D_80085224[D_800704A8.entityIndex[0]].msgActive != 3
-            && D_80085224[D_800704A8.entityIndex[0]].msgActive != 4
-            && (s16)D_800704A8.dialogState != 4
-            && (s16)D_800704A8.dialogState != 1
-            && (s16)D_800704A8.dialogState != 3
-            && (s16)D_800704A8.dialogState != 2
-            && D_800704A8.unk1A3 == 0 && D_800704A8.mode == 0) {
+        if ((g_fieldEntity.unk150 & 0x20) && func_800BE274() == 0
+            && D_80085224[g_fieldEntity.entityIndex[0]].msgActive != 3
+            && D_80085224[g_fieldEntity.entityIndex[0]].msgActive != 4
+            && g_fieldEntity.dialogState != 4
+            && g_fieldEntity.dialogState != 1
+            && g_fieldEntity.dialogState != 3
+            && g_fieldEntity.dialogState != 2
+            && g_fieldEntity.unk1A3 == 0 && g_fieldEntity.mode == 0) {
             func_8009912C();
-            D_800704A8.mode = 5;
-            D_800704A8.counter = 0;
-            D_8005F158 = 6;
-            D_800704A8.position_x = D_80085224[D_8005F148].posX / 4096;
-            D_800704A8.position_y = D_80085224[D_8005F148].posY / 4096;
-            D_800704A8.spawnTriIdx = D_80085224[D_8005F148].triIdx;
-            D_800704A8.anim_state = D_80085224[D_8005F148].field_0x241;
+            g_fieldEntity.mode = 5;
+            g_fieldEntity.counter = 0;
+            g_vsyncRate = 6;
+            g_fieldEntity.position_x = D_80085224[D_8005F148].posX / 4096;
+            g_fieldEntity.position_y = D_80085224[D_8005F148].posY / 4096;
+            g_fieldEntity.spawnTriIdx = D_80085224[D_8005F148].triIdx;
+            g_fieldEntity.anim_state = D_80085224[D_8005F148].field_0x241;
             func_800A59D0();
             break;
         }
 
-        if (D_800704A8.mode == 5) {
+        if (g_fieldEntity.mode == 5) {
             func_8009912C();
-            D_8005F158 = 10;
+            g_vsyncRate = 10;
             func_800A59D0();
             break;
         }
 
         if (func_800BE274() == 0) {
-            if (D_800704A8.unk1A6 == 0) {
-                D_800C71F8 = *D_800C71E8;
+            if (g_fieldEntity.unk1A6 == 0) {
+                g_curFieldView = *g_fieldViews;
             } else {
-                D_800C71F8 = *D_800C71E8 + 1;
+                g_curFieldView = *g_fieldViews + 1;
             }
         } else {
-            D_800C71F8 = D_8005F108;
-            D_800704A8.unk1B0 = 1;
-            if (D_800704A8.unk1B1 == 0) {
-                D_800704A8.unk1B1 = 1;
+            g_curFieldView = g_movieView;
+            g_fieldEntity.unk1B0 = 1;
+            if (g_fieldEntity.unk1B1 == 0) {
+                g_fieldEntity.unk1B1 = 1;
             }
         }
 
-        SetGeomScreen(D_800C71F8->spriteScale);
-        if (D_800704A8.unk1A6 != D_800704A8.unk1A9) {
-            D_800704A8.unk1A9 = D_800704A8.unk1A6;
-            eq = (u8 *)D_8005F0F8;
-            D_800704A8.unk1A8 = D_800704A8.unk100 =
-                ((EventQueue *)(eq + D_800704A8.unk1A6))->unk09;
+        SetGeomScreen(g_curFieldView->spriteScale);
+        if (g_fieldEntity.unk1A6 != g_fieldEntity.unk1A9) {
+            g_fieldEntity.unk1A9 = g_fieldEntity.unk1A6;
+            g_fieldEntity.unk1A8 = g_fieldEntity.unk100 = g_curFieldInfo->unk09[g_fieldEntity.unk1A6];
         }
-        func_8009BEC8(D_80085224, D_800704A8.unk150);
-        func_8009A7E8(&D_80085224[D_800704A8.entityIndex[0]], D_8008538C);
+        func_8009BEC8(D_80085224, g_fieldEntity.unk150);
+        func_8009A7E8(&D_80085224[g_fieldEntity.entityIndex[0]], D_8008538C);
         func_8009CEE8();
-        func_800A17B8(&D_800704A8.oscillators[0]);
-        func_800A17B8(&D_800704A8.oscillators[1]);
+        func_800A17B8(&g_fieldEntity.oscillators[0]);
+        func_800A17B8(&g_fieldEntity.oscillators[1]);
         func_800A10F4();
         func_800A1318();
-        if (D_800704A8.unk1A6 == 1) {
-            func_800A15C0(D_800C71E0, D_80067388, 1);
+        if (g_fieldEntity.unk1A6 == 1) {
+            func_800A15C0(D_800C71E0, g_drawEnvs, 1);
         } else {
-            func_800A15C0(D_800C71E0, D_80067388, 0);
+            func_800A15C0(D_800C71E0, g_drawEnvs, 0);
         }
 
-        if (D_80067440[((s16)g_bufferIndex + 1) & 1].isrgb24 == 0
-            && D_800704A8.unk1AD == 0) {
+        if (g_dispEnvs[((s16)g_bufferIndex + 1) & 1].isrgb24 == 0
+            && g_fieldEntity.unk1AD == 0) {
             SCRATCH_STACK_ENTER();
             func_800A1CFC(D_80085224, D_800C71E0);
             SCRATCH_STACK_LEAVE();
-            func_800A222C(D_800C71E0->ot, &D_800C71F8->m, D_800C71E0->shadowPrims,
+            func_800A222C(D_800C71E0->ot, &g_curFieldView->m, D_800C71E0->shadowPrims,
                           D_800C71E0->shadowTPages, D_80085224);
-            func_800A5224(&D_800C71F8->m, D_800C71E0->ot, D_800C71E0->ribbonPrims,
+            func_800A5224(&g_curFieldView->m, D_800C71E0->ot, D_800C71E0->ribbonPrims,
                           D_800C71E0->ribbonTPages);
         }
 
         if (func_800BE274() == 0) {
             func_800A06F0(0, D_800C71E0, D_800C6D98[(s16)g_bufferIndex],
                           D_800C71E0->unk4F80);
-        } else if (D_8005F0F8->unk0E == 1
-                   && D_800704A8.unk1A7 == 0) {
+        } else if (g_curFieldInfo->movieMask == 1
+                   && g_fieldEntity.unk1A7 == 0) {
             func_800A2AF8(D_800C71E0, D_800D5EC8[(s16)g_bufferIndex],
-                          D_800D5EB8[(s16)g_bufferIndex], D_800C71F8);
+                          D_800D5EB8[(s16)g_bufferIndex], g_curFieldView);
         }
 
-        if (func_800BE274() == 0 && D_800C7200 != 0) {
-            func_800A37A8(&D_800C71F8->m, D_800C71E0, D_800C7200);
+        if (func_800BE274() == 0 && g_curFieldParticles != 0) {
+            func_800A37A8(&g_curFieldView->m, D_800C71E0, g_curFieldParticles);
             if ((s16)g_bufferIndex == 0) {
-                D_800C7200->primCursor = D_800C7200->primArena[0];
+                g_curFieldParticles->primCursor = g_curFieldParticles->primArena[0];
             } else {
-                D_800C7200->primCursor = D_800C7200->primArena[1];
+                g_curFieldParticles->primCursor = g_curFieldParticles->primArena[1];
             }
             for (i = 0; i < 128; i++) {
-                if (D_800C7200->entries[i].active == 1) {
-                    SetRotMatrix(&D_800C71F8->m);
-                    SetTransMatrix(&D_800C71F8->m);
-                    func_800A39D8(&D_800C7200->entries[i],
-                                  &D_800C7200->records[D_800C7200->entries[i].cmdIndex],
-                                  D_800C7200, D_800C71E0->ot);
+                if (g_curFieldParticles->entries[i].active == 1) {
+                    SetRotMatrix(&g_curFieldView->m);
+                    SetTransMatrix(&g_curFieldView->m);
+                    func_800A39D8(&g_curFieldParticles->entries[i],
+                                  &g_curFieldParticles->records[g_curFieldParticles->entries[i].cmdIndex],
+                                  g_curFieldParticles, D_800C71E0->ot);
                     /* stepTotal == 0 means this accumulator ran off the end of its
                        command's waypoints: retire it and drop the command's use count. */
-                    if (D_800C7200->records[D_800C7200->entries[i].cmdIndex]
-                            .steps[D_800C7200->entries[i].stepIndex].stepTotal == 0) {
-                        D_800C7200->entries[i].active = 0;
-                        D_800C7200->records[D_800C7200->entries[i].cmdIndex].activeCount--;
+                    if (g_curFieldParticles->records[g_curFieldParticles->entries[i].cmdIndex]
+                            .steps[g_curFieldParticles->entries[i].stepIndex].stepTotal == 0) {
+                        g_curFieldParticles->entries[i].active = 0;
+                        g_curFieldParticles->records[g_curFieldParticles->entries[i].cmdIndex].activeCount--;
                     }
                 }
             }
         }
 
         if ((s16)g_bufferIndex == 0) {
-            D_80067388[(s16)g_bufferIndex].clip.x = D_8005F0F8->rect_b[0].f6;
+            g_drawEnvs[(s16)g_bufferIndex].clip.x = g_curFieldInfo->screenRanges[0].left;
         } else {
-            D_80067388[(s16)g_bufferIndex].clip.x = D_8005F0F8->rect_b[0].f6 + 512;
+            g_drawEnvs[(s16)g_bufferIndex].clip.x = g_curFieldInfo->screenRanges[0].left + 512;
         }
-        D_80067388[(s16)g_bufferIndex].clip.y = D_8005F0F8->rect_b[0].f0;
-        D_80067388[(s16)g_bufferIndex].clip.w =
-            D_8005F0F8->rect_b[0].f4 - D_8005F0F8->rect_b[0].f6;
-        D_80067388[(s16)g_bufferIndex].clip.h =
-            D_8005F0F8->rect_b[0].f2 - D_8005F0F8->rect_b[0].f0;
-        func_80049B78(&D_800C71E0->drawEnvPrim, &D_80067388[(s16)g_bufferIndex]);
+        g_drawEnvs[(s16)g_bufferIndex].clip.y = g_curFieldInfo->screenRanges[0].top;
+        g_drawEnvs[(s16)g_bufferIndex].clip.w =
+            g_curFieldInfo->screenRanges[0].right - g_curFieldInfo->screenRanges[0].left;
+        g_drawEnvs[(s16)g_bufferIndex].clip.h =
+            g_curFieldInfo->screenRanges[0].bottom - g_curFieldInfo->screenRanges[0].top;
+        SetDrawEnv(&D_800C71E0->drawEnvPrim, &g_drawEnvs[(s16)g_bufferIndex]);
 
         addPrim(&D_800C71E0->ot[0xFFF], &D_800C71E0->drawEnvPrim);
         addPrim(&D_800C71E0->ot[1], &D_800C71E0->unk4F00);
 
         if (func_800BE274()) {
-            renderAndUpdateDisplay(D_800704A8.unk1AC);
+            renderAndUpdateDisplay(g_fieldEntity.unk1AC);
         } else {
             renderAndUpdateDisplay(2);
         }
         renderBattleDisplayList((s32 *)D_800C71E0->ot);
 
-        if (D_800704A8.mode == 6) {
-            D_8005F158 = 9;
+        if (g_fieldEntity.mode == 6) {
+            g_vsyncRate = 9;
             func_800A59D0();
             break;
         }
-        if (D_800704A8.mode == 4) {
+        if (g_fieldEntity.mode == 4) {
             func_800A59D0();
             break;
         }
-        if (D_800704A8.mode == 3 || D_800704A8.mode == 8) {
-            D_800704A8.position_x = D_80085224[D_8005F148].posX / 4096;
-            D_800704A8.position_y = D_80085224[D_8005F148].posY / 4096;
-            D_800704A8.spawnTriIdx = D_80085224[D_8005F148].triIdx;
+        if (g_fieldEntity.mode == 3 || g_fieldEntity.mode == 8) {
+            g_fieldEntity.position_x = D_80085224[D_8005F148].posX / 4096;
+            g_fieldEntity.position_y = D_80085224[D_8005F148].posY / 4096;
+            g_fieldEntity.spawnTriIdx = D_80085224[D_8005F148].triIdx;
             func_8009912C();
-            mode = D_800704A8.mode;
+            mode = g_fieldEntity.mode;
             if (mode == 3) {
-                D_8005F158 = mode;
+                g_vsyncRate = mode;
             } else {
-                D_8005F158 = 8;
+                g_vsyncRate = 8;
             }
             func_800A59D0();
             break;
@@ -820,60 +826,57 @@ void func_80099348(void) {
 
         if ((g_fieldVars->stateFlags & FIELD_STATE_CAMERA_SHAKE) && g_gameState.mainData.countdownTimer == 0
             && (g_fieldVars->fieldB6 & 0x100) == 0) {
-            D_800704A8.counter = 0x4B;
-            D_800704A8.mode = 1;
-            D_800704A8.spawnTriIdx = 0x7FFF;
+            g_fieldEntity.counter = 0x4B;
+            g_fieldEntity.mode = 1;
+            g_fieldEntity.spawnTriIdx = 0x7FFF;
             func_800A59D0();
         }
-        if (D_800704A8.mode == 1 || D_800704A8.mode == 7) {
+        if (g_fieldEntity.mode == 1 || g_fieldEntity.mode == 7) {
             func_8009912C();
             while (DrawSync(1) != 0) {
             }
             break;
         }
 
-        /* Same four-byte skew into entry 0 that func_8009D598 hands func_8009AAC8;
-           see the note there on EventEntry's field names being off by four. */
-        func_800A5A20(&D_80085224[D_8005F148],
-                      (EventEntry *)&D_8005F0F8->entries[0].z0);
+        func_800A5A20(&D_80085224[D_8005F148], g_curFieldInfo->gateways);
         func_800A5898(D_800C71E0);
         /* Called for its side effect only, func_800BE274 dispatches into the
            overlay when D_800DE4FD bit 1 is set; the original discards the result. */
         func_800BE274();
-        func_8002A150(0, 0x18, 0xBE);
-        D_800D5EA0 = func_80042634(1);
+        encodeCardFilename(0, 0x18, 0xBE);
+        D_800D5EA0 = VSync(1);
         while (DrawSync(1) != 0) {
         }
         if (func_800BE274()) {
-            func_80042634(D_800704A8.unk1AC);
+            VSync(g_fieldEntity.unk1AC);
         } else {
-            func_80042634(2);
+            VSync(2);
         }
         if (frames == 0) {
             SetDispMask(1);
         } else {
             frames--;
         }
-        func_80049480(&D_80067440[(s16)g_bufferIndex]);
+        PutDispEnv(&g_dispEnvs[(s16)g_bufferIndex]);
 
-        if ((D_800704A8.padHeld & 0x800) && !(D_800704A8.padHeldPrev & 0x800)
-            && func_800BE274() == 0 && (s16)D_800704A8.dialogState != 4
-            && (s16)D_800704A8.dialogState != 3
-            && (s16)D_800704A8.dialogState != 2 && D_800704A8.unk1A3 == 0) {
+        if ((g_fieldEntity.padHeld & PADstart) && !(g_fieldEntity.padHeldPrev & PADstart)
+            && func_800BE274() == 0 && g_fieldEntity.dialogState != 4
+            && g_fieldEntity.dialogState != 3
+            && g_fieldEntity.dialogState != 2 && g_fieldEntity.unk1A3 == 0) {
             func_800AD7AC(0);
         }
 
-        if (D_800704A8.unk1AA == 1) {
-            ClearImage(&D_80067388[(s16)g_bufferIndex].clip, 0, 0, 0);
+        if (g_fieldEntity.unk1AA == 1) {
+            ClearImage(&g_drawEnvs[(s16)g_bufferIndex].clip, 0, 0, 0);
         }
-        if (D_800704A8.unk1B1 == 1) {
-            D_800704A8.unk1B1 = 2;
+        if (g_fieldEntity.unk1B1 == 1) {
+            g_fieldEntity.unk1B1 = 2;
             func_800A1C64();
         }
         func_800393C8();
         func_800BE2DC();
-        if (D_800704A8.unk1A1 == 0) {
-            func_80049244(&D_800C71E0->ot[0xFFF]);
+        if (g_fieldEntity.unk1A1 == 0) {
+            DrawOTag(&D_800C71E0->ot[0xFFF]);
         }
     }
     func_800BE2AC();
@@ -1085,10 +1088,10 @@ s32 func_8009A4C0(Actor *actor, Eline *records, VECTOR *pt) {
                 }
             }
             if (fc->unk19D == 1 && ((fc->unk19C - actor->unk23F + 0x20) & 0xFF) < 0x40) {
-                if ((D_800704A8.unk150 & 0x40) && !(D_800704A8.unk154 & 0x40)) {
+                if ((g_fieldEntity.unk150 & 0x40) && !(g_fieldEntity.unk154 & 0x40)) {
                     fc->trigger7 = 1;
                 }
-                if ((D_800704A8.unk150 & 0x80) && !(D_800704A8.unk154 & 0x80)) {
+                if ((g_fieldEntity.unk150 & 0x80) && !(g_fieldEntity.unk154 & 0x80)) {
                     fc->trigger7 = 2;
                 }
             }
@@ -1114,7 +1117,7 @@ s32 func_8009A4C0(Actor *actor, Eline *records, VECTOR *pt) {
  *   - @c unk19D == @c activeMarker (so @c unk19D == 1)
  *   - @c entity->unk19C falls within a @c +/-32 window of @c actor->unk23F
  *
- * writes @c trigger7 from the @c D_800704A8.unk150 / @c unk154 pair:
+ * writes @c trigger7 from the @c g_fieldEntity.unk150 / @c unk154 pair:
  *   - bit 6 set in @c unk150 and clear in @c unk154 → @c trigger7 = @c unk19D (= 1)
  *   - bit 7 set in @c unk150 and clear in @c unk154 → @c trigger7 = 2
  *
@@ -1130,13 +1133,13 @@ void func_8009A7E8(Actor *actor, Eline *pool) {
             if (actor->msgActive == 0) {
                 if (pool->unk19D == pool->activeMarker) {
                     if ((s32)(((s32)pool->unk19C - (s32)actor->unk23F + 0x20) & 0xFF) < 0x40) {
-                        if (D_800704A8.unk150 & 0x40) {
-                            if (!(D_800704A8.unk154 & 0x40)) {
+                        if (g_fieldEntity.unk150 & 0x40) {
+                            if (!(g_fieldEntity.unk154 & 0x40)) {
                                 pool->trigger7 = pool->unk19D;
                             }
                         }
-                        if (D_800704A8.unk150 & 0x80) {
-                            if (!(D_800704A8.unk154 & 0x80)) {
+                        if (g_fieldEntity.unk150 & 0x80) {
+                            if (!(g_fieldEntity.unk154 & 0x80)) {
                                 pool->trigger7 = 2;
                             }
                         }
@@ -1230,51 +1233,49 @@ void func_8009A920(Actor *actor, Eline *entities) {
 }
 
 /**
- * @brief Restore an event-entry snapshot into the live @c D_800704A8.
+ * @brief Take gateway @p e: stage its destination in @c g_fieldEntity so the
+ *        field loop leaves for that field.
  *
- * Copies the 5 snapshot fields stored in an @c EventEntry slot back into
- * the corresponding live fields of @c D_800704A8, and selects the
- * engine @c mode from the snapshotted @c counter:
- *   - @c counter < 72 → @c mode = 7 (e.g. resume an in-progress event)
- *   - otherwise → @c mode = 1 (e.g. start a fresh interaction)
- *
- * Used when reactivating a queued event after it was paused or saved.
+ * Copies the destination field id, arrival position, arrival triangle and
+ * @c anim_state into @c g_fieldEntity, and picks the engine @c mode from the
+ * field id: below 72 selects mode 7, anything else mode 1.
  */
-void func_8009AA64(EventEntry *e) {
-    if (e->counter < 72) {
-        D_800704A8.mode = 7;
+void func_8009AA64(FieldGateway *e) {
+    if (e->fieldId < 72) {
+        g_fieldEntity.mode = 7;
     } else {
-        D_800704A8.mode = 1;
+        g_fieldEntity.mode = 1;
     }
-    D_800704A8.counter = e->counter;
-    D_800704A8.position_x = e->position_x;
-    D_800704A8.position_y = e->position_y;
-    D_800704A8.spawnTriIdx = e->spawnTriIdx;
-    D_800704A8.anim_state = e->anim_state;
+    g_fieldEntity.counter = e->fieldId;
+    g_fieldEntity.position_x = e->position_x;
+    g_fieldEntity.position_y = e->position_y;
+    g_fieldEntity.spawnTriIdx = e->spawnTriIdx;
+    g_fieldEntity.anim_state = e->anim_state;
 }
 
 /**
- * @brief Scan the 12-entry event queue for trigger segments the query point
- *        crosses, and fire the event restore for each hit.
+ * @brief Scan the 12 gateways for exit lines the query point crosses, and take
+ *        each one crossed.
  *
  * Stages the actor's position (@c >>12) into the scratchpad at
  * @c getScratchAddr(0) and the query point (X/Y from @p pt, Z from the
- * actor) at @c getScratchAddr(4), then for each armed @ref EventEntry
- * (@c counter != 0x7FFF, @c rotation != 0xFFFF): projects the query point
- * onto the entry's trigger segment via @ref func_8009A2BC, and when the
+ * actor) at @c getScratchAddr(4), then for each gateway in use
+ * (@c fieldId != @c FIELD_GATEWAY_UNUSED, @c spawnTriIdx != @c FIELD_GATEWAY_NO_TRIANGLE):
+ * projects the query point
+ * onto its exit line via @ref func_8009A2BC, and when the
  * squared distance is inside @c actor->radius² and the actor and the query
  * point lie on opposite sides of the segment (2D cross-product signs
- * differ), restores the entry's event snapshot via @ref func_8009AA64.
+ * differ), takes the gateway via @ref func_8009AA64.
  *
  * @param actor Querying entity.
- * @param segs  12-entry @ref EventEntry queue (32-byte stride).
+ * @param gateways The field's 12 gateways.
  * @param pt    Query point (world fixed-point; only X/Y read).
  *
  * @note @c B and @c C are derived from @c A with @c |0x10 / @c |0x20 so the
  *       compiler shares one scratchpad base register (addu+ori), as in the
  *       original.
  */
-void func_8009AAC8(Actor *actor, EventEntry *segs, Vec3i *pt) {
+void func_8009AAC8(Actor *actor, FieldGateway *gateways, Vec3i *pt) {
     Vec3i *A = (Vec3i *)getScratchAddr(0);
     Vec3i *B;
     Vec3i *C;
@@ -1291,25 +1292,25 @@ void func_8009AAC8(Actor *actor, EventEntry *segs, Vec3i *pt) {
     B->x = pt->x >> 12;
     B->y = pt->y >> 12;
     B->z = actor->posZ >> 12;
-    for (i = 0; i < 12; i++, segs++) {
-        if (segs->counter == 0x7FFF) {
+    for (i = 0; i < 12; i++, gateways++) {
+        if (gateways->fieldId == FIELD_GATEWAY_UNUSED) {
             continue;
         }
-        if (segs->spawnTriIdx == 0xFFFF) {
+        if (gateways->spawnTriIdx == FIELD_GATEWAY_NO_TRIANGLE) {
             continue;
         }
-        dist = func_8009A2BC((LineSeg *)&segs->x0, B, C);
+        dist = func_8009A2BC((LineSeg *)&gateways->x0, B, C);
         if (dist == -1) {
             continue;
         }
         if (dist < actor->radius * actor->radius) {
-            crossSelf = (segs->x1 - segs->x0) * (A->y - segs->y0)
-                      - (A->x - segs->x0) * (segs->y1 - segs->y0);
-            crossPt = (segs->x1 - segs->x0) * (B->y - segs->y0)
-                    - (B->x - segs->x0) * (segs->y1 - segs->y0);
+            crossSelf = (gateways->x1 - gateways->x0) * (A->y - gateways->y0)
+                      - (A->x - gateways->x0) * (gateways->y1 - gateways->y0);
+            crossPt = (gateways->x1 - gateways->x0) * (B->y - gateways->y0)
+                    - (B->x - gateways->x0) * (gateways->y1 - gateways->y0);
             if ((crossSelf >= 0 && crossPt < 0) || (crossPt >= 0 && crossSelf < 0)
                 || (crossSelf > 0 && crossPt <= 0) || (crossPt > 0 && crossSelf <= 0)) {
-                func_8009AA64(segs);
+                func_8009AA64(gateways);
             }
         }
     }
@@ -1397,18 +1398,18 @@ s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
     return (s16)bestIdx;
 }
 
-/** @brief Scale applied to @c D_800704A8.unk00A when seeding @c Actor::moveSpeed. */
+/** @brief Scale applied to @c g_fieldEntity.unk00A when seeding @c Actor::moveSpeed. */
 #define FIELD_CHANNEL_SCALE 0x4367
 
-/** @brief Sentinel in @c D_800704A8.spawnTriIdx / @c position_x meaning "no override". */
+/** @brief Sentinel in @c g_fieldEntity.spawnTriIdx / @c position_x meaning "no override". */
 #define SPAWN_UNSET 0x7FFF
 
 /**
  * @brief Place every field entity on the navmesh when a field is entered.
  *
  * For each of the @c D_80085388 entities:
- *  - The player entity (@c D_8005F148, taken from @c D_800704A8.entityIndex[0])
- *    is handled specially. When @c D_800704A8.spawnTriIdx carries a triangle index
+ *  - The player entity (@c D_8005F148, taken from @c g_fieldEntity.entityIndex[0])
+ *    is handled specially. When @c g_fieldEntity.spawnTriIdx carries a triangle index
  *    (i.e. is not @c SPAWN_UNSET) the entity is moved onto that triangle:
  *    with no X override it is dropped at the triangle centroid, otherwise its
  *    existing X/Y are kept and only Z is re-derived from the triangle plane.
@@ -1425,7 +1426,7 @@ s16 func_8009AC9C(s16 px, s16 py, s16 pz, TriangleList *list) {
  * (@c func_8009E660) and path (@c func_8009BB18) tables are rebuilt.
  *
  * @note The navmesh is indexed as a flat vertex array, triangle @c t owns
- *       @c D_800C71F0[t*3 .. t*3+2], which is also how @c func_8009DF18 reads
+ *       @c g_fieldWalkmeshVerts[t*3 .. t*3+2], which is also how @c func_8009DF18 reads
  *       it. A @c Triangle[] view does not reproduce the original's addressing:
  *       gcc then shares the derived triangle pointer between the two corner
  *       arguments and computes the second as @c ptr+8, where the original
@@ -1441,34 +1442,34 @@ void func_8009AEC0(void) {
     s16 i;
 
     D_8005F102 = 0;
-    D_800704A8.unk00A = 20;
-    D_8005F148 = D_800704A8.entityIndex[0];
+    g_fieldEntity.unk00A = 20;
+    D_8005F148 = g_fieldEntity.entityIndex[0];
 
     for (i = 0; i < D_80085388; i++) {
         if (i == D_8005F148) {
-            if (D_800704A8.spawnTriIdx != SPAWN_UNSET) {
-                D_80085224[i].triIdx = D_800704A8.spawnTriIdx;
-                if (D_800704A8.position_x == SPAWN_UNSET) {
-                    D_80085224[i].posX = ((D_800C71F0[D_80085224[i].triIdx * 3].sx +
-                                           D_800C71F0[D_80085224[i].triIdx * 3 + 1].sx +
-                                           D_800C71F0[D_80085224[i].triIdx * 3 + 2].sx) / 3) << 12;
-                    D_80085224[i].posY = ((D_800C71F0[D_80085224[i].triIdx * 3].sy +
-                                           D_800C71F0[D_80085224[i].triIdx * 3 + 1].sy +
-                                           D_800C71F0[D_80085224[i].triIdx * 3 + 2].sy) / 3) << 12;
-                    D_80085224[i].posZ = ((D_800C71F0[D_80085224[i].triIdx * 3].sz +
-                                           D_800C71F0[D_80085224[i].triIdx * 3 + 1].sz +
-                                           D_800C71F0[D_80085224[i].triIdx * 3 + 2].sz) / 3) << 12;
+            if (g_fieldEntity.spawnTriIdx != SPAWN_UNSET) {
+                D_80085224[i].triIdx = g_fieldEntity.spawnTriIdx;
+                if (g_fieldEntity.position_x == SPAWN_UNSET) {
+                    D_80085224[i].posX = ((g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3].sx +
+                                           g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3 + 1].sx +
+                                           g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3 + 2].sx) / 3) << 12;
+                    D_80085224[i].posY = ((g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3].sy +
+                                           g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3 + 1].sy +
+                                           g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3 + 2].sy) / 3) << 12;
+                    D_80085224[i].posZ = ((g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3].sz +
+                                           g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3 + 1].sz +
+                                           g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3 + 2].sz) / 3) << 12;
                 } else {
-                    func_8009DED8(&edge0, &D_800C71F0[D_80085224[i].triIdx * 3 + 1],
-                                  &D_800C71F0[D_80085224[i].triIdx * 3]);
+                    func_8009DED8(&edge0, &g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3 + 1],
+                                  &g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3]);
                     func_8009DED8(&edge1,
-                                  &D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 2],
-                                  &D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 1]);
+                                  &g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3 + 2],
+                                  &g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3 + 1]);
                     pos.x = D_80085224[D_8005F148].posX / 4096;
                     pos.y = D_80085224[D_8005F148].posY / 4096;
                     D_80085224[D_8005F148].posZ =
                         func_8009E338(&edge0, &edge1, &pos,
-                                      &D_800C71F0[D_80085224[D_8005F148].triIdx * 3]) << 12;
+                                      &g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3]) << 12;
                 }
             } else {
                 D_80085224[i].field_0x208 = 0x10;
@@ -1477,32 +1478,32 @@ void func_8009AEC0(void) {
                 D_80085224[D_8005F148].field_0x251 = 2;
                 /* Same scale func_800B6738 applies to D_800704B2 (there as *69020>>9), so
                    the entity starts exactly at the threshold that picks field_0x251. */
-                D_80085224[D_8005F148].moveSpeed = ((u32)(D_800704A8.unk00A * 17255)) >> 7;
+                D_80085224[D_8005F148].moveSpeed = ((u32)(g_fieldEntity.unk00A * 17255)) >> 7;
                 D_80085224[D_8005F148].radius = 0x30;
                 D_80085224[D_8005F148].triIdx = 0;
                 D_80085224[D_8005F148].posX =
-                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3].sx +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 1].sx +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 2].sx) / 3) << 12;
+                    ((g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3].sx +
+                      g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3 + 1].sx +
+                      g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3 + 2].sx) / 3) << 12;
                 D_80085224[D_8005F148].posY =
-                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3].sy +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 1].sy +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 2].sy) / 3) << 12;
+                    ((g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3].sy +
+                      g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3 + 1].sy +
+                      g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3 + 2].sy) / 3) << 12;
                 D_80085224[D_8005F148].posZ =
-                    ((D_800C71F0[D_80085224[D_8005F148].triIdx * 3].sz +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 1].sz +
-                      D_800C71F0[D_80085224[D_8005F148].triIdx * 3 + 2].sz) / 3) << 12;
+                    ((g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3].sz +
+                      g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3 + 1].sz +
+                      g_fieldWalkmeshVerts[D_80085224[D_8005F148].triIdx * 3 + 2].sz) / 3) << 12;
             }
         } else {
             pos.x = D_80085224[i].posX / 4096;
             pos.y = D_80085224[i].posY / 4096;
             pos.z = 0;
-            func_8009DED8(&edge0, &D_800C71F0[D_80085224[i].triIdx * 3 + 1],
-                          &D_800C71F0[D_80085224[i].triIdx * 3]);
-            func_8009DED8(&edge1, &D_800C71F0[D_80085224[i].triIdx * 3 + 2],
-                          &D_800C71F0[D_80085224[i].triIdx * 3 + 1]);
+            func_8009DED8(&edge0, &g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3 + 1],
+                          &g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3]);
+            func_8009DED8(&edge1, &g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3 + 2],
+                          &g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3 + 1]);
             D_80085224[i].posZ = func_8009E338(&edge0, &edge1, &pos,
-                                               &D_800C71F0[D_80085224[i].triIdx * 3]) << 12;
+                                               &g_fieldWalkmeshVerts[D_80085224[i].triIdx * 3]) << 12;
         }
     }
 
@@ -1600,14 +1601,14 @@ void func_8009B4A8(s16 idx, u8 anim, s16 mode, s8 delta) {
 void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier) {
     u8 entityIdx;
 
-    entityIdx = D_800704A8.entityIndex[slotIdx];
+    entityIdx = g_fieldEntity.entityIndex[slotIdx];
 
     if (entityIdx == 0xFF) {
         return;
     }
 
-    D_80085224[D_800704A8.entityIndex[(s16)slotIdx]].field_0x241 = params[paramIdx].field_0B;
-    D_80085224[D_800704A8.entityIndex[slotIdx]].field_0x24C = 1;
+    D_80085224[g_fieldEntity.entityIndex[(s16)slotIdx]].field_0x241 = params[paramIdx].field_0B;
+    D_80085224[g_fieldEntity.entityIndex[slotIdx]].field_0x24C = 1;
 
     if (slotIdx == 1) {
         if (D_8005F160 > D_8005F118) {
@@ -1621,28 +1622,28 @@ void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier)
 
     switch (params[paramIdx].field_0A) {
     case 0:
-        entityIdx = D_800704A8.entityIndex[slotIdx];
-        func_8009B4A8(entityIdx, D_80085224[D_800704A8.entityIndex[slotIdx]].field_0x250, 0, (s8)(params[paramIdx].field_09 * multiplier));
+        entityIdx = g_fieldEntity.entityIndex[slotIdx];
+        func_8009B4A8(entityIdx, D_80085224[g_fieldEntity.entityIndex[slotIdx]].field_0x250, 0, (s8)(params[paramIdx].field_09 * multiplier));
         break;
     case 1:
-        entityIdx = D_800704A8.entityIndex[slotIdx];
-        func_8009B4A8(entityIdx, D_80085224[D_800704A8.entityIndex[slotIdx]].field_0x251, 0, (s8)(params[paramIdx].field_09 * multiplier));
+        entityIdx = g_fieldEntity.entityIndex[slotIdx];
+        func_8009B4A8(entityIdx, D_80085224[g_fieldEntity.entityIndex[slotIdx]].field_0x251, 0, (s8)(params[paramIdx].field_09 * multiplier));
         break;
     case 2:
-        entityIdx = D_800704A8.entityIndex[slotIdx];
-        func_8009B4A8(entityIdx, D_80085224[D_800704A8.entityIndex[slotIdx]].field_0x24F, 0, (s8)(params[paramIdx].field_09 * multiplier));
+        entityIdx = g_fieldEntity.entityIndex[slotIdx];
+        func_8009B4A8(entityIdx, D_80085224[g_fieldEntity.entityIndex[slotIdx]].field_0x24F, 0, (s8)(params[paramIdx].field_09 * multiplier));
         break;
     case 3:
-        entityIdx = D_800704A8.entityIndex[slotIdx];
-        func_8009B4A8(entityIdx, D_80085224[D_800704A8.entityIndex[slotIdx]].field_0x252, 0, (s8)(params[paramIdx].field_09 * multiplier));
+        entityIdx = g_fieldEntity.entityIndex[slotIdx];
+        func_8009B4A8(entityIdx, D_80085224[g_fieldEntity.entityIndex[slotIdx]].field_0x252, 0, (s8)(params[paramIdx].field_09 * multiplier));
         break;
     case 4:
-        entityIdx = D_800704A8.entityIndex[slotIdx];
-        func_8009B4A8(entityIdx, D_80085224[D_800704A8.entityIndex[slotIdx]].field_0x253, 0, (s8)(params[paramIdx].field_09 * multiplier));
+        entityIdx = g_fieldEntity.entityIndex[slotIdx];
+        func_8009B4A8(entityIdx, D_80085224[g_fieldEntity.entityIndex[slotIdx]].field_0x253, 0, (s8)(params[paramIdx].field_09 * multiplier));
         break;
     case 5:
-        entityIdx = D_800704A8.entityIndex[slotIdx];
-        func_8009B4A8(D_800704A8.entityIndex[slotIdx], D_80085224[entityIdx].field_0x254, 0, (s8)(params[paramIdx].field_09 * multiplier));
+        entityIdx = g_fieldEntity.entityIndex[slotIdx];
+        func_8009B4A8(g_fieldEntity.entityIndex[slotIdx], D_80085224[entityIdx].field_0x254, 0, (s8)(params[paramIdx].field_09 * multiplier));
         break;
     }
 }
@@ -1661,21 +1662,21 @@ void func_8009B74C(s16 slotIdx, u16 paramIdx, PathEntry *params, s16 multiplier)
 void func_8009BB18(void) {
     u16 angle;
 
-    if (D_800704A8.entityIndex[2] != 0xFF) {
+    if (g_fieldEntity.entityIndex[2] != 0xFF) {
         angle = (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK;
-        D_80085224[D_800704A8.entityIndex[2]].posX   = D_80070A60[angle].x << 12;
-        D_80085224[D_800704A8.entityIndex[2]].posY   = D_80070A60[angle].y << 12;
-        D_80085224[D_800704A8.entityIndex[2]].posZ   = D_80070A60[angle].z << 12;
-        D_80085224[D_800704A8.entityIndex[2]].triIdx = D_80070A60[angle].unk6;
-        D_80085224[D_800704A8.entityIndex[2]].unk258 = D_80070A60[angle].unk8;
+        D_80085224[g_fieldEntity.entityIndex[2]].posX   = D_80070A60[angle].x << 12;
+        D_80085224[g_fieldEntity.entityIndex[2]].posY   = D_80070A60[angle].y << 12;
+        D_80085224[g_fieldEntity.entityIndex[2]].posZ   = D_80070A60[angle].z << 12;
+        D_80085224[g_fieldEntity.entityIndex[2]].triIdx = D_80070A60[angle].unk6;
+        D_80085224[g_fieldEntity.entityIndex[2]].unk258 = D_80070A60[angle].unk8;
     }
-    if (D_800704A8.entityIndex[1] != 0xFF) {
+    if (g_fieldEntity.entityIndex[1] != 0xFF) {
         angle = (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK;
-        D_80085224[D_800704A8.entityIndex[1]].posX   = D_80070760[angle].x << 12;
-        D_80085224[D_800704A8.entityIndex[1]].posY   = D_80070760[angle].y << 12;
-        D_80085224[D_800704A8.entityIndex[1]].posZ   = D_80070760[angle].z << 12;
-        D_80085224[D_800704A8.entityIndex[1]].triIdx = D_80070760[angle].unk6;
-        D_80085224[D_800704A8.entityIndex[1]].unk258 = D_80070760[angle].unk8;
+        D_80085224[g_fieldEntity.entityIndex[1]].posX   = D_80070760[angle].x << 12;
+        D_80085224[g_fieldEntity.entityIndex[1]].posY   = D_80070760[angle].y << 12;
+        D_80085224[g_fieldEntity.entityIndex[1]].posZ   = D_80070760[angle].z << 12;
+        D_80085224[g_fieldEntity.entityIndex[1]].triIdx = D_80070760[angle].unk6;
+        D_80085224[g_fieldEntity.entityIndex[1]].unk258 = D_80070760[angle].unk8;
     }
 }
 
@@ -1751,7 +1752,7 @@ void func_8009BD50(Actor *actor, s16 mode, s8 b9, u8 b8) {
  * Runs nine sequential passes over the @c D_80085388 entities of @p ents:
  *  1. Re-arm each entity's @c unk258 tick flag.
  *  2. Advance the global heading lerp (@c unk100 -> @c unk102 over @c unk104
- *     frames) into @c D_800704A8.unk1A8.
+ *     frames) into @c g_fieldEntity.unk1A8.
  *  3. Advance each entity's heading lerp (@c field_0x244: 1 = linear,
  *     2 = sine, 3 = finished).
  *  4. Advance each entity's position-offset lerp (@c unk245, same encoding).
@@ -1786,12 +1787,12 @@ void func_8009BEC8(Actor *ents, s32 flags) {
         ents[i].unk258 = 1;
     }
 
-    if (D_800704A8.unk106 < D_800704A8.unk104) {
-        D_800704A8.unk106++;
-        D_800704A8.unk1A8 = func_800A0E54((s16)D_800704A8.unk100, (s16)D_800704A8.unk102,
-                                          D_800704A8.unk104, D_800704A8.unk106);
-        if (D_800704A8.unk104 == D_800704A8.unk106) {
-            D_800704A8.unk100 = D_800704A8.unk1A8;
+    if (g_fieldEntity.unk106 < g_fieldEntity.unk104) {
+        g_fieldEntity.unk106++;
+        g_fieldEntity.unk1A8 = func_800A0E54((s16)g_fieldEntity.unk100, (s16)g_fieldEntity.unk102,
+                                          g_fieldEntity.unk104, g_fieldEntity.unk106);
+        if (g_fieldEntity.unk104 == g_fieldEntity.unk106) {
+            g_fieldEntity.unk100 = g_fieldEntity.unk1A8;
         }
     }
 
@@ -1859,8 +1860,8 @@ void func_8009BEC8(Actor *ents, s32 flags) {
             continue;
         }
         step = 0;
-        D_800704A8.fieldStepDelta = 0;
-        if (D_800704A8.unk015 == 1 || (s16)D_800704A8.dialogState == 4) {
+        g_fieldEntity.fieldStepDelta = 0;
+        if (g_fieldEntity.unk015 == 1 || g_fieldEntity.dialogState == 4) {
             continue;
         }
         if (func_80027DB4(0, PAD_AXIS_X, 0) != -1) {
@@ -1898,7 +1899,7 @@ void func_8009BEC8(Actor *ents, s32 flags) {
                         ents[i].unk23F = 0x40;
                     }
                 }
-                ents[i].unk23F += D_800704A8.unk1A8 + ents[i].headingBase;
+                ents[i].unk23F += g_fieldEntity.unk1A8 + ents[i].headingBase;
             } else {
                 if (!(flags & FIELD_PAD_WALK)) {
                     if (dist[0] >= 0x79) {
@@ -1907,37 +1908,37 @@ void func_8009BEC8(Actor *ents, s32 flags) {
                         flags |= FIELD_PAD_WALK;
                     }
                 }
-                ents[i].unk23F = dir + (D_800704A8.unk1A8 + D_8005F0F8->slotHeadingBias[D_800704A8.unk1A6]);
+                ents[i].unk23F = dir + (g_fieldEntity.unk1A8 + g_curFieldInfo->slotHeadingBias[g_fieldEntity.unk1A6]);
             }
-            if ((flags & FIELD_PAD_WALK) || D_800704A8.unk1A4 == 1) {
+            if ((flags & FIELD_PAD_WALK) || g_fieldEntity.unk1A4 == 1) {
                 if (func_800BE274() == 0) {
-                    ents[D_8005F148].moveSpeed = (u32)(D_800704A8.unk00A * 0x4367) >> 7;
+                    ents[D_8005F148].moveSpeed = (u32)(g_fieldEntity.unk00A * 0x4367) >> 7;
                 } else {
-                    ents[D_8005F148].moveSpeed = (u32)(D_800704A8.unk00A * 0x4367) >> 6;
+                    ents[D_8005F148].moveSpeed = (u32)(g_fieldEntity.unk00A * 0x4367) >> 6;
                 }
             } else {
                 if (func_800BE274() == 0) {
-                    ents[D_8005F148].moveSpeed = (u32)(D_800704A8.unk00A * 0x631F) >> 6;
+                    ents[D_8005F148].moveSpeed = (u32)(g_fieldEntity.unk00A * 0x631F) >> 6;
                 } else {
-                    ents[D_8005F148].moveSpeed = (u32)(D_800704A8.unk00A * 0x631F) >> 5;
+                    ents[D_8005F148].moveSpeed = (u32)(g_fieldEntity.unk00A * 0x631F) >> 5;
                 }
             }
             SCRATCH_STACK_ENTER();
             step = func_8009D598((s16)i);
             SCRATCH_STACK_LEAVE();
             if (step == 1) {
-                if ((flags & FIELD_PAD_WALK) || D_800704A8.unk1A4 == step) {
+                if ((flags & FIELD_PAD_WALK) || g_fieldEntity.unk1A4 == step) {
                     func_8009B4A8((s16)i, ents[i].field_0x250, 1, 1);
                     trail = D_8005F144;
                     D_80070A60[trail].field_0A = 0;
                     D_80070760[trail].field_0A = 0;
-                    D_800704A8.fieldStepDelta = 3;
+                    g_fieldEntity.fieldStepDelta = 3;
                 } else {
                     func_8009B4A8((s16)i, ents[i].field_0x251, 1, 1);
                     trail = D_8005F144;
                     D_80070A60[trail].field_0A = step;
                     D_80070760[trail].field_0A = step;
-                    D_800704A8.fieldStepDelta = 5;
+                    g_fieldEntity.fieldStepDelta = 5;
                 }
                 func_8009B74C(2, (D_8005F144 - D_8005F11A) & FIELD_PATH_RING_MASK, D_80070A60, 1);
                 func_8009B74C(1, (D_8005F144 - D_8005F118) & FIELD_PATH_RING_MASK, D_80070760, 1);
@@ -1947,28 +1948,28 @@ void func_8009BEC8(Actor *ents, s32 flags) {
                 D_80070760[trail].field_0B = heading;
         } else {
             func_8009B4A8((s16)i, ents[i].field_0x24F, 0, 1);
-            if (D_800704A8.entityIndex[2] != 0xFF) {
-                func_8009B4A8(D_800704A8.entityIndex[2], ents[D_800704A8.entityIndex[2]].field_0x24F, 0, 1);
+            if (g_fieldEntity.entityIndex[2] != 0xFF) {
+                func_8009B4A8(g_fieldEntity.entityIndex[2], ents[g_fieldEntity.entityIndex[2]].field_0x24F, 0, 1);
             }
-            if (D_800704A8.entityIndex[1] != 0xFF) {
-                func_8009B4A8(D_800704A8.entityIndex[1], ents[D_800704A8.entityIndex[1]].field_0x24F, 0, 1);
+            if (g_fieldEntity.entityIndex[1] != 0xFF) {
+                func_8009B4A8(g_fieldEntity.entityIndex[1], ents[g_fieldEntity.entityIndex[1]].field_0x24F, 0, 1);
             }
         }
         if (ents[i].field_0x240 == 0) {
             ents[i].field_0x241 = ents[i].unk23F;
         }
-        if (D_800704A8.mode != 1 && D_800704A8.mode != 7 && step == 1) {
+        if (g_fieldEntity.mode != 1 && g_fieldEntity.mode != 7 && step == 1) {
             func_800A5D28();
         }
             func_8009BD50(&ents[i], step, 1, 1);
             func_8009BB18();
         } else {
             func_8009B4A8((s16)i, ents[i].field_0x24F, 0, 1);
-            if (D_800704A8.entityIndex[2] != 0xFF) {
-                func_8009B4A8(D_800704A8.entityIndex[2], ents[D_800704A8.entityIndex[2]].field_0x24F, 0, 1);
+            if (g_fieldEntity.entityIndex[2] != 0xFF) {
+                func_8009B4A8(g_fieldEntity.entityIndex[2], ents[g_fieldEntity.entityIndex[2]].field_0x24F, 0, 1);
             }
-            if (D_800704A8.entityIndex[1] != 0xFF) {
-                func_8009B4A8(D_800704A8.entityIndex[1], ents[D_800704A8.entityIndex[1]].field_0x24F, 0, 1);
+            if (g_fieldEntity.entityIndex[1] != 0xFF) {
+                func_8009B4A8(g_fieldEntity.entityIndex[1], ents[g_fieldEntity.entityIndex[1]].field_0x24F, 0, 1);
             }
             func_8009BD50(&ents[i], step, 1, 1);
             func_8009BB18();
@@ -1977,7 +1978,7 @@ void func_8009BEC8(Actor *ents, s32 flags) {
 
 
     for (i = 0; i < D_80085388; i++) {
-        if (ents[i].msgActive == 1 && D_800704A8.pad001 != 1) {
+        if (ents[i].msgActive == 1 && g_fieldEntity.pad001 != 1) {
             ents[i].headingBase = 0;
             if (func_8009D274(&ents[i], ents[i].windowId) == 0) {
                 ents[i].msgState = 2;
@@ -2006,11 +2007,11 @@ void func_8009BEC8(Actor *ents, s32 flags) {
             ents[i].moveStartX = ents[i].posX;
             ents[i].moveStartY = ents[i].posY;
             ents[i].moveStartZ = ents[i].posZ;
-            func_8009DED8((Vec3i *)&a, &D_800C71F0[ents[i].field_0x1FC * 3 + 1], &D_800C71F0[ents[i].field_0x1FC * 3]);
-            func_8009DED8((Vec3i *)&b, &D_800C71F0[ents[i].field_0x1FC * 3 + 2], &D_800C71F0[ents[i].field_0x1FC * 3 + 1]);
+            func_8009DED8((Vec3i *)&a, &g_fieldWalkmeshVerts[ents[i].field_0x1FC * 3 + 1], &g_fieldWalkmeshVerts[ents[i].field_0x1FC * 3]);
+            func_8009DED8((Vec3i *)&b, &g_fieldWalkmeshVerts[ents[i].field_0x1FC * 3 + 2], &g_fieldWalkmeshVerts[ents[i].field_0x1FC * 3 + 1]);
             pt.vx = ents[i].msgTextPtr / 0x1000;
             pt.vy = ents[i].msgPosX / 0x1000;
-            ents[i].msgPosY = func_8009E338((Vec3i *)&a, (Vec3i *)&b, (Vec3i *)&pt, &D_800C71F0[ents[i].field_0x1FC * 3]) << 12;
+            ents[i].msgPosY = func_8009E338((Vec3i *)&a, (Vec3i *)&b, (Vec3i *)&pt, &g_fieldWalkmeshVerts[ents[i].field_0x1FC * 3]) << 12;
             ents[i].arcVelZ = (ents[i].msgPosY - ents[i].moveStartZ) / ents[i].field_0x1D8 - -(ents[i].field_0x1D8 * 0x3E80) / 2;
             ents[i].field_0x1DA = 0;
             ents[i].msgState = 1;
@@ -2052,7 +2053,7 @@ void func_8009BEC8(Actor *ents, s32 flags) {
             a.vy = (ents[i].msgPosX - ents[i].moveStartY) / 1024;
             a.vz = (ents[i].msgPosY - ents[i].moveStartZ) / 1024;
             dist[0] = SquareRoot0(a.vx * a.vx + a.vy * a.vy + a.vz * a.vz);
-            ents[i].field_0x1D8 = dist[0] / D_800704A8.unk1AE;
+            ents[i].field_0x1D8 = dist[0] / g_fieldEntity.unk1AE;
             ents[i].field_0x1DA = 0;
             ents[i].msgState = 1;
             if (i == D_8005F148) {
@@ -2060,7 +2061,7 @@ void func_8009BEC8(Actor *ents, s32 flags) {
             }
             continue;
         }
-        if (i == D_8005F148 && D_800704A8.unk015 == 0) {
+        if (i == D_8005F148 && g_fieldEntity.unk015 == 0) {
             if (ents[i].windowId == 0) {
                 if (flags & (FIELD_PAD_YLOW | FIELD_PAD_XHIGH)) {
                     if (ents[i].field_0x1DA == 0) {
@@ -2120,7 +2121,7 @@ void func_8009BEC8(Actor *ents, s32 flags) {
  *
  * The self entity is @c D_80085224[D_8005F148]; its position is taken in whole
  * units (fixed-point @c >>12). A @c mode (0/1/2) is derived from the current and
- * previous pad-held bits in @c D_800704A8 (@c unk150 / @c unk154, bits @c 0x80
+ * previous pad-held bits in @c g_fieldEntity (@c unk150 / @c unk154, bits @c 0x80
  * and @c 0x40). If the field is busy (@c D_800704BD != 0) or @c mode is 0, the
  * scan is skipped entirely.
  *
@@ -2149,7 +2150,7 @@ void func_8009CEE8(void) {
     selfPos[1] = D_80085224[D_8005F148].posY >> 12;
     selfPos[2] = D_80085224[D_8005F148].posZ >> 12;
 
-    sys = &D_800704A8;
+    sys = &g_fieldEntity;
     mode = 0;
     if (sys->unk150 & 0x80) {
         mode = ((sys->unk154 & 0x80) == 0) << 1;
@@ -2408,22 +2409,12 @@ s32 func_8009D500(s32 selfIdx, s32 arg1, FieldStepScratch *ctx, s32 *out) {
  * entity's triangle to the target point so @c triIdx follows the entity, and
  * for the player (when field control is enabled) the trigger scans run against
  * the new point: @ref func_8009A4C0 for the per-entity line triggers,
- * @ref func_8009AAC8 for the event queue, and @ref func_800A6100 for the field
+ * @ref func_8009AAC8 for the gateways, and @ref func_800A6100 for the field
  * line-trigger table.
  *
  * @param index Entity index into @ref D_80085224.
  * @return @c 1 if the entity moved (position written back), @c 0 if it was
  *         blocked or the navmesh walk failed.
- *
- * @note The event queue is handed to @ref func_8009AAC8 starting four bytes
- *       into entry 0, and that skew is real, @c func_8009AAC8's sentinel test
- *       (@c counter @c == @c 0x7FFF) then lands on @ref EventEntry::field16 and
- *       its armed test (@c spawnTriIdx @c == @c 0xFFFF) on @c field14, which is
- *       exactly what @c opHandler_PREMAPJUMP writes. The likely reading is that
- *       @ref EventEntry 's own field names are off by four and the trigger
- *       segment really starts at @c +0x04; @c opHandler_PREMAPJUMP pins the
- *       array base at @c 0x60, so the offsets are left as they are until a
- *       function that settles the entry layout is decompiled.
  */
 s32 func_8009D598(s16 index) {
     FieldStepScratch *sc = (FieldStepScratch *)getScratchAddr(16);
@@ -2446,7 +2437,7 @@ s32 func_8009D598(s16 index) {
        offset first, matching the original's addu operand order. */
     s32 vertBase;
 
-    vertBase = (s32)D_800C71F0;
+    vertBase = (s32)g_fieldWalkmeshVerts;
     tri = D_80085224[index].triIdx;
     a = (SVert *)(tri * 24 + vertBase);
     b = &a[1];
@@ -2566,15 +2557,14 @@ s32 func_8009D598(s16 index) {
 
     blocked = func_8009DF18(&D_80085224[self].triIdx, (Vec3i *)&sc->srcX, &sc->dx,
                             (s32 *)sc);
-    if (self == D_8005F148 && D_800704A8.unk015 == 0) {
+    if (self == D_8005F148 && g_fieldEntity.unk015 == 0) {
         func_8009A4C0(&D_80085224[self], D_8008538C, (VECTOR *)&sc->srcX);
         D_8005F102 = 0;
-        if (D_800704A8.unk1A2 == 0) {
-            func_8009AAC8(&D_80085224[self],
-                          (EventEntry *)&D_8005F0F8->entries[0].z0,
+        if (g_fieldEntity.unk1A2 == 0) {
+            func_8009AAC8(&D_80085224[self], g_curFieldInfo->gateways,
                           (Vec3i *)&sc->srcX);
         }
-        func_800A6100(&D_80085224[self], D_8005F0F8->segs, (Vec3i *)&sc->srcX);
+        func_800A6100(&D_80085224[self], g_curFieldInfo->triggers, (Vec3i *)&sc->srcX);
     }
 
     if (hitFwd == 0 && hitLeft == 0 && hitRight == 0 && pushFwd == 0
@@ -2627,11 +2617,11 @@ void func_8009DED8(Vec3i *out, SVert *a, SVert *b) {
  *    (@ref func_8009E338), returning 0 or the last edge classification;
  *  - otherwise, for the first failing edge: moves to that edge's neighbor
  *    triangle (@c *pTriIdx updated) when one exists and its
- *    @c D_800704A8.statusBits lock bit is clear, else returns +/-8 by the
+ *    @c g_fieldEntity.statusBits lock bit is clear, else returns +/-8 by the
  *    sign of the edge direction dotted with the movement delta @p dxy
  *    (which side of the blocking edge the motion crosses).
  *
- * @param pTriIdx In/out current triangle index into @c D_800C71F0.
+ * @param pTriIdx In/out current triangle index into @c g_fieldWalkmeshVerts.
  * @param out     Stepped position (fixed-point); @c z receives the plane height.
  * @param dxy     Movement delta (dx at [0], dy at [1]).
  * @param aux     Unused.
@@ -2681,38 +2671,38 @@ s32 func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux) {
     posV.sz = 0;
 
     while (1) {
-        func_8009DED8(&e0, &D_800C71F0[*pTriIdx * 3 + 1], &D_800C71F0[*pTriIdx * 3]);
-        func_8009DED8(&e1, &D_800C71F0[*pTriIdx * 3 + 2], &D_800C71F0[*pTriIdx * 3 + 1]);
-        func_8009DED8(&e2, &D_800C71F0[*pTriIdx * 3], &D_800C71F0[*pTriIdx * 3 + 2]);
+        func_8009DED8(&e0, &g_fieldWalkmeshVerts[*pTriIdx * 3 + 1], &g_fieldWalkmeshVerts[*pTriIdx * 3]);
+        func_8009DED8(&e1, &g_fieldWalkmeshVerts[*pTriIdx * 3 + 2], &g_fieldWalkmeshVerts[*pTriIdx * 3 + 1]);
+        func_8009DED8(&e2, &g_fieldWalkmeshVerts[*pTriIdx * 3], &g_fieldWalkmeshVerts[*pTriIdx * 3 + 2]);
         idx3 = *pTriIdx * 3;
-        gte_nclip(nc0, *(u32 *)&posV, *(u32 *)&D_800C71F0[idx3 + 1], *(u32 *)&D_800C71F0[idx3]);
+        gte_nclip(nc0, *(u32 *)&posV, *(u32 *)&g_fieldWalkmeshVerts[idx3 + 1], *(u32 *)&g_fieldWalkmeshVerts[idx3]);
         idx3 = *pTriIdx * 3;
-        gte_nclip(nc1, *(u32 *)&posV, *(u32 *)&D_800C71F0[idx3 + 2], *(u32 *)&D_800C71F0[idx3 + 1]);
+        gte_nclip(nc1, *(u32 *)&posV, *(u32 *)&g_fieldWalkmeshVerts[idx3 + 2], *(u32 *)&g_fieldWalkmeshVerts[idx3 + 1]);
         idx3 = *pTriIdx * 3;
-        gte_nclip(nc2, *(u32 *)&posV, *(u32 *)&D_800C71F0[idx3], *(u32 *)&D_800C71F0[idx3 + 2]);
+        gte_nclip(nc2, *(u32 *)&posV, *(u32 *)&g_fieldWalkmeshVerts[idx3], *(u32 *)&g_fieldWalkmeshVerts[idx3 + 2]);
         if (nc0 >= 0 && nc1 >= 0 && nc2 >= 0) {
             break;
         }
         if (nc0 < 0) {
-            nb = D_800D5E98[*pTriIdx].neighbor[0];
-            if (nb >= 0 && !((D_800704A8.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
-                *pTriIdx = D_800D5E98[*pTriIdx].neighbor[0];
+            nb = g_fieldWalkmeshAdjacency[*pTriIdx].neighbor[0];
+            if (nb >= 0 && !((g_fieldEntity.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
+                *pTriIdx = g_fieldWalkmeshAdjacency[*pTriIdx].neighbor[0];
                 continue;
             }
             ret = (e0.x * dxy[0] + e0.y * dxy[1] >= 0) ? 8 : -8;
             break;
         } else if (nc1 < 0) {
-            nb = D_800D5E98[*pTriIdx].neighbor[1];
-            if (nb >= 0 && !((D_800704A8.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
-                *pTriIdx = D_800D5E98[*pTriIdx].neighbor[1];
+            nb = g_fieldWalkmeshAdjacency[*pTriIdx].neighbor[1];
+            if (nb >= 0 && !((g_fieldEntity.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
+                *pTriIdx = g_fieldWalkmeshAdjacency[*pTriIdx].neighbor[1];
                 continue;
             }
             ret = (e1.x * dxy[0] + e1.y * dxy[1] >= 0) ? 8 : -8;
             break;
         } else if (nc2 < 0) {
-            nb = D_800D5E98[*pTriIdx].neighbor[2];
-            if (nb >= 0 && !((D_800704A8.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
-                *pTriIdx = D_800D5E98[*pTriIdx].neighbor[2];
+            nb = g_fieldWalkmeshAdjacency[*pTriIdx].neighbor[2];
+            if (nb >= 0 && !((g_fieldEntity.statusBits[nb >> 3] >> (nb - ((nb >> 3) << 3))) & 1)) {
+                *pTriIdx = g_fieldWalkmeshAdjacency[*pTriIdx].neighbor[2];
                 continue;
             }
             ret = (e2.x * dxy[0] + e2.y * dxy[1] >= 0) ? 8 : -8;
@@ -2720,7 +2710,7 @@ s32 func_8009DF18(u16 *pTriIdx, Vec3i *out, s32 *dxy, s32 *aux) {
         }
     }
 
-    out->z = func_8009E338(&e0, &e1, &posW, (Vec3s *)&D_800C71F0[*pTriIdx * 3]);
+    out->z = func_8009E338(&e0, &e1, &posW, (Vec3s *)&g_fieldWalkmeshVerts[*pTriIdx * 3]);
     return ret;
 }
 
@@ -2906,13 +2896,13 @@ void func_8009E660(void) {
             pos.y = py = D_80070760[63 - i].y = D_80070A60[63 - i].y = y / 4096;
             pz = z / 4096;
             D_80070760[63 - i].unk6 = D_80070A60[63 - i].unk6 =
-                func_8009AC9C(px, py, pz, *D_800C7204);
-            func_8009DED8(&edge0, &D_800C71F0[D_80070760[63 - i].unk6 * 3 + 1],
-                          &D_800C71F0[D_80070760[63 - i].unk6 * 3]);
-            func_8009DED8(&edge1, &D_800C71F0[D_80070760[63 - i].unk6 * 3 + 2],
-                          &D_800C71F0[D_80070760[63 - i].unk6 * 3 + 1]);
+                func_8009AC9C(px, py, pz, *g_fieldWalkmesh);
+            func_8009DED8(&edge0, &g_fieldWalkmeshVerts[D_80070760[63 - i].unk6 * 3 + 1],
+                          &g_fieldWalkmeshVerts[D_80070760[63 - i].unk6 * 3]);
+            func_8009DED8(&edge1, &g_fieldWalkmeshVerts[D_80070760[63 - i].unk6 * 3 + 2],
+                          &g_fieldWalkmeshVerts[D_80070760[63 - i].unk6 * 3 + 1]);
             planeZ = func_8009E338(&edge0, &edge1, &pos,
-                                   (Vec3s *)&D_800C71F0[D_80070760[63 - i].unk6 * 3]);
+                                   (Vec3s *)&g_fieldWalkmeshVerts[D_80070760[63 - i].unk6 * 3]);
             if (planeZ < pz + 0x136 && pz - 0x136 < planeZ) {
                 D_80070760[63 - i].z = D_80070A60[63 - i].z = planeZ;
             } else {
@@ -2929,9 +2919,9 @@ void func_8009E660(void) {
                applies to D_800704B2; written *4 >> 9 because that is the shift pair
                the original emits. */
             x -= func_8009D234(D_80085224[D_8005F148].field_0x241) *
-                 ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9) / 256;
+                 ((g_fieldEntity.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9) / 256;
             y -= -(func_8009D254(D_80085224[D_8005F148].field_0x241) *
-                   ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9)) / 256;
+                   ((g_fieldEntity.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9)) / 256;
         }
     }
 }
@@ -2990,7 +2980,7 @@ void func_8009ECA4(void) {
     trail1.vy = D_80085224[g_fieldVars->memberSlot[1]].posY / 4096;
     trail2.vy = D_80085224[g_fieldVars->memberSlot[2]].posY / 4096;
 
-    stride = (D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9;
+    stride = (g_fieldEntity.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9;
     dir1 = func_8009A0E8(&trail1.vx, &lead.vx, &slots1);
     slots1 = (slots1 << 8) / stride;
     dir2 = func_8009A0E8(&trail2.vx, &lead.vx, &slots2);
@@ -3006,12 +2996,12 @@ void func_8009ECA4(void) {
             D_80070760[63 - i].y = trail1.vy / 4096;
             D_80070760[63 - i].unk6 =
                 func_8009AC9C((s16)(trail1.vx / 4096), (s16)(trail1.vy / 4096),
-                              (s16)(trail1.vz / 4096), *D_800C7204);
+                              (s16)(trail1.vz / 4096), *g_fieldWalkmesh);
             trail1.vx -= func_8009D234((u8)dir1)
-                         * ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9)
+                         * ((g_fieldEntity.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9)
                          / 256;
             trail1.vy -= -(func_8009D254((u8)dir1)
-                           * ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4))
+                           * ((g_fieldEntity.unk00A * (FIELD_CHANNEL_SCALE * 4))
                               >> 9))
                          / 256;
             D_80070760[63 - i].z =
@@ -3031,7 +3021,7 @@ void func_8009ECA4(void) {
                 (s16)(D_80085224[g_fieldVars->memberSlot[1]].posX / 4096),
                 (s16)(D_80085224[g_fieldVars->memberSlot[1]].posY / 4096),
                 (s16)(D_80085224[g_fieldVars->memberSlot[1]].posZ / 4096),
-                *D_800C7204);
+                *g_fieldWalkmesh);
             D_80070760[63 - i].z =
                 D_80085224[g_fieldVars->memberSlot[1]].posZ / 4096;
             D_80070760[63 - i].field_0A = 2;
@@ -3045,12 +3035,12 @@ void func_8009ECA4(void) {
             D_80070A60[63 - i].y = trail2.vy / 4096;
             D_80070A60[63 - i].unk6 =
                 func_8009AC9C((s16)(trail2.vx / 4096), (s16)(trail2.vy / 4096),
-                              (s16)(trail2.vz / 4096), *D_800C7204);
+                              (s16)(trail2.vz / 4096), *g_fieldWalkmesh);
             trail2.vx -= func_8009D234((u8)dir2)
-                         * ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9)
+                         * ((g_fieldEntity.unk00A * (FIELD_CHANNEL_SCALE * 4)) >> 9)
                          / 256;
             trail2.vy -= -(func_8009D254((u8)dir2)
-                           * ((D_800704A8.unk00A * (FIELD_CHANNEL_SCALE * 4))
+                           * ((g_fieldEntity.unk00A * (FIELD_CHANNEL_SCALE * 4))
                               >> 9))
                          / 256;
             D_80070A60[63 - i].z =
@@ -3070,7 +3060,7 @@ void func_8009ECA4(void) {
                 (s16)(D_80085224[g_fieldVars->memberSlot[2]].posX / 4096),
                 (s16)(D_80085224[g_fieldVars->memberSlot[2]].posY / 4096),
                 (s16)(D_80085224[g_fieldVars->memberSlot[2]].posZ / 4096),
-                *D_800C7204);
+                *g_fieldWalkmesh);
             D_80070A60[63 - i].z =
                 D_80085224[g_fieldVars->memberSlot[2]].posZ / 4096;
             D_80070A60[63 - i].field_0A = 2;
@@ -3430,9 +3420,9 @@ void func_8009FE18(s32 entIdx, Actor *actor, s32 flags) {
         D_80070760[p].field_0A = D_80070A60[p].field_0A = 2;
         func_8009F7F4((s16)idx, -1, actor->field_0x24F, 1);
         if (actor->field_0x1DA == 0) {
-            if (D_800704A8.entityIndex[2] != 0xFF) {
+            if (g_fieldEntity.entityIndex[2] != 0xFF) {
                 actor->field_0x1D8 = 32;
-            } else if (D_800704A8.entityIndex[1] != 0xFF) {
+            } else if (g_fieldEntity.entityIndex[1] != 0xFF) {
                 actor->field_0x1D8 = 16;
             } else {
                 actor->field_0x1D8 = 1;
@@ -3453,29 +3443,29 @@ void func_8009FE18(s32 entIdx, Actor *actor, s32 flags) {
 }
 
 /**
- * @brief Transcode the script entry list at @c D_800D5E90->entries into
+ * @brief Transcode the field's background tile map (@c *g_fieldTileMap) into
  *        a buffer of 16x16 sprite (@c SPRT_16) primitives.
  *
- * Walks the list of @ref ScriptEntry records (stride @c 0x10, terminated
- * by @c terminator == @c 0x7FFF) and writes one @c SPRT_16 per entry,
+ * Walks the list of @ref MapTile records (stride @c 0x10, ended by a tile
+ * whose @c x is @c MAP_TILE_END) and writes one @c SPRT_16 per entry,
  * returning the advanced @c prim pointer. Each sprite gets the entry's
  * @c u / @c v texture cell and @c clut, gray @c 0x80 colour, and is
- * marked semi-translucent unless @c kind == @c 4 (opaque).
+ * marked semi-translucent unless @c blendMode == @c 4 (opaque).
  *
  * Called by @c func_800983F0 as part of the chain that lays out
  * draw-prim regions back-to-back in one growing buffer.
  */
 SPRT_16 *func_800A0640(SPRT_16 *prim) {
-    ScriptEntry *e = D_800D5E90->entries;
+    MapTile *e = *g_fieldTileMap;
     while (1) {
-        if (e->terminator == 0x7FFF) break;
+        if (e->x == MAP_TILE_END) break;
         setSprt16(prim);
         setUV0(prim, e->u, e->v);
         prim->clut = e->clut;
         /* Chain direction is load-bearing: b0 must store first (setRGB0 stores r0 first). */
         prim->r0 = prim->g0 = prim->b0 = 0x80;
         /* Hand-written toggle: setSemiTrans lays its arms out inverted. */
-        if (e->kind == 4) {
+        if (e->blendMode == 4) {
             prim->code &= ~PRIM_CODE_SEMI_TRANS;
         } else {
             prim->code |= PRIM_CODE_SEMI_TRANS;
@@ -3500,7 +3490,7 @@ INCLUDE_ASM("asm/field/nonmatchings/fe_object1", func_800A06F0);
  *     content.
  *
  * Each transfer is sandwiched by @c DrawSync(1) polls (GPU-busy
- * waits); @c func_80042634(0) is called once per strip to set up the
+ * waits); @c VSync(0) is called once per strip to set up the
  * mode for the upcoming StoreImage.
  *
  * @return Restores VRAM in-place; no return value.
@@ -3517,7 +3507,7 @@ void func_800A0D6C(u8 *buf) {
     while (DrawSync(1) != 0) {}
     buf += 0x3000;
     for (i = 0; i < 16; i++) {
-        func_80042634(0);
+        VSync(0);
         rect.x = 0;
         rect.y = i * 16 + 0x100;
         rect.w = 0x340;
@@ -3584,42 +3574,41 @@ s32 func_800A0EB8(s32 start, s32 end, s32 total, s32 angle) {
 
 /**
  * @brief Project a 3D point through the current world transform and
- *        return the @c func_80040DE4 projection result.
+ *        return the @c RotTransPers projection result.
  *
  * Pushes the GTE matrix stack, installs the current world transform
- * (rotation and translation) from @c D_800C71F8, resets the geometric
+ * (rotation and translation) from @c g_curFieldView, resets the geometric
  * offset to @c (0, 0), then projects @p v to screen space, writing the
  * resulting on-screen XY into @c *sxy and discarding the @c p and flag
  * outputs into stack locals. Pops the matrix stack via
- * @c func_8003FF88 (return discarded) and returns @c func_80040DE4 's
- * result, the saved value survives @c func_8003FF88 by being copied
+ * @c PopMatrix (return discarded) and returns @c RotTransPers 's
+ * result, the saved value survives @c PopMatrix by being copied
  * out of @c v0 in the @c jal delay slot.
  */
 s32 func_800A0F34(SVECTOR *v, s32 *sxy) {
     s32 result;
     s32 unk_p, unk_flag;
-    func_8003FEE4();
-    SetRotMatrix((u8 *)D_800C71F8);
-    SetTransMatrix((u8 *)D_800C71F8);
+    PushMatrix();
+    SetRotMatrix((u8 *)g_curFieldView);
+    SetTransMatrix((u8 *)g_curFieldView);
     SetGeomOffset(0, 0);
-    result = func_80040DE4(v, sxy, &unk_p, &unk_flag);
-    func_8003FF88();
+    result = RotTransPers(v, sxy, &unk_p, &unk_flag);
+    PopMatrix();
     return result;
 }
 
 /**
  * @brief 2D position clamp, clamp @c out->(x,y) to a rect defined by
- *        @c D_8005F0F8->rect_a[a], shrunk by half the extents of
- *        @c D_8005F0F8->rect_b[b].
+ *        @c g_curFieldInfo->cameraRanges[a], shrunk by half the extents of
+ *        @c g_curFieldInfo->screenRanges[b].
  *
- * Computes four "half" values from rect_b's (f0,f2) and (f4,f6) field
- * pairs (signed average with round-toward-zero via @c (x + (x>>31)) >> 1),
- * then clamps @c out->x and @c out->y to the rect_a bounds @c (f4,f6) and
- * @c (f2,f0) minus/plus the appropriate half.
+ * Computes half the width and height of @c screenRanges[b] (signed average
+ * with round-toward-zero via @c (x + (x>>31)) >> 1), then clamps @c out->x
+ * and @c out->y to @c cameraRanges[a] shrunk by those halves.
  *
  * @param out  Output position (s16 x, s16 y).
- * @param a    @c rect_a[] index (one of 2 in caller).
- * @param b    @c rect_b[] index (always 0 in caller).
+ * @param a    @c cameraRanges[] index (one of 2 in caller).
+ * @param b    @c screenRanges[] index (always 0 in caller).
  *
  * @note The first and last `half` expressions are inlined (not assigned
  *       to the @c half local) to match the target's register allocation
@@ -3631,18 +3620,18 @@ s32 func_800A0F34(SVECTOR *v, s32 *sxy) {
 void func_800A0FB8(Vec2s *out, s16 a, s16 b) {
     s32 half;
 
-    if (D_8005F0F8->rect_a[a].f4 - (D_8005F0F8->rect_b[b].f4 - D_8005F0F8->rect_b[b].f6) / 2 < out->x) {
-        out->x = D_8005F0F8->rect_a[a].f4 - (D_8005F0F8->rect_b[b].f4 - D_8005F0F8->rect_b[b].f6) / 2;
+    if (g_curFieldInfo->cameraRanges[a].right - (g_curFieldInfo->screenRanges[b].right - g_curFieldInfo->screenRanges[b].left) / 2 < out->x) {
+        out->x = g_curFieldInfo->cameraRanges[a].right - (g_curFieldInfo->screenRanges[b].right - g_curFieldInfo->screenRanges[b].left) / 2;
     }
-    half = (D_8005F0F8->rect_b[b].f4 - D_8005F0F8->rect_b[b].f6) / 2;
-    if (out->x < D_8005F0F8->rect_a[a].f6 + half) {
-        out->x = D_8005F0F8->rect_a[a].f6 + half;
+    half = (g_curFieldInfo->screenRanges[b].right - g_curFieldInfo->screenRanges[b].left) / 2;
+    if (out->x < g_curFieldInfo->cameraRanges[a].left + half) {
+        out->x = g_curFieldInfo->cameraRanges[a].left + half;
     }
-    half = (D_8005F0F8->rect_b[b].f2 - D_8005F0F8->rect_b[b].f0) / 2;
-    if (D_8005F0F8->rect_a[a].f2 - half < out->y) {
-        out->y = D_8005F0F8->rect_a[a].f2 - half;
+    half = (g_curFieldInfo->screenRanges[b].bottom - g_curFieldInfo->screenRanges[b].top) / 2;
+    if (g_curFieldInfo->cameraRanges[a].bottom - half < out->y) {
+        out->y = g_curFieldInfo->cameraRanges[a].bottom - half;
     }
-    if (out->y < D_8005F0F8->rect_a[a].f0 + (D_8005F0F8->rect_b[b].f2 - D_8005F0F8->rect_b[b].f0) / 2) {
-        out->y = D_8005F0F8->rect_a[a].f0 + (D_8005F0F8->rect_b[b].f2 - D_8005F0F8->rect_b[b].f0) / 2;
+    if (out->y < g_curFieldInfo->cameraRanges[a].top + (g_curFieldInfo->screenRanges[b].bottom - g_curFieldInfo->screenRanges[b].top) / 2) {
+        out->y = g_curFieldInfo->cameraRanges[a].top + (g_curFieldInfo->screenRanges[b].bottom - g_curFieldInfo->screenRanges[b].top) / 2;
     }
 }

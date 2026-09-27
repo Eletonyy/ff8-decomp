@@ -13,6 +13,7 @@
 #include "menujnc2.h"
 #include "btl_sfx.h"
 #include "card.h"
+#include "psxsdk/libetc.h"
 
 /*
  * Foreign symbols owned by other units (menumain/gamestate/battle/...). Kept
@@ -780,17 +781,13 @@ s32 getAbilityScrollOffset(s32 index) {
     return -(page * 160);
 }
 
-/** @brief Draw inner panel with section id 0xB and clear flag. */
-s32 renderInnerPanel(s32 pos) {
+/** @brief Look up string @p pos in menu text category 0xB. */
+u8 *renderInnerPanel(s32 pos) {
     return func_801F08D4(1, 0xB, pos, 0);
 }
 
-/**
- * @brief Draw inner panel with section id 0xB and set flag.
- * @param pos Panel position parameter
- * @return Result of func_801F08D4
- */
-s32 renderInnerPanelAlt(s32 pos) {
+/** @brief Look up string @p pos in menu text category 0xB, with the last flag set. */
+u8 *renderInnerPanelAlt(s32 pos) {
     return func_801F08D4(1, 0xB, pos, 1);
 }
 
@@ -1559,35 +1556,36 @@ void previewJunctionChange(s32 charIdx, s32 gfIdx, s32 slot, s32 abilityId) {
 }
 
 /**
- * @brief Look up ability/command name string by type and index.
+ * @brief Look up the description of a junction command or ability by type and index.
  *
- * For type 1 (commands): looks up command ID from D_801EEF10, finds
- * the GF ability index in g_gfData, and returns the name via getAbilityEntryDesc.
+ * For type 1 (commands): looks up the command ability ID from D_801EEF10,
+ * reads its battle command from g_kernel, and returns that command's
+ * description via getBattleCommandDesc.
  * For type 2 (abilities): looks up ability ID from D_801EEF40 and
- * returns the name via getAbilityDesc.
+ * returns its description via getAbilityDesc.
  *
  * @param type Lookup type (0=none, 1=command, 2=ability).
  * @param index Index into the lookup table.
- * @return Name string pointer, or 0 if not found.
+ * @return Description string, or NULL if not found.
  */
-s32 getAbilityNamePtr(s32 type, s32 index) {
-    s32 result;
+u8 *getAbilityNamePtr(s32 type, s32 index) {
+    u8 *result;
     u8 *gfData;
     s32 stride;
 
     switch (type) {
     case 0:
-        result = 0;
+        result = NULL;
         break;
     case 1:
         if (index < D_801EEF38) {
             u8 cmdId = D_801EEF10[index * 2];
-            gfData = (u8 *)&D_80078E00;
+            gfData = (u8 *)&g_kernel;
             stride = 8;
-            /* g_gfData ability range J: typeField at offset 0x4180 + 5 = 0x4185 */
-            result = getAbilityEntryDesc(gfData[(cmdId - 0x14) * stride + 0x4185]);
+            /* g_kernel ability range J: typeField at offset 0x4180 + 5 = 0x4185 */
+            result = getBattleCommandDesc(gfData[(cmdId - 0x14) * stride + 0x4185]);
         } else {
-            result = 0;
+            result = NULL;
         }
         break;
     case 2:
@@ -1595,10 +1593,10 @@ s32 getAbilityNamePtr(s32 type, s32 index) {
             u8 ablId = D_801EEF40[index * 2];
             result = getAbilityDesc(ablId);
         } else {
-            result = 0;
+            result = NULL;
         }
         break;
-        result = 0;
+        result = NULL;
     default:
         break;
     }
@@ -1695,8 +1693,8 @@ void buildMagicLookupTable(s32 charIdx) {
  * @param ctx Junction menu context (JunctionMenuCtx *).
  */
 void junctionMenuUpdate(JunctionMenuCtx *ctx) {
-    u16 inputNew = g_menuDisplayCfg.inputNew;
     u16 inputRepeat = g_menuDisplayCfg.inputRepeat;
+    u16 inputNew = g_menuDisplayCfg.inputNew;
     u16 *statePtr;
     u16 state;
     s32 var_a2;
@@ -1740,7 +1738,7 @@ dispatch:
                 ctx->unk4E = 0;
             }
             if (popcount(ctx->parentParam) >= 2) {
-                if (inputNew & 4) {
+                if (inputRepeat & PADL1) {
                     if ((ctx->unk61 == 0) ||
                         (g_junctionChars[ctx->charIdx].currentHp <= g_gameState.chars[ctx->charIdx].currentHp)) {
                         restoreCommandAbilityBackup(ctx->charIdx, 1);
@@ -1756,7 +1754,7 @@ dispatch:
                     *statePtr = 0x2B;
                     break;
                 }
-                if (inputNew & 8) {
+                if (inputRepeat & PADR1) {
                     if ((ctx->unk61 == 0) ||
                         (g_junctionChars[ctx->charIdx].currentHp <= g_gameState.chars[ctx->charIdx].currentHp)) {
                         restoreCommandAbilityBackup(ctx->charIdx, 1);
@@ -1774,7 +1772,7 @@ dispatch:
                 }
             }
             renderStatValueBar(ctx, 1, ctx->unk4E);
-            if (inputRepeat & 0x40) {
+            if (inputNew & PADRdown) {
                 sendSpuCommand(2);
                 switch (ctx->unk4E) {
                 case 0:
@@ -1795,7 +1793,7 @@ dispatch:
                 break;
             }
         block35_fall:
-            if (inputRepeat & 0x10) {
+            if (inputNew & PADRup) {
                 if ((ctx->unk61 != 0) &&
                     (g_junctionChars[ctx->charIdx].currentHp > g_gameState.chars[ctx->charIdx].currentHp)) {
                     ctx->returnState = 3;
@@ -1810,11 +1808,11 @@ dispatch:
                     applyJunctedGfs(ctx->charIdx);
                     snapshotJunctionPreview(ctx->charIdx);
                     *statePtr = 0x48;
-                    ctx->unk4E = func_801F76E0(inputNew, ctx->unk5A, ctx->unk4E);
+                    ctx->unk4E = func_801F76E0(inputRepeat, ctx->unk5A, ctx->unk4E);
                     ctx->itemPtr = renderInnerPanelAlt(D_801EEB1C[ctx->unk4E]);
                 }
             } else {
-                ctx->unk4E = func_801F76E0(inputNew, ctx->unk5A, ctx->unk4E);
+                ctx->unk4E = func_801F76E0(inputRepeat, ctx->unk5A, ctx->unk4E);
                 ctx->itemPtr = renderInnerPanelAlt(D_801EEB1C[ctx->unk4E]);
             }
             break;
@@ -1843,10 +1841,10 @@ dispatch:
                 ctx->slideOffset = 0;
                 *statePtr = 3;
             }
-            if (inputRepeat & 4) {
+            if (inputNew & PADL1) {
                 *statePtr = 4;
             }
-            if (inputRepeat & 8) {
+            if (inputNew & PADR1) {
                 *statePtr = 6;
             }
             break;
@@ -1875,10 +1873,10 @@ dispatch:
                 ctx->slideOffset = 0;
                 *statePtr = 3;
             }
-            if (inputRepeat & 4) {
+            if (inputNew & PADL1) {
                 *statePtr = 4;
             }
-            if (inputRepeat & 8) {
+            if (inputNew & PADR1) {
                 *statePtr = 6;
             }
             break;
@@ -1933,12 +1931,12 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatDeltaEntry(ctx, 1, ctx->unk4C);
             ctx->itemPtr = renderInnerPanelAlt(D_801EEB38[ctx->unk4C]);
-            ctx->unk4C = func_801F6800(inputNew, 3, ctx->unk4C);
-            if (inputRepeat & 0x10) {
+            ctx->unk4C = func_801F6800(inputRepeat, 3, ctx->unk4C);
+            if (inputNew & PADRup) {
                 sendSpuCommand(3);
                 *statePtr = 8;
             }
-            if (inputRepeat & 0x40) {
+            if (inputNew & PADRdown) {
                 playSoundEffect(0x11);
                 autoJunctionAll(ctx->charIdx, ctx->unk4C);
                 previewJunctionChange(ctx->charIdx, -1, -1, -1);
@@ -1954,7 +1952,7 @@ dispatch:
             ctx->unk40 = 0;
             /* fallthrough */
         case 0xD:
-            ctx->unk4B = func_80035AA4(ctx->statInfo[1], 0);
+            ctx->unk4B = findNthSetBit(ctx->statInfo[1], 0);
             *statePtr = 0xE;
             break;
         case 0xE:
@@ -1969,14 +1967,14 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatDeltaEntry(ctx, 1, ctx->unk4B);
             if (ctx->statInfo[1] == 3) {
-                ctx->unk4B = func_801F6800(inputNew, 2, ctx->unk4B);
+                ctx->unk4B = func_801F6800(inputRepeat, 2, ctx->unk4B);
             }
             ctx->itemPtr = renderInnerPanelAlt(D_801EEB30[ctx->unk4B]);
-            if (inputRepeat & 0x10) {
+            if (inputNew & PADRup) {
                 sendSpuCommand(3);
                 *statePtr = 8;
             }
-            if (inputRepeat & 0x40) {
+            if (inputNew & PADRdown) {
                 sendSpuCommand(2);
                 if (ctx->unk4B != 0) {
                     *statePtr = 0x10;
@@ -2000,9 +1998,9 @@ dispatch:
             *statePtr = 0x12;
             break;
         case 0x12:
-            ctx->unk5C = func_801F6768(inputNew, 2, ctx->unk5C);
+            ctx->unk5C = func_801F6768(inputRepeat, 2, ctx->unk5C);
             func_801F6F88(ctx->unk5C);
-            if (inputRepeat & 0x40) {
+            if (inputNew & PADRdown) {
                 ctx->unk42 = 0;
                 ctx->unk61 = 1;
                 switch (ctx->unk5C) {
@@ -2017,7 +2015,7 @@ dispatch:
                     *statePtr = 0xE;
                     break;
                 default:
-                    if (inputRepeat & 0x10) {
+                    if (inputNew & PADRup) {
                         sendSpuCommand(3);
                         ctx->unk5C = -1;
                         ctx->unk42 = 0;
@@ -2026,7 +2024,7 @@ dispatch:
                     break;
                 }
             } else {
-                if (inputRepeat & 0x10) {
+                if (inputNew & PADRup) {
                     sendSpuCommand(3);
                     ctx->unk5C = -1;
                     ctx->unk42 = 0;
@@ -2113,7 +2111,7 @@ dispatch:
             s32 col;
             s32 fr;
             renderStatValueBar(ctx, 0, ctx->unk4E);
-            fr = func_801F6768(inputNew, ctx->unk5F, ctx->unk5E);
+            fr = func_801F6768(inputRepeat, ctx->unk5F, ctx->unk5E);
             ctx->unk5E = fr;
             renderStatColumnEntry(1, ctx->unk5E, 0);
             if (fr < 3) {
@@ -2125,23 +2123,23 @@ dispatch:
             }
             if (col != 0) {
                 if (fr < 3) {
-                    { s32 b = (s32)&D_80078E00; u8 *p = (u8 *)((col - 0x14) * 8 + b); ctx->itemPtr = getAbilityEntryDesc(p[0x4185]); }
+                    { s32 b = (s32)&g_kernel; u8 *p = (u8 *)((col - 0x14) * 8 + b); ctx->itemPtr = getBattleCommandDesc(p[0x4185]); }
                 } else {
                     ctx->itemPtr = getAbilityDesc(col);
                 }
             } else {
-                ctx->itemPtr = 0;
+                ctx->itemPtr = NULL;
             }
             ctx->unk44 = ctx->statByte[ctx->unk56] / 11;
-            if (inputRepeat & 0x10) {
+            if (inputNew & PADRup) {
                 sendSpuCommand(3);
                 *statePtr = 0x19;
             }
-            if (inputRepeat & 0x40) {
+            if (inputNew & PADRdown) {
                 sendSpuCommand(2);
                 *statePtr = 0x1B;
             }
-            if (inputRepeat & 0x80) {
+            if (inputNew & PADRleft) {
                 s32 e5 = ctx->unk5E;
                 if (e5 >= 3) {
                     if (g_gameState.chars[ctx->charIdx].commands[e5 + 1] != 0) {
@@ -2175,15 +2173,15 @@ dispatch:
             {
                 s32 d = ctx->statByte[ctx->unk56] / 11;
                 s32 m = ctx->statByte[ctx->unk56] % 11;
-                ctx->statByte[ctx->unk56] = d * 0xB + func_801F6768(inputNew, 0xB, m);
+                ctx->statByte[ctx->unk56] = d * 0xB + func_801F6768(inputRepeat, 0xB, m);
             }
             ctx->itemPtr = getAbilityNamePtr(ctx->unk56, ctx->statByte[ctx->unk56]);
             if (ctx->unk57 >= 0xC) {
-                if (inputNew & 0x8000) {
+                if (inputRepeat & PADLleft) {
                     state = 0x1D;
                     goto dispatch;
                 }
-                if (inputNew & 0x2000) {
+                if (inputRepeat & PADLright) {
                     state = 0x1F;
                     goto dispatch;
                 }
@@ -2191,10 +2189,10 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatColumnEntry(0, ctx->unk5E, 0);
             renderStatListEntry(1, ctx->statByte[ctx->unk56]);
-            if (inputRepeat & 0x40) {
+            if (inputNew & PADRdown) {
                 if (ctx->statByte[ctx->unk56] >= (s32)ctx->unk57) {
                     sendSpuCommand(5);
-                    if (inputRepeat & 0x10) {
+                    if (inputNew & PADRup) {
                         sendSpuCommand(3);
                         *statePtr = 0x18;
                     }
@@ -2202,7 +2200,7 @@ dispatch:
                     state = 0x21;
                     goto dispatch;
                 }
-            } else if (inputRepeat & 0x10) {
+            } else if (inputNew & PADRup) {
                 sendSpuCommand(3);
                 *statePtr = 0x18;
             }
@@ -2239,10 +2237,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x1C;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & PADLright) {
                 *statePtr = 0x1F;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & PADLleft) {
                 *statePtr = 0x1D;
             }
             break;
@@ -2277,10 +2275,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x1C;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & PADLright) {
                 *statePtr = 0x1F;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & PADLleft) {
                 *statePtr = 0x1D;
             }
             break;
@@ -2354,10 +2352,10 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatDeltaEntry(ctx, 1, ctx->unk4A);
             if (g_junctionChars[ctx->charIdx].availFlags != 0) {
-                ctx->unk4A = func_801F6800(inputNew, 2, ctx->unk4A);
+                ctx->unk4A = func_801F6800(inputRepeat, 2, ctx->unk4A);
             }
             ctx->itemPtr = renderInnerPanelAlt(D_801EEB28[ctx->unk4A]);
-            if (inputRepeat & 0x10) {
+            if (inputNew & PADRup) {
                 sendSpuCommand(3);
                 ctx->unk5A = getJunctionCapabilities(ctx->charIdx);
                 if (ctx->unk62 != 0) {
@@ -2383,7 +2381,7 @@ dispatch:
                     *statePtr = 8;
                 }
             }
-            if (inputRepeat & 0x40) {
+            if (inputNew & PADRdown) {
                 sendSpuCommand(2);
                 if (ctx->unk4A != 0) {
                     *statePtr = 0x31;
@@ -2423,7 +2421,7 @@ dispatch:
             }
             //tmp = (s8)(slot - (col >> 2) * 4);
             tmp = (s8) (slot - (((unsigned long long) (col >> 2)) * 4)); // Fixme
-            ctx->statSlot = (col >> 2) * 4 + func_801F6768(inputNew, 4, tmp);
+            ctx->statSlot = (col >> 2) * 4 + func_801F6768(inputRepeat, 4, tmp);
             ctx->unk58 = 0xA;
             ctx->unk38 = getAbilityScrollOffset(0xA);
             {
@@ -2436,11 +2434,11 @@ dispatch:
                 previewJunctionChange(ctx->charIdx, arg1, -1, -1);
             }
             if (ctx->discCount >= 5) {
-                if (inputNew & 0x8000) {
+                if (inputRepeat & PADLleft) {
                     state = 0x2D;
                     goto dispatch;
                 }
-                if (inputNew & 0x2000) {
+                if (inputRepeat & PADLright) {
                     state = 0x2F;
                     goto dispatch;
                 }
@@ -2448,19 +2446,19 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatDeltaEntry(ctx, 0, ctx->unk4A);
             renderStatEffectBar(1, ctx);
-            if (inputRepeat & 0x40) {
+            if (inputNew & PADRdown) {
                 if (ctx->statSlot < (s32)ctx->discCount) {
                     state = 0x42;
                     goto dispatch;
                 }
                 sendSpuCommand(5);
             }
-            if (inputRepeat & 0x10) {
+            if (inputNew & PADRup) {
                 sendSpuCommand(3);
                 previewJunctionChange(ctx->charIdx, -1, -1, -1);
                 saveCommandAbilityBackup(ctx->charIdx, 1);
                 *statePtr = 0x2A;
-            } else if (inputRepeat & 0x80) {
+            } else if (inputNew & PADRleft) {
                 if (ctx->statSlot < (s32)ctx->discCount) {
                     sendSpuCommand(2);
                     *statePtr = 0x45;
@@ -2489,9 +2487,9 @@ dispatch:
             *statePtr = 0x2C;
             break;
         case 0x2C:
-            ctx->unk5C = func_801F6768(inputNew, 2, ctx->unk5C);
+            ctx->unk5C = func_801F6768(inputRepeat, 2, ctx->unk5C);
             func_801F6F88(ctx->unk5C);
-            if (inputRepeat & 0x40) {
+            if (inputNew & PADRdown) {
                 sendSpuCommand(2);
                 syncCharacterHp(ctx->charIdx);
                 ctx->statSlot = -1;
@@ -2560,10 +2558,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x29;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & PADLleft) {
                 *statePtr = 0x2D;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & PADLright) {
                 *statePtr = 0x2F;
             }
             break;
@@ -2614,10 +2612,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x29;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & PADLleft) {
                 *statePtr = 0x2D;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & PADLright) {
                 *statePtr = 0x2F;
             }
             break;
@@ -2654,7 +2652,7 @@ dispatch:
             }
             col = ctx->unk58 % 5;
             grp = ctx->unk58 / 5;
-            if (inputNew & 0x4000) {
+            if (inputRepeat & PADLdown) {
                 ctx->statScale = 0x1000;
                 sendSpuCommand(1);
                 col += 1;
@@ -2662,7 +2660,7 @@ dispatch:
                     col = (grp == 3);
                 }
             }
-            if (inputNew & 0x1000) {
+            if (inputRepeat & PADLup) {
                 ctx->statScale = 0x1000;
                 sendSpuCommand(1);
                 col -= 1;
@@ -2679,26 +2677,26 @@ dispatch:
             renderStatDeltaEntry(ctx, 0, ctx->unk4A);
             renderAbilityEntry(1, ctx->unk58);
             previewJunctionChange(ctx->charIdx, -1, -1, -1);
-            if (inputNew & 0x8000) {
+            if (inputRepeat & PADLleft) {
                 if (grp != 0) {
                     ctx->statScale = 0x1000;
                     state = 0x35;
                     goto dispatch;
                 }
             }
-            if ((inputNew & 0x2000) && (grp < 3)) {
+            if ((inputRepeat & PADLright) && (grp < 3)) {
                 ctx->statScale = 0x1000;
                 state = 0x37;
                 goto dispatch;
             }
             ctx->dataPtr2 = buildMagicAvailMask(ctx->charIdx, ctx->unk58);
-            if (inputRepeat & 0x10) {
+            if (inputNew & PADRup) {
                 ctx->statScale = 0x1000;
                 sendSpuCommand(3);
                 previewJunctionChange(ctx->charIdx, -1, -1, -1);
                 *statePtr = 0x39;
             } else {
-                if (inputRepeat & 0x40) {
+                if (inputNew & PADRdown) {
                     ctx->statScale = 0x1000;
                     if (getJunctionSlotFlags(ctx->charIdx, ctx->unk58) != 0) {
                         sendSpuCommand(2);
@@ -2707,7 +2705,7 @@ dispatch:
                         sendSpuCommand(5);
                     }
                 }
-                if (inputRepeat & 0x80) {
+                if (inputNew & PADRleft) {
                     ctx->statScale = 0x1000;
                     if (getJunctionSlotFlags(ctx->charIdx, ctx->unk58) != 0) {
                         s32 idx = D_801EEAC0[ctx->unk58];
@@ -2844,12 +2842,12 @@ dispatch:
                 col += 3;
             }
             tmp = (s8) (slot - (((unsigned long long) (col >> 2)) * 4));
-            ctx->unk50 = (col >> 2) * 4 + func_801F6768(inputNew, 4, tmp) ;
-            if (inputNew & 0x8000) {
+            ctx->unk50 = (col >> 2) * 4 + func_801F6768(inputRepeat, 4, tmp) ;
+            if (inputRepeat & PADLleft) {
                 state = 0x3C;
                 goto dispatch;
             }
-            if (!(inputNew & 0x2000)) {
+            if (!(inputRepeat & PADLright)) {
                 renderStatValueBar(ctx, 0, ctx->unk4E);
                 renderStatDeltaEntry(ctx, 0, ctx->unk4A);
                 renderAbilityEntry(0, ctx->unk58);
@@ -2862,7 +2860,7 @@ dispatch:
                   } else {
                     previewJunctionChange(ctx->charIdx, -1, cc, grp);
                   } }
-                if (inputRepeat & 0x40) {
+                if (inputNew & PADRdown) {
                     s32 mm2 = 1 << ctx->unk50;
                     if (ctx->dataPtr2 & mm2) {
                         playSoundEffect(0x11);
@@ -2871,7 +2869,7 @@ dispatch:
                     }
                     sendSpuCommand(5);
                 }
-                if (inputRepeat & 0x10) {
+                if (inputNew & PADRup) {
                     sendSpuCommand(3);
                     previewJunctionChange(ctx->charIdx, -1, -1, -1);
                     *statePtr = 0x34;
@@ -2926,10 +2924,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x3B;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & PADLleft) {
                 *statePtr = 0x3C;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & PADLright) {
                 *statePtr = 0x3E;
             }
             break;
@@ -2976,10 +2974,10 @@ dispatch:
                 ctx->unk34 = 0;
                 *statePtr = 0x3B;
             }
-            if (inputRepeat & 0x8000) {
+            if (inputNew & PADLleft) {
                 *statePtr = 0x3C;
             }
-            if (inputRepeat & 0x2000) {
+            if (inputNew & PADLright) {
                 *statePtr = 0x3E;
             }
             break;
@@ -3031,21 +3029,21 @@ dispatch:
         case 0x43:
             sendSpuCommand(5);
             ctx->unk66 = 0x258;
-            func_8002D6AC(0, D_801EF1B0);
+            initSfxPlayback(0, D_801EF1B0);
             func_801F23D0(0, 0x68, D_801EF1B0);
-            func_8002DE74(0, 0x56);
-            func_8002CA58(0, 0);
-            func_8002DCF4(0);
+            setSfxField2F(0, 0x56);
+            setSfxPitch(0, 0);
+            startSfxNormal(0);
             *statePtr = 0x44;
             break;
         case 0x44:
             ctx->unk66 -= 1;
-            if (inputRepeat & 0x50) {
-                func_801F7BEC(inputRepeat);
+            if (inputNew & (PADRup | PADRdown)) {
+                func_801F7BEC(inputNew);
                 ctx->unk66 = 0;
             }
             if ((s16)ctx->unk66 <= 0) {
-                func_8002DD58(0);
+                fadeOutSfxFast(0);
                 *statePtr = 0x29;
             }
             break;
@@ -3061,11 +3059,11 @@ dispatch:
             renderStatValueBar(ctx, 0, ctx->unk4E);
             renderStatDeltaEntry(ctx, 0, ctx->unk4A);
             renderStatEffectBar(1, ctx);
-            if (inputRepeat & 0x10) {
+            if (inputNew & PADRup) {
                 sendSpuCommand(3);
                 *statePtr = 0x47;
             }
-            if (inputRepeat & 0xC0) {
+            if (inputNew & (PADRdown | PADRleft)) {
                 sendSpuCommand(2);
                 *statePtr = 0x47;
             }
@@ -3090,7 +3088,7 @@ dispatch:
                 func_801F18FC(ctx);
                 func_801F0BB0();
                 func_801F5340();
-                func_80023888();
+                recalcPartyStats();
                 *statePtr = 8;
             }
             if (func_801F1200() == 0) {
@@ -3213,14 +3211,14 @@ s32 renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
             cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuColor, (color * 64) + 2);
         }
         x += 0xA;
-        func_8002F294(currentVal, buf, func_80020F84(0xB)[1]);
-        fmtParam = func_80020F84(0xB)[1];
-        func_8002F2EC(&buf[2], 2, fmtParam, func_80020F84(0xB)[0]);
-        func_8002A2C4(buf, fmtResult);
+        intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
+        fmtParam = getMenuString(0xB)[1];
+        replaceLeadingZeros(&buf[2], 2, fmtParam, getMenuString(0xB)[0]);
+        btlStrcat2(buf, fmtResult);
         cursorY = func_8002C56C(renderCtx, cy2, x, y, &buf[2], color);
     }
 
-    if (func_80037ADC() == 4) {
+    if (isMcBusy() == 4) {
         cfg->iconType = 0xFC;
     } else {
         cfg->iconType = 0xD0;
@@ -3296,14 +3294,14 @@ s32 renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
             cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuColor, (color * 64) + 2);
         }
         x += 0xA;
-        func_8002F294(currentVal, buf, func_80020F84(0xB)[1]);
-        fmtParam = func_80020F84(0xB)[1];
-        func_8002F2EC(&buf[2], 2, fmtParam, func_80020F84(0xB)[0]);
-        func_8002A2C4(buf, fmtResult);
+        intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
+        fmtParam = getMenuString(0xB)[1];
+        replaceLeadingZeros(&buf[2], 2, fmtParam, getMenuString(0xB)[0]);
+        btlStrcat2(buf, fmtResult);
         cursorY = func_8002C56C(renderCtx, cy2, x, y, &buf[2], color);
     }
 
-    if (func_80037ADC() == 4) {
+    if (isMcBusy() == 4) {
         cfg->iconType = 0xFD;
     } else {
         cfg->iconType = 0xD1;
@@ -3401,14 +3399,14 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
             cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuColor, (color * 64) + 2);
         }
         x += 0xA;
-        func_8002F294(currentVal, buf, func_80020F84(0xB)[1]);
-        fmtParam = func_80020F84(0xB)[1];
-        func_8002F2EC(bufPtr, 2, fmtParam, func_80020F84(0xB)[0]);
-        func_8002A2C4(buf, fmtResult);
+        intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
+        fmtParam = getMenuString(0xB)[1];
+        replaceLeadingZeros(bufPtr, 2, fmtParam, getMenuString(0xB)[0]);
+        btlStrcat2(buf, fmtResult);
         cursorY = func_8002C56C(renderCtx, cy2, x, y, bufPtr, color);
     }
 
-    if (func_80037ADC() == 4) {
+    if (isMcBusy() == 4) {
         cfg->iconType = 0xFE;
     } else {
         cfg->iconType = 0xD2;
@@ -3498,14 +3496,14 @@ s32 renderStatTableD(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
             cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuColor, (color * 64) + 2);
         }
         x += 0xA;
-        func_8002F294(currentVal, buf, func_80020F84(0xB)[1]);
-        fmtParam = func_80020F84(0xB)[1];
-        func_8002F2EC(bufPtr, 2, fmtParam, func_80020F84(0xB)[0]);
-        func_8002A2C4(buf, fmtResult);
+        intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
+        fmtParam = getMenuString(0xB)[1];
+        replaceLeadingZeros(bufPtr, 2, fmtParam, getMenuString(0xB)[0]);
+        btlStrcat2(buf, fmtResult);
         cursorY = func_8002C56C(renderCtx, cy2, x, y, bufPtr, color);
     }
 
-    if (func_80037ADC() == 4) {
+    if (isMcBusy() == 4) {
         cfg->iconType = 0xFF;
     } else {
         cfg->iconType = 0xD3;
@@ -4042,10 +4040,10 @@ s32 renderJunctionSlotDetail(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 wideM
         if (availFlags & magicBit) {
             name = getMagicNamePtr(magicId);
         } else {
-            name = (u8 *)renderInnerPanel(0x1A);
+            name = renderInnerPanel(0x1A);
         }
     } else {
-        name = (u8 *)renderInnerPanel(0x1A);
+        name = renderInnerPanel(0x1A);
     }
     cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, available);
 
@@ -4255,7 +4253,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
                             (!available) ? 0x1C0 : 0x80);
     magicId = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_ELEM];
     if (magicId == 0) {
-        name = (u8 *)renderInnerPanel(0x1A);
+        name = renderInnerPanel(0x1A);
     } else {
         name = getMagicNamePtr(magicId);
     }
@@ -4272,7 +4270,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
         yPos = y + 0x11;
         cursorY = func_800300F8(renderCtx, cursorY, 0x12B, xPos, yPos, g_menuColor, 0x1C0);
         xPos = x + 0x30;
-        name = (u8 *)renderInnerPanel(0x1A);
+        name = renderInnerPanel(0x1A);
         cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, 0);
     } else {
         for (i = 0; i < numSlots; i++) {
@@ -4284,7 +4282,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
             xPos = x + 0x30;
             magicId = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_ELEM_0 + i];
             if (magicId == 0) {
-                name = (u8 *)renderInnerPanel(0x1A);
+                name = renderInnerPanel(0x1A);
             } else {
                 name = getMagicNamePtr(magicId);
             }
@@ -4337,7 +4335,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
                             (!available) ? 0x1C0 : 0x80);
     magicId = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_STATUS];
     if (magicId == 0) {
-        name = (u8 *)renderInnerPanel(0x1A);
+        name = renderInnerPanel(0x1A);
     } else {
         name = getMagicNamePtr(magicId);
     }
@@ -4354,7 +4352,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
         yPos = y + 0x11;
         cursorY = func_800300F8(renderCtx, cursorY, 0x129, xPos, yPos, g_menuColor, 0x1C0);
         xPos = x + 0x30;
-        name = (u8 *)renderInnerPanel(0x1A);
+        name = renderInnerPanel(0x1A);
         cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, 0);
     } else {
         for (i = 0; i < numSlots; i++) {
@@ -4366,7 +4364,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
             xPos = x + 0x30;
             magicId = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_STATUS_0 + i];
             if (magicId == 0) {
-                name = (u8 *)renderInnerPanel(0x1A);
+                name = renderInnerPanel(0x1A);
             } else {
                 name = getMagicNamePtr(magicId);
             }
@@ -4473,7 +4471,7 @@ s32 setupStatBorderPanel(s32 ctx, s32 mode, s32 x, s32 y, s32 renderParam) {
  */
 s32 renderJunctionHeader(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
-    s32 p1, p2;
+    u8 *p1, *p2;
     s32 xPos, yPos;
     s32 icon1, icon2;
     s32 seven = 7;
@@ -4502,9 +4500,9 @@ s32 renderJunctionHeader(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x
 
     xPos = x + 0x10;
     yPos = y + 6;
-    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, (u8 *)p1, seven);
+    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, p1, seven);
     xPos = x + 0x4B;
-    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, (u8 *)p2, seven);
+    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, p2, seven);
 
     xPos = x + 8;
     yPos = y + 7;
@@ -4825,7 +4823,7 @@ s32 renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32
  * @brief Render the character's 3 equipped-command rows with junction highlighting.
  *
  * Reads the character index from @c ctx->charIdx, renders the character title (looked
- * up via @c func_80020EF4 from @c g_charMenuInfo[charIdx].unk12), then loops over the
+ * up via @c getBattleCommandName from @c g_charMenuInfo[charIdx].unk12), then loops over the
  * 3 equipped commands (@c g_gameState.chars[charIdx].commands[i]). Each command is
  * drawn with its category icon (@c getAbilityCategory) and name (@c getAbilityName),
  * highlighted (color 1 instead of 7) when the junction slot being edited — queried
@@ -4859,7 +4857,7 @@ s32 renderStatRowGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s
     xPos = x + 0x21;
     yPos = y + 9;
     highlight = 7;
-    title = func_80020EF4((*(cmiTable = &g_charMenuInfo))[ctx->charIdx].unk12);
+    title = getBattleCommandName((*(cmiTable = &g_charMenuInfo))[ctx->charIdx].unk12);
     cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, title, highlight);
 
     for (i = 0; i < 3; i++) {
@@ -5007,14 +5005,14 @@ s32 renderCharSwitchPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 
             x2 += 0x180;
         }
         chr = ctx->prevCharIdx;
-        rec = &D_80077808[chr];
+        rec = &g_characters[chr];
         info = &g_charMenuInfo[chr];
         cursorY = func_801F65F0(renderCtx, cursorY, x2, y2, rec, info);
         x2 = x + scale;
         y2 = y;
     }
     chr = ctx->charIdx;
-    rec = &D_80077808[chr];
+    rec = &g_characters[chr];
     info = &g_charMenuInfo[chr];
     return func_801F65F0(renderCtx, cursorY, x2, y2, rec, info);
 }
@@ -5333,7 +5331,7 @@ void initJunctionMenu(MenuParentCtx *parentCtx) {
     JunctionMenuCtx *ctx;
     s32 i;
 
-    ctx = (JunctionMenuCtx *)func_801F179C((s32)junctionMenuUpdate, (s32)renderJunctionMenu);
+    ctx = func_801F179C(junctionMenuUpdate, renderJunctionMenu);
     func_801F5300();
     if (ctx != NULL) {
         ctx->parentParam = parentCtx->param;

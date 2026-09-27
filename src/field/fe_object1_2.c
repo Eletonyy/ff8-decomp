@@ -1,18 +1,24 @@
 #include "common.h"
 #include "field.h"
 #include "gamestate.h"
+#include "battle.h"
 #include "main.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
 #include "field/fe_object1.h"
 #include "field/fe_object1_2.h"
+#include "field/fe_object1b.h"
 #include "field/fe_object10.h"
+
+static void func_800A2F48(FieldParticles *particles);
+static void func_800A2F70(POLY_FT4 *prim);
+static void func_800A3534(FieldParticles *particles);
 
 /**
  * @brief Arm every camera slot whose move has not started yet.
  *
- * Scans the eight @c D_800704A8.slots for ones still in @c submode @c 0 and
+ * Scans the eight @c g_fieldEntity.slots for ones still in @c submode @c 0 and
  * gets them ready for @c func_800A1318 to tick: the step counter @c unk06 is
  * zeroed and the current position @c q1 / @c q2 is snapshotted into
  * @c savedQ1 / @c savedQ2, which is the "from" end of the interpolation.
@@ -26,22 +32,22 @@
 void func_800A10F4(void) {
     s16 i;
     for (i = 0; i < 8; i++) {
-        if (D_800704A8.slots[i].submode == 0) {
-            D_800704A8.slots[i].unk06 = 0;
-            D_800704A8.slots[i].savedQ1 = D_800704A8.slots[i].q1;
-            D_800704A8.slots[i].savedQ2 = D_800704A8.slots[i].q2;
-            switch (D_800704A8.slots[i].mode) {
+        if (g_fieldEntity.slots[i].submode == 0) {
+            g_fieldEntity.slots[i].unk06 = 0;
+            g_fieldEntity.slots[i].savedQ1 = g_fieldEntity.slots[i].q1;
+            g_fieldEntity.slots[i].savedQ2 = g_fieldEntity.slots[i].q2;
+            switch (g_fieldEntity.slots[i].mode) {
                 case 0:
                 case 1:
                 case 2:
                 case 4:
                 case 5:
-                    D_800704A8.slots[i].submode = 1;
+                    g_fieldEntity.slots[i].submode = 1;
                     break;
                 case 3:
-                    D_800704A8.slots[i].submode = 2;
-                    D_800704A8.slots[i].q1 = D_800704A8.slots[i].p1;
-                    D_800704A8.slots[i].q2 = D_800704A8.slots[i].p2;
+                    g_fieldEntity.slots[i].submode = 2;
+                    g_fieldEntity.slots[i].q1 = g_fieldEntity.slots[i].p1;
+                    g_fieldEntity.slots[i].q2 = g_fieldEntity.slots[i].p2;
                     break;
             }
         }
@@ -53,26 +59,26 @@ void func_800A10F4(void) {
  *        project it through @c func_800A0F34, then call @c func_800A0FB8
  *        with a flag selected by the active-slot index.
  *
- * Reads @c D_800704A8.slots[unk1A6].param to pick an @ref Actor entity,
+ * Reads @c g_fieldEntity.slots[unk1A6].param to pick an @ref Actor entity,
  * fills @c svec.{vx,vy,vz} from its @c posX/posY/posZ shifted right by
- * @c 12, biasing @c vz by @c D_8005F0F8->baseZ. The projection result is
+ * @c 12, biasing @c vz by @c g_curFieldInfo->baseZ. The projection result is
  * latched to @c D_800C71FC. The trailing @c func_800A0FB8 clamp call gets
  * flag @c 0 when @c unk1A6 @c == @c 0 and flag @c 1 otherwise.
  *
  * @param out     Screen-space position, written by @c func_800A0F34 and then
  *                clamped in place by @c func_800A0FB8.
  * @param slotIdx Caller's slot index. Unused — the entity is picked from
- *                @c D_800704A8.unk1A6 instead — but @c func_800A1318 passes it.
+ *                @c g_fieldEntity.unk1A6 instead — but @c func_800A1318 passes it.
  */
 void func_800A11E0(Vec2s *out, s16 slotIdx) {
     SVECTOR svec;
 
-    svec.vx = D_80085224[D_800704A8.slots[D_800704A8.unk1A6].param].posX >> 12;
-    svec.vy = D_80085224[D_800704A8.slots[D_800704A8.unk1A6].param].posY >> 12;
-    svec.vz = (D_80085224[D_800704A8.slots[D_800704A8.unk1A6].param].posZ >> 12) +
-              D_8005F0F8->baseZ;
+    svec.vx = D_80085224[g_fieldEntity.slots[g_fieldEntity.unk1A6].param].posX >> 12;
+    svec.vy = D_80085224[g_fieldEntity.slots[g_fieldEntity.unk1A6].param].posY >> 12;
+    svec.vz = (D_80085224[g_fieldEntity.slots[g_fieldEntity.unk1A6].param].posZ >> 12) +
+              g_curFieldInfo->baseZ;
     D_800C71FC = func_800A0F34(&svec, (s32 *)out);
-    if (D_800704A8.unk1A6 == 0) {
+    if (g_fieldEntity.unk1A6 == 0) {
         func_800A0FB8(out, 0, 0);
     } else {
         func_800A0FB8(out, 1, 0);
@@ -82,13 +88,13 @@ void func_800A11E0(Vec2s *out, s16 slotIdx) {
 /**
  * @brief Advance every camera slot that has a move in progress.
  *
- * Walks the eight @c D_800704A8.slots and ticks each one whose @c submode is
+ * Walks the eight @c g_fieldEntity.slots and ticks each one whose @c submode is
  * @c 1 (move running). @c mode picks how the slot's camera position
  * @c q1 / @c q2 — the scroll origin @c func_800A15C0 later turns into the
  * frame's draw offset — is driven towards its target:
  *
  *  - @c 0: hard-lock to the party entity's projected screen position, but only
- *    for the active slot (@c D_800704A8.unk1A6); every other slot is zeroed.
+ *    for the active slot (@c g_fieldEntity.unk1A6); every other slot is zeroed.
  *  - @c 1 / @c 2: ease towards that live projected position, linearly
  *    (@c func_800A0E54) or sine-eased (@c func_800A0EB8).
  *  - @c 3: nothing.
@@ -104,66 +110,66 @@ void func_800A1318(void) {
     s16 i;
 
     for (i = 0; i < 8; i++) {
-        if (D_800704A8.slots[i].submode != 1) {
+        if (g_fieldEntity.slots[i].submode != 1) {
             continue;
         }
-        switch (D_800704A8.slots[i].mode) {
+        switch (g_fieldEntity.slots[i].mode) {
         case 0:
             func_800A11E0(&pos, i);
-            if (i == D_800704A8.unk1A6) {
-                D_800704A8.slots[i].q1 = pos.x;
-                D_800704A8.slots[i].q2 = pos.y;
+            if (i == g_fieldEntity.unk1A6) {
+                g_fieldEntity.slots[i].q1 = pos.x;
+                g_fieldEntity.slots[i].q2 = pos.y;
             } else {
-                D_800704A8.slots[i].q1 = 0;
-                D_800704A8.slots[i].q2 = 0;
+                g_fieldEntity.slots[i].q1 = 0;
+                g_fieldEntity.slots[i].q2 = 0;
             }
             break;
         case 1:
             func_800A11E0(&pos, i);
-            D_800704A8.slots[i].q1 = func_800A0E54((s16)D_800704A8.slots[i].savedQ1, pos.x,
-                                                   (s16)D_800704A8.slots[i].timer, (s16)D_800704A8.slots[i].unk06);
-            D_800704A8.slots[i].q2 = func_800A0E54((s16)D_800704A8.slots[i].savedQ2, pos.y,
-                                                   (s16)D_800704A8.slots[i].timer, (s16)D_800704A8.slots[i].unk06);
-            if ((s16)D_800704A8.slots[i].timer == (s16)D_800704A8.slots[i].unk06) {
-                D_800704A8.slots[i].submode = 2;
+            g_fieldEntity.slots[i].q1 = func_800A0E54(g_fieldEntity.slots[i].savedQ1, pos.x,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            g_fieldEntity.slots[i].q2 = func_800A0E54(g_fieldEntity.slots[i].savedQ2, pos.y,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            if (g_fieldEntity.slots[i].timer == g_fieldEntity.slots[i].unk06) {
+                g_fieldEntity.slots[i].submode = 2;
             } else {
-                D_800704A8.slots[i].unk06++;
+                g_fieldEntity.slots[i].unk06++;
             }
             break;
         case 2:
             func_800A11E0(&pos, i);
-            D_800704A8.slots[i].q1 = func_800A0EB8((s16)D_800704A8.slots[i].savedQ1, pos.x,
-                                                   (s16)D_800704A8.slots[i].timer, (s16)D_800704A8.slots[i].unk06);
-            D_800704A8.slots[i].q2 = func_800A0EB8((s16)D_800704A8.slots[i].savedQ2, pos.y,
-                                                   (s16)D_800704A8.slots[i].timer, (s16)D_800704A8.slots[i].unk06);
-            if ((s16)D_800704A8.slots[i].timer == (s16)D_800704A8.slots[i].unk06) {
-                D_800704A8.slots[i].submode = 2;
+            g_fieldEntity.slots[i].q1 = func_800A0EB8(g_fieldEntity.slots[i].savedQ1, pos.x,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            g_fieldEntity.slots[i].q2 = func_800A0EB8(g_fieldEntity.slots[i].savedQ2, pos.y,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            if (g_fieldEntity.slots[i].timer == g_fieldEntity.slots[i].unk06) {
+                g_fieldEntity.slots[i].submode = 2;
             } else {
-                D_800704A8.slots[i].unk06++;
+                g_fieldEntity.slots[i].unk06++;
             }
             break;
         case 3:
             break;
         case 4:
-            D_800704A8.slots[i].q1 = func_800A0E54((s16)D_800704A8.slots[i].savedQ1, (s16)D_800704A8.slots[i].p1,
-                                                   (s16)D_800704A8.slots[i].timer, (s16)D_800704A8.slots[i].unk06);
-            D_800704A8.slots[i].q2 = func_800A0E54((s16)D_800704A8.slots[i].savedQ2, (s16)D_800704A8.slots[i].p2,
-                                                   (s16)D_800704A8.slots[i].timer, (s16)D_800704A8.slots[i].unk06);
-            if ((s16)D_800704A8.slots[i].timer == (s16)D_800704A8.slots[i].unk06) {
-                D_800704A8.slots[i].submode = 2;
+            g_fieldEntity.slots[i].q1 = func_800A0E54(g_fieldEntity.slots[i].savedQ1, g_fieldEntity.slots[i].p1,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            g_fieldEntity.slots[i].q2 = func_800A0E54(g_fieldEntity.slots[i].savedQ2, g_fieldEntity.slots[i].p2,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            if (g_fieldEntity.slots[i].timer == g_fieldEntity.slots[i].unk06) {
+                g_fieldEntity.slots[i].submode = 2;
             } else {
-                D_800704A8.slots[i].unk06++;
+                g_fieldEntity.slots[i].unk06++;
             }
             break;
         case 5:
-            D_800704A8.slots[i].q1 = func_800A0EB8((s16)D_800704A8.slots[i].savedQ1, (s16)D_800704A8.slots[i].p1,
-                                                   (s16)D_800704A8.slots[i].timer, (s16)D_800704A8.slots[i].unk06);
-            D_800704A8.slots[i].q2 = func_800A0EB8((s16)D_800704A8.slots[i].savedQ2, (s16)D_800704A8.slots[i].p2,
-                                                   (s16)D_800704A8.slots[i].timer, (s16)D_800704A8.slots[i].unk06);
-            if ((s16)D_800704A8.slots[i].timer == (s16)D_800704A8.slots[i].unk06) {
-                D_800704A8.slots[i].submode = 2;
+            g_fieldEntity.slots[i].q1 = func_800A0EB8(g_fieldEntity.slots[i].savedQ1, g_fieldEntity.slots[i].p1,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            g_fieldEntity.slots[i].q2 = func_800A0EB8(g_fieldEntity.slots[i].savedQ2, g_fieldEntity.slots[i].p2,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            if (g_fieldEntity.slots[i].timer == g_fieldEntity.slots[i].unk06) {
+                g_fieldEntity.slots[i].submode = 2;
             } else {
-                D_800704A8.slots[i].unk06++;
+                g_fieldEntity.slots[i].unk06++;
             }
             break;
         }
@@ -188,26 +194,26 @@ void func_800A1318(void) {
  *
  * @param buf     The GPU work area this frame is being built into; compared against
  *                @ref D_800C7218 to choose the environment.
- * @param env     The two-element draw-environment array (@c D_80067388).
+ * @param env     The two-element draw-environment array (@c g_drawEnvs).
  * @param slotIdx Party slot whose camera position drives the scroll.
  */
 void func_800A15C0(FieldFrameBuf *buf, DRAWENV *env, s16 slotIdx) {
     SetGeomOffset(0, 0);
     if (func_800BE274() == 0) {
         if (buf == D_800C7218) {
-            env[0].dispX = (D_800C7210 - D_800704A8.slots[slotIdx].q1) + (s8)D_800704A8.oscillators[0].output + D_800C71F8->viewOfsX;
-            env[0].dispY = (D_800C7214 - D_800704A8.slots[slotIdx].q2) + (s8)D_800704A8.oscillators[1].output + D_800C71F8->viewOfsY;
+            env[0].dispX = (D_800C7210 - g_fieldEntity.slots[slotIdx].q1) + g_fieldEntity.oscillators[0].output + g_curFieldView->viewOfsX;
+            env[0].dispY = (D_800C7214 - g_fieldEntity.slots[slotIdx].q2) + g_fieldEntity.oscillators[1].output + g_curFieldView->viewOfsY;
         } else {
-            env[1].dispX = (D_800C7210 - D_800704A8.slots[slotIdx].q1) + (s8)D_800704A8.oscillators[0].output + D_800C71F8->viewOfsX + 0x200;
-            env[1].dispY = (D_800C7214 - D_800704A8.slots[slotIdx].q2) + (s8)D_800704A8.oscillators[1].output + D_800C71F8->viewOfsY;
+            env[1].dispX = (D_800C7210 - g_fieldEntity.slots[slotIdx].q1) + g_fieldEntity.oscillators[0].output + g_curFieldView->viewOfsX + 0x200;
+            env[1].dispY = (D_800C7214 - g_fieldEntity.slots[slotIdx].q2) + g_fieldEntity.oscillators[1].output + g_curFieldView->viewOfsY;
         }
     } else {
         if (buf == D_800C7218) {
-            env[0].dispX = D_800C7210 - D_800C71F8->viewOfsX;
-            env[0].dispY = D_800C7214 + D_800C71F8->viewOfsY;
+            env[0].dispX = D_800C7210 - g_curFieldView->viewOfsX;
+            env[0].dispY = D_800C7214 + g_curFieldView->viewOfsY;
         } else {
-            env[1].dispX = (D_800C7210 - D_800C71F8->viewOfsX) + 0x200;
-            env[1].dispY = D_800C7214 + D_800C71F8->viewOfsY;
+            env[1].dispX = (D_800C7210 - g_curFieldView->viewOfsX) + 0x200;
+            env[1].dispY = D_800C7214 + g_curFieldView->viewOfsY;
         }
     }
 }
@@ -331,31 +337,28 @@ void func_800A17B8(Oscillator *osc) {
 INCLUDE_ASM("asm/field/nonmatchings/fe_object1_2", func_800A19B8);
 
 /**
- * @brief Restore a 256x16 VRAM region from a saved buffer and clear
- *        the @c 0x8000 transparency bit on every pixel.
+ * @brief Save the field's 256x16 palette strip from VRAM and clear the
+ *        @c 0x8000 STP bit on every colour of the copy.
  *
- * Sets @c D_800C71E4 to point at the saved-image buffer @c D_800D3E88,
- * then (only when the current event queue's @c unk0E flag is @c 1)
- * uses @c StoreImage (via @c func_80048F5C) to write the buffer back
- * to VRAM at @c (0x100, 0x10) with a @c 256x16 RECT, and masks every
- * pixel's @c 0x8000 transparency bit to leave just the colour bits.
+ * Points @c D_800C71E4 at @c D_800D3E88, then, only when the field info's
+ * @c movieMask flag is @c 1, reads the strip at VRAM @c (512, 240) into it
+ * with @c StoreImage. @c func_800A1C64 uploads it back.
  *
- * The two @c DrawSync(1) polls are GPU-busy waits sandwiching
- * the transfer so the buffer isn't read while another command is
- * still being issued.
+ * The two @c DrawSync(1) polls wait for the GPU before the transfer and for
+ * the transfer itself before the buffer is read.
  */
 void func_800A1BB8(void) {
     RECT rect;
     u16 *p;
     s32 i;
     D_800C71E4 = D_800D3E88;
-    if (D_8005F0F8->unk0E != 1) return;
+    if (g_curFieldInfo->movieMask != 1) return;
     rect.x = 0x200;
     rect.y = 0xF0;
     rect.w = 0x100;
     rect.h = 0x10;
     while (DrawSync(1) != 0) {}
-    func_80048F5C(&rect, D_800C71E4);
+    StoreImage(&rect, D_800C71E4);
     while (DrawSync(1) != 0) {}
     p = D_800C71E4;
     for (i = 0; i < 0x1000; i++) {
@@ -365,19 +368,19 @@ void func_800A1BB8(void) {
 }
 
 /**
- * If D_8005F0F8 byte at offset 0xE is 1, sets up a display region
- * (0x200 x 0xF0 at 0x100, 0x10) and calls LoadImage.
+ * @brief Upload @c D_800C71E4 back to the 256x16 strip at VRAM (512, 240) when
+ *        the field has a movie mask.
+ *
+ * Counterpart of @c func_800A1BB8, which captures the same strip.
  */
 void func_800A1C64(void) {
-    u8 *data = (u8 *)D_8005F0F8;
-
-    if (*(u8 *)(data + 0xE) == 1) {
-        s16 rect[4];
-        rect[0] = 0x200;
-        rect[1] = 0xF0;
-        rect[2] = 0x100;
-        rect[3] = 0x10;
-        LoadImage(rect, D_800C71E4);
+    if (g_curFieldInfo->movieMask == 1) {
+        RECT rect;
+        rect.x = 0x200;
+        rect.y = 0xF0;
+        rect.w = 0x100;
+        rect.h = 0x10;
+        LoadImage(&rect, D_800C71E4);
     }
 }
 
@@ -449,7 +452,7 @@ void func_800A1CFC(Actor *ents, FieldFrameBuf *frame) {
         v30.z = (u16)ent->posOfsZ + (ent->posZ >> 12);
         func_800A7224(i, (u16 *)&v30, 0);
         if (ent->turnMode == 1 && ent->turnTick == 0) {
-            func_800A8DAC(i, 0x1E, D_800C71F8, buf);
+            func_800A8DAC(i, 0x1E, g_curFieldView, buf);
             pB.x = ent->turnTgtX;
             pB.y = ent->turnTgtY;
             pB.z = ent->turnTgtZ;
@@ -536,7 +539,7 @@ void func_800A1CFC(Actor *ents, FieldFrameBuf *frame) {
             func_800A97E4(i, 0x25, 0, 0);
         }
     }
-    func_800A63AC(frame, D_800C71F8, 0);
+    func_800A63AC(frame, g_curFieldView, 0);
 }
 
 /**
@@ -580,7 +583,7 @@ typedef struct {
  *
  * Loop 2: for each of 16 8-byte items, write @c tag = 1 and
  *         @c cmd = @c 0xE1000200 | (color & 0x9FF), where @c color
- *         comes from @c func_8004D524(0, 2, 0, 0).
+ *         comes from @c GetTPage(0, 2, 0, 0).
  *
  * @note The two @c i[t->items1] / @c i[t->items2] uses (instead of
  *       @c t->items1[i] / @c t->items2[i]) are the trick that swaps
@@ -602,7 +605,7 @@ void func_800A2128(func_800A2128_arg0 *t) {
     for (i = 0; i < 16; i++) {
         s32 color;
         i[t->items2].tag = 1;
-        color = func_8004D524(0, 2, 0, 0);
+        color = GetTPage(0, 2, 0, 0);
         t->items2[i].cmd = (color & 0x9FF) | 0xE1000200;
     }
 }
@@ -620,7 +623,7 @@ void func_800A2128(func_800A2128_arg0 *t) {
  * point @c k sits at that centre offset along octagon direction @c k, scaled by the
  * entity's own @c shadowRadius[k]. Because the eight radii are independent the
  * shadow need not be circular, @c SHADEFORM sets them individually, @c SHADESET
- * makes them uniform. The nine points are projected with one @c func_80040DE4 (whose
+ * makes them uniform. The nine points are projected with one @c RotTransPers (whose
  * return gives the OTZ) plus three @c RTPT batches, and when the centre is in depth
  * range the fan is emitted as eight @ref POLY_G3 triangles, every one flat-shaded in
  * @c shadowLevel, followed by the slot's tpage command.
@@ -635,7 +638,7 @@ void func_800A2128(func_800A2128_arg0 *t) {
  *       cos at @c getScratchAddr(2), sin at @c getScratchAddr(6), points at
  *       @c getScratchAddr(10).
  * @note @c sxy is two words wide because that is the slot the original reserves for
- *       @c func_80040DE4's screen-XY output; only the first word is meaningful.
+ *       @c RotTransPers's screen-XY output; only the first word is meaningful.
  * @note @c rad is advanced at the end of the ring loop rather than indexed: that is
  *       what makes gcc give it an induction variable of its own alongside the two
  *       octagon tables, which is how the original walks all three.
@@ -658,7 +661,7 @@ void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Actor *ents)
         sinTbl[i] = func_8009D254(i * 32);
     }
 
-    func_8003FEE4();
+    PushMatrix();
     SetRotMatrix(m);
     SetTransMatrix(m);
 
@@ -685,7 +688,7 @@ void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Actor *ents)
             rad++;
         }
 
-        otz = func_80040DE4(&pt[0], sxy, &p, &flag);
+        otz = RotTransPers(&pt[0], sxy, &p, &flag);
         gte_ldv3(&pt[0], &pt[1], &pt[2]);
         gte_rtpt();
         gte_stsxy3(&pt[0], &pt[1], &pt[2]);
@@ -737,23 +740,24 @@ void func_800A222C(u32 *ot, MATRIX *m, POLY_G3 *prim, DR_TPAGE *tp, Actor *ents)
         }
     }
 
-    func_8003FF88();
+    PopMatrix();
 }
 
 /**
  * @brief Initialize a run of items at @p p; return the pointer past the
  *        last item.
  *
- * Iterates @c **D_800D5E9C items, each iteration writing the fixed
- * trio (@c b3 = 4, @c b7 = 0x22, @c b4/b5/b6 = 0). The buffer count
- * @c **D_800D5E9C is reloaded each iteration (gcc can't prove the
- * stores don't alias the indirect chain). Returns the input pointer
+ * Writes one item per @c g_fieldMovieMask triangle, each with the fixed
+ * trio (@c b3 = 4, @c b7 = 0x22, @c b4/b5/b6 = 0). The triangle count
+ * is reloaded each iteration (gcc can't prove the stores don't alias
+ * the indirect chain) and read as a halfword: reading the full word turns
+ * the lhu into lw and the exit test into blez. Returns the input pointer
  * advanced past the items written, used by @c func_800983F0 to chain
  * multiple init regions into one growing buffer.
  */
 func_800A29C0_arg0 *func_800A29C0(func_800A29C0_arg0 *p) {
     s32 i;
-    for (i = 0; i < **D_800D5E9C; i++) {
+    for (i = 0; i < (u16)(*g_fieldMovieMask)->count; i++) {
         p->b3 = 4;
         p->b7 = 0x22;
         p->b4 = 0;
@@ -765,11 +769,11 @@ func_800A29C0_arg0 *func_800A29C0(func_800A29C0_arg0 *p) {
 }
 
 /**
- * @brief Append one GPU draw-mode prim per entry in the @c D_800D5E9C
- *        list; return the advanced output pointer.
+ * @brief Append one GPU draw-mode prim per @c g_fieldMovieMask triangle;
+ *        return the advanced output pointer.
  *
- * For each non-sentinel entry (count from @c **D_800D5E9C), calls
- * @c func_8004D524(0, 1, 0, 0) to get a color value, masks to 9 bits,
+ * For each triangle (the count read as a halfword, which keeps the lhu),
+ * calls @c GetTPage(0, 1, 0, 0) to get a color value, masks to 9 bits,
  * ORs with the GPU draw-mode command base @c 0xE1000200, and writes
  * one 8-byte prim with @c tag=1 + @c cmd=combined.
  *
@@ -777,10 +781,10 @@ func_800A29C0_arg0 *func_800A29C0(func_800A29C0_arg0 *p) {
  */
 func_800A2A30_item *func_800A2A30(func_800A2A30_item *p) {
     s32 i;
-    for (i = 0; i < **D_800D5E9C; i++) {
+    for (i = 0; i < (u16)(*g_fieldMovieMask)->count; i++) {
         s32 color;
         p->tag = 1;
-        color = func_8004D524(0, 1, 0, 0);
+        color = GetTPage(0, 1, 0, 0);
         p->cmd = (color & 0x9FF) | 0xE1000200;
         p++;
     }
@@ -800,7 +804,7 @@ typedef union {
  *
  * @p buf begins with a halfword header: the split row (0x2020, ASCII
  * spaces, means "empty buffer, skip"). The upload sequence, each part
- * preceded by a busy-wait on @ref DrawSync and a @ref func_80042634
+ * preceded by a busy-wait on @ref DrawSync and a @ref VSync
  * reset:
  *  1. a 256x1 strip at (0, 0xE8) from @c buf+2 (the palette row),
  *  2. a 64-wide column at (slot*64, header+0x100) of height
@@ -824,21 +828,21 @@ void func_800A2D2C(s16 *buf, s32 slot) {
     hp = (func_800A2D2C_half *)buf;
     if (buf[0] != 0x2020) {
         while (DrawSync(1) != 0) {}
-        func_80042634(0);
+        VSync(0);
         rect.x = 0;
         rect.y = 0xE8;
         rect.w = 0x100;
         rect.h = 1;
         LoadImage(&rect, (u32 *)(buf + 2));
         while (DrawSync(1) != 0) {}
-        func_80042634(0);
+        VSync(0);
         rect.x = slot << 6;
         rect.y = hp->u + 0x100;
         rect.w = 0x40;
         rect.h = (0x100 - hp->s) / 2;
         LoadImage(&rect, (u32 *)(buf + 0x102));
         while (DrawSync(1) != 0) {}
-        func_80042634(0);
+        VSync(0);
         rect.x = slot << 6;
         y0 = ((volatile func_800A2D2C_half *)hp)->u;
         h2 = (0x100 - hp->s) / 2;
@@ -871,108 +875,60 @@ s16 func_800A2EA4(s16 range) {
 }
 
 /**
- * Initializes an object by calling a sequence of setup functions.
+ * @brief Reset the field's particle system after its member is loaded.
  *
- * @param a0 Pointer to the script/object structure.
+ * Clears the animation slots' state, the records' active counts and every
+ * particle's step state, then tags both prim arenas' @c POLY_FT4s.
+ *
+ * @param particles The field's particle system.
  */
-void func_800A2EE0(u8 *a0) {
-    func_800A3534(a0);
-    func_800A3018(a0);
-    func_800A2F48(a0);
-    func_800A2F70(a0 + 0x3720);
-    func_800A2F70(a0 + 0x4B20);
+void func_800A2EE0(FieldParticles *particles) {
+    func_800A3534(particles);
+    func_800A3018(particles->records);
+    func_800A2F48(particles);
+    func_800A2F70(particles->primArena[0]);
+    func_800A2F70(particles->primArena[1]);
 }
 
 /**
- * Clears 16 bytes at offset 0x190 (backwards loop).
+ * @brief Clear all 16 @c SystemState::slotActive entries.
  *
- * @param a0 Unused parameter.
- * @param a1 Pointer to the object structure base.
+ * @param particles Unused.
+ * @param sys       System state.
  */
-void func_800A2F28(s32 a0, u8 *a1) {
-    s32 i = 0xF;
-    a1 += 0xF;
-    do {
-        *(u8 *)(a1 + 0x190) = 0;
-        i--;
-        a1--;
-    } while (i >= 0);
-}
-
-/**
- * @brief Shape of the buffer @c func_800A2F48 sees: an array of 128
- * 32-byte items beginning at offset 0x2739, each item's first 3 bytes
- * being what gets zeroed.
- *
- * @note Named after the function/arg it describes rather than after a
- *       semantic role, we don't know what the original developer
- *       called this view. The same memory is also reached by
- *       @c func_800A303C through the @c Particle overlay (where these
- *       3 bytes are the per-particle @c unk19, @c unk1A, and @c active
- *       fields), but it's not certain that the original C used the same
- *       struct in both functions.
- */
-typedef struct {
-    /* 0x0000 */ u8 pad0000[0x2739];
-    /* 0x2739 */ struct {
-        u8 b0;
-        u8 b1;
-        u8 b2;
-        u8 pad[0x1D];
-    } items[128];
-} func_800A2F48_arg0;
-
-/**
- * @brief Zero the 3 leading bytes of each of the 128 items in the table.
- *
- * Called from @c func_800A2EE0 during the particle-system init chain on
- * the disc-loaded field-map buffer.
- */
-void func_800A2F48(func_800A2F48_arg0 *t) {
+void func_800A2F28(FieldParticles *particles, SystemState *sys) {
     s32 i;
-    for (i = 0; i < 128; i++) {
-        t->items[i].b0 = 0;
-        t->items[i].b1 = 0;
-        t->items[i].b2 = 0;
+    for (i = 0; i < 16; i++) {
+        sys->slotActive[i] = 0;
     }
 }
 
 /**
- * @brief Shape @c func_800A2F70 sees: array of 128 40-byte items, three
- *        fields per item, @c b3 / @c b7 (constant tags) and @c hE (a
- *        @c func_8004D564 -seeded halfword).
+ * @brief Clear every particle's step index, step progress and active flag.
  *
- * @note Named after the function/arg. Called from @c func_800A2EE0 twice
- *       (at base + 0x3720 and base + 0x4B20) on two different sub-regions
- *       of the disc-loaded field-map buffer, so the shape describes
- *       "whichever sub-region was passed" rather than any single
- *       canonical struct.
+ * @param particles The field's particle system.
  */
-typedef struct {
-    /* 0x00 */ u8  pad00[0x3];
-    /* 0x03 */ u8  b3;
-    /* 0x04 */ u8  pad04[0x3];
-    /* 0x07 */ u8  b7;
-    /* 0x08 */ u8  pad08[0x6];
-    /* 0x0E */ s16 hE;
-    /* 0x10 */ u8  pad10[0x18];
-} func_800A2F70_arg0;  /* 0x28 = 40 bytes */
-
-/**
- * @brief Seed 128 items with the constant tags 9 / 0x2C and a
- *        per-item @c func_8004D564(0, 0xE8) sample at the @c hE field.
- *
- * Called twice from @c func_800A2EE0 on two distinct sub-regions of the
- * disc-loaded field-map buffer; both regions are arrays of 40-byte
- * items, 128 entries each.
- */
-void func_800A2F70(func_800A2F70_arg0 *e) {
+static void func_800A2F48(FieldParticles *particles) {
     s32 i;
     for (i = 0; i < 128; i++) {
-        e->b3 = 9;
-        e->b7 = 0x2C;
-        e->hE = func_8004D564(0, 0xE8);
-        e++;
+        particles->entries[i].stepIndex = 0;
+        particles->entries[i].stepProgress = 0;
+        particles->entries[i].active = 0;
+    }
+}
+
+/**
+ * @brief Tag all 128 prims of one particle prim arena as @c POLY_FT4, each
+ *        using the CLUT at VRAM (0, 232).
+ *
+ * @param prim First prim of the arena.
+ */
+static void func_800A2F70(POLY_FT4 *prim) {
+    s32 i;
+    for (i = 0; i < 128; i++) {
+        setPolyFT4(prim);
+        prim->clut = GetClut(0, 0xE8);
+        prim++;
     }
 }
 
@@ -981,10 +937,9 @@ void func_800A2F70(func_800A2F70_arg0 *e) {
  * 32-byte items beginning at offset 0x2739, each item's third byte
  * being the @c active flag scanned for free slots.
  *
- * @note Named after the function/arg. Same memory layout as
- *       @c func_800A2F48_arg0 (which clears all three leading bytes of
- *       each item); the views weren't unified because we don't know
- *       whether the original C source shared a single typedef.
+ * @note Named after the function/arg. The three bytes are
+ *       @c MoveAccum::stepIndex, @c stepProgress and @c active of
+ *       @c FieldParticles::entries.
  */
 typedef struct {
     /* 0x0000 */ u8 pad0000[0x2739];
@@ -1165,38 +1120,16 @@ void func_800A3488(func_800A3488_arg0 *a, SVECTOR *out) {
 }
 
 /**
- * @brief Shape of the buffer @c func_800A3534 sees: an array of 16
- * items beginning at offset 0x1830, each item @c 0xFE bytes with three
- * leading s16 fields that get zeroed.
+ * @brief Clear the three state halfwords of all 16 animation slots.
  *
- * @note Named after the function/arg; we don't know the original name.
- *       Same disc-loaded field-map buffer that the rest of the
- *       @c func_800A2EE0 init chain operates on, but the per-item shape
- *       (stride 0xFE, three s16 fields) doesn't align with any other
- *       struct in this file.
+ * @param particles The field's particle system.
  */
-typedef struct {
-    /* 0x0000 */ u8 pad0000[0x1830];
-    /* 0x1830 */ struct {
-        s16 h0;
-        s16 h1;
-        s16 h2;
-        u8  pad[0xF8];   /* pad to 0xFE stride */
-    } items[16];
-} func_800A3534_arg0;
-
-/**
- * @brief Zero the three leading s16 fields of each of 16 items in the table.
- *
- * Called from @c func_800A2EE0 as the first step of the particle-system
- * init chain on the disc-loaded field-map buffer.
- */
-void func_800A3534(func_800A3534_arg0 *t) {
+static void func_800A3534(FieldParticles *particles) {
     s32 i;
     for (i = 0; i < 16; i++) {
-        t->items[i].h0 = 0;
-        t->items[i].h1 = 0;
-        t->items[i].h2 = 0;
+        particles->slots[i].h0 = 0;
+        particles->slots[i].h1 = 0;
+        particles->slots[i].h2 = 0;
     }
 }
 
@@ -1213,7 +1146,7 @@ void func_800A3534(func_800A3534_arg0 *t) {
  *     (`rate` itself if rate < 8, else 1).
  *   - Increment the tick counter.
  *   - Dispatch to func_800A303C with one of three position sources, chosen
- *     by `D_800704A8.slotActive[slot]`:
+ *     by `g_fieldEntity.slotActive[slot]`:
  *       - kind == 1: select by actor->mode, pass the actor itself
  *         (mode 1), or fill `pos` via func_800A3488 (mode 2) or
  *         func_800A327C (mode 3).
@@ -1221,7 +1154,7 @@ void func_800A3534(func_800A3534_arg0 *t) {
  *         posX/Y/Z by 4096, pass as `pos`.
  *
  * @param actor Field entity (with rows[4]/timers[4]/animOffset/mode).
- * @param slot  Index into D_800704A8.slotActive (0..15).
+ * @param slot  Index into g_fieldEntity.slotActive (0..15).
  * @param a2    Second arg passed through to func_800A303C.
  */
 void func_800A355C(ActorAnim *actor, s32 slot, s32 a2) {
@@ -1248,7 +1181,7 @@ void func_800A355C(ActorAnim *actor, s32 slot, s32 a2) {
         }
         actor->timers[i] = (u16)actor->timers[i] + 1;
 
-        if (D_800704A8.slotActive[slot] == 1) {
+        if (g_fieldEntity.slotActive[slot] == 1) {
             switch (actor->mode) {
             case 1:
                 func_800A303C(actor->rows[i].id, a2, (SVECTOR *)actor, ratio);
@@ -1263,19 +1196,19 @@ void func_800A355C(ActorAnim *actor, s32 slot, s32 a2) {
                 break;
             }
         } else {
-            pos.vx = (s16)(D_80085224[D_800704A8.slotActive[slot] & 0x7F].posX / 4096);
-            pos.vy = (s16)(D_80085224[D_800704A8.slotActive[slot] & 0x7F].posY / 4096);
-            pos.vz = (s16)(D_80085224[D_800704A8.slotActive[slot] & 0x7F].posZ / 4096);
+            pos.vx = D_80085224[g_fieldEntity.slotActive[slot] & 0x7F].posX / 4096;
+            pos.vy = D_80085224[g_fieldEntity.slotActive[slot] & 0x7F].posY / 4096;
+            pos.vz = D_80085224[g_fieldEntity.slotActive[slot] & 0x7F].posZ / 4096;
             func_800A303C(actor->rows[i].id, a2, &pos, ratio);
         }
     }
 }
 
 /**
- * @brief Per-frame animation tick for all 16 slots of a field subscene buffer.
+ * @brief Per-frame animation tick for all 16 slots of the field's particle system.
  *
  * Walks the 16 @ref FieldSubsceneSlot entries of @p buf (stride @c 0xFE). For
- * each slot marked active in @c D_800704A8.slotActive[i]:
+ * each slot marked active in @c g_fieldEntity.slotActive[i]:
  *  - if the per-frame counter @c h1 has reached @c table[h2], reset @c h1,
  *    advance the table cursor @c h2, and if the next table entry is @c 0 wrap
  *    @c h2 and @c h0 back to 0;
@@ -1285,17 +1218,17 @@ void func_800A355C(ActorAnim *actor, s32 slot, s32 a2) {
  *
  * @param arg0 Unused.
  * @param frame Unused.
- * @param buf  Subscene buffer (from the @c D_800C7200 table).
+ * @param buf  The field's particle system (@c g_curFieldParticles).
  *
  * @note @c pos is declared but unused: the original reserves an 8-byte stack
  *       slot here (gcc 2.7.2 keeps an unused struct local), matching the frame.
  */
-void func_800A37A8(MATRIX *m, FieldFrameBuf *frame, FieldSubsceneBuffer *buf) {
+void func_800A37A8(MATRIX *m, FieldFrameBuf *frame, FieldParticles *buf) {
     s32 i;
     SVECTOR pos;
 
     for (i = 0; i < 16; i++) {
-        if (D_800704A8.slotActive[i] != 0) {
+        if (g_fieldEntity.slotActive[i] != 0) {
             if (buf->slots[i].h1 >= buf->slots[i].table[buf->slots[i].h2]) {
                 buf->slots[i].h1 = 0;
                 buf->slots[i].h2++;
@@ -1368,11 +1301,11 @@ void func_800A38B4(MoveAccum *out, MoveStep *in, MoveStep *target) {
  * @note The scratchpad slots are separate @c getScratchAddr locals rather than
  *       one struct: the original materialises each address independently and
  *       spills two of them, which a single base pointer does not reproduce.
- * @note @c func_80041C74 is the main binary's @c RotMatrix_gte and
+ * @note @c RotMatrix_gte is the main binary's @c RotMatrix_gte and
  *       @c func_80040534 its @c TransMatrix; the field overlay links both by
  *       address, so they keep their @c func_ names here.
  */
-void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldSubsceneBuffer *buf, u32 *ot) {
+void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldParticles *buf, u32 *ot) {
     SVECTOR *pos = (SVECTOR *)getScratchAddr(5);
     SVECTOR *rot = (SVECTOR *)getScratchAddr(7);
     SVECTOR *corner = (SVECTOR *)getScratchAddr(9);
@@ -1398,11 +1331,11 @@ void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldSubsceneBuffer *buf, u3
 
     if (step->mode == 4) {
         buf->primCursor->code &= ~2;
-        buf->primCursor->tpage = (D_8005F0F8->tpageX & 0xF) | 0x10;
+        buf->primCursor->tpage = (g_curFieldInfo->tpageX & 0xF) | 0x10;
     } else {
         buf->primCursor->code |= 2;
         tp = (((step->mode & 3) << 5) | 0x10);
-        tp |= D_8005F0F8->tpageX & 0xF;
+        tp |= g_curFieldInfo->tpageX & 0xF;
         buf->primCursor->tpage = tp;
     }
 
@@ -1415,7 +1348,7 @@ void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldSubsceneBuffer *buf, u3
     if (otz > 0 && otz < 0x1000) {
         dx = (next->spriteX - step->spriteX) * acc->stepProgress / step->stepTotal;
         dy = (next->spriteY - step->spriteY) * acc->stepProgress / step->stepTotal;
-        scale = (D_800C71F8->spriteScale << 14) / otz;
+        scale = (g_curFieldView->spriteScale << 14) / otz;
         spriteX = step->spriteX + dx;
         spriteY = step->spriteY + dy;
 
@@ -1430,7 +1363,7 @@ void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldSubsceneBuffer *buf, u3
         rot->vy = 0;
         rot->vx = 0;
         rot->vz = acc->angle;
-        func_80041C74(rot, m);
+        RotMatrix_gte(rot, m);
 
         trans->vz = 0;
         trans->vy = 0;
@@ -1489,7 +1422,7 @@ void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldSubsceneBuffer *buf, u3
  * Runs the per-tick work of @c func_800A37A8 and @c func_800A38B4 in a loop
  * until every subscene slot has played out: the tick count is the largest
  * @c frameCount across the 16 slots, and a slot is dropped (its
- * @c D_800704A8.slotActive entry cleared) once the tick passes its own count.
+ * @c g_fieldEntity.slotActive entry cleared) once the tick passes its own count.
  *
  * Each tick advances two things. Every still-active slot steps its animation
  * table, resetting the cursor to the start when the table byte runs out —
@@ -1504,14 +1437,14 @@ void func_800A39D8(MoveAccum *acc, MoveRecord *rec, FieldSubsceneBuffer *buf, u3
  *
  * @param buf Animation buffer to run to completion.
  */
-void func_800A3FE0(FieldSubsceneBuffer *buf) {
+void func_800A3FE0(FieldParticles *buf) {
     u8 saved[16];
     s32 i;
     s32 j;
     s32 maxFrames;
 
     for (i = 0; i < 16; i++) {
-        saved[i] = D_800704A8.slotActive[i];
+        saved[i] = g_fieldEntity.slotActive[i];
     }
 
     maxFrames = 0;
@@ -1524,9 +1457,9 @@ void func_800A3FE0(FieldSubsceneBuffer *buf) {
     for (i = 0; i < maxFrames; i++) {
         for (j = 0; j < 16; j++) {
             if (buf->slots[j].frameCount < i) {
-                D_800704A8.slotActive[j] = 0;
+                g_fieldEntity.slotActive[j] = 0;
             }
-            if (D_800704A8.slotActive[j] != 0) {
+            if (g_fieldEntity.slotActive[j] != 0) {
                 if (buf->slots[j].h1 >= buf->slots[j].table[buf->slots[j].h2]) {
                     buf->slots[j].h1 = 0;
                     buf->slots[j].h2++;
@@ -1560,7 +1493,7 @@ void func_800A3FE0(FieldSubsceneBuffer *buf) {
     }
 
     for (i = 0; i < 16; i++) {
-        D_800704A8.slotActive[i] = saved[i];
+        g_fieldEntity.slotActive[i] = saved[i];
     }
 }
 
@@ -1573,7 +1506,7 @@ void func_800A3FE0(FieldSubsceneBuffer *buf) {
  *     of @c 8 words and code @c 0x3A (gouraud four-point, semi-transparent).
  *  2. **32 draw-mode packets** (@p tpages): stamp each @ref DR_TPAGE with a
  *     length of @c 1 word and a GP0(E1h) draw-mode command whose low bits come
- *     from @c func_8004D524() (texture page / semi-transparency selection).
+ *     from @c GetTPage() (texture page / semi-transparency selection).
  *  3. **8 shimmer objects**: for each @ref ObjSlot / @ref DrawPoint pair, sample
  *     a perturbation byte from @c D_800C3520 at the current VSync phase
  *     (@c D_8005F154 @c + slot), offset the draw-point corners by it, mirror the
@@ -1607,7 +1540,7 @@ void func_800A42EC(POLY_G4 *polys, DR_TPAGE *tpages) {
     do {
         u32 *w = &q->code[0];
         ((u8 *)w)[-1] = 1;
-        *w = (func_8004D524(0, 1, 0, 0) & 0x9FF) | 0xE1000200;
+        *w = (GetTPage(0, 1, 0, 0) & 0x9FF) | 0xE1000200;
         q++;
     } while (++i < 32);
 
@@ -1622,9 +1555,9 @@ void func_800A42EC(POLY_G4 *polys, DR_TPAGE *tpages) {
         D_800706A0[i].field14 = D_800706A0[i].z + 0x80;
 
         for (j = 0; j < 8; j++) {
-            D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
-            D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
-            D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+            D_800C6DA0[i].va[j].vx = D_800C6DA0[i].vb[j].vx = D_800706A0[i].x;
+            D_800C6DA0[i].va[j].vy = D_800C6DA0[i].vb[j].vy = D_800706A0[i].y;
+            D_800C6DA0[i].va[j].vz = D_800C6DA0[i].vb[j].vz = D_800706A0[i].z;
         }
 
         D_800C6DA0[i].field80 = 0x10 + i * 2;
@@ -1704,8 +1637,8 @@ void func_800A455C(s16 entityIdx) {
     s32 entityPos[3];
     s32 dist[2];
 
-    objPos[0] = (s16)D_800706A0[0].x;
-    objPos[1] = (s16)D_800706A0[0].y;
+    objPos[0] = D_800706A0[0].x;
+    objPos[1] = D_800706A0[0].y;
     objPos[2] = 0;
     entityPos[0] = D_80085224[entityIdx].posX >> 12;
     entityPos[1] = D_80085224[entityIdx].posY >> 12;
@@ -1724,9 +1657,9 @@ void func_800A455C(s16 entityIdx) {
         D_800706A0[i].field14 = (D_80085224[entityIdx].posZ >> 12) + 0xB4;
 
         for (j = 0; j < 8; j++) {
-            D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
-            D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
-            D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+            D_800C6DA0[i].va[j].vx = D_800C6DA0[i].vb[j].vx = D_800706A0[i].x;
+            D_800C6DA0[i].va[j].vy = D_800C6DA0[i].vb[j].vy = D_800706A0[i].y;
+            D_800C6DA0[i].va[j].vz = D_800C6DA0[i].vb[j].vz = D_800706A0[i].z;
         }
 
         D_800C6DA0[i].field80 = 0x18 + i * 2;
@@ -1767,9 +1700,9 @@ void func_800A4758(void) {
             D_800706A0[i].field12 = D_800706A0[i].y;
             D_800706A0[i].field14 = D_800706A0[i].z + 0x80;
             for (j = 0; j < 8; j++) {
-                D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
-                D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
-                D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+                D_800C6DA0[i].va[j].vx = D_800C6DA0[i].vb[j].vx = D_800706A0[i].x;
+                D_800C6DA0[i].va[j].vy = D_800C6DA0[i].vb[j].vy = D_800706A0[i].y;
+                D_800C6DA0[i].va[j].vz = D_800C6DA0[i].vb[j].vz = D_800706A0[i].z;
             }
             D_800C6DA0[i].field80 = 0x10 + i * 2;
             D_800C6DA0[i].field82 = 0;
@@ -1834,38 +1767,38 @@ s32 func_800A4910(s32 a0, s32 a1, s32 a2, s32 a3) {
  * @param dp   Draw point holding the object's base and corner positions.
  */
 void func_800A4934(ObjSlot *slot, DrawPoint *dp) {
-    ObjVertex *mid = (ObjVertex *)getScratchAddr(0);
-    ObjVertex *end = (ObjVertex *)getScratchAddr(2);
+    SVECTOR *mid = (SVECTOR *)getScratchAddr(0);
+    SVECTOR *end = (SVECTOR *)getScratchAddr(2);
     s32 idx;
 
     func_800A4758();
     idx = slot->field82 & 7;
-    if (slot->field80 < (s16)slot->field82) {
-        mid->x = dp->field10;
-        mid->y = dp->field12;
-        mid->z = dp->field14;
+    if (slot->field80 < slot->field82) {
+        mid->vx = dp->field10;
+        mid->vy = dp->field12;
+        mid->vz = dp->field14;
     } else {
-        mid->x = func_800A4910((s16)dp->x, (s16)dp->field8, slot->field80, (s16)slot->field82);
-        mid->y = func_800A4910((s16)dp->y, (s16)dp->fieldA, slot->field80, (s16)slot->field82);
-        mid->z = func_800A4910((s16)dp->z, (s16)dp->fieldC, slot->field80, (s16)slot->field82);
-        end->x = func_800A4910((s16)dp->field8, (s16)dp->field10, slot->field80, (s16)slot->field82);
-        end->y = func_800A4910((s16)dp->fieldA, (s16)dp->field12, slot->field80, (s16)slot->field82);
-        end->z = func_800A4910((s16)dp->fieldC, (s16)dp->field14, slot->field80, (s16)slot->field82);
-        mid->x = func_800A4910((s16)mid->x, (s16)end->x, slot->field80, (s16)slot->field82);
-        mid->y = func_800A4910((s16)mid->y, (s16)end->y, slot->field80, (s16)slot->field82);
-        mid->z = func_800A4910((s16)mid->z, (s16)end->z, slot->field80, (s16)slot->field82);
+        mid->vx = func_800A4910(dp->x, dp->field8, slot->field80, slot->field82);
+        mid->vy = func_800A4910(dp->y, dp->fieldA, slot->field80, slot->field82);
+        mid->vz = func_800A4910(dp->z, (s16)dp->fieldC, slot->field80, slot->field82);
+        end->vx = func_800A4910(dp->field8, dp->field10, slot->field80, slot->field82);
+        end->vy = func_800A4910(dp->fieldA, dp->field12, slot->field80, slot->field82);
+        end->vz = func_800A4910((s16)dp->fieldC, dp->field14, slot->field80, slot->field82);
+        mid->vx = func_800A4910(mid->vx, end->vx, slot->field80, slot->field82);
+        mid->vy = func_800A4910(mid->vy, end->vy, slot->field80, slot->field82);
+        mid->vz = func_800A4910(mid->vz, end->vz, slot->field80, slot->field82);
     }
 
-    slot->vb[idx].x = mid->x - ((func_8009D234(slot->field86) >> 8) *
+    slot->vb[idx].vx = mid->vx - ((func_8009D234(slot->field86) >> 8) *
                                 func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
-    slot->vb[idx].y = mid->y + ((func_8009D254(slot->field86) >> 8) *
+    slot->vb[idx].vy = mid->vy + ((func_8009D254(slot->field86) >> 8) *
                                 func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
-    slot->vb[idx].z = mid->z;
-    slot->va[idx].x = mid->x + ((func_8009D234(slot->field86) >> 8) *
+    slot->vb[idx].vz = mid->vz;
+    slot->va[idx].vx = mid->vx + ((func_8009D234(slot->field86) >> 8) *
                                 func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
-    slot->va[idx].y = mid->y - ((func_8009D254(slot->field86) >> 8) *
+    slot->va[idx].vy = mid->vy - ((func_8009D254(slot->field86) >> 8) *
                                 func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
-    slot->va[idx].z = mid->z;
+    slot->va[idx].vz = mid->vz;
 }
 
 /**
@@ -1874,7 +1807,7 @@ void func_800A4934(ObjSlot *slot, DrawPoint *dp) {
  * The slot keeps two 8-entry ring buffers of corner vertices, @c va and @c vb
  * (the left and right edge of the ribbon), with @c field82 as the write cursor.
  * Starting at the newest entry this walks six entries back through the ring and
- * projects the twelve corners in four @c func_80040E14 calls, three points per
+ * projects the twelve corners in four @c RotTransPers3 calls, three points per
  * call, producing a zigzag @c va[i], @c vb[i], @c va[i-1], @c vb[i-1], ... that
  * reads as a ribbon when stroked.
  *
@@ -1922,7 +1855,7 @@ void func_800A4C14(ObjSlot *slot, u32 *ot, LINE_G4 *line0, DR_TPAGE *tp) {
     i = slot->field82 & 7;
     pal = D_80070657 * 16;
 
-    otz = func_80040E14(&slot->va[i], &slot->vb[i], &slot->va[(i - 1) & 7],
+    otz = RotTransPers3(&slot->va[i], &slot->vb[i], &slot->va[(i - 1) & 7],
                         (s32 *)&line0->x0, (s32 *)&line0->x1, (s32 *)&line0->x2, &p, &flag);
 
     line1 = &line0[1];
@@ -1940,7 +1873,7 @@ void func_800A4C14(ObjSlot *slot, u32 *ot, LINE_G4 *line0, DR_TPAGE *tp) {
     line1->x0 = line0->x2;
     line1->y0 = line0->y2;
 
-    otz = func_80040E14(&slot->vb[(i - 1) & 7], &slot->va[(i - 2) & 7], &slot->vb[(i - 2) & 7],
+    otz = RotTransPers3(&slot->vb[(i - 1) & 7], &slot->va[(i - 2) & 7], &slot->vb[(i - 2) & 7],
                         (s32 *)&line1->x1, (s32 *)&line1->x2, (s32 *)&line1->x3, &p, &flag);
     if (otz < 0x1000) {
         line0->r2 = line0->r3 = line1->r0 = line1->r1 = D_800C3720[pal];
@@ -1962,7 +1895,7 @@ void func_800A4C14(ObjSlot *slot, u32 *ot, LINE_G4 *line0, DR_TPAGE *tp) {
     line2->x1 = line1->x3;
     line2->y1 = line1->y3;
 
-    otz = func_80040E14(&slot->va[(i - 3) & 7], &slot->vb[(i - 3) & 7], &slot->va[(i - 4) & 7],
+    otz = RotTransPers3(&slot->va[(i - 3) & 7], &slot->vb[(i - 3) & 7], &slot->va[(i - 4) & 7],
                         (s32 *)&line3->x0, (s32 *)&line3->x1, (s32 *)&line3->x2, &p, &flag);
     if (otz < 0x1000) {
         line2->r2 = line2->r3 = line3->r0 = line3->r1 = D_800C3726[pal];
@@ -1980,7 +1913,7 @@ void func_800A4C14(ObjSlot *slot, u32 *ot, LINE_G4 *line0, DR_TPAGE *tp) {
     line4->x0 = line3->x2;
     line4->y0 = line3->y2;
 
-    otz = func_80040E14(&slot->vb[(i - 4) & 7], &slot->va[(i - 5) & 7], &slot->vb[(i - 5) & 7],
+    otz = RotTransPers3(&slot->vb[(i - 4) & 7], &slot->va[(i - 5) & 7], &slot->vb[(i - 5) & 7],
                         (s32 *)&line4->x1, (s32 *)&line4->x2, (s32 *)&line4->x3, &p, &flag);
     if (otz < 0x1000) {
         line3->r2 = line3->r3 = line4->r0 = line4->r1 = D_800C3729[pal];
@@ -2003,7 +1936,7 @@ void func_800A4C14(ObjSlot *slot, u32 *ot, LINE_G4 *line0, DR_TPAGE *tp) {
  *        callbacks and a tick counter that auto-clears.
  *
  * Sets the GTE rotation/translation matrix from @p m (guarded by
- * @c func_8003FEE4 / @c func_8003FF88), then iterates @c i in @c [0,8) over
+ * @c PushMatrix / @c PopMatrix), then iterates @c i in @c [0,8) over
  * four parallel arrays: @c D_800C6DA0 (@ref ObjSlot, stride 0x88),
  * @c D_800706A0 (@ref DrawPoint, stride 0x18), @p tpages (stride 0x20), and
  * @p prims (stride 0xB4). When the per-slot flag @c D_8005F168[i] is
@@ -2021,7 +1954,7 @@ void func_800A5224(MATRIX *m, u32 *ot, FieldRibbonPrims *prims,
                    FieldRibbonTPages *tpages) {
     s32 i;
 
-    func_8003FEE4();
+    PushMatrix();
     SetRotMatrix(m);
     SetTransMatrix(m);
     for (i = 0; i < 8; i++) {
@@ -2040,7 +1973,7 @@ void func_800A5224(MATRIX *m, u32 *ot, FieldRibbonPrims *prims,
             }
         }
     }
-    func_8003FF88();
+    PopMatrix();
 }
 
 /**
@@ -2070,7 +2003,7 @@ void func_800A5224(MATRIX *m, u32 *ot, FieldRibbonPrims *prims,
 void func_800A5360(u32 *ot, s16 r, s16 g, s16 b) {
     ClearOTagR(&g_orderingTablePtrs[(s16)g_bufferIndex], 1);
     {
-        volatile SystemState *sys = &D_800704A8;
+        volatile SystemState *sys = &g_fieldEntity;
         s32 idx = (s16)g_bufferIndex * 2;
         g_clearTiles[idx].r0 = (s16)sys->dialogTimer * r / 256;
         g_clearTiles[(s16)g_bufferIndex * 2].g0 = (s16)sys->dialogTimer * g / 256;
@@ -2125,7 +2058,7 @@ void func_800A553C(u32 *ot, s16 r, s16 g, s16 b) {
  * driven from the dialog state machine each frame.
  */
 void func_800A5698(void) {
-    SystemState *sys = &D_800704A8;
+    SystemState *sys = &g_fieldEntity;
     sys->dialogTimer -= sys->dialogCount;
     sys->unk1A1 = 0;
     if ((s16)*(volatile u16 *)&sys->dialogTimer > 0) {
@@ -2149,7 +2082,7 @@ void func_800A5698(void) {
  * of letting gcc reuse the post-increment value still in a register.
  */
 void func_800A5700(void) {
-    SystemState *sys = &D_800704A8;
+    SystemState *sys = &g_fieldEntity;
     sys->dialogTimer += sys->dialogCount;
     sys->unk1A1 = 0;
     if ((s16)*(volatile u16 *)&sys->dialogTimer >= 256) {
@@ -2190,7 +2123,7 @@ s16 func_800A5748(s16 start, s16 end, s16 progress, s16 total) {
  * @param a0 Opaque pointer forwarded as @c func_800A553C's first arg.
  */
 void func_800A5788(FieldFrameBuf *buf) {
-    SystemState *sys = &D_800704A8;
+    SystemState *sys = &g_fieldEntity;
 
     sys->unk1A1 = 0;
     sys->dialogTimer++;
@@ -2216,7 +2149,7 @@ void func_800A5788(FieldFrameBuf *buf) {
 /**
  * @brief Render one frame of the dialog/fade overlay for the current dialog state.
  *
- * Dispatches on @c D_800704A8.dialogState into @p buf 's ordering table:
+ * Dispatches on @c g_fieldEntity.dialogState into @p buf 's ordering table:
  *
  *  - @c 0: idle — clear the fade colour accumulators and the re-arm guard.
  *  - @c 1: nothing (the state is owned by someone else this frame).
@@ -2226,52 +2159,52 @@ void func_800A5788(FieldFrameBuf *buf) {
  *  - @c 5 / @c 6: interpolate the fade colour for this tick (@c func_800A5788).
  *  - @c 7 / @c 8: draw the flat fade tint with @c func_800A553C.
  *
- * The @c func_800127F8 argument that precedes each draw selects the blend mode,
+ * The @c SetupDrawMode argument that precedes each draw selects the blend mode,
  * @c 1 or @c 2 depending on the state.
  *
  * @param buf The frame's GPU work area; its ordering table receives the prims.
  */
 void func_800A5898(FieldFrameBuf *buf) {
-    SystemState *sys = &D_800704A8;
+    SystemState *sys = &g_fieldEntity;
 
-    switch ((s16)sys->dialogState) {
+    switch (sys->dialogState) {
     case 0:
-        D_800704A8.unk1A1 = 0;
-        D_800704A8.field_0x114 = 0;
-        D_800704A8.field_0x116 = 0;
-        D_800704A8.field_0x118 = 0;
+        g_fieldEntity.unk1A1 = 0;
+        g_fieldEntity.field_0x114 = 0;
+        g_fieldEntity.field_0x116 = 0;
+        g_fieldEntity.field_0x118 = 0;
         break;
     case 1:
         break;
     case 2:
-        func_800127F8(2);
+        SetupDrawMode(2);
         func_800A5698();
-        func_800A5360(buf->ot, D_800704A8.field_0x10E, D_800704A8.field_0x110, D_800704A8.field_0x112);
+        func_800A5360(buf->ot, g_fieldEntity.field_0x10E, g_fieldEntity.field_0x110, g_fieldEntity.field_0x112);
         break;
     case 3:
-        func_800127F8(2);
+        SetupDrawMode(2);
         func_800A5700();
-        func_800A5360(buf->ot, D_800704A8.field_0x10E, D_800704A8.field_0x110, D_800704A8.field_0x112);
+        func_800A5360(buf->ot, g_fieldEntity.field_0x10E, g_fieldEntity.field_0x110, g_fieldEntity.field_0x112);
         break;
     case 4:
         D_80070649 = 1;
         break;
     case 7:
-        D_800704A8.unk1A1 = 0;
-        func_800127F8(1);
-        func_800A553C(buf->ot, D_800704A8.field_0x10E, D_800704A8.field_0x110, D_800704A8.field_0x112);
+        g_fieldEntity.unk1A1 = 0;
+        SetupDrawMode(1);
+        func_800A553C(buf->ot, g_fieldEntity.field_0x10E, g_fieldEntity.field_0x110, g_fieldEntity.field_0x112);
         break;
     case 8:
-        D_800704A8.unk1A1 = 0;
-        func_800127F8(2);
-        func_800A553C(buf->ot, D_800704A8.field_0x10E, D_800704A8.field_0x110, D_800704A8.field_0x112);
+        g_fieldEntity.unk1A1 = 0;
+        SetupDrawMode(2);
+        func_800A553C(buf->ot, g_fieldEntity.field_0x10E, g_fieldEntity.field_0x110, g_fieldEntity.field_0x112);
         break;
     case 5:
-        func_800127F8(1);
+        SetupDrawMode(1);
         func_800A5788(buf);
         break;
     case 6:
-        func_800127F8(2);
+        SetupDrawMode(2);
         func_800A5788(buf);
         break;
     }
@@ -2308,10 +2241,9 @@ void func_800A5A14(s16 a0) {
  * @brief Per-frame background preload of the field nearest the player.
  *
  * Snapshots the player position into the scratchpad (whole units), then, while
- * the map is not suppressed by @c D_800704BD, scans the 12 event-queue entries
- * for the armed one (@c counter != @c 0x7FFF) whose trigger-segment start is
- * nearest in XY, recording its @c counter (the destination field id) in
- * @c D_8005F142.
+ * the map is not suppressed by @c D_800704BD, scans the 12 gateways for the one
+ * in use (@c fieldId != @c FIELD_GATEWAY_UNUSED) whose exit line starts
+ * nearest in XY, recording its destination @c fieldId in @c D_8005F142.
  *
  * The streaming half then runs unless the movie subsystem is busy or the engine
  * is in mode 3 (both abort through @c func_800A59D0), and unless a load is
@@ -2324,9 +2256,9 @@ void func_800A5A14(s16 a0) {
  * in flight.
  *
  * @param actor    Player entity, read for its 20.12 world position.
- * @param entries Event-queue entry array (12 slots).
+ * @param gateways The field's 12 gateways.
  */
-void func_800A5A20(Actor *actor, EventEntry *entries) {
+void func_800A5A20(Actor *actor, FieldGateway *gateways) {
     Vec3i *scratch = (Vec3i *)getScratchAddr(0);
     s32 best;
     s32 i;
@@ -2347,11 +2279,11 @@ void func_800A5A20(Actor *actor, EventEntry *entries) {
     scratch->z = actor->posZ >> 12;
 
     if (D_800704BD == 0) {
-        for (i = 0; i < 12; i++, entries++) {
-            id = entries->counter;
-            if (id != 0x7FFF) {
-                dx = entries->x0 - scratch->x;
-                dy = entries->y0 - scratch->y;
+        for (i = 0; i < 12; i++, gateways++) {
+            id = gateways->fieldId;
+            if (id != FIELD_GATEWAY_UNUSED) {
+                dx = gateways->x0 - scratch->x;
+                dy = gateways->y0 - scratch->y;
                 d = dx * dx + dy * dy;
                 if (d < best) {
                     best = d;
@@ -2361,7 +2293,7 @@ void func_800A5A20(Actor *actor, EventEntry *entries) {
         }
     }
 
-    if (func_800BE264() != 0 || D_800704A8.mode == 3) {
+    if (func_800BE264() != 0 || g_fieldEntity.mode == 3) {
         func_800A59D0();
         return;
     }
@@ -2430,7 +2362,7 @@ s32 func_800A5CF8(void) {
  *
  * Runs the classic FF8 field encounter formula. Bails when: the engine mode
  * is 1 or 7, @c func_800BE274() reports activity, @c g_fieldVars->fieldCF is
- * set, the dialog state is 2/3/4, encounters are disabled (@c D_8005F116),
+ * set, the dialog state is 2/3/4, encounters are disabled (@c g_fadeMode),
  * or movement flag bit 3 is set. Otherwise adds the field's step-rate byte
  * (halved when movement flag bit 2 is set) to the step accumulator
  * @c D_8005F164; when it passes 0x100 the accumulator wraps (@c &= 0xFF) and
@@ -2444,22 +2376,25 @@ s32 func_800A5CF8(void) {
  *
  * @note The three dialog-state reads go through a volatile cast, the
  *       original re-reads the halfword for each compare.
- * @note The first formation store writes @c D_800704A8.counter through the
+ * @note The first formation store writes @c g_fieldEntity.counter through the
  *       struct; the others use the alias symbol @c D_800704AA (same word,
  *       0x800704AA), both spellings exist in the original.
+ * @note Each formation id is read twice from the same slot: through the
+ *       @c (s16) cast for the compare with @c D_8005F120 (@c lh) and
+ *       unsigned for the store (@c lhu), both loads are in the original.
  * @note The step accumulator advances by the player's @c moveSpeed (0x1FE)
  *       read through a @c (u16) view, so faster movement builds the encounter
  *       counter proportionally faster.
  */
 void func_800A5D28(void) {
-    u8 *rate;
+    FieldEncounterRate *rate;
     s32 r;
-    u16 *fm;
+    FieldFormations *fm;
 
-    if (D_800704A8.mode == 1) {
+    if (g_fieldEntity.mode == 1) {
         return;
     }
-    if (D_800704A8.mode == 7) {
+    if (g_fieldEntity.mode == 7) {
         return;
     }
     r = func_800BE274();
@@ -2469,26 +2404,26 @@ void func_800A5D28(void) {
     if (g_fieldVars->fieldCF != 0) {
         return;
     }
-    if ((s16)*(volatile u16 *)&D_800704A8.dialogState == 4) {
+    if (g_fieldEntity.dialogState == 4) {
         return;
     }
-    if ((s16)*(volatile u16 *)&D_800704A8.dialogState == 3) {
+    if (g_fieldEntity.dialogState == 3) {
         return;
     }
-    if ((s16)*(volatile u16 *)&D_800704A8.dialogState == 2) {
+    if (g_fieldEntity.dialogState == 2) {
         return;
     }
-    if (D_8005F116 == 1) {
+    if (g_fadeMode == 1) {
         return;
     }
-    if (D_80078DF8 & 8) {
+    if (g_battleChars.levelEntries[15].abilityFlags & 8) {
         return;
     }
-    rate = *D_800C71F4;
-    if (D_80078DF8 & 4) {
-        D_8005F164 += *rate >> 1;
+    rate = *g_fieldEncounterRate;
+    if (g_battleChars.levelEntries[15].abilityFlags & 4) {
+        D_8005F164 += rate->stepRate >> 1;
     } else {
-        D_8005F164 += *rate;
+        D_8005F164 += rate->stepRate;
     }
     if (D_8005F164 < 0x101) {
         return;
@@ -2496,19 +2431,19 @@ void func_800A5D28(void) {
     D_8005F164 &= 0xFF;
     D_8005F0FE += (s16)(u16)D_80085224[D_8005F148].moveSpeed / 1348;
     if ((u8)func_800A5C9C() < D_8005F0FE) {
-        D_800704A8.mode = 3;
+        g_fieldEntity.mode = 3;
         D_8005F0FE = 0;
         D_8005F130 = 1;
         r = func_800A5CF8();
-        fm = *D_800C720C;
-        if ((u8)r < 0x80 && D_8005F120 != (s16)fm[0]) {
-            D_800704A8.counter = fm[0];
-        } else if ((u8)r < 0xC0 && D_8005F120 != (s16)fm[1]) {
-            D_800704AA = fm[1];
-        } else if ((u8)r < 0xF0 && D_8005F120 != (s16)fm[2]) {
-            D_800704AA = fm[2];
+        fm = *g_fieldFormations;
+        if ((u8)r < 0x80 && D_8005F120 != (s16)fm->formation[0]) {
+            g_fieldEntity.counter = fm->formation[0];
+        } else if ((u8)r < 0xC0 && D_8005F120 != (s16)fm->formation[1]) {
+            D_800704AA = fm->formation[1];
+        } else if ((u8)r < 0xF0 && D_8005F120 != (s16)fm->formation[2]) {
+            D_800704AA = fm->formation[2];
         } else {
-            D_800704AA = fm[3];
+            D_800704AA = fm->formation[3];
         }
         D_8005F120 = D_800704AA;
     }

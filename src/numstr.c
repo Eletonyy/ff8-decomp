@@ -489,7 +489,7 @@ static inline u8 *insertArgString(u8 *dst, s32 code, u8 *buf) {
  *   0x04 + byte — Two-byte numeric value format (type 4: SFX entry values)
  *   0x05-0x06, 0x08-0x0B + byte — Escape: next byte stored literally
  *   0x0C + byte — Magic spell name lookup via getMagicNamePtr
- *   0x0D + byte — GF/item stat name lookup via getStatName
+ *   0x0D + byte — Item name lookup via getItemName
  *   0x0E + byte — Character name table set 0 (idx * 224 + subByte)
  *   0x0F + byte — Character name table set 1 (idx * 224 + subByte)
  *   0x10-0x18   — Direct name lookup via getBattleCharNameWrapper (type 0);
@@ -569,7 +569,7 @@ void decodeMessage(u8 *input, u8 *output, s32 maxLen) {
                 output = appendString(output - 1, getMagicNamePtr(ch - 0x20));
             } else if (ch == 0xD) {
                 ch = *input++;
-                output = appendString(output - 1, getStatName(ch - 0x20));
+                output = appendString(output - 1, getItemName(ch - 0x20));
             } else if (ch == 0xE || ch == 0xF) {
                 ch = (ch - 0xE) * 224;
                 lowCmd = *input++;

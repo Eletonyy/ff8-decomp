@@ -1,5 +1,29 @@
 #include "common.h"
 #include "menu.h"
+#include "menucrd.h"
+#include "overlay.h"
+
+/**
+ * @brief Card menu task state, allocated by func_801F179C.
+ *
+ * The first 0x10 bytes belong to the menumain allocator (task links and the
+ * tick/draw callbacks).
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x20];
+    /* 0x20 */ u8 *rowText[2];      /**< Row text the list panels draw (MenuDisplayConfig.dataPtr). */
+    /* 0x28 */ u16 scroll;
+    /* 0x2A */ u8 pad2A[2];
+    /* 0x2C */ u8 unk2C;
+    /* 0x2D */ u8 pad2D;
+    /* 0x2E */ u8 card;             /**< Card under the cursor. */
+    /* 0x2F */ u8 pad2F;
+    /* 0x30 */ s16 intensity;       /**< Menu color intensity. */
+    /* 0x32 */ u16 groupCounts[4];  /**< Card copies owned per level group: 1-5, 6-7, 8-9, 10. */
+    /* 0x3A */ u16 totalCount;      /**< Card copies owned in all. */
+    /* 0x3C */ u8 pad3C[6];
+    /* 0x42 */ u8 unk42;
+} CardMenuState;
 
 extern s32 g_menuColor;
 extern s16 D_801E7D64;
@@ -7,22 +31,16 @@ extern s16 D_801E7D66;
 extern MenuDisplayConfig g_menuDisplayCfg;
 extern u8 D_801E7870;
 
-extern s32 pollCdReadStatus(void);
 extern s16 getGameStateS16(void);
-extern void loadOverlayWithTimCallback(s16 id, void *addr);
 
-void func_801E582C(s32 a0);
-void func_801E5ABC(s32 a0);
-void func_801E5F7C(void);
-void func_801E67E4(void);
-s32 func_801E69AC(s32 a0, s32 a1, s32 a2);
+void func_801E582C(CardMenuState *state);
+void func_801E5ABC(CardMenuState *state);
+s32 func_801E5F7C(s32, s32, s32, s32, s32);
+s32 func_801E67E4(s32, s32, s32, s32, s32);
+s32 func_801E69AC(CardMenuState *state, s32 a1, s32 a2);
 
-/**
- * Allocates a menu resource of type 0xD for the card menu.
- * @param a0 Subtype parameter passed as third argument
- * @return Result from func_801F08D4
- */
-s32 func_801E5800(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 0xD. */
+u8 *func_801E5800(s32 a0) {
     return func_801F08D4(1, 0xD, a0, 0);
 }
 
@@ -32,10 +50,10 @@ s32 func_801E5800(s32 a0) {
  * Checks if the card transition animation is done via pollCdReadStatus.
  * If not done, gets the new position via getGameStateS16. If the
  * target position (D_801E7D66) is valid and differs from the new
- * position, triggers a card load at 0x801CD000 and resets both
+ * position, loads that card image to MENU_IMAGE_ADDR and resets both
  * position trackers to -1.
  */
-void func_801E582C(s32 a0) {
+void func_801E582C(CardMenuState *state) {
     int new_var;
     s16 value;
     if (pollCdReadStatus() == 0) {
@@ -43,7 +61,7 @@ void func_801E582C(s32 a0) {
         new_var = -1;
         D_801E7D64 = value;
         if (((D_801E7D66 >= 0) && (D_801E7D66 != value)) && (D_801E7D66 >= 0)) {
-            loadOverlayWithTimCallback(D_801E7D66, (void *) 0x801CD000);
+            loadOverlayWithTimCallback(D_801E7D66, MENU_IMAGE_ADDR);
             D_801E7D66 = new_var;
             D_801E7D64 = -1;
         }
@@ -71,15 +89,18 @@ void func_801E58B4(s32 a0, s32 a1) {
 }
 
 /**
- * Selects a menu icon based on card count ranges.
- * Validates the card with func_80023B14, then maps the count
- * to one of four icon indices (9-12) based on thresholds.
- * @param a0 Card identifier
- * @return func_801E5800 result for the selected icon, or 0 if invalid
+ * @brief Look up the menu text for card @p a0's level group.
+ *
+ * Picks entry 9 of menu text category 0xD for cards 0-54 (levels 1-5),
+ * 10 for 55-76 (levels 6-7), 11 for 77-98 (levels 8-9) and 12 for the rest
+ * (level 10).
+ *
+ * @param a0 Card ID.
+ * @return The text, or NULL when func_80023B14 returns a negative value for the card.
  */
-s32 func_801E591C(s32 a0) {
+u8 *func_801E591C(s32 a0) {
     if (func_80023B14(a0) < 0) {
-        return 0;
+        return NULL;
     }
     if (a0 < 0x37) {
         return func_801E5800(9);
@@ -94,84 +115,81 @@ s32 func_801E591C(s32 a0) {
 }
 
 /**
- * @brief Tally card counts by rarity tier and store totals.
+ * @brief Count the card copies owned, per level group and in all.
  *
- * Iterates through all card indices calling func_80023B14 to get
- * each card's count. Accumulates counts into per-tier totals stored
- * at offsets 0x32-0x38, and a grand total at offset 0x3A.
- * Tier ranges: 0-0x36 (common), 0x37-0x4C (uncommon),
- * 0x4D-0x62 (rare), 0x63-0x6D (legendary).
+ * Adds up func_80023B14 over cards 0-54 (levels 1-5), 55-76 (levels 6-7),
+ * 77-98 (levels 8-9) and 99-109 (level 10), skipping cards it reports
+ * as zero or negative.
  *
- * @param a0 Card data structure pointer
+ * @param state Card menu state.
  */
-void func_801E5980(s32 a0) {
+void func_801E5980(CardMenuState *state) {
     s32 sum = 0;
     s32 i = sum;
     s32 cardIdx = i;
     s32 count;
 
-    *(s16 *)(a0 + 0x32) = 0;
-    *(s16 *)(a0 + 0x34) = 0;
-    *(s16 *)(a0 + 0x36) = 0;
-    *(s16 *)(a0 + 0x38) = 0;
-    *(s16 *)(a0 + 0x3A) = 0;
+    state->groupCounts[0] = 0;
+    state->groupCounts[1] = 0;
+    state->groupCounts[2] = 0;
+    state->groupCounts[3] = 0;
+    state->totalCount = 0;
 
     do {
         count = func_80023B14(cardIdx);
         if (count > 0) {
             sum += count;
-            *(u16 *)(a0 + 0x32) = *(u16 *)(a0 + 0x32) + count;
+            state->groupCounts[0] += count;
         }
         i++;
         cardIdx++;
-    } while (i < 0x37);
+    } while (i < 55);
 
     i = 0;
     do {
         count = func_80023B14(cardIdx);
         if (count > 0) {
             sum += count;
-            *(u16 *)(a0 + 0x34) = *(u16 *)(a0 + 0x34) + count;
+            state->groupCounts[1] += count;
         }
         i++;
         cardIdx++;
-    } while (i < 0x16);
+    } while (i < 22);
 
     i = 0;
     do {
         count = func_80023B14(cardIdx);
         if (count > 0) {
             sum += count;
-            *(u16 *)(a0 + 0x36) = *(u16 *)(a0 + 0x36) + count;
+            state->groupCounts[2] += count;
         }
         i++;
         cardIdx++;
-    } while (i < 0x16);
+    } while (i < 22);
 
     i = 0;
     do {
         count = func_80023B14(cardIdx);
         if (count > 0) {
             sum += count;
-            *(u16 *)(a0 + 0x38) = *(u16 *)(a0 + 0x38) + count;
+            state->groupCounts[3] += count;
         }
         i++;
         cardIdx++;
-    } while (i < 0x0B);
+    } while (i < 11);
 
-    *(s16 *)(a0 + 0x3A) = sum;
+    state->totalCount = sum;
 }
 
 INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E5ABC);
 
 /**
- * Processes a card menu entry by running the state machine
- * and then updating the display.
- * @param a0 Card entry pointer
+ * @brief Card menu tick: run the state machine, then the card image loader.
+ * @param state Card menu state.
  */
-void func_801E5F4C(s32 a0) {
-    func_801E5ABC(a0);
-    func_801E582C(a0);
+void func_801E5F4C(CardMenuState *state) {
+    func_801E5ABC(state);
+    func_801E582C(state);
 }
 
 INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E5F7C);
@@ -179,13 +197,13 @@ INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E5F7C);
 /**
  * Initializes a card dialog box with scroll parameters and
  * registers func_801E5F7C as the update callback.
- * @param a0 Source card data pointer
+ * @param state Card menu state.
  * @param a1 X position for callback
  * @param a2 Y position for callback
  * @param a3 Dialog type identifier
  * @param stackArg Scroll offset
  */
-s32 func_801E6058(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
+s32 func_801E6058(CardMenuState *state, s32 a1, s32 a2, s32 a3, s32 stackArg) {
     g_menuDisplayCfg.iconType = 0x55;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = a3;
@@ -195,11 +213,11 @@ s32 func_801E6058(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
     g_menuDisplayCfg.pageStart = 0;
     g_menuDisplayCfg.pageEnd = 1;
     g_menuDisplayCfg.y = stackArg;
-    g_menuDisplayCfg.scrollOffset = *(u16 *)(a0 + 0x28);
-    g_menuDisplayCfg.dataPtr = a0 + 0x20;
-    g_menuDisplayCfg.itemId = *(u8 *)(a0 + 0x2E);
-    g_menuDisplayCfg.itemAttr = *(u8 *)(a0 + 0x2C);
-    func_801EFBB4(a1, a2, (s32)func_801E5F7C);
+    g_menuDisplayCfg.scrollOffset = state->scroll;
+    g_menuDisplayCfg.dataPtr = (s32)state->rowText;
+    g_menuDisplayCfg.itemId = state->card;
+    g_menuDisplayCfg.itemAttr = state->unk2C;
+    func_801EFBB4(a1, a2, func_801E5F7C);
 }
 
 INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E60E8);
@@ -235,38 +253,6 @@ s32 func_801E6228(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
  * @param stackArg Color/attribute
  * @return Result from func_800376A8
  */
-/**
- * @brief Render a card entry text with highlight detection.
- *
- * Computes divmod-by-11 on the card index at offset 0x2E to get
- * page (quotient) and column (remainder). If the page+0x30 matches
- * D_801E7D64 and the card is inactive (byte 0x42 == 0), renders
- * the text using the card remainder as the palette selector.
- * Otherwise renders with palette index 0xB.
- *
- * @param a0 Card entry pointer
- * @param a1 X position
- * @param a2 Y position
- * @param a3 Text index
- * @param stackArg Color/attribute
- * @return Result from func_800376A8
- */
-/**
- * @brief Render a card entry text with highlight detection.
- *
- * Computes divmod-by-11 on the card index at offset 0x2E to get
- * page (quotient) and column (remainder). If the page+0x30 matches
- * D_801E7D64 and the card is inactive (byte 0x42 == 0), renders
- * the text using the card remainder as the palette selector.
- * Otherwise renders with palette index 0xB.
- *
- * @param a0 Card entry pointer
- * @param a1 X position
- * @param a2 Y position
- * @param a3 Text index
- * @param stackArg Color/attribute
- * @return Result from func_800376A8
- */
 INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E6270);
 
 INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E634C);
@@ -280,13 +266,13 @@ INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E67E4);
 /**
  * Initializes a card info dialog box and registers func_801E67E4
  * as the update callback.
- * @param a0 Source card data pointer
+ * @param state Card menu state.
  * @param a1 X position for callback
  * @param a2 Y position for callback
  * @param a3 Dialog type identifier
  * @param stackArg Scroll offset
  */
-s32 func_801E6920(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
+s32 func_801E6920(CardMenuState *state, s32 a1, s32 a2, s32 a3, s32 stackArg) {
     g_menuDisplayCfg.iconType = 0;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = a3;
@@ -296,11 +282,11 @@ s32 func_801E6920(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
     g_menuDisplayCfg.pageStart = 0;
     g_menuDisplayCfg.pageEnd = 1;
     g_menuDisplayCfg.y = stackArg;
-    g_menuDisplayCfg.scrollOffset = *(u16 *)(a0 + 0x28);
-    g_menuDisplayCfg.dataPtr = a0 + 0x20;
-    g_menuDisplayCfg.itemId = *(u8 *)(a0 + 0x2E);
-    g_menuDisplayCfg.itemAttr = *(u8 *)(a0 + 0x2C);
-    func_801EFBB4(a1, a2, (s32)func_801E67E4);
+    g_menuDisplayCfg.scrollOffset = state->scroll;
+    g_menuDisplayCfg.dataPtr = (s32)state->rowText;
+    g_menuDisplayCfg.itemId = state->card;
+    g_menuDisplayCfg.itemAttr = state->unk2C;
+    func_801EFBB4(a1, a2, func_801E67E4);
 }
 
 /**
@@ -311,28 +297,28 @@ s32 func_801E6920(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
  * dialog, card name dialog, and the summary row. Returns the
  * accumulated render result.
  *
- * @param a0 Card entry pointer
+ * @param state Card menu state.
  * @param a1 X base position
  * @param a2 Y base position
  * @return Final render chain result
  */
-s32 func_801E69AC(s32 a0, s32 a1, s32 a2) {
+s32 func_801E69AC(CardMenuState *state, s32 a1, s32 a2) {
     s32 result;
     s32 saved;
     s32 v1;
 
     saved = getDisplayListHead();
     func_801F1AFC();
-    setMenuColorIntensity(*(s16 *)(a0 + 0x30));
+    setMenuColorIntensity(state->intensity);
     v1 = 0x1E;
-    result = func_801E645C(a0, a1, a2, 0xC0, v1);
+    result = func_801E645C(state, a1, a2, 0xC0, v1);
     v1 = 0x6A;
-    result = func_801E66AC(a0, a1, result, 0xC0, v1);
+    result = func_801E66AC(state, a1, result, 0xC0, v1);
     v1 = 0xC0;
-    result = func_801E6920(a0, a1, result, 0x18, v1);
+    result = func_801E6920(state, a1, result, 0x18, v1);
     v1 = 0x6;
-    result = func_801E6058(a0, a1, result, 0x18, v1);
-    result = func_801E634C(a0, a1, result, 0x1E, 0x1E);
+    result = func_801E6058(state, a1, result, 0x18, v1);
+    result = func_801E634C(state, a1, result, 0x1E, 0x1E);
     func_801F1B10();
     storeGpuPacket(saved);
     return result;
@@ -344,20 +330,20 @@ s32 func_801E69AC(s32 a0, s32 a1, s32 a2) {
  * initializes the first card entry.
  */
 void func_801E6AA8(void) {
-    s32 result = func_801F179C((s32)func_801E5F4C, (s32)func_801E69AC);
+    CardMenuState *state = func_801F179C(func_801E5F4C, func_801E69AC);
 
     D_801E7D64 = -1;
     D_801E7D66 = -1;
     do {
     } while (pollCdReadStatus() != 0);
     func_801F0948(0);
-    if (result != 0) {
-        *(u8 *)(result + 0x42) = 1;
-        *(s16 *)(result + 0x30) = 0;
+    if (state != NULL) {
+        state->unk42 = 1;
+        state->intensity = 0;
         D_801E7D64 = -1;
-        func_801E5980(result);
+        func_801E5980(state);
         func_801E58A4(0);
-        func_801E5F4C(result);
+        func_801E5F4C(state);
     }
 }
 

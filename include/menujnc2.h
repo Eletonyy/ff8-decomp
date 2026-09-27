@@ -9,7 +9,7 @@
 /* Public prototypes (junction-menu entry points + magic-list callback). */
 extern void junctionMenuUpdate();
 s32 renderJunctionMenu(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY);
-extern s32 renderMagicItemCallback();
+s32 renderMagicItemCallback(s32 renderCtx, s32 cursorY, s32 itemIdx, s32 columnIdx, s32 xOffset);
 
 /* Private typedefs/structs (menujnc2-internal layout descriptors). */
 /** @brief Stat-table layout entry: grid cell + label string ID (stride 8). */
@@ -107,8 +107,8 @@ void renderAbilityEntry(s32 renderCtx, s32 index);
 s32 getJunctionSlotCount(s32 charIdx, s32 slotType);
 s32 buildMagicAvailMask(s32 charIdx, s32 slotOffset);
 s32 getAbilityScrollOffset(s32 index);
-s32 renderInnerPanel(s32 pos);
-s32 renderInnerPanelAlt(s32 pos);
+u8 *renderInnerPanel(s32 pos);
+u8 *renderInnerPanelAlt(s32 pos);
 void validateCommandSlots(s32 charIdx);
 void validateAbilitySlots(s32 charIdx);
 void refreshJunctionState(s32 charIdx);
@@ -132,7 +132,7 @@ void compactAbilitySlots(s32 charIdx);
 s32 unjunctionGf(s32 charIdx, s32 gfIdx);
 s32 unjunctionGfAndRefresh(s32 charIdx, s32 gfIdx);
 void previewJunctionChange(s32 charIdx, s32 gfIdx, s32 slot, s32 abilityId);
-s32 getAbilityNamePtr(s32 type, s32 index);
+u8 *getAbilityNamePtr(s32 type, s32 index);
 s32 getJunctionCapabilities(s32 charIdx);
 void buildMagicLookupTable(s32 charIdx);
 s32 encodeBattleAbilityFlags(BattleCharData *charData);

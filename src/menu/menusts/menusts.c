@@ -56,30 +56,26 @@ s32 func_801E586C(s32 index) {
 }
 
 /**
- * @brief Wrapper that calls getMagicNamePtr with a0 offset by 0x33.
- *
- * @param a0 Base pointer to a menu entry structure.
+ * @brief Wrapper that calls getMagicNamePtr with @p a0 offset by 0x33.
  */
-void func_801E5890(u8 *a0) {
+void func_801E5890(s32 a0) {
     getMagicNamePtr(a0 + 0x33);
 }
 
 /**
- * @brief Wrapper that calls getSpellEntityData with a0 offset by 0x33.
- *
- * @param a0 Base pointer to a menu entry structure.
+ * @brief Wrapper that calls getSpellDesc with @p a0 offset by 0x33.
  */
-void func_801E58B0(u8 *a0) {
-    getSpellEntityData(a0 + 0x33);
+void func_801E58B0(s32 a0) {
+    getSpellDesc(a0 + 0x33);
 }
 
-/** @brief Draw inner panel with section id 0x7 and clear flag. */
-s32 func_801E58D0(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 7. */
+u8 *func_801E58D0(s32 a0) {
     return func_801F08D4(1, 7, a0, 0);
 }
 
-/** @brief Draw inner panel with section id 0x7 and set flag. */
-s32 func_801E58FC(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 7, with the last flag set. */
+u8 *func_801E58FC(s32 a0) {
     return func_801F08D4(1, 7, a0, 1);
 }
 

@@ -3,6 +3,23 @@
 
 #include "common.h"
 
+/** @brief Load address of the menu sub-overlays and their page data. */
+#define MENU_SUBOVERLAY_ADDR 0x801D1000
+
+/** @brief Load address of the menus' image data (TIM files). */
+#define MENU_IMAGE_ADDR 0x801CD000
+
+/**
+ * @brief Menu task callbacks registered with func_801F179C.
+ *
+ * Each overlay's callbacks take its own task-state type, so the arguments are
+ * left unspecified: the tick callback is called with the task and its result is
+ * ignored; the draw callback gets (task, ot, packet cursor) and returns the new
+ * cursor.
+ */
+typedef void (*MenuTickCallback)();
+typedef s32 (*MenuDrawCallback)();
+
 /**
  * @brief Display/rendering configuration for menu panels.
  *
@@ -30,12 +47,20 @@ typedef struct {
     /* 0x16 */ u8 pageStart;      /**< First visible page/row index */
     /* 0x17 */ u8 pageEnd;        /**< Last visible page/row index */
     /* 0x18 */ u16 inputRaw;      /**< Raw button input state */
-    /* 0x1A */ u16 inputNew;      /**< Newly pressed buttons (edges) */
-    /* 0x1C */ u16 inputRepeat;   /**< Buttons with auto-repeat applied */
+    /* 0x1A */ u16 inputRepeat;   /**< Held buttons with auto-repeat applied (func_801F0E5C). */
+    /* 0x1C */ u16 inputNew;      /**< Newly pressed buttons: (cur ^ prev) & cur. */
     /* 0x1E */ u8 itemId;         /**< Current item/card ID for rendering */
     /* 0x1F */ u8 itemAttr;       /**< Item attribute byte */
     /* 0x20 */ s32 dataPtr;       /**< Pointer to item data array */
 } MenuDisplayConfig; /* 0x24 bytes */
+
+/**
+ * @brief Per-column renderer that func_801EFBB4 calls for a panel.
+ *
+ * Called as (ot, packet cursor, MenuDisplayConfig.pageEnd or pageStart,
+ * column index, x offset); returns the advanced packet cursor.
+ */
+typedef s32 (*MenuRowCallback)(s32, s32, s32, s32, s32);
 
 /** @brief Shared menu display state (lives in menumain BSS at 0x801FAB00). */
 extern MenuDisplayConfig g_menuDisplayCfg;
@@ -75,8 +100,8 @@ typedef struct {
     /* 0x16 */ u16 returnState;        /**< State to return to after sub-menu. */
     /* 0x18 */ u16 exitState;          /**< State to transition to on exit. */
     /* 0x1A */ u8 pad1A[6];            /**< Unknown. */
-    /* 0x20 */ s32 itemPtr;            /**< Item/ability data pointer passed to rendering callbacks. */
-    /* 0x24 */ s32 itemPtr2;           /**< Secondary item/ability data pointer. */
+    /* 0x20 */ u8 *itemPtr;            /**< Item/ability data pointer passed to rendering callbacks. */
+    /* 0x24 */ u8 *itemPtr2;           /**< Secondary item/ability data pointer. */
     /* 0x28 */ s32 dataPtr;            /**< Pointer to ability data table. */
     /* 0x2C */ s32 dataPtr2;           /**< Magic-availability mask / secondary data pointer. */
     /* 0x30 */ u16 parentParam;        /**< Parameter from parent menu context. */
@@ -218,7 +243,8 @@ extern u8 D_800780AB;
 
 /* menumain-owned shared symbols (canonical signatures from menumain.c). */
 s32 func_801F6AFC(s32);
-u32 func_801F0FEC(s32, s32, s32, s32, s32, s32);
+s32 func_801EFBB4(s32, s32, MenuRowCallback);
+u32 func_801F0FEC(s32, s32, s32, s32, u8 *, s32);
 s32 func_801F3FB4(s32);
 s32 func_801F5104(s32);
 s32 func_801F510C(s32);
@@ -230,6 +256,8 @@ s32 func_801F776C(s32, s32);
 s32 func_801F79F8(s32);
 s32 func_801F7BAC(s32);
 s32 func_801F7BE4(s32);
+void *func_801F179C(MenuTickCallback, MenuDrawCallback);
+u8 *func_801F08D4(s32, s32, s32, s32);
 extern u8 D_801EF1A4;
 extern u8 D_801EF1A5;
 extern u8 D_801EF1B0[];

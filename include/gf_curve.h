@@ -5,7 +5,7 @@
  * Stat/experience curve evaluation for characters and GFs: the quadratic
  * curve evaluator all the others build on, level<->XP inversion, and the
  * derived combat stats (HP, hit, evade, elemental and status attack/defence)
- * that the battle code reads out of @c g_gameState and @c g_gfData.
+ * that the battle code reads out of @c g_gameState and @c g_kernel.
  */
 #ifndef GF_CURVE_H
 #define GF_CURVE_H

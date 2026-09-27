@@ -40,7 +40,7 @@ typedef struct {
     /* 0x18 */ u8 pad18[8];          /**< Unknown. */
     /* 0x20 */ u16 fadeAlpha;        /**< Panel fade-in alpha (counts up to 0x1000). */
     /* 0x22 */ U16Split pageIndex;   /**< Page index (lo=overlayCmd, hi=overlayParam). */
-    /* 0x24 */ s32 panelHandle;      /**< Panel handle returned by func_801F08D4 / func_801F6AD0. */
+    /* 0x24 */ u8 *panelHandle;      /**< Message text returned by func_801F08D4 / func_801F6AD0. */
     /* 0x28 */ s16 fadePos;          /**< Fade animation position (counts up to 0x1000). */
     /* 0x2A */ s16 scrollPos;        /**< Section-list scroll position (counts down from 0x1000). */
     /* 0x2C */ s16 fadeProgress;     /**< Section-select fade progress. */
@@ -111,11 +111,6 @@ extern u8 D_801E4EC2;
 /* External shared menu globals (live in menumain overlay)                  */
 /* ======================================================================== */
 
-/** @brief CLUT lookup table, indexed by an angle/64 (shared across menu overlays). */
-
-/** @brief Buttons-with-repeat alias of g_menuDisplayCfg.inputRepeat. */
-extern u16 D_801FAB1C;
-
 /** @brief Tutorial save flag controlling the party-availability scan. */
 extern u8 D_801FABC7;
 
@@ -123,8 +118,6 @@ extern u8 D_801FABC7;
 /* External menu functions (defined in menumain overlay)                    */
 /* ======================================================================== */
 
-extern s32 func_801EF9AC(s32, s32, s32, s32);
-extern u32 func_801EFBB4(s32, s32, s32);
 extern s32 func_801F7A54(void);
 extern s32 drawColorByMenuPalette(s32, s32, s32, s32, s32);
 

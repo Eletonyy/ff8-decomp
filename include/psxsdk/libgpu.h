@@ -133,6 +133,12 @@ typedef struct {
 #define getClut(x, y) \
     (((y) << 6) | (((x) >> 4) & 0x3f))
 
+/* Pack a draw-mode command word (GP0 0xE1): dfe = drawing to the display
+ * area allowed, dtd = dithering on, tpage = a getTPage() value. */
+#define _get_mode(dfe, dtd, tpage) \
+    ((0xe1000000) | ((dtd) ? 0x0200 : 0) | \
+     ((dfe) ? 0x0400 : 0) | ((tpage) & 0x9ff))
+
 /* Store a tpage / clut into a primitive's tpage / clut field. */
 #define setTPage(p, tp, abr, x, y) \
     ((p)->tpage = getTPage((tp), (abr), (x), (y)))
@@ -431,15 +437,24 @@ typedef struct {
     u16 w, h;                 /* +0x14: sprite dimensions */
 } TSPRT;
 
+/**
+ * @brief Set the tag length and draw-mode word of a TSPRT.
+ *
+ * The TSPRT counterpart of the SDK's setDrawTPage, which cannot be used on it:
+ * that one sets the length to 1, a TSPRT carries 5 words under its tag.
+ */
+#define setTSprt(p, dfe, dtd, tpage) \
+    (setlen(p, 5), (p)->drawMode = _get_mode(dfe, dtd, tpage))
+
 /* --- GPU function declarations --- */
 
-void ResetGraph(s32 mode);
+s32 ResetGraph(s32 mode);
 void SetGraphDebug(s32 level);
 s32 DrawSync(s32 mode);
 void SetDispMask(s32 mask);
 void ClearOTag(u32 *ot, s32 n);
 void ClearOTagR(u32 *ot, s32 n);
-void DrawOTag(void *p);
+void DrawOTag(u32 *p);
 void DrawPrim(void *p);
 void LoadImage(RECT *rect, u32 *data);
 void StoreImage(RECT *rect, u32 *data);
@@ -451,9 +466,9 @@ void SetDrawLoad(DR_LOAD *p, RECT *rect);
 void SetDrawEnv(DR_ENV *dr_env, DRAWENV *env);
 DRAWENV *SetDefDrawEnv(DRAWENV *env, s32 x, s32 y, s32 w, s32 h);
 DISPENV *SetDefDispEnv(DISPENV *env, s32 x, s32 y, s32 w, s32 h);
-void PutDrawEnv(void *env);
-void PutDispEnv(void *env);
-void ClearImage(void *rect, u8 r, u8 g, u8 b);
+DRAWENV *PutDrawEnv(DRAWENV *env);
+DISPENV *PutDispEnv(DISPENV *env);
+s32 ClearImage(RECT *rect, u8 r, u8 g, u8 b);
 void SetDrawStp(u32 *p, s32 dfe);
 void AddPrim(void *ot, void *p);
 void AddPrims(s32 *ot, void *p0, void *p1);
@@ -469,6 +484,7 @@ void SetDrawMode(void *p, s32 dfe, s32 dtd, s32 tpage, RECT *tw);
 void SetDrawTPage(void *p, s32 dfe, s32 dtd, u16 tpage);
 void SetTile(void *p);
 void SetSprt(SPRT *p);
+u16 GetClut(s32 x, s32 y);
 u16 GetTPage(s32 tp, s32 abr, s32 x, s32 y);
 
 #endif /* LIBGPU_H */

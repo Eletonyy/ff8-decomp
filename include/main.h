@@ -36,7 +36,7 @@ typedef enum {
 } RenderMode;
 
 /* Display / render state owned by main.c. */
-extern u16            g_currentMusicTrack;
+extern s16            g_currentMusicTrack;
 extern TILE           g_clearTiles[];
 extern volatile u16   g_bufferIndex; /* volatile for codegen match (forces sign extension, prevents CSE) */
 extern volatile u8    g_fadeMode;    /* volatile for codegen match (forces reload each access) */
@@ -63,6 +63,7 @@ extern CdFileDesc     D_80097400[];
 extern CdFileDesc     D_80097410[];
 extern CdFileDesc     D_800974D0[];
 extern CdFileDesc     D_800974D8[];
+extern CdFileDesc     g_kernelFileDesc;
 extern CdFileDesc     D_80097808[];
 extern u8             D_80067468[];
 extern u8             D_8006A468[];

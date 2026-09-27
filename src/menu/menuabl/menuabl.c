@@ -1,26 +1,24 @@
 #include "common.h"
 #include "menu.h"
+#include "menumain.h"
 #include "gamestate.h"
 #include "menuabl.h"
+#include "psxsdk/libetc.h"
 #include "numstr.h"
+#include "btl_anim.h"
+#include "btl_anim_packet.h"
 
 extern AbilityEntry  D_8007CEE0[];
 
 extern s32  getAbilityDesc(s32 id);
 extern u8  *getAbilityName(s32 abilityId);
-extern s32  getDisplayListHead(void);
-extern void storeGpuPacket(u32 pkt);
 extern void setMenuColorIntensity(s32 intensity);
 extern s32  func_8002FF34(s32 ctx, s32 a1, s32 a2, s32 x, s32 y, s32 color);
-extern s32  func_801EF9AC(s32 dl, s32 ot, s32 opaque, s32 color);
-extern s32  func_801EFBB4(s32 dl, s32 ot, s32 callback);
 extern void func_801F0A78(s32 ctx, s32 idx, s32 unused, s32 x, s32 y);
-extern s32  func_801F179C(s32 tickCb, s32 drawCb);
 extern void func_801F1AFC(void);
 extern void func_801F1B10(void);
 extern s32  func_801F72B4(void);
 
-extern u8 D_8007809A;
 
 extern s32  func_801F6768(u16 flags, s32 max, s32 current);
 extern void func_801EFFE4(s32 trackId);
@@ -30,8 +28,6 @@ extern s32  func_801F0D84(void);
 extern void func_801F18FC(s32 *ctx);
 extern s32  func_801F0BB0(void);
 extern void func_801F7BEC(s32 cfg);
-extern void func_801F23D0(s32 a0, s32 size, void *buf);
-extern void *func_801F6AA4(s32 id);
 extern void initSfxPlayback(s32 ch, u8 *buf);
 extern void sendSpuCommand(s32 cmd);
 extern void setSfxPitch(s32 ch, s32 pitch);
@@ -183,8 +179,8 @@ void func_801E2990(void) {
 void func_801E2A34(SoundMenuState *s) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
     u16 *statePtr = &s->state;
-    u16 btnFlags = cfg->inputNew;
-    u32 cfgFlags = cfg->inputRepeat;
+    u16 inputRepeat = cfg->inputRepeat;
+    u32 inputNew = cfg->inputNew;
     u16 state = s->state;
     s32 newSel;
     s32 slot;
@@ -215,23 +211,23 @@ restart:
     case 3: {
         s32 page = s->field_3A / 11;
         slot = s->field_3A % 11;
-        if (btnFlags & 0x8000) {
+        if (inputRepeat & PADLleft) {
             if (D_801E3D9C >= 12) {
                 state = 4;
                 goto restart;
             }
         }
-        if (btnFlags & 0x2000) {
+        if (inputRepeat & PADLright) {
             if (D_801E3D9C >= 12) {
                 state = 6;
                 goto restart;
             }
         }
-        newSel = func_801F6768(btnFlags, 11, slot);
+        newSel = func_801F6768(inputRepeat, 11, slot);
         func_801E28B4(1, s->field_3A, s->field_2C);
         s->field_20 = func_801E2944(s->field_3A);
         s->field_3A = (page * 11) + newSel;
-        if (cfgFlags & 0x40) {
+        if (inputNew & PADRdown) {
             s32 cur = s->field_3A;
             if (cur < D_801E3D9C) {
                 u8 *trackPtr = &D_801E3D84[cur];
@@ -240,9 +236,9 @@ restart:
                 trackType = ptr[5];
                 if (trackType != 0xFF) {
                     if (trackType == 0x81) {
-                        if (D_8007809A & 1) {
-                            ptr = (u8 *)func_801F6AA4(0x4F);
-                            func_801F23D0(0, 0x68, (void *)ptr);
+                        if (g_gameState.mainData.partyLockFlag & 1) {
+                            ptr = func_801F6AA4(0x4F);
+                            func_801F23D0(0, 0x68, ptr);
                             initSfxPlayback(0, ptr);
                             *statePtr = 0x10;
                             break;
@@ -255,7 +251,7 @@ restart:
                     if (trackType == 0x80) {
                         if (func_801E2934() == 0) {
                             ptr = (u8 *)func_801F6AFC(0x36);
-                            func_801F23D0(0, 0x68, (void *)ptr);
+                            func_801F23D0(0, 0x68, ptr);
                             initSfxPlayback(0, ptr);
                             *statePtr = 0x10;
                             break;
@@ -272,7 +268,7 @@ restart:
             }
             sendSpuCommand(5);
         }
-        if (cfgFlags & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0x18;
         }
@@ -311,10 +307,10 @@ restart:
             s->field_32 = 0;
             *statePtr = 3;
         }
-        if (cfgFlags & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 4;
         }
-        if (cfgFlags & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 6;
         }
         break;
@@ -351,10 +347,10 @@ restart:
             s->field_32 = 0;
             *statePtr = 3;
         }
-        if (cfgFlags & 0x8000) {
+        if (inputNew & PADLleft) {
             *statePtr = 4;
         }
-        if (cfgFlags & 0x2000) {
+        if (inputNew & PADLright) {
             *statePtr = 6;
         }
         break;
@@ -377,20 +373,20 @@ restart:
         s32 page = s->field_3B / 11;
         slot = s->field_3B % 11;
         if (D_801E3DB8 >= 12) {
-            if (btnFlags & 0x8000) {
+            if (inputRepeat & PADLleft) {
                 if (page != 0) {
                     state = 0xC;
                     goto restart;
                 }
             }
-            if (btnFlags & 0x2000) {
+            if (inputRepeat & PADLright) {
                 if (page == 0) {
                     state = 0xE;
                     goto restart;
                 }
             }
         }
-        newSel = func_801F6768(btnFlags, 11, slot);
+        newSel = func_801F6768(inputRepeat, 11, slot);
         func_801E28B4(0, s->field_3A, s->field_2C);
         func_801E2800(1, s->field_3B, s->field_2C, (MenuSlot *)s);
         {
@@ -403,7 +399,7 @@ restart:
                 : "=r"(newSlot)
                 : "r"(page * 11), "r"(newSel));
             s->field_3B = newSlot;
-            if (cfgFlags & 0x40) {
+            if (inputNew & PADRdown) {
                 if (((u8)newSlot) < D_801E3DB8) {
                     /* FIXME: Keep newSlot live past the andi (for the
                      *        upcoming `(u8)newSlot` cast) so the andi
@@ -419,7 +415,7 @@ restart:
                 sendSpuCommand(5);
             }
         }
-        if (cfgFlags & 0x10) {
+        if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0xB;
             break;
@@ -516,8 +512,8 @@ restart:
         /* fall through */
     case 17:
         s->field_30 -= 1;
-        if (cfgFlags & 0x50) {
-            func_801F7BEC(cfgFlags);
+        if (inputNew & (PADRup | PADRdown)) {
+            func_801F7BEC(inputNew);
             s->field_30 = 0;
         }
         if (s->field_30 <= 0) {
@@ -682,7 +678,7 @@ s32 func_801E3630(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
     cfg->y            = stackArg;
     cfg->scrollOffset = ctx->scrollOff;
     cfg->dataPtr      = (s32)ctx->items;
-    return func_801EFBB4(a1, a2, (s32)func_801E3580);
+    return func_801EFBB4(a1, a2, func_801E3580);
 }
 
 /**
@@ -728,7 +724,7 @@ s32 func_801E36AC(s32 ctx, s32 pkt, s32 col, s32 row, s32 scrollOffset) {
         entry = func_801E2920(abilityId);
         if (entry->status == 0xFF
             || (entry->status == 0x80 && func_801E2934() == 0)
-            || (entry->status == 0x81 && (D_8007809A & 1))) {
+            || (entry->status == 0x81 && (g_gameState.mainData.partyLockFlag & 1))) {
             color = 1;
         } else {
             color = 7;
@@ -773,7 +769,7 @@ s32 func_801E381C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
         s32 scrollbar = func_801F5F30(a1, a2, a3 + 0x28, stackArg, g_menuColor, ctx->pageStart);
         a2 = func_801F5F60(a1, scrollbar, g_menuColor, 3);
     }
-    return func_801EFBB4(a1, a2, (s32)func_801E36AC);
+    return func_801EFBB4(a1, a2, func_801E36AC);
 }
 
 /**
@@ -831,7 +827,7 @@ s32 func_801E3904(s32 ctx, s32 pkt, s32 col, s32 row, s32 scrollOffset) {
  */
 s32 func_801E39E0(SoundMenuState *s, s32 ot, s32 a2, s32 a3, s32 stackArg) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
-    s32 callback;
+    MenuRowCallback callback;
 
     cfg->iconType     = 0x49;
     cfg->iconSubType  = 0;
@@ -857,7 +853,7 @@ s32 func_801E39E0(SoundMenuState *s, s32 ot, s32 a2, s32 a3, s32 stackArg) {
         }
         a2 = func_801F5F60(ot, scrollbar, g_menuColor, mode);
     }
-    callback = (s32)func_801E3904;
+    callback = func_801E3904;
     return func_801EFBB4(ot, a2, callback);
 }
 
@@ -958,8 +954,8 @@ void func_801E3C28(void) {
  * list, initializes data, and enters via func_801E2A34.
  */
 void func_801E3C9C(void) {
-    AbilityMenuState *st = (AbilityMenuState *)func_801F179C(
-        (s32)func_801E2A34, (s32)func_801E3AE0);
+    AbilityMenuState *st = func_801F179C(
+        func_801E2A34, func_801E3AE0);
 
     if (st != NULL) {
         st->state       = 0;

@@ -1,9 +1,10 @@
 #include "common.h"
+#include "battle.h"
 #include "gamestate.h"
 #include "battle/bc_object11.h"
 #include "battle/bc_object12.h"
 #include "battle/bc_object9.h"
-#include "battle.h"
+
 
 extern u8 D_800F16A4[];
 extern u8 D_800F16A8[];

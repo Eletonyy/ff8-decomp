@@ -6,6 +6,8 @@ extern u8 g_menuDisplayCfg[];
 extern u8 g_gameState[];
 extern s32 g_menuColor;
 
+s32 func_801E6A8C(s32, s32, s32, s32, s32);
+
 INCLUDE_ASM("asm/ovl/menugf/nonmatchings/menugf", func_801E5800);
 
 /**
@@ -90,7 +92,7 @@ void func_801E6B3C(u8 *a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
     *(s16 *)(cfg + 0x02) = arg4;
     *(s16 *)(cfg + 0x14) = *(u16 *)(a0 + 0x28);
     *(s32 *)(cfg + 0x20) = (s32)(a0 + 0x20);
-    func_801EFBB4(a1, a2, (s32)func_801E6A8C);
+    func_801EFBB4(a1, a2, func_801E6A8C);
 }
 
 INCLUDE_ASM("asm/ovl/menugf/nonmatchings/menugf", func_801E6BB8);

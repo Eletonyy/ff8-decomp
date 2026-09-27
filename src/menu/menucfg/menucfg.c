@@ -36,9 +36,9 @@ static s32  func_801E5820(CfgContext *arg0);
 static void func_801E587C(CfgContext *cfg);
 static void func_801E58EC(s32 a0, s32 a1);
 static void func_801E5918(s32 a0, s32 a1, s32 a2);
-static s32  func_801E59A0(s32 a0);
-static s32  func_801E59CC(s32 a0);
-static void func_801E61A0(s32 flags, void *data, s32 value, s32 x, s32 y);
+static u8  *func_801E59A0(s32 a0);
+static u8  *func_801E59CC(s32 a0);
+static void func_801E61A0(u8 *text, void *data, s32 value, s32 x, s32 y);
 static s32  func_801E67A8(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4);
 
 /** @brief Config menu entry point — delegates to func_801F798C. */
@@ -140,13 +140,13 @@ static void func_801E5918(s32 a0, s32 a1, s32 a2) {
     func_801F0A34(a0, 0, a2 + 0x5A, D_801E7094[a1].unk03 + 0x2F);
 }
 
-/** @brief Draw inner panel with section id 0x2 and clear flag. */
-static s32 func_801E59A0(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 2. */
+static u8 *func_801E59A0(s32 a0) {
     return func_801F08D4(1, 2, a0, 0);
 }
 
-/** @brief Draw inner panel with section id 0x2 and set flag. */
-static s32 func_801E59CC(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 2, with the last flag set. */
+static u8 *func_801E59CC(s32 a0) {
     return func_801F08D4(1, 2, a0, 1);
 }
 
@@ -159,26 +159,26 @@ extern MenuDisplayConfig g_menuDisplayCfg;
 /**
  * @brief Render a bordered panel at the given position.
  *
- * If @p flags is nonzero, calls func_801F0FEC to compute a modified
- * value from @p data at position (x+10, y+7). Then configures g_menuDisplayCfg
+ * If @p text is set, draws it with func_801F0FEC at (x+10, y+7), which
+ * advances @p value. Then configures g_menuDisplayCfg
  * with the given position (fixed size 0xF4 x 0x16, iconType=0x55,
  * iconSubType=0) and calls func_801EF9AC to draw the panel.
  *
- * @param flags  If nonzero, passes through func_801F0FEC first.
+ * @param text   Text to draw in the panel, or NULL for none.
  * @param data   Pointer passed to rendering functions.
  * @param value  Value passed to rendering functions.
  * @param x      X position of the panel.
  * @param y      Y position of the panel.
  */
-static void func_801E61A0(s32 flags, void *data, s32 value, s32 x, s32 y)
+static void func_801E61A0(u8 *text, void *data, s32 value, s32 x, s32 y)
 {
     MenuDisplayConfig *s = &g_menuDisplayCfg;
     s32 xoff = x + 10;
     s32 yoff = y + 7;
 
-    if (flags != 0)
+    if (text != NULL)
     {
-        value = func_801F0FEC(data, value, xoff, yoff, flags, 7);
+        value = func_801F0FEC(data, value, xoff, yoff, text, 7);
     }
 
     s->iconType = 0x55;

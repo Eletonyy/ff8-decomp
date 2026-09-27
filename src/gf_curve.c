@@ -24,25 +24,25 @@ s32 evalQuadraticCurve(s32 a0, s32 a1, s32 a2) {
 
 /**
  * @brief Look up GF ability XP curve parameters and compute a value.
- * @param a0 GF index (stride 132 in g_gfData ability table).
+ * @param a0 GF index (stride 132 in g_kernel ability table).
  * @param a1 Level value passed through as first arg to evalQuadraticCurve.
  * @return Result of evalQuadraticCurve(a1, linearCoeff, quadDivisor).
  */
 s32 evalAbilityCurve(s32 a0, s32 a1) {
-    return evalQuadraticCurve(a1, g_gfData.abilityTable132[a0].xpParamB, g_gfData.abilityTable132[a0].xpParamC);
+    return evalQuadraticCurve(a1, g_kernel.junctionableGfs[a0].xpParamB, g_kernel.junctionableGfs[a0].xpParamC);
 }
 
 
 /**
  * @brief Find the level at which a GF ability curve reaches a given XP threshold.
  * @param a0 XP threshold to check against.
- * @param a1 GF index (stride 132 in g_gfData ability table).
+ * @param a1 GF index (stride 132 in g_kernel ability table).
  * @return Level (1–100) where the curve value first exceeds a0, or 100 if never exceeded.
  */
 s32 findAbilityLevel(s32 a0, s32 a1) {
     s32 i = 1;
     do {
-        if (a0 < evalQuadraticCurve(i, g_gfData.abilityTable132[a1].xpParamB, g_gfData.abilityTable132[a1].xpParamC)) {
+        if (a0 < evalQuadraticCurve(i, g_kernel.junctionableGfs[a1].xpParamB, g_kernel.junctionableGfs[a1].xpParamC)) {
             return i;
         }
         i++;
@@ -54,14 +54,13 @@ s32 findAbilityLevel(s32 a0, s32 a1) {
 /**
  * @brief Compute an experience or stat curve value using a quadratic formula.
  * @param a0 Level or input value for the formula.
- * @param a1 Entry index into the g_gfData data table (stride 132 bytes).
+ * @param a1 Entry index into the g_kernel data table (stride 132 bytes).
  * @return Computed value as s16: a0*field0 + a0*a0*10/field1 + field2.
- * @note Uses GfAbilityTableEntry fields xpLinear (+0x12), xpQuadDiv (+0x13), xpConst (+0x14).
  */
 s32 evalStatCurve(s32 a0, s32 a1) {
-    u8 field1 = g_gfData.abilityTable132[a1].xpQuadDiv;
-    u8 field0 = g_gfData.abilityTable132[a1].xpLinear;
-    u8 field2 = g_gfData.abilityTable132[a1].xpConst;
+    u8 field1 = g_kernel.junctionableGfs[a1].xpQuadDiv;
+    u8 field0 = g_kernel.junctionableGfs[a1].xpLinear;
+    u8 field2 = g_kernel.junctionableGfs[a1].xpConst;
     return (s16)(a0 * field0 + a0 * a0 * 10 / field1 + field2);
 }
 
@@ -70,12 +69,12 @@ s32 evalStatCurve(s32 a0, s32 a1) {
  * @brief Compute a stat value for an entity by looking up parameters from two data tables.
  * @param a0 Entity index into g_battleChars (stride 464 bytes).
  * @param a1 Level or modifier value passed to evalQuadraticCurve.
- * @return Result of evalQuadraticCurve using two u8 fields from g_gfData indexed by a secondary ID.
- * @note Reads a sub-index from g_battleChars offset 0x1C3, then looks up linearCoeff/quadDivisor in g_gfData.xpCurves36.
+ * @return Result of evalQuadraticCurve using two u8 fields from g_kernel indexed by a secondary ID.
+ * @note Reads a sub-index from g_battleChars offset 0x1C3, then looks up linearCoeff/quadDivisor in g_kernel.characters.
  */
 s32 evalEntityXpCurve(s32 entityIdx, s32 a1) {
     u8 idx = g_battleChars.chars[entityIdx].characterId;
-    return evalQuadraticCurve(a1, g_gfData.xpCurves36[idx].linearCoeff, g_gfData.xpCurves36[idx].quadDivisor);
+    return evalQuadraticCurve(a1, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadDivisor);
 }
 
 
@@ -84,13 +83,13 @@ s32 evalEntityXpCurve(s32 entityIdx, s32 a1) {
  * @param a0 XP threshold to check against.
  * @param a1 Character slot index (stride 152 in g_gameState).
  * @return Level (1–100) where the curve value first exceeds a0, or 100 if never exceeded.
- * @note Reads a GF index from g_gameState offset 0x498, then uses g_gfData.xpCurves36 linearCoeff/quadDivisor.
+ * @note Reads a GF index from g_gameState offset 0x498, then uses g_kernel.characters linearCoeff/quadDivisor.
  */
 s32 findCharXpLevel(s32 a0, s32 a1) {
     s32 i = 1;
     u8 idx = g_gameState.chars[a1].characterId;
     do {
-        if (a0 < evalQuadraticCurve(i, g_gfData.xpCurves36[idx].linearCoeff, g_gfData.xpCurves36[idx].quadDivisor)) {
+        if (a0 < evalQuadraticCurve(i, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadDivisor)) {
             return i;
         }
         i++;
@@ -112,7 +111,7 @@ s32 getXpToNextLevel(s32 a0, s32 a1) {
     u8 idx = g_gameState.chars[a1].characterId;
     s32 curveVal;
     do {
-        curveVal = evalQuadraticCurve(i, g_gfData.xpCurves36[idx].linearCoeff, g_gfData.xpCurves36[idx].quadDivisor);
+        curveVal = evalQuadraticCurve(i, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadDivisor);
         if (a0 < curveVal) {
             break;
         }
@@ -172,9 +171,9 @@ s32 multiplyDiv100(s32 a0, s32 a1) {
  * @brief Compute an elemental or status modifier percentage from a character's equipped abilities.
  * @param a0 Character slot index (stride 152 in g_gameState).
  * @param a1 Element or status type to match against.
- * @return Base value of 100 plus any matching ability bonuses from g_gfData table.
+ * @return Base value of 100 plus any matching ability bonuses from g_kernel table.
  * @note Checks 4 ability slots (offsets 0x4E4..0x4E7). Abilities in range 0x27..0x39 are looked up
- *       in g_gfData (stride 8, offset 0x421D for type, 0x421E for bonus).
+ *       in g_kernel (stride 8, offset 0x421D for type, 0x421E for bonus).
  */
 s32 getAbilityModifier(s32 charIdx, s32 a1) {
     s32 result = 100;
@@ -183,8 +182,8 @@ s32 getAbilityModifier(s32 charIdx, s32 a1) {
         s32 val = g_gameState.chars[charIdx].abilities[i];
         s32 idx = val - 0x27;
         if ((u32)idx < 0x13) {
-            if (g_gfData.abilityRangeK[idx].typeField == a1) {
-                result += g_gfData.abilityRangeK[idx].bonusField;
+            if (g_kernel.statPercentAbilities[idx].typeField == a1) {
+                result += g_kernel.statPercentAbilities[idx].bonusField;
             }
         }
     }
@@ -215,10 +214,10 @@ s32 calcHpFromLevel(s32 level, s32 charIdx) {
     hpJunc = g_gameState.chars[charIdx].junctions[0];
     charId = g_gameState.chars[charIdx].characterId;
     count = getMagicQuantity(charIdx, hpJunc);
-    juncMult = multiply(g_gfData.junctionData[hpJunc].pad12[5], count);
-    _div = g_gfData.xpCurves36[charId].pad09[0];
-    coef = g_gfData.xpCurves36[charId].constant;
-    addBase = g_gfData.xpCurves36[charId].pad09[1];
+    juncMult = multiply(g_kernel.magic[hpJunc].statJunction[JUNCTION_HP], count);
+    _div = g_kernel.characters[charId].pad09[0];
+    coef = g_kernel.characters[charId].constant;
+    addBase = g_kernel.characters[charId].pad09[1];
     maxHp = g_gameState.chars[charIdx].maxHp;
     result = level * coef - (level * level * 10) / _div + addBase + maxHp + juncMult;
     return result;
@@ -266,14 +265,14 @@ INCLUDE_ASM("asm/nonmatchings/gf_curve", func_80021C10);
  * @param a0 Character slot index (stride 152 in g_gameState).
  * @param a1 Modifier or stat type passed to func_80021B58.
  * @return Clamped u8 result combining a base value, a junction bonus, and a level-based lookup.
- * @note Reads GF/junction index from offset 0x4F3, looks up base value from g_gfData (stride 60),
+ * @note Reads GF/junction index from offset 0x4F3, looks up base value from g_kernel (stride 60),
  *       then adds a bonus from multiplyDiv100 scaled by junction quantity.
  */
 s32 calcHitStat(s32 charIdx, s32 a1) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_HIT];
-    u8 val = g_gfData.junctionData[idx].magicParam;
+    u8 val = g_kernel.magic[idx].statJunction[JUNCTION_HIT];
     s32 result1 = func_80021B58(charIdx, a1);
-    return clampToByte(g_gfData.levelCurve12[result1].field07 + multiplyDiv100(val, getMagicQuantity(charIdx, idx)));
+    return clampToByte(g_kernel.weapons[result1].hitRate + multiplyDiv100(val, getMagicQuantity(charIdx, idx)));
 }
 
 
@@ -281,12 +280,12 @@ s32 calcHitStat(s32 charIdx, s32 a1) {
  * @brief Compute a derived stat (likely spirit/magic defense) for a character, clamped to 0-255.
  * @param a0 Character slot index (stride 152 in g_gameState).
  * @param a1 Base value that is divided by 4 before adding junction bonus.
- * @return Clamped u8 result combining (a1/4) with a junction-scaled bonus from g_gfData.
- * @note Reads GF/junction index from offset 0x4F2, looks up multiplier from g_gfData (stride 60, offset 0x239).
+ * @return Clamped u8 result combining (a1/4) with a junction-scaled bonus from g_kernel.
+ * @note Reads GF/junction index from offset 0x4F2, looks up multiplier from g_kernel (stride 60, offset 0x239).
  */
 s32 calcEvaStat(s32 charIdx, s32 a1) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_EVA];
-    u8 val = g_gfData.junctionData[idx].spiritParam;
+    u8 val = g_kernel.magic[idx].statJunction[JUNCTION_EVA];
     return clampToByte((a1 >> 2) + multiplyDiv100(val, getMagicQuantity(charIdx, idx)));
 }
 
@@ -294,24 +293,24 @@ s32 calcEvaStat(s32 charIdx, s32 a1) {
 /**
  * @brief Get a base stat value for a character's junctioned GF.
  * @param a0 Character slot index (stride 152 in g_gameState).
- * @return u8 value from g_gfData at stride 60, offset 0x23C for the character's GF index at slot 0x4F5.
+ * @return u8 value from g_kernel at stride 60, offset 0x23C for the character's GF index at slot 0x4F5.
  * @note Purpose uncertain -- appears to retrieve a GF compatibility or stat modifier base value.
  */
 s32 getAtkElemBase(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_ELEM];
-    return g_gfData.junctionData[idx].statParamA;
+    return g_kernel.magic[idx].atkElement;
 }
 
 
 /**
  * @brief Compute a junction-scaled stat bonus for a character.
  * @param a0 Character slot index (stride 152 in g_gameState).
- * @return Product of a GF multiplier (from g_gfData offset 0x23D) and the junction quantity.
+ * @return Product of a GF multiplier (from g_kernel offset 0x23D) and the junction quantity.
  * @note Reads GF index from offset 0x4F5, then computes multiplier * getMagicQuantity(a0, idx).
  */
 s32 getAtkElemBonus(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_ELEM];
-    u8 val = g_gfData.junctionData[idx].statParamB;
+    u8 val = g_kernel.magic[idx].atkElementValue;
     return multiplyDiv100(val, getMagicQuantity(charIdx, idx));
 }
 
@@ -327,8 +326,8 @@ s32 getElemResistance(s32 charIdx, s32 shiftBit) {
     s32 i;
     for (i = 0; i < 4; i++) {
         u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_ELEM_0 + i];
-        if ((g_gfData.junctionData[idx].defElemFlag >> shiftBit) & 1) {
-            u8 mult = g_gfData.junctionData[idx].defElemMult;
+        if ((g_kernel.magic[idx].defElement >> shiftBit) & 1) {
+            u8 mult = g_kernel.magic[idx].defElementValue;
             result += multiplyDiv100(mult, getMagicQuantity(charIdx, idx));
         }
     }
@@ -341,25 +340,25 @@ s32 getElemResistance(s32 charIdx, s32 shiftBit) {
 /**
  * @brief Get the lower 7 bits of a GF's flags field for a character.
  * @param a0 Character slot index (stride 152 in g_gameState).
- * @return Lower 7 bits (0x7F mask) of a u16 flags field from g_gfData at offset 0x242.
+ * @return Lower 7 bits (0x7F mask) of a u16 flags field from g_kernel at offset 0x242.
  * @note Reads GF index from character slot offset 0x4F6, then looks up flags in GF data (stride 60).
  */
 s32 getAtkStatusFlags(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_STATUS];
-    return g_gfData.junctionData[idx].statusFlags & 0x7F;
+    return g_kernel.magic[idx].atkStatuses & 0x7F;
 }
 
 
 /**
  * @brief Decode a GF's status immunity/attribute flags into a game-engine bitmask.
  * @param a0 Character slot index (stride 152 in g_gameState).
- * @return Bitmask with remapped flag bits from the GF's u16 flags field at g_gfData offset 0x242.
+ * @return Bitmask with remapped flag bits from the GF's u16 flags field at g_kernel offset 0x242.
  * @note Maps source bits to result bits: 0x80->0x1, 0x100->0x4, 0x200->0x8,
  *       0x400->0x200, 0x800->0x4000, 0x1000->0x8000.
  */
 s32 decodeAtkStatusMask(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_STATUS];
-    u16 flags = g_gfData.junctionData[idx].statusFlags;
+    u16 flags = g_kernel.magic[idx].atkStatuses;
     s32 val;
     s32 result;
     val = flags & 0x80;
@@ -376,12 +375,12 @@ s32 decodeAtkStatusMask(s32 charIdx) {
 /**
  * @brief Compute a hit/accuracy percentage for a character, starting at 100 and adding a junction bonus.
  * @param a0 Character slot index (stride 152 in g_gameState).
- * @return 100 + junction-scaled bonus from GF index at offset 0x4F6, g_gfData offset 0x240.
+ * @return 100 + junction-scaled bonus from GF index at offset 0x4F6, g_kernel offset 0x240.
  * @note Calls multiplyDiv100 to scale the GF multiplier by junction quantity.
  */
 s32 calcAtkStatusHit(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_STATUS];
-    u8 val = g_gfData.junctionData[idx].hitParam;
+    u8 val = g_kernel.magic[idx].atkStatusValue;
     return multiplyDiv100(val, getMagicQuantity(charIdx, idx)) + 100;
 }
 
@@ -397,8 +396,8 @@ s32 getStatusResistance(s32 charIdx, s32 shiftBit) {
     s32 i;
     for (i = 0; i < 4; i++) {
         u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_STATUS_0 + i];
-        if ((g_gfData.junctionData[idx].defStatusFlags >> shiftBit) & 1) {
-            u8 base = g_gfData.junctionData[idx].defStatusBase;
+        if ((g_kernel.magic[idx].defStatuses >> shiftBit) & 1) {
+            u8 base = g_kernel.magic[idx].defStatusValue;
             result += multiplyDiv100(base, getMagicQuantity(charIdx, idx));
         }
     }
@@ -422,8 +421,8 @@ s32 func_8002274C(s32 gfIdx, u16 delta) {
     s32 level = findAbilityLevel(gf->exp += (delta & 0xFFFF), gfIdx);
     if (level >= 100) {
         level = 100;
-        gf->exp = evalQuadraticCurve(99, g_gfData.abilityTable132[gfIdx].xpParamB,
-                                     g_gfData.abilityTable132[gfIdx].xpParamC);
+        gf->exp = evalQuadraticCurve(99, g_kernel.junctionableGfs[gfIdx].xpParamB,
+                                     g_kernel.junctionableGfs[gfIdx].xpParamC);
     }
     return level;
 }

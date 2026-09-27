@@ -3,7 +3,7 @@
 #include "gf.h"
 #include "gamestate.h"
 #include "battle/bc_object4.h"
-extern void func_800E1850(void);
+#include "battle/bc_object22.h"
 
 
 void func_800A6184(s32 arg0, s32 arg1, s32 arg2, u16 arg3) {
@@ -151,13 +151,13 @@ void func_800A63DC(void) {
  */
 void func_800A64E4(s32 arg0, u16 arg1) {
     if (arg0 == 0) {
-        func_800B0754(D_800ED148.entities[0].entityRef, 237, D_800ED148.unk1324, arg1);
+        func_800B0754(D_800ED148.header.entityRef, 237, D_800ED148.unk1324, arg1);
         decrementItemByType(D_800ED148.unk1324 + 101);
         func_8009AF14(func_800E1850);
         return;
     }
     
-    func_800B0754(D_800ED148.entities[0].entityRef, 238, D_800ED148.unk1324, func_800AA4E8());
+    func_800B0754(D_800ED148.header.entityRef, 238, D_800ED148.unk1324, func_800AA4E8());
     func_8009AE08(8);
 }
 
@@ -170,13 +170,20 @@ void func_800A6588(void) {
     func_8009AE08(8);
 }
 
+/**
+ * @brief Step Zell's Duel after an input.
+ *
+ * D_800ED148.unk12EF holds the chosen Duel sequence: 255 finishes the Duel
+ * and 254 keeps waiting. Otherwise the sequence's move is queued, below 6 as
+ * another Duel hit (re-arming this handler) and 6 and up as the finisher.
+ */
 void func_800A65B0(void) {
     u8 val;
 
     val = D_800ED148.unk12EF;
     if (val == 255) {
         D_800ED148.unk12EF = 254;
-        func_800B0754(D_800ED148.entities[0].entityRef, 241, 65532, D_800ED148.unk12E2);
+        func_800B0754(D_800ED148.header.entityRef, 241, 65532, D_800ED148.unk12E2);
         func_800A6588();
         return;
     }
@@ -187,19 +194,19 @@ void func_800A65B0(void) {
     }
 
     D_800ED148.unk131A = D_800ED148.unk12EF;
-    val = D_80078E00.unk49F8[D_800ED148.unk131A];
+    val = g_kernel.duelParams[D_800ED148.unk131A].startMove;
     D_800ED148.unk12EF = 254;
     D_800ED148.unk131B = val;
     
     if (val < 6) {
-        func_800B0754(D_800ED148.entities[0].entityRef, 241, D_800ED148.unk131B, D_800ED148.unk12E2);
+        func_800B0754(D_800ED148.header.entityRef, 241, D_800ED148.unk131B, D_800ED148.unk12E2);
         func_8009AF14(func_800A65B0);
         return;
     }
     
-    func_800A30F8(D_800ED148.entities[0].entityRef, 241, 65530, D_800ED148.unk131B, D_800ED148.entities[0].entityRef, D_800ED148.unk12E2, 0);
+    func_800A30F8(D_800ED148.header.entityRef, 241, 65530, D_800ED148.unk131B, D_800ED148.header.entityRef, D_800ED148.unk12E2, 0);
     func_800B06DC(D_800ED148.unk12E2);
-    func_800B0754(D_800ED148.entities[0].entityRef, 239, D_800ED148.unk131B, func_8009BA5C(D_800ED148.unk131B, D_800ED148.unk12E2));
+    func_800B0754(D_800ED148.header.entityRef, 239, D_800ED148.unk131B, func_8009BA5C(D_800ED148.unk131B, D_800ED148.unk12E2));
     func_800A6588();
 }
 
@@ -232,11 +239,11 @@ void func_800A6724(void) {
 void func_800A6780(s32 arg0) {
   
     if (!(D_800ED148.entities[arg0].status & 1) && !(D_800ED148.entities[arg0].status & 4)) {
-        D_800ED148.entities[arg0].unk24 = D_800ED148.entities[arg0].unk20;
+        D_800ED148.entities[arg0].curAtb = D_800ED148.entities[arg0].maxAtb;
         return;
     }
     
-    D_800ED148.entities[arg0].unk24 = 0;
+    D_800ED148.entities[arg0].curAtb = 0;
 }
 
 void func_800A67FC(s32 arg0) {
@@ -273,7 +280,7 @@ void func_800A68AC(s32 arg0) {
         case 1:
             for (i = 0; i < 3; i++) {
                 if (!(g_battleChars.chars[i].statusFlags & 0x10000)) {
-                    D_800ED148.entities[i].unk24 = 0;
+                    D_800ED148.entities[i].curAtb = 0;
                 }
             }
             break;
@@ -286,7 +293,7 @@ void func_800A68AC(s32 arg0) {
 
         case 3:
             for (i = 3; i < 7; i++) {
-                D_800ED148.entities[i].unk24 = 0;
+                D_800ED148.entities[i].curAtb = 0;
             }
             break;
 
@@ -298,19 +305,19 @@ void func_800A68AC(s32 arg0) {
 void func_800A69BC(void) {
     switch (D_800ED148.unk1308) {
         case 1:
-            func_8009AF3C(getMenuString(0x2E), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2E), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
         
         case 2:
-            func_8009AF3C(getMenuString(0x2D), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2D), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
         
         case 3:
-            func_8009AF3C(getMenuString(0x2C), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2C), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
         
         case 4:
-            func_8009AF3C(getMenuString(0x2F), (D_80077E59 * 8) + 8, 3, 128, 86);
+            func_8009AF3C(getMenuString(0x2F), (g_gameState.config.battleMsgSpeed * 8) + 8, 3, 128, 86);
             break;
     }
 }
@@ -418,15 +425,15 @@ s32 func_800A6C34(void) {
     s32 var_s1;
 
 
-    if (D_80082C0A & 0x80) {
+    if (g_battleConfig.unk2 & 0x80) {
         return 0;
     }
       
-    if (D_80082C0A & 0x20) {
+    if (g_battleConfig.unk2 & 0x20) {
         return 1;
     }
     
-    if (D_80082C0A & 0x40) {
+    if (g_battleConfig.unk2 & 0x40) {
         return 2;
     }
     
@@ -434,7 +441,7 @@ s32 func_800A6C34(void) {
     var_s0 += func_800A6B6C(2, -20);
     var_s0 += func_8009B15C();
     
-    if (D_80078DF8 & 1) {
+    if (g_battleChars.levelEntries[15].abilityFlags & 1) {
         var_s0 -= 20;
     }
     
@@ -446,7 +453,7 @@ s32 func_800A6C34(void) {
         }
     }
     
-    if ((D_80078DF8 & 1) && (var_s1 == 2)) {
+    if ((g_battleChars.levelEntries[15].abilityFlags & 1) && (var_s1 == 2)) {
         var_s1 = 1;
     }
     
@@ -487,9 +494,9 @@ s32 func_800A6DD8(void) {
     var_v1 = 0;
     
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].linkedIdx != 255) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             var_a2++;
-            var_v1 += D_800ED148.entities[i].unkCC;
+            var_v1 += D_800ED148.entities[i].level;
         }
     }
     
@@ -766,8 +773,8 @@ void func_800A71C0(s32 idx) {
         temp_a0->unk90[0] = 200;
     }
     
-    func_800A240C(idx, D_800ED148.entities[idx].unk28, &D_800ED148.entities[idx].status);
-    if (D_800ED148.entities[0].state.word == 4) {
+    func_800A240C(idx, D_800ED148.entities[idx].currentHp, &D_800ED148.entities[idx].status);
+    if (D_800ED148.header.unk4 == 4) {
         if (D_800ED148.entities[idx].status & 0x100) {
             func_8009B088(idx, 0, 8, 1);
         }
@@ -778,6 +785,14 @@ void func_800A71C0(s32 idx) {
     }
 }
 
+/**
+ * @brief Initialise a party member's battle entity data.
+ *
+ * Copies the character and its statuses, flags a melee weapon (0x1000) and
+ * a female character (0x100) in unk7C, and starts the ATB gauge.
+ *
+ * @param arg0 Party slot.
+ */
 void func_800A7518(s32 arg0) {
     BattleCharData* temp_s1;
     BattleEntityData* temp_s0;
@@ -796,11 +811,11 @@ void func_800A7518(s32 arg0) {
     temp_s0->unk80 = temp_s1->displayStatus;
     temp_s0->unk7C = 34817;
 
-    if (D_80078E00.array35BD[temp_s1->classId].unk6 & 1) {
+    if (g_kernel.weapons[temp_s1->classId].melee & WEAPON_MELEE) {
         temp_s0->unk7C |= 0x1000;
     }
 
-    if (D_80078E00.array37A6[temp_s0->unkBB].unk1 & 1) {
+    if (g_kernel.characters[temp_s0->unkBB].gender & GENDER_FEMALE) {
         temp_s0->unk7C |= 0x100;
     }
 
@@ -827,7 +842,7 @@ void func_800A7518(s32 arg0) {
 
     if (!(temp_s0->unk80 & 4) && !(temp_s0->unk80 & 1)) {
         if (temp_s1->statusFlags & 0x10000) {
-            D_800ED148.entities[arg0].unk24 = D_800ED148.entities[arg0].unk20;
+            D_800ED148.entities[arg0].curAtb = D_800ED148.entities[arg0].maxAtb;
         }
         
         else {
@@ -908,7 +923,7 @@ void func_800A7884(void) {
     }
 
     func_800A77E8();
-    D_80078DF8 = 0;
+    g_battleChars.levelEntries[15].abilityFlags = 0;
 
     for (i = 0; i < 3; i++) {
         func_80022E08(g_gameState.mainData.party.party[i], i);
@@ -925,9 +940,9 @@ void func_800A7934(void) {
     
     for (i = 0; i < 3; i++) {
         GameState* gs = &g_gameState;
-        if (D_800ED148.entities[i].linkedIdx != 255) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             CharacterData* character = gs->chars;
-            character[g_gameState.mainData.party.party[i]].currentHp = D_800ED148.entities[i].unk28;
+            character[g_gameState.mainData.party.party[i]].currentHp = D_800ED148.entities[i].currentHp;
         }
     }
 }
@@ -953,17 +968,16 @@ void func_800A79A0(void) {
 }
 
 /**
- * @brief Look up the per-class @c field09 byte for the entity at @p a0.
+ * @brief Look up the tier of the weapon equipped by the entity at @p a0.
  *
  * Reads @c BattleCharData[a0].classId, then returns
- * @c g_gfData.levelCurve12[classId].field09 (offset @c 0x35C1 in the
- * shared @c D_80078E00 / @c g_gfData block).
+ * @c g_kernel.weapons[classId].tier.
  *
  * @param a0 Entity index (stride 0x1D0 in @c g_battleChars).
- * @return The @c field09 byte for that entity's class.
+ * @return The weapon's tier.
  */
 u8 func_800A7A44(s32 arg0) {
-    return D_80078E00.array35BD[g_battleChars.chars[arg0].classId].unk4;
+    return g_kernel.weapons[g_battleChars.chars[arg0].classId].tier;
 }
 
 /**
@@ -999,17 +1013,11 @@ u8 func_800A7AB8(s32 arg0) {
  * @param a0 Entity index (stride 208).
  * @return Byte value at the end of the pointer chain.
  */
-s32 func_800A7AF4(s32 a0) {
-    s32 base = (s32)&D_800ED148;
-    s32 ptr;
-    s32 p2;
-    ptr = *(s32 *)(base + a0 * 208 + 0x14);
-    p2 = *(s32 *)ptr;
-    ptr = *(s32 *)(p2 + 4);
-    ptr += p2;
-    p2 = *(s32 *)(ptr + 0xC);
-    ptr += p2;
-    return *(u8 *)ptr;
+s32 func_800A7AF4(s32 idx) {
+    Unk4Struct *script = *D_800ED148.entities[idx].monsterAiSection;
+    Unk4Struct *ai = GET_OFFSET(Unk4Struct, script, script->unk4);
+
+    return *((u8*)ai + ai->unkC);
 }
 
 void func_800A7B48(void) {
@@ -1210,7 +1218,7 @@ void func_800A8320(s32 arg0) {
 
     temp_s1 = &D_800EE9E8.subEntries[arg0 - 3];
     temp_s2 = *D_800ED148.entities[arg0].entityData;
-    temp_s0 =  (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    temp_s0 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
     
     temp_s0->unkBD = func_800A82A0(temp_s1, temp_s2, temp_s0, 0);
     temp_s0->unkBE = func_800A82A0(temp_s1, temp_s2, temp_s0, 1);
@@ -1265,22 +1273,28 @@ void func_800A853C(void) {
     }
 }
 
+/**
+ * @brief Refresh the battle item menu slots from their kernel entries.
+ *
+ * Each slot gets flag 1 when the item may target KO'd units, flag 2 when it
+ * is greyed out, and the item's target info and category.
+ */
 void func_800A8578(void) {
     s32 i;
 
     for (i = 0; i < 32; i++) {
         D_800EE9E8.animSlots[i].unk4 = 0;
         
-        if (D_80078E00.abilities[D_800EE9E8.animSlots[i].id].unk2 & 0x80) {
+        if (g_kernel.battleItems[D_800EE9E8.animSlots[i].id].attackFlags & ATTACK_FLAG_TARGET_KO) {
             D_800EE9E8.animSlots[i].unk4 = 1;
         }
         
-        if (!(D_80078E00.abilities[D_800EE9E8.animSlots[i].id].unk2 & 0x20)) {
+        if (!(g_kernel.battleItems[D_800EE9E8.animSlots[i].id].attackFlags & ATTACK_FLAG_SELECTABLE)) {
             D_800EE9E8.animSlots[i].unk4 |= 2;
         }
 
-        D_800EE9E8.animSlots[i].unk3 = D_80078E00.abilities[D_800EE9E8.animSlots[i].id].abilityId;
-        D_800EE9E8.animSlots[i].unk2 = D_80078E00.abilities[D_800EE9E8.animSlots[i].id].unk0;
+        D_800EE9E8.animSlots[i].unk3 = g_kernel.battleItems[D_800EE9E8.animSlots[i].id].targetInfo;
+        D_800EE9E8.animSlots[i].unk2 = g_kernel.battleItems[D_800EE9E8.animSlots[i].id].category;
     }
 }
 
@@ -1298,7 +1312,7 @@ void func_800A864C(void) {
         idx = g_gameState.mainData.itemSlots[i].id;
         
         if ((idx != 0) && (idx < 33)) {
-            temp_v0 = &D_800EE9E8.animSlots[g_gameState.mainData.limitBreaks.angeloPoints[idx+7]]; // not much sense, size 8
+            temp_v0 = &D_800EE9E8.animSlots[g_gameState.mainData.limitBreaks.angeloPoints[idx+7]]; // hack, not much sense, size 8
             temp_v0->value = g_gameState.mainData.itemSlots[i].count;
             temp_v0->id = idx;
         }
@@ -1336,7 +1350,7 @@ void func_800A8794(void) {
             arr0 = D_800EE9E8.subEntries[i].array0;
 
             for (j = 0; j < 4; j++) {
-                idx = temp_s2->unk104[D_800EE9E8.subEntries[i].unk46].unk0[j].unk0;
+                idx = temp_s2->unk104[0][D_800EE9E8.subEntries[i].unk46].sub[j].unk0;
                 if (idx < 64) {
                     arr0[j].unk0 = idx;
                     arr0[j].unk2 = 0;
@@ -1405,9 +1419,20 @@ s32 func_800A89B8(s32 arg0, s32 arg1) {
     return 1;
 }
 
+/**
+ * @brief Fill sub-command slot @p arg1 with battle command @p arg2.
+ *
+ * The target info comes from the kernel command; the rest is copied from
+ * the character's command 13 slot, or its Magic slot when @p arg3 is set.
+ *
+ * @param arg0 Party member's battle data.
+ * @param arg1 Sub-command slot.
+ * @param arg2 Battle command.
+ * @param arg3 Nonzero to copy from the Magic slot.
+ */
 void func_800A8A48(BattleCharData* arg0, s32 arg1, u8 arg2, s32 arg3) {
     arg0->unkSlots[arg1].unk0 = arg2;
-    arg0->unkSlots[arg1].unk2 = D_80078E00.unkE8[arg0->unkSlots[arg1].unk0].unk2;
+    arg0->unkSlots[arg1].unk2 = g_kernel.battleCommands[arg0->unkSlots[arg1].unk0].targetInfo;
     
     if (arg3 == 0) {
         arg0->unkSlots[arg1].unk1 = arg0->cmdSlots[findCommandSlot(arg0, 13)].unk1;
@@ -1442,20 +1467,20 @@ s32 func_800A8B7C(s32 arg0) {
         case 0:
             return 0;
         
-        case 0x60000:
-            func_800A8A48(temp_s0, 0, 0x23, 1);
-            func_800A8A48(temp_s0, 1, 0x24, 1);
-            func_800A8A48(temp_s0, 2, 0x25, 1);
+         case 0x60000:
+            func_800A8A48(temp_s0, 0, 35, 1);
+            func_800A8A48(temp_s0, 1, 36, 1);
+            func_800A8A48(temp_s0, 2, 37, 1);
             return 3;
             
-        case 0x20000:
-            func_800A8A48(temp_s0, 0, 0x23, 1);
-            func_800A8A48(temp_s0, 1, 0x24, 1);
+         case 0x20000:
+            func_800A8A48(temp_s0, 0, 35, 1);
+            func_800A8A48(temp_s0, 1, 36, 1);
             return 2;
             
-        case 0x40000:
-            func_800A8A48(temp_s0, 0, 0x23, 1);
-            func_800A8A48(temp_s0, 1, 0x25, 1);
+         case 0x40000:
+            func_800A8A48(temp_s0, 0, 35, 1);
+            func_800A8A48(temp_s0, 1, 37, 1);
             return 2;
     }
 }
@@ -1480,24 +1505,33 @@ void func_800A8CA4(s32 characterId, s32 targetId) {
     }
 }
 
+/**
+ * @brief Build the Stock / Cast choice for drawing spell @p arg1.
+ *
+ * Stock takes its menu flags and target info from the kernel command; Cast
+ * takes the spell's, and is greyed out for IDs 64 and up.
+ *
+ * @param arg0 Party slot.
+ * @param arg1 Drawn spell.
+ */
 void func_800A8D7C(s32 arg0, s32 arg1) {
     BattleCharData* temp_s0;
 
     temp_s0 = &g_battleChars.chars[arg0];
-    temp_s0->pad0[0] = 10;
-    temp_s0->pad0[1] = D_80078E00.unk0139;
-    temp_s0->pad0[2] = D_80078E00.unk013A;
+    temp_s0->pad0[0] = BATTLE_CMD_STOCK;
+    temp_s0->pad0[1] = g_kernel.battleCommands[BATTLE_CMD_STOCK].menuFlags;
+    temp_s0->pad0[2] = g_kernel.battleCommands[BATTLE_CMD_STOCK].targetInfo;
     temp_s0->pad0[3] = 0;
     if (arg1 < 64) {
-        temp_s0->pad0[4] = 9;
-        temp_s0->pad0[5] = D_80078E00.spells[arg1].unk5;
-        temp_s0->pad0[6] = D_80078E00.spells[arg1].magicId;
+        temp_s0->pad0[4] = BATTLE_CMD_CAST;
+        temp_s0->pad0[5] = g_kernel.magic[arg1].statusWindowFlags;
+        temp_s0->pad0[6] = g_kernel.magic[arg1].targetInfo;
         temp_s0->pad0[7] = 0;
         
-        if (D_80078E00.spells[arg1].unk7 & 0x80) {
+        if (g_kernel.magic[arg1].attackFlags & ATTACK_FLAG_TARGET_KO) {
             temp_s0->pad0[7] = 1;
             
-            if (D_80078E00.spells[arg1].unk7 & 0x80) {
+            if (g_kernel.magic[arg1].attackFlags & ATTACK_FLAG_TARGET_KO) {
                 temp_s0->pad0[3] |= 1;
             }
         }
@@ -1508,25 +1542,37 @@ void func_800A8D7C(s32 arg0, s32 arg1) {
     } 
     
     else {
-        temp_s0->pad0[4] = 9;
+        temp_s0->pad0[4] = BATTLE_CMD_CAST;
         temp_s0->pad0[5] = 0;
         temp_s0->pad0[6] = 0;
         temp_s0->pad0[7] = 2;
     }
 }
 
+/**
+ * @brief Put temporary limit break @p arg1 in limit slot 0.
+ *
+ * @param arg0 Party member's battle data.
+ * @param arg1 Temporary limit break index.
+ */
 void func_800A8E90(BattleCharData* arg0, s32 arg1) {
     arg0->testSlots[0].unk0 = arg1;
-    arg0->testSlots[0].unk2 = D_80078E00.array4484[arg1].unk5;
-    arg0->testSlots[0].unk3 = D_80078E00.array4484[arg1].unk6;
+    arg0->testSlots[0].unk2 = g_kernel.tempLimitBreaks[arg1].statusWindowFlags;
+    arg0->testSlots[0].unk3 = g_kernel.tempLimitBreaks[arg1].targetInfo;
     arg0->testSlots[0].unk4 = 0;
     arg0->testSlots[0].unk1 = 1;
     
-    if (D_80078E00.array4484[arg1].unk7 & 0x80) {
+    if (g_kernel.tempLimitBreaks[arg1].attackFlags & ATTACK_FLAG_TARGET_KO) {
         arg0->testSlots[0].unk4 |= 1;
     }
 }
 
+/**
+ * @brief Fill the limit slots with Quistis' learned Blue Magic.
+ *
+ * @param arg0 Party member's battle data.
+ * @return Number of slots filled.
+ */
 s32 func_800A8EFC(BattleCharData* arg0) {
     s32 bit;
     s32 i;
@@ -1538,13 +1584,13 @@ s32 func_800A8EFC(BattleCharData* arg0) {
     for (i = 0; i < 16; i++) {
         if (g_gameState.mainData.limitBreaks.quistisLimits & bit) {
             arg0->testSlots[val].unk0 = i;
-            arg0->testSlots[val].unk2 = D_80078E00.array44FC[i].unk4;
-            arg0->testSlots[val].unk3 = D_80078E00.array44FC[i].unk5;
+            arg0->testSlots[val].unk2 = g_kernel.blueMagic[i].statusWindowFlags;
+            arg0->testSlots[val].unk3 = g_kernel.blueMagic[i].targetInfo;
             arg0->testSlots[val].unk4 = 0;
             arg0->testSlots[val].unk1 = 1;
             arg0->testSlots[val].unk4 &= 0xEF;
             
-            if (D_80078E00.array44FC[i].unk6 & 0x80) {
+            if (g_kernel.blueMagic[i].attackFlags & ATTACK_FLAG_TARGET_KO) {
                 arg0->testSlots[val].unk4 |= 1;
             }
             
@@ -1561,8 +1607,8 @@ s32 func_800A8EFC(BattleCharData* arg0) {
 * @brief Initialize entity ability fields from the ability table.
 *
 * Writes a1 as the ability ID at offset 0x32 of the entity entry
-* (computed as a0 + a2*5). Looks up ability data in D_80078E00
-* (offset 0x4A60, stride 8) and copies two bytes to offsets 0x34-0x35.
+* (computed as a0 + a2*5). Copies Rinoa limit break a1's status window
+* flags and target info to offsets 0x34-0x35.
 * Clears offset 0x36 and sets offset 0x33 to 1.
 *
 * @param a0 Base entity pointer (as integer).
@@ -1572,14 +1618,13 @@ s32 func_800A8EFC(BattleCharData* arg0) {
 
 void func_800A8F98(BattleCharData* arg0, s32 arg1, s32 arg2) {
     arg0->testSlots[arg2].unk0 = arg1;
-    arg0->testSlots[arg2].unk2 = D_80078E00.rows8[arg1].unk2;
-    arg0->testSlots[arg2].unk3 = D_80078E00.rows8[arg1].unk3;
+    arg0->testSlots[arg2].unk2 = g_kernel.rinoaLimitBreaks1[arg1].statusWindowFlags;
+    arg0->testSlots[arg2].unk3 = g_kernel.rinoaLimitBreaks1[arg1].targetInfo;
     arg0->testSlots[arg2].unk4 = 0;
     arg0->testSlots[arg2].unk1 = 1;
 }
 
 s32 func_800A8FDC(BattleCharData* arg0) {
-    s32 current;
     s32 val = 0;
 
     if (!(g_gameState.mainData.partyLockFlag & 0x10)) {
@@ -1587,10 +1632,8 @@ s32 func_800A8FDC(BattleCharData* arg0) {
         func_800A8F98(arg0, 0, 0);
     }
     
-    current = val;
     if (g_gameState.mainData.partyLockFlag & 0x20) {
-        val++;
-        func_800A8F98(arg0, 1, current);
+        func_800A8F98(arg0, 1, val++);
     }
     
     return val;
@@ -1612,7 +1655,57 @@ s32 func_800A9064(BattleCharData* arg0) {
     return 3;
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object4", func_800A9084);
+/**
+ * @brief Roll Selphie's Slot: a spell and how many times to cast it.
+ *
+ * The slot set comes from the kernel slot array, its row picked at random
+ * and its column from Selphie's level, crisis level and a random offset.
+ *
+ * @param arg0 Output: rolled spell.
+ * @param arg1 Output: cast count, from 1 to the set's count.
+ */
+void func_800A9084(u8* arg0, u8* arg1) {
+    s32 i;
+    s32 temp_a1;
+    s32 temp_v0;
+    s32 var_v1_2;
+    s32 idx;
+    
+    for (i = 0; i < 3; i++) {
+        if (g_battleChars.chars[i].characterId == 5) {
+            break; 
+        }
+    }
+
+    temp_a1 = ((D_800ED148.entities[i].level / 10) + (func_8009B15C() % 5) + D_800ED148.entities[i].crisisLevel) - 1;
+    temp_v0 = func_8009B15C();
+    
+    if (temp_v0 < 39) {
+        var_v1_2 = 0;
+    }
+        
+    else if (temp_v0 < 159) {
+        var_v1_2 = 1;
+    }
+        
+    else if (temp_v0 < 209) {
+        var_v1_2 = 2;
+    }
+        
+    else if (temp_v0 < 249) {
+        var_v1_2 = 3;
+    }
+        
+    else {
+        var_v1_2 = 4;
+    }
+    
+    idx = g_kernel.slotArray[var_v1_2][temp_a1];
+    temp_v0 = func_8009B15C() % 8;
+
+    D_800ED148.unk131F = *arg0 = g_kernel.slotSets[idx][temp_v0].magicId;
+    D_800ED148.unk1320 = *arg1 = (func_8009B15C() % g_kernel.slotSets[idx][temp_v0].count) + 1;
+}
 
 /**
 * @brief Search g_gameState+0xB44 table for entry matching a given byte.
@@ -1636,6 +1729,14 @@ s32 func_800A9240(s32 arg0) {
     return 0;
 }
 
+/**
+ * @brief Fill the Shot slots, one per ammo Irvine has learned or holds.
+ *
+ * Ammo not in the inventory is greyed out.
+ *
+ * @param arg0 Party member's battle data.
+ * @return Number of slots filled.
+ */
 s32 func_800A9284(BattleCharData* arg0) {
     s32 i;
     u16 mask;
@@ -1651,8 +1752,8 @@ s32 func_800A9284(BattleCharData* arg0) {
         temp_a0 = func_800A9240(var_s1);
         if ((g_gameState.mainData.limitBreaks.irvineLimits & mask) || (temp_a0 != 0)) {
             arg0->testSlots[val].unk0 = var_s1;
-            arg0->testSlots[val].unk2 = 0x80;
-            arg0->testSlots[val].unk3 = D_80078E00.unk015A;
+            arg0->testSlots[val].unk2 = 128;
+            arg0->testSlots[val].unk3 = g_kernel.battleCommands[BATTLE_CMD_SHOT].targetInfo;
             arg0->testSlots[val].unk4 = 0;
             arg0->testSlots[val].unk1 = temp_a0;
             arg0->testSlots[val].unk4 &= 0xEF;
@@ -1806,7 +1907,7 @@ void func_800A960C(s32 arg0) {
     s32 result;
 
     if (D_800ED148.entities[arg0].status & 0x200) {
-        result = D_800ED148.entities[arg0].unk2C - D_800ED148.entities[arg0].unk28;
+        result = D_800ED148.entities[arg0].maxHp - D_800ED148.entities[arg0].currentHp;
         if (result <= 200) {
             return;
         }
@@ -1848,16 +1949,16 @@ void func_800A960C(s32 arg0) {
 /**
 * @brief Compute paired lookup results from entity table and return combined.
 *
-* Computes D_80078E00 + a0 * 20 as the base address, loads the byte at
-* offset 0x3EE7, calls func_800B0F9C and func_800B0F7C with it, and
-* returns the bitwise OR of both results masked to 16 bits.
+* Reads non-junctionable GF attack a0's target info, calls func_800B0F9C
+* and func_800B0F7C with it, and returns the bitwise OR of both results
+* masked to 16 bits.
 *
-* @param a0 Entity index (stride 20 in D_80078E00).
+* @param a0 Non-junctionable GF attack index.
 * @return Combined result from both lookups, masked to u16.
 */
 
-s32 func_800A972C(s32 arg0) {
-    return func_800B0F9C(D_80078E00.entriesA0[arg0].unk7) | func_800B0F7C(D_80078E00.entriesA0[arg0].unk7);
+u16 func_800A972C(s32 arg0) {
+    return func_800B0F9C(g_kernel.nonJunctionableGfAttacks[arg0].targetInfo) | func_800B0F7C(g_kernel.nonJunctionableGfAttacks[arg0].targetInfo);
 }
 
 /**
@@ -1876,7 +1977,7 @@ u8* func_800A9784(u16 arg0, s32 arg1) {
         return D_800E3CEC;
     }
     
-    return arg0 + arg1; // weird
+    return GET_OFFSET(u8, arg1, arg0);
 }
 
 /**
@@ -1974,7 +2075,7 @@ u16 func_800A9888(void) {
 */
 
 u16 func_800A9904(s32 arg0) {
-    return (1 << D_800ED148.entities[arg0].unk98);
+    return (1 << D_800ED148.entities[arg0].unk88);
 }
 
 /**
@@ -2073,10 +2174,10 @@ void func_800A9AC0(s32 arg0, s32 arg1) {
     
     if (arg0 < 213) {
         val = 0;
-        idx = arg0 - 0xCD;
+        idx = arg0 - 205;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                u8* cd = D_800ED148.entities[i].unkCD;
+                u8* cd = D_800ED148.entities[i].unkBD;
                 if (val < cd[idx]) {
                     val = cd[idx];
                 }
@@ -2086,10 +2187,10 @@ void func_800A9AC0(s32 arg0, s32 arg1) {
     
     else {
         val = 255;
-        idx = arg0 - 0xD5;
+        idx = arg0 - 213;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                u8* cd = D_800ED148.entities[i].unkCD;
+                u8* cd = D_800ED148.entities[i].unkBD;
                 if (cd[idx] < val){
                     val = cd[idx];
                 }
@@ -2098,7 +2199,7 @@ void func_800A9AC0(s32 arg0, s32 arg1) {
     }
 
     for (i = 0; i < 7; i++) {
-        u8* cd = D_800ED148.entities[i].unkCD;
+        u8* cd = D_800ED148.entities[i].unkBD;
         if (val == cd[idx]) {
             D_800EEBE0[i] = 1;
         }
@@ -2121,8 +2222,8 @@ void func_800A9C68(s32 arg0, s32 arg1) {
         idx = arg0 - 221;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                if (val < D_800ED148.entities[i].unk54[idx]) {
-                    val = D_800ED148.entities[i].unk54[idx];
+                if (val < D_800ED148.entities[i].elemDef[idx]) {
+                    val = D_800ED148.entities[i].elemDef[idx];
                 }
             }
         }
@@ -2133,8 +2234,8 @@ void func_800A9C68(s32 arg0, s32 arg1) {
         idx = arg0 - 229;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                if (D_800ED148.entities[i].unk54[idx] < val) {
-                    val = D_800ED148.entities[i].unk54[idx];
+                if (D_800ED148.entities[i].elemDef[idx] < val) {
+                    val = D_800ED148.entities[i].elemDef[idx];
                 }
             }
         }       
@@ -2142,7 +2243,7 @@ void func_800A9C68(s32 arg0, s32 arg1) {
 
 
     for (i = 0; i < 7; i++) {
-        if (val == D_800ED148.entities[i].unk54[idx]) {
+        if (val == D_800ED148.entities[i].elemDef[idx]) {
             D_800EEBE0[i] = 1;
         }
         
@@ -2162,8 +2263,8 @@ void func_800A9E08(s32 arg0, s32 arg1) {
         val = 0;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                if (val < D_800ED148.entities[i].unk28) {
-                    val = D_800ED148.entities[i].unk28;
+                if (val < D_800ED148.entities[i].currentHp) {
+                    val = D_800ED148.entities[i].currentHp;
                 }
             }
         }
@@ -2173,15 +2274,15 @@ void func_800A9E08(s32 arg0, s32 arg1) {
         val = 0x7FFFFFFF;
         for (i = D_800EEBD8; i < D_800EEBDC; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
-                if ((D_800ED148.entities[i].unk28 < val) && (D_800ED148.entities[i].unk28 != 0)) {
-                    val = D_800ED148.entities[i].unk28;
+                if ((D_800ED148.entities[i].currentHp < val) && (D_800ED148.entities[i].currentHp != 0)) {
+                    val = D_800ED148.entities[i].currentHp;
                 }
             }
         }
     }
 
     for (i = 0; i < 7; i++) {
-        if (val == D_800ED148.entities[i].unk28) {
+        if (val == D_800ED148.entities[i].currentHp) {
             D_800EEBE0[i]= 1;
         } 
         
@@ -2233,7 +2334,7 @@ u16 func_800AA034(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     var_s0 = 0;
     
     switch (arg3) {
-        case 200: case 201:
+        case 200 ... 201:
             func_800A9970(arg3);
             break;
         
@@ -2293,7 +2394,7 @@ u16 func_800AA034(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
             default:
                 do {
                     i = func_800A97A4(7);
-                } while ((D_800EEBE0[i] == 0) || D_800ED148.entities[i].linkedIdx != arg1);
+                } while ((D_800EEBE0[i] == 0) || D_800ED148.entities[i].comFileId != arg1);
                 result = func_800A97FC(i);
                 break;
         }
@@ -2320,7 +2421,7 @@ u16 func_800AA034(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
             
             default:
                 for (i = 0; i < 7; i++) {
-                    if ((D_800ED148.entities[i].linkedIdx == arg1) && (D_800EEBE0[i] != 0)) {
+                    if ((D_800ED148.entities[i].comFileId == arg1) && (D_800EEBE0[i] != 0)) {
                         result |= func_800A97FC(i);
                     }
                 }
@@ -2355,7 +2456,7 @@ s32 func_800AA368(s32 arg0) {
             
         default:
             for (i = 0; i < 7; i++) {
-                if ((D_800ED148.entities[i].linkedIdx == arg0) && !(D_800ED148.entities[i].status & 1)) {
+                if ((D_800ED148.entities[i].comFileId == arg0) && !(D_800ED148.entities[i].status & 1)) {
                     val++;
                 }
             }   
@@ -2404,7 +2505,7 @@ s32 func_800AA4F8(s32 arg0) {
     s32 i;
 
     for (i = 0; i < 7; i++) {
-        if (D_800ED148.entities[i].linkedIdx == arg0) {
+        if (D_800ED148.entities[i].comFileId == arg0) {
             return i;
         }
     }
@@ -2423,7 +2524,7 @@ s32 func_800AA530(s32 arg0) {
     s32 i;
 
     for (i = 0; i < 7; i++) {
-        if (!(D_800ED148.entities[i].status & 1) && ((D_800ED148.entities[i].linkedIdx == arg0))) {
+        if (!(D_800ED148.entities[i].status & 1) && ((D_800ED148.entities[i].comFileId == arg0))) {
             return i;
         }
     }

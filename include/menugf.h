@@ -66,7 +66,6 @@ void func_801E7CF4(u8 *a0);
 /* Bodies still in assembly; used both as callbacks (cast to s32) and called
  * directly, so their argument lists are declared K&R-style until known. */
 extern void func_801E5A60();
-extern void func_801E6A8C();
 extern void func_801E7988();
 
 #endif /* MENUGF_H */

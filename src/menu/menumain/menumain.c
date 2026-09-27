@@ -7,6 +7,7 @@
 #include "game.h"
 #include "gf.h"
 #include "btl_anim.h"
+#include "btl_anim_packet.h"
 #include "btl_color.h"
 #include "btl_sfx.h"
 #include "numstr.h"
@@ -19,7 +20,6 @@ extern s32 D_8008384C;
 extern u16 D_80083850;
 extern u16 g_configFlags;
 extern u8 D_80077E6C[];
-extern u8 D_80077EBC[];
 extern u16 D_800780E8;
 extern u8 D_80056290[];
 extern u8 D_800562A4;
@@ -647,14 +647,14 @@ void func_801F177C(s32 *a0) {
  * use, and inserts it at the front of the D_801FA450 list: the head pointer
  * doubles as a sentinel node whose @c next field is the pointer itself, so
  * the insert is the ordinary four-store list splice. Clears the task's
- * callback table via func_801F177C, then stores @p tag, @p handler and a
+ * callback table via func_801F177C, then stores @p tickCb, @p drawCb and a
  * zeroed state.
  *
  * @param tickCb Update callback stored in the task (func_801F1584).
  * @param drawCb Per-frame draw callback (func_801F16AC).
  * @return The claimed task as void*, or NULL when the pool is full.
  */
-void* func_801F179C(s32 tickCb, s32 drawCb) {
+void *func_801F179C(MenuTickCallback tickCb, MenuDrawCallback drawCb) {
     MenuTask *node;
     MenuTask *n = D_801FA550;
     MenuTask *first;
@@ -686,7 +686,7 @@ void* func_801F179C(s32 tickCb, s32 drawCb) {
     first->prev = node;
     func_801F177C((s32 *)node);
     node->tickCb = tickCb;
-    node->drawCb = (s32 (*)(MenuTask *, s32, s32))drawCb;
+    node->drawCb = drawCb;
     node->state = 0;
     return node;
 }
@@ -696,7 +696,7 @@ void* func_801F179C(s32 tickCb, s32 drawCb) {
  *
  * Claims the first free slot of the 10-entry pool D_801FA550, marks it in
  * use, splices it in directly after D_801FA4D0 (the list head), clears its
- * callback table via func_801F177C, and stores @p tag and @p handler.
+ * callback table via func_801F177C, and stores @p tickCb and @p drawCb.
  *
  * @note The explicit exhaust-break (rather than a for loop with node
  *       pre-initialized) is what places the @c node @c = @c 0 on the
@@ -706,7 +706,7 @@ void* func_801F179C(s32 tickCb, s32 drawCb) {
  * @param drawCb Per-frame draw callback (func_801F16AC).
  * @return The claimed task, or NULL when the pool is full.
  */
-MenuTask *func_801F1850(s32 tickCb, s32 drawCb) {
+MenuTask *func_801F1850(MenuTickCallback tickCb, MenuDrawCallback drawCb) {
     MenuTask *node;
     MenuTask *n = D_801FA550;
     MenuTask *next;
@@ -736,7 +736,7 @@ MenuTask *func_801F1850(s32 tickCb, s32 drawCb) {
     next->prev = &D_801FA4D0;
     func_801F177C((s32 *)&D_801FA4D0);
     node->tickCb = tickCb;
-    node->drawCb = (s32 (*)(MenuTask *, s32, s32))drawCb;
+    node->drawCb = drawCb;
     return node;
 }
 
@@ -787,9 +787,10 @@ s32 func_801F1AA4(s32 a0, s32 a1, s32 a2) {
     return a2;
 }
 
-/** @brief Iterate all panels and dispatch via callback. */
+/** @brief Start a panel task (tick func_801F1A40, draw func_801F1AA4) and run its first tick. */
 void func_801F1AAC(void) {
-    s32 result = func_801F179C(func_801F1A40, func_801F1AA4);
+    /* func_801F1A40 returns a status that the tick driver ignores. */
+    s32 result = func_801F179C((MenuTickCallback)func_801F1A40, func_801F1AA4);
 
     if (result != 0) {
         func_801F1A40(result);
@@ -1154,7 +1155,7 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F3824);
  * the panel border via func_801EF9AC.
  */
 void func_801F38F8(s32 a0, s32 a1, s32 a2) {
-    s32 ret1;
+    u8 *ret1;
     s32 ret2;
 
     ret1 = func_801F6AD0(*(u8 *)(a0 + 0x46));
@@ -1168,8 +1169,8 @@ void func_801F38F8(s32 a0, s32 a1, s32 a2) {
 }
 
 /** @brief Render text with explicit parameters (arg-reorder wrapper for func_801F0FEC). */
-void func_801F3994(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
-    func_801F0FEC(a1, a2, a3, a4, a0, a5);
+void func_801F3994(u8 *text, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
+    func_801F0FEC(a1, a2, a3, a4, text, a5);
 }
 
 /**
@@ -1381,20 +1382,16 @@ void func_801F5340(void) {
     }
 }
 
-/** @brief Recalculate stats for a party slot and copy result table to dst. */
-void func_801F537C(s32 a0, CopyBlock16 *a1) {
-    CopyBlock16 *src;
-    CopyBlock16 *end;
-
+/**
+ * @brief Recalculate party slot @p a0's stats and copy the result to @p dst.
+ *
+ * @param a0  Party slot to recalculate.
+ * @param dst Receives the computed stat sheet (g_battleChars' first entry).
+ */
+void func_801F537C(s32 a0, BattleCharData *dst) {
     func_801F5300();
     func_801F5190(a0);
-
-    src = (CopyBlock16 *)&g_battleChars;
-    end = (CopyBlock16 *)((u8 *)&g_battleChars + 0x1D0);
-    do {
-        *a1++ = *src++;
-    } while (src != end);
-
+    *dst = g_battleChars.chars[0];
     func_801F5340();
     recalcPartyStats();
 }
@@ -1842,12 +1839,12 @@ s32 func_801F65F0(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
 }
 
 /**
- * @brief Draw a character's level number in its status panel slot.
+ * @brief Draw a weapon's name in its status panel slot.
  *
  * Anchors g_menuDisplayCfg at (x+200, y+121) with a 154x22 box and no
- * icon, renders the level value from getLevelCurveData(charIdx) as a
- * 7-glyph field at (x+209, y+128) via func_801F0FEC, then draws the
- * panel frame with func_801EF9AC at full intensity.
+ * icon, draws the name from getWeaponName(weaponId) at (x+209, y+128)
+ * via func_801F0FEC, then draws the panel frame with func_801EF9AC at
+ * full intensity.
  *
  * @note @p x and @p y are advanced in place — reassigning the parameters
  *       restores their true live lengths so px/py keep s0/s1 (allocation
@@ -1857,10 +1854,10 @@ s32 func_801F65F0(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
  * @param dl      Display-list cursor.
  * @param x       Panel base X.
  * @param y       Panel base Y.
- * @param charIdx Level-curve entry to display.
+ * @param weaponId Weapon to display.
  */
-void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 charIdx) {
-    s32 lvl;
+void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 weaponId) {
+    u8 *name;
 
     x += 0xC8;
     y += 0x79;
@@ -1872,21 +1869,19 @@ void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 charIdx) {
     g_menuDisplayCfg.y = y;
     g_menuDisplayCfg.h = 0x16;
     y += 7;
-    lvl = getLevelCurveData(charIdx);
-    dl = func_801F0FEC(ctx, dl, x, y, lvl, 7);
+    name = getWeaponName(weaponId);
+    dl = func_801F0FEC(ctx, dl, x, y, name, 7);
     func_801EF9AC(ctx, dl, 0x1000, g_menuColor);
 }
 
 /**
- * @brief Adjust cursor position based on D-pad input with wrapping and guard.
+ * @brief Step a cursor down or up the D-pad, wrapping at both ends.
  *
  * If max == 1 (single option), returns 0 immediately.
- * Checks bit flags for up (0x4000) and down (0x1000) input.
- * On up: increments position, wraps to 0 if >= max.
- * On down: decrements position, wraps to max-1 if < 0.
+ * Down advances the cursor and wraps to 0; up retreats it and wraps to max-1.
  * Plays a sound effect on each valid input.
  *
- * @param flags   Input button flags.
+ * @param flags   One of the g_menuDisplayCfg input words.
  * @param max     Maximum position value (exclusive).
  * @param current Current cursor position.
  * @return Updated cursor position, or 0 if max == 1.
@@ -1895,14 +1890,14 @@ s32 func_801F6768(u16 flags, s32 max, s32 current) {
     if (max == 1) {
         return 0;
     }
-    if (flags & 0x4000) {
+    if (flags & PADLdown) {
         sendSpuCommand(1);
         current++;
         if (current >= max) {
             current = 0;
         }
     }
-    if (flags & 0x1000) {
+    if (flags & PADLup) {
         sendSpuCommand(1);
         current--;
         if (current < 0) {
@@ -1913,27 +1908,25 @@ s32 func_801F6768(u16 flags, s32 max, s32 current) {
 }
 
 /**
- * @brief Adjust cursor position based on D-pad input with wrapping.
+ * @brief Step a cursor right or left the D-pad, wrapping at both ends.
  *
- * Checks bit flags for right (0x2000) and left (0x8000) input.
- * On right: increments position, wraps to 0 if >= max.
- * On left: decrements position, wraps to max-1 if < 0.
+ * Right advances the cursor and wraps to 0; left retreats it and wraps to max-1.
  * Plays a sound effect on each valid input.
  *
- * @param flags   Input button flags.
+ * @param flags   One of the g_menuDisplayCfg input words.
  * @param max     Maximum position value (exclusive).
  * @param current Current cursor position.
  * @return Updated cursor position.
  */
 s32 func_801F6800(u16 flags, s32 max, s32 current) {
-    if (flags & 0x2000) {
+    if (flags & PADLright) {
         sendSpuCommand(1);
         current++;
         if (current >= max) {
             current = 0;
         }
     }
-    if (flags & 0x8000) {
+    if (flags & PADLleft) {
         sendSpuCommand(1);
         current--;
         if (current < 0) {
@@ -1997,14 +1990,14 @@ s32 func_801F6A5C(void) {
     return val;
 }
 
-/** @brief Look up ability/command name string (category 3). */
-void func_801F6AA4(s32 a0) {
-    func_801F08D4(1, 3, a0, 0);
+/** @brief Look up string @p a0 in menu text category 3. */
+u8 *func_801F6AA4(s32 a0) {
+    return func_801F08D4(1, 3, a0, 0);
 }
 
-/** @brief Look up character name string. */
-s32 func_801F6AD0(s32 a0) {
-    func_801F08D4(0, 0, a0, 1);
+/** @brief Look up string @p a0 in menu text category 0, with the last flag set. */
+u8 *func_801F6AD0(s32 a0) {
+    return func_801F08D4(0, 0, a0, 1);
 }
 
 /** @brief Look up character description string. */
@@ -2137,7 +2130,7 @@ s32 func_801F7394(s32 a0) {
  * Sets up g_menuDisplayCfg rendering params (icon 0x4A), then renders
  * the list, scroll indicator, and footer/help text.
  */
-void func_801F739C(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
+void func_801F739C(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, MenuRowCallback a5) {
     s32 base = (s32)&g_menuDisplayCfg;
     s32 ret1;
     s32 ret2;
@@ -2176,19 +2169,18 @@ void func_801F76A8(s32 a0) {
 }
 
 /**
- * @brief Handle left/right D-pad input for value adjustment.
+ * @brief Nudge a value right or left with the D-pad.
  *
- * If right pressed (0x2000), increments; if left (0x8000), decrements.
  * Plays a sound effect if the value changed.
  */
 s32 func_801F76E0(s32 flags, s32 a1, s32 a2) {
     s32 result = a2;
     s32 orig = a2;
 
-    if (flags & 0x2000) {
+    if (flags & PADLright) {
         result = func_80035B28(a1, result);
     }
-    if (flags & 0x8000) {
+    if (flags & PADLleft) {
         result = func_80035B70(a1, orig);
     }
     if (result != orig) {
@@ -2353,22 +2345,23 @@ void func_801F7B10(s32 a0) {
  * ID; if ID is 0, clears the quantity.
  */
 void func_801F7B60(void) {
-    u8 *a0 = D_80077EBC;
-    s32 a2 = 0;
-    u8 *v1 = a0 + 1;
-    do {
-        u8 b = *v1;
-        u8 a = *a0;
-        if (b == 0) {
-            *a0 = 0;
+    s32 i;
+    ItemSlot* itemSlot;
+
+    itemSlot = g_gameState.mainData.itemSlots;
+    
+    for (i = 0; i < 198; i++, itemSlot++) {
+        u8 id = itemSlot->id;
+        u8 qt = itemSlot->count;
+        
+        if (qt == 0) {
+            itemSlot->id = 0;
         }
-        if (a == 0) {
-            *v1 = 0;
+        
+        if (id == 0) {
+            itemSlot->count = 0;
         }
-        a2++;
-        v1 += 2;
-        a0 += 2;
-    } while (a2 < 198);
+    }
 }
 
 /** @brief Convert 0-255 value to 0-100 percentage. */
@@ -2381,9 +2374,9 @@ s32 func_801F7BE4(s32 a0) {
     return a0;
 }
 
-/** @brief Play toggle sound effect (sound 2 if bit 6 set, else sound 3). */
+/** @brief Click confirm or cancel, from a press-edge input word. */
 void func_801F7BEC(s32 a0) {
-    if (a0 & 0x40) {
+    if (a0 & PADRdown) {
         sendSpuCommand(2);
     } else {
         sendSpuCommand(3);

@@ -2,6 +2,7 @@
 #include "field.h"
 #include "gamestate.h"
 #include "field/fe_object1.h"
+#include "field/fe_object1b.h"
 #include "field/fe_object8.h"
 
 
@@ -604,11 +605,11 @@ s32 opHandler_PDIRA(Actor *actor) {
  * @brief Helper — pop byte + halfword, queue turn (subtract variant, kind 1).
  *
  * Same shape as @c opHandler_OP16C but with reversed comparison: subtracts
- * @c 0x100 from the heading if @c field_0x1DC is less than @c (s16)raw.
+ * @c 0x100 from the heading if @c field_0x1DC is less than @c raw.
  * Sets @c field_0x244 to @c 1.
  */
 s32 opHandler_OP16B(Actor *actor) {
-    s32 raw;
+    s16 raw;
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
@@ -617,9 +618,9 @@ s32 opHandler_OP16B(Actor *actor) {
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(&actor->context);
+        raw = POP(&actor->context);
         actor->field_0x1DE = raw;
-        if (actor->field_0x1DC < (s16)raw) {
+        if (actor->field_0x1DC < raw) {
             actor->field_0x1DE = raw - 0x100;
         }
     } else if (actor->field_0x244 == 3) {
@@ -641,7 +642,7 @@ s32 opHandler_OP16B(Actor *actor) {
  * Inactive path: return 2 unless @c field_0x244 == 3, otherwise 1.
  */
 s32 opHandler_OP16C(Actor *actor) {
-    s32 raw;
+    s16 raw;
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
@@ -650,9 +651,9 @@ s32 opHandler_OP16C(Actor *actor) {
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(&actor->context);
+        raw = POP(&actor->context);
         actor->field_0x1DE = raw;
-        if ((s16)raw < actor->field_0x1DC) {
+        if (raw < actor->field_0x1DC) {
             actor->field_0x1DE = raw + 0x100;
         }
     } else if (actor->field_0x244 == 3) {
@@ -667,7 +668,7 @@ s32 opHandler_OP16C(Actor *actor) {
  * Same as @c opHandler_OP16B but sets @c field_0x244 to @c 2.
  */
 s32 opHandler_OP16D(Actor *actor) {
-    s32 raw;
+    s16 raw;
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
@@ -676,9 +677,9 @@ s32 opHandler_OP16D(Actor *actor) {
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(&actor->context);
+        raw = POP(&actor->context);
         actor->field_0x1DE = raw;
-        if (actor->field_0x1DC < (s16)raw) {
+        if (actor->field_0x1DC < raw) {
             actor->field_0x1DE = raw - 0x100;
         }
     } else if (actor->field_0x244 == 3) {
@@ -693,7 +694,7 @@ s32 opHandler_OP16D(Actor *actor) {
  * Same as @c opHandler_OP16C but sets @c field_0x244 to @c 2.
  */
 s32 opHandler_OP16E(Actor *actor) {
-    s32 raw;
+    s16 raw;
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
@@ -702,9 +703,9 @@ s32 opHandler_OP16E(Actor *actor) {
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(&actor->context);
+        raw = POP(&actor->context);
         actor->field_0x1DE = raw;
-        if ((s16)raw < actor->field_0x1DC) {
+        if (raw < actor->field_0x1DC) {
             actor->field_0x1DE = raw + 0x100;
         }
     } else if (actor->field_0x244 == 3) {
@@ -754,7 +755,7 @@ void func_800BA3E0(Actor *actor) {
  * Sets @c field_0x244 to @c 1.
  */
 s32 opHandler_LTURNR(Actor *actor) {
-    s32 raw;
+    s16 raw;
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
@@ -763,7 +764,7 @@ s32 opHandler_LTURNR(Actor *actor) {
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(&actor->context);
+        raw = POP(&actor->context);
         actor->field_0x1DE = raw;
         func_800BA3E0(actor);
     } else if (actor->field_0x244 == 3) {
@@ -776,7 +777,7 @@ s32 opHandler_LTURNR(Actor *actor) {
  * @brief Op 0x083 handler — identical to @c opHandler_LTURNR.
  */
 s32 opHandler_LTURNL(Actor *actor) {
-    s32 raw;
+    s16 raw;
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
@@ -785,7 +786,7 @@ s32 opHandler_LTURNL(Actor *actor) {
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(&actor->context);
+        raw = POP(&actor->context);
         actor->field_0x1DE = raw;
         func_800BA3E0(actor);
     } else if (actor->field_0x244 == 3) {
@@ -798,7 +799,7 @@ s32 opHandler_LTURNL(Actor *actor) {
  * @brief CTURNR opcode 0x084 handler — same shape as @c opHandler_LTURNR with kind 2.
  */
 s32 opHandler_CTURNR(Actor *actor) {
-    s32 raw;
+    s16 raw;
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
@@ -807,7 +808,7 @@ s32 opHandler_CTURNR(Actor *actor) {
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(&actor->context);
+        raw = POP(&actor->context);
         actor->field_0x1DE = raw;
         func_800BA3E0(actor);
     } else if (actor->field_0x244 == 3) {
@@ -820,7 +821,7 @@ s32 opHandler_CTURNR(Actor *actor) {
  * @brief CTURNL opcode 0x085 handler — identical to CTURNR (@c opHandler_CTURNR).
  */
 s32 opHandler_CTURNL(Actor *actor) {
-    s32 raw;
+    s16 raw;
     u8 byte1;
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
@@ -829,7 +830,7 @@ s32 opHandler_CTURNL(Actor *actor) {
         actor->field_0x243 = 0;
         actor->field_0x1DC = actor->field_0x241;
         actor->field_0x242 = byte1;
-        raw = (u16)POP(&actor->context);
+        raw = POP(&actor->context);
         actor->field_0x1DE = raw;
         func_800BA3E0(actor);
     } else if (actor->field_0x244 == 3) {
@@ -1100,7 +1101,7 @@ s32 opHandler_FACEDIRA(Actor *actor, s32 arg1) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(&actor->context);
         idx = POP(&actor->context);
-        func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, (u32)D_800C71F8, buf);
+        func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, (u32)g_curFieldView, buf);
         actor->turnTgtX = D_80085230[idx]->posX / 4096;
         actor->turnTgtY = D_80085230[idx]->posY / 4096;
         actor->turnTgtZ = buf[2] + D_80085230[idx]->posZ / 4096;
@@ -1129,7 +1130,7 @@ s32 opHandler_FACEDIRP(Actor *actor, s32 arg1) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(&actor->context);
         slot = g_fieldVars->memberSlot[POP(&actor->context)];
-        func_800A8DAC(slot, 0x1E, (u32)D_800C71F8, buf);
+        func_800A8DAC(slot, 0x1E, (u32)g_curFieldView, buf);
         actor->turnTgtX = D_80085224[slot].posX / 4096;
         actor->turnTgtY = D_80085224[slot].posY / 4096;
         actor->turnTgtZ = buf[2] + D_80085224[slot].posZ / 4096;

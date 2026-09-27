@@ -1,4 +1,4 @@
-getLevelCurveData = 0x80020EB4;
+getWeaponName = 0x80020EB4;
 getMenuString = 0x80020F84;
 func_80027C00 = 0x80027C00;
 func_80027C90 = 0x80027C90;
@@ -96,7 +96,7 @@ g_characterAbilities = 0x80077864;
 g_characterJunctions = 0x80077864;
 g_configFlags = 0x80077E5C;
 g_battleChars = 0x80078720;
-g_gfData = 0x80078E00;
+g_kernel = 0x80078E00;
 g_cmdAbilities = 0x8007CF80;
 g_battleAnims = 0x80082DD0;
 func_80600000 = 0x80600000;

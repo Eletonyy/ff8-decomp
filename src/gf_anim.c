@@ -3,8 +3,8 @@
 #include "battle.h"
 #include "gamestate.h"
 #include "gf.h"
+#include "gf_anim.h"
 
-extern u8 D_80078DF8;
 extern u8 D_80082C10;
 extern CharacterData g_characters[];
 
@@ -28,8 +28,8 @@ INCLUDE_ASM("asm/nonmatchings/gf_anim", func_800229FC);
 /** @brief GF animation slot (4 bytes, inside GfAnimState at +0x1E). */
 typedef struct {
     u8 gfId;            /* 0x00: GF/animation index. */
-    u8 frameStart;      /* 0x01: start frame from g_gfData. */
-    u8 frameEnd;        /* 0x02: end frame from g_gfData. */
+    u8 frameStart;      /* 0x01: start frame from g_kernel. */
+    u8 frameEnd;        /* 0x02: end frame from g_kernel. */
     u8 frameCounter;    /* 0x03: current frame counter. */
 } GfAnimSlot;
 
@@ -40,7 +40,7 @@ typedef struct {
 } GfAnimState;
 
 /**
- * @brief Initialize a GF animation slot with look-up data from g_gfData.
+ * @brief Initialize a GF animation slot with look-up data from g_kernel.
  *
  * @param state Animation state block.
  * @param index Slot index.
@@ -48,9 +48,9 @@ typedef struct {
  */
 void initGfAnimEntry(GfAnimState *state, s32 index, s32 gfId) {
     state->slots[index].gfId = gfId;
-    state->slots[index].frameStart = g_gfData.statTable8[state->slots[index].gfId].typeField;
+    state->slots[index].frameStart = g_kernel.battleCommands[state->slots[index].gfId].menuFlags;
     state->slots[index].frameCounter = 0;
-    state->slots[index].frameEnd = g_gfData.statTable8[state->slots[index].gfId].bonusField;
+    state->slots[index].frameEnd = g_kernel.battleCommands[state->slots[index].gfId].targetInfo;
 }
 
 
@@ -59,7 +59,7 @@ void initGfAnimEntry(GfAnimState *state, s32 index, s32 gfId) {
  * @param a0 Character slot index into g_gameState.chars[].
  * @return Packed bitmask: (B << 16) | (G << 8) | R, OR'd across up to 4 matching ability slots.
  * @note Abilities in range 0x3A..0x4D are status immunity abilities; each has R/G/B
- *       immunity bytes looked up from g_gfData.abilityRangeL[].
+ *       immunity bytes looked up from g_kernel.characterAbilities[].
  */
 s32 getStatusImmunityFlags(u32 a0) {
     s32 result = 0;
@@ -68,9 +68,9 @@ s32 getStatusImmunityFlags(u32 a0) {
         s32 val = g_gameState.chars[a0].abilities[i];
         u32 idx = val - 0x3A;
         if (idx < 0x14) {
-            u8 b = g_gfData.abilityRangeL[idx].extraField;
-            u8 g = g_gfData.abilityRangeL[idx].bonusField;
-            u8 r = g_gfData.abilityRangeL[idx].typeField;
+            u8 b = g_kernel.characterAbilities[idx].extraField;
+            u8 g = g_kernel.characterAbilities[idx].bonusField;
+            u8 r = g_kernel.characterAbilities[idx].typeField;
             result |= (b << 16) | (g << 8) | r;
         }
         i++;
@@ -117,7 +117,7 @@ s32 getMagicAvailFlags(BattleCharData *charData) {
  * @brief Apply party ability flags from a character's equipped abilities to g_battleChars.
  * @param a0 Character slot index into g_gameState.chars[].
  * @note Abilities in range 0x4E..0x52 are party abilities; each value is looked up
- *       in g_gfData.abilityRangeM[] and OR'd into g_battleChars party ability flags
+ *       in g_kernel.partyAbilities[] and OR'd into g_battleChars party ability flags
  *       at offset 0x6D8. Likely enables field/world abilities (encounter-none, rare-item).
  */
 void applyPartyAbilityFlags(s32 charIdx) {
@@ -125,7 +125,7 @@ void applyPartyAbilityFlags(s32 charIdx) {
     for (i = 0; i < 4; i++) {
         u8 ability = g_gameState.chars[charIdx].abilities[i];
         if ((u32)(ability - 0x4E) < 5) {
-            g_battleChars.levelEntries[15].abilityFlags |= g_gfData.abilityRangeM[ability - 0x4E].typeField;
+            g_battleChars.levelEntries[15].abilityFlags |= g_kernel.partyAbilities[ability - 0x4E].typeField;
         }
     }
 }
@@ -322,7 +322,7 @@ void recalcAllGfStats(void) {
 void recalcPartyStats(void) {
     s32 i;
 
-    D_80078DF8 = 0;
+    g_battleChars.levelEntries[15].abilityFlags = 0;
 
     for (i = 0; i < 3; i++) {
         func_80022E08(g_gameState.mainData.party.party[i], i);

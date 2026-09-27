@@ -33,16 +33,16 @@ void mainGameLoop(void) {
  * wait for completion.
  */
 void clearFramebuffers(void) {
-    short rect[4];
-    rect[0] = 0;
-    rect[1] = 0;
-    rect[2] = 0x180;
-    rect[3] = 0xE0;
-    ClearImage(rect, 0, 0, 0);
+    RECT rect;
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = 0x180;
+    rect.h = 0xE0;
+    ClearImage(&rect, 0, 0, 0);
     DrawSync(0);
-    rect[0] = 0x200;
-    rect[1] = 0;
-    ClearImage(rect, 0, 0, 0);
+    rect.x = 0x200;
+    rect.y = 0;
+    ClearImage(&rect, 0, 0, 0);
     DrawSync(0);
 }
 

@@ -24,7 +24,7 @@ extern s32 func_800B0668(s32 a0, s32 a1);
 extern void func_800B06DC(u16 arg0);
 extern void func_800B0754(s32 a0, s32 a1, s32 a2, u16 a3);
 extern void func_800B0C08(void);
-extern u16 func_800B0F7C(s32 arg0);
+extern s32 func_800B0F7C(s32 arg0);
 extern u16 func_800B1104(s32 a0);
 
 #endif /* BATTLE_BC_OBJECT7_H */

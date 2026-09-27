@@ -4,11 +4,12 @@
 #include "battle.h"
 #include "sound.h"
 #include "psxsdk/libgte.h"
+#include "field/field_data.h"
 #include "field/fe_object6.h"
 
 /**
  * Pops 3 stack values (target, volume, pan), looks up an SFX entry in
- * the dispatcher-keyed bank table @c D_800D5EA4, and plays the resulting
+ * the dispatcher-keyed bank table @c g_curFieldSfx, and plays the resulting
  * bank SFX with the popped parameters (volume masked to 8 bits, pan to 7).
  *
  * @param actor Pointer to the Actor event-script context.
@@ -22,7 +23,7 @@ s32 opHandler_EFFECTPLAY2(ScriptContext *context, s32 a1) {
     val3 = POP(context);
     val2 &= 0xFF;
     val3 &= 0x7F;
-    sndPlayBankSfx((s32)func_8003974C(D_800D5EA4, a1), val1, val2, val3);
+    sndPlayBankSfx((s32)getOffsetTableEntry(g_curFieldSfx, a1), val1, val2, val3);
     return 2;
 }
 
@@ -197,7 +198,7 @@ void func_800B27C4(s32 entityIdx, s32 *sxy, s32 *out) {
     v.vx = 0;
     v.vy = 0;
     v.vz = 0;
-    *out = func_80040DE4(&v, sxy, &p, &flag);
+    *out = RotTransPers(&v, sxy, &p, &flag);
     *sxy = (s16)*sxy;
 }
 
@@ -240,7 +241,7 @@ void func_800B2864(Actor *actor, s32 channel, s32 unused2, s32 unused3) {
         if ((u32)(actor->msgActive - 3) < 2) {
             sndPlaySfx(0x40, 0x400000, pitch, volume);
         } else if ((s8)actor->unk188 != -1) {
-            sndPlayBankSfx((s32)func_8003974C(D_800D5EA4, (s8)actor->unk188), 0x400000, pitch, volume);
+            sndPlayBankSfx((s32)getOffsetTableEntry(g_curFieldSfx, (s8)actor->unk188), 0x400000, pitch, volume);
         } else if (actor->context.flags & 0x4000000) {
             sndPlaySfx(0x36, 0x400000, pitch, volume);
         } else {
@@ -251,7 +252,7 @@ void func_800B2864(Actor *actor, s32 channel, s32 unused2, s32 unused3) {
         if ((u32)(actor->msgActive - 3) < 2) {
             sndPlaySfx(0x3F, 0x400000, pitch, volume);
         } else if ((s8)actor->unk189 != -1) {
-            sndPlayBankSfx((s32)func_8003974C(D_800D5EA4, (s8)actor->unk189), 0x800000, pitch, volume);
+            sndPlayBankSfx((s32)getOffsetTableEntry(g_curFieldSfx, (s8)actor->unk189), 0x800000, pitch, volume);
         } else if (actor->context.flags & 0x4000000) {
             sndPlaySfx(0x35, 0x400000, pitch, volume);
         } else {
@@ -603,7 +604,7 @@ s32 opHandler_BGOFF(Bganime *bganime) {
 /** @brief Pop halfword, store to both walkSpeed2 and walkSpeed. Returns 2. */
 s32 opHandler_BGANIMESPEED(Bganime *bganime) {
     Bganime *e = bganime;
-    e->animSpeed2 = (u16)POP(&bganime->context);
+    e->animSpeed2 = POP(&bganime->context);
     e->animSpeed = e->animSpeed2;
     return 2;
 }
@@ -611,7 +612,7 @@ s32 opHandler_BGANIMESPEED(Bganime *bganime) {
 /** @brief Pop halfword, store to runSpeed. Returns 2. */
 s32 opHandler_BGANIMEFLAG(Bganime *bganime) {
     Bganime *e = bganime;
-    e->animFlag = (u16)POP(&bganime->context);
+    e->animFlag = POP(&bganime->context);
     return 2;
 }
 
@@ -638,7 +639,7 @@ s32 opHandler_BGSHADE(Bganime *bganime) {
         e->unk1A9 = POP_BYTE(&bganime->context);
         e->unk1A8 = POP_BYTE(&bganime->context);
         e->unk1A7 = POP_BYTE(&bganime->context);
-        e->shadeCounter = (u16)POP(&bganime->context);
+        e->shadeCounter = POP(&bganime->context);
     } else if ((s16)e->shadeCounter == 0) {
         return 2;
     }
@@ -692,9 +693,9 @@ s32 opHandler_RBGSHADELOOP(Bganime *bganime) {
     e->unk1A7 = v;
     e->unk1AD = v;
 
-    e->unk1A2 = (u16)POP(&bganime->context);
+    e->unk1A2 = POP(&bganime->context);
 
-    hw = (u16)POP(&bganime->context);
+    hw = POP(&bganime->context);
     e->unk1A0 = hw;
     e->shadeCounter = hw;
 
@@ -761,12 +762,12 @@ s32 opHandler_BGSHADEOFF(Bganime *bganime) {
  * @return 3 (yield to dispatcher with state change).
  */
 s32 opHandler_SHAKE(ScriptContext *context) {
-    D_800704A8.oscillators[0].mode = 1;
-    D_800704A8.oscillators[1].mode = 1;
-    D_800704A8.oscillators[1].total = (u16)POP(context);
-    D_800704A8.oscillators[1].amplitude = (u16)POP(context);
-    D_800704A8.oscillators[0].total = (u16)POP(context);
-    D_800704A8.oscillators[0].amplitude = (u16)POP(context);
+    g_fieldEntity.oscillators[0].mode = 1;
+    g_fieldEntity.oscillators[1].mode = 1;
+    g_fieldEntity.oscillators[1].total = POP(context);
+    g_fieldEntity.oscillators[1].amplitude = POP(context);
+    g_fieldEntity.oscillators[0].total = POP(context);
+    g_fieldEntity.oscillators[0].amplitude = POP(context);
     return 3;
 }
 
@@ -777,8 +778,8 @@ s32 opHandler_SHAKE(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_SHAKEOFF(ScriptContext *context) {
-    D_800704A8.oscillators[0].mode = 0;
-    D_800704A8.oscillators[1].mode = 0;
+    g_fieldEntity.oscillators[0].mode = 0;
+    g_fieldEntity.oscillators[1].mode = 0;
     return 2;
 }
 
@@ -790,10 +791,10 @@ s32 opHandler_SHAKEOFF(ScriptContext *context) {
  * @return 3 (yield to dispatcher with state change).
  */
 s32 opHandler_DSCROLL(ScriptContext *context) {
-    D_800704A8.slots[0].p2 = (u16)POP(context);
-    D_800704A8.slots[0].p1 = (u16)POP(context);
-    D_800704A8.slots[0].mode = 3;
-    D_800704A8.slots[0].submode = 0;
+    g_fieldEntity.slots[0].p2 = POP(context);
+    g_fieldEntity.slots[0].p1 = POP(context);
+    g_fieldEntity.slots[0].mode = 3;
+    g_fieldEntity.slots[0].submode = 0;
     return 3;
 }
 
@@ -807,11 +808,11 @@ s32 opHandler_DSCROLL(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_LSCROLL(ScriptContext *context) {
-    D_800704A8.slots[0].timer = (u16)POP(context);
-    D_800704A8.slots[0].p2 = (u16)POP(context);
-    D_800704A8.slots[0].p1 = (u16)POP(context);
-    D_800704A8.slots[0].mode = 4;
-    D_800704A8.slots[0].submode = 0;
+    g_fieldEntity.slots[0].timer = POP(context);
+    g_fieldEntity.slots[0].p2 = POP(context);
+    g_fieldEntity.slots[0].p1 = POP(context);
+    g_fieldEntity.slots[0].mode = 4;
+    g_fieldEntity.slots[0].submode = 0;
     return 2;
 }
 
@@ -824,11 +825,11 @@ s32 opHandler_LSCROLL(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_CSCROLL(ScriptContext *context) {
-    D_800704A8.slots[0].timer = (u16)POP(context);
-    D_800704A8.slots[0].p2 = (u16)POP(context);
-    D_800704A8.slots[0].p1 = (u16)POP(context);
-    D_800704A8.slots[0].mode = 5;
-    D_800704A8.slots[0].submode = 0;
+    g_fieldEntity.slots[0].timer = POP(context);
+    g_fieldEntity.slots[0].p2 = POP(context);
+    g_fieldEntity.slots[0].p1 = POP(context);
+    g_fieldEntity.slots[0].mode = 5;
+    g_fieldEntity.slots[0].submode = 0;
     return 2;
 }
 
@@ -844,9 +845,9 @@ s32 opHandler_CSCROLL(ScriptContext *context) {
 s32 opHandler_DSCROLLA(ScriptContext *context) {
     s32 val = POP(context);
     u8 byte = D_80085230[val]->field_0x256;
-    D_800704A8.slots[0].mode = 0;
-    D_800704A8.slots[0].submode = 0;
-    D_800704A8.slots[0].param = byte;
+    g_fieldEntity.slots[0].mode = 0;
+    g_fieldEntity.slots[0].submode = 0;
+    g_fieldEntity.slots[0].param = byte;
     return 3;
 }
 
@@ -862,10 +863,10 @@ s32 opHandler_DSCROLLA(ScriptContext *context) {
 s32 opHandler_LSCROLLA(ScriptContext *context) {
     s32 val1 = POP(context);
     s32 val2 = POP(context);
-    D_800704A8.slots[0].timer = val1;
-    D_800704A8.slots[0].param = D_80085230[val2]->field_0x256;
-    D_800704A8.slots[0].mode = 1;
-    D_800704A8.slots[0].submode = 0;
+    g_fieldEntity.slots[0].timer = val1;
+    g_fieldEntity.slots[0].param = D_80085230[val2]->field_0x256;
+    g_fieldEntity.slots[0].mode = 1;
+    g_fieldEntity.slots[0].submode = 0;
     return 2;
 }
 
@@ -878,10 +879,10 @@ s32 opHandler_LSCROLLA(ScriptContext *context) {
 s32 opHandler_CSCROLLA(ScriptContext *context) {
     s32 val1 = POP(context);
     s32 val2 = POP(context);
-    D_800704A8.slots[0].timer = val1;
-    D_800704A8.slots[0].param = D_80085230[val2]->field_0x256;
-    D_800704A8.slots[0].mode = 2;
-    D_800704A8.slots[0].submode = 0;
+    g_fieldEntity.slots[0].timer = val1;
+    g_fieldEntity.slots[0].param = D_80085230[val2]->field_0x256;
+    g_fieldEntity.slots[0].mode = 2;
+    g_fieldEntity.slots[0].submode = 0;
     return 2;
 }
 
@@ -896,9 +897,9 @@ s32 opHandler_CSCROLLA(ScriptContext *context) {
 s32 opHandler_DSCROLLP(ScriptContext *context) {
     FieldVars *ss = g_fieldVars;
     s32 val = POP(context);
-    D_800704A8.slots[0].param = ss->memberSlot[val];
-    D_800704A8.slots[0].mode = 0;
-    D_800704A8.slots[0].submode = 0;
+    g_fieldEntity.slots[0].param = ss->memberSlot[val];
+    g_fieldEntity.slots[0].mode = 0;
+    g_fieldEntity.slots[0].submode = 0;
     return 3;
 }
 
@@ -911,14 +912,14 @@ s32 opHandler_DSCROLLP(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_LSCROLLP(ScriptContext *context) {
-    u16 timer = (u16)POP(context);
+    u16 timer = POP(context);
     FieldVars *ss = g_fieldVars;
     s32 partySlot;
-    D_800704A8.slots[0].timer = timer;
+    g_fieldEntity.slots[0].timer = timer;
     partySlot = POP(context);
-    D_800704A8.slots[0].param = ss->memberSlot[partySlot];
-    D_800704A8.slots[0].mode = 1;
-    D_800704A8.slots[0].submode = 0;
+    g_fieldEntity.slots[0].param = ss->memberSlot[partySlot];
+    g_fieldEntity.slots[0].mode = 1;
+    g_fieldEntity.slots[0].submode = 0;
     return 2;
 }
 
@@ -929,14 +930,14 @@ s32 opHandler_LSCROLLP(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_CSCROLLP(ScriptContext *context) {
-    u16 timer = (u16)POP(context);
+    u16 timer = POP(context);
     FieldVars *ss = g_fieldVars;
     s32 partySlot;
-    D_800704A8.slots[0].timer = timer;
+    g_fieldEntity.slots[0].timer = timer;
     partySlot = POP(context);
-    D_800704A8.slots[0].param = ss->memberSlot[partySlot];
-    D_800704A8.slots[0].mode = 2;
-    D_800704A8.slots[0].submode = 0;
+    g_fieldEntity.slots[0].param = ss->memberSlot[partySlot];
+    g_fieldEntity.slots[0].mode = 2;
+    g_fieldEntity.slots[0].submode = 0;
     return 2;
 }
 
@@ -964,7 +965,7 @@ s32 opHandler_SCROLLSYNC(ScriptContext *context) {
  */
 s32 opHandler_SCROLLSYNC2(ScriptContext *context) {
     s32 idx = PEEK(context);
-    if (D_800704A8.slots[idx].submode == 2) {
+    if (g_fieldEntity.slots[idx].submode == 2) {
         context->stackPtr--;
         return 2;
     }
@@ -980,13 +981,13 @@ s32 opHandler_SCROLLSYNC2(ScriptContext *context) {
  * @return 3 (yield to dispatcher with state change).
  */
 s32 opHandler_DSCROLL2(ScriptContext *context) {
-    u16 p2 = (u16)POP(context);
-    u16 p1 = (u16)POP(context);
+    u16 p2 = POP(context);
+    u16 p1 = POP(context);
     s32 idx = POP(context);
-    D_800704A8.slots[idx].p2 = p2;
-    D_800704A8.slots[idx].p1 = p1;
-    D_800704A8.slots[idx].mode = 3;
-    D_800704A8.slots[idx].submode = 0;
+    g_fieldEntity.slots[idx].p2 = p2;
+    g_fieldEntity.slots[idx].p1 = p1;
+    g_fieldEntity.slots[idx].mode = 3;
+    g_fieldEntity.slots[idx].submode = 0;
     return 3;
 }
 
@@ -998,15 +999,15 @@ s32 opHandler_DSCROLL2(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_LSCROLL2(ScriptContext *context) {
-    u16 timer = (u16)POP(context);
-    u16 p2 = (u16)POP(context);
-    u16 p1 = (u16)POP(context);
+    u16 timer = POP(context);
+    u16 p2 = POP(context);
+    u16 p1 = POP(context);
     s32 idx = POP(context);
-    D_800704A8.slots[idx].timer = timer;
-    D_800704A8.slots[idx].p2 = p2;
-    D_800704A8.slots[idx].p1 = p1;
-    D_800704A8.slots[idx].mode = 4;
-    D_800704A8.slots[idx].submode = 0;
+    g_fieldEntity.slots[idx].timer = timer;
+    g_fieldEntity.slots[idx].p2 = p2;
+    g_fieldEntity.slots[idx].p1 = p1;
+    g_fieldEntity.slots[idx].mode = 4;
+    g_fieldEntity.slots[idx].submode = 0;
     return 2;
 }
 
@@ -1017,15 +1018,15 @@ s32 opHandler_LSCROLL2(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_CSCROLL2(ScriptContext *context) {
-    u16 timer = (u16)POP(context);
-    u16 p2 = (u16)POP(context);
-    u16 p1 = (u16)POP(context);
+    u16 timer = POP(context);
+    u16 p2 = POP(context);
+    u16 p1 = POP(context);
     s32 idx = POP(context);
-    D_800704A8.slots[idx].timer = timer;
-    D_800704A8.slots[idx].p2 = p2;
-    D_800704A8.slots[idx].p1 = p1;
-    D_800704A8.slots[idx].mode = 5;
-    D_800704A8.slots[idx].submode = 0;
+    g_fieldEntity.slots[idx].timer = timer;
+    g_fieldEntity.slots[idx].p2 = p2;
+    g_fieldEntity.slots[idx].p1 = p1;
+    g_fieldEntity.slots[idx].mode = 5;
+    g_fieldEntity.slots[idx].submode = 0;
     return 2;
 }
 
@@ -1040,9 +1041,9 @@ s32 opHandler_CSCROLL2(ScriptContext *context) {
 s32 opHandler_DSCROLLA2(ScriptContext *context) {
     s32 entityIdx = POP(context);
     s32 slotIdx = POP(context);
-    D_800704A8.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
-    D_800704A8.slots[slotIdx].mode = 0;
-    D_800704A8.slots[slotIdx].submode = 0;
+    g_fieldEntity.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
+    g_fieldEntity.slots[slotIdx].mode = 0;
+    g_fieldEntity.slots[slotIdx].submode = 0;
     return 3;
 }
 
@@ -1055,13 +1056,13 @@ s32 opHandler_DSCROLLA2(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_LSCROLLA2(ScriptContext *context) {
-    u16 timer = (u16)POP(context);
+    u16 timer = POP(context);
     s32 entityIdx = POP(context);
     s32 slotIdx = POP(context);
-    D_800704A8.slots[slotIdx].timer = timer;
-    D_800704A8.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
-    D_800704A8.slots[slotIdx].mode = 1;
-    D_800704A8.slots[slotIdx].submode = 0;
+    g_fieldEntity.slots[slotIdx].timer = timer;
+    g_fieldEntity.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
+    g_fieldEntity.slots[slotIdx].mode = 1;
+    g_fieldEntity.slots[slotIdx].submode = 0;
     return 2;
 }
 
@@ -1072,13 +1073,13 @@ s32 opHandler_LSCROLLA2(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_CSCROLLA2(ScriptContext *context) {
-    u16 timer = (u16)POP(context);
+    u16 timer = POP(context);
     s32 entityIdx = POP(context);
     s32 slotIdx = POP(context);
-    D_800704A8.slots[slotIdx].timer = timer;
-    D_800704A8.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
-    D_800704A8.slots[slotIdx].mode = 2;
-    D_800704A8.slots[slotIdx].submode = 0;
+    g_fieldEntity.slots[slotIdx].timer = timer;
+    g_fieldEntity.slots[slotIdx].param = D_80085230[entityIdx]->field_0x256;
+    g_fieldEntity.slots[slotIdx].mode = 2;
+    g_fieldEntity.slots[slotIdx].submode = 0;
     return 2;
 }
 
@@ -1095,9 +1096,9 @@ s32 opHandler_DSCROLLP2(ScriptContext *context) {
     s32 partySlot = POP(context);
     u8 byte = ss->memberSlot[partySlot];
     s32 slotIdx = POP(context);
-    D_800704A8.slots[slotIdx].param = byte;
-    D_800704A8.slots[slotIdx].mode = 0;
-    D_800704A8.slots[slotIdx].submode = 0;
+    g_fieldEntity.slots[slotIdx].param = byte;
+    g_fieldEntity.slots[slotIdx].mode = 0;
+    g_fieldEntity.slots[slotIdx].submode = 0;
     return 3;
 }
 
@@ -1110,15 +1111,15 @@ s32 opHandler_DSCROLLP2(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_LSCROLLP2(ScriptContext *context) {
-    u16 timer = (u16)POP(context);
+    u16 timer = POP(context);
     FieldVars *ss = g_fieldVars;
     s32 partySlot = POP(context);
     u8 byte = ss->memberSlot[partySlot];
     s32 slotIdx = POP(context);
-    D_800704A8.slots[slotIdx].timer = timer;
-    D_800704A8.slots[slotIdx].param = byte;
-    D_800704A8.slots[slotIdx].mode = 1;
-    D_800704A8.slots[slotIdx].submode = 0;
+    g_fieldEntity.slots[slotIdx].timer = timer;
+    g_fieldEntity.slots[slotIdx].param = byte;
+    g_fieldEntity.slots[slotIdx].mode = 1;
+    g_fieldEntity.slots[slotIdx].submode = 0;
     return 2;
 }
 
@@ -1129,15 +1130,15 @@ s32 opHandler_LSCROLLP2(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_CSCROLLP2(ScriptContext *context) {
-    u16 timer = (u16)POP(context);
+    u16 timer = POP(context);
     FieldVars *ss = g_fieldVars;
     s32 partySlot = POP(context);
     u8 byte = ss->memberSlot[partySlot];
     s32 slotIdx = POP(context);
-    D_800704A8.slots[slotIdx].timer = timer;
-    D_800704A8.slots[slotIdx].param = byte;
-    D_800704A8.slots[slotIdx].mode = 2;
-    D_800704A8.slots[slotIdx].submode = 0;
+    g_fieldEntity.slots[slotIdx].timer = timer;
+    g_fieldEntity.slots[slotIdx].param = byte;
+    g_fieldEntity.slots[slotIdx].mode = 2;
+    g_fieldEntity.slots[slotIdx].submode = 0;
     return 2;
 }
 
@@ -1150,15 +1151,15 @@ s32 opHandler_CSCROLLP2(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_SCROLLMODE2(ScriptContext *context) {
-    u16 p6 = (u16)POP(context);
-    u16 p5 = (u16)POP(context);
-    u16 p4 = (u16)POP(context);
-    u16 p3 = (u16)POP(context);
+    u16 p6 = POP(context);
+    u16 p5 = POP(context);
+    u16 p4 = POP(context);
+    u16 p3 = POP(context);
     s32 slotIdx = POP(context);
-    D_800704A8.slots[slotIdx].p3 = p3;
-    D_800704A8.slots[slotIdx].p4 = p4;
-    D_800704A8.slots[slotIdx].p5 = p5;
-    D_800704A8.slots[slotIdx].p6 = p6;
+    g_fieldEntity.slots[slotIdx].p3 = p3;
+    g_fieldEntity.slots[slotIdx].p4 = p4;
+    g_fieldEntity.slots[slotIdx].p5 = p5;
+    g_fieldEntity.slots[slotIdx].p6 = p6;
     return 2;
 }
 
@@ -1170,11 +1171,11 @@ s32 opHandler_SCROLLMODE2(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_SCROLLRATIO2(ScriptContext *context) {
-    u16 p6 = (u16)POP(context);
-    u16 p5 = (u16)POP(context);
+    u16 p6 = POP(context);
+    u16 p5 = POP(context);
     s32 slotIdx = POP(context);
-    D_800704A8.slots[slotIdx].p5 = p5;
-    D_800704A8.slots[slotIdx].p6 = p6;
+    g_fieldEntity.slots[slotIdx].p5 = p5;
+    g_fieldEntity.slots[slotIdx].p6 = p6;
     return 2;
 }
 
@@ -1187,13 +1188,13 @@ s32 opHandler_SCROLLRATIO2(ScriptContext *context) {
  * @return 3 (yield to dispatcher with state change).
  */
 s32 opHandler_DSCROLL3(ScriptContext *context) {
-    u16 p2 = (u16)POP(context);
-    u16 p1 = (u16)POP(context);
+    u16 p2 = POP(context);
+    u16 p1 = POP(context);
     s32 slotIdx = POP(context);
-    D_800704A8.slots[slotIdx].p1 = p1;
-    D_800704A8.slots[slotIdx].p2 = p2;
-    D_800704A8.slots[slotIdx].mode = 3;
-    D_800704A8.slots[slotIdx].submode = 0;
+    g_fieldEntity.slots[slotIdx].p1 = p1;
+    g_fieldEntity.slots[slotIdx].p2 = p2;
+    g_fieldEntity.slots[slotIdx].mode = 3;
+    g_fieldEntity.slots[slotIdx].submode = 0;
     return 3;
 }
 
@@ -1206,19 +1207,19 @@ s32 opHandler_DSCROLL3(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_LSCROLL3(ScriptContext *context) {
-    u16 timer = (u16)POP(context);
-    u16 p2 = (u16)POP(context);
-    u16 p1 = (u16)POP(context);
-    u16 q2 = (u16)POP(context);
-    u16 q1 = (u16)POP(context);
+    u16 timer = POP(context);
+    u16 p2 = POP(context);
+    u16 p1 = POP(context);
+    u16 q2 = POP(context);
+    u16 q1 = POP(context);
     s32 slotIdx = POP(context);
-    D_800704A8.slots[slotIdx].q1 = q1;
-    D_800704A8.slots[slotIdx].q2 = q2;
-    D_800704A8.slots[slotIdx].p1 = p1;
-    D_800704A8.slots[slotIdx].p2 = p2;
-    D_800704A8.slots[slotIdx].timer = timer;
-    D_800704A8.slots[slotIdx].mode = 4;
-    D_800704A8.slots[slotIdx].submode = 0;
+    g_fieldEntity.slots[slotIdx].q1 = q1;
+    g_fieldEntity.slots[slotIdx].q2 = q2;
+    g_fieldEntity.slots[slotIdx].p1 = p1;
+    g_fieldEntity.slots[slotIdx].p2 = p2;
+    g_fieldEntity.slots[slotIdx].timer = timer;
+    g_fieldEntity.slots[slotIdx].mode = 4;
+    g_fieldEntity.slots[slotIdx].submode = 0;
     return 2;
 }
 
@@ -1229,19 +1230,19 @@ s32 opHandler_LSCROLL3(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_CSCROLL3(ScriptContext *context) {
-    u16 timer = (u16)POP(context);
-    u16 p2 = (u16)POP(context);
-    u16 p1 = (u16)POP(context);
-    u16 q2 = (u16)POP(context);
-    u16 q1 = (u16)POP(context);
+    u16 timer = POP(context);
+    u16 p2 = POP(context);
+    u16 p1 = POP(context);
+    u16 q2 = POP(context);
+    u16 q1 = POP(context);
     s32 slotIdx = POP(context);
-    D_800704A8.slots[slotIdx].q1 = q1;
-    D_800704A8.slots[slotIdx].q2 = q2;
-    D_800704A8.slots[slotIdx].p1 = p1;
-    D_800704A8.slots[slotIdx].p2 = p2;
-    D_800704A8.slots[slotIdx].timer = timer;
-    D_800704A8.slots[slotIdx].mode = 5;
-    D_800704A8.slots[slotIdx].submode = 0;
+    g_fieldEntity.slots[slotIdx].q1 = q1;
+    g_fieldEntity.slots[slotIdx].q2 = q2;
+    g_fieldEntity.slots[slotIdx].p1 = p1;
+    g_fieldEntity.slots[slotIdx].p2 = p2;
+    g_fieldEntity.slots[slotIdx].timer = timer;
+    g_fieldEntity.slots[slotIdx].mode = 5;
+    g_fieldEntity.slots[slotIdx].submode = 0;
     return 2;
 }
 
@@ -1330,7 +1331,7 @@ s32 opHandler_SHADETIMER(ScriptContext *context) {
 
 /**
  * If this entity is the active script and the mode-7 reentry guard
- * (@c D_800704A8.unk1A2) is clear, pop three halfwords into the
+ * (@c g_fieldEntity.unk1A2) is clear, pop three halfwords into the
  * mode-7 parameter slots @c unk00E / @c unk00C / @c counter, switch
  * @c mode to 7, and call @c func_800B4F40 to launch the operation.
  * If @c unk1A2 is set (operation already in progress), rewind the
@@ -1341,13 +1342,13 @@ s32 opHandler_SHADETIMER(ScriptContext *context) {
  */
 s32 opHandler_WORLDMAPJUMP(ScriptContext *context) {
     if ((context->activeMask >> context->scriptSlot) & 1) {
-        if (D_800704A8.unk1A2 != 0) {
+        if (g_fieldEntity.unk1A2 != 0) {
             context->stackPtr -= 3;
         } else {
-            D_800704A8.mode = 7;
-            D_800704A8.anim_state = (u16)POP(context);
-            D_800704A8.spawnTriIdx = (u16)POP(context);
-            D_800704A8.counter = (u16)POP(context);
+            g_fieldEntity.mode = 7;
+            g_fieldEntity.anim_state = POP(context);
+            g_fieldEntity.spawnTriIdx = POP(context);
+            g_fieldEntity.counter = POP(context);
             func_800B4F40();
         }
     }
@@ -1378,28 +1379,27 @@ s32 opHandler_SETDCAMERA(ScriptContext *context) {
 }
 
 /**
- * Find the first free slot in @c D_8005F0F8->entries (the entry whose
- * @c field16 is the sentinel @c 0x7FFF), pop four halfwords into its
- * @c field04 / @c field06 / @c field08 / @c field16, set @c field14 =
- * @c 0xFFFF to mark the slot armed, and re-arm the next entry's
- * @c field16 to @c 0x7FFF as the new sentinel.
+ * Fill the first unused gateway (@c fieldId @c FIELD_GATEWAY_UNUSED): pop
+ * its exit-line start @c z0 / @c y0 / @c x0 and destination @c fieldId, set
+ * @c spawnTriIdx to @c FIELD_GATEWAY_NO_TRIANGLE so the crossing scan skips
+ * it, and mark the next slot unused.
  *
- * @param actor Pointer to the Actor event-script context.
+ * @param context Script context.
  * @return 2 (continue processing).
  */
 s32 opHandler_PREMAPJUMP(ScriptContext *context) {
     s32 t = 0;
-    if (D_8005F0F8->entries[0].field16 != 0x7FFF) {
+    if (g_curFieldInfo->gateways[0].fieldId != FIELD_GATEWAY_UNUSED) {
         do {
             t++;
-        } while (D_8005F0F8->entries[t].field16 != 0x7FFF);
+        } while (g_curFieldInfo->gateways[t].fieldId != FIELD_GATEWAY_UNUSED);
     }
-    D_8005F0F8->entries[t].y1 = (u16)POP(context);
-    D_8005F0F8->entries[t].x1 = (u16)POP(context);
-    D_8005F0F8->entries[t].z0 = (u16)POP(context);
-    D_8005F0F8->entries[t].field16 = (u16)POP(context);
-    D_8005F0F8->entries[t].field14 = 0xFFFF;
-    D_8005F0F8->entries[t + 1].field16 = 0x7FFF;
+    g_curFieldInfo->gateways[t].z0 = POP(context);
+    g_curFieldInfo->gateways[t].y0 = POP(context);
+    g_curFieldInfo->gateways[t].x0 = POP(context);
+    g_curFieldInfo->gateways[t].fieldId = POP(context);
+    g_curFieldInfo->gateways[t].spawnTriIdx = FIELD_GATEWAY_NO_TRIANGLE;
+    g_curFieldInfo->gateways[t + 1].fieldId = FIELD_GATEWAY_UNUSED;
     return 2;
 }
 
@@ -1425,12 +1425,12 @@ s32 func_800B45CC(Actor *actor) {
  */
 s32 opHandler_MAPJUMP(ScriptContext *context, s32 a1) {
     if ((context->activeMask >> context->scriptSlot) & 1) {
-        D_800704A8.mode = 1;
-        D_800704A8.spawnTriIdx = a1;
-        D_800704A8.anim_state = (u16)POP(context);
-        D_800704A8.position_y = (u16)POP(context);
-        D_800704A8.position_x = (u16)POP(context);
-        D_800704A8.counter = (u16)POP(context);
+        g_fieldEntity.mode = 1;
+        g_fieldEntity.spawnTriIdx = a1;
+        g_fieldEntity.anim_state = POP(context);
+        g_fieldEntity.position_y = POP(context);
+        g_fieldEntity.position_x = POP(context);
+        g_fieldEntity.counter = POP(context);
     }
     return 1;
 }
@@ -1445,13 +1445,13 @@ s32 opHandler_MAPJUMP(ScriptContext *context, s32 a1) {
  */
 s32 opHandler_MAPJUMP3(ScriptContext *context, s32 a1) {
     if ((context->activeMask >> context->scriptSlot) & 1) {
-        D_800704A8.mode = 1;
-        D_800704A8.spawnTriIdx = a1;
-        D_800704A8.anim_state = (u16)POP(context);
-        D_800704A8.unk008 = (u16)POP(context);
-        D_800704A8.position_y = (u16)POP(context);
-        D_800704A8.position_x = (u16)POP(context);
-        D_800704A8.counter = (u16)POP(context);
+        g_fieldEntity.mode = 1;
+        g_fieldEntity.spawnTriIdx = a1;
+        g_fieldEntity.anim_state = POP(context);
+        g_fieldEntity.unk008 = POP(context);
+        g_fieldEntity.position_y = POP(context);
+        g_fieldEntity.position_x = POP(context);
+        g_fieldEntity.counter = POP(context);
     }
     return 1;
 }
@@ -1466,14 +1466,14 @@ s32 opHandler_MAPJUMP3(ScriptContext *context, s32 a1) {
  */
 s32 opHandler_DISCJUMP(ScriptContext *context, s32 a1) {
     if ((context->activeMask >> context->scriptSlot) & 1) {
-        D_800704A8.mode = 6;
-        D_800704A8.unk1A0 = 1;
-        D_800704A8.spawnTriIdx = a1;
-        D_800704A8.anim_state = (u16)POP(context);
-        D_800704A8.unk008 = (u16)POP(context);
-        D_800704A8.position_y = (u16)POP(context);
-        D_800704A8.position_x = (u16)POP(context);
-        D_800704A8.counter = (u16)POP(context);
+        g_fieldEntity.mode = 6;
+        g_fieldEntity.unk1A0 = 1;
+        g_fieldEntity.spawnTriIdx = a1;
+        g_fieldEntity.anim_state = POP(context);
+        g_fieldEntity.unk008 = POP(context);
+        g_fieldEntity.position_y = POP(context);
+        g_fieldEntity.position_x = POP(context);
+        g_fieldEntity.counter = POP(context);
     }
     return 1;
 }
@@ -1487,12 +1487,12 @@ s32 opHandler_DISCJUMP(ScriptContext *context, s32 a1) {
  */
 s32 opHandler_MAPJUMPO(ScriptContext *context) {
     if ((context->activeMask >> context->scriptSlot) & 1) {
-        D_800704A8.mode = 1;
-        D_800704A8.anim_state = 0;
-        D_800704A8.spawnTriIdx = (u16)POP(context);
-        D_800704A8.position_x = 0x7FFF;
-        D_800704A8.position_y = 0x7FFF;
-        D_800704A8.counter = (u16)POP(context);
+        g_fieldEntity.mode = 1;
+        g_fieldEntity.anim_state = 0;
+        g_fieldEntity.spawnTriIdx = POP(context);
+        g_fieldEntity.position_x = 0x7FFF;
+        g_fieldEntity.position_y = 0x7FFF;
+        g_fieldEntity.counter = POP(context);
     }
     return 1;
 }
@@ -1563,25 +1563,25 @@ s32 opHandler_MENUENABLE(ScriptContext *context) {
     return 2;
 }
 
-/** @brief Set D_800704A8 command to 5, clear halfword, copy entity byte 0xD1. Returns 3. */
+/** @brief Set g_fieldEntity command to 5, clear halfword, copy entity byte 0xD1. Returns 3. */
 s32 opHandler_MENUNORMAL(void) {
-    D_800704A8.mode = 5;
-    D_800704A8.counter = 0;
-    D_800704A8.unk1AB = g_fieldVars->fieldD1;
+    g_fieldEntity.mode = 5;
+    g_fieldEntity.counter = 0;
+    g_fieldEntity.unk1AB = g_fieldVars->fieldD1;
     return 3;
 }
 
 /**
- * Sets D_800704A8 to 5, sets the halfword at D_800704A8+2 to 1,
- * sets the byte at D_800704A8+0x1AB to 2, returns 3.
+ * Sets g_fieldEntity to 5, sets the halfword at g_fieldEntity+2 to 1,
+ * sets the byte at g_fieldEntity+0x1AB to 2, returns 3.
  *
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 3.
  */
 s32 opHandler_MENUPHS(ScriptContext *context) {
-    D_800704A8.mode = 5;
-    D_800704A8.counter = 1;
-    D_800704A8.unk1AB = 2;
+    g_fieldEntity.mode = 5;
+    g_fieldEntity.counter = 1;
+    g_fieldEntity.unk1AB = 2;
     return 3;
 }
 
@@ -1592,9 +1592,9 @@ s32 opHandler_MENUPHS(ScriptContext *context) {
  * @return 3 (yield to dispatcher with state change).
  */
 s32 opHandler_MENUSHOP(ScriptContext *context) {
-    D_800704A8.mode = 5;
-    D_800704A8.counter = 0x17;
-    D_800704A8.unk1AB = POP_BYTE(context);
+    g_fieldEntity.mode = 5;
+    g_fieldEntity.counter = 0x17;
+    g_fieldEntity.unk1AB = POP_BYTE(context);
     return 3;
 }
 
@@ -1612,8 +1612,8 @@ s32 opHandler_MENUSHOP(ScriptContext *context) {
  */
 s32 opHandler_MENUNAME(ScriptContext *context) {
     s32 val;
-    D_800704A8.mode = 5;
-    D_800704A8.unk1AB = 1;
+    g_fieldEntity.mode = 5;
+    g_fieldEntity.unk1AB = 1;
     val = POP(context);
     switch (val) {
     case 0:  D_800704AA = 2;  break;
@@ -1642,16 +1642,16 @@ s32 opHandler_MENUNAME(ScriptContext *context) {
 }
 
 /**
- * Sets D_800704A8 to 5, sets the halfword at D_800704A8+2 to 0x1A,
- * sets the byte at D_800704A8+0x1AB to 1, returns 3.
+ * Sets g_fieldEntity to 5, sets the halfword at g_fieldEntity+2 to 0x1A,
+ * sets the byte at g_fieldEntity+0x1AB to 1, returns 3.
  *
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 3.
  */
 s32 opHandler_MENUTUTO(ScriptContext *context) {
-    D_800704A8.mode = 5;
-    D_800704A8.counter = 0x1A;
-    D_800704A8.unk1AB = 1;
+    g_fieldEntity.mode = 5;
+    g_fieldEntity.counter = 0x1A;
+    g_fieldEntity.unk1AB = 1;
     return 3;
 }
 
@@ -1662,9 +1662,9 @@ s32 opHandler_MENUTUTO(ScriptContext *context) {
  * @return 3 (yield to dispatcher with state change).
  */
 s32 func_800B4D34(Actor *actor) {
-    D_800704A8.mode = 5;
-    D_800704A8.counter = 0x1D;
-    D_800704A8.unk1AB = POP_BYTE(&actor->context);
+    g_fieldEntity.mode = 5;
+    g_fieldEntity.counter = 0x1D;
+    g_fieldEntity.unk1AB = POP_BYTE(&actor->context);
     return 3;
 }
 
@@ -1709,7 +1709,7 @@ s32 opHandler_DYING(Actor *actor) {
  * @return 2 (continue processing).
  */
 s32 opHandler_SETHP(ScriptContext *context) {
-    u16 hp = (u16)POP(context);
+    u16 hp = POP(context);
     s32 charId = POP(context);
     g_gameState.chars[charId].currentHp = hp;
     return 2;
@@ -1729,16 +1729,16 @@ s32 opHandler_GETHP(ScriptContext *context) {
 }
 
 /**
- * Sets D_800704A8 to 5, sets the halfword at D_800704A8+2 to 0x18,
- * sets the byte at D_800704A8+0x1AB to 1, returns 3.
+ * Sets g_fieldEntity to 5, sets the halfword at g_fieldEntity+2 to 0x18,
+ * sets the byte at g_fieldEntity+0x1AB to 1, returns 3.
  *
  * @param actor Pointer to the Actor event-script context (unused).
  * @return 3.
  */
 s32 opHandler_MENUSAVE(ScriptContext *context) {
-    D_800704A8.mode = 5;
-    D_800704A8.counter = 0x18;
-    D_800704A8.unk1AB = 1;
+    g_fieldEntity.mode = 5;
+    g_fieldEntity.counter = 0x18;
+    g_fieldEntity.unk1AB = 1;
     return 3;
 }
 

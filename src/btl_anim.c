@@ -4,6 +4,7 @@
 #include "psxsdk/libc.h"
 #include "battle.h"
 #include "btl_anim.h"
+#include "btl_anim_packet.h"
 #include "thread.h"
 
 
@@ -194,7 +195,7 @@ s32 getAnimFrameType(s32 idx, s32 frameOffset) {
  * @param index Index into the unk10 array (0-3).
  * @param value Value to store.
  */
-void setAnimUnk10Both(s32 unused, s32 index, s16 value) {
+void setAnimUnk10Both(s32 unused, s32 index, s32 value) {
     int new_var;
     new_var = 1;
     g_battleAnims.entities[0].unk10[index] = value;

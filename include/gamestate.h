@@ -50,7 +50,7 @@ extern SceneState D_80082C8C;   /**< Scene-state block (mode/cmd/markers). */
  *
  * 16 entries at g_gameState + 0x50 (0x800773C8).
  * This is the persistent save-file GF data — distinct from the runtime
- * ability tables in g_gfData (0x80078E00, see gf.h).
+ * ability tables in g_kernel (0x80078E00, see gf.h).
  */
 typedef struct {
     /* 0x00 */ u8 name[12];              /**< GF name (null-terminated). */
@@ -223,17 +223,10 @@ typedef struct {
     u8 count;    /**< Item quantity (0-100). */
 } ItemSlot; /* 2 bytes */
 
-/**
- * @brief Item inventory (428 bytes).
- *
- * At g_gameState + 0xB24 (0x80077E9C).
- */
-typedef struct {
-    /* 0x00 */ u8 battleOrder[32];     /**< Battle item menu ordering (indices). */
-    /* 0x20 */ ItemSlot items[198];    /**< Item slots (ID + count pairs). */
-} ItemData; /* 0x1AC = 428 bytes */
 
 #define ITEM_SLOT_COUNT 198
+#define BATTLE_ITEM_COUNT 0x20
+#define BATTLE_ITEM_ID_LIMIT (BATTLE_ITEM_COUNT + 1)
 
 /* ======================================================================== */
 /* Triple Triad Cards                                                       */
@@ -422,6 +415,7 @@ typedef struct {
 
 /** @brief Main game state (BSS at 0x80077378). */
 extern GameState g_gameState;
+extern TripleTriadData g_tripleTriad;
 
 /** @brief Pointer to the SeeD/world sub-region of @c g_gameState (@c &g_gameState.fieldVars). */
 extern FieldVars *g_fieldVars;
@@ -452,7 +446,7 @@ extern u8 D_8005F151;
 extern volatile s16 g_vsyncRate;
 extern DISPENV      g_dispEnvs[2];
 extern DRAWENV      g_drawEnvs[2];
-extern s8           g_fadeCounter; /* signed: counts toward 0 (be_object1 uses -1 / <0) */
+extern s8           g_fadeCounter; /* signed: counts toward 0 */
 
 /** @brief Bit @c 0x10 mirrors into @c FieldVars.field58 on full field reset. */
 extern u8  D_80078DF8;
@@ -471,7 +465,7 @@ extern void enableChocoboWorld(void);
 /** @brief Resolve a character ID (e.g. party slot) to its global character code. */
 extern s32 func_80037C6C(s32 charId);
 
-extern CharacterData D_80077808[];
+extern CharacterData g_characters[];
 extern u8 D_800788E4;
 extern u8 D_800788E5;
 

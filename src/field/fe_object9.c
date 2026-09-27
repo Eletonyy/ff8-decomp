@@ -4,6 +4,7 @@
 #include "battle.h"
 #include "sound.h"
 #include "field/fe_object1.h"
+#include "field/fe_object1b.h"
 #include "field/fe_object9.h"
 
 // Intentionally NOT included — these headers would pull in void prototypes
@@ -29,7 +30,7 @@ s32 opHandler_RFACEDIRA(Actor *actor) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(&actor->context);
         idx = POP(&actor->context);
-        func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, (u32)D_800C71F8, buf);
+        func_800A8DAC(D_80085230[idx]->field_0x256, 0x1E, (u32)g_curFieldView, buf);
         actor->turnTgtX = D_80085230[idx]->posX / 4096;
         actor->turnTgtY = D_80085230[idx]->posY / 4096;
         actor->turnTgtZ = buf[2] + D_80085230[idx]->posZ / 4096;
@@ -55,7 +56,7 @@ s32 opHandler_RFACEDIRP(Actor *actor) {
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         actor->turnLen = POP(&actor->context);
         slot = g_fieldVars->memberSlot[POP(&actor->context)];
-        func_800A8DAC(slot, 0x1E, (u32)D_800C71F8, buf);
+        func_800A8DAC(slot, 0x1E, (u32)g_curFieldView, buf);
         actor->turnTgtX = D_80085224[slot].posX / 4096;
         actor->turnTgtY = D_80085224[slot].posY / 4096;
         actor->turnTgtZ = buf[2] + D_80085224[slot].posZ / 4096;
@@ -119,17 +120,17 @@ s32 opHandler_FACEDIRINIT(Actor *actor) {
 }
 
 /**
- * @brief Snapshot the 12-halfword dialog-state block from @c D_800704A8
+ * @brief Snapshot the 12-halfword dialog-state block from @c g_fieldEntity
  *        into @c g_fieldVars.
  *
- * Copies @c D_800704A8.dialogState..field_0x11E (12 halfwords) into
+ * Copies @c g_fieldEntity.dialogState..field_0x11E (12 halfwords) into
  * @c g_fieldVars->dialogStateMirror..fieldEE. The first four writes
  * are emitted out of source order (dst@D8, DC, DA, DE) for codegen
  * matching; the remaining eight are sequential.
  */
 void func_800BB6C8(void) {
     FieldVars   *dst = g_fieldVars;
-    SystemState *src = &D_800704A8;
+    SystemState *src = &g_fieldEntity;
 
     dst->dialogStateMirror = src->dialogState;
     dst->fieldDC           = src->dialogCount;
@@ -149,19 +150,19 @@ void func_800BB6C8(void) {
  * @brief Initialise the dialog-state block and mirror it to @c g_fieldVars.
  *
  * Sets the global mode marker @c D_800DE8D2 to @c 2 and seeds the
- * 6-halfword dialog state at @c D_800704A8.dialogState..field_0x112
+ * 6-halfword dialog state at @c g_fieldEntity.dialogState..field_0x112
  * with the boot values (state=2, timer=0xFF, count=0x10, then 0xFF
  * sentinels). @c func_800BB6C8 copies the whole 12-halfword block
  * into @c g_fieldVars->dialogStateMirror..fieldEE.
  */
 s32 opHandler_FADEIN(void) {
     D_800DE8D2 = 2;
-    D_800704A8.dialogState  = 2;
-    D_800704A8.dialogTimer  = 0xFF;
-    D_800704A8.dialogCount  = 0x10;
-    D_800704A8.field_0x10E  = 0xFF;
-    D_800704A8.field_0x110  = 0xFF;
-    D_800704A8.field_0x112  = 0xFF;
+    g_fieldEntity.dialogState  = 2;
+    g_fieldEntity.dialogTimer  = 0xFF;
+    g_fieldEntity.dialogCount  = 0x10;
+    g_fieldEntity.field_0x10E  = 0xFF;
+    g_fieldEntity.field_0x110  = 0xFF;
+    g_fieldEntity.field_0x112  = 0xFF;
     func_800BB6C8();
     return 2;
 }
@@ -178,13 +179,13 @@ s32 opHandler_FADEIN(void) {
  */
 s32 opHandler_FADEOUT(void) {
     D_800DE8D2 = 3;
-    D_800704A8.dialogState = 3;
-    D_800704A8.dialogTimer = 0;
-    D_800704A8.dialogCount = 8;
+    g_fieldEntity.dialogState = 3;
+    g_fieldEntity.dialogTimer = 0;
+    g_fieldEntity.dialogCount = 8;
     do { } while (0);
-    D_800704A8.field_0x10E = 0xFF;
-    D_800704A8.field_0x110 = 0xFF;
-    D_800704A8.field_0x112 = 0xFF;
+    g_fieldEntity.field_0x10E = 0xFF;
+    g_fieldEntity.field_0x110 = 0xFF;
+    g_fieldEntity.field_0x112 = 0xFF;
     func_800BB6C8();
     return 2;
 }
@@ -202,11 +203,11 @@ s32 opHandler_FADEOUT(void) {
  * so the two halves merge back into one function.
  */
 s32 opHandler_DCOLADD(ScriptContext *context) {
-    D_800704A8.dialogState = 7;
-    D_800704A8.dialogTimer = 0;
-    D_800704A8.field_0x112 = POP(context);
-    D_800704A8.field_0x110 = POP(context);
-    D_800704A8.field_0x10E = POP(context);
+    g_fieldEntity.dialogState = 7;
+    g_fieldEntity.dialogTimer = 0;
+    g_fieldEntity.field_0x112 = POP(context);
+    g_fieldEntity.field_0x110 = POP(context);
+    g_fieldEntity.field_0x10E = POP(context);
     func_800BB6C8();
     return 2;
 }
@@ -221,11 +222,11 @@ s32 opHandler_DCOLADD(ScriptContext *context) {
  * from @c symbol_addrs.field so the two halves merge back.
  */
 s32 opHandler_DCOLSUB(ScriptContext *context) {
-    D_800704A8.dialogState = 8;
-    D_800704A8.dialogTimer = 0;
-    D_800704A8.field_0x112 = POP(context);
-    D_800704A8.field_0x110 = POP(context);
-    D_800704A8.field_0x10E = POP(context);
+    g_fieldEntity.dialogState = 8;
+    g_fieldEntity.dialogTimer = 0;
+    g_fieldEntity.field_0x112 = POP(context);
+    g_fieldEntity.field_0x110 = POP(context);
+    g_fieldEntity.field_0x10E = POP(context);
     func_800BB6C8();
     return 2;
 }
@@ -244,15 +245,15 @@ s32 opHandler_DCOLSUB(ScriptContext *context) {
  * from @c symbol_addrs.field so the two halves merge back.
  */
 s32 opHandler_TCOLADD(ScriptContext *context) {
-    D_800704A8.dialogState = 5;
-    D_800704A8.dialogTimer = 0;
-    D_800704A8.dialogCount = POP(context);
-    D_800704A8.field_0x11E = POP(context);
-    D_800704A8.field_0x11C = POP(context);
-    D_800704A8.field_0x11A = POP(context);
-    D_800704A8.field_0x118 = D_800704A8.field_0x112;
-    D_800704A8.field_0x116 = D_800704A8.field_0x110;
-    D_800704A8.field_0x114 = D_800704A8.field_0x10E;
+    g_fieldEntity.dialogState = 5;
+    g_fieldEntity.dialogTimer = 0;
+    g_fieldEntity.dialogCount = POP(context);
+    g_fieldEntity.field_0x11E = POP(context);
+    g_fieldEntity.field_0x11C = POP(context);
+    g_fieldEntity.field_0x11A = POP(context);
+    g_fieldEntity.field_0x118 = g_fieldEntity.field_0x112;
+    g_fieldEntity.field_0x116 = g_fieldEntity.field_0x110;
+    g_fieldEntity.field_0x114 = g_fieldEntity.field_0x10E;
     func_800BB6C8();
     return 2;
 }
@@ -262,15 +263,15 @@ s32 opHandler_TCOLADD(ScriptContext *context) {
  * @brief Same shape as @c opHandler_TCOLADD with @c dialogState=6.
  */
 s32 opHandler_TCOLSUB(ScriptContext *context) {
-    D_800704A8.dialogState = 6;
-    D_800704A8.dialogTimer = 0;
-    D_800704A8.dialogCount = POP(context);
-    D_800704A8.field_0x11E = POP(context);
-    D_800704A8.field_0x11C = POP(context);
-    D_800704A8.field_0x11A = POP(context);
-    D_800704A8.field_0x118 = D_800704A8.field_0x112;
-    D_800704A8.field_0x116 = D_800704A8.field_0x110;
-    D_800704A8.field_0x114 = D_800704A8.field_0x10E;
+    g_fieldEntity.dialogState = 6;
+    g_fieldEntity.dialogTimer = 0;
+    g_fieldEntity.dialogCount = POP(context);
+    g_fieldEntity.field_0x11E = POP(context);
+    g_fieldEntity.field_0x11C = POP(context);
+    g_fieldEntity.field_0x11A = POP(context);
+    g_fieldEntity.field_0x118 = g_fieldEntity.field_0x112;
+    g_fieldEntity.field_0x116 = g_fieldEntity.field_0x110;
+    g_fieldEntity.field_0x114 = g_fieldEntity.field_0x10E;
     func_800BB6C8();
     return 2;
 }
@@ -288,15 +289,15 @@ s32 opHandler_TCOLSUB(ScriptContext *context) {
  * @c symbol_addrs.field to merge them back.
  */
 s32 opHandler_FCOLADD(ScriptContext *context) {
-    D_800704A8.dialogState = 5;
-    D_800704A8.dialogTimer = 0;
-    D_800704A8.dialogCount = POP(context);
-    D_800704A8.field_0x11E = POP(context);
-    D_800704A8.field_0x11C = POP(context);
-    D_800704A8.field_0x11A = POP(context);
-    D_800704A8.field_0x118 = POP(context);
-    D_800704A8.field_0x116 = POP(context);
-    D_800704A8.field_0x114 = POP(context);
+    g_fieldEntity.dialogState = 5;
+    g_fieldEntity.dialogTimer = 0;
+    g_fieldEntity.dialogCount = POP(context);
+    g_fieldEntity.field_0x11E = POP(context);
+    g_fieldEntity.field_0x11C = POP(context);
+    g_fieldEntity.field_0x11A = POP(context);
+    g_fieldEntity.field_0x118 = POP(context);
+    g_fieldEntity.field_0x116 = POP(context);
+    g_fieldEntity.field_0x114 = POP(context);
     func_800BB6C8();
     return 2;
 }
@@ -307,15 +308,15 @@ s32 opHandler_FCOLADD(ScriptContext *context) {
  * @brief Same shape as @c opHandler_FCOLADD with @c dialogState=6.
  */
 s32 opHandler_FCOLSUB(ScriptContext *context) {
-    D_800704A8.dialogState = 6;
-    D_800704A8.dialogTimer = 0;
-    D_800704A8.dialogCount = POP(context);
-    D_800704A8.field_0x11E = POP(context);
-    D_800704A8.field_0x11C = POP(context);
-    D_800704A8.field_0x11A = POP(context);
-    D_800704A8.field_0x118 = POP(context);
-    D_800704A8.field_0x116 = POP(context);
-    D_800704A8.field_0x114 = POP(context);
+    g_fieldEntity.dialogState = 6;
+    g_fieldEntity.dialogTimer = 0;
+    g_fieldEntity.dialogCount = POP(context);
+    g_fieldEntity.field_0x11E = POP(context);
+    g_fieldEntity.field_0x11C = POP(context);
+    g_fieldEntity.field_0x11A = POP(context);
+    g_fieldEntity.field_0x118 = POP(context);
+    g_fieldEntity.field_0x116 = POP(context);
+    g_fieldEntity.field_0x114 = POP(context);
     func_800BB6C8();
     return 2;
 }
@@ -323,15 +324,15 @@ s32 opHandler_FCOLSUB(ScriptContext *context) {
 /**
  * @brief Wait for the dialog-state countdown to match the timer.
  *
- * Returns @c 1 while @c D_800704A8+0x10C (countdown) and @c +0x10A
+ * Returns @c 1 while @c g_fieldEntity+0x10C (countdown) and @c +0x10A
  * (target/timer) differ. Once they match, copy the current dialog
  * state word at @c +0x108 into @c g_fieldVars->dialogStateMirror and return @c 2.
  */
 s32 opHandler_COLSYNC(void) {
-    if (D_800704A8.dialogCount != D_800704A8.dialogTimer) {
+    if (g_fieldEntity.dialogCount != g_fieldEntity.dialogTimer) {
         return 1;
     }
-    g_fieldVars->dialogStateMirror = D_800704A8.dialogState;
+    g_fieldVars->dialogStateMirror = g_fieldEntity.dialogState;
     return 2;
 }
 
@@ -339,7 +340,7 @@ s32 opHandler_COLSYNC(void) {
  * @brief Dialog ready/idle predicate dispatched on @c D_800DE8D2.
  *
  * When @c D_800DE8D2 == 2 the function reports 2 only if
- * @c D_800704A8.dialogState is currently 0 (idle), otherwise 1.
+ * @c g_fieldEntity.dialogState is currently 0 (idle), otherwise 1.
  * For every other value of @c D_800DE8D2 the function waits for
  * @c dialogState == 3 AND @c dialogTimer == 0xFF before reporting 2.
  *
@@ -353,15 +354,15 @@ s32 opHandler_FADESYNC(void) {
     u16 dlg;
     volatile SystemState *ss;
     if (D_800DE8D2 == 2) {
-        dlg = ((volatile SystemState *)&D_800704A8)->dialogState;
+        dlg = g_fieldEntity.dialogState;
         if (dlg != 0) {
             dlg = 1;
             return dlg;
         }
         return 2;
     }
-    ss = &D_800704A8;
-    if ((s16)ss->dialogState != 3) {
+    ss = &g_fieldEntity;
+    if (ss->dialogState != 3) {
         return 1;
     }
     if ((s16)ss->dialogTimer == 0xFF) {
@@ -373,7 +374,7 @@ s32 opHandler_FADESYNC(void) {
 /**
  * @brief Clear the dialog state and mirror it into @c g_fieldVars.
  *
- * Writes 0 into @c D_800704A8.dialogState, then copies the freshly
+ * Writes 0 into @c g_fieldEntity.dialogState, then copies the freshly
  * cleared value into @c g_fieldVars->dialogStateMirror. The @c volatile
  * pointer is required to force a real load-after-store rather than
  * letting gcc fold the mirror to a constant 0.
@@ -381,7 +382,7 @@ s32 opHandler_FADESYNC(void) {
  * @return Always 2 (VM continue).
  */
 s32 opHandler_FADENONE(void) {
-    volatile SystemState *src = &D_800704A8;
+    volatile SystemState *src = &g_fieldEntity;
     FieldVars *dst = g_fieldVars;
     src->dialogState = 0;
     dst->dialogStateMirror = src->dialogState;
@@ -396,9 +397,9 @@ s32 opHandler_FADENONE(void) {
  * literal @c 4.
  */
 s32 opHandler_FADEBLACK(void) {
-    SystemState *src = &D_800704A8;
-    *(volatile u16 *)&src->dialogState = 4;
-    g_fieldVars->dialogStateMirror = *(volatile u16 *)&src->dialogState;
+    SystemState *src = &g_fieldEntity;
+    src->dialogState = 4;
+    g_fieldVars->dialogStateMirror = src->dialogState;
     return 2;
 }
 
@@ -466,7 +467,7 @@ s32 opHandler_SETMESSPEED(ScriptContext *context) {
  * If the Actor's @c activeMask bit for the current @c scriptSlot is
  * set: returns 5 immediately when the slot bit is already in
  * @c sfxStartMask; otherwise looks up the SFX data via
- * @c func_8003974C(D_800704C0, val1), kicks off playback
+ * @c getOffsetTableEntry(g_curFieldMessages, val1), kicks off playback
  * (@c initSfxPlayback / @c startSfxSlow), promotes the global flag
  * and marks the slot bit in @c sfxStartMask. Returns 1.
  *
@@ -488,7 +489,7 @@ s32 opHandler_MESW(ScriptContext *context) {
         if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
             return 5;
         }
-        initSfxPlayback(sfxIdx, func_8003974C(D_800704C0, val1));
+        initSfxPlayback(sfxIdx, getOffsetTableEntry(g_curFieldMessages, val1));
         startSfxSlow(sfxIdx);
         setSfxGlobalFlag(sfxIdx);
         do {
@@ -532,7 +533,7 @@ void func_800BC12C(s32 idx, s32 val, u16 *src) {
  * the sound-data lookup) and @c sfxIdx (one below). If the slot's bit
  * is already set in @c sfxStartMask, return 5 (busy).
  *
- * Otherwise: look up the SFX data via @c func_8003974C(D_800704C0,
+ * Otherwise: look up the SFX data via @c getOffsetTableEntry(g_curFieldMessages,
  * val1), kick off playback (@c initSfxPlayback / @c startSfxSlow),
  * promote to the global flag, set both @c sfxStartMask and
  * @c sfxActiveMask bits, pop two stack slots, then register the
@@ -550,7 +551,7 @@ s32 opHandler_MES(ScriptContext *context) {
         return 5;
     }
 
-    data = func_8003974C(D_800704C0, val1);
+    data = getOffsetTableEntry(g_curFieldMessages, val1);
     initSfxPlayback(sfxIdx, data);
     startSfxSlow(sfxIdx);
     setSfxGlobalFlag(sfxIdx);
@@ -614,7 +615,7 @@ s32 opHandler_AMESW(ScriptContext *context) {
         if ((g_fieldVars->sfxStartMask >> sfxIdx) & 1) {
             return 5;
         }
-        data = func_8003974C(D_800704C0, textIdx);
+        data = getOffsetTableEntry(g_curFieldMessages, textIdx);
         initSfxPlayback(sfxIdx, data);
         dims = func_8002E680(data);
         buf.w = (dims & 0xFFFF) + 0x10;
@@ -659,7 +660,7 @@ s32 opHandler_AMES(ScriptContext *context) {
         return 5;
     }
 
-    data = func_8003974C(D_800704C0, textIdx);
+    data = getOffsetTableEntry(g_curFieldMessages, textIdx);
     initSfxPlayback(sfxIdx, data);
     dims = func_8002E680(data);
     buf.w = (dims & 0xFFFF) + 0x10;
@@ -702,7 +703,7 @@ s32 opHandler_RAMESW(ScriptContext *context) {
         return 5;
     }
 
-    data = func_8003974C(D_800704C0, textIdx);
+    data = getOffsetTableEntry(g_curFieldMessages, textIdx);
     initSfxPlayback(sfxIdx, data);
     dims = func_8002E680(data);
     buf.w = (dims & 0xFFFF) + 0x10;
@@ -756,7 +757,7 @@ s32 opHandler_ASK(Actor *actor) {
             return 5;
         }
         D_800DE4D8 = getSfxGlobalFlag();
-        data = func_8003974C(D_800704C0, textIdx);
+        data = getOffsetTableEntry(g_curFieldMessages, textIdx);
         func_8002D784(sfxIdx, data, paramY, paramZ, paramW, paramV);
         startSfxSlow(sfxIdx);
         actor->field_0x204 = 0;
@@ -837,7 +838,7 @@ s32 opHandler_AASK(Actor *actor) {
             return 5;
         }
         D_800DE4DC = getSfxGlobalFlag();
-        text = func_8003974C(D_800704C0, textIdx);
+        text = getOffsetTableEntry(g_curFieldMessages, textIdx);
         dims = func_8002E680(text);
         buf[2] = (dims & 0xFFFF) + 0x30;
         buf[3] = (dims >> 16) + 0x11;
