@@ -1412,3 +1412,4 @@ g_battleCmdTable = 0x80083878;
 g_ovlCmdQueue = 0x80085168;
 g_biosPadEnableFn = 0x8008CB68; // type:u32 BIOS pad-enable entry set by _patch_pad, EnablePAD jumps through it
 g_biosPadDisableFn = 0x8008CB6C; // type:u32 BIOS pad-disable entry set by _patch_pad, DisablePAD jumps through it
+g_kernelFileDesc = 0x80097800; // master file table entry 128, kernel.bin

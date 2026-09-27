@@ -63,6 +63,7 @@ extern CdFileDesc     D_80097400[];
 extern CdFileDesc     D_80097410[];
 extern CdFileDesc     D_800974D0[];
 extern CdFileDesc     D_800974D8[];
+extern CdFileDesc     g_kernelFileDesc;
 extern CdFileDesc     D_80097808[];
 extern u8             D_80067468[];
 extern u8             D_8006A468[];
