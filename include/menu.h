@@ -6,6 +6,9 @@
 /** @brief Load address of the menu sub-overlays and their page data. */
 #define MENU_SUBOVERLAY_ADDR 0x801D1000
 
+/** @brief Load address of the menus' image data (TIM files). */
+#define MENU_IMAGE_ADDR 0x801CD000
+
 /**
  * @brief Display/rendering configuration for menu panels.
  *
