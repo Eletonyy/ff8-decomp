@@ -172,7 +172,7 @@ binaries:
   options:
     target_path: original/field_init.bin
     src_path: src/ovl/field_init
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.field_init.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.field_init.txt]
   segments:
   - name: field_init
     type: code
