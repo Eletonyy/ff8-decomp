@@ -3,6 +3,9 @@
 
 #include "common.h"
 
+/** @brief Load address of the menu sub-overlays and their page data (loadSubOverlay). */
+#define MENU_SUBOVERLAY_ADDR 0x801D1000
+
 /**
  * @brief Display/rendering configuration for menu panels.
  *

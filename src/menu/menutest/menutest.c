@@ -2,17 +2,37 @@
 #include "menu.h"
 #include "menutest.h"
 
+/**
+ * @brief Test menu task state, allocated by func_801F179C.
+ *
+ * The first 0x10 bytes belong to the menumain allocator (task links and the
+ * tick/draw callbacks).
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x10];
+    /* 0x10 */ u16 state;        /**< State machine state (func_801E5D74). */
+    /* 0x12 */ u8 pad12[0xE];
+    /* 0x20 */ u8 *text;         /**< Text centred along the bottom panel (func_801E66A8). */
+    /* 0x24 */ s16 unk24;
+    /* 0x26 */ s16 unk26;
+    /* 0x28 */ u8 pad28[2];
+    /* 0x2A */ s16 scroll;       /**< Scroll position, looked up in the D_801FA3C8 falloff table. */
+    /* 0x2C */ u8 entryPicked;   /**< 1 when the tutorial menu picked an entry (func_801E28D4() != 0xFF). */
+    /* 0x2D */ u8 entry;         /**< Tutorial entry to show; below 30 it has sub-overlay 0x60 + entry. */
+    /* 0x2E */ u8 unk2E;
+    /* 0x2F */ u8 unk2F;
+} TestMenuState;
+
 extern s16 D_801E7ABC;
 extern u8 D_801E7ABE;
-extern s32 D_801E7ACC;
+extern s32 D_801E7ACC[2];
 extern u8 D_801E7ADC;
-extern u8 D_801E69BC;
+extern u8 D_801E69BC[];
 extern u8 D_801E71BC;
 extern u8 D_801E79BC;
 extern MenuDisplayConfig g_menuDisplayCfg;
 extern u8 D_801FABD4;
 extern s32 g_menuColor;
-extern u8 D_800780AB;
 extern u8 g_gameState;
 extern u32 D_801E69B8;
 
@@ -20,7 +40,7 @@ extern u32 D_801E69B8;
 #define CalcCenter(maxW, tw, w) \
     do { (maxW) = (w); (tw) = ((maxW) - (tw)) / 2; break; } while (1)
 
-void func_801E5D74(s32 a0);
+void func_801E5D74(TestMenuState *state);
 
 /** @brief Look up string @p a0 in menu text category 0xD. */
 u8 *func_801E5800(s32 a0) {
@@ -122,7 +142,7 @@ void func_801E5D18(s32 a0, s32 a1) {
     offset = *(u16 *)(a0 + a1 * 2 + 2);
     code = *(u8 *)(a0 + offset);
     *(u8 *)&D_801E7ABE = code;
-    *(s16 *)&D_801E7ABC = func_801E59B4(a0 + offset + 1, &D_801E69BC, &D_801E79BC);
+    *(s16 *)&D_801E7ABC = func_801E59B4(a0 + offset + 1, D_801E69BC, &D_801E79BC);
 }
 
 /**
@@ -204,7 +224,7 @@ s32 func_801E6570(s32 a0, s32 a1, s32 a2) {
     yPos -= v0 >> 12;
 
     a2 = func_801EF8D8(disp, a2);
-    func_8002EAD0(disp, yPos, 0x23, (s32)&D_801E69BC);
+    func_8002EAD0(disp, yPos, 0x23, (s32)D_801E69BC);
 
     *(s16 *)&g_menuDisplayCfg = 0x1C;     /* x */
     *(s16 *)(buf + 2) = 0x21;       /* y */
@@ -271,50 +291,55 @@ s32 func_801E6760(s32 a0, s32 a1, s32 a2) {
 }
 
 /**
- * Main entry point for the menu test overlay.
- * Initializes menu state, loads resources, and runs the main menu loop.
+ * @brief Test menu overlay entry: allocate the task state and run its first tick.
+ *
+ * Registers func_801E5D74 (tick) and func_801E6760 (draw) with func_801F179C
+ * and waits for pending CD reads. With no tutorial entry picked
+ * (func_801E28D4() returns 0xFF) it shows entry tutoEntryCount; otherwise it
+ * shows the picked entry and stores it and the next one in D_801E7ACC.
+ * Entries below 30 load their sub-overlay (0x60 + entry).
  */
 void func_801E67F0(void) {
-    s32 s0;
+    TestMenuState *state;
     s32 v0;
     u8 *text;
 
-    s0 = func_801F179C((s32)func_801E5D74, (s32)func_801E6760);
+    state = (TestMenuState *)func_801F179C(func_801E5D74, func_801E6760);
     func_801F0948(0);
     func_801F5440();
     do {
         v0 = pollCdReadStatus();
     } while (v0 != 0);
-    if (s0 == 0) {
+    if (state == NULL) {
         return;
     }
-    *(s16 *)(s0 + 0x26) = 0;
-    func_801F1D34((s32)&D_801E69B8);
+    state->unk26 = 0;
+    func_801F1D34(&D_801E69B8);
     func_801F1DB0(0);
     v0 = func_801E28D4();
     if (v0 == 0xFF) {
-        *(u8 *)(s0 + 0x2C) = 0;
-        *(u8 *)(s0 + 0x2D) = *(u8 *)&D_800780AB;
+        state->entryPicked = 0;
+        state->entry = D_800780AB;
         text = func_801E5800(0x11);
         func_801E59B4(text, &D_801E71BC, &D_801E79BC);
         text = func_801E5800(0x1A);
     } else {
-        *(u8 *)(s0 + 0x2C) = 1;
+        state->entryPicked = 1;
         v0 = func_801E28D4();
-        *(u8 *)(s0 + 0x2D) = v0;
-        *(s32 *)&D_801E7ACC = *(u8 *)(s0 + 0x2D);
-        *(s32 *)((s32)&D_801E7ACC + 4) = *(u8 *)(s0 + 0x2D) + 1;
+        state->entry = v0;
+        D_801E7ACC[0] = state->entry;
+        D_801E7ACC[1] = state->entry + 1;
         text = func_801E5800(0x16);
         func_801E59B4(text, &D_801E71BC, &D_801E79BC);
         text = func_801E5800(0x1B);
     }
-    *(u8 **)(s0 + 0x20) = text;
-    *(u8 *)(s0 + 0x2E) = 0;
-    *(s16 *)(s0 + 0x26) = 0;
-    *(u8 *)&D_801E69BC = 0;
-    if (*(u8 *)(s0 + 0x2D) < 0x1E) {
-        loadSubOverlay(*(u8 *)(s0 + 0x2D) + 0x60, 0x801D1000);
+    state->text = text;
+    state->unk2E = 0;
+    state->unk26 = 0;
+    D_801E69BC[0] = 0;
+    if (state->entry < 0x1E) {
+        loadSubOverlay(state->entry + 0x60, MENU_SUBOVERLAY_ADDR);
     }
-    *(s16 *)(s0 + 0x2A) = 0;
-    func_801E5D74(s0);
+    state->scroll = 0;
+    func_801E5D74(state);
 }
