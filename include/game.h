@@ -29,7 +29,7 @@ u8 *getBlueMagicName(s32 id);
 u8 *getTempLimitBreakName(s32 id);
 
 u8 *getAbilityName(s32 abilityId);
-s32 getWeaponName(s32 id);
+u8 *getWeaponName(s32 id);
 u8 *getAbilityDesc(s32 abilityId);
 s32 getBattleCommandDesc(s32 id);
 

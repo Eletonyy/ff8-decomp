@@ -40,7 +40,7 @@ typedef struct {
     /* 0x18 */ u8 pad18[8];          /**< Unknown. */
     /* 0x20 */ u16 fadeAlpha;        /**< Panel fade-in alpha (counts up to 0x1000). */
     /* 0x22 */ U16Split pageIndex;   /**< Page index (lo=overlayCmd, hi=overlayParam). */
-    /* 0x24 */ s32 panelHandle;      /**< Panel handle returned by func_801F08D4 / func_801F6AD0. */
+    /* 0x24 */ u8 *panelHandle;      /**< Message text returned by func_801F08D4 / func_801F6AD0. */
     /* 0x28 */ s16 fadePos;          /**< Fade animation position (counts up to 0x1000). */
     /* 0x2A */ s16 scrollPos;        /**< Section-list scroll position (counts down from 0x1000). */
     /* 0x2C */ s16 fadeProgress;     /**< Section-select fade progress. */

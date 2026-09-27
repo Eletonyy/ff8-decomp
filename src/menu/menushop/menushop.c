@@ -308,7 +308,7 @@ static s32 func_801E5A8C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s16 *
     s32 x;
     s32 y;
     s32 color;
-    s32 str;
+    u8 *str;
     s32 mask;
 
     y = arg3;
@@ -1219,7 +1219,7 @@ static s32 func_801E6FD8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
 
     if (itemId != 0 && count != 0) {
         s32 color;
-        s32 itemName;
+        u8 *itemName;
         s32 itemGlyph;
         s32 x;
         s32 y;
@@ -1461,7 +1461,7 @@ static s32 func_801E7628(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
  */
 s32 func_801E77EC(s32 fieldShopId, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     MenuDisplayConfig *cfg;
-    s32 name;
+    u8 *name;
     s32 x;
     s32 y;
     s32 flag;

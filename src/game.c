@@ -390,7 +390,7 @@ u8 *getCharName(CharacterId charId) {
 
 
 /** @brief Returns the name of weapon @p id. */
-s32 getWeaponName(s32 id) {
+u8 *getWeaponName(s32 id) {
     return resolveKernelPtr(g_kernel.weapons[id].param0, g_kernel.weaponsText);
 }
 

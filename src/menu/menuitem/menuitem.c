@@ -16,8 +16,8 @@ s32 func_801E280C(void) {
     return D_801ECE20;
 }
 
-/** @brief Draw inner panel with section id 0xB and clear flag. */
-s32 func_801E281C(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 0xB. */
+u8 *func_801E281C(s32 a0) {
     return func_801F08D4(1, 0xB, a0, 0);
 }
 
@@ -783,8 +783,8 @@ void func_801E9DE4(u8 *a0) {
  */
 INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem", func_801E9E10);
 
-/** @brief Draw inner panel with section id 0x5 and clear flag. */
-s32 func_801E9E7C(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 5. */
+u8 *func_801E9E7C(s32 a0) {
     return func_801F08D4(1, 5, a0, 0);
 }
 
