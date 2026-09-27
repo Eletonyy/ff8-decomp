@@ -38,6 +38,5 @@ extern s32 func_801E2EA8(s32);
 extern s32 func_801EFFD4(void);
 
 void func_801E4EA4(s32);
-void func_801E95C4(void);
 
 #endif /* MENUITEM_H */

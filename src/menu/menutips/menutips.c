@@ -1,5 +1,6 @@
 #include "common.h"
 #include "menu.h"
+#include "menutips.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
 
@@ -15,19 +16,14 @@ extern u8 D_801E7B10[];
 extern u8 D_801E8310[];
 extern s16 D_801ED420;
 extern s16 D_801ED422;
+
+void func_801E5A10(void *);
 extern s8 D_801E6B0C;
 extern s8 D_801E6B10[];
 extern s32 g_menuColor;
 
-/**
- * @brief Render a tips panel entry.
- *
- * Calls func_801F08D4 with mode 1, section 0xD, the provided context,
- * and flag 0.
- *
- * @param a0 Render context pointer.
- */
-s32 func_801E5800(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 0xD. */
+u8 *func_801E5800(s32 a0) {
     return func_801F08D4(1, 0xD, a0, 0);
 }
 
@@ -338,7 +334,7 @@ void func_801E64B0(s32 a0) {
  */
 s32 func_801E6514(s32 a0, s32 a1) {
     s32 ot = a1;
-    s32 resource;
+    u8 *resource;
     s32 tw;
     s32 width;
     s32 xPos = 0x18;
@@ -533,8 +529,6 @@ u8 func_801E688C(void) {
     }
 }
 
-extern void *func_801E5A10(void *);
-
 typedef struct {
     u8 pad00[0x24];
     s16 unk24;
@@ -563,7 +557,7 @@ void func_801E696C(void) {
 
     DrawSync(0);
     VSync(0);
-    work = (WorkStruct *)func_801F179C(func_801E5A10, &func_801E67F4);
+    work = func_801F179C(func_801E5A10, func_801E67F4);
     for (i = 0; i < 0x1000; i++) {
         D_801E6B10[i] = 0;
     }

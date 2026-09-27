@@ -41,8 +41,8 @@ void func_801E5828(s32 a0) {
     }
 }
 
-/** @brief Draw inner panel with section id 0x2 and clear flag. */
-s32 func_801E5854(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 2. */
+u8 *func_801E5854(s32 a0) {
     return func_801F08D4(1, 2, a0, 0);
 }
 

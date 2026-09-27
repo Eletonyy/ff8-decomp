@@ -1208,7 +1208,7 @@ void func_801E46DC(void) {
     TutoState *ctx;
     u8 *p;
 
-    ctx = (TutoState *)func_801F179C((s32)func_801E3140, (s32)func_801E4598);
+    ctx = func_801F179C(func_801E3140, func_801E4598);
     NOP();
 
     ctx->isReentry = 0;
@@ -1268,7 +1268,7 @@ void func_801E47F8(void) {
     TutoState *ctx;
     u8 *p;
 
-    ctx = (TutoState *)func_801F179C((s32)func_801E3140, (s32)func_801E4598);
+    ctx = func_801F179C(func_801E3140, func_801E4598);
     NOP();
     ctx->isReentry = 1;
     ctx->fadeProgress = 0;
@@ -1527,7 +1527,7 @@ s32 func_801E4CB0(TutoState *state, s32 renderCtx, s32 cursorY) {
  * calls func_801F010C(0x140) for display setup, then enters via func_801E48C0.
  */
 void func_801E4CE4(void) {
-    TutoState *ctx = (TutoState *)func_801F179C((s32)func_801E48C0, (s32)func_801E4CB0);
+    TutoState *ctx = func_801F179C(func_801E48C0, func_801E4CB0);
 
     if (ctx != NULL) {
         ctx->fadeAlpha = 0;

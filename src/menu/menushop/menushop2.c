@@ -951,7 +951,7 @@ void func_801E9900(s32 arg0) {
     s32 i;
     u8* ptr;
 
-    s = func_801F179C((s32) func_801E81A4, (s32) &func_801E9684);
+    s = func_801F179C(func_801E81A4, func_801E9684);
     func_801F1D2C(0, "mwepon.bin", (s32) D_801E9BA0);
     func_801F1D2C(0, "mwepon.msg", (s32) D_801E9D2C);
     func_801F0948(0);

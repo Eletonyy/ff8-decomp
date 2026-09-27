@@ -402,7 +402,7 @@ u8 *getBattleCommandName(s32 id) {
 
 
 /** @brief Returns the description of battle command @p id. */
-s32 getBattleCommandDesc(s32 id) {
+u8 *getBattleCommandDesc(s32 id) {
     return resolveKernelPtr(g_kernel.battleCommands[id].statParam1, g_kernel.battleCommandsText);
 }
 

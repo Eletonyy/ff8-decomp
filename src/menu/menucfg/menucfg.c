@@ -36,8 +36,8 @@ static s32  func_801E5820(CfgContext *arg0);
 static void func_801E587C(CfgContext *cfg);
 static void func_801E58EC(s32 a0, s32 a1);
 static void func_801E5918(s32 a0, s32 a1, s32 a2);
-static s32  func_801E59A0(s32 a0);
-static s32  func_801E59CC(s32 a0);
+static u8  *func_801E59A0(s32 a0);
+static u8  *func_801E59CC(s32 a0);
 static void func_801E61A0(u8 *text, void *data, s32 value, s32 x, s32 y);
 static s32  func_801E67A8(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4);
 
@@ -140,13 +140,13 @@ static void func_801E5918(s32 a0, s32 a1, s32 a2) {
     func_801F0A34(a0, 0, a2 + 0x5A, D_801E7094[a1].unk03 + 0x2F);
 }
 
-/** @brief Draw inner panel with section id 0x2 and clear flag. */
-static s32 func_801E59A0(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 2. */
+static u8 *func_801E59A0(s32 a0) {
     return func_801F08D4(1, 2, a0, 0);
 }
 
-/** @brief Draw inner panel with section id 0x2 and set flag. */
-static s32 func_801E59CC(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 2, with the last flag set. */
+static u8 *func_801E59CC(s32 a0) {
     return func_801F08D4(1, 2, a0, 1);
 }
 

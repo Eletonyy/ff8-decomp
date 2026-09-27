@@ -1620,7 +1620,7 @@ static s32 func_801E79D4(ShopMenuState *s, s32 arg1, s32 arg2) {
 void func_801E7B9C(s32 arg0) {
     ShopMenuState *s;
 
-    s = func_801F179C((s32)func_801E5E90, (s32)func_801E79D4);
+    s = func_801F179C(func_801E5E90, func_801E79D4);
     func_801F1D2C(0, "shop.bin", (s32)D_801EA170);
     func_801F1D2C(0, "price.bin", (s32)D_801EA3F0);
     func_801F1D2C(0, "mitem.bin", (s32)D_801EA70C);
