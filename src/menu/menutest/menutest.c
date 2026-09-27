@@ -1,5 +1,6 @@
 #include "common.h"
 #include "menu.h"
+#include "menutest.h"
 
 extern s16 D_801E7ABC;
 extern u8 D_801E7ABE;
@@ -21,12 +22,8 @@ extern u32 D_801E69B8;
 
 void func_801E5D74(s32 a0);
 
-/**
- * Allocates a menu resource of type 0xD.
- * @param a0 Subtype parameter passed as third argument
- * @return Result from func_801F08D4
- */
-s32 func_801E5800(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 0xD. */
+u8 *func_801E5800(s32 a0) {
     return func_801F08D4(1, 0xD, a0, 0);
 }
 
@@ -280,6 +277,7 @@ s32 func_801E6760(s32 a0, s32 a1, s32 a2) {
 void func_801E67F0(void) {
     s32 s0;
     s32 v0;
+    u8 *text;
 
     s0 = func_801F179C((s32)func_801E5D74, (s32)func_801E6760);
     func_801F0948(0);
@@ -297,20 +295,20 @@ void func_801E67F0(void) {
     if (v0 == 0xFF) {
         *(u8 *)(s0 + 0x2C) = 0;
         *(u8 *)(s0 + 0x2D) = *(u8 *)&D_800780AB;
-        v0 = func_801E5800(0x11);
-        func_801E59B4(v0, (s32)&D_801E71BC, (s32)&D_801E79BC);
-        v0 = func_801E5800(0x1A);
+        text = func_801E5800(0x11);
+        func_801E59B4(text, (s32)&D_801E71BC, (s32)&D_801E79BC);
+        text = func_801E5800(0x1A);
     } else {
         *(u8 *)(s0 + 0x2C) = 1;
         v0 = func_801E28D4();
         *(u8 *)(s0 + 0x2D) = v0;
         *(s32 *)&D_801E7ACC = *(u8 *)(s0 + 0x2D);
         *(s32 *)((s32)&D_801E7ACC + 4) = *(u8 *)(s0 + 0x2D) + 1;
-        v0 = func_801E5800(0x16);
-        func_801E59B4(v0, (s32)&D_801E71BC, (s32)&D_801E79BC);
-        v0 = func_801E5800(0x1B);
+        text = func_801E5800(0x16);
+        func_801E59B4(text, (s32)&D_801E71BC, (s32)&D_801E79BC);
+        text = func_801E5800(0x1B);
     }
-    *(s32 *)(s0 + 0x20) = v0;
+    *(u8 **)(s0 + 0x20) = text;
     *(u8 *)(s0 + 0x2E) = 0;
     *(s16 *)(s0 + 0x26) = 0;
     *(u8 *)&D_801E69BC = 0;

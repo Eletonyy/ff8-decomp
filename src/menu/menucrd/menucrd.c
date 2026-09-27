@@ -1,5 +1,6 @@
 #include "common.h"
 #include "menu.h"
+#include "menucrd.h"
 
 extern s32 g_menuColor;
 extern s16 D_801E7D64;
@@ -17,12 +18,8 @@ void func_801E5F7C(void);
 void func_801E67E4(void);
 s32 func_801E69AC(s32 a0, s32 a1, s32 a2);
 
-/**
- * Allocates a menu resource of type 0xD for the card menu.
- * @param a0 Subtype parameter passed as third argument
- * @return Result from func_801F08D4
- */
-s32 func_801E5800(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 0xD. */
+u8 *func_801E5800(s32 a0) {
     return func_801F08D4(1, 0xD, a0, 0);
 }
 
@@ -77,7 +74,7 @@ void func_801E58B4(s32 a0, s32 a1) {
  * @param a0 Card identifier
  * @return func_801E5800 result for the selected icon, or 0 if invalid
  */
-s32 func_801E591C(s32 a0) {
+u8 *func_801E591C(s32 a0) {
     if (func_80023B14(a0) < 0) {
         return 0;
     }

@@ -75,8 +75,8 @@ typedef struct {
     /* 0x16 */ u16 returnState;        /**< State to return to after sub-menu. */
     /* 0x18 */ u16 exitState;          /**< State to transition to on exit. */
     /* 0x1A */ u8 pad1A[6];            /**< Unknown. */
-    /* 0x20 */ s32 itemPtr;            /**< Item/ability data pointer passed to rendering callbacks. */
-    /* 0x24 */ s32 itemPtr2;           /**< Secondary item/ability data pointer. */
+    /* 0x20 */ u8 *itemPtr;            /**< Item/ability data pointer passed to rendering callbacks. */
+    /* 0x24 */ u8 *itemPtr2;           /**< Secondary item/ability data pointer. */
     /* 0x28 */ s32 dataPtr;            /**< Pointer to ability data table. */
     /* 0x2C */ s32 dataPtr2;           /**< Magic-availability mask / secondary data pointer. */
     /* 0x30 */ u16 parentParam;        /**< Parameter from parent menu context. */
@@ -230,6 +230,7 @@ s32 func_801F776C(s32, s32);
 s32 func_801F79F8(s32);
 s32 func_801F7BAC(s32);
 s32 func_801F7BE4(s32);
+u8 *func_801F08D4(s32, s32, s32, s32);
 extern u8 D_801EF1A4;
 extern u8 D_801EF1A5;
 extern u8 D_801EF1B0[];

@@ -781,17 +781,13 @@ s32 getAbilityScrollOffset(s32 index) {
     return -(page * 160);
 }
 
-/** @brief Draw inner panel with section id 0xB and clear flag. */
-s32 renderInnerPanel(s32 pos) {
+/** @brief Look up string @p pos in menu text category 0xB. */
+u8 *renderInnerPanel(s32 pos) {
     return func_801F08D4(1, 0xB, pos, 0);
 }
 
-/**
- * @brief Draw inner panel with section id 0xB and set flag.
- * @param pos Panel position parameter
- * @return Result of func_801F08D4
- */
-s32 renderInnerPanelAlt(s32 pos) {
+/** @brief Look up string @p pos in menu text category 0xB, with the last flag set. */
+u8 *renderInnerPanelAlt(s32 pos) {
     return func_801F08D4(1, 0xB, pos, 1);
 }
 
@@ -1560,25 +1556,26 @@ void previewJunctionChange(s32 charIdx, s32 gfIdx, s32 slot, s32 abilityId) {
 }
 
 /**
- * @brief Look up ability/command name string by type and index.
+ * @brief Look up the description of a junction command or ability by type and index.
  *
- * For type 1 (commands): looks up command ID from D_801EEF10, finds
- * the GF ability index in g_kernel, and returns the name via getBattleCommandDesc.
+ * For type 1 (commands): looks up the command ability ID from D_801EEF10,
+ * reads its battle command from g_kernel, and returns that command's
+ * description via getBattleCommandDesc.
  * For type 2 (abilities): looks up ability ID from D_801EEF40 and
- * returns the name via getAbilityDesc.
+ * returns its description via getAbilityDesc.
  *
  * @param type Lookup type (0=none, 1=command, 2=ability).
  * @param index Index into the lookup table.
- * @return Name string pointer, or 0 if not found.
+ * @return Description string, or NULL if not found.
  */
-s32 getAbilityNamePtr(s32 type, s32 index) {
-    s32 result;
+u8 *getAbilityNamePtr(s32 type, s32 index) {
+    u8 *result;
     u8 *gfData;
     s32 stride;
 
     switch (type) {
     case 0:
-        result = 0;
+        result = NULL;
         break;
     case 1:
         if (index < D_801EEF38) {
@@ -1588,7 +1585,7 @@ s32 getAbilityNamePtr(s32 type, s32 index) {
             /* g_kernel ability range J: typeField at offset 0x4180 + 5 = 0x4185 */
             result = getBattleCommandDesc(gfData[(cmdId - 0x14) * stride + 0x4185]);
         } else {
-            result = 0;
+            result = NULL;
         }
         break;
     case 2:
@@ -1596,10 +1593,10 @@ s32 getAbilityNamePtr(s32 type, s32 index) {
             u8 ablId = D_801EEF40[index * 2];
             result = getAbilityDesc(ablId);
         } else {
-            result = 0;
+            result = NULL;
         }
         break;
-        result = 0;
+        result = NULL;
     default:
         break;
     }
@@ -2131,7 +2128,7 @@ dispatch:
                     ctx->itemPtr = getAbilityDesc(col);
                 }
             } else {
-                ctx->itemPtr = 0;
+                ctx->itemPtr = NULL;
             }
             ctx->unk44 = ctx->statByte[ctx->unk56] / 11;
             if (inputNew & PADRup) {
@@ -4043,10 +4040,10 @@ s32 renderJunctionSlotDetail(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 wideM
         if (availFlags & magicBit) {
             name = getMagicNamePtr(magicId);
         } else {
-            name = (u8 *)renderInnerPanel(0x1A);
+            name = renderInnerPanel(0x1A);
         }
     } else {
-        name = (u8 *)renderInnerPanel(0x1A);
+        name = renderInnerPanel(0x1A);
     }
     cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, available);
 
@@ -4256,7 +4253,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
                             (!available) ? 0x1C0 : 0x80);
     magicId = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_ELEM];
     if (magicId == 0) {
-        name = (u8 *)renderInnerPanel(0x1A);
+        name = renderInnerPanel(0x1A);
     } else {
         name = getMagicNamePtr(magicId);
     }
@@ -4273,7 +4270,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
         yPos = y + 0x11;
         cursorY = func_800300F8(renderCtx, cursorY, 0x12B, xPos, yPos, g_menuColor, 0x1C0);
         xPos = x + 0x30;
-        name = (u8 *)renderInnerPanel(0x1A);
+        name = renderInnerPanel(0x1A);
         cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, 0);
     } else {
         for (i = 0; i < numSlots; i++) {
@@ -4285,7 +4282,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
             xPos = x + 0x30;
             magicId = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_ELEM_0 + i];
             if (magicId == 0) {
-                name = (u8 *)renderInnerPanel(0x1A);
+                name = renderInnerPanel(0x1A);
             } else {
                 name = getMagicNamePtr(magicId);
             }
@@ -4338,7 +4335,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
                             (!available) ? 0x1C0 : 0x80);
     magicId = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_STATUS];
     if (magicId == 0) {
-        name = (u8 *)renderInnerPanel(0x1A);
+        name = renderInnerPanel(0x1A);
     } else {
         name = getMagicNamePtr(magicId);
     }
@@ -4355,7 +4352,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
         yPos = y + 0x11;
         cursorY = func_800300F8(renderCtx, cursorY, 0x129, xPos, yPos, g_menuColor, 0x1C0);
         xPos = x + 0x30;
-        name = (u8 *)renderInnerPanel(0x1A);
+        name = renderInnerPanel(0x1A);
         cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, 0);
     } else {
         for (i = 0; i < numSlots; i++) {
@@ -4367,7 +4364,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
             xPos = x + 0x30;
             magicId = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_STATUS_0 + i];
             if (magicId == 0) {
-                name = (u8 *)renderInnerPanel(0x1A);
+                name = renderInnerPanel(0x1A);
             } else {
                 name = getMagicNamePtr(magicId);
             }
@@ -4474,7 +4471,7 @@ s32 setupStatBorderPanel(s32 ctx, s32 mode, s32 x, s32 y, s32 renderParam) {
  */
 s32 renderJunctionHeader(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
-    s32 p1, p2;
+    u8 *p1, *p2;
     s32 xPos, yPos;
     s32 icon1, icon2;
     s32 seven = 7;
@@ -4503,9 +4500,9 @@ s32 renderJunctionHeader(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x
 
     xPos = x + 0x10;
     yPos = y + 6;
-    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, (u8 *)p1, seven);
+    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, p1, seven);
     xPos = x + 0x4B;
-    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, (u8 *)p2, seven);
+    cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, p2, seven);
 
     xPos = x + 8;
     yPos = y + 7;

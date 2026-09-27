@@ -69,13 +69,13 @@ void func_801E58B0(s32 a0) {
     getSpellDesc(a0 + 0x33);
 }
 
-/** @brief Draw inner panel with section id 0x7 and clear flag. */
-s32 func_801E58D0(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 7. */
+u8 *func_801E58D0(s32 a0) {
     return func_801F08D4(1, 7, a0, 0);
 }
 
-/** @brief Draw inner panel with section id 0x7 and set flag. */
-s32 func_801E58FC(s32 a0) {
+/** @brief Look up string @p a0 in menu text category 7, with the last flag set. */
+u8 *func_801E58FC(s32 a0) {
     return func_801F08D4(1, 7, a0, 1);
 }
 
