@@ -683,10 +683,10 @@ void func_80099348(void) {
         if ((g_fieldEntity.unk150 & 0x20) && func_800BE274() == 0
             && D_80085224[g_fieldEntity.entityIndex[0]].msgActive != 3
             && D_80085224[g_fieldEntity.entityIndex[0]].msgActive != 4
-            && (s16)g_fieldEntity.dialogState != 4
-            && (s16)g_fieldEntity.dialogState != 1
-            && (s16)g_fieldEntity.dialogState != 3
-            && (s16)g_fieldEntity.dialogState != 2
+            && g_fieldEntity.dialogState != 4
+            && g_fieldEntity.dialogState != 1
+            && g_fieldEntity.dialogState != 3
+            && g_fieldEntity.dialogState != 2
             && g_fieldEntity.unk1A3 == 0 && g_fieldEntity.mode == 0) {
             func_8009912C();
             g_fieldEntity.mode = 5;
@@ -865,10 +865,10 @@ void func_80099348(void) {
         }
         PutDispEnv(&g_dispEnvs[(s16)g_bufferIndex]);
 
-        if ((g_fieldEntity.padHeld & 0x800) && !(g_fieldEntity.padHeldPrev & 0x800)
-            && func_800BE274() == 0 && (s16)g_fieldEntity.dialogState != 4
-            && (s16)g_fieldEntity.dialogState != 3
-            && (s16)g_fieldEntity.dialogState != 2 && g_fieldEntity.unk1A3 == 0) {
+        if ((g_fieldEntity.padHeld & PADstart) && !(g_fieldEntity.padHeldPrev & PADstart)
+            && func_800BE274() == 0 && g_fieldEntity.dialogState != 4
+            && g_fieldEntity.dialogState != 3
+            && g_fieldEntity.dialogState != 2 && g_fieldEntity.unk1A3 == 0) {
             func_800AD7AC(0);
         }
 
@@ -1867,7 +1867,7 @@ void func_8009BEC8(Actor *ents, s32 flags) {
         }
         step = 0;
         g_fieldEntity.fieldStepDelta = 0;
-        if (g_fieldEntity.unk015 == 1 || (s16)g_fieldEntity.dialogState == 4) {
+        if (g_fieldEntity.unk015 == 1 || g_fieldEntity.dialogState == 4) {
             continue;
         }
         if (func_80027DB4(0, PAD_AXIS_X, 0) != -1) {

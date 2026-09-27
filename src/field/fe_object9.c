@@ -354,7 +354,7 @@ s32 opHandler_FADESYNC(void) {
     u16 dlg;
     volatile SystemState *ss;
     if (D_800DE8D2 == 2) {
-        dlg = ((volatile SystemState *)&g_fieldEntity)->dialogState;
+        dlg = g_fieldEntity.dialogState;
         if (dlg != 0) {
             dlg = 1;
             return dlg;
@@ -362,7 +362,7 @@ s32 opHandler_FADESYNC(void) {
         return 2;
     }
     ss = &g_fieldEntity;
-    if ((s16)ss->dialogState != 3) {
+    if (ss->dialogState != 3) {
         return 1;
     }
     if ((s16)ss->dialogTimer == 0xFF) {
@@ -398,8 +398,8 @@ s32 opHandler_FADENONE(void) {
  */
 s32 opHandler_FADEBLACK(void) {
     SystemState *src = &g_fieldEntity;
-    *(volatile u16 *)&src->dialogState = 4;
-    g_fieldVars->dialogStateMirror = *(volatile u16 *)&src->dialogState;
+    src->dialogState = 4;
+    g_fieldVars->dialogStateMirror = src->dialogState;
     return 2;
 }
 

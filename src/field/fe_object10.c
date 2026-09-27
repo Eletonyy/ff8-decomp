@@ -1239,7 +1239,7 @@ void func_800BF4A4(void) {
     if (g_fieldEntity.dialogCount == g_fieldEntity.dialogTimer) {
         g_fieldVars->dialogStateMirror = 0;
     }
-    if ((s16)g_fieldVars->dialogStateMirror == 0) {
+    if (g_fieldVars->dialogStateMirror == 0) {
         g_fieldEntity.dialogState = 2;
         g_fieldEntity.dialogCount = 0x10;
         g_fieldEntity.dialogTimer = 0xFF;

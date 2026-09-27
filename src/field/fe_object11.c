@@ -285,9 +285,9 @@ s32 *func_800BFBBC(u8 *entity, Eline *eline, u16 *a2, s32 mode) {
         for (i = 0; i < 3; i++) {
             for (e = D_80085224, D_800DE4FC = 0; D_800DE4FC < D_80085388; D_800DE4FC++, e++) {
                 if (g_gameState.battleParty[i] == e->field_0x255) {
-                    e->posX = (s32)((s16)g_fieldEntity.position_x) << 12;
-                    e->posY = (s32)((s16)g_fieldEntity.position_y) << 12;
-                    e->field_0x241 = (u8)g_fieldEntity.anim_state;
+                    e->posX = g_fieldEntity.position_x << 12;
+                    e->posY = g_fieldEntity.position_y << 12;
+                    e->field_0x241 = g_fieldEntity.anim_state;
                     rot = g_fieldEntity.spawnTriIdx;
                     e->context.flags |= 4;
                     e->triIdx = rot;

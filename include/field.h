@@ -48,14 +48,14 @@ typedef struct {
     /* 0x01 */ u8 param;
     /* 0x02 */ u8 submode;
     /* 0x03 */ u8 pad03;
-    /* 0x04 */ u16 timer;
-    /* 0x06 */ u16 unk06;            /**< Cleared on submode=0 entry by @c func_800A10F4. */
+    /* 0x04 */ s16 timer;
+    /* 0x06 */ s16 unk06;            /**< Cleared on submode=0 entry by @c func_800A10F4. */
     /* 0x08 */ u16 q1;
     /* 0x0A */ u16 q2;
-    /* 0x0C */ u16 savedQ1;          /**< Snapshot of @c q1 captured by @c func_800A10F4. */
-    /* 0x0E */ u16 savedQ2;          /**< Snapshot of @c q2 captured by @c func_800A10F4. */
-    /* 0x10 */ u16 p1;
-    /* 0x12 */ u16 p2;
+    /* 0x0C */ s16 savedQ1;          /**< Snapshot of @c q1 captured by @c func_800A10F4. */
+    /* 0x0E */ s16 savedQ2;          /**< Snapshot of @c q2 captured by @c func_800A10F4. */
+    /* 0x10 */ s16 p1;
+    /* 0x12 */ s16 p2;
     /* 0x14 */ u16 p3;
     /* 0x16 */ u16 p4;
     /* 0x18 */ u16 p5;
@@ -72,7 +72,7 @@ typedef struct {
     /* 0x00 */ u8  mode;       /**< Dispatch mode (1 = continuous oscillation). */
     /* 0x01 */ u8  phase;      /**< Sub-state within the current mode. */
     /* 0x02 */ u8  tableIdx;   /**< Cursor into the @c D_800C3520 waveform table. */
-    /* 0x03 */ u8  output;     /**< Latest interpolated value from @c func_800A0EB8. */
+    /* 0x03 */ s8  output;     /**< Latest interpolated value from @c func_800A0EB8. */
     /* 0x04 */ s16 amplitude;  /**< Scale applied to the sampled waveform byte. */
     /* 0x06 */ s16 start;      /**< Interpolation start value. */
     /* 0x08 */ s16 end;        /**< Interpolation end (target) value. */
@@ -105,7 +105,7 @@ typedef struct {
      * SPAWN_UNSET in position_x or spawnTriIdx means "no override".
      */
     /* 0x004 */ s16 position_x;     /**< Spawn X, or @c SPAWN_UNSET to use the triangle centroid. */
-    /* 0x006 */ u16 position_y;     /**< Spawn Y. */
+    /* 0x006 */ s16 position_y;     /**< Spawn Y. */
     /* 0x008 */ u16 unk008;         /**< Extra halfword popped only by @c opHandler_MAPJUMP3. */
     /* 0x00A */ s16 unk00A;         /**< Reset to 20 by @c func_8009AEC0 and scaled into the self
                                          entity's @c moveSpeed with the same factor
@@ -128,7 +128,7 @@ typedef struct {
     /* 0x102 */ u16 unk102;
     /* 0x104 */ u16 unk104;
     /* 0x106 */ u16 unk106;
-    /* 0x108 */ volatile u16 dialogState; /**< Dialog state word (0=init, 2=run, 4=force-complete).
+    /* 0x108 */ volatile s16 dialogState; /**< Dialog state word (0=init, 2=run, 4=force-complete).
                                           @c volatile: the field loop polls it and re-reads it for
                                           every comparison rather than caching one load. */
     /* 0x10A */ u16 dialogTimer;    /**< Dialog timer target. */
@@ -269,7 +269,7 @@ typedef struct {
     /* 0xD5 */ u8 nextSoundBank;        /**< Sound bank ID staged by MUSICCHANGE; copied into @c audioChannel0State on swap. */
     /* 0xD6 */ u8 soundLoadComplete;    /**< Set to 1 after sound bank loading finishes. */
     /* 0xD7 */ u8 padD7;
-    /* 0xD8 */ u16 dialogStateMirror;   /**< Mirror of @c g_fieldEntity.dialogState (kept in sync by fe_object9). */
+    /* 0xD8 */ s16 dialogStateMirror;   /**< Mirror of @c g_fieldEntity.dialogState (kept in sync by fe_object9). */
     /* 0xDA */ u16 fieldDA;
     /* 0xDC */ u16 fieldDC;
     /* 0xDE */ u16 fieldDE;

@@ -126,11 +126,11 @@ void func_800A1318(void) {
             break;
         case 1:
             func_800A11E0(&pos, i);
-            g_fieldEntity.slots[i].q1 = func_800A0E54((s16)g_fieldEntity.slots[i].savedQ1, pos.x,
-                                                   (s16)g_fieldEntity.slots[i].timer, (s16)g_fieldEntity.slots[i].unk06);
-            g_fieldEntity.slots[i].q2 = func_800A0E54((s16)g_fieldEntity.slots[i].savedQ2, pos.y,
-                                                   (s16)g_fieldEntity.slots[i].timer, (s16)g_fieldEntity.slots[i].unk06);
-            if ((s16)g_fieldEntity.slots[i].timer == (s16)g_fieldEntity.slots[i].unk06) {
+            g_fieldEntity.slots[i].q1 = func_800A0E54(g_fieldEntity.slots[i].savedQ1, pos.x,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            g_fieldEntity.slots[i].q2 = func_800A0E54(g_fieldEntity.slots[i].savedQ2, pos.y,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            if (g_fieldEntity.slots[i].timer == g_fieldEntity.slots[i].unk06) {
                 g_fieldEntity.slots[i].submode = 2;
             } else {
                 g_fieldEntity.slots[i].unk06++;
@@ -138,11 +138,11 @@ void func_800A1318(void) {
             break;
         case 2:
             func_800A11E0(&pos, i);
-            g_fieldEntity.slots[i].q1 = func_800A0EB8((s16)g_fieldEntity.slots[i].savedQ1, pos.x,
-                                                   (s16)g_fieldEntity.slots[i].timer, (s16)g_fieldEntity.slots[i].unk06);
-            g_fieldEntity.slots[i].q2 = func_800A0EB8((s16)g_fieldEntity.slots[i].savedQ2, pos.y,
-                                                   (s16)g_fieldEntity.slots[i].timer, (s16)g_fieldEntity.slots[i].unk06);
-            if ((s16)g_fieldEntity.slots[i].timer == (s16)g_fieldEntity.slots[i].unk06) {
+            g_fieldEntity.slots[i].q1 = func_800A0EB8(g_fieldEntity.slots[i].savedQ1, pos.x,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            g_fieldEntity.slots[i].q2 = func_800A0EB8(g_fieldEntity.slots[i].savedQ2, pos.y,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            if (g_fieldEntity.slots[i].timer == g_fieldEntity.slots[i].unk06) {
                 g_fieldEntity.slots[i].submode = 2;
             } else {
                 g_fieldEntity.slots[i].unk06++;
@@ -151,22 +151,22 @@ void func_800A1318(void) {
         case 3:
             break;
         case 4:
-            g_fieldEntity.slots[i].q1 = func_800A0E54((s16)g_fieldEntity.slots[i].savedQ1, (s16)g_fieldEntity.slots[i].p1,
-                                                   (s16)g_fieldEntity.slots[i].timer, (s16)g_fieldEntity.slots[i].unk06);
-            g_fieldEntity.slots[i].q2 = func_800A0E54((s16)g_fieldEntity.slots[i].savedQ2, (s16)g_fieldEntity.slots[i].p2,
-                                                   (s16)g_fieldEntity.slots[i].timer, (s16)g_fieldEntity.slots[i].unk06);
-            if ((s16)g_fieldEntity.slots[i].timer == (s16)g_fieldEntity.slots[i].unk06) {
+            g_fieldEntity.slots[i].q1 = func_800A0E54(g_fieldEntity.slots[i].savedQ1, g_fieldEntity.slots[i].p1,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            g_fieldEntity.slots[i].q2 = func_800A0E54(g_fieldEntity.slots[i].savedQ2, g_fieldEntity.slots[i].p2,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            if (g_fieldEntity.slots[i].timer == g_fieldEntity.slots[i].unk06) {
                 g_fieldEntity.slots[i].submode = 2;
             } else {
                 g_fieldEntity.slots[i].unk06++;
             }
             break;
         case 5:
-            g_fieldEntity.slots[i].q1 = func_800A0EB8((s16)g_fieldEntity.slots[i].savedQ1, (s16)g_fieldEntity.slots[i].p1,
-                                                   (s16)g_fieldEntity.slots[i].timer, (s16)g_fieldEntity.slots[i].unk06);
-            g_fieldEntity.slots[i].q2 = func_800A0EB8((s16)g_fieldEntity.slots[i].savedQ2, (s16)g_fieldEntity.slots[i].p2,
-                                                   (s16)g_fieldEntity.slots[i].timer, (s16)g_fieldEntity.slots[i].unk06);
-            if ((s16)g_fieldEntity.slots[i].timer == (s16)g_fieldEntity.slots[i].unk06) {
+            g_fieldEntity.slots[i].q1 = func_800A0EB8(g_fieldEntity.slots[i].savedQ1, g_fieldEntity.slots[i].p1,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            g_fieldEntity.slots[i].q2 = func_800A0EB8(g_fieldEntity.slots[i].savedQ2, g_fieldEntity.slots[i].p2,
+                                                   g_fieldEntity.slots[i].timer, g_fieldEntity.slots[i].unk06);
+            if (g_fieldEntity.slots[i].timer == g_fieldEntity.slots[i].unk06) {
                 g_fieldEntity.slots[i].submode = 2;
             } else {
                 g_fieldEntity.slots[i].unk06++;
@@ -201,11 +201,11 @@ void func_800A15C0(FieldFrameBuf *buf, DRAWENV *env, s16 slotIdx) {
     SetGeomOffset(0, 0);
     if (func_800BE274() == 0) {
         if (buf == D_800C7218) {
-            env[0].dispX = (D_800C7210 - g_fieldEntity.slots[slotIdx].q1) + (s8)g_fieldEntity.oscillators[0].output + g_curFieldView->viewOfsX;
-            env[0].dispY = (D_800C7214 - g_fieldEntity.slots[slotIdx].q2) + (s8)g_fieldEntity.oscillators[1].output + g_curFieldView->viewOfsY;
+            env[0].dispX = (D_800C7210 - g_fieldEntity.slots[slotIdx].q1) + g_fieldEntity.oscillators[0].output + g_curFieldView->viewOfsX;
+            env[0].dispY = (D_800C7214 - g_fieldEntity.slots[slotIdx].q2) + g_fieldEntity.oscillators[1].output + g_curFieldView->viewOfsY;
         } else {
-            env[1].dispX = (D_800C7210 - g_fieldEntity.slots[slotIdx].q1) + (s8)g_fieldEntity.oscillators[0].output + g_curFieldView->viewOfsX + 0x200;
-            env[1].dispY = (D_800C7214 - g_fieldEntity.slots[slotIdx].q2) + (s8)g_fieldEntity.oscillators[1].output + g_curFieldView->viewOfsY;
+            env[1].dispX = (D_800C7210 - g_fieldEntity.slots[slotIdx].q1) + g_fieldEntity.oscillators[0].output + g_curFieldView->viewOfsX + 0x200;
+            env[1].dispY = (D_800C7214 - g_fieldEntity.slots[slotIdx].q2) + g_fieldEntity.oscillators[1].output + g_curFieldView->viewOfsY;
         }
     } else {
         if (buf == D_800C7218) {
@@ -1196,9 +1196,9 @@ void func_800A355C(ActorAnim *actor, s32 slot, s32 a2) {
                 break;
             }
         } else {
-            pos.vx = (s16)(D_80085224[g_fieldEntity.slotActive[slot] & 0x7F].posX / 4096);
-            pos.vy = (s16)(D_80085224[g_fieldEntity.slotActive[slot] & 0x7F].posY / 4096);
-            pos.vz = (s16)(D_80085224[g_fieldEntity.slotActive[slot] & 0x7F].posZ / 4096);
+            pos.vx = D_80085224[g_fieldEntity.slotActive[slot] & 0x7F].posX / 4096;
+            pos.vy = D_80085224[g_fieldEntity.slotActive[slot] & 0x7F].posY / 4096;
+            pos.vz = D_80085224[g_fieldEntity.slotActive[slot] & 0x7F].posZ / 4096;
             func_800A303C(actor->rows[i].id, a2, &pos, ratio);
         }
     }
@@ -1637,8 +1637,8 @@ void func_800A455C(s16 entityIdx) {
     s32 entityPos[3];
     s32 dist[2];
 
-    objPos[0] = (s16)D_800706A0[0].x;
-    objPos[1] = (s16)D_800706A0[0].y;
+    objPos[0] = D_800706A0[0].x;
+    objPos[1] = D_800706A0[0].y;
     objPos[2] = 0;
     entityPos[0] = D_80085224[entityIdx].posX >> 12;
     entityPos[1] = D_80085224[entityIdx].posY >> 12;
@@ -1773,20 +1773,20 @@ void func_800A4934(ObjSlot *slot, DrawPoint *dp) {
 
     func_800A4758();
     idx = slot->field82 & 7;
-    if (slot->field80 < (s16)slot->field82) {
+    if (slot->field80 < slot->field82) {
         mid->vx = dp->field10;
         mid->vy = dp->field12;
         mid->vz = dp->field14;
     } else {
-        mid->vx = func_800A4910((s16)dp->x, (s16)dp->field8, slot->field80, (s16)slot->field82);
-        mid->vy = func_800A4910((s16)dp->y, (s16)dp->fieldA, slot->field80, (s16)slot->field82);
-        mid->vz = func_800A4910((s16)dp->z, (s16)dp->fieldC, slot->field80, (s16)slot->field82);
-        end->vx = func_800A4910((s16)dp->field8, (s16)dp->field10, slot->field80, (s16)slot->field82);
-        end->vy = func_800A4910((s16)dp->fieldA, (s16)dp->field12, slot->field80, (s16)slot->field82);
-        end->vz = func_800A4910((s16)dp->fieldC, (s16)dp->field14, slot->field80, (s16)slot->field82);
-        mid->vx = func_800A4910(mid->vx, end->vx, slot->field80, (s16)slot->field82);
-        mid->vy = func_800A4910(mid->vy, end->vy, slot->field80, (s16)slot->field82);
-        mid->vz = func_800A4910(mid->vz, end->vz, slot->field80, (s16)slot->field82);
+        mid->vx = func_800A4910(dp->x, dp->field8, slot->field80, slot->field82);
+        mid->vy = func_800A4910(dp->y, dp->fieldA, slot->field80, slot->field82);
+        mid->vz = func_800A4910(dp->z, (s16)dp->fieldC, slot->field80, slot->field82);
+        end->vx = func_800A4910(dp->field8, dp->field10, slot->field80, slot->field82);
+        end->vy = func_800A4910(dp->fieldA, dp->field12, slot->field80, slot->field82);
+        end->vz = func_800A4910((s16)dp->fieldC, dp->field14, slot->field80, slot->field82);
+        mid->vx = func_800A4910(mid->vx, end->vx, slot->field80, slot->field82);
+        mid->vy = func_800A4910(mid->vy, end->vy, slot->field80, slot->field82);
+        mid->vz = func_800A4910(mid->vz, end->vz, slot->field80, slot->field82);
     }
 
     slot->vb[idx].vx = mid->vx - ((func_8009D234(slot->field86) >> 8) *
@@ -2167,7 +2167,7 @@ void func_800A5788(FieldFrameBuf *buf) {
 void func_800A5898(FieldFrameBuf *buf) {
     SystemState *sys = &g_fieldEntity;
 
-    switch ((s16)sys->dialogState) {
+    switch (sys->dialogState) {
     case 0:
         g_fieldEntity.unk1A1 = 0;
         g_fieldEntity.field_0x114 = 0;
@@ -2404,13 +2404,13 @@ void func_800A5D28(void) {
     if (g_fieldVars->fieldCF != 0) {
         return;
     }
-    if ((s16)*(volatile u16 *)&g_fieldEntity.dialogState == 4) {
+    if (g_fieldEntity.dialogState == 4) {
         return;
     }
-    if ((s16)*(volatile u16 *)&g_fieldEntity.dialogState == 3) {
+    if (g_fieldEntity.dialogState == 3) {
         return;
     }
-    if ((s16)*(volatile u16 *)&g_fieldEntity.dialogState == 2) {
+    if (g_fieldEntity.dialogState == 2) {
         return;
     }
     if (g_fadeMode == 1) {

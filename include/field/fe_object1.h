@@ -420,19 +420,22 @@ extern volatile s32 D_8005F154;  /**< VSync frame counter (main.c); phase for th
  * derives two corner offsets from it: @c field8 / @c fieldA / @c fieldC (base
  * minus a table-perturbed 0x80 bias) and @c field10 / @c field12 / @c field14
  * (base plus fixed 0x40/0x80 offsets).
+ *
+ * @c fieldC stays @c u16: a signed @c fieldC changes @c func_800A455C 's code,
+ * so @c func_800A4934, which needs it signed, casts both of its reads.
  */
 typedef struct {
-    /* 0x00 */ u16 x;
-    /* 0x02 */ u16 y;
-    /* 0x04 */ u16 z;
+    /* 0x00 */ s16 x;
+    /* 0x02 */ s16 y;
+    /* 0x04 */ s16 z;
     /* 0x06 */ u16 pad06;
-    /* 0x08 */ u16 field8;
-    /* 0x0A */ u16 fieldA;
+    /* 0x08 */ s16 field8;
+    /* 0x0A */ s16 fieldA;
     /* 0x0C */ u16 fieldC;
     /* 0x0E */ u16 padE;
-    /* 0x10 */ u16 field10;
-    /* 0x12 */ u16 field12;
-    /* 0x14 */ u16 field14;
+    /* 0x10 */ s16 field10;
+    /* 0x12 */ s16 field12;
+    /* 0x14 */ s16 field14;
     /* 0x16 */ u16 pad16;
 } DrawPoint;  /* 0x18 = 24 bytes */
 extern DrawPoint D_800706A0[];
@@ -450,7 +453,7 @@ typedef struct {
     /* 0x00 */ SVECTOR va[8];
     /* 0x40 */ SVECTOR vb[8];
     /* 0x80 */ s16 field80;   /**< Tick threshold base; slot clears when tick > field80+4. */
-    /* 0x82 */ u16 field82;   /**< Per-frame tick counter (incremented while active). */
+    /* 0x82 */ s16 field82;   /**< Per-frame tick counter (incremented while active). */
     /* 0x84 */ u8  pad84[0x02];
     /* 0x86 */ u8  field86;
     /* 0x87 */ u8  field87;
