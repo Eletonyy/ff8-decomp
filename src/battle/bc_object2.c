@@ -7,6 +7,7 @@
  */
 #include "common.h"
 #include "battle.h"
+#include "kernel.h"
 #include "gamestate.h"
 #include "game.h"
 #include "battle/bc_object2.h"
@@ -16,11 +17,11 @@
 /**
  * @brief Look up entity ability flags with index-based table lookup.
  *
- * Stores a0 to D_800EE476, computes D_80078E00 + a0 * 0x18 as base,
- * reads byte at base + 0x374E, combines results of func_800B0F9C and
- * func_800B0F7C. Returns combined if bit 15 is set, otherwise returns a1.
+ * Stores a0 to D_800EE476, reads Renzokuken finisher a0's target info,
+ * combines results of func_800B0F9C and func_800B0F7C. Returns combined
+ * if bit 15 is set, otherwise returns a1.
  *
- * @param a0 Entity index (stride 0x18).
+ * @param a0 Renzokuken finisher index.
  * @param a1 Default return value if bit 15 not set.
  * @return Combined ability flags (u16) or a1 (u16).
  */
@@ -28,8 +29,8 @@ u16 func_8009BAC4(s32 arg0, u16 arg1) {
     s16 result;
     
     D_800ED148.unk132E = arg0;
-    result = func_800B0F9C(D_80078E00.unk3738[arg0].val) 
-           | func_800B0F7C(D_80078E00.unk3738[arg0].val);
+    result = func_800B0F9C(g_kernel.renzokukenFinishers[arg0].targetInfo) 
+           | func_800B0F7C(g_kernel.renzokukenFinishers[arg0].targetInfo);
     
     if (result & BATTLE_ENTITY_FLAG_BIT_15) {
         return result;
@@ -41,16 +42,15 @@ u16 func_8009BAC4(s32 arg0, u16 arg1) {
 /**
  * @brief Look up entity ability flags with adjusted index.
  *
- * Subtracts 0x40 from the index, computes entity pointer from
- * D_80078E00 + (a0 - 0x40) * 132, reads byte at offset 0xF81,
- * and combines results of func_800B0F9C and func_800B0F7C.
+ * Reads the target info of junctionable GF a0 - 0x40 and combines
+ * results of func_800B0F9C and func_800B0F7C.
  *
- * @param a0 Entity index (offset by 0x40, stride 132).
+ * @param a0 Junctionable GF index plus 0x40.
  * @return Combined ability flags (u16).
  */
 u16 func_8009BB3C(s32 arg0) {
-    return func_800B0F9C(D_80078E00.rows132[arg0 - 64].unk9) 
-         | func_800B0F7C(D_80078E00.rows132[arg0 - 64].unk9);
+    return func_800B0F9C(g_kernel.junctionableGfs[arg0 - 64].targetInfo) 
+         | func_800B0F7C(g_kernel.junctionableGfs[arg0 - 64].targetInfo);
 }
 
 /**
@@ -88,12 +88,19 @@ BattleEntry* func_8009BBD0(void) {
     return currentEntry;
 }
 
+/**
+ * @brief Resolve and apply every hit of the current Renzokuken finisher.
+ *
+ * Stores the finisher's hit count on the first target, then runs one
+ * sub-entry of func_8009BBD0's battle entry per hit through func_800A09D0
+ * and func_800A5210.
+ */
 void func_8009BC28(void) {
     SubEntry* subs;
     s32 count;
     s32 i;
     
-    count = D_80078E00.array3750[D_800ED148.unk132E].unk0;
+    count = g_kernel.renzokukenFinishers[D_800ED148.unk132E].hitCount;
     subs = func_8009BBD0()->subEntries;
     D_800ED148.entities[subs->unk0].unkC9 = count;
     
@@ -1489,6 +1496,19 @@ s32 func_8009EF64(s32 arg0) {
     return 1; 
 }
 
+/**
+ * @brief Roll whether @p arg0 devours @p arg1.
+ *
+ * Fails outright when @p arg1 has more HP than @p arg0; otherwise the odds
+ * grow with the HP gap. On success the target is flagged, unk1326 is set and
+ * the Devour entry's description goes to func_800A4320. On failure unk1328
+ * is set to 8.
+ *
+ * @param arg0 Attacking entity.
+ * @param arg1 Target entity.
+ * @param unused Attack power (unused).
+ * @return D_800ED148.unk1328.
+ */
 s32 func_8009F040(s32 arg0, s32 arg1, s32 unused) {
     s32 entity0;
     s32 entity1;
@@ -1505,9 +1525,9 @@ s32 func_8009F040(s32 arg0, s32 arg1, s32 unused) {
             
         
             func_800A4320(resolveKernelPtr(
-                D_80078E00.unk4C0C[D_800ED148.unk1327].lookupId, 
-                D_80078E00.unk4C0CArg, 
-                &D_80078E00
+                g_kernel.devour[D_800ED148.unk1327].descOffset, 
+                g_kernel.devourText, 
+                &g_kernel
             ));
         }
             
@@ -1527,52 +1547,69 @@ s32 func_8009F040(s32 arg0, s32 arg1, s32 unused) {
     return D_800ED148.unk1328;
 }
 
+/**
+ * @brief Apply Devour entry @p arg1's stat and max HP raises.
+ *
+ * @param arg0 Party member to raise.
+ * @param arg1 Devour entry index.
+ */
 void func_8009F168(s32 arg0, s32 arg1) {
     u8 temp_s0;
      
-    temp_s0 = D_80078E00.unk4C0C[arg1].flags;
-    if (temp_s0 & 1) {
+    temp_s0 = g_kernel.devour[arg1].raisedStat;
+    if (temp_s0 & DEVOUR_RAISE_STR) {
         func_8002153C(arg0, 0);
     }
 
-    if (temp_s0 & 2) {
+    if (temp_s0 & DEVOUR_RAISE_VIT) {
         func_8002153C(arg0, 1);
     }
 
-    if (temp_s0 & 4) {
+    if (temp_s0 & DEVOUR_RAISE_MAG) {
         func_8002153C(arg0, 2);
     }
 
-    if (temp_s0 & 8) {
+    if (temp_s0 & DEVOUR_RAISE_SPR) {
         func_8002153C(arg0, 3);
     }
 
-    if (temp_s0 & CTRL_FLAG_10) {
+    if (temp_s0 & DEVOUR_RAISE_SPD) {
         func_8002153C(arg0, 4);
     }
 
-    if (temp_s0 & CTRL_FLAG_20) {
+    if (temp_s0 & DEVOUR_RAISE_LUCK) {
         func_8002153C(arg0, 5);
     }
 
-    addCharMaxHp(arg0, D_80078E00.unk4C0C[arg1].maxHP);
+    addCharMaxHp(arg0, g_kernel.devour[arg1].raisedMaxHp);
 }
 
+/**
+ * @brief Apply the HP effect of the current Devour entry.
+ *
+ * The amount is hpAmount sixteenths of @p arg1's max HP. A cure entry runs
+ * func_8009DD2C with hpAmount and the entry's statuses, then applies its
+ * raises to @p arg1; a damage entry hands both to func_8009C8B8.
+ *
+ * @param arg0 Acting entity.
+ * @param arg1 Entity the effect applies to.
+ * @return The HP amount.
+ */
 s32 func_8009F23C(s32 arg0, s32 arg1) {
     s32 var_s2;
     s32 temp_a3;
 
-    temp_a3 = D_80078E00.unk4C0C[D_800ED148.unk1327].unk3;
+    temp_a3 = g_kernel.devour[D_800ED148.unk1327].hpAmount;
     var_s2 = D_800ED148.entities[arg1].maxHp * temp_a3 / 16;
     
-    switch (D_80078E00.unk4C0C[D_800ED148.unk1327].unk2) {
-        case 30:
+    switch (g_kernel.devour[D_800ED148.unk1327].hpMode) {
+        case DEVOUR_CURE:
             D_800EE4C0.flags6 |= 1;
             func_8009DD2C(arg1, temp_a3, D_800EEBC2, D_800EEBC4);
             func_8009F168(arg1, D_800ED148.unk1327);
             break;
 
-        case 31:
+        case DEVOUR_DAMAGE:
             func_8009C8B8(1, arg0, arg1, temp_a3, var_s2);
             break;
     }
@@ -1715,12 +1752,12 @@ s32 func_8009F65C(s32 arg0, s32 arg1) {
 }
 
 /**
- * @brief Look up a byte attribute from D_80078E00 table (stride 0x3C).
- * @param idx Entry index.
- * @return Byte at offset 0x228 within the table entry.
+ * @brief Return a spell's draw resist.
+ * @param arg0 Magic index.
+ * @return g_kernel.magic[arg0].drawResist.
  */
 s32 func_8009F6F4(s32 arg0) {
-    return D_80078E00.spells[arg0].unk8;
+    return g_kernel.magic[arg0].drawResist;
 }
 
 s32 func_8009F718(s32 arg0, s32 arg1, s32 arg2) {
@@ -1951,13 +1988,23 @@ void func_8009FCF4(u8 arg0) {
     D_800ED148.entities[D_800ED148.unk12F3].unk89 = arg0 & 3;
 }
 
+/**
+ * @brief Compute the current spell's damage.
+ *
+ * Applies the spell's attack flags and hit animation, then returns
+ * func_8009F930 for its attack type and power.
+ *
+ * @param arg0 Target entity.
+ * @param arg1 Acting entity.
+ * @return func_8009F930's result.
+ */
 s32 func_8009FD28(s32 arg0, s32 arg1) {
     u8 var;
 
-    func_8009FCF4(D_80078E00.spells[D_800EE4C0.statusCode].unk7);
-    var = D_80078E00.spells[D_800EE4C0.statusCode].unk4;
-    D_800EE4C0.unk4 = D_80078E00.spells[D_800EE4C0.statusCode].unk2;
-    return func_8009F930(D_80078E00.spells[D_800EE4C0.statusCode].unk3, arg1, arg0, var);
+    func_8009FCF4(g_kernel.magic[D_800EE4C0.statusCode].attackFlags);
+    var = g_kernel.magic[D_800EE4C0.statusCode].power;
+    D_800EE4C0.unk4 = g_kernel.magic[D_800EE4C0.statusCode].hitAnimation;
+    return func_8009F930(g_kernel.magic[D_800EE4C0.statusCode].attackType, arg1, arg0, var);
 }
 
 /**
@@ -1990,6 +2037,15 @@ s32 func_8009FDE0(s32 arg0, s32 arg1) {
     return result + D_800ED148.entities[arg0].crisisLevel;
 }
 
+/**
+ * @brief Load the current action's element, status and hit parameters.
+ *
+ * Fills D_800EEBB8..D_800EEBC4 from the kernel entry of the action type in
+ * D_800EE4C0.unk1; other action types use the actor's own battle stats and
+ * weapon.
+ *
+ * @param arg0 Acting entity.
+ */
 void func_8009FE14(s32 arg0) {
     s32 index;
 
@@ -1999,11 +2055,11 @@ void func_8009FE14(s32 arg0) {
 
     switch (D_800EE4C0.unk1) {
         case 239:
-            D_800EEBB8 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C6;
-            D_800EEBB9 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C5;
-            D_800EEBBA = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C7;
-            D_800EEBC2 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D2;
-            D_800EEBC4 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D4;
+            D_800EEBB8 = g_kernel.duel[D_800EE4C0.statusCode].elementPercent;
+            D_800EEBB9 = g_kernel.duel[D_800EE4C0.statusCode].element;
+            D_800EEBBA = g_kernel.duel[D_800EE4C0.statusCode].statusAccuracy;
+            D_800EEBC2 = g_kernel.duel[D_800EE4C0.statusCode].status1;
+            D_800EEBC4 = g_kernel.duel[D_800EE4C0.statusCode].status2;
             break;
 
         case 241:
@@ -2019,11 +2075,11 @@ void func_8009FE14(s32 arg0) {
             }
 
             else { 
-                D_800EEBB8 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C6;
-                D_800EEBB9 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C5;
-                D_800EEBBA = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C7;
-                D_800EEBC2 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D2;
-                D_800EEBC4 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48D4;
+                D_800EEBB8 = g_kernel.duel[D_800EE4C0.statusCode].elementPercent;
+                D_800EEBB9 = g_kernel.duel[D_800EE4C0.statusCode].element;
+                D_800EEBBA = g_kernel.duel[D_800EE4C0.statusCode].statusAccuracy;
+                D_800EEBC2 = g_kernel.duel[D_800EE4C0.statusCode].status1;
+                D_800EEBC4 = g_kernel.duel[D_800EE4C0.statusCode].status2;
             }
             break;
         }
@@ -2032,47 +2088,47 @@ void func_8009FE14(s32 arg0) {
         case 244:
         case 245:
             D_800EEBC0 = 0;
-            D_800EEBBB = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk13;
-            D_800EEBB9 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unkB;
-            D_800EEBBA = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk6;
-            D_800EEBC2 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk10;
-            D_800EEBC4 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unkC;
+            D_800EEBBB = g_kernel.nonJunctionableGfAttacks[D_800EE4C0.statusCode].levelModifier;
+            D_800EEBB9 = g_kernel.nonJunctionableGfAttacks[D_800EE4C0.statusCode].element;
+            D_800EEBBA = g_kernel.nonJunctionableGfAttacks[D_800EE4C0.statusCode].statusAccuracy;
+            D_800EEBC2 = g_kernel.nonJunctionableGfAttacks[D_800EE4C0.statusCode].status1;
+            D_800EEBC4 = g_kernel.nonJunctionableGfAttacks[D_800EE4C0.statusCode].status2;
             break;
 
         case 254:
             D_800EEBC0 = g_battleChars.levelEntries[D_800EE4C0.statusCode - 64].unk1;
-            D_800EEBB9 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkD;
-            D_800EEBBA = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk1B;
-            D_800EEBC2 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkE;
-            D_800EEBC4 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk10;
+            D_800EEBB9 = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].element;
+            D_800EEBBA = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].statusAccuracy;
+            D_800EEBC2 = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].status1;
+            D_800EEBC4 = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].status2;
             break;
 
         case 7:  
         case 23 ... 27: 
         case 29 ... 34: 
         case 38: 
-            D_800EEBB9 = D_80078E00.array4020[D_800EE4C0.statusCode].unk8;
-            D_800EEBBA = D_80078E00.array4020[D_800EE4C0.statusCode].unk9;
-            D_800EEBC2 = D_80078E00.array4020[D_800EE4C0.statusCode].unkA;
-            D_800EEBC4 = D_80078E00.array4020[D_800EE4C0.statusCode].unkC;
+            D_800EEBB9 = g_kernel.commandAbilityData[D_800EE4C0.statusCode].element;
+            D_800EEBBA = g_kernel.commandAbilityData[D_800EE4C0.statusCode].statusAccuracy;
+            D_800EEBC2 = g_kernel.commandAbilityData[D_800EE4C0.statusCode].status1;
+            D_800EEBC4 = g_kernel.commandAbilityData[D_800EE4C0.statusCode].status2;
             break;
 
         case 2:
         case 6:
         case 16:
         case 247:
-            D_800EEBB9 = D_80078E00.spells[D_800EE4C0.statusCode].unkA;
-            D_800EEBBA = D_80078E00.spells[D_800EE4C0.statusCode].unk12;
-            D_800EEBC2 = D_80078E00.spells[D_800EE4C0.statusCode].unk10;
-            D_800EEBC4 = D_80078E00.spells[D_800EE4C0.statusCode].unkC;
+            D_800EEBB9 = g_kernel.magic[D_800EE4C0.statusCode].element;
+            D_800EEBBA = g_kernel.magic[D_800EE4C0.statusCode].statusAccuracy;
+            D_800EEBC2 = g_kernel.magic[D_800EE4C0.statusCode].status1;
+            D_800EEBC4 = g_kernel.magic[D_800EE4C0.statusCode].status2;
             break;
 
         case 19:
-            D_800EEBB8 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A78;
-            D_800EEBB9 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A77;
-            D_800EEBBA = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A79;
-            D_800EEBC2 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A7A;
-            D_800EEBC4 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A7C;
+            D_800EEBB8 = g_kernel.rinoaLimitBreaks2[D_800EE4C0.unk3].elementPercent;
+            D_800EEBB9 = g_kernel.rinoaLimitBreaks2[D_800EE4C0.unk3].element;
+            D_800EEBBA = g_kernel.rinoaLimitBreaks2[D_800EE4C0.unk3].statusAccuracy;
+            D_800EEBC2 = g_kernel.rinoaLimitBreaks2[D_800EE4C0.unk3].status1;
+            D_800EEBC4 = g_kernel.rinoaLimitBreaks2[D_800EE4C0.unk3].status2;
             break;
 
         case 17:
@@ -2080,51 +2136,51 @@ void func_8009FE14(s32 arg0) {
         case 20:
         case 21:
         case 22:
-            D_800EEBB8 = D_80078E00.array4484[D_800EE4C0.statusCode].unkA;
-            D_800EEBB9 = D_80078E00.array4484[D_800EE4C0.statusCode].unk9;
-            D_800EEBBA = D_80078E00.array4484[D_800EE4C0.statusCode].unkB;
-            D_800EEBC2 = D_80078E00.array4484[D_800EE4C0.statusCode].unkC;
-            D_800EEBC4 = D_80078E00.array4484[D_800EE4C0.statusCode].unk10;
+            D_800EEBB8 = g_kernel.tempLimitBreaks[D_800EE4C0.statusCode].elementPercent;
+            D_800EEBB9 = g_kernel.tempLimitBreaks[D_800EE4C0.statusCode].element;
+            D_800EEBBA = g_kernel.tempLimitBreaks[D_800EE4C0.statusCode].statusAccuracy;
+            D_800EEBC2 = g_kernel.tempLimitBreaks[D_800EE4C0.statusCode].status1;
+            D_800EEBC4 = g_kernel.tempLimitBreaks[D_800EE4C0.statusCode].status2;
             break;
 
         case 15:
-            D_800EEBB9 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk8;
-            D_800EEBBA = D_80078E00.array44FC[D_800EE4C0.statusCode].unk9;
+            D_800EEBB9 = g_kernel.blueMagic[D_800EE4C0.statusCode].element;
+            D_800EEBBA = g_kernel.blueMagic[D_800EE4C0.statusCode].statusAccuracy;
             index = func_8009FDE0(arg0, D_800EE4C0.statusCode);
-            D_800EEBC2 = D_80078E00.array45F8[index].unk4;
-            D_800EEBC4 = D_80078E00.array45F8[index].unk0;
-            D_800EEBBB = D_80078E00.array45F8[index].unk7;
-            D_800EEBBC = D_80078E00.array44FC[D_800EE4C0.statusCode].unkA;
+            D_800EEBC2 = g_kernel.blueMagicParams[index].status1;
+            D_800EEBC4 = g_kernel.blueMagicParams[index].status2;
+            D_800EEBBB = g_kernel.blueMagicParams[index].hitRate;
+            D_800EEBBC = g_kernel.blueMagic[D_800EE4C0.statusCode].critBonus;
             break;
 
         case 14:
         case 237:
         case 238:
-            D_800EEBB8 = D_80078E00.array47FC[D_800ED148.unk1324].unkA;
-            D_800EEBB9 = D_80078E00.array47FC[D_800ED148.unk1324].unk9;
-            D_800EEBBA = D_80078E00.array47FC[D_800ED148.unk1324].unkB; 
-            D_800EEBC2 = D_80078E00.array47FC[D_800ED148.unk1324].unkC;
-            D_800EEBC4 = D_80078E00.array47FC[D_800ED148.unk1324].unk10;
-            D_800EEBBC = D_80078E00.array47FC[D_800ED148.unk1324].unkF;
+            D_800EEBB8 = g_kernel.shot[D_800ED148.unk1324].elementPercent;
+            D_800EEBB9 = g_kernel.shot[D_800ED148.unk1324].element;
+            D_800EEBBA = g_kernel.shot[D_800ED148.unk1324].statusAccuracy; 
+            D_800EEBC2 = g_kernel.shot[D_800ED148.unk1324].status1;
+            D_800EEBC4 = g_kernel.shot[D_800ED148.unk1324].status2;
+            D_800EEBBC = g_kernel.shot[D_800ED148.unk1324].critBonus;
             break;
 
         case 4:
         case 13:
-            D_800EEBBB = D_80078E00.abilities[D_800EE4C0.statusCode].unkC;
-            D_800EEBB9 = D_80078E00.abilities[D_800EE4C0.statusCode].unkF;
-            D_800EEBBA = D_80078E00.abilities[D_800EE4C0.statusCode].unk5;
-            D_800EEBC2 = D_80078E00.abilities[D_800EE4C0.statusCode].unk6;
-            D_800EEBC4 = D_80078E00.abilities[D_800EE4C0.statusCode].unk8;
+            D_800EEBBB = g_kernel.battleItems[D_800EE4C0.statusCode].hitRate;
+            D_800EEBB9 = g_kernel.battleItems[D_800EE4C0.statusCode].element;
+            D_800EEBBA = g_kernel.battleItems[D_800EE4C0.statusCode].statusAccuracy;
+            D_800EEBC2 = g_kernel.battleItems[D_800EE4C0.statusCode].status1;
+            D_800EEBC4 = g_kernel.battleItems[D_800EE4C0.statusCode].status2;
             break;
 
         case 8:
         case 236:
-            D_800EEBB9 = D_80078E00.entries17[D_800EE4C0.statusCode].unkA;
-            D_800EEBBA = D_80078E00.entries17[D_800EE4C0.statusCode].unkC; 
-            D_800EEBC2 = D_80078E00.entries17[D_800EE4C0.statusCode].unkE;       
-            D_800EEBC4 = D_80078E00.entries17[D_800EE4C0.statusCode].unk10;
-            D_800EEBBB = D_80078E00.entries17[D_800EE4C0.statusCode].unkD;
-            D_800EEBBC = D_80078E00.entries17[D_800EE4C0.statusCode].unkB;
+            D_800EEBB9 = g_kernel.enemyAttacks[D_800EE4C0.statusCode].element;
+            D_800EEBBA = g_kernel.enemyAttacks[D_800EE4C0.statusCode].statusAccuracy; 
+            D_800EEBC2 = g_kernel.enemyAttacks[D_800EE4C0.statusCode].status1;       
+            D_800EEBC4 = g_kernel.enemyAttacks[D_800EE4C0.statusCode].status2;
+            D_800EEBBB = g_kernel.enemyAttacks[D_800EE4C0.statusCode].hitRate;
+            D_800EEBBC = g_kernel.enemyAttacks[D_800EE4C0.statusCode].critBonus;
             break;
 
         case 0:
@@ -2132,8 +2188,8 @@ void func_8009FE14(s32 arg0) {
             case 10:
                 D_800EEBB9 = 0;    
                 D_800EEBBA = 200;
-                D_800EEBC2 = D_80078E00.unk4C0C[D_800ED148.unk1327].unk8;
-                D_800EEBC4 = D_80078E00.unk4C0C[D_800ED148.unk1327].unk5;
+                D_800EEBC2 = g_kernel.devour[D_800ED148.unk1327].status1;
+                D_800EEBC4 = g_kernel.devour[D_800ED148.unk1327].status2;
                 break;
 
             case 8:
@@ -2146,11 +2202,11 @@ void func_8009FE14(s32 arg0) {
             break;
 
         case 249:
-            D_800EEBB8 = D_80078E00.array3750[D_800EE4C0.unk3].unk2;
-            D_800EEBB9 = D_80078E00.array3750[D_800EE4C0.unk3].unk1;
-            D_800EEBBA = D_80078E00.array3750[D_800EE4C0.unk3].unk3;
-            D_800EEBC2 = D_80078E00.array3750[D_800EE4C0.unk3].unk6;
-            D_800EEBC4 = D_80078E00.array3750[D_800EE4C0.unk3].unk8;
+            D_800EEBB8 = g_kernel.renzokukenFinishers[D_800EE4C0.unk3].elementPercent;
+            D_800EEBB9 = g_kernel.renzokukenFinishers[D_800EE4C0.unk3].element;
+            D_800EEBBA = g_kernel.renzokukenFinishers[D_800EE4C0.unk3].statusAccuracy;
+            D_800EEBC2 = g_kernel.renzokukenFinishers[D_800EE4C0.unk3].status1;
+            D_800EEBC4 = g_kernel.renzokukenFinishers[D_800EE4C0.unk3].status2;
             break;
 
         case 251:
@@ -2167,7 +2223,7 @@ void func_8009FE14(s32 arg0) {
             D_800EEBC2 = D_800ED148.entities[arg0].hitStatus1;
             D_800EEBC4 = D_800ED148.entities[arg0].unk20;
             D_800EEBBB = D_800ED148.entities[arg0].unkBD[7];
-            D_800EEBBC = D_80078E00.array35BD[g_battleChars.chars[arg0].classId].unk5;
+            D_800EEBBC = g_kernel.weapons[g_battleChars.chars[arg0].classId].critBonus;
             break;
     }
 }
@@ -2237,6 +2293,15 @@ void func_800A0978(s32 arg0) {
     }
 }
 
+/**
+ * @brief Resolve one hit of the current action on @p arg0.
+ *
+ * Resets the action result in D_800EE4C0, loads the attack data of the
+ * action type from its kernel entry, computes the damage, applies the
+ * command modifiers and hands the result to func_800A2724.
+ *
+ * @param arg0 Target entity.
+ */
 void func_800A09D0(s32 arg0) {
     s32 temp_s4;
     u8 var_a0;
@@ -2337,11 +2402,11 @@ void func_800A09D0(s32 arg0) {
             }       
             break;
             not_another_goto:
-            func_8009FCF4(D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C3);
-            var_s3 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48BF;
+            func_8009FCF4(g_kernel.duel[D_800EE4C0.statusCode].attackFlags);
+            var_s3 = g_kernel.duel[D_800EE4C0.statusCode].power;
 
-            D_800EE4C0.unk4 = D_80078E00.array48BC[D_800EE4C0.statusCode].unk48C0;
-            D_800EE4C0.unkC = func_8009F930(D_80078E00.array48BC[D_800EE4C0.statusCode].unk48BE, temp_s4, arg0, var_s3);
+            D_800EE4C0.unk4 = g_kernel.duel[D_800EE4C0.statusCode].hitAnimation;
+            D_800EE4C0.unkC = func_8009F930(g_kernel.duel[D_800EE4C0.statusCode].attackType, temp_s4, arg0, var_s3);
             break;
 
         case 12:        
@@ -2351,9 +2416,9 @@ void func_800A09D0(s32 arg0) {
         case 28:
             if (D_800ED148.entities[temp_s4].comFileId != 0 && D_800ED148.entities[temp_s4].comFileId != 6) {
                 func_8009FCF4(0);
-                var_s3 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk1;
+                var_s3 = g_kernel.weapons[g_battleChars.chars[temp_s4].classId].power;
                 D_800EE4C0.unk4 = 4;
-                var_a0 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk0;
+                var_a0 = g_kernel.weapons[g_battleChars.chars[temp_s4].classId].attackType;
                 D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
             } 
 
@@ -2365,10 +2430,10 @@ void func_800A09D0(s32 arg0) {
             break;
 
         case 29:       
-            func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk6);
-            var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk5;
-            D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk3;
-            var_a0 = D_80078E00.array4020[D_800EE4C0.statusCode].unk4;
+            func_8009FCF4(g_kernel.commandAbilityData[D_800EE4C0.statusCode].attackFlags);
+            var_s3 = g_kernel.commandAbilityData[D_800EE4C0.statusCode].power;
+            D_800EE4C0.unk4 = g_kernel.commandAbilityData[D_800EE4C0.statusCode].hitAnimation;
+            var_a0 = g_kernel.commandAbilityData[D_800EE4C0.statusCode].attackType;
             D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
             break;
 
@@ -2398,12 +2463,12 @@ void func_800A09D0(s32 arg0) {
             }
 
             D_800EEBC8 = 100;
-            D_800EEBBD = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk12;
-            D_800EEBBE = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk13;
-            func_8009FCF4(D_80078E00.entriesA0[D_800EE4C0.statusCode].unk8);
-            var_s3 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk5;
-            D_800EE4C0.unk4 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk9;
-            var_a0 = D_80078E00.entriesA0[D_800EE4C0.statusCode].unk4;
+            D_800EEBBD = g_kernel.nonJunctionableGfAttacks[D_800EE4C0.statusCode].powerModifier;
+            D_800EEBBE = g_kernel.nonJunctionableGfAttacks[D_800EE4C0.statusCode].levelModifier;
+            func_8009FCF4(g_kernel.nonJunctionableGfAttacks[D_800EE4C0.statusCode].attackFlags);
+            var_s3 = g_kernel.nonJunctionableGfAttacks[D_800EE4C0.statusCode].power;
+            D_800EE4C0.unk4 = g_kernel.nonJunctionableGfAttacks[D_800EE4C0.statusCode].hitAnimation;
+            var_a0 = g_kernel.nonJunctionableGfAttacks[D_800EE4C0.statusCode].attackType;
             D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
             break;
 
@@ -2420,10 +2485,10 @@ void func_800A09D0(s32 arg0) {
             break;
 
         case 19:       
-            func_8009FCF4(D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A75);
-            var_s3 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A71;
-            D_800EE4C0.unk4 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A72;
-            var_a0 = D_80078E00.array4A6C[D_800EE4C0.unk3].unk4A70;
+            func_8009FCF4(g_kernel.rinoaLimitBreaks2[D_800EE4C0.unk3].attackFlags);
+            var_s3 = g_kernel.rinoaLimitBreaks2[D_800EE4C0.unk3].power;
+            D_800EE4C0.unk4 = g_kernel.rinoaLimitBreaks2[D_800EE4C0.unk3].hitAnimation;
+            var_a0 = g_kernel.rinoaLimitBreaks2[D_800EE4C0.unk3].attackType;
             D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
             break;
 
@@ -2432,37 +2497,37 @@ void func_800A09D0(s32 arg0) {
         case 20:       
         case 21:       
         case 22:       
-            func_8009FCF4(D_80078E00.array4484[D_800EE4C0.statusCode].unk7);
-            var_s3 = D_80078E00.array4484[D_800EE4C0.statusCode].unk3;
-            D_800EE4C0.unk4 = D_80078E00.array4484[D_800EE4C0.statusCode].unk4;
-            var_a0 = D_80078E00.array4484[D_800EE4C0.statusCode].unk2;
+            func_8009FCF4(g_kernel.tempLimitBreaks[D_800EE4C0.statusCode].attackFlags);
+            var_s3 = g_kernel.tempLimitBreaks[D_800EE4C0.statusCode].power;
+            D_800EE4C0.unk4 = g_kernel.tempLimitBreaks[D_800EE4C0.statusCode].hitAnimation;
+            var_a0 = g_kernel.tempLimitBreaks[D_800EE4C0.statusCode].attackType;
             D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
             break;
 
         case 15:        
-            func_8009FCF4(D_80078E00.array44FC[D_800EE4C0.statusCode].unk6);
-            var_s3 = D_80078E00.array45F8[func_8009FDE0(temp_s4, D_800EE4C0.statusCode)].unk6;
-            D_800EE4C0.unk4 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk2;
-            var_a0 = D_80078E00.array44FC[D_800EE4C0.statusCode].unk3;
+            func_8009FCF4(g_kernel.blueMagic[D_800EE4C0.statusCode].attackFlags);
+            var_s3 = g_kernel.blueMagicParams[func_8009FDE0(temp_s4, D_800EE4C0.statusCode)].power;
+            D_800EE4C0.unk4 = g_kernel.blueMagic[D_800EE4C0.statusCode].hitAnimation;
+            var_a0 = g_kernel.blueMagic[D_800EE4C0.statusCode].attackType;
             D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
             break;
 
         case 4:        
         case 13:        
-            func_8009FCF4(D_80078E00.abilities[D_800EE4C0.statusCode].unk2);
-            var_s3 = D_80078E00.array3920[D_800EE4C0.statusCode].unk17;
-            D_800EE4C0.unk4 = D_80078E00.abilities[D_800EE4C0.statusCode].unk3;
-            var_a0 = D_80078E00.array3920[D_800EE4C0.statusCode].unk16;
+            func_8009FCF4(g_kernel.battleItems[D_800EE4C0.statusCode].attackFlags);
+            var_s3 = g_kernel.battleItems[D_800EE4C0.statusCode].power;
+            D_800EE4C0.unk4 = g_kernel.battleItems[D_800EE4C0.statusCode].hitAnimation;
+            var_a0 = g_kernel.battleItems[D_800EE4C0.statusCode].attackType;
             D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
             break;
 
         case 7:        
         case 23 ... 27:             
         case 30 ... 34:           
-            func_8009FCF4(D_80078E00.array4020[D_800EE4C0.statusCode].unk6);
-            var_s3 = D_80078E00.array4020[D_800EE4C0.statusCode].unk5;
-            D_800EE4C0.unk4 = D_80078E00.array4020[D_800EE4C0.statusCode].unk3;
-            var_a0 = D_80078E00.array4020[D_800EE4C0.statusCode].unk4;
+            func_8009FCF4(g_kernel.commandAbilityData[D_800EE4C0.statusCode].attackFlags);
+            var_s3 = g_kernel.commandAbilityData[D_800EE4C0.statusCode].power;
+            D_800EE4C0.unk4 = g_kernel.commandAbilityData[D_800EE4C0.statusCode].hitAnimation;
+            var_a0 = g_kernel.commandAbilityData[D_800EE4C0.statusCode].attackType;
             D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
             break;
 
@@ -2475,7 +2540,7 @@ void func_800A09D0(s32 arg0) {
         case 238:       
             D_800ED148.unk1300 = 0;
             if (D_800ED148.entities[arg0].status & 1) {
-                D_800EE4C0.unk4 = D_80078E00.array47FC[D_800ED148.unk1324].unk4;
+                D_800EE4C0.unk4 = g_kernel.shot[D_800ED148.unk1324].hitAnimation;
             } 
 
             else {
@@ -2489,19 +2554,19 @@ void func_800A09D0(s32 arg0) {
 
         case 237:       
             D_800ED148.unk1300 = 1;
-            func_8009FCF4(D_80078E00.array47FC[D_800ED148.unk1324].unk7);
-            var_s3 = D_80078E00.array47FC[D_800ED148.unk1324].unk3;
-            D_800EE4C0.unk4 = D_80078E00.array47FC[D_800ED148.unk1324].unk4;
-            var_a0 = D_80078E00.array47FC[D_800ED148.unk1324].unk2;
+            func_8009FCF4(g_kernel.shot[D_800ED148.unk1324].attackFlags);
+            var_s3 = g_kernel.shot[D_800ED148.unk1324].power;
+            D_800EE4C0.unk4 = g_kernel.shot[D_800ED148.unk1324].hitAnimation;
+            var_a0 = g_kernel.shot[D_800ED148.unk1324].attackType;
             D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3); 
             break;
 
         case 8:        
         case 236:       
-            func_8009FCF4(D_80078E00.entries17[D_800EE4C0.statusCode].unk8);
-            var_s3 = D_80078E00.entries17[D_800EE4C0.statusCode].unk7;
-            D_800EE4C0.unk4 = D_80078E00.entries17[D_800EE4C0.statusCode].unk5;
-            var_a0 = D_80078E00.entries17[D_800EE4C0.statusCode].unk6;
+            func_8009FCF4(g_kernel.enemyAttacks[D_800EE4C0.statusCode].attackFlags);
+            var_s3 = g_kernel.enemyAttacks[D_800EE4C0.statusCode].power;
+            D_800EE4C0.unk4 = g_kernel.enemyAttacks[D_800EE4C0.statusCode].hitAnimation;
+            var_a0 = g_kernel.enemyAttacks[D_800EE4C0.statusCode].attackType;
             D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
             break;
 
@@ -2511,13 +2576,13 @@ void func_800A09D0(s32 arg0) {
 
         case 254:       
             if (D_800ED148.unk131E != 0) {
-                D_800EEBBD = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk82;
-                D_800EEBBE = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk83;
+                D_800EEBBD = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].powerModifier;
+                D_800EEBBE = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].levelModifier;
                 D_800EEBBF = g_battleChars.levelEntries[D_800EE4C0.statusCode - 64].level;
-                func_8009FCF4(D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkA);
-                var_s3 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk7;
-                D_800EE4C0.unk4 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unkB;
-                var_a0 = D_80078E00.rows132[D_800EE4C0.statusCode - 64].unk6;
+                func_8009FCF4(g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].attackFlags);
+                var_s3 = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].power;
+                D_800EE4C0.unk4 = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].hitAnimation;
+                var_a0 = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].attackType;
                 D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3); 
                 break; 
             }       
@@ -2525,21 +2590,21 @@ void func_800A09D0(s32 arg0) {
 
         case 249:       
             D_800ED148.unk1300 = 0;
-            func_8009FCF4(D_80078E00.unk3738[D_800EE4C0.unk3].unk17);
-            var_s3 = D_80078E00.unk3738[D_800EE4C0.unk3].unk14;
-            D_800EE4C0.unk4 = D_80078E00.unk3738[D_800EE4C0.unk3].unk15;
-            var_a0 = D_80078E00.unk3738[D_800EE4C0.unk3].unk12;
+            func_8009FCF4(g_kernel.renzokukenFinishers[D_800EE4C0.unk3].attackFlags);
+            var_s3 = g_kernel.renzokukenFinishers[D_800EE4C0.unk3].power;
+            D_800EE4C0.unk4 = g_kernel.renzokukenFinishers[D_800EE4C0.unk3].hitAnimation;
+            var_a0 = g_kernel.renzokukenFinishers[D_800EE4C0.unk3].attackType;
             D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3); 
             break;
 
         case 251:       
-            var_s3 = D_80078E00.array37A6[g_gameState.chars[g_gameState.mainData.party.party[temp_s4]].characterId].unk3;
+            var_s3 = g_kernel.characters[g_gameState.chars[g_gameState.mainData.party.party[temp_s4]].characterId].limitBreakParam;
             goto wait_oh_god_make_it_stop;
 
         case 243:       
         case 248:       
         case 253:       
-            var_s3 = D_80078E00.array35BD[g_battleChars.chars[temp_s4].classId].unk1;
+            var_s3 = g_kernel.weapons[g_battleChars.chars[temp_s4].classId].power;
             wait_oh_god_make_it_stop:
             func_8009FCF4(0);
             D_800EE4C0.unk4 = 4;

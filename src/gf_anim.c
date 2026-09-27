@@ -48,9 +48,9 @@ typedef struct {
  */
 void initGfAnimEntry(GfAnimState *state, s32 index, s32 gfId) {
     state->slots[index].gfId = gfId;
-    state->slots[index].frameStart = g_kernel.battleCommands[state->slots[index].gfId].typeField;
+    state->slots[index].frameStart = g_kernel.battleCommands[state->slots[index].gfId].menuFlags;
     state->slots[index].frameCounter = 0;
-    state->slots[index].frameEnd = g_kernel.battleCommands[state->slots[index].gfId].bonusField;
+    state->slots[index].frameEnd = g_kernel.battleCommands[state->slots[index].gfId].targetInfo;
 }
 
 

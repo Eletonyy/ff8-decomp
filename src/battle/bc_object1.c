@@ -1452,7 +1452,7 @@ void func_8009B924(s32 slot, s32 clearMask, s32 applyMask) {
 u16 func_8009BA5C(s32 arg0, u16 arg1) {
     u16 result;
     
-    result = func_800B0F9C(D_80078E00.array48BC[arg0].unk48C2) | func_800B0F7C(D_80078E00.array48BC[arg0].unk48C2);
+    result = func_800B0F9C(g_kernel.duel[arg0].targetInfo) | func_800B0F7C(g_kernel.duel[arg0].targetInfo);
 
     return (result & 0x8000)? result : arg1;
 }

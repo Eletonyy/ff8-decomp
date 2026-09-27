@@ -170,6 +170,13 @@ void func_800A6588(void) {
     func_8009AE08(8);
 }
 
+/**
+ * @brief Step Zell's Duel after an input.
+ *
+ * D_800ED148.unk12EF holds the chosen Duel sequence: 255 finishes the Duel
+ * and 254 keeps waiting. Otherwise the sequence's move is queued, below 6 as
+ * another Duel hit (re-arming this handler) and 6 and up as the finisher.
+ */
 void func_800A65B0(void) {
     u8 val;
 
@@ -187,7 +194,7 @@ void func_800A65B0(void) {
     }
 
     D_800ED148.unk131A = D_800ED148.unk12EF;
-    val = D_80078E00.unk49F8[D_800ED148.unk131A];
+    val = g_kernel.duelParams[D_800ED148.unk131A].startMove;
     D_800ED148.unk12EF = 254;
     D_800ED148.unk131B = val;
     
@@ -778,6 +785,14 @@ void func_800A71C0(s32 idx) {
     }
 }
 
+/**
+ * @brief Initialise a party member's battle entity data.
+ *
+ * Copies the character and its statuses, flags a melee weapon (0x1000) and
+ * a female character (0x100) in unk7C, and starts the ATB gauge.
+ *
+ * @param arg0 Party slot.
+ */
 void func_800A7518(s32 arg0) {
     BattleCharData* temp_s1;
     BattleEntityData* temp_s0;
@@ -796,11 +811,11 @@ void func_800A7518(s32 arg0) {
     temp_s0->unk80 = temp_s1->displayStatus;
     temp_s0->unk7C = 34817;
 
-    if (D_80078E00.array35BD[temp_s1->classId].unk6 & 1) {
+    if (g_kernel.weapons[temp_s1->classId].melee & WEAPON_MELEE) {
         temp_s0->unk7C |= 0x1000;
     }
 
-    if (D_80078E00.array37A6[temp_s0->unkBB].unk1 & 1) {
+    if (g_kernel.characters[temp_s0->unkBB].gender & GENDER_FEMALE) {
         temp_s0->unk7C |= 0x100;
     }
 
@@ -953,17 +968,16 @@ void func_800A79A0(void) {
 }
 
 /**
- * @brief Look up the per-class @c field09 byte for the entity at @p a0.
+ * @brief Look up the tier of the weapon equipped by the entity at @p a0.
  *
  * Reads @c BattleCharData[a0].classId, then returns
- * @c g_kernel.weapons[classId].field09 (offset @c 0x35C1 in the
- * shared @c D_80078E00 / @c g_kernel block).
+ * @c g_kernel.weapons[classId].tier.
  *
  * @param a0 Entity index (stride 0x1D0 in @c g_battleChars).
- * @return The @c field09 byte for that entity's class.
+ * @return The weapon's tier.
  */
 u8 func_800A7A44(s32 arg0) {
-    return D_80078E00.array35BD[g_battleChars.chars[arg0].classId].unk4;
+    return g_kernel.weapons[g_battleChars.chars[arg0].classId].tier;
 }
 
 /**
@@ -1259,22 +1273,28 @@ void func_800A853C(void) {
     }
 }
 
+/**
+ * @brief Refresh the battle item menu slots from their kernel entries.
+ *
+ * Each slot gets flag 1 when the item may target KO'd units, flag 2 when it
+ * is greyed out, and the item's target info and category.
+ */
 void func_800A8578(void) {
     s32 i;
 
     for (i = 0; i < 32; i++) {
         D_800EE9E8.animSlots[i].unk4 = 0;
         
-        if (D_80078E00.abilities[D_800EE9E8.animSlots[i].id].unk2 & 0x80) {
+        if (g_kernel.battleItems[D_800EE9E8.animSlots[i].id].attackFlags & ATTACK_FLAG_TARGET_KO) {
             D_800EE9E8.animSlots[i].unk4 = 1;
         }
         
-        if (!(D_80078E00.abilities[D_800EE9E8.animSlots[i].id].unk2 & 0x20)) {
+        if (!(g_kernel.battleItems[D_800EE9E8.animSlots[i].id].attackFlags & ATTACK_FLAG_SELECTABLE)) {
             D_800EE9E8.animSlots[i].unk4 |= 2;
         }
 
-        D_800EE9E8.animSlots[i].unk3 = D_80078E00.abilities[D_800EE9E8.animSlots[i].id].abilityId;
-        D_800EE9E8.animSlots[i].unk2 = D_80078E00.abilities[D_800EE9E8.animSlots[i].id].unk0;
+        D_800EE9E8.animSlots[i].unk3 = g_kernel.battleItems[D_800EE9E8.animSlots[i].id].targetInfo;
+        D_800EE9E8.animSlots[i].unk2 = g_kernel.battleItems[D_800EE9E8.animSlots[i].id].category;
     }
 }
 
@@ -1399,9 +1419,20 @@ s32 func_800A89B8(s32 arg0, s32 arg1) {
     return 1;
 }
 
+/**
+ * @brief Fill sub-command slot @p arg1 with battle command @p arg2.
+ *
+ * The target info comes from the kernel command; the rest is copied from
+ * the character's command 13 slot, or its Magic slot when @p arg3 is set.
+ *
+ * @param arg0 Party member's battle data.
+ * @param arg1 Sub-command slot.
+ * @param arg2 Battle command.
+ * @param arg3 Nonzero to copy from the Magic slot.
+ */
 void func_800A8A48(BattleCharData* arg0, s32 arg1, u8 arg2, s32 arg3) {
     arg0->unkSlots[arg1].unk0 = arg2;
-    arg0->unkSlots[arg1].unk2 = D_80078E00.unkE8[arg0->unkSlots[arg1].unk0].unk2;
+    arg0->unkSlots[arg1].unk2 = g_kernel.battleCommands[arg0->unkSlots[arg1].unk0].targetInfo;
     
     if (arg3 == 0) {
         arg0->unkSlots[arg1].unk1 = arg0->cmdSlots[findCommandSlot(arg0, 13)].unk1;
@@ -1474,24 +1505,33 @@ void func_800A8CA4(s32 characterId, s32 targetId) {
     }
 }
 
+/**
+ * @brief Build the Stock / Cast choice for drawing spell @p arg1.
+ *
+ * Stock takes its menu flags and target info from the kernel command; Cast
+ * takes the spell's, and is greyed out for IDs 64 and up.
+ *
+ * @param arg0 Party slot.
+ * @param arg1 Drawn spell.
+ */
 void func_800A8D7C(s32 arg0, s32 arg1) {
     BattleCharData* temp_s0;
 
     temp_s0 = &g_battleChars.chars[arg0];
-    temp_s0->pad0[0] = 10;
-    temp_s0->pad0[1] = D_80078E00.unk0139;
-    temp_s0->pad0[2] = D_80078E00.unk013A;
+    temp_s0->pad0[0] = BATTLE_CMD_STOCK;
+    temp_s0->pad0[1] = g_kernel.battleCommands[BATTLE_CMD_STOCK].menuFlags;
+    temp_s0->pad0[2] = g_kernel.battleCommands[BATTLE_CMD_STOCK].targetInfo;
     temp_s0->pad0[3] = 0;
     if (arg1 < 64) {
-        temp_s0->pad0[4] = 9;
-        temp_s0->pad0[5] = D_80078E00.spells[arg1].unk5;
-        temp_s0->pad0[6] = D_80078E00.spells[arg1].magicId;
+        temp_s0->pad0[4] = BATTLE_CMD_CAST;
+        temp_s0->pad0[5] = g_kernel.magic[arg1].statusWindowFlags;
+        temp_s0->pad0[6] = g_kernel.magic[arg1].targetInfo;
         temp_s0->pad0[7] = 0;
         
-        if (D_80078E00.spells[arg1].unk7 & 0x80) {
+        if (g_kernel.magic[arg1].attackFlags & ATTACK_FLAG_TARGET_KO) {
             temp_s0->pad0[7] = 1;
             
-            if (D_80078E00.spells[arg1].unk7 & 0x80) {
+            if (g_kernel.magic[arg1].attackFlags & ATTACK_FLAG_TARGET_KO) {
                 temp_s0->pad0[3] |= 1;
             }
         }
@@ -1502,25 +1542,37 @@ void func_800A8D7C(s32 arg0, s32 arg1) {
     } 
     
     else {
-        temp_s0->pad0[4] = 9;
+        temp_s0->pad0[4] = BATTLE_CMD_CAST;
         temp_s0->pad0[5] = 0;
         temp_s0->pad0[6] = 0;
         temp_s0->pad0[7] = 2;
     }
 }
 
+/**
+ * @brief Put temporary limit break @p arg1 in limit slot 0.
+ *
+ * @param arg0 Party member's battle data.
+ * @param arg1 Temporary limit break index.
+ */
 void func_800A8E90(BattleCharData* arg0, s32 arg1) {
     arg0->testSlots[0].unk0 = arg1;
-    arg0->testSlots[0].unk2 = D_80078E00.array4484[arg1].unk5;
-    arg0->testSlots[0].unk3 = D_80078E00.array4484[arg1].unk6;
+    arg0->testSlots[0].unk2 = g_kernel.tempLimitBreaks[arg1].statusWindowFlags;
+    arg0->testSlots[0].unk3 = g_kernel.tempLimitBreaks[arg1].targetInfo;
     arg0->testSlots[0].unk4 = 0;
     arg0->testSlots[0].unk1 = 1;
     
-    if (D_80078E00.array4484[arg1].unk7 & 0x80) {
+    if (g_kernel.tempLimitBreaks[arg1].attackFlags & ATTACK_FLAG_TARGET_KO) {
         arg0->testSlots[0].unk4 |= 1;
     }
 }
 
+/**
+ * @brief Fill the limit slots with Quistis' learned Blue Magic.
+ *
+ * @param arg0 Party member's battle data.
+ * @return Number of slots filled.
+ */
 s32 func_800A8EFC(BattleCharData* arg0) {
     s32 bit;
     s32 i;
@@ -1532,13 +1584,13 @@ s32 func_800A8EFC(BattleCharData* arg0) {
     for (i = 0; i < 16; i++) {
         if (g_gameState.mainData.limitBreaks.quistisLimits & bit) {
             arg0->testSlots[val].unk0 = i;
-            arg0->testSlots[val].unk2 = D_80078E00.array44FC[i].unk4;
-            arg0->testSlots[val].unk3 = D_80078E00.array44FC[i].unk5;
+            arg0->testSlots[val].unk2 = g_kernel.blueMagic[i].statusWindowFlags;
+            arg0->testSlots[val].unk3 = g_kernel.blueMagic[i].targetInfo;
             arg0->testSlots[val].unk4 = 0;
             arg0->testSlots[val].unk1 = 1;
             arg0->testSlots[val].unk4 &= 0xEF;
             
-            if (D_80078E00.array44FC[i].unk6 & 0x80) {
+            if (g_kernel.blueMagic[i].attackFlags & ATTACK_FLAG_TARGET_KO) {
                 arg0->testSlots[val].unk4 |= 1;
             }
             
@@ -1555,8 +1607,8 @@ s32 func_800A8EFC(BattleCharData* arg0) {
 * @brief Initialize entity ability fields from the ability table.
 *
 * Writes a1 as the ability ID at offset 0x32 of the entity entry
-* (computed as a0 + a2*5). Looks up ability data in D_80078E00
-* (offset 0x4A60, stride 8) and copies two bytes to offsets 0x34-0x35.
+* (computed as a0 + a2*5). Copies Rinoa limit break a1's status window
+* flags and target info to offsets 0x34-0x35.
 * Clears offset 0x36 and sets offset 0x33 to 1.
 *
 * @param a0 Base entity pointer (as integer).
@@ -1566,8 +1618,8 @@ s32 func_800A8EFC(BattleCharData* arg0) {
 
 void func_800A8F98(BattleCharData* arg0, s32 arg1, s32 arg2) {
     arg0->testSlots[arg2].unk0 = arg1;
-    arg0->testSlots[arg2].unk2 = D_80078E00.rows8[arg1].unk2;
-    arg0->testSlots[arg2].unk3 = D_80078E00.rows8[arg1].unk3;
+    arg0->testSlots[arg2].unk2 = g_kernel.rinoaLimitBreaks1[arg1].statusWindowFlags;
+    arg0->testSlots[arg2].unk3 = g_kernel.rinoaLimitBreaks1[arg1].targetInfo;
     arg0->testSlots[arg2].unk4 = 0;
     arg0->testSlots[arg2].unk1 = 1;
 }
@@ -1603,6 +1655,15 @@ s32 func_800A9064(BattleCharData* arg0) {
     return 3;
 }
 
+/**
+ * @brief Roll Selphie's Slot: a spell and how many times to cast it.
+ *
+ * The slot set comes from the kernel slot array, its row picked at random
+ * and its column from Selphie's level, crisis level and a random offset.
+ *
+ * @param arg0 Output: rolled spell.
+ * @param arg1 Output: cast count, from 1 to the set's count.
+ */
 void func_800A9084(u8* arg0, u8* arg1) {
     s32 i;
     s32 temp_a1;
@@ -1639,11 +1700,11 @@ void func_800A9084(u8* arg0, u8* arg1) {
         var_v1_2 = 4;
     }
     
-    idx = D_80078E00.unk4AD0[var_v1_2][temp_a1];
+    idx = g_kernel.slotArray[var_v1_2][temp_a1];
     temp_v0 = func_8009B15C() % 8;
 
-    D_800ED148.unk131F = *arg0 = D_80078E00.unk4B0C_arr[idx][temp_v0].unk4B0C;
-    D_800ED148.unk1320 = *arg1 = (func_8009B15C() % D_80078E00.unk4B0C_arr[idx][temp_v0].unk4B0D) + 1;
+    D_800ED148.unk131F = *arg0 = g_kernel.slotSets[idx][temp_v0].magicId;
+    D_800ED148.unk1320 = *arg1 = (func_8009B15C() % g_kernel.slotSets[idx][temp_v0].count) + 1;
 }
 
 /**
@@ -1668,6 +1729,14 @@ s32 func_800A9240(s32 arg0) {
     return 0;
 }
 
+/**
+ * @brief Fill the Shot slots, one per ammo Irvine has learned or holds.
+ *
+ * Ammo not in the inventory is greyed out.
+ *
+ * @param arg0 Party member's battle data.
+ * @return Number of slots filled.
+ */
 s32 func_800A9284(BattleCharData* arg0) {
     s32 i;
     u16 mask;
@@ -1684,7 +1753,7 @@ s32 func_800A9284(BattleCharData* arg0) {
         if ((g_gameState.mainData.limitBreaks.irvineLimits & mask) || (temp_a0 != 0)) {
             arg0->testSlots[val].unk0 = var_s1;
             arg0->testSlots[val].unk2 = 128;
-            arg0->testSlots[val].unk3 = D_80078E00.unk015A;
+            arg0->testSlots[val].unk3 = g_kernel.battleCommands[BATTLE_CMD_SHOT].targetInfo;
             arg0->testSlots[val].unk4 = 0;
             arg0->testSlots[val].unk1 = temp_a0;
             arg0->testSlots[val].unk4 &= 0xEF;
@@ -1880,16 +1949,16 @@ void func_800A960C(s32 arg0) {
 /**
 * @brief Compute paired lookup results from entity table and return combined.
 *
-* Computes D_80078E00 + a0 * 20 as the base address, loads the byte at
-* offset 0x3EE7, calls func_800B0F9C and func_800B0F7C with it, and
-* returns the bitwise OR of both results masked to 16 bits.
+* Reads non-junctionable GF attack a0's target info, calls func_800B0F9C
+* and func_800B0F7C with it, and returns the bitwise OR of both results
+* masked to 16 bits.
 *
-* @param a0 Entity index (stride 20 in D_80078E00).
+* @param a0 Non-junctionable GF attack index.
 * @return Combined result from both lookups, masked to u16.
 */
 
 u16 func_800A972C(s32 arg0) {
-    return func_800B0F9C(D_80078E00.entriesA0[arg0].unk7) | func_800B0F7C(D_80078E00.entriesA0[arg0].unk7);
+    return func_800B0F9C(g_kernel.nonJunctionableGfAttacks[arg0].targetInfo) | func_800B0F7C(g_kernel.nonJunctionableGfAttacks[arg0].targetInfo);
 }
 
 /**
