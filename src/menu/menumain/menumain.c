@@ -647,7 +647,7 @@ void func_801F177C(s32 *a0) {
  * use, and inserts it at the front of the D_801FA450 list: the head pointer
  * doubles as a sentinel node whose @c next field is the pointer itself, so
  * the insert is the ordinary four-store list splice. Clears the task's
- * callback table via func_801F177C, then stores @p tag, @p handler and a
+ * callback table via func_801F177C, then stores @p tickCb, @p drawCb and a
  * zeroed state.
  *
  * @param tickCb Update callback stored in the task (func_801F1584).
@@ -696,7 +696,7 @@ void *func_801F179C(MenuTickCallback tickCb, MenuDrawCallback drawCb) {
  *
  * Claims the first free slot of the 10-entry pool D_801FA550, marks it in
  * use, splices it in directly after D_801FA4D0 (the list head), clears its
- * callback table via func_801F177C, and stores @p tag and @p handler.
+ * callback table via func_801F177C, and stores @p tickCb and @p drawCb.
  *
  * @note The explicit exhaust-break (rather than a for loop with node
  *       pre-initialized) is what places the @c node @c = @c 0 on the
@@ -787,7 +787,7 @@ s32 func_801F1AA4(s32 a0, s32 a1, s32 a2) {
     return a2;
 }
 
-/** @brief Iterate all panels and dispatch via callback. */
+/** @brief Start a panel task (tick func_801F1A40, draw func_801F1AA4) and run its first tick. */
 void func_801F1AAC(void) {
     /* func_801F1A40 returns a status that the tick driver ignores. */
     s32 result = func_801F179C((MenuTickCallback)func_801F1A40, func_801F1AA4);

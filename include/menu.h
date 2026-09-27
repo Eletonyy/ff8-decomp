@@ -13,8 +13,9 @@
  * @brief Menu task callbacks registered with func_801F179C.
  *
  * Each overlay's callbacks take its own task-state type, so the arguments are
- * left unspecified: the tick callback runs once per frame with the task, and
- * the draw callback gets (task, ot, packet cursor) and returns the new cursor.
+ * left unspecified: the tick callback is called with the task and its result is
+ * ignored; the draw callback gets (task, ot, packet cursor) and returns the new
+ * cursor.
  */
 typedef void (*MenuTickCallback)();
 typedef s32 (*MenuDrawCallback)();
