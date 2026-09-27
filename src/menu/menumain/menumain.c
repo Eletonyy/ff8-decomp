@@ -2130,7 +2130,7 @@ s32 func_801F7394(s32 a0) {
  * Sets up g_menuDisplayCfg rendering params (icon 0x4A), then renders
  * the list, scroll indicator, and footer/help text.
  */
-void func_801F739C(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
+void func_801F739C(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, MenuRowCallback a5) {
     s32 base = (s32)&g_menuDisplayCfg;
     s32 ret1;
     s32 ret2;

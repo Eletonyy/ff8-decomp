@@ -54,6 +54,14 @@ typedef struct {
     /* 0x20 */ s32 dataPtr;       /**< Pointer to item data array */
 } MenuDisplayConfig; /* 0x24 bytes */
 
+/**
+ * @brief Per-column renderer that func_801EFBB4 calls for a panel.
+ *
+ * Called as (ot, packet cursor, MenuDisplayConfig.pageEnd or pageStart,
+ * column index, x offset); returns the advanced packet cursor.
+ */
+typedef s32 (*MenuRowCallback)(s32, s32, s32, s32, s32);
+
 /** @brief Shared menu display state (lives in menumain BSS at 0x801FAB00). */
 extern MenuDisplayConfig g_menuDisplayCfg;
 
@@ -235,6 +243,7 @@ extern u8 D_800780AB;
 
 /* menumain-owned shared symbols (canonical signatures from menumain.c). */
 s32 func_801F6AFC(s32);
+s32 func_801EFBB4(s32, s32, MenuRowCallback);
 u32 func_801F0FEC(s32, s32, s32, s32, u8 *, s32);
 s32 func_801F3FB4(s32);
 s32 func_801F5104(s32);

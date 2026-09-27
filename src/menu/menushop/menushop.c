@@ -1169,7 +1169,7 @@ static s32 func_801E6F60(ShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
     g_menuDisplayCfg.y = a4;
     g_menuDisplayCfg.scrollOffset = s->scrollOffset;
     g_menuDisplayCfg.dataPtr = (s32)&s->itemDesc;
-    return func_801EFBB4(a1, a2, (s32)&func_801E6EB0);
+    return func_801EFBB4(a1, a2, func_801E6EB0);
 }
 
 /**

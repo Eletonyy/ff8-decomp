@@ -9,7 +9,7 @@
 /* Public prototypes (junction-menu entry points + magic-list callback). */
 extern void junctionMenuUpdate();
 s32 renderJunctionMenu(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY);
-extern s32 renderMagicItemCallback();
+s32 renderMagicItemCallback(s32 renderCtx, s32 cursorY, s32 itemIdx, s32 columnIdx, s32 xOffset);
 
 /* Private typedefs/structs (menujnc2-internal layout descriptors). */
 /** @brief Stat-table layout entry: grid cell + label string ID (stride 8). */

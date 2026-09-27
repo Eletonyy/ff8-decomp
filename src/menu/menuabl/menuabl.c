@@ -678,7 +678,7 @@ s32 func_801E3630(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
     cfg->y            = stackArg;
     cfg->scrollOffset = ctx->scrollOff;
     cfg->dataPtr      = (s32)ctx->items;
-    return func_801EFBB4(a1, a2, (s32)func_801E3580);
+    return func_801EFBB4(a1, a2, func_801E3580);
 }
 
 /**
@@ -769,7 +769,7 @@ s32 func_801E381C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
         s32 scrollbar = func_801F5F30(a1, a2, a3 + 0x28, stackArg, g_menuColor, ctx->pageStart);
         a2 = func_801F5F60(a1, scrollbar, g_menuColor, 3);
     }
-    return func_801EFBB4(a1, a2, (s32)func_801E36AC);
+    return func_801EFBB4(a1, a2, func_801E36AC);
 }
 
 /**
@@ -827,7 +827,7 @@ s32 func_801E3904(s32 ctx, s32 pkt, s32 col, s32 row, s32 scrollOffset) {
  */
 s32 func_801E39E0(SoundMenuState *s, s32 ot, s32 a2, s32 a3, s32 stackArg) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
-    s32 callback;
+    MenuRowCallback callback;
 
     cfg->iconType     = 0x49;
     cfg->iconSubType  = 0;
@@ -853,7 +853,7 @@ s32 func_801E39E0(SoundMenuState *s, s32 ot, s32 a2, s32 a3, s32 stackArg) {
         }
         a2 = func_801F5F60(ot, scrollbar, g_menuColor, mode);
     }
-    callback = (s32)func_801E3904;
+    callback = func_801E3904;
     return func_801EFBB4(ot, a2, callback);
 }
 

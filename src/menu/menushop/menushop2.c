@@ -465,7 +465,7 @@ static s32 func_801E8B60(JunkShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
     g_menuDisplayCfg.y = a4;
     g_menuDisplayCfg.scrollOffset = s->scrollOffset;
     g_menuDisplayCfg.dataPtr = (s32)&s->weaponName;
-    return func_801EFBB4(a1, a2, (s32)&func_801E8AB0);
+    return func_801EFBB4(a1, a2, func_801E8AB0);
 }
 
 /**

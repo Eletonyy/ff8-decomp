@@ -35,8 +35,8 @@ extern s16 getGameStateS16(void);
 
 void func_801E582C(CardMenuState *state);
 void func_801E5ABC(CardMenuState *state);
-void func_801E5F7C(void);
-void func_801E67E4(void);
+s32 func_801E5F7C(s32, s32, s32, s32, s32);
+s32 func_801E67E4(s32, s32, s32, s32, s32);
 s32 func_801E69AC(CardMenuState *state, s32 a1, s32 a2);
 
 /** @brief Look up string @p a0 in menu text category 0xD. */
@@ -217,7 +217,7 @@ s32 func_801E6058(CardMenuState *state, s32 a1, s32 a2, s32 a3, s32 stackArg) {
     g_menuDisplayCfg.dataPtr = (s32)state->rowText;
     g_menuDisplayCfg.itemId = state->card;
     g_menuDisplayCfg.itemAttr = state->unk2C;
-    func_801EFBB4(a1, a2, (s32)func_801E5F7C);
+    func_801EFBB4(a1, a2, func_801E5F7C);
 }
 
 INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E60E8);
@@ -286,7 +286,7 @@ s32 func_801E6920(CardMenuState *state, s32 a1, s32 a2, s32 a3, s32 stackArg) {
     g_menuDisplayCfg.dataPtr = (s32)state->rowText;
     g_menuDisplayCfg.itemId = state->card;
     g_menuDisplayCfg.itemAttr = state->unk2C;
-    func_801EFBB4(a1, a2, (s32)func_801E67E4);
+    func_801EFBB4(a1, a2, func_801E67E4);
 }
 
 /**
