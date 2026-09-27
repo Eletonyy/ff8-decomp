@@ -330,7 +330,7 @@ s32 func_801E69AC(CardMenuState *state, s32 a1, s32 a2) {
  * initializes the first card entry.
  */
 void func_801E6AA8(void) {
-    CardMenuState *state = (CardMenuState *)func_801F179C((s32)func_801E5F4C, (s32)func_801E69AC);
+    CardMenuState *state = func_801F179C(func_801E5F4C, func_801E69AC);
 
     D_801E7D64 = -1;
     D_801E7D66 = -1;

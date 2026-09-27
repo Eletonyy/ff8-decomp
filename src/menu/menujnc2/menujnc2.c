@@ -5331,7 +5331,7 @@ void initJunctionMenu(MenuParentCtx *parentCtx) {
     JunctionMenuCtx *ctx;
     s32 i;
 
-    ctx = (JunctionMenuCtx *)func_801F179C((s32)junctionMenuUpdate, (s32)renderJunctionMenu);
+    ctx = func_801F179C(junctionMenuUpdate, renderJunctionMenu);
     func_801F5300();
     if (ctx != NULL) {
         ctx->parentParam = parentCtx->param;

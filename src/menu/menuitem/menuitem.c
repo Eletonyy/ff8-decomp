@@ -2,6 +2,8 @@
 #include "menu.h"
 #include "menuitem.h"
 
+s32 func_801E95C4(s32, s32, s32);
+
 /** @brief Store item menu state pointer. */
 void func_801E2800(s32 a0) {
     D_801ECE20 = a0;

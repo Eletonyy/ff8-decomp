@@ -16,6 +16,8 @@ extern u8 D_801E7B10[];
 extern u8 D_801E8310[];
 extern s16 D_801ED420;
 extern s16 D_801ED422;
+
+void func_801E5A10(void *);
 extern s8 D_801E6B0C;
 extern s8 D_801E6B10[];
 extern s32 g_menuColor;
@@ -527,8 +529,6 @@ u8 func_801E688C(void) {
     }
 }
 
-extern void *func_801E5A10(void *);
-
 typedef struct {
     u8 pad00[0x24];
     s16 unk24;
@@ -557,7 +557,7 @@ void func_801E696C(void) {
 
     DrawSync(0);
     VSync(0);
-    work = (WorkStruct *)func_801F179C(func_801E5A10, &func_801E67F4);
+    work = func_801F179C(func_801E5A10, func_801E67F4);
     for (i = 0; i < 0x1000; i++) {
         D_801E6B10[i] = 0;
     }

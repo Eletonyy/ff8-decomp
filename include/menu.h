@@ -10,6 +10,16 @@
 #define MENU_IMAGE_ADDR 0x801CD000
 
 /**
+ * @brief Menu task callbacks registered with func_801F179C.
+ *
+ * Each overlay's callbacks take its own task-state type, so the arguments are
+ * left unspecified: the tick callback runs once per frame with the task, and
+ * the draw callback gets (task, ot, packet cursor) and returns the new cursor.
+ */
+typedef void (*MenuTickCallback)();
+typedef s32 (*MenuDrawCallback)();
+
+/**
  * @brief Display/rendering configuration for menu panels.
  *
  * Shared across menu overlays (menumain, menucrd, menutest, etc.).
@@ -236,6 +246,7 @@ s32 func_801F776C(s32, s32);
 s32 func_801F79F8(s32);
 s32 func_801F7BAC(s32);
 s32 func_801F7BE4(s32);
+void *func_801F179C(MenuTickCallback, MenuDrawCallback);
 u8 *func_801F08D4(s32, s32, s32, s32);
 extern u8 D_801EF1A4;
 extern u8 D_801EF1A5;

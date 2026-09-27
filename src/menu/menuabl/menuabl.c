@@ -955,7 +955,7 @@ void func_801E3C28(void) {
  */
 void func_801E3C9C(void) {
     AbilityMenuState *st = func_801F179C(
-        (s32)func_801E2A34, (s32)func_801E3AE0);
+        func_801E2A34, func_801E3AE0);
 
     if (st != NULL) {
         st->state       = 0;

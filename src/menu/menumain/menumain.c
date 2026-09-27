@@ -654,7 +654,7 @@ void func_801F177C(s32 *a0) {
  * @param drawCb Per-frame draw callback (func_801F16AC).
  * @return The claimed task as void*, or NULL when the pool is full.
  */
-void* func_801F179C(s32 tickCb, s32 drawCb) {
+void *func_801F179C(MenuTickCallback tickCb, MenuDrawCallback drawCb) {
     MenuTask *node;
     MenuTask *n = D_801FA550;
     MenuTask *first;
@@ -686,7 +686,7 @@ void* func_801F179C(s32 tickCb, s32 drawCb) {
     first->prev = node;
     func_801F177C((s32 *)node);
     node->tickCb = tickCb;
-    node->drawCb = (s32 (*)(MenuTask *, s32, s32))drawCb;
+    node->drawCb = drawCb;
     node->state = 0;
     return node;
 }
@@ -706,7 +706,7 @@ void* func_801F179C(s32 tickCb, s32 drawCb) {
  * @param drawCb Per-frame draw callback (func_801F16AC).
  * @return The claimed task, or NULL when the pool is full.
  */
-MenuTask *func_801F1850(s32 tickCb, s32 drawCb) {
+MenuTask *func_801F1850(MenuTickCallback tickCb, MenuDrawCallback drawCb) {
     MenuTask *node;
     MenuTask *n = D_801FA550;
     MenuTask *next;
@@ -736,7 +736,7 @@ MenuTask *func_801F1850(s32 tickCb, s32 drawCb) {
     next->prev = &D_801FA4D0;
     func_801F177C((s32 *)&D_801FA4D0);
     node->tickCb = tickCb;
-    node->drawCb = (s32 (*)(MenuTask *, s32, s32))drawCb;
+    node->drawCb = drawCb;
     return node;
 }
 
@@ -789,7 +789,8 @@ s32 func_801F1AA4(s32 a0, s32 a1, s32 a2) {
 
 /** @brief Iterate all panels and dispatch via callback. */
 void func_801F1AAC(void) {
-    s32 result = func_801F179C(func_801F1A40, func_801F1AA4);
+    /* func_801F1A40 returns a status that the tick driver ignores. */
+    s32 result = func_801F179C((MenuTickCallback)func_801F1A40, func_801F1AA4);
 
     if (result != 0) {
         func_801F1A40(result);

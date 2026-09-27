@@ -303,7 +303,7 @@ void func_801E67F0(void) {
     s32 v0;
     u8 *text;
 
-    state = (TestMenuState *)func_801F179C(func_801E5D74, func_801E6760);
+    state = func_801F179C(func_801E5D74, func_801E6760);
     func_801F0948(0);
     func_801F5440();
     do {
