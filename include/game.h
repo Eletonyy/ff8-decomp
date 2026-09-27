@@ -19,6 +19,14 @@ u8 *getSpellDesc(s32 spellId);
 
 /** @brief Look up the name of item @p itemId. */
 u8 *getItemName(s32 itemId);
+u8 *getItemDesc(s32 itemId);
+
+u8 *getRinoaLimitBreak2Name(s32 id);
+u8 *getDuelName(s32 id);
+u8 *getShotName(s32 id);
+u8 *getRenzokukenFinisherName(s32 id);
+u8 *getBlueMagicName(s32 id);
+u8 *getTempLimitBreakName(s32 id);
 
 u8 *getAbilityName(s32 abilityId);
 s32 getWeaponName(s32 id);
