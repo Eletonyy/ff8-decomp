@@ -1838,12 +1838,12 @@ s32 func_801F65F0(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
 }
 
 /**
- * @brief Draw a character's level number in its status panel slot.
+ * @brief Draw a weapon's name in its status panel slot.
  *
  * Anchors g_menuDisplayCfg at (x+200, y+121) with a 154x22 box and no
- * icon, renders the level value from getLevelCurveData(charIdx) as a
- * 7-glyph field at (x+209, y+128) via func_801F0FEC, then draws the
- * panel frame with func_801EF9AC at full intensity.
+ * icon, draws the name from getWeaponName(weaponId) at (x+209, y+128)
+ * via func_801F0FEC, then draws the panel frame with func_801EF9AC at
+ * full intensity.
  *
  * @note @p x and @p y are advanced in place — reassigning the parameters
  *       restores their true live lengths so px/py keep s0/s1 (allocation
@@ -1853,10 +1853,10 @@ s32 func_801F65F0(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
  * @param dl      Display-list cursor.
  * @param x       Panel base X.
  * @param y       Panel base Y.
- * @param charIdx Level-curve entry to display.
+ * @param weaponId Weapon to display.
  */
-void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 charIdx) {
-    s32 lvl;
+void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 weaponId) {
+    s32 name;
 
     x += 0xC8;
     y += 0x79;
@@ -1868,8 +1868,8 @@ void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 charIdx) {
     g_menuDisplayCfg.y = y;
     g_menuDisplayCfg.h = 0x16;
     y += 7;
-    lvl = getLevelCurveData(charIdx);
-    dl = func_801F0FEC(ctx, dl, x, y, lvl, 7);
+    name = getWeaponName(weaponId);
+    dl = func_801F0FEC(ctx, dl, x, y, name, 7);
     func_801EF9AC(ctx, dl, 0x1000, g_menuColor);
 }
 

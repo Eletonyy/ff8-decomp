@@ -106,22 +106,21 @@ u8 *getAngeloName(void) {
 }
 
 
-/** @brief Resolves param from Kernel.rinoaLimitBreaks2[gfId] (stride 20) via resolveKernelPtr. */
-s32 getGfSummonData(s32 gfId) {
-    return resolveKernelPtr(g_kernel.rinoaLimitBreaks2[gfId].param0, g_kernel.rinoaLimitBreaks2Text);
+/** @brief Returns the name of Rinoa limit break (part 2) @p id. */
+s32 getRinoaLimitBreak2Name(s32 id) {
+    return resolveKernelPtr(g_kernel.rinoaLimitBreaks2[id].param0, g_kernel.rinoaLimitBreaks2Text);
 }
 
 
 /**
- * @brief Resolve GF name pointer from Kernel.rinoaLimitBreaks1[gfId] (stride 8).
- * @param a0 GF index (0 returns default D_800773A8 pointer).
- * @return Pointer from resolveKernelPtr lookup, or &D_800773A8 if a0 is 0.
+ * @brief Returns the name of Rinoa limit break (part 1) @p id.
+ * @param id Entry index; 0 returns Angelo's name from the save.
  */
-u8 *getGfName(s32 gfId) {
+u8 *getRinoaLimitBreak1Name(s32 id) {
     u8 *result;
 
-    if (gfId != 0) {
-        result = resolveKernelPtr(g_kernel.rinoaLimitBreaks1[gfId].param0, g_kernel.rinoaLimitBreaks1Text);
+    if (id != 0) {
+        result = resolveKernelPtr(g_kernel.rinoaLimitBreaks1[id].param0, g_kernel.rinoaLimitBreaks1Text);
     } else {
         result = g_gameState.angeloName;
     }
@@ -129,63 +128,63 @@ u8 *getGfName(s32 gfId) {
 }
 
 
-/** @brief Resolves param0 from Kernel.duel[entityId] (stride 32) via resolveKernelPtr. */
-s32 getMagicEffectName(s32 entityId) {
-    return resolveKernelPtr(g_kernel.duel[entityId].param0, g_kernel.duelText);
+/** @brief Returns the name of duel entry @p id. */
+s32 getDuelName(s32 id) {
+    return resolveKernelPtr(g_kernel.duel[id].param0, g_kernel.duelText);
 }
 
 
-/** @brief Resolves param1 from Kernel.duel[entityId] (stride 32, +2) via resolveKernelPtr. */
-s32 getMagicEffectDesc(s32 entityId) {
-    return resolveKernelPtr(g_kernel.duel[entityId].param1, g_kernel.duelText);
+/** @brief Returns the description of duel entry @p id. */
+s32 getDuelDesc(s32 id) {
+    return resolveKernelPtr(g_kernel.duel[id].param1, g_kernel.duelText);
 }
 
 
-/** @brief Resolves param0 from Kernel.shot[statusId] (stride 24) via resolveKernelPtr. */
-s32 getStatusEffectName(s32 statusId) {
-    return resolveKernelPtr(g_kernel.shot[statusId].param0, g_kernel.shotText);
+/** @brief Returns the name of shot entry @p id. */
+s32 getShotName(s32 id) {
+    return resolveKernelPtr(g_kernel.shot[id].param0, g_kernel.shotText);
 }
 
 
-/** @brief Resolves param1 from Kernel.shot[statusId] (stride 24, +2) via resolveKernelPtr. */
-s32 getStatusEffectDesc(s32 statusId) {
-    return resolveKernelPtr(g_kernel.shot[statusId].param1, g_kernel.shotText);
+/** @brief Returns the description of shot entry @p id. */
+s32 getShotDesc(s32 id) {
+    return resolveKernelPtr(g_kernel.shot[id].param1, g_kernel.shotText);
 }
 
 
-/** @brief Resolves param0 from Kernel.renzokukenFinishers[elemId] (stride 24) via resolveKernelPtr. */
-s32 getElementName(s32 elemId) {
-    return resolveKernelPtr(g_kernel.renzokukenFinishers[elemId].param0, g_kernel.renzokukenFinishersText);
+/** @brief Returns the name of renzokuken finisher entry @p id. */
+s32 getRenzokukenFinisherName(s32 id) {
+    return resolveKernelPtr(g_kernel.renzokukenFinishers[id].param0, g_kernel.renzokukenFinishersText);
 }
 
 
-/** @brief Resolves param1 from Kernel.renzokukenFinishers[elemId] (stride 24, +2) via resolveKernelPtr. */
-s32 getElementDesc(s32 elemId) {
-    return resolveKernelPtr(g_kernel.renzokukenFinishers[elemId].param1, g_kernel.renzokukenFinishersText);
+/** @brief Returns the description of renzokuken finisher entry @p id. */
+s32 getRenzokukenFinisherDesc(s32 id) {
+    return resolveKernelPtr(g_kernel.renzokukenFinishers[id].param1, g_kernel.renzokukenFinishersText);
 }
 
 
-/** @brief Resolves param0 from Kernel.blueMagic[effectId] (stride 16) via resolveKernelPtr. */
-s32 getJuncEffectName(s32 effectId) {
-    return resolveKernelPtr(g_kernel.blueMagic[effectId].param0, g_kernel.blueMagicText);
+/** @brief Returns the name of blue magic entry @p id. */
+s32 getBlueMagicName(s32 id) {
+    return resolveKernelPtr(g_kernel.blueMagic[id].param0, g_kernel.blueMagicText);
 }
 
 
-/** @brief Resolves param1 from Kernel.blueMagic[effectId] (stride 16, +2) via resolveKernelPtr. */
-s32 getJuncEffectDesc(s32 effectId) {
-    return resolveKernelPtr(g_kernel.blueMagic[effectId].param1, g_kernel.blueMagicText);
+/** @brief Returns the description of blue magic entry @p id. */
+s32 getBlueMagicDesc(s32 id) {
+    return resolveKernelPtr(g_kernel.blueMagic[id].param1, g_kernel.blueMagicText);
 }
 
 
-/** @brief Resolves param0 from Kernel.tempLimitBreaks[catId] (stride 24) via resolveKernelPtr. */
-s32 getJuncCategoryName(s32 catId) {
-    return resolveKernelPtr(g_kernel.tempLimitBreaks[catId].param0, g_kernel.tempLimitBreaksText);
+/** @brief Returns the name of temporary limit break entry @p id. */
+s32 getTempLimitBreakName(s32 id) {
+    return resolveKernelPtr(g_kernel.tempLimitBreaks[id].param0, g_kernel.tempLimitBreaksText);
 }
 
 
-/** @brief Resolves param1 from Kernel.tempLimitBreaks[catId] (stride 24, +2) via resolveKernelPtr. */
-s32 getJuncCategoryDesc(s32 catId) {
-    return resolveKernelPtr(g_kernel.tempLimitBreaks[catId].param1, g_kernel.tempLimitBreaksText);
+/** @brief Returns the description of temporary limit break entry @p id. */
+s32 getTempLimitBreakDesc(s32 id) {
+    return resolveKernelPtr(g_kernel.tempLimitBreaks[id].param1, g_kernel.tempLimitBreaksText);
 }
 
 
@@ -297,15 +296,10 @@ u8 *getMagicNamePtr(s32 magicId) {
 
 
 /**
- * @brief Resolve a secondary data pointer for a spell or GF ability.
- *
- * For magic spells (< 64), reads nameParam1 from the junction data table.
- * For GF abilities (>= 64), reads nameParam0 from the ability table.
- *
- * @param spellId Spell/ability index.
- * @return Resolved data pointer via resolveKernelPtr.
+ * @brief Returns the description of a magic spell or junctionable GF.
+ * @param spellId Magic ID below 0x40; from 0x40, junctionable GF @p spellId - 0x40.
  */
-u8 *getSpellEntityData(s32 spellId) {
+u8 *getSpellDesc(s32 spellId) {
     if (spellId < 0x40) {
         return resolveKernelPtr(g_kernel.magic[spellId].nameParam1, g_kernel.magicText);
     }
@@ -314,19 +308,18 @@ u8 *getSpellEntityData(s32 spellId) {
 
 
 /**
- * @brief Look up the name string for a stat/command ID.
- * @param statId Stat index; >= 0x21 uses statTable4, otherwise statTable24.
- * @return Pointer to the stat's name string.
+ * @brief Returns an item's name.
+ * @param itemId Battle item below 0x21; from 0x21, non-battle item @p itemId - 0x21.
  */
-u8 *getStatName(s32 statId) {
+u8 *getItemName(s32 itemId) {
     u16 param;
     s32 base;
 
-    if (statId >= 0x21) {
-        param = g_kernel.nonBattleItems[statId - 0x21].param0;
+    if (itemId >= 0x21) {
+        param = g_kernel.nonBattleItems[itemId - 0x21].param0;
         base = g_kernel.nonBattleItemsText;
     } else {
-        param = g_kernel.battleItems[statId].param0;
+        param = g_kernel.battleItems[itemId].param0;
         base = g_kernel.battleItemsText;
     }
     return resolveKernelPtr(param, base);
@@ -334,19 +327,18 @@ u8 *getStatName(s32 statId) {
 
 
 /**
- * @brief Look up the description string for a stat/command ID.
- * @param statId Stat index; >= 0x21 uses statTable4, otherwise statTable24.
- * @return Pointer to the stat's description string.
+ * @brief Returns an item's description.
+ * @param itemId Battle item below 0x21; from 0x21, non-battle item @p itemId - 0x21.
  */
-s32 getStatDesc(s32 statId) {
+s32 getItemDesc(s32 itemId) {
     u16 param;
     s32 base;
 
-    if (statId >= 0x21) {
-        param = g_kernel.nonBattleItems[statId - 0x21].param1;
+    if (itemId >= 0x21) {
+        param = g_kernel.nonBattleItems[itemId - 0x21].param1;
         base = g_kernel.nonBattleItemsText;
     } else {
-        param = g_kernel.battleItems[statId].param1;
+        param = g_kernel.battleItems[itemId].param1;
         base = g_kernel.battleItemsText;
     }
     return resolveKernelPtr(param, base);
@@ -397,21 +389,21 @@ u8 *getCharName(CharacterId charId) {
 }
 
 
-/** @brief Resolves param from Kernel.weapons[curveId] (stride 12) via resolveKernelPtr. */
-s32 getLevelCurveData(s32 curveId) {
-    return resolveKernelPtr(g_kernel.weapons[curveId].param0, g_kernel.weaponsText);
+/** @brief Returns the name of weapon @p id. */
+s32 getWeaponName(s32 id) {
+    return resolveKernelPtr(g_kernel.weapons[id].param0, g_kernel.weaponsText);
 }
 
 
-/** @brief Resolves AbilityEntry.statParam0 from Kernel.battleCommands[entryId] via resolveKernelPtr. */
-u8 *getAbilityEntryName(s32 entryId) {
-    return resolveKernelPtr(g_kernel.battleCommands[entryId].statParam0, g_kernel.battleCommandsText);
+/** @brief Returns the name of battle command @p id. */
+u8 *getBattleCommandName(s32 id) {
+    return resolveKernelPtr(g_kernel.battleCommands[id].statParam0, g_kernel.battleCommandsText);
 }
 
 
-/** @brief Resolves AbilityEntry.statParam1 from Kernel.battleCommands[entryId] via resolveKernelPtr. */
-s32 getAbilityEntryDesc(s32 entryId) {
-    return resolveKernelPtr(g_kernel.battleCommands[entryId].statParam1, g_kernel.battleCommandsText);
+/** @brief Returns the description of battle command @p id. */
+s32 getBattleCommandDesc(s32 id) {
+    return resolveKernelPtr(g_kernel.battleCommands[id].statParam1, g_kernel.battleCommandsText);
 }
 
 

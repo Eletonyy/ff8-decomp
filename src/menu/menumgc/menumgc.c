@@ -164,7 +164,7 @@ s32 _getJunctionableCharMask(void) {
  *
  * Reads the availability flag from D_801F87B8[idx]. If button 0x40 is held
  * (func_801F79F8), returns the flag directly. Otherwise checks the GF type
- * field in the GfJunctionEntry table (g_kernel + 0x21C): if the type is
+ * field in the MagicEntry table (g_kernel + 0x21C): if the type is
  * 5 or 6, returns 0 (unavailable); otherwise returns the flag.
  *
  * @param idx GF/slot index.
@@ -1975,7 +1975,7 @@ dispatch:
         ctx->drawMode = 5;
         ctx->upperSlot = ctx->slotCursor[ctx->charIdx];
         ctx->lowerSlot = ctx->upperSlot;
-        ctx->itemPtr = getSpellEntityData(func_801E6648(ctx->charIdx, ctx->upperSlot));
+        ctx->itemPtr = getSpellDesc(func_801E6648(ctx->charIdx, ctx->upperSlot));
         ctx->rearrangeSlide = 0x1000;
         ctx->upperPageSlide = 0;
         ctx->lowerPageSlide = 0;
@@ -1997,7 +1997,7 @@ dispatch:
     case 0x4D:
         ctx->upperSlot = 0;
         ctx->lowerSlot = 0;
-        ctx->itemPtr = getSpellEntityData(func_801E6648(ctx->charIdx, ctx->upperSlot));
+        ctx->itemPtr = getSpellDesc(func_801E6648(ctx->charIdx, ctx->upperSlot));
         ctx->upperPage = ctx->upperSlot / 4;
         ctx->lowerPage = ctx->lowerSlot / 4;
         *statePtr = 0x4E;
@@ -2052,7 +2052,7 @@ dispatch:
                 goto dispatch;
             }
         }
-        ctx->itemPtr = getSpellEntityData(func_801E6648(ctx->charIdx, ctx->upperSlot));
+        ctx->itemPtr = getSpellDesc(func_801E6648(ctx->charIdx, ctx->upperSlot));
         if (inputNew & PADRup) {
             sendSpuCommand(3);
             *statePtr = 0x5B;
@@ -2100,7 +2100,7 @@ dispatch:
             ctx->upperSlot = page * 4 + slot;
             ctx->upperPage = page;
             ctx->upperPageSlide = -0xE67;
-            ctx->itemPtr = getSpellEntityData(func_801E6648(ctx->charIdx, ctx->upperSlot));
+            ctx->itemPtr = getSpellDesc(func_801E6648(ctx->charIdx, ctx->upperSlot));
             *statePtr = 0x51;
         }
         /* fallthrough */
@@ -2137,7 +2137,7 @@ dispatch:
             ctx->upperSlot = page * 4 + slot;
             ctx->upperPage = page;
             ctx->upperPageSlide = 0xE67;
-            ctx->itemPtr = getSpellEntityData(func_801E6648(ctx->charIdx, ctx->upperSlot));
+            ctx->itemPtr = getSpellDesc(func_801E6648(ctx->charIdx, ctx->upperSlot));
             *statePtr = 0x53;
         }
         /* fallthrough */
@@ -2185,7 +2185,7 @@ dispatch:
                 *statePtr = 0x58;
                 return;
             }
-            ctx->itemPtr = getSpellEntityData(func_801E6648(ctx->charIdx, ctx->lowerSlot));
+            ctx->itemPtr = getSpellDesc(func_801E6648(ctx->charIdx, ctx->lowerSlot));
             if (inputNew & PADRup) {
                 sendSpuCommand(3);
                 *statePtr = 0x4E;
@@ -2218,7 +2218,7 @@ dispatch:
         ctx->lowerSlot = page * 4 + slot;
         ctx->lowerPage = page;
         ctx->lowerPageSlide = -0xE67;
-        ctx->itemPtr = getSpellEntityData(func_801E6648(ctx->charIdx, ctx->lowerSlot));
+        ctx->itemPtr = getSpellDesc(func_801E6648(ctx->charIdx, ctx->lowerSlot));
         *statePtr = 0x57;
         /* fallthrough */
     }
@@ -2255,7 +2255,7 @@ dispatch:
         ctx->lowerSlot = page * 4 + slot;
         ctx->lowerPage = page;
         ctx->lowerPageSlide = 0xE67;
-        ctx->itemPtr = getSpellEntityData(func_801E6648(ctx->charIdx, ctx->lowerSlot));
+        ctx->itemPtr = getSpellDesc(func_801E6648(ctx->charIdx, ctx->lowerSlot));
         *statePtr = 0x59;
         /* fallthrough */
     }

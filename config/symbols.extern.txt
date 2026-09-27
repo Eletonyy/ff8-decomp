@@ -1,4 +1,4 @@
-getLevelCurveData = 0x80020EB4;
+getWeaponName = 0x80020EB4;
 getMenuString = 0x80020F84;
 func_80027C00 = 0x80027C00;
 func_80027C90 = 0x80027C90;

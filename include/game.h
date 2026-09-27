@@ -9,20 +9,21 @@ void vsyncGameHandler(void);
 /** @brief Main game state-machine loop, driven by g_vsyncRate. */
 void gameStateLoop(void);
 
-/** @brief Look up entry @p stringId of the kernel string table. */
-u8 *getAbilityEntryName(s32 entryId);
+u8 *getBattleCommandName(s32 id);
+
+/** @brief Look up entry @p stringId of the kernel's misc text table. */
 u8 *getMenuString(s32 stringId);
 
-/** @brief Look up the kernel record of magic spell @p spellId. */
-u8 *getSpellEntityData(s32 spellId);
+/** @brief Look up the description of magic spell @p spellId. */
+u8 *getSpellDesc(s32 spellId);
 
-/** @brief Look up the name string for stat/command @p statId. */
-u8 *getStatName(s32 statId);
+/** @brief Look up the name of item @p itemId. */
+u8 *getItemName(s32 itemId);
 
 u8 *getAbilityName(s32 abilityId);
-s32 getLevelCurveData(s32 curveId);
+s32 getWeaponName(s32 id);
 u8 *getAbilityDesc(s32 abilityId);
-s32 getAbilityEntryDesc(s32 entryId);
+s32 getBattleCommandDesc(s32 id);
 
 /** @brief Zero @p count 16-byte units starting at @p ptr. */
 void memzero16(s32 *ptr, s32 count);

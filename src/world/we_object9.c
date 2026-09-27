@@ -860,18 +860,18 @@ u8 *func_800BCC70(u8 *dst, s32 idx, u8 *p1, u8 *p2, u8 *p3, u8 *p4) {
 
 
 /**
- * @brief Append a stat-name string to @p dst (strcat variant).
+ * @brief Append an item name to @p dst (strcat variant).
  *
- * Looks up the stat name via @c getStatName and appends it (including the
+ * Looks up the item name via @c getItemName and appends it (including the
  * terminating null) to the existing null-terminated string in @p dst.
  *
  * @param dst    Destination buffer with an existing null-terminated string.
- * @param statId Stat ID passed to @c getStatName.
+ * @param itemId Item ID passed to @c getItemName.
  * @return @p dst (unchanged).
  */
-u8 *func_800BCE74(u8 *dst, s32 statId) {
+u8 *func_800BCE74(u8 *dst, s32 itemId) {
     u8 new_var;
-    u8 *src = getStatName(statId);
+    u8 *src = getItemName(itemId);
     s32 len;
     s32 i;
     u8 c;
@@ -902,13 +902,13 @@ u8 *func_800BCE74(u8 *dst, s32 statId) {
 
 
 /**
- * @brief Zero-terminate buf and fill it with a stat name via func_800BCE74.
+ * @brief Zero-terminate buf and fill it with an item name via func_800BCE74.
  *
- * Mirrors func_800BC8B8 / func_800BCA54 but targets the stat-name resolver
- * (func_800BCE74 dispatches to getStatName internally).
+ * Mirrors func_800BC8B8 / func_800BCA54 but targets the item-name resolver
+ * (func_800BCE74 dispatches to getItemName internally).
  *
  * @param buf Destination string buffer; first byte is zeroed before filling.
- * @param statId Stat identifier whose name to look up.
+ * @param statId Item whose name to look up.
  */
 void func_800BCF10(u8 *buf, s32 statId) {
     buf[0] = 0;

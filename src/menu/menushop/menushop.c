@@ -183,7 +183,7 @@ static s32 func_801E583C(ShopMenuState *s, ShopAction action, s32 index) {
  * @brief Look up shop item and get its description string.
  *
  * Calls func_801E583C to validate the item, then if valid, calls
- * func_801E5800 to get item ID and getStatDesc to get its
+ * func_801E5800 to get item ID and getItemDesc to get its
  * description string.
  *
  * @param s Shop context parameter.
@@ -194,7 +194,7 @@ static s32 func_801E583C(ShopMenuState *s, ShopAction action, s32 index) {
 static u8* func_801E58A0(ShopMenuState *s, ShopAction action, s32 index) {
     s32 valid = func_801E583C(s, action, index);
     if (valid) {
-        return getStatDesc(func_801E5800(s, action, index));
+        return getItemDesc(func_801E5800(s, action, index));
     }
     return NULL;
 }
@@ -1229,7 +1229,7 @@ static s32 func_801E6FD8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
             color = COLOR_GRAY;
         }
 
-        itemName = getStatName(itemId);
+        itemName = getItemName(itemId);
         itemGlyph = func_801E5904(itemId) + 223;
 
         arg1 = func_8002FF34(arg0, arg1, itemGlyph, xBase + 11, yBase + 8, g_menuColor);
@@ -1718,7 +1718,7 @@ void func_801E7D30(u8 *src, u8 *dst) {
 
             switch (srcVal) {
             case 0x26:
-                copyString(bufferPtr, getLevelCurveData(D_801EB2E4));
+                copyString(bufferPtr, getWeaponName(D_801EB2E4));
                 break;
             case 0x27:
                 copyString(bufferPtr, getCharName(D_801EB2E8));

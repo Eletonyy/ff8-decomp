@@ -56,7 +56,7 @@ s32 findAbilityLevel(s32 a0, s32 a1) {
  * @param a0 Level or input value for the formula.
  * @param a1 Entry index into the g_kernel data table (stride 132 bytes).
  * @return Computed value as s16: a0*field0 + a0*a0*10/field1 + field2.
- * @note Uses GfAbilityTableEntry fields xpLinear (+0x12), xpQuadDiv (+0x13), xpConst (+0x14).
+ * @note Uses JunctionableGfEntry fields xpLinear (+0x12), xpQuadDiv (+0x13), xpConst (+0x14).
  */
 s32 evalStatCurve(s32 a0, s32 a1) {
     u8 field1 = g_kernel.junctionableGfs[a1].xpQuadDiv;

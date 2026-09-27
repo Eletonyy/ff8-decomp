@@ -19,7 +19,7 @@ typedef struct {
 /** @brief Magic entry (60 bytes). */
 typedef struct {
     u16 nameParam0;   /**< +0x00: Name text offset (getMagicNamePtr). */
-    u16 nameParam1;   /**< +0x02: Description text offset (getSpellEntityData). */
+    u16 nameParam1;   /**< +0x02: Description text offset (getSpellDesc). */
     u8 pad04;         /**< +0x04: Unknown. */
     u8 spiritMult;    /**< +0x05: Spirit/magic junction multiplier. */
     u8 magicBase;     /**< +0x06: Magic power base value. */
@@ -45,7 +45,7 @@ typedef struct {
     u16 statusFlags;  /**< +0x26: Status flags bitmask (func_80022328/func_80022370). */
     u16 defStatusFlags;/**< +0x28: Status defense flags (checked for bit in getStatusResistance). */
     u8 pad2A[0x12];   /**< +0x2A..+0x3B: Unknown. */
-} GfJunctionEntry; /* 60 bytes */
+} MagicEntry; /* 60 bytes */
 
 /** @brief Character entry (36 bytes). */
 typedef struct {
@@ -63,7 +63,7 @@ typedef struct {
     u8 divisorField;  /**< +0x0F: calcHpFromLevel divisor. */
     u8 addend;        /**< +0x10: calcHpFromLevel addend. */
     u8 pad11[0x13];   /**< +0x11..+0x23: Unknown. */
-} GfCurveEntry; /* 36 bytes */
+} CharacterEntry; /* 36 bytes */
 
 #define GF_ABILITY_SLOT_COUNT 21
 
@@ -88,85 +88,85 @@ typedef struct {
     u8 pad1A[2];           /**< +0x1A..+0x1B: Unknown. */
     GfAbilitySlot abilities[GF_ABILITY_SLOT_COUNT]; /**< +0x1C..+0x6F */
     u8 pad70[20];          /**< +0x70..+0x83: Compatibility and power data. */
-} GfAbilityTableEntry; /* 132 bytes */
+} JunctionableGfEntry; /* 132 bytes */
 
 /** @brief Weapon entry (12 bytes). */
 typedef struct {
-    u16 param0;    /**< +0x00: Name text offset (getLevelCurveData). */
+    u16 param0;    /**< +0x00: Name text offset (getWeaponName). */
     u8 pad02[5];   /**< +0x02..+0x06: Unknown. */
     u8 field07;    /**< +0x07: Used in func_80022028. */
     u8 pad08;      /**< +0x08: Unknown. */
     u8 field09;    /**< +0x09: Returned directly by @c func_800A7A44 as a per-class lookup byte. */
     u8 pad0A;      /**< +0x0A: Unknown. */
     u8 field0B;    /**< +0x0B: Bit 0 enables @c BattleSlot.slotFlags @c 0x1000 in @c func_800A7518. */
-} LevelCurve12Entry; /* 12 bytes */
+} WeaponEntry; /* 12 bytes */
 
 /** @brief Battle item entry (24 bytes). */
 typedef struct {
-    u16 param0;    /**< +0x00: Name text offset (getStatName). */
-    u16 param1;    /**< +0x02: Description text offset (getStatDesc). */
+    u16 param0;    /**< +0x00: Name text offset (getItemName). */
+    u16 param1;    /**< +0x02: Description text offset (getItemDesc). */
     u8 pad04[20];  /**< +0x04..+0x17: Unknown. */
-} StatTable24Entry; /* 24 bytes */
+} BattleItemEntry; /* 24 bytes */
 
 /** @brief Non-battle item entry (4 bytes). */
 typedef struct {
-    u16 param0;    /**< +0x00: Name text offset (getStatName). */
-    u16 param1;    /**< +0x02: Description text offset (getStatDesc). */
-} StatTable4Entry; /* 4 bytes */
+    u16 param0;    /**< +0x00: Name text offset (getItemName). */
+    u16 param1;    /**< +0x02: Description text offset (getItemDesc). */
+} NonBattleItemEntry; /* 4 bytes */
 
 /** @brief Renzokuken finisher entry (24 bytes). */
 typedef struct {
-    u16 param0;    /**< +0x00: Name text offset (getElementName). */
-    u16 param1;    /**< +0x02: Description text offset (getElementDesc). */
+    u16 param0;    /**< +0x00: Name text offset (getRenzokukenFinisherName). */
+    u16 param1;    /**< +0x02: Description text offset (getRenzokukenFinisherDesc). */
     u8 pad04[20];  /**< +0x04..+0x17: Unknown. */
-} ElementData24Entry; /* 24 bytes */
+} RenzokukenFinisherEntry; /* 24 bytes */
 
 /** @brief Temporary character limit break entry (24 bytes). */
 typedef struct {
-    u16 param0;    /**< +0x00: Name text offset (getJuncCategoryName). */
-    u16 param1;    /**< +0x02: Description text offset (getJuncCategoryDesc). */
+    u16 param0;    /**< +0x00: Name text offset (getTempLimitBreakName). */
+    u16 param1;    /**< +0x02: Description text offset (getTempLimitBreakDesc). */
     u8 pad04[20];  /**< +0x04..+0x17: Unknown. */
-} GfSubTablePEntry; /* 24 bytes */
+} TempLimitBreakEntry; /* 24 bytes */
 
 /** @brief Blue magic entry (16 bytes). */
 typedef struct {
-    u16 param0;    /**< +0x00: Name text offset (getJuncEffectName). */
-    u16 param1;    /**< +0x02: Description text offset (getJuncEffectDesc). */
+    u16 param0;    /**< +0x00: Name text offset (getBlueMagicName). */
+    u16 param1;    /**< +0x02: Description text offset (getBlueMagicDesc). */
     u8 pad04[12];  /**< +0x04..+0x0F: Unknown. */
-} GfSubTableQEntry; /* 16 bytes */
+} BlueMagicEntry; /* 16 bytes */
 
 /** @brief Shot (Irvine limit break) entry (24 bytes). */
 typedef struct {
-    u16 param0;    /**< +0x00: Name text offset (getStatusEffectName). */
-    u16 param1;    /**< +0x02: Description text offset (getStatusEffectDesc). */
+    u16 param0;    /**< +0x00: Name text offset (getShotName). */
+    u16 param1;    /**< +0x02: Description text offset (getShotDesc). */
     u8 pad04[20];  /**< +0x04..+0x17: Unknown. */
-} GfSubTableREntry; /* 24 bytes */
+} ShotEntry; /* 24 bytes */
 
 /** @brief Duel (Zell limit break) entry (32 bytes). */
 typedef struct {
-    u16 param0;        /**< +0x00: Name text offset (getMagicEffectName). */
-    u16 param1;        /**< +0x02: Description text offset (getMagicEffectDesc). */
+    u16 param0;        /**< +0x00: Name text offset (getDuelName). */
+    u16 param1;        /**< +0x02: Description text offset (getDuelDesc). */
     u8 pad04[6];       /**< +0x04..+0x09: Unknown. */
     u8 abilityFlags;   /**< +0x0A: Ability flags byte (func_8009BA5C). */
     u8 pad0B[0x15];    /**< +0x0B..+0x1F: Unknown. */
-} GfSubTableSEntry; /* 32 bytes */
+} DuelEntry; /* 32 bytes */
 
 /** @brief Rinoa limit break (part 1) entry (8 bytes). */
 typedef struct {
-    u16 param0;    /**< +0x00: Name text offset (getGfName). */
+    u16 param0;    /**< +0x00: Name text offset (getRinoaLimitBreak1Name). */
     u8 pad02[6];   /**< +0x02..+0x07: Unknown. */
-} GfSubTableTEntry; /* 8 bytes */
+} RinoaLimitBreak1Entry; /* 8 bytes */
 
 /** @brief Rinoa limit break (part 2) entry (20 bytes). */
 typedef struct {
-    u16 param0;    /**< +0x00: Name text offset (getGfSummonData). */
+    u16 param0;    /**< +0x00: Name text offset (getRinoaLimitBreak2Name). */
     u8 pad02[18];  /**< +0x02..+0x13: Unknown. */
-} GfSubTableUEntry; /* 20 bytes */
+} RinoaLimitBreak2Entry; /* 20 bytes */
 
 /** @brief Miscellaneous text pointer (2 bytes). */
 typedef struct {
     u16 param0;    /**< +0x00: Text offset (getMenuString). */
-} GfSubTableVEntry; /* 2 bytes */
+} MiscTextEntry; /* 2 bytes */
 
 /**
  * @brief kernel.bin: a section count and offset table, then the data sections.
@@ -203,14 +203,14 @@ typedef struct {
     /* 0x00DC */ s32 devourText;
     /* 0x00E0 */ s32 miscText;
     /* 0x00E4 */ AbilityEntry battleCommands[39];
-    /* 0x021C */ GfJunctionEntry magic[57];
-    /* 0x0F78 */ GfAbilityTableEntry junctionableGfs[16];
+    /* 0x021C */ MagicEntry magic[57];
+    /* 0x0F78 */ JunctionableGfEntry junctionableGfs[16];
     /* 0x17B8 */ u8 enemyAttacks[384][20];
-    /* 0x35B8 */ LevelCurve12Entry weapons[33];
-    /* 0x3744 */ ElementData24Entry renzokukenFinishers[4];
-    /* 0x37A4 */ GfCurveEntry characters[11];
-    /* 0x3930 */ StatTable24Entry battleItems[33];
-    /* 0x3C48 */ StatTable4Entry nonBattleItems[166];
+    /* 0x35B8 */ WeaponEntry weapons[33];
+    /* 0x3744 */ RenzokukenFinisherEntry renzokukenFinishers[4];
+    /* 0x37A4 */ CharacterEntry characters[11];
+    /* 0x3930 */ BattleItemEntry battleItems[33];
+    /* 0x3C48 */ NonBattleItemEntry nonBattleItems[166];
     /* 0x3EE0 */ u8 nonJunctionableGfAttacks[16][20];
     /* 0x4020 */ u8 commandAbilityData[12][16];
     /* 0x40E0 */ AbilityEntry junctionAbilities[20];
@@ -220,19 +220,19 @@ typedef struct {
     /* 0x4350 */ AbilityEntry partyAbilities[5];
     /* 0x4378 */ AbilityEntry gfAbilities[9];
     /* 0x43C0 */ AbilityEntry menuAbilities[24];
-    /* 0x4480 */ GfSubTablePEntry tempLimitBreaks[5];
-    /* 0x44F8 */ GfSubTableQEntry blueMagic[16];
+    /* 0x4480 */ TempLimitBreakEntry tempLimitBreaks[5];
+    /* 0x44F8 */ BlueMagicEntry blueMagic[16];
     /* 0x45F8 */ u8 blueMagicParams[0x200];
-    /* 0x47F8 */ GfSubTableREntry shot[8];
-    /* 0x48B8 */ GfSubTableSEntry duel[10];
+    /* 0x47F8 */ ShotEntry shot[8];
+    /* 0x48B8 */ DuelEntry duel[10];
     /* 0x49F8 */ u8 duelParams[0x64];
-    /* 0x4A5C */ GfSubTableTEntry rinoaLimitBreaks1[2];
-    /* 0x4A6C */ GfSubTableUEntry rinoaLimitBreaks2[5];
+    /* 0x4A5C */ RinoaLimitBreak1Entry rinoaLimitBreaks1[2];
+    /* 0x4A6C */ RinoaLimitBreak2Entry rinoaLimitBreaks2[5];
     /* 0x4AD0 */ u8 slotArray[0x3C];
     /* 0x4B0C */ u8 slotSets[0x100];
     /* 0x4C0C */ u8 devour[0xC0];
     /* 0x4CCC */ u8 misc[0x3C];
-    /* 0x4D08 */ GfSubTableVEntry miscTextPointers[128];
+    /* 0x4D08 */ MiscTextEntry miscTextPointers[128];
 } Kernel;
 
 extern Kernel g_kernel;

@@ -505,7 +505,7 @@ void func_801E4B80(s32 a0, s32 a1) {
  * Reads the current list index from @p a0[0x54], uses it to look up
  * a byte pair from the item table at @p a0[0x20]. Stores the first
  * byte (item ID) at @p a0[0x65]. If both bytes are nonzero, calls
- * getStatDesc to get the item description and stores it at @p a0[0x28].
+ * getItemDesc to get the item description and stores it at @p a0[0x28].
  *
  * @param a0 Pointer to item menu context.
  */

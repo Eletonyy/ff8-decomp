@@ -1563,7 +1563,7 @@ void previewJunctionChange(s32 charIdx, s32 gfIdx, s32 slot, s32 abilityId) {
  * @brief Look up ability/command name string by type and index.
  *
  * For type 1 (commands): looks up command ID from D_801EEF10, finds
- * the GF ability index in g_kernel, and returns the name via getAbilityEntryDesc.
+ * the GF ability index in g_kernel, and returns the name via getBattleCommandDesc.
  * For type 2 (abilities): looks up ability ID from D_801EEF40 and
  * returns the name via getAbilityDesc.
  *
@@ -1586,7 +1586,7 @@ s32 getAbilityNamePtr(s32 type, s32 index) {
             gfData = (u8 *)&g_kernel;
             stride = 8;
             /* g_kernel ability range J: typeField at offset 0x4180 + 5 = 0x4185 */
-            result = getAbilityEntryDesc(gfData[(cmdId - 0x14) * stride + 0x4185]);
+            result = getBattleCommandDesc(gfData[(cmdId - 0x14) * stride + 0x4185]);
         } else {
             result = 0;
         }
@@ -2126,7 +2126,7 @@ dispatch:
             }
             if (col != 0) {
                 if (fr < 3) {
-                    { s32 b = (s32)&g_kernel; u8 *p = (u8 *)((col - 0x14) * 8 + b); ctx->itemPtr = getAbilityEntryDesc(p[0x4185]); }
+                    { s32 b = (s32)&g_kernel; u8 *p = (u8 *)((col - 0x14) * 8 + b); ctx->itemPtr = getBattleCommandDesc(p[0x4185]); }
                 } else {
                     ctx->itemPtr = getAbilityDesc(col);
                 }
@@ -4826,7 +4826,7 @@ s32 renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32
  * @brief Render the character's 3 equipped-command rows with junction highlighting.
  *
  * Reads the character index from @c ctx->charIdx, renders the character title (looked
- * up via @c getAbilityEntryName from @c g_charMenuInfo[charIdx].unk12), then loops over the
+ * up via @c getBattleCommandName from @c g_charMenuInfo[charIdx].unk12), then loops over the
  * 3 equipped commands (@c g_gameState.chars[charIdx].commands[i]). Each command is
  * drawn with its category icon (@c getAbilityCategory) and name (@c getAbilityName),
  * highlighted (color 1 instead of 7) when the junction slot being edited — queried
@@ -4860,7 +4860,7 @@ s32 renderStatRowGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s
     xPos = x + 0x21;
     yPos = y + 9;
     highlight = 7;
-    title = getAbilityEntryName((*(cmiTable = &g_charMenuInfo))[ctx->charIdx].unk12);
+    title = getBattleCommandName((*(cmiTable = &g_charMenuInfo))[ctx->charIdx].unk12);
     cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, title, highlight);
 
     for (i = 0; i < 3; i++) {
