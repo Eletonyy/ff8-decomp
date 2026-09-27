@@ -1,5 +1,6 @@
 #include "common.h"
 #include "menu.h"
+#include "menumain.h"
 #include "gamestate.h"
 #include "menuabl.h"
 #include "psxsdk/libetc.h"
@@ -13,10 +14,7 @@ extern s32  getAbilityDesc(s32 id);
 extern u8  *getAbilityName(s32 abilityId);
 extern void setMenuColorIntensity(s32 intensity);
 extern s32  func_8002FF34(s32 ctx, s32 a1, s32 a2, s32 x, s32 y, s32 color);
-extern s32  func_801EF9AC(s32 dl, s32 ot, s32 opaque, s32 color);
-extern s32  func_801EFBB4(s32 dl, s32 ot, s32 callback);
 extern void func_801F0A78(s32 ctx, s32 idx, s32 unused, s32 x, s32 y);
-extern s32  func_801F179C(s32 tickCb, s32 drawCb);
 extern void func_801F1AFC(void);
 extern void func_801F1B10(void);
 extern s32  func_801F72B4(void);
@@ -30,8 +28,6 @@ extern s32  func_801F0D84(void);
 extern void func_801F18FC(s32 *ctx);
 extern s32  func_801F0BB0(void);
 extern void func_801F7BEC(s32 cfg);
-extern void func_801F23D0(s32 a0, s32 size, void *buf);
-extern void *func_801F6AA4(s32 id);
 extern void initSfxPlayback(s32 ch, u8 *buf);
 extern void sendSpuCommand(s32 cmd);
 extern void setSfxPitch(s32 ch, s32 pitch);
@@ -241,8 +237,8 @@ restart:
                 if (trackType != 0xFF) {
                     if (trackType == 0x81) {
                         if (g_gameState.mainData.partyLockFlag & 1) {
-                            ptr = (u8 *)func_801F6AA4(0x4F);
-                            func_801F23D0(0, 0x68, (void *)ptr);
+                            ptr = func_801F6AA4(0x4F);
+                            func_801F23D0(0, 0x68, ptr);
                             initSfxPlayback(0, ptr);
                             *statePtr = 0x10;
                             break;
@@ -255,7 +251,7 @@ restart:
                     if (trackType == 0x80) {
                         if (func_801E2934() == 0) {
                             ptr = (u8 *)func_801F6AFC(0x36);
-                            func_801F23D0(0, 0x68, (void *)ptr);
+                            func_801F23D0(0, 0x68, ptr);
                             initSfxPlayback(0, ptr);
                             *statePtr = 0x10;
                             break;
@@ -958,7 +954,7 @@ void func_801E3C28(void) {
  * list, initializes data, and enters via func_801E2A34.
  */
 void func_801E3C9C(void) {
-    AbilityMenuState *st = (AbilityMenuState *)func_801F179C(
+    AbilityMenuState *st = func_801F179C(
         (s32)func_801E2A34, (s32)func_801E3AE0);
 
     if (st != NULL) {

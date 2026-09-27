@@ -34,7 +34,7 @@ s32 func_801EFBB4(s32, s32, s32);            /**< Panel/window render helper. */
 u8  *func_801F08D4(s32, s32, s32, s32);       /**< Look up a menu text string. */
 void* func_801F179C(s32, s32);                 /**< Allocate a menu state task (tickCb, drawCb). */
 u8  *func_801F6AA4(s32);                      /**< Look up a string in menu text category 3. */
-u8  *func_801F6AD0(s32);                      /**< Party/character query helper. */
+u8  *func_801F6AD0(s32);                      /**< Look up a string in menu text category 0. */
 void func_801F7B60(void);                     /**< Menu teardown/exit helper. */
 
 /* ======================================================================== */

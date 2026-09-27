@@ -1994,7 +1994,7 @@ u8 *func_801F6AA4(s32 a0) {
     return func_801F08D4(1, 3, a0, 0);
 }
 
-/** @brief Look up character name string. */
+/** @brief Look up string @p a0 in menu text category 0, with the last flag set. */
 u8 *func_801F6AD0(s32 a0) {
     return func_801F08D4(0, 0, a0, 1);
 }
