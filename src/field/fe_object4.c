@@ -330,7 +330,7 @@ s32 opHandler_LBL(ScriptContext *context, s32 a1) {
 
 /** @brief Pop halfword from stack and store to entity offset 0x176. */
 void func_800AE184(Actor *actor) {
-    actor->context.pc = (u16)POP(&actor->context);
+    actor->context.pc = POP(&actor->context);
 }
 
 /**
@@ -566,7 +566,7 @@ s32 opHandler_POPM_B(ScriptContext *context, s32 a1) {
 
 /** @brief Pop halfword from stack and store to D_800780D8[a1]. Returns 2. */
 s32 opHandler_POPM_W(ScriptContext *context, s32 a1) {
-    *(u16 *)&D_800780D8[a1] = (u16)POP(context);
+    *(u16 *)&D_800780D8[a1] = POP(context);
     return 2;
 }
 

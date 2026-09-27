@@ -228,18 +228,12 @@ s32 *func_800983F0(void) {
     return (s32 *)ptr;
 }
 
-/**
- * Zero 0x40 bytes at g_fieldEntity+0x1B8 (backwards loop).
- */
+/** @brief Clear all 512 bits of @c g_fieldEntity.statusBits. */
 void func_80098934(void) {
-    s32 i = 0x3F;
-    volatile u8 *base = (u8 *)&g_fieldEntity;
-    u8 *ptr = (u8 *)base + 0x3F;
-    do {
-        *(u8 *)(ptr + 0x1B8) = 0;
-        i--;
-        ptr--;
-    } while (i >= 0);
+    s32 i;
+    for (i = 0; i < 0x40; i++) {
+        g_fieldEntity.statusBits[i] = 0;
+    }
 }
 
 /**
@@ -393,7 +387,7 @@ void func_8009895C(void) {
             || (s16)D_8005F14C == 3
             || (s16)D_8005F14C == 6
             || (s16)D_8005F14C == 0xA) {
-            *(u8 *)&g_fieldEntity = 0;
+            g_fieldEntity.mode = 0;
         }
 
         if (g_curFieldParticles != 0) {
@@ -453,7 +447,7 @@ void func_8009895C(void) {
         PutDispEnv(&g_dispEnvs[(s16)g_bufferIndex]);
         PutDrawEnv(&g_drawEnvs[(s16)g_bufferIndex]);
 
-        state = *(u8 *)&g_fieldEntity;
+        state = g_fieldEntity.mode;
         D_8005F14C = 1;
 
         if (state == 4) {
@@ -476,17 +470,17 @@ void func_8009895C(void) {
             break;
         }
         if (state == 7) {
-            *(u8 *)&g_fieldEntity = 0;
+            g_fieldEntity.mode = 0;
             g_vsyncRate = 2;
             g_fieldEntity.field_0x120 = g_currentMusicTrack;
-            D_80082C8C.unk02 = *(u8 *)&g_fieldEntity.counter;
-            D_80082C8C.cmd = *(u8 *)&g_fieldEntity.spawnTriIdx;
-            D_80082C8C.unk03 = *(u8 *)&g_fieldEntity.anim_state;
+            D_80082C8C.unk02 = g_fieldEntity.counter;
+            D_80082C8C.cmd = g_fieldEntity.spawnTriIdx;
+            D_80082C8C.unk03 = g_fieldEntity.anim_state;
             sndCmd21(-1, 0);
             break;
         }
         if (state == 1) {
-            *(u8 *)&g_fieldEntity = 0;
+            g_fieldEntity.mode = 0;
             g_fieldEntity.field_0x120 = g_currentMusicTrack;
             g_currentMusicTrack = g_fieldEntity.counter;
             sndCmd21(-2, g_fieldEntity.field1B4);
