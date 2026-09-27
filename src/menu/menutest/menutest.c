@@ -23,6 +23,12 @@ typedef struct {
     /* 0x2F */ u8 unk2F;
 } TestMenuState;
 
+/** @brief String table: an entry count, then each entry's byte offset from the start of the table. */
+typedef struct {
+    u16 count;
+    u16 offsets[1];
+} TestTextTable;
+
 /** @brief Position func_801E59B4 records for a marker in the laid-out text, relative to the text origin. */
 typedef struct {
     s16 x;
@@ -136,18 +142,16 @@ void func_801E58B8(void) {
 INCLUDE_ASM("asm/ovl/menutest/nonmatchings/menutest", func_801E59B4);
 
 /**
- * Reads a string descriptor from a table and dispatches to func_801E59B4.
- * @param a0 Base pointer to string table
- * @param a1 Index into the table
+ * @brief Lay out entry @p index of @p table: its first byte goes to D_801E7ABE,
+ *        and func_801E59B4's result for the text after it to D_801E7ABC.
+ * @param table String table.
+ * @param index Entry to lay out.
  */
-void func_801E5D18(s32 a0, s32 a1) {
-    s32 offset;
-    u8 code;
+void func_801E5D18(TestTextTable *table, s32 index) {
+    u8 *entry = (u8 *)table + table->offsets[index];
 
-    offset = *(u16 *)(a0 + a1 * 2 + 2);
-    code = *(u8 *)(a0 + offset);
-    *(u8 *)&D_801E7ABE = code;
-    *(s16 *)&D_801E7ABC = func_801E59B4(a0 + offset + 1, D_801E69BC, D_801E79BC);
+    D_801E7ABE = entry[0];
+    D_801E7ABC = func_801E59B4(entry + 1, D_801E69BC, D_801E79BC);
 }
 
 /**
