@@ -760,7 +760,7 @@ void func_800A30E4(void) {
  * @param arg1 Battle command, or an internal action type (236 and up).
  * @param arg2 Spell, item, ability or attack ID for the command.
  * @param arg3 Secondary ID, e.g. the Renzokuken finisher or Combine attack.
- * @param arg4 Target entity.
+ * @param arg4 Target entity (the attack animation for action 252).
  * @param arg5 Target mask.
  * @param arg6 Value stored in the entry's unk2.
  * @return 0.
@@ -1586,7 +1586,7 @@ s32 func_800A493C(s32 arg0) {
 /**
  * @brief Redirect a single-hit enemy attack to a covering ally.
  *
- * Only for a one-hit enemy attack (action 8) with no damage-type bits. If
+ * Applies to a one-hit enemy attack (action 8) with no damage-type bits. If
  * func_800A493C finds an ally to cover the target, the original target is
  * kept in D_800ED148.unk1319 and the ally's mask is returned.
  *

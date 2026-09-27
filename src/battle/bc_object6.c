@@ -43,7 +43,7 @@ u16 func_800AB4A8(s32 arg0, s32 arg1, u16 arg2) {
 }
 
 /**
- * @brief Queue and start the first pending spell of D_800ED148.array12CC.
+ * @brief Queue the first pending spell of D_800ED148.array12CC as action 247.
  *
  * Does nothing without pending spells, and clears them afterwards.
  *

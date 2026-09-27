@@ -2041,7 +2041,8 @@ s32 func_8009FDE0(s32 arg0, s32 arg1) {
  * @brief Load the current action's element, status and hit parameters.
  *
  * Fills D_800EEBB8..D_800EEBC4 from the kernel entry of the action type in
- * D_800EE4C0.unk1; plain attacks use the actor's battle stats and weapon.
+ * D_800EE4C0.unk1; other action types use the actor's own battle stats and
+ * weapon.
  *
  * @param arg0 Acting entity.
  */
