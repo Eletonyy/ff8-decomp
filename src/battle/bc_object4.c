@@ -3,7 +3,7 @@
 #include "gf.h"
 #include "gamestate.h"
 #include "battle/bc_object4.h"
-extern void func_800E1850(void);
+#include "battle/bc_object22.h"
 
 
 void func_800A6184(s32 arg0, s32 arg1, s32 arg2, u16 arg3) {
@@ -1605,7 +1605,6 @@ s32 func_800A9064(BattleCharData* arg0) {
 
 void func_800A9084(u8* arg0, u8* arg1) {
     s32 i;
-    s32 temp_ret;
     s32 temp_a1;
     s32 temp_v0;
     s32 var_v1_2;
@@ -1617,13 +1616,9 @@ void func_800A9084(u8* arg0, u8* arg1) {
         }
     }
 
-    temp_ret = func_8009B15C();
-
-    temp_a1 = ((D_800ED148.entities[i].level / 10) + (temp_ret % 5) + D_800ED148.entities[i].crisisLevel) - 1;
-    
+    temp_a1 = ((D_800ED148.entities[i].level / 10) + (func_8009B15C() % 5) + D_800ED148.entities[i].crisisLevel) - 1;
     temp_v0 = func_8009B15C();
     
-
     if (temp_v0 < 39) {
         var_v1_2 = 0;
     }
@@ -1893,7 +1888,7 @@ void func_800A960C(s32 arg0) {
 * @return Combined result from both lookups, masked to u16.
 */
 
-s32 func_800A972C(s32 arg0) {
+u16 func_800A972C(s32 arg0) {
     return func_800B0F9C(D_80078E00.entriesA0[arg0].unk7) | func_800B0F7C(D_80078E00.entriesA0[arg0].unk7);
 }
 

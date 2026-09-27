@@ -3,6 +3,7 @@
 #include "gamestate.h"
 #include "battle/bc_object5.h"
 
+
 s32 func_800AA68C(s32 arg0, u32 arg1, u32 arg2) {
     switch (arg1) {
         case 0:

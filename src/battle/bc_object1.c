@@ -4,6 +4,8 @@
 #include "gf.h"
 #include "battle/bc_object1.h"
 #include "battle/bc_object7.h"
+#include "battle/bc_object9.h"
+#include "battle/bc_object17.h"
 
 /**
  * @file bc_object1.c
@@ -34,9 +36,6 @@
    with two offsets and broke the match. The magic 2 / +1 should go
    away if/when a struct-typed access form that produces the same
    codegen is found. */
-
-extern void func_800D0F74(void);
-extern SoundCmd* func_800B8564(s16, u8); /* bc_object9.c */
 
 
 void func_80099D30(void) {

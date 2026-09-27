@@ -3,18 +3,14 @@
 #include "gamestate.h"
 #include "game.h"
 #include "battle/bc_object1.h"
+#include "battle/bc_object2.h"
+#include "battle/bc_object4.h"
 #include "battle/bc_object5.h"
 #include "battle/bc_object6.h"
+#include "battle/bc_object7.h"
 
 
-extern void func_8009BC28;
-extern void func_8009BCE4;
-extern void func_800A2F54;
-extern void func_800A65B0;
-extern u8 func_800ADAC0(s32);
-
-void sndStopAll(void);
-void resetCdDrive(void);
+void func_800A2F54(void); // cant include bc_object3.h
 
 
 u16 func_800AB4A8(s32 arg0, s32 arg1, u16 arg2) {
@@ -44,8 +40,8 @@ void func_800AB570(s32 arg0) {
     
     cc = &D_800ED148.array12CC[0];
     
-
-    result = func_800B0F7C(D_80078E00.spells[cc->unk1].magicId) | func_800ADC10(cc->unk2);
+    result = func_800B0F7C(D_80078E00.spells[cc->unk1].magicId);
+    result = result | func_800ADC10(cc->unk2);
     func_800A30F8(arg0, 247, cc->unk1, 0, 0, result, 0);
     func_800A4C84(result);
     func_8009AE08(5);
