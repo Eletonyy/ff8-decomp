@@ -1,6 +1,7 @@
 #include "common.h"
 #include "battle.h"
 #include "gamestate.h"
+#include "kernel.h"
 #include "game.h"
 #include "battle/bc_object1.h"
 #include "battle/bc_object2.h"
@@ -15,15 +16,15 @@ void func_800A2F54(void); // cant include bc_object3.h
 
 u16 func_800AB4A8(s32 arg0, s32 arg1, u16 arg2) {
     if (arg0 == 2) {
-        return arg2 | func_800B0F7C(D_80078E00.spells[arg1].magicId);
+        return arg2 | func_800B0F7C(g_kernel.magic[arg1].targetInfo);
     }
     
     if (arg0 == 4) {
-        return arg2 | func_800B0F7C(D_80078E00.abilities[arg1].abilityId);
+        return arg2 | func_800B0F7C(g_kernel.battleItems[arg1].targetInfo);
     }
     
 
-    if ((D_80078E00.entries17[arg1].unk8 & 0x80)) {
+    if ((g_kernel.enemyAttacks[arg1].attackFlags & 0x80)) {
         return arg2 | 0x4000;
     }
 
@@ -40,7 +41,7 @@ void func_800AB570(s32 arg0) {
     
     cc = &D_800ED148.array12CC[0];
     
-    result = func_800B0F7C(D_80078E00.spells[cc->unk1].magicId);
+    result = func_800B0F7C(g_kernel.magic[cc->unk1].targetInfo);
     result = result | func_800ADC10(cc->unk2);
     func_800A30F8(arg0, 247, cc->unk1, 0, 0, result, 0);
     func_800A4C84(result);
@@ -470,7 +471,7 @@ void func_800ADC48(s32 arg0) {
     for (i = 0; i < D_800ED148.unk130B; i++) {
         Struct_12CC* var_s1 = &D_800ED148.array12CC[i];
         temp_s4->unk4 = var_s1->unk1;
-        result = func_800B0F7C(D_80078E00.spells[var_s1->unk1].magicId);
+        result = func_800B0F7C(g_kernel.magic[var_s1->unk1].targetInfo);
         D_800ED148.arrayDE8[D_800ED148.unk12F2][D_800ED148.unk1302][1].unk6[i] = func_800ADC10(var_s1->unk2) | result;
     }
 
