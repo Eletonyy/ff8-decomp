@@ -214,7 +214,7 @@ s32 calcHpFromLevel(s32 level, s32 charIdx) {
     hpJunc = g_gameState.chars[charIdx].junctions[0];
     charId = g_gameState.chars[charIdx].characterId;
     count = getMagicQuantity(charIdx, hpJunc);
-    juncMult = multiply(g_kernel.magic[hpJunc].pad12[5], count);
+    juncMult = multiply(g_kernel.magic[hpJunc].statJunction[JUNCTION_HP], count);
     _div = g_kernel.characters[charId].pad09[0];
     coef = g_kernel.characters[charId].constant;
     addBase = g_kernel.characters[charId].pad09[1];
@@ -270,9 +270,9 @@ INCLUDE_ASM("asm/nonmatchings/gf_curve", func_80021C10);
  */
 s32 calcHitStat(s32 charIdx, s32 a1) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_HIT];
-    u8 val = g_kernel.magic[idx].magicParam;
+    u8 val = g_kernel.magic[idx].statJunction[JUNCTION_HIT];
     s32 result1 = func_80021B58(charIdx, a1);
-    return clampToByte(g_kernel.weapons[result1].field07 + multiplyDiv100(val, getMagicQuantity(charIdx, idx)));
+    return clampToByte(g_kernel.weapons[result1].hitRate + multiplyDiv100(val, getMagicQuantity(charIdx, idx)));
 }
 
 
@@ -285,7 +285,7 @@ s32 calcHitStat(s32 charIdx, s32 a1) {
  */
 s32 calcEvaStat(s32 charIdx, s32 a1) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_EVA];
-    u8 val = g_kernel.magic[idx].spiritParam;
+    u8 val = g_kernel.magic[idx].statJunction[JUNCTION_EVA];
     return clampToByte((a1 >> 2) + multiplyDiv100(val, getMagicQuantity(charIdx, idx)));
 }
 
@@ -298,7 +298,7 @@ s32 calcEvaStat(s32 charIdx, s32 a1) {
  */
 s32 getAtkElemBase(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_ELEM];
-    return g_kernel.magic[idx].statParamA;
+    return g_kernel.magic[idx].atkElement;
 }
 
 
@@ -310,7 +310,7 @@ s32 getAtkElemBase(s32 charIdx) {
  */
 s32 getAtkElemBonus(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_ELEM];
-    u8 val = g_kernel.magic[idx].statParamB;
+    u8 val = g_kernel.magic[idx].atkElementValue;
     return multiplyDiv100(val, getMagicQuantity(charIdx, idx));
 }
 
@@ -326,8 +326,8 @@ s32 getElemResistance(s32 charIdx, s32 shiftBit) {
     s32 i;
     for (i = 0; i < 4; i++) {
         u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_ELEM_0 + i];
-        if ((g_kernel.magic[idx].defElemFlag >> shiftBit) & 1) {
-            u8 mult = g_kernel.magic[idx].defElemMult;
+        if ((g_kernel.magic[idx].defElement >> shiftBit) & 1) {
+            u8 mult = g_kernel.magic[idx].defElementValue;
             result += multiplyDiv100(mult, getMagicQuantity(charIdx, idx));
         }
     }
@@ -345,7 +345,7 @@ s32 getElemResistance(s32 charIdx, s32 shiftBit) {
  */
 s32 getAtkStatusFlags(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_STATUS];
-    return g_kernel.magic[idx].statusFlags & 0x7F;
+    return g_kernel.magic[idx].atkStatuses & 0x7F;
 }
 
 
@@ -358,7 +358,7 @@ s32 getAtkStatusFlags(s32 charIdx) {
  */
 s32 decodeAtkStatusMask(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_STATUS];
-    u16 flags = g_kernel.magic[idx].statusFlags;
+    u16 flags = g_kernel.magic[idx].atkStatuses;
     s32 val;
     s32 result;
     val = flags & 0x80;
@@ -380,7 +380,7 @@ s32 decodeAtkStatusMask(s32 charIdx) {
  */
 s32 calcAtkStatusHit(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_STATUS];
-    u8 val = g_kernel.magic[idx].hitParam;
+    u8 val = g_kernel.magic[idx].atkStatusValue;
     return multiplyDiv100(val, getMagicQuantity(charIdx, idx)) + 100;
 }
 
@@ -396,8 +396,8 @@ s32 getStatusResistance(s32 charIdx, s32 shiftBit) {
     s32 i;
     for (i = 0; i < 4; i++) {
         u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_STATUS_0 + i];
-        if ((g_kernel.magic[idx].defStatusFlags >> shiftBit) & 1) {
-            u8 base = g_kernel.magic[idx].defStatusBase;
+        if ((g_kernel.magic[idx].defStatuses >> shiftBit) & 1) {
+            u8 base = g_kernel.magic[idx].defStatusValue;
             result += multiplyDiv100(base, getMagicQuantity(charIdx, idx));
         }
     }

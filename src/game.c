@@ -108,7 +108,7 @@ u8 *getAngeloName(void) {
 
 /** @brief Returns the name of Rinoa limit break (part 2) @p id. */
 u8 *getRinoaLimitBreak2Name(s32 id) {
-    return resolveKernelPtr(g_kernel.rinoaLimitBreaks2[id].param0, g_kernel.rinoaLimitBreaks2Text);
+    return resolveKernelPtr(g_kernel.rinoaLimitBreaks2[id].nameOffset, g_kernel.rinoaLimitBreaks2Text);
 }
 
 
@@ -120,7 +120,7 @@ u8 *getRinoaLimitBreak1Name(s32 id) {
     u8 *result;
 
     if (id != 0) {
-        result = resolveKernelPtr(g_kernel.rinoaLimitBreaks1[id].param0, g_kernel.rinoaLimitBreaks1Text);
+        result = resolveKernelPtr(g_kernel.rinoaLimitBreaks1[id].nameOffset, g_kernel.rinoaLimitBreaks1Text);
     } else {
         result = g_gameState.angeloName;
     }
@@ -130,61 +130,61 @@ u8 *getRinoaLimitBreak1Name(s32 id) {
 
 /** @brief Returns the name of duel entry @p id. */
 u8 *getDuelName(s32 id) {
-    return resolveKernelPtr(g_kernel.duel[id].param0, g_kernel.duelText);
+    return resolveKernelPtr(g_kernel.duel[id].nameOffset, g_kernel.duelText);
 }
 
 
 /** @brief Returns the description of duel entry @p id. */
 u8 *getDuelDesc(s32 id) {
-    return resolveKernelPtr(g_kernel.duel[id].param1, g_kernel.duelText);
+    return resolveKernelPtr(g_kernel.duel[id].descOffset, g_kernel.duelText);
 }
 
 
 /** @brief Returns the name of shot entry @p id. */
 u8 *getShotName(s32 id) {
-    return resolveKernelPtr(g_kernel.shot[id].param0, g_kernel.shotText);
+    return resolveKernelPtr(g_kernel.shot[id].nameOffset, g_kernel.shotText);
 }
 
 
 /** @brief Returns the description of shot entry @p id. */
 u8 *getShotDesc(s32 id) {
-    return resolveKernelPtr(g_kernel.shot[id].param1, g_kernel.shotText);
+    return resolveKernelPtr(g_kernel.shot[id].descOffset, g_kernel.shotText);
 }
 
 
 /** @brief Returns the name of renzokuken finisher entry @p id. */
 u8 *getRenzokukenFinisherName(s32 id) {
-    return resolveKernelPtr(g_kernel.renzokukenFinishers[id].param0, g_kernel.renzokukenFinishersText);
+    return resolveKernelPtr(g_kernel.renzokukenFinishers[id].nameOffset, g_kernel.renzokukenFinishersText);
 }
 
 
 /** @brief Returns the description of renzokuken finisher entry @p id. */
 u8 *getRenzokukenFinisherDesc(s32 id) {
-    return resolveKernelPtr(g_kernel.renzokukenFinishers[id].param1, g_kernel.renzokukenFinishersText);
+    return resolveKernelPtr(g_kernel.renzokukenFinishers[id].descOffset, g_kernel.renzokukenFinishersText);
 }
 
 
 /** @brief Returns the name of blue magic entry @p id. */
 u8 *getBlueMagicName(s32 id) {
-    return resolveKernelPtr(g_kernel.blueMagic[id].param0, g_kernel.blueMagicText);
+    return resolveKernelPtr(g_kernel.blueMagic[id].nameOffset, g_kernel.blueMagicText);
 }
 
 
 /** @brief Returns the description of blue magic entry @p id. */
 u8 *getBlueMagicDesc(s32 id) {
-    return resolveKernelPtr(g_kernel.blueMagic[id].param1, g_kernel.blueMagicText);
+    return resolveKernelPtr(g_kernel.blueMagic[id].descOffset, g_kernel.blueMagicText);
 }
 
 
 /** @brief Returns the name of temporary limit break entry @p id. */
 u8 *getTempLimitBreakName(s32 id) {
-    return resolveKernelPtr(g_kernel.tempLimitBreaks[id].param0, g_kernel.tempLimitBreaksText);
+    return resolveKernelPtr(g_kernel.tempLimitBreaks[id].nameOffset, g_kernel.tempLimitBreaksText);
 }
 
 
 /** @brief Returns the description of temporary limit break entry @p id. */
 u8 *getTempLimitBreakDesc(s32 id) {
-    return resolveKernelPtr(g_kernel.tempLimitBreaks[id].param1, g_kernel.tempLimitBreaksText);
+    return resolveKernelPtr(g_kernel.tempLimitBreaks[id].descOffset, g_kernel.tempLimitBreaksText);
 }
 
 
@@ -289,7 +289,7 @@ u8 *getAbilityDesc(s32 abilityId) {
  */
 u8 *getMagicNamePtr(s32 magicId) {
     if (magicId < 0x40) {
-        return resolveKernelPtr(g_kernel.magic[magicId].nameParam0, g_kernel.magicText);
+        return resolveKernelPtr(g_kernel.magic[magicId].nameOffset, g_kernel.magicText);
     }
     return D_800762C8 + magicId * 68;
 }
@@ -301,7 +301,7 @@ u8 *getMagicNamePtr(s32 magicId) {
  */
 u8 *getSpellDesc(s32 spellId) {
     if (spellId < 0x40) {
-        return resolveKernelPtr(g_kernel.magic[spellId].nameParam1, g_kernel.magicText);
+        return resolveKernelPtr(g_kernel.magic[spellId].descOffset, g_kernel.magicText);
     }
     return resolveKernelPtr(g_kernel.junctionableGfs[spellId - 0x40].descOffset, g_kernel.junctionableGfsText);
 }
@@ -319,7 +319,7 @@ u8 *getItemName(s32 itemId) {
         param = g_kernel.nonBattleItems[itemId - 0x21].param0;
         base = g_kernel.nonBattleItemsText;
     } else {
-        param = g_kernel.battleItems[itemId].param0;
+        param = g_kernel.battleItems[itemId].nameOffset;
         base = g_kernel.battleItemsText;
     }
     return resolveKernelPtr(param, base);
@@ -338,7 +338,7 @@ u8 *getItemDesc(s32 itemId) {
         param = g_kernel.nonBattleItems[itemId - 0x21].param1;
         base = g_kernel.nonBattleItemsText;
     } else {
-        param = g_kernel.battleItems[itemId].param1;
+        param = g_kernel.battleItems[itemId].descOffset;
         base = g_kernel.battleItemsText;
     }
     return resolveKernelPtr(param, base);
@@ -391,19 +391,19 @@ u8 *getCharName(CharacterId charId) {
 
 /** @brief Returns the name of weapon @p id. */
 u8 *getWeaponName(s32 id) {
-    return resolveKernelPtr(g_kernel.weapons[id].param0, g_kernel.weaponsText);
+    return resolveKernelPtr(g_kernel.weapons[id].nameOffset, g_kernel.weaponsText);
 }
 
 
 /** @brief Returns the name of battle command @p id. */
 u8 *getBattleCommandName(s32 id) {
-    return resolveKernelPtr(g_kernel.battleCommands[id].statParam0, g_kernel.battleCommandsText);
+    return resolveKernelPtr(g_kernel.battleCommands[id].nameOffset, g_kernel.battleCommandsText);
 }
 
 
 /** @brief Returns the description of battle command @p id. */
 u8 *getBattleCommandDesc(s32 id) {
-    return resolveKernelPtr(g_kernel.battleCommands[id].statParam1, g_kernel.battleCommandsText);
+    return resolveKernelPtr(g_kernel.battleCommands[id].descOffset, g_kernel.battleCommandsText);
 }
 
 

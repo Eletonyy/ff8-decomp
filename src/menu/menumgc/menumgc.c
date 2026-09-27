@@ -171,7 +171,7 @@ s32 _getJunctionableCharMask(void) {
 s32 func_801E599C(s32 idx) {
     s32 result = D_801F87B8[idx].flags & 1;
     if (func_801F79F8(0x40) != 0) {
-        s32 gfType = g_kernel.magic[idx].pad07;
+        s32 gfType = g_kernel.magic[idx].attackType;
         if (gfType >= 7) goto done;
         if (gfType < 5) goto done;
         result = 0;
