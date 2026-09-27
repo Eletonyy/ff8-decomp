@@ -504,7 +504,7 @@ binaries:
   sha1: accfe3831595f26c5d6de6f3891736521736f8ef
   options:
     target_path: original/tripletriad.bin
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.tripletriad.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.tripletriad.txt]
     section_order: [.rodata, .text, .data, .bss]
     ld_bss_is_noload: true
   segments:

@@ -17,4 +17,6 @@ extern void setBattleEntityRectClamp(s32 idx, RECT *src); /**< Set an entity's c
 extern s32 getAnimGlobalState(void);
 extern s32 setAnimGlobalState(s32 value);
 extern void setAnimEntityParams(s32 idx, s32 param7, s32 param6);
+extern void setAnimUnk10Both(s32 unused, s32 index, s32 value);
+
 #endif /* BTL_ANIM_H */

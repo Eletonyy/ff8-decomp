@@ -179,8 +179,8 @@ extern void queueStoreImage(RECT *rect, void *dst);
 extern void queueMoveImage(RECT *rect, s16 dstX, u16 dstY);
 extern void *findFreeNode(ObjList *list);
 
-/* SDK / main-binary math helpers used by be_object1.c. */
-extern void  func_8003F884(SVECTOR *a, SVECTOR *b, s32 wa, s32 wb, SVECTOR *out);
-extern void  func_80041794(s32 angle, MATRIX *m);
+extern s8      g_ttFadeCounter;   /**< Card game's fade counter; counts toward 0, -1 / below 0 while fading. */
+extern DRAWENV g_ttDrawEnvs[2];   /**< Card game's double-buffered draw environments. */
+extern DISPENV g_ttDispEnvs[2];   /**< Card game's double-buffered display environments. */
 
 #endif /* TRIPLETRIAD_BE_OBJECT1_H */
