@@ -4,6 +4,7 @@
 #include "gf.h"
 #include "gamestate.h"
 #include "ability.h"
+#include "battle_render.h"
 
 u8 *resolveKernelPtr(u16 a0, s32 a1);
 
@@ -18,7 +19,6 @@ void dispatchScratchpadThread(void);
 s32 getRenderCompleteFlag(void);
 void cdReadSync(s32, s32, s32, s32);
 void func_8001F5C8(void);
-void func_80098238(void);
 void setCameraVibrateIntensity(s32);
 s32 func_80021300(void);
 void func_80023D60(s32);
@@ -404,7 +404,7 @@ s32 getLevelCurveData(s32 curveId) {
 
 
 /** @brief Resolves AbilityEntry.statParam0 from GfData.statTable8[entryId] via resolveKernelPtr. */
-s32 getAbilityEntryName(s32 entryId) {
+u8 *getAbilityEntryName(s32 entryId) {
     return resolveKernelPtr(g_gfData.statTable8[entryId].statParam0, g_gfData.ptrStatTable8);
 }
 
@@ -415,7 +415,7 @@ s32 getAbilityEntryDesc(s32 entryId) {
 }
 
 
-/** @brief Wrapper that calls func_80020F84 with argument 3. */
+/** @brief Wrapper that calls getMenuString with argument 3. */
 static u8 *getDefaultMenuLabel(void) {
     return getMenuString(3);
 }

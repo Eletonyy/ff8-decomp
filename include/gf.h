@@ -330,7 +330,5 @@ typedef struct {
 } MagicJunctionData; /* 60 bytes */
 
 extern MagicJunctionData g_magicJunctionData[];
-u8 *func_80020EF4(s32);
-u8 *func_80020F84(s32);
 
 #endif /* GF_H */

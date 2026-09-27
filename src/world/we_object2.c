@@ -221,7 +221,7 @@ void func_8009D0F0(void) {
     }
     func_800A5F78(0);
     func_800A5FD4(0);
-    ClearImage(&D_800CA040, 0, 0, 0);
+    ClearImage(&D_800CA040.drawEnv.clip, 0, 0, 0);
     DrawSync(0);
 }
 

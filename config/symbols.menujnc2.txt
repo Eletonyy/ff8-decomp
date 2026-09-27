@@ -1,15 +1,3 @@
-getAbilityName = 0x800209A0;
-getAbilityDesc = 0x80020AD4;
-getAbilityEntryDesc = 0x80020F2C;
-btlMemcpyForward = 0x8002A318;
-sendSpuCommand = 0x80030D48;
-playSoundEffect = 0x80030D78;
-drawColorByMenuPalette = 0x800332C4; // type:func
-popcount = 0x80035A6C;
-getAbilityCategory = 0x80036978;
-getGfAvailabilityMask = 0x80036F60;
-g_gameState = 0x80077378;
-g_characterJunctions = 0x80077864;
 g_magicJunctionData = 0x8007901C;
 decodeMenuString = 0x801E5800; // type:func
 autoJunctionSlot = 0x801E59A4; // type:func

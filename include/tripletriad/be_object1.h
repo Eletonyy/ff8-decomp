@@ -153,10 +153,10 @@ extern RECT          g_fbClearRect;
 extern RECT          g_texClearRect;
 extern u32           g_orderingTables[2][TT_OT_LEN];  /**< Per-buffer ordering tables (OT). */
 extern u8            g_primPools[2][0x10000];  /* primitive pool, 64KB per buffer */
-extern u8            g_textOTs[2][8];
+extern u32           g_textOTs[2][2];
 extern u8            g_textFrameBufs[2][0x8000];
 extern u8           *g_textFbPtr;
-extern u8           *g_textOtPtr;
+extern u32          *g_textOtPtr;
 extern u8           *g_tripleTriadActiveList;
 extern u8            g_hexDigits[];
 
@@ -179,8 +179,8 @@ extern void queueStoreImage(RECT *rect, void *dst);
 extern void queueMoveImage(RECT *rect, s16 dstX, u16 dstY);
 extern void *findFreeNode(ObjList *list);
 
-/* SDK / main-binary math helpers used by be_object1.c. */
-extern void  func_8003F884(SVECTOR *a, SVECTOR *b, s32 wa, s32 wb, SVECTOR *out);
-extern void  func_80041794(s32 angle, MATRIX *m);
+extern s8      g_ttFadeCounter;   /**< Card game's fade counter; counts toward 0, -1 / below 0 while fading. */
+extern DRAWENV g_ttDrawEnvs[2];   /**< Card game's double-buffered draw environments. */
+extern DISPENV g_ttDispEnvs[2];   /**< Card game's double-buffered display environments. */
 
 #endif /* TRIPLETRIAD_BE_OBJECT1_H */

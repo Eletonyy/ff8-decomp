@@ -1,4 +1,5 @@
 #include "common.h"
+#include "psxsdk/libgte.h"
 #include "world.h"
 #include "world/we_object6.h"
 #include "world/we_object7.h"
@@ -64,8 +65,8 @@ void func_800B3868(TrackObj *obj) {
             diff.vz = target->screen.vz - current->screen.vz;
             current->unk18 = 0;
             horizDist = SquareRoot0(diff.vz * diff.vz + diff.vx * diff.vx);
-            current->pitch = func_80041E84(-diff.vy, horizDist);
-            current->yaw = func_80041E84(-diff.vz, diff.vx) + 0x800;
+            current->pitch = ratan2(-diff.vy, horizDist);
+            current->yaw = ratan2(-diff.vz, diff.vx) + 0x800;
         }
     }
 }

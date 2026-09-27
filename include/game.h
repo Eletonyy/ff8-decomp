@@ -10,6 +10,7 @@ void vsyncGameHandler(void);
 void gameStateLoop(void);
 
 /** @brief Look up entry @p stringId of the kernel string table. */
+u8 *getAbilityEntryName(s32 entryId);
 u8 *getMenuString(s32 stringId);
 
 /** @brief Look up the kernel record of magic spell @p spellId. */

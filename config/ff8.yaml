@@ -108,7 +108,7 @@ binaries:
   options:
     target_path: original/battle_render.bin
     src_path: src/ovl/battle_render
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.battle_render.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle_render.txt]
     section_order: [.rodata, .text, .data, .bss]
   segments:
   - name: battle_render
@@ -172,7 +172,7 @@ binaries:
   options:
     target_path: original/field_init.bin
     src_path: src/ovl/field_init
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.field_init.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.field_init.txt]
   segments:
   - name: field_init
     type: code
@@ -191,7 +191,7 @@ binaries:
     elf_path: build/intro/intro.elf
     asm_path: asm/intro
     src_path: src
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.intro.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.intro.txt]
     build_path: build/intro
     ld_bss_is_noload: true
     section_order: [.text, .rodata, .data, .bss]
@@ -215,7 +215,7 @@ binaries:
   options:
     target_path: original/menuabl.ovl
     src_path: src/menu/menuabl
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menuabl.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menuabl.txt]
   segments:
   - name: menuabl
     type: code
@@ -230,7 +230,7 @@ binaries:
   options:
     target_path: original/menucfg.ovl
     src_path: src/menu/menucfg
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menucfg.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menucfg.txt]
   segments:
   - name: menucfg
     type: code
@@ -246,7 +246,7 @@ binaries:
   options:
     target_path: original/menucrd.ovl
     src_path: src/menu/menucrd
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menucrd.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menucrd.txt]
   segments:
   - name: menucrd
     type: code
@@ -263,7 +263,7 @@ binaries:
   options:
     target_path: original/menuext.ovl
     src_path: src/menu/menuext
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menuext.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menuext.txt]
   segments:
   - name: menuext
     type: code
@@ -278,7 +278,7 @@ binaries:
   options:
     target_path: original/menugf.ovl
     src_path: src/menu/menugf
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menugf.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menugf.txt]
   segments:
   - name: menugf
     type: code
@@ -294,7 +294,7 @@ binaries:
   options:
     target_path: original/menuitem.ovl
     src_path: src/menu/menuitem
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menuitem.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menuitem.txt]
     section_order: [.text, .rodata, .data, .bss]
   segments:
   - name: menuitem
@@ -316,7 +316,7 @@ binaries:
   options:
     target_path: original/menujnc2.ovl
     src_path: src/menu/menujnc2
-    symbol_addrs_path: [config/symbols.menumain.txt, config/symbols.menujnc2.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menujnc2.txt]
     ld_bss_is_noload: true
     section_order: [.text, .rodata, .data, .bss]
   segments:
@@ -340,7 +340,7 @@ binaries:
   options:
     target_path: original/menumain.ovl
     src_path: src/menu/menumain
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt]
   segments:
   - name: menumain
     type: code
@@ -358,7 +358,7 @@ binaries:
   options:
     target_path: original/menumgc.ovl
     src_path: src/menu/menumgc
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menumgc.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menumgc.txt]
   segments:
   - name: menumgc
     type: code
@@ -374,7 +374,7 @@ binaries:
   options:
     target_path: original/menupty.ovl
     src_path: src/menu/menupty
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menupty.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menupty.txt]
   segments:
   - name: menupty
     type: code
@@ -389,7 +389,7 @@ binaries:
   options:
     target_path: original/menusav.ovl
     src_path: src/menu/menusav
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menusav.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menusav.txt]
   segments:
   - name: menusav
     type: code
@@ -404,7 +404,7 @@ binaries:
   options:
     target_path: original/menushop.ovl
     src_path: src/menu/menushop
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menushop.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menushop.txt]
     section_order: [.text, .rodata, .data, .bss]
   segments:
   - name: menushop
@@ -424,7 +424,7 @@ binaries:
   options:
     target_path: original/menusts.ovl
     src_path: src/menu/menusts
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menusts.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menusts.txt]
   segments:
   - name: menusts
     type: code
@@ -441,7 +441,7 @@ binaries:
   options:
     target_path: original/menutest.ovl
     src_path: src/menu/menutest
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menutest.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menutest.txt]
   segments:
   - name: menutest
     type: code
@@ -457,7 +457,7 @@ binaries:
   options:
     target_path: original/menutips.ovl
     src_path: src/menu/menutips
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menutips.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menutips.txt]
   segments:
   - name: menutips
     type: code
@@ -473,7 +473,7 @@ binaries:
   options:
     target_path: original/menutmag.ovl
     src_path: src/menu/menutmag
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menutmag.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menutmag.txt]
   segments:
   - name: menutmag
     type: code
@@ -489,7 +489,7 @@ binaries:
   options:
     target_path: original/menututo.ovl
     src_path: src/menu/menututo
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.menumain.txt, config/symbols.menututo.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menututo.txt]
   segments:
   - name: menututo
     type: code
@@ -504,7 +504,7 @@ binaries:
   sha1: accfe3831595f26c5d6de6f3891736521736f8ef
   options:
     target_path: original/tripletriad.bin
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.tripletriad.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.tripletriad.txt]
     section_order: [.rodata, .text, .data, .bss]
     ld_bss_is_noload: true
   segments:
@@ -539,7 +539,7 @@ binaries:
   sha1: b421bf83a307dcd41536b14dc81a3aa03f7c9ed0
   options:
     target_path: original/world.bin
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.world.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.world.txt]
     section_order: [.rodata, .text, .data, .bss]
     ld_bss_is_noload: true
   segments:

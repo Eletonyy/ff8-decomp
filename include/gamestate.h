@@ -415,6 +415,7 @@ typedef struct {
 
 /** @brief Main game state (BSS at 0x80077378). */
 extern GameState g_gameState;
+extern TripleTriadData g_tripleTriad;
 
 /** @brief Pointer to the SeeD/world sub-region of @c g_gameState (@c &g_gameState.fieldVars). */
 extern FieldVars *g_fieldVars;
@@ -445,7 +446,7 @@ extern u8 D_8005F151;
 extern volatile s16 g_vsyncRate;
 extern DISPENV      g_dispEnvs[2];
 extern DRAWENV      g_drawEnvs[2];
-extern s8           g_fadeCounter; /* signed: counts toward 0 (be_object1 uses -1 / <0) */
+extern s8           g_fadeCounter; /* signed: counts toward 0 */
 
 /** @brief Bit @c 0x10 mirrors into @c FieldVars.field58 on full field reset. */
 extern u8  D_80078DF8;
@@ -464,7 +465,7 @@ extern void enableChocoboWorld(void);
 /** @brief Resolve a character ID (e.g. party slot) to its global character code. */
 extern s32 func_80037C6C(s32 charId);
 
-extern CharacterData D_80077808[];
+extern CharacterData g_characters[];
 extern u8 D_800788E4;
 extern u8 D_800788E5;
 
