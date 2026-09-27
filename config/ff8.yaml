@@ -539,7 +539,7 @@ binaries:
   sha1: b421bf83a307dcd41536b14dc81a3aa03f7c9ed0
   options:
     target_path: original/world.bin
-    symbol_addrs_path: [config/symbols.shared.txt, config/symbols.world.txt]
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.world.txt]
     section_order: [.rodata, .text, .data, .bss]
     ld_bss_is_noload: true
   segments:

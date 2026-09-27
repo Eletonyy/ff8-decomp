@@ -1,5 +1,6 @@
 #include "common.h"
 #include "battle.h"
+#include "psxsdk/libc.h"
 #include "gamestate.h"
 #include "world.h"
 #include "world/we_object5.h"
@@ -338,7 +339,7 @@ void func_800BDBE0(u8 *target, s32 unitCount) {
     SVECTOR buf;
     s32 i;
     s32 totalIters;
-    func_80047CE4(&buf, 0, 8);
+    memset(&buf, 0, 8);
     totalIters = unitCount * 8;
     for (i = 0; i < totalIters; i++) {
         s32 r1, r2;
