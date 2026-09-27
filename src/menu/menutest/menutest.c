@@ -13,7 +13,7 @@ typedef struct {
     /* 0x10 */ u16 state;
     /* 0x12 */ u8 pad12[0xE];
     /* 0x20 */ u8 *text;         /**< Text drawn centred in the bottom panel. */
-    /* 0x24 */ s16 unk24;
+    /* 0x24 */ s16 intensity;    /**< Menu color intensity. */
     /* 0x26 */ s16 unk26;
     /* 0x28 */ u8 pad28[2];
     /* 0x2A */ s16 scroll;       /**< Scroll position, looked up in the D_801FA3C8 falloff table. */
@@ -51,15 +51,15 @@ u8 *func_801E5800(s32 a0) {
  * Computes a scroll-adjusted Y position from D_801E79BC table entries and
  * D_801FA3C8 animation table, then calls func_801F0A34 to apply it.
  * @param a0 Display mode parameter (passed through to func_801F0A34)
- * @param a1 Menu state structure pointer
+ * @param state Test menu state.
  * @note Separating load and add (e.g. `yOff = *(s16*)entry; yOff += 0x22;`)
  *       makes the compiler load directly into the target register (t0/a3),
  *       rather than through intermediary v0/v1.
  */
-void func_801E582C(s32 a0, s32 a1) {
+void func_801E582C(s32 a0, TestMenuState *state) {
     s32 base = (s32)&D_801E79BC;
-    s32 idx = *(u8 *)(a1 + 0x2F);
-    s32 scroll = *(s16 *)(a1 + 0x2A);
+    s32 idx = state->unk2F;
+    s32 scroll = state->scroll;
     s32 entry = base + idx * 8;
     s32 yOff;
     s32 height;
@@ -147,15 +147,15 @@ void func_801E5D18(s32 a0, s32 a1) {
 
 /**
  * Menu test state machine — drives all menu navigation and display logic.
- * Uses a 28-case switch on *(u16 *)(a0 + 0x10) as state variable, with cases
+ * Uses a 28-case switch on @c state->state, with cases
  * handling: initial display (0), VSync wait (1), page transition checks (2),
  * resource allocation (3,6), fade-in animation (4,7,10,15), input polling (5,8,11),
  * text decode (9), scroll animation (13,14,19,20,25,26), page navigation (16,17),
  * confirmation (21,22), and cleanup/exit (27).
- * Reads input via func_801F0948/pollCdReadStatus, updates scroll position at +0x24,
- * manages page index at +0x2D and +0x2E, and dispatches rendering via func_801E582C,
- * func_801E5D18, func_801E58B8, func_801F6800.
- * @param a0 Menu state structure pointer (s1=a0, s2=a0+0x10, s3/s0 from g_menuDisplayCfg)
+ * Reads input via func_801F0948/pollCdReadStatus, fades @c intensity, moves
+ * @c scroll, tracks @c entry, @c unk2E and @c unk2F, sets @c text, and dispatches
+ * rendering via func_801E582C, func_801E5D18, func_801E58B8, func_801F6800.
+ * @param state Test menu state (s1 = state, s2 = &state->state, s3/s0 from g_menuDisplayCfg)
  * @note Scrambled prologue (s1,s2,ra,s3,s0) with s-reg assignment locked by graph
  *       coloring — C compiler cannot reproduce the exact register allocation.
  *       See asm/ovl/menutest/nonmatchings/menutest/func_801E5D74.s.
@@ -170,9 +170,6 @@ INCLUDE_ASM("asm/ovl/menutest/nonmatchings/menutest", func_801E5D74);
  * @param a0 Display list pointer
  * @param a1 OT pointer
  * @return Result of func_801EF9AC
- * @note Uses `ot + text - ot` liveness trick to force ot→s1 (see
- *       docs/s-reg-allocation.md Technique 1). CalcCenter macro with
- *       do{break}while(1) shifts maxW→s3 via interference graph change.
  */
 s32 func_801E64B4(s32 a0, s32 a1) {
     s32 disp = a0;
@@ -182,8 +179,8 @@ s32 func_801E64B4(s32 a0, s32 a1) {
     s32 v0;
     s32 buf;
 
-    v0 = func_8002E680(ot + text - ot);
-    CalcCenter(maxW, v0, 0xF4);
+    v0 = func_8002E680(ot + text - ot); // liveness trick: the extra uses of ot put it in s1
+    CalcCenter(maxW, v0, 0xF4); // the macro's do/break/while(1) shape puts maxW in s3
     func_8002EAD0(disp, v0 + 0x18, 0xC, text);
     g_menuDisplayCfg.iconType = 0;
     g_menuDisplayCfg.iconSubType = 0;
@@ -201,24 +198,21 @@ s32 func_801E64B4(s32 a0, s32 a1) {
  * then configures two g_menuDisplayCfg display regions:
  * first (0x1C, 0x21, 0x148, 0x9F) submitted via func_801EF800,
  * second (0x18, 0x1D, 0x150, 0xA7) submitted via func_801EF9AC.
- * @param a0 Menu state structure
+ * @param state Test menu state.
  * @param a1 Display list pointer
  * @param a2 OT pointer
  * @return Result of func_801EF9AC
- * @note Uses `a2 + a0 + 0x2A - a2` liveness trick to force a2→s0 (see
- *       docs/s-reg-allocation.md Technique 1). Separate v1 variable for lhu
- *       result ensures multiply uses correct register (v0, not v1).
  */
-s32 func_801E6570(s32 a0, s32 a1, s32 a2) {
+s32 func_801E6570(TestMenuState *state, s32 a1, s32 a2) {
     s32 disp = a1;
     s32 yPos = 0x22;
     s32 buf = (s32)&g_menuDisplayCfg;
-    s32 scroll = *(s16 *)(a2 + a0 + 0x2A - a2);
+    s32 scroll = a2 + state->scroll - a2; // liveness trick: the extra uses of a2 put it in s0
     s32 v0;
     s32 v1;
 
     if (scroll < 0) scroll += 0x3F;
-    v1 = *(u16 *)((s32)&D_801FA3C8 + (scroll >> 6) * 2);
+    v1 = *(u16 *)((s32)&D_801FA3C8 + (scroll >> 6) * 2); // own variable: puts the lhu result in v0 for the multiply
     v0 = (v1 * 3) << 7;
     if (v0 < 0) v0 += 0xFFF;
     yPos -= v0 >> 12;
@@ -243,24 +237,23 @@ s32 func_801E6570(s32 a0, s32 a1, s32 a2) {
 
 /**
  * Sets up GPU display for a secondary text area, similar to func_801E64B4.
- * Centers text from *(a0 + 0x20) within 0x150 pixels, draws via func_8002EAD0
+ * Centers @c state->text within 0x150 pixels, draws via func_8002EAD0
  * at Y=0xC8, configures g_menuDisplayCfg (0x18, 0xC4, 0x150, 0x14), and submits
  * via func_801EF9AC.
- * @param a0 Menu state structure
+ * @param state Test menu state.
  * @param a1 Display list pointer
  * @param a2 OT pointer
  * @return Result of func_801EF9AC
  */
-s32 func_801E66A8(s32 a0, s32 a1, s32 a2) {
-    s32 state = a0;
+s32 func_801E66A8(TestMenuState *state, s32 a1, s32 a2) {
     s32 disp = a1;
     s32 ot = a2;
     s32 maxW;
     s32 v0;
 
-    v0 = func_8002E680(ot + *(s32 *)(state + 0x20) - ot);
+    v0 = func_8002E680(ot + state->text - ot); // liveness trick: the extra uses of ot put it in s0
     CalcCenter(maxW, v0, 0x150);
-    func_8002EAD0(disp, v0 + 0x18, 0xC8, *(s32 *)(state + 0x20));
+    func_8002EAD0(disp, v0 + 0x18, 0xC8, state->text);
     g_menuDisplayCfg.iconType = 0;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = 0x18;
@@ -272,20 +265,20 @@ s32 func_801E66A8(s32 a0, s32 a1, s32 a2) {
 
 /**
  * Sets up menu display rendering pipeline.
- * @param a0 Menu state structure
+ * @param state Test menu state.
  * @param a1 Display buffer 1
  * @param a2 Display buffer 2
  * @return Final display buffer pointer from func_801F1B10
  */
-s32 func_801E6760(s32 a0, s32 a1, s32 a2) {
+s32 func_801E6760(TestMenuState *state, s32 a1, s32 a2) {
     s32 v0;
 
     func_801F1AFC();
-    setMenuColorIntensity(*(s16 *)(a0 + 0x24));
-    buildGrayscaleGpuColor(*(s16 *)(a0 + 0x24));
+    setMenuColorIntensity(state->intensity);
+    buildGrayscaleGpuColor(state->intensity);
     v0 = func_801E64B4(a1, a2);
-    v0 = func_801E6570(a0, a1, v0);
-    v0 = func_801E66A8(a0, a1, v0);
+    v0 = func_801E6570(state, a1, v0);
+    v0 = func_801E66A8(state, a1, v0);
     func_801F1B10();
     return v0;
 }
