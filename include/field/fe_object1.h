@@ -310,27 +310,6 @@ typedef struct {
 extern void func_800A2AF8(FieldFrameBuf *buf, u8 *a, u8 *b, FieldView *view);
 
 /** @brief Emit one field sprite for a movement accumulator and link it into the OT. */
-/**
- * @brief 8-byte (x, y, z) vertex within a shimmer object's corner array; also
- *        the shape @c func_800A4934 stages its two interpolated points in at
- *        @c getScratchAddr(0) and @c getScratchAddr(2).
- */
-typedef struct {
-    /* 0x00 */ u16 x;
-    /* 0x02 */ u16 y;
-    /* 0x04 */ u16 z;
-    /* 0x06 */ u16 pad6;
-} ObjVertex;
-
-
-
-
-/**
- * @brief Main binary's @c RotTransPers3: perspective-transforms three vertices
- *        at once, writing the three screen XY pairs and returning the OTZ.
- */
-extern s32 RotTransPers3(ObjVertex *v0, ObjVertex *v1, ObjVertex *v2, s32 *sxy0,
-                         s32 *sxy1, s32 *sxy2, s32 *p, s32 *flag);
 
 /** @brief Palette selector for the ribbon colour ramp (scaled by 16 to index it). */
 extern u8 D_80070657;
@@ -423,7 +402,6 @@ extern u8 D_800C6D90;            /**< PRNG counter advanced 13/step by func_800A
 extern u8 D_8005F150;            /**< Outer PRNG counter, D_800C3520 lookup offset, advanced 13/step per 256 calls of func_800A5C9C */
 extern u8 D_8005F151;            /**< Inner PRNG counter, D_800C3520 lookup index, advanced 1/call by func_800A5C9C */
 
-extern s32 GetClut(s32 a, s32 b);
 extern void func_8004D684(void *p);
 
 extern void *D_800C71E4;         /**< Buffer handed to @c StoreImage / @c LoadImage; points at @c D_800D3E88 once @c func_800A1BB8 runs. */
@@ -469,8 +447,8 @@ extern DrawPoint D_800706A0[];
  * pair (@c field80 / @c field82) is what @c func_800A5224 later consumes.
  */
 typedef struct {
-    /* 0x00 */ ObjVertex va[8];
-    /* 0x40 */ ObjVertex vb[8];
+    /* 0x00 */ SVECTOR va[8];
+    /* 0x40 */ SVECTOR vb[8];
     /* 0x80 */ s16 field80;   /**< Tick threshold base; slot clears when tick > field80+4. */
     /* 0x82 */ u16 field82;   /**< Per-frame tick counter (incremented while active). */
     /* 0x84 */ u8  pad84[0x02];

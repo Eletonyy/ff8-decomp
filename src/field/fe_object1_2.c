@@ -1555,9 +1555,9 @@ void func_800A42EC(POLY_G4 *polys, DR_TPAGE *tpages) {
         D_800706A0[i].field14 = D_800706A0[i].z + 0x80;
 
         for (j = 0; j < 8; j++) {
-            D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
-            D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
-            D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+            D_800C6DA0[i].va[j].vx = D_800C6DA0[i].vb[j].vx = D_800706A0[i].x;
+            D_800C6DA0[i].va[j].vy = D_800C6DA0[i].vb[j].vy = D_800706A0[i].y;
+            D_800C6DA0[i].va[j].vz = D_800C6DA0[i].vb[j].vz = D_800706A0[i].z;
         }
 
         D_800C6DA0[i].field80 = 0x10 + i * 2;
@@ -1657,9 +1657,9 @@ void func_800A455C(s16 entityIdx) {
         D_800706A0[i].field14 = (D_80085224[entityIdx].posZ >> 12) + 0xB4;
 
         for (j = 0; j < 8; j++) {
-            D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
-            D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
-            D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+            D_800C6DA0[i].va[j].vx = D_800C6DA0[i].vb[j].vx = D_800706A0[i].x;
+            D_800C6DA0[i].va[j].vy = D_800C6DA0[i].vb[j].vy = D_800706A0[i].y;
+            D_800C6DA0[i].va[j].vz = D_800C6DA0[i].vb[j].vz = D_800706A0[i].z;
         }
 
         D_800C6DA0[i].field80 = 0x18 + i * 2;
@@ -1700,9 +1700,9 @@ void func_800A4758(void) {
             D_800706A0[i].field12 = D_800706A0[i].y;
             D_800706A0[i].field14 = D_800706A0[i].z + 0x80;
             for (j = 0; j < 8; j++) {
-                D_800C6DA0[i].va[j].x = D_800C6DA0[i].vb[j].x = D_800706A0[i].x;
-                D_800C6DA0[i].va[j].y = D_800C6DA0[i].vb[j].y = D_800706A0[i].y;
-                D_800C6DA0[i].va[j].z = D_800C6DA0[i].vb[j].z = D_800706A0[i].z;
+                D_800C6DA0[i].va[j].vx = D_800C6DA0[i].vb[j].vx = D_800706A0[i].x;
+                D_800C6DA0[i].va[j].vy = D_800C6DA0[i].vb[j].vy = D_800706A0[i].y;
+                D_800C6DA0[i].va[j].vz = D_800C6DA0[i].vb[j].vz = D_800706A0[i].z;
             }
             D_800C6DA0[i].field80 = 0x10 + i * 2;
             D_800C6DA0[i].field82 = 0;
@@ -1767,38 +1767,38 @@ s32 func_800A4910(s32 a0, s32 a1, s32 a2, s32 a3) {
  * @param dp   Draw point holding the object's base and corner positions.
  */
 void func_800A4934(ObjSlot *slot, DrawPoint *dp) {
-    ObjVertex *mid = (ObjVertex *)getScratchAddr(0);
-    ObjVertex *end = (ObjVertex *)getScratchAddr(2);
+    SVECTOR *mid = (SVECTOR *)getScratchAddr(0);
+    SVECTOR *end = (SVECTOR *)getScratchAddr(2);
     s32 idx;
 
     func_800A4758();
     idx = slot->field82 & 7;
     if (slot->field80 < (s16)slot->field82) {
-        mid->x = dp->field10;
-        mid->y = dp->field12;
-        mid->z = dp->field14;
+        mid->vx = dp->field10;
+        mid->vy = dp->field12;
+        mid->vz = dp->field14;
     } else {
-        mid->x = func_800A4910((s16)dp->x, (s16)dp->field8, slot->field80, (s16)slot->field82);
-        mid->y = func_800A4910((s16)dp->y, (s16)dp->fieldA, slot->field80, (s16)slot->field82);
-        mid->z = func_800A4910((s16)dp->z, (s16)dp->fieldC, slot->field80, (s16)slot->field82);
-        end->x = func_800A4910((s16)dp->field8, (s16)dp->field10, slot->field80, (s16)slot->field82);
-        end->y = func_800A4910((s16)dp->fieldA, (s16)dp->field12, slot->field80, (s16)slot->field82);
-        end->z = func_800A4910((s16)dp->fieldC, (s16)dp->field14, slot->field80, (s16)slot->field82);
-        mid->x = func_800A4910((s16)mid->x, (s16)end->x, slot->field80, (s16)slot->field82);
-        mid->y = func_800A4910((s16)mid->y, (s16)end->y, slot->field80, (s16)slot->field82);
-        mid->z = func_800A4910((s16)mid->z, (s16)end->z, slot->field80, (s16)slot->field82);
+        mid->vx = func_800A4910((s16)dp->x, (s16)dp->field8, slot->field80, (s16)slot->field82);
+        mid->vy = func_800A4910((s16)dp->y, (s16)dp->fieldA, slot->field80, (s16)slot->field82);
+        mid->vz = func_800A4910((s16)dp->z, (s16)dp->fieldC, slot->field80, (s16)slot->field82);
+        end->vx = func_800A4910((s16)dp->field8, (s16)dp->field10, slot->field80, (s16)slot->field82);
+        end->vy = func_800A4910((s16)dp->fieldA, (s16)dp->field12, slot->field80, (s16)slot->field82);
+        end->vz = func_800A4910((s16)dp->fieldC, (s16)dp->field14, slot->field80, (s16)slot->field82);
+        mid->vx = func_800A4910(mid->vx, end->vx, slot->field80, (s16)slot->field82);
+        mid->vy = func_800A4910(mid->vy, end->vy, slot->field80, (s16)slot->field82);
+        mid->vz = func_800A4910(mid->vz, end->vz, slot->field80, (s16)slot->field82);
     }
 
-    slot->vb[idx].x = mid->x - ((func_8009D234(slot->field86) >> 8) *
+    slot->vb[idx].vx = mid->vx - ((func_8009D234(slot->field86) >> 8) *
                                 func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
-    slot->vb[idx].y = mid->y + ((func_8009D254(slot->field86) >> 8) *
+    slot->vb[idx].vy = mid->vy + ((func_8009D254(slot->field86) >> 8) *
                                 func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
-    slot->vb[idx].z = mid->z;
-    slot->va[idx].x = mid->x + ((func_8009D234(slot->field86) >> 8) *
+    slot->vb[idx].vz = mid->vz;
+    slot->va[idx].vx = mid->vx + ((func_8009D234(slot->field86) >> 8) *
                                 func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
-    slot->va[idx].y = mid->y - ((func_8009D254(slot->field86) >> 8) *
+    slot->va[idx].vy = mid->vy - ((func_8009D254(slot->field86) >> 8) *
                                 func_8009D234(((u8)slot->field82 << 3) & 0xF8) >> 12);
-    slot->va[idx].z = mid->z;
+    slot->va[idx].vz = mid->vz;
 }
 
 /**
