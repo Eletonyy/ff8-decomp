@@ -1,5 +1,6 @@
 #include "common.h"
 #include "menu.h"
+#include "menucrd.h"
 
 extern s32 g_menuColor;
 extern s16 D_801E7D64;
@@ -13,8 +14,8 @@ extern void loadOverlayWithTimCallback(s16 id, void *addr);
 
 void func_801E582C(s32 a0);
 void func_801E5ABC(s32 a0);
-void func_801E5F7C(void);
-void func_801E67E4(void);
+s32 func_801E5F7C(s32, s32, s32, s32, s32);
+s32 func_801E67E4(s32, s32, s32, s32, s32);
 s32 func_801E69AC(s32 a0, s32 a1, s32 a2);
 
 /**
@@ -199,7 +200,7 @@ s32 func_801E6058(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
     g_menuDisplayCfg.dataPtr = a0 + 0x20;
     g_menuDisplayCfg.itemId = *(u8 *)(a0 + 0x2E);
     g_menuDisplayCfg.itemAttr = *(u8 *)(a0 + 0x2C);
-    func_801EFBB4(a1, a2, (s32)func_801E5F7C);
+    func_801EFBB4(a1, a2, func_801E5F7C);
 }
 
 INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E60E8);
@@ -300,7 +301,7 @@ s32 func_801E6920(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
     g_menuDisplayCfg.dataPtr = a0 + 0x20;
     g_menuDisplayCfg.itemId = *(u8 *)(a0 + 0x2E);
     g_menuDisplayCfg.itemAttr = *(u8 *)(a0 + 0x2C);
-    func_801EFBB4(a1, a2, (s32)func_801E67E4);
+    func_801EFBB4(a1, a2, func_801E67E4);
 }
 
 /**
