@@ -36,7 +36,6 @@ extern u8 D_801ECB20[];
 extern u8 D_801ECB60[];
 extern s32 func_801E2EA8(s32);
 extern s32 func_801EFFD4(void);
-extern s32 func_801E80D0(s32, s32, s32, s32, s32);
 
 void func_801E4EA4(s32);
 void func_801E95C4(void);
