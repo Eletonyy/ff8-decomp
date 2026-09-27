@@ -21,9 +21,6 @@ extern u32 D_800C0900[];         /**< Streaming table, primary {sector,size} pai
 extern u32 D_800C0908[];         /**< Streaming table, secondary {sector,size} pair. */
 extern CdFileDesc D_800C0910[];  /**< Streaming table, third descriptor (passed by address). */
 
-/** @brief Field id currently being streamed in (compared against @c D_8005F100). */
-extern s16 D_8005F14E;
-
 /** @brief The field's particle system; @c NULL when the field has none. */
 extern FieldParticles *g_curFieldParticles;
 
@@ -92,24 +89,12 @@ extern SVert *g_fieldWalkmeshVerts;
 extern u8 D_80098000[];
 /** @brief The field overlay's own DrawSync callback, installed by @c func_8009895C. */
 extern u8 D_800982F0[];
-/** @brief Draw-environment packet arena; @c SetDrawEnv builds into it for both buffers. */
-extern u8 D_800CC118[];
 /** @brief Per-frame prim arena the field renderers build into. */
 extern u8 D_800CD1B0[];
 /** @brief Horizontal centre of the field clamp rect, derived on every load. */
 extern s32 D_800C7210;
 /** @brief Vertical centre of the field clamp rect, derived on every load. */
 extern s32 D_800C7214;
-/** @brief Cleared alongside the framebuffer copy that @c func_8009895C kicks off. */
-extern u8 D_8005F0FC;
-/**
- * @brief Field-exit state code handed back to the engine dispatcher: 2 when the engine
- *        leaves on state 7, and 6 / 8 / 9 / 10 or the engine mode from @c func_80099348 .
- *
- * @c volatile so the stores are not sunk into branch delay slots, which is what
- * @c func_80099348 's original does.
- */
-extern volatile s16 D_8005F158;
 /** @brief Camera/view block used instead of the field's own while @c func_800BE274 reports
  *         the overlay subsystem active; assigned to @c g_curFieldView . */
 extern FieldView *g_movieView;
@@ -120,10 +105,8 @@ extern s32 D_8005F110;
 extern FieldFrameBuf *D_800C71E0;
 /** @brief The two per-frame GPU work areas @ref D_800C71E0 alternates between. */
 extern FieldFrameBuf D_800C7218[2];
-/** @brief Handle returned by @c func_80042634 each frame. */
+/** @brief Handle returned by @c VSync each frame. */
 extern s32 D_800D5EA0;
-/** @brief Field render/present request byte; 1 = normal, 9 = post-copy. */
-extern volatile u8 D_8005F116;
 
 extern AdjRec *g_fieldWalkmeshAdjacency;    /**< Per-triangle edge adjacency table, one entry per triangle. */
 
@@ -327,29 +310,6 @@ typedef struct {
 extern void func_800A2AF8(FieldFrameBuf *buf, u8 *a, u8 *b, FieldView *view);
 
 /** @brief Emit one field sprite for a movement accumulator and link it into the OT. */
-/**
- * @brief 8-byte (x, y, z) vertex within a shimmer object's corner array; also
- *        the shape @c func_800A4934 stages its two interpolated points in at
- *        @c getScratchAddr(0) and @c getScratchAddr(2).
- */
-typedef struct {
-    /* 0x00 */ u16 x;
-    /* 0x02 */ u16 y;
-    /* 0x04 */ u16 z;
-    /* 0x06 */ u16 pad6;
-} ObjVertex;
-
-
-
-
-/**
- * @brief Main binary's @c RotTransPers3: perspective-transforms three vertices
- *        at once, writing the three screen XY pairs and returning the OTZ.
- *
- * @note The field overlay links it by address, so it keeps its @c func_ name.
- */
-extern s32 func_80040E14(ObjVertex *v0, ObjVertex *v1, ObjVertex *v2, s32 *sxy0,
-                         s32 *sxy1, s32 *sxy2, s32 *p, s32 *flag);
 
 /** @brief Palette selector for the ribbon colour ramp (scaled by 16 to index it). */
 extern u8 D_80070657;
@@ -368,8 +328,6 @@ extern u8 D_80070649;
 extern s32  func_800A5FA4(FieldLineTrigger *seg, s32 sel);
 extern void func_800A6100(Actor *actor, FieldLineTrigger *segs, Vec3i *pt);
 extern void func_800A62EC(FieldLineTrigger *segs);
-extern int  func_800A63AC();
-extern int  func_800A6A80();
 
 /**
  * @brief Element of a @ref FieldObject part's sub-range (8-byte stride).
@@ -420,25 +378,8 @@ extern FieldObject *D_800D6620[];
 /** @brief u16 seed value written into @c FieldObject::field50 at init. */
 extern u16 D_800D60E8;
 
-extern void func_800A7194(void);
-extern void func_800A7224(s32 idx, u16 *vals, s32 mode);
-extern void func_800A736C(s32 idx, u16 *vals, s32 mode);
-extern void func_800A74B4(s32 idx, EntityRenderXform *vals, s32 mode);
-extern int  func_800A7564();
-extern s32  func_800A8058(s32 idx, s32 arg1, FieldObject *newObj, u8 count);
-extern int  func_800A81AC();
 /** @brief Scratch sprite rectangle built by @c func_800AA5F8 before a @c MoveImage upload. */
 extern RECT D_800D5ED8;
-
-extern s32 *func_800A8CDC(s32 idx, s32 firstWord, EntityRenderSlot *slot);
-/** @brief Per-entity animation tick: advances the frame and rebuilds the sprite rect. */
-extern s32  func_800AA5F8(s32 idx);
-extern u8  *func_800A8DAC(s32 spatialIdx, s32 cmd, u32 arg, void *out);
-extern int  func_800A91C8();
-extern int  func_800A9434();
-extern void func_800A97E4(s32 spatialIdx, s32 cmd, s32 arg2, s32 arg3);
-extern void func_800AA46C(s32 spatialIdx, s32 cmd, s32 arg, s32 arg4);
-extern int  func_800AA8A0();
 
 
 /* Shared by fe_object1.c, fe_object1_2.c and fe_object1_3.c. */
@@ -446,7 +387,6 @@ extern u16 D_8005F118;
 extern u16 D_8005F11A;
 extern u16 D_8005F144;
 extern s16 D_8005F148;
-extern volatile u8 D_8005F116;   /**< Encounter-disable flag (1 = no random battles); also spun on by the field loader. */
 extern u16 D_8005F0FE;           /**< Accumulated battle chance; compared against the encounter RNG roll. */
 extern s16 D_8005F120;           /**< Previous battle formation id (avoid immediate repeats). */
 extern u8 D_8005F130;            /**< Encounter-pending marker set when a battle triggers. */
@@ -462,14 +402,11 @@ extern u8 D_800C6D90;            /**< PRNG counter advanced 13/step by func_800A
 extern u8 D_8005F150;            /**< Outer PRNG counter, D_800C3520 lookup offset, advanced 13/step per 256 calls of func_800A5C9C */
 extern u8 D_8005F151;            /**< Inner PRNG counter, D_800C3520 lookup index, advanced 1/call by func_800A5C9C */
 
-extern s32 func_8004D564(s32 a, s32 b);
-extern void func_80048F5C(RECT *r, u16 *src);
-extern s32 func_8004D524(s32, s32, s32, s32);
 extern void func_8004D684(void *p);
 
-extern u16 *D_800C71E4;
+extern void *D_800C71E4;         /**< Buffer handed to @c StoreImage / @c LoadImage; points at @c D_800D3E88 once @c func_800A1BB8 runs. */
 extern s32 D_800C71FC;           /**< Latched result of @c func_800A0F34 from @c func_800A11E0. */
-extern u16 D_800D3E88[];
+extern u16 D_800D3E88[];         /**< Saved 256x16 VRAM palette strip, one 16-bit colour per entry. */
 extern u8 D_800D5F50[];
 extern u8 D_800D61A8[];
 extern u8 D_8005F168[];
@@ -483,19 +420,22 @@ extern volatile s32 D_8005F154;  /**< VSync frame counter (main.c); phase for th
  * derives two corner offsets from it: @c field8 / @c fieldA / @c fieldC (base
  * minus a table-perturbed 0x80 bias) and @c field10 / @c field12 / @c field14
  * (base plus fixed 0x40/0x80 offsets).
+ *
+ * @c fieldC stays @c u16: a signed @c fieldC changes @c func_800A455C 's code,
+ * so @c func_800A4934, which needs it signed, casts both of its reads.
  */
 typedef struct {
-    /* 0x00 */ u16 x;
-    /* 0x02 */ u16 y;
-    /* 0x04 */ u16 z;
+    /* 0x00 */ s16 x;
+    /* 0x02 */ s16 y;
+    /* 0x04 */ s16 z;
     /* 0x06 */ u16 pad06;
-    /* 0x08 */ u16 field8;
-    /* 0x0A */ u16 fieldA;
+    /* 0x08 */ s16 field8;
+    /* 0x0A */ s16 fieldA;
     /* 0x0C */ u16 fieldC;
     /* 0x0E */ u16 padE;
-    /* 0x10 */ u16 field10;
-    /* 0x12 */ u16 field12;
-    /* 0x14 */ u16 field14;
+    /* 0x10 */ s16 field10;
+    /* 0x12 */ s16 field12;
+    /* 0x14 */ s16 field14;
     /* 0x16 */ u16 pad16;
 } DrawPoint;  /* 0x18 = 24 bytes */
 extern DrawPoint D_800706A0[];
@@ -510,10 +450,10 @@ extern DrawPoint D_800706A0[];
  * pair (@c field80 / @c field82) is what @c func_800A5224 later consumes.
  */
 typedef struct {
-    /* 0x00 */ ObjVertex va[8];
-    /* 0x40 */ ObjVertex vb[8];
+    /* 0x00 */ SVECTOR va[8];
+    /* 0x40 */ SVECTOR vb[8];
     /* 0x80 */ s16 field80;   /**< Tick threshold base; slot clears when tick > field80+4. */
-    /* 0x82 */ u16 field82;   /**< Per-frame tick counter (incremented while active). */
+    /* 0x82 */ s16 field82;   /**< Per-frame tick counter (incremented while active). */
     /* 0x84 */ u8  pad84[0x02];
     /* 0x86 */ u8  field86;
     /* 0x87 */ u8  field87;
@@ -535,7 +475,5 @@ extern u8 D_8005F103;
 
 extern PathEntry D_80070A60[FIELD_PATH_RING_LEN];
 extern PathEntry D_80070760[FIELD_PATH_RING_LEN];
-extern DRAWENV D_80067388[2];   /**< Double-buffered draw environments. */
-extern DISPENV D_80067440[2];   /**< Double-buffered display environments. */
 
 #endif

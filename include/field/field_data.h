@@ -22,14 +22,14 @@ typedef struct {
     /* 0x06 */ s16 x1;          /**< Exit line end X. */
     /* 0x08 */ s16 y1;          /**< Exit line end Y. */
     /* 0x0A */ s16 z1;          /**< Exit line end Z. */
-    /* 0x0C */ u16 position_x;  /**< Arrival X, copied to @c D_800704A8.position_x by @c func_8009AA64. */
-    /* 0x0E */ u16 position_y;  /**< Arrival Y, copied to @c D_800704A8.position_y. */
-    /* 0x10 */ u16 spawnTriIdx; /**< Arrival triangle, copied to @c D_800704A8.spawnTriIdx;
+    /* 0x0C */ u16 position_x;  /**< Arrival X, copied to @c g_fieldEntity.position_x by @c func_8009AA64. */
+    /* 0x0E */ u16 position_y;  /**< Arrival Y, copied to @c g_fieldEntity.position_y. */
+    /* 0x10 */ u16 spawnTriIdx; /**< Arrival triangle, copied to @c g_fieldEntity.spawnTriIdx;
                                      @c FIELD_GATEWAY_NO_TRIANGLE makes @c func_8009AAC8 skip it. */
-    /* 0x12 */ u16 fieldId;     /**< Destination field, copied to @c D_800704A8.counter;
+    /* 0x12 */ u16 fieldId;     /**< Destination field, copied to @c g_fieldEntity.counter;
                                      @c FIELD_GATEWAY_UNUSED in an unused slot. */
     /* 0x14 */ u8 pad14[0x08];
-    /* 0x1C */ u8 anim_state;   /**< Copied to @c D_800704A8.anim_state (low byte). */
+    /* 0x1C */ u8 anim_state;   /**< Copied to @c g_fieldEntity.anim_state (low byte). */
     /* 0x1D */ u8 pad1D[0x03];
 } FieldGateway; /* 0x20 = 32 bytes */
 
