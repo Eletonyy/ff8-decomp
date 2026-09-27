@@ -220,6 +220,12 @@ void func_800A2008(s32 attackerId, s32 targetId, s32 arg2) {
     }
 }
 
+/**
+ * @brief Sum the kernel limit effects of a party member's statuses.
+ *
+ * @param arg0 Party slot.
+ * @return Sum of the limit effects of every active status 1 and status 2 bit.
+ */
 s32 func_800A20AC(s32 arg0) {
     BattleCharData* temp_a0;
     s32 i;
@@ -272,6 +278,15 @@ s32 func_800A2150(void) {
     return val;
 }
 
+/**
+ * @brief Roll a party member's crisis level.
+ *
+ * Weighs the status limit effects and the KO'd allies against the member's
+ * HP, scaled by its kernel crisis level HP multiplier, over a random divisor.
+ *
+ * @param arg0 Party slot.
+ * @return Crisis level, 0-4.
+ */
 s32 func_800A21B0(s32 arg0) {
     BattleCharData* temp_s3;
     s32 temp_a0;
@@ -671,12 +686,15 @@ s32 func_800A2EF8(s32 arg0, s32 arg1) {
  * crisis level.
  */
 void func_800A2F54(void) {
-    s32 result = g_kernel.shot[D_800ED148.unk1324].targetInfo & 0x10;
+    s32 result = g_kernel.shot[D_800ED148.unk1324].targetInfo & TARGET_INFO_SINGLE;
     
     func_800E1880(!result, g_kernel.misc.shotTimers[D_800ED148.entities[D_800ED148.header.entityRef].crisisLevel - 1]);
 }
 
 
+/**
+ * @brief Hand func_800DEAA4 the Duel start sequence for the actor's crisis level.
+ */
 void func_800A2FC8(void) {    
     func_800DEAA4(D_800ED148.unk131A, g_kernel.misc.duel[D_800ED148.entities[D_800ED148.header.entityRef].crisisLevel - 1].startSequence);
 }
@@ -731,6 +749,22 @@ void func_800A30E4(void) {
     D_800ED148.unk5C0 = 0;
 }
 
+/**
+ * @brief Queue a battle action.
+ *
+ * Resolves the action's hit count, attack animation and name from the
+ * kernel entry for @p arg1 (party actors may remap the command first), then
+ * records the action in D_800EE4C0 and the next battle entry.
+ *
+ * @param arg0 Acting entity.
+ * @param arg1 Battle command, or an internal action type (236 and up).
+ * @param arg2 Spell, item, ability or attack ID for the command.
+ * @param arg3 Secondary ID, e.g. the Renzokuken finisher or Combine attack.
+ * @param arg4 Target entity.
+ * @param arg5 Target mask.
+ * @param arg6 Value stored in the entry's unk2.
+ * @return 0.
+ */
 s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 arg6) {
     s32 sp30;
     u16 sp2E;
@@ -1186,7 +1220,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             
         case 8:                                      
         case 236:                                     
-            if (g_kernel.enemyAttacks[arg2].hitCount & 0x80) {
+            if (g_kernel.enemyAttacks[arg2].hitCount & ENEMY_ATTACK_SHOW_NAME) {
                 var_s2 = func_800AFFB4(arg2);
             } 
             
@@ -1194,7 +1228,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
                 var_s2 = 0;
             }
             
-            var_s3 = g_kernel.enemyAttacks[arg2].hitCount & 0x7F;
+            var_s3 = g_kernel.enemyAttacks[arg2].hitCount & ENEMY_ATTACK_HIT_COUNT;
             sp2E = g_kernel.enemyAttacks[arg2].animation;
             sp30 = g_kernel.enemyAttacks[arg2].camera;
             break;
@@ -1211,10 +1245,10 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
                     break;
                     
                 case 2:                                     
-                    var_s3 = g_kernel.nonJunctionableGfAttacks[6].hitCount;
-                    arg2 = 6;
-                    sp2E = g_kernel.nonJunctionableGfAttacks[6].animation;
-                    var_s2 = func_800AFF30(6);
+                    var_s3 = g_kernel.nonJunctionableGfAttacks[GF_ATTACK_MOOGLE_DANCE].hitCount;
+                    arg2 = GF_ATTACK_MOOGLE_DANCE;
+                    sp2E = g_kernel.nonJunctionableGfAttacks[GF_ATTACK_MOOGLE_DANCE].animation;
+                    var_s2 = func_800AFF30(GF_ATTACK_MOOGLE_DANCE);
                     D_800ED148.unk1322 = 0;
                     break;
             }
@@ -1549,12 +1583,23 @@ s32 func_800A493C(s32 arg0) {
     return 255;
 }
 
+/**
+ * @brief Redirect a single-hit enemy attack to a covering ally.
+ *
+ * Only for a one-hit enemy attack (action 8) with no damage-type bits. If
+ * func_800A493C finds an ally to cover the target, the original target is
+ * kept in D_800ED148.unk1319 and the ally's mask is returned.
+ *
+ * @param arg0 Hit count of the action.
+ * @param arg1 Target mask.
+ * @return The covering ally's mask, or @p arg1.
+ */
 u16 func_800A4A74(s32 arg0, u16 arg1) {
     u8 sp10;
     s32 temp_v0;
 
     if ((arg0 == 1) && (D_800EE4C0.unk0 >= 3)) {
-        if (D_800EE4C0.unk1 == 8 && !(D_800ED148.unk130F & 4) && !(g_kernel.enemyAttacks[D_800EE4C0.statusCode].attackFlags & 3)) {
+        if (D_800EE4C0.unk1 == 8 && !(D_800ED148.unk130F & 4) && !(g_kernel.enemyAttacks[D_800EE4C0.statusCode].attackFlags & ATTACK_DAMAGE_TYPE)) {
             func_800A4FC4(arg1, &sp10);
             
             temp_v0 = func_800A493C(sp10);
@@ -2015,6 +2060,15 @@ void func_800A565C(s32 arg0) {
     D_800ED148.entities[arg0].curAtb = 0;
 }
 
+/**
+ * @brief Advance an entity's ATB gauge by one tick.
+ *
+ * Adds (speed + 30) * kernel ATB speed * rate / 100, where rate is 10, or
+ * 15 and 5 with entity-data flags 2 and 4, and caps the gauge at its maximum.
+ *
+ * @param arg0 Entity index.
+ * @return 1 once the gauge is full, else 0.
+ */
 s32 func_800A5688(s32 arg0) {
     s32 var_a0;
     BattleEntityData* currentEntityData; 
@@ -2268,6 +2322,19 @@ void func_800A5C48(InternalStruct* arg0) {
     }
 }
 
+/**
+ * @brief Queue a command's sub-actions through func_800A5A7C.
+ *
+ * Slot (command 16) queues one cast of the rolled spell per rolled count;
+ * Combine (19) rolls Rinoa's combine attack unless @p arg3 is 1; any other
+ * command queues a single sub-action.
+ *
+ * @param arg0 Sub-action slot for a single sub-action.
+ * @param arg1 Acting entity.
+ * @param arg2 Battle command.
+ * @param arg3 Command argument.
+ * @param arg4 Target mask.
+ */
 void func_800A5F24(s32 arg0, s32 arg1, s32 arg2, s32 arg3, u16 arg4) {
     s32 i;
 

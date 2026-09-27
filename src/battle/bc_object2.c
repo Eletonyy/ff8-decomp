@@ -88,6 +88,13 @@ BattleEntry* func_8009BBD0(void) {
     return currentEntry;
 }
 
+/**
+ * @brief Resolve and apply every hit of the current Renzokuken finisher.
+ *
+ * Stores the finisher's hit count on the first target, then runs one
+ * sub-entry of func_8009BBD0's battle entry per hit through func_800A09D0
+ * and func_800A5210.
+ */
 void func_8009BC28(void) {
     SubEntry* subs;
     s32 count;
@@ -1489,6 +1496,19 @@ s32 func_8009EF64(s32 arg0) {
     return 1; 
 }
 
+/**
+ * @brief Roll whether @p arg0 devours @p arg1.
+ *
+ * Fails outright when @p arg1 has more HP than @p arg0; otherwise the odds
+ * grow with the HP gap. On success the target is flagged, unk1326 is set and
+ * the Devour entry's description goes to func_800A4320. On failure unk1328
+ * is set to 8.
+ *
+ * @param arg0 Attacking entity.
+ * @param arg1 Target entity.
+ * @param unused Attack power (unused).
+ * @return D_800ED148.unk1328.
+ */
 s32 func_8009F040(s32 arg0, s32 arg1, s32 unused) {
     s32 entity0;
     s32 entity1;
@@ -1527,37 +1547,54 @@ s32 func_8009F040(s32 arg0, s32 arg1, s32 unused) {
     return D_800ED148.unk1328;
 }
 
+/**
+ * @brief Apply Devour entry @p arg1's stat and max HP raises.
+ *
+ * @param arg0 Party member to raise.
+ * @param arg1 Devour entry index.
+ */
 void func_8009F168(s32 arg0, s32 arg1) {
     u8 temp_s0;
      
     temp_s0 = g_kernel.devour[arg1].raisedStat;
-    if (temp_s0 & 1) {
+    if (temp_s0 & DEVOUR_RAISE_STR) {
         func_8002153C(arg0, 0);
     }
 
-    if (temp_s0 & 2) {
+    if (temp_s0 & DEVOUR_RAISE_VIT) {
         func_8002153C(arg0, 1);
     }
 
-    if (temp_s0 & 4) {
+    if (temp_s0 & DEVOUR_RAISE_MAG) {
         func_8002153C(arg0, 2);
     }
 
-    if (temp_s0 & 8) {
+    if (temp_s0 & DEVOUR_RAISE_SPR) {
         func_8002153C(arg0, 3);
     }
 
-    if (temp_s0 & CTRL_FLAG_10) {
+    if (temp_s0 & DEVOUR_RAISE_SPD) {
         func_8002153C(arg0, 4);
     }
 
-    if (temp_s0 & CTRL_FLAG_20) {
+    if (temp_s0 & DEVOUR_RAISE_LUCK) {
         func_8002153C(arg0, 5);
     }
 
     addCharMaxHp(arg0, g_kernel.devour[arg1].raisedMaxHp);
 }
 
+/**
+ * @brief Apply the HP effect of the current Devour entry.
+ *
+ * The amount is hpAmount sixteenths of @p arg1's max HP. A cure entry runs
+ * func_8009DD2C with hpAmount and the entry's statuses, then applies its
+ * raises to @p arg1; a damage entry hands both to func_8009C8B8.
+ *
+ * @param arg0 Acting entity.
+ * @param arg1 Entity the effect applies to.
+ * @return The HP amount.
+ */
 s32 func_8009F23C(s32 arg0, s32 arg1) {
     s32 var_s2;
     s32 temp_a3;
@@ -1566,13 +1603,13 @@ s32 func_8009F23C(s32 arg0, s32 arg1) {
     var_s2 = D_800ED148.entities[arg1].maxHp * temp_a3 / 16;
     
     switch (g_kernel.devour[D_800ED148.unk1327].hpMode) {
-        case 30:
+        case DEVOUR_CURE:
             D_800EE4C0.flags6 |= 1;
             func_8009DD2C(arg1, temp_a3, D_800EEBC2, D_800EEBC4);
             func_8009F168(arg1, D_800ED148.unk1327);
             break;
 
-        case 31:
+        case DEVOUR_DAMAGE:
             func_8009C8B8(1, arg0, arg1, temp_a3, var_s2);
             break;
     }
@@ -1951,6 +1988,16 @@ void func_8009FCF4(u8 arg0) {
     D_800ED148.entities[D_800ED148.unk12F3].unk89 = arg0 & 3;
 }
 
+/**
+ * @brief Compute the current spell's damage.
+ *
+ * Applies the spell's attack flags and hit animation, then returns
+ * func_8009F930 for its attack type and power.
+ *
+ * @param arg0 Target entity.
+ * @param arg1 Acting entity.
+ * @return func_8009F930's result.
+ */
 s32 func_8009FD28(s32 arg0, s32 arg1) {
     u8 var;
 
@@ -1990,6 +2037,14 @@ s32 func_8009FDE0(s32 arg0, s32 arg1) {
     return result + D_800ED148.entities[arg0].crisisLevel;
 }
 
+/**
+ * @brief Load the current action's element, status and hit parameters.
+ *
+ * Fills D_800EEBB8..D_800EEBC4 from the kernel entry of the action type in
+ * D_800EE4C0.unk1; plain attacks use the actor's battle stats and weapon.
+ *
+ * @param arg0 Acting entity.
+ */
 void func_8009FE14(s32 arg0) {
     s32 index;
 
@@ -2237,6 +2292,15 @@ void func_800A0978(s32 arg0) {
     }
 }
 
+/**
+ * @brief Resolve one hit of the current action on @p arg0.
+ *
+ * Resets the action result in D_800EE4C0, loads the attack data of the
+ * action type from its kernel entry, computes the damage, applies the
+ * command modifiers and hands the result to func_800A2724.
+ *
+ * @param arg0 Target entity.
+ */
 void func_800A09D0(s32 arg0) {
     s32 temp_s4;
     u8 var_a0;

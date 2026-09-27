@@ -6,6 +6,16 @@
 // kernel.bin, loaded whole at g_kernel. Section layout per the FF8 Modding Wiki
 // (technical-reference/main/kernel/header); offsets match the disc's kernel.bin.
 
+/** @brief targetInfo bit: one unit of the chosen side. */
+#define TARGET_INFO_SINGLE 0x10
+
+/** @brief attackFlags bits 0-1: the damage type. */
+#define ATTACK_DAMAGE_TYPE 0x03
+
+/** @brief attackFlags bits. */
+#define ATTACK_FLAG_SELECTABLE 0x20  /**< Battle items only: clear greys the item out. */
+#define ATTACK_FLAG_TARGET_KO  0x80  /**< May target KO'd units. */
+
 /** @brief Ability entry (8 bytes). */
 typedef struct {
     u16 statParam0;   /**< +0x00: Name text offset. */
@@ -25,6 +35,11 @@ typedef struct {
     u8 targetInfo;      /**< +0x06 */
     u8 pad07;
 } BattleCommandEntry; /* 8 bytes */
+
+/** @brief Battle command IDs, indexing Kernel.battleCommands. */
+#define BATTLE_CMD_CAST  9
+#define BATTLE_CMD_STOCK 10
+#define BATTLE_CMD_SHOT  14
 
 /** @brief Magic entry (60 bytes). */
 typedef struct {
@@ -75,6 +90,9 @@ typedef struct {
     u8 addend;                   /**< +0x10: calcHpFromLevel addend. */
     u8 pad11[0x13];              /**< +0x11..+0x23: Unknown. */
 } CharacterEntry; /* 36 bytes */
+
+/** @brief CharacterEntry.gender of a female character. */
+#define GENDER_FEMALE 1
 
 #define GF_ABILITY_SLOT_COUNT 21
 
@@ -133,6 +151,12 @@ typedef struct {
     u32 status2;           /**< +0x10 */
 } EnemyAttackEntry; /* 20 bytes */
 
+/** @brief EnemyAttackEntry.hitCount bits 0-6: the hit count. */
+#define ENEMY_ATTACK_HIT_COUNT 0x7F
+
+/** @brief EnemyAttackEntry.hitCount bit 7: show the attack's name. */
+#define ENEMY_ATTACK_SHOW_NAME 0x80
+
 /** @brief Weapon entry (12 bytes). */
 typedef struct {
     u16 nameOffset;          /**< +0x00: Name text offset. */
@@ -147,6 +171,9 @@ typedef struct {
     u8 critBonus;            /**< +0x0A */
     u8 melee;                /**< +0x0B: Bit 0 marks a melee weapon. */
 } WeaponEntry; /* 12 bytes */
+
+/** @brief WeaponEntry.melee bit 0: a melee weapon. */
+#define WEAPON_MELEE 0x01
 
 /** @brief Battle item entry (24 bytes). */
 typedef struct {
@@ -192,6 +219,9 @@ typedef struct {
     u8 powerModifier;      /**< +0x12 */
     u8 levelModifier;      /**< +0x13 */
 } NonJunctionableGfAttackEntry; /* 20 bytes */
+
+/** @brief Moogle Dance, the GF attack of the MiniMog command. */
+#define GF_ATTACK_MOOGLE_DANCE 6
 
 /** @brief Battle data of a command ability (16 bytes). */
 typedef struct {
@@ -361,9 +391,21 @@ typedef struct {
     u8 hpAmount;           /**< +0x03: HP healed or lost, in sixteenths of max HP. */
     u32 status2;           /**< +0x04 */
     u16 status1;           /**< +0x08 */
-    u8 raisedStat;         /**< +0x0A: Stat raised (0x01 STR .. 0x20 LUCK). */
+    u8 raisedStat;         /**< +0x0A: DEVOUR_RAISE_* bits. */
     u8 raisedMaxHp;        /**< +0x0B: Max HP raised. */
 } DevourEntry; /* 12 bytes */
+
+/** @brief DevourEntry.raisedStat bits, one per stat raised. */
+#define DEVOUR_RAISE_STR  0x01
+#define DEVOUR_RAISE_VIT  0x02
+#define DEVOUR_RAISE_MAG  0x04
+#define DEVOUR_RAISE_SPR  0x08
+#define DEVOUR_RAISE_SPD  0x10
+#define DEVOUR_RAISE_LUCK 0x20
+
+/** @brief DevourEntry.hpMode values. */
+#define DEVOUR_CURE   0x1E
+#define DEVOUR_DAMAGE 0x1F
 
 /** @brief Duel start and timer for one crisis level (2 bytes). */
 typedef struct {

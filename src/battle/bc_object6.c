@@ -14,6 +14,17 @@
 void func_800A2F54(void); // cant include bc_object3.h
 
 
+/**
+ * @brief Add an action's KO and spread target bits to target mask @p arg2.
+ *
+ * Magic (command 2) and items (4) take them from the entry's target info;
+ * enemy attacks add 0x4000 when they may target KO'd units.
+ *
+ * @param arg0 Battle command.
+ * @param arg1 Spell, item or enemy attack ID.
+ * @param arg2 Target mask.
+ * @return The extended mask.
+ */
 u16 func_800AB4A8(s32 arg0, s32 arg1, u16 arg2) {
     if (arg0 == 2) {
         return arg2 | func_800B0F7C(g_kernel.magic[arg1].targetInfo);
@@ -24,13 +35,20 @@ u16 func_800AB4A8(s32 arg0, s32 arg1, u16 arg2) {
     }
     
 
-    if ((g_kernel.enemyAttacks[arg1].attackFlags & 0x80)) {
+    if ((g_kernel.enemyAttacks[arg1].attackFlags & ATTACK_FLAG_TARGET_KO)) {
         return arg2 | 0x4000;
     }
 
     return arg2;
 }
 
+/**
+ * @brief Queue and start the first pending spell of D_800ED148.array12CC.
+ *
+ * Does nothing without pending spells, and clears them afterwards.
+ *
+ * @param arg0 Acting entity.
+ */
 void func_800AB570(s32 arg0) {
     u16 result;
     Struct_12CC* cc;
@@ -452,6 +470,14 @@ u16 func_800ADC10(s32 count) {
     return result;
 }
 
+/**
+ * @brief Record the pending spells of D_800ED148.array12CC as one command.
+ *
+ * Writes action 247 with each spell's target mask into the current DE8
+ * command entry, then clears the pending list.
+ *
+ * @param arg0 Acting entity.
+ */
 void func_800ADC48(s32 arg0) {
     s32 i;
     s32 result;
