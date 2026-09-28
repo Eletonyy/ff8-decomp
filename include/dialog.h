@@ -64,7 +64,7 @@ typedef struct {
     u32 textTint;       /**< Grey tint of message and string text (0x80 = unmodulated). */
     u32 textBlinkTint;  /**< Tint of text colours 8-15: @c textTint on the full half of the blink,
                              a grey at 75% of its red channel on the dim half. */
-    s8 activeFlag;
+    s8 focusedDialog;   /**< Dialog with the input focus, -1 for none: only it reads the pad (paging, choices). */
     u8 padD[7];
     s8 repeatCounters[4];  /**< Per-channel pad auto-repeat countdown (autoRepeatPadChannel). */
     u16 repeatLatched[4];  /**< Per-channel pad bits latched on the previous frame (autoRepeatPadChannel). */
@@ -89,8 +89,8 @@ extern void setDialogTextSpeed(s32 idx, s32 val);
 extern void setOpenDialogScale(s32 idx, s32 val);
 extern void setOpenDialogStep(s32 idx, s32 val);
 extern s32  getOpenDialogScale(s32 idx);
-extern void setDialogGlobalFlag(s32 val);
-extern s32  getDialogGlobalFlag(void);
+extern void setFocusedDialog(s32 idx);
+extern s32  getFocusedDialog(void);
 extern s32  getDialogChoice(s32 idx);
 extern s32  autoRepeatPad(s32 input);
 extern void setDialogMessage(s32 index, u8 *data);
@@ -124,5 +124,8 @@ extern s32  getFirstLineWidth(u8 *str);
 extern s32  getIconWidth(s32 idx);
 extern s32  measureMessage(u8 *str);
 extern void setMenuBrightness(s32 brightness);
+
+/** @brief Brightness last passed to setMenuBrightness; menus read it back to restore it. */
+extern s32 g_menuBrightness;
 
 #endif

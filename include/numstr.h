@@ -7,8 +7,16 @@
 
 struct Dialog;
 
+/** @brief How numbers are printed: the digit glyphs and the thousands separator. */
+typedef struct {
+    u8 digits[0x10];           /* glyph codes of the digits 0-F; [0] is the decimal digit base */
+    u8 separator;              /* thousands separator character */
+} MsgFormatConfig;
+
+extern MsgFormatConfig g_numberFormat;
+
 /** @brief Text colour the message decoder is in; its colour code (0x06) sets it. */
-extern u8 D_8008386C;
+extern u8 g_messageColor;
 
 /* Public prototypes */
 extern void intToDecString(u32 value, u8 *buf, s32 digitBase);

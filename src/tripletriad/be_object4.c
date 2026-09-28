@@ -150,14 +150,14 @@ void func_800A1D68(s32 id, u8 *str, s32 param) {
         goto dialogDefault;
     }
     setDialogChoiceMessage(6, str, 1, 2, 1, 2);
-    setDialogGlobalFlag(6);
+    setFocusedDialog(6);
     goto dialogDone;
 dialog5:
     {
         s32 lines = dim.wh[1] / 16;
         setDialogChoiceMessage(5, str, lines - 1, lines, lines - 1, lines);
     }
-    setDialogGlobalFlag(5);
+    setFocusedDialog(5);
     goto dialogDone;
 dialogDefault:
     setDialogMessage(id, str);

@@ -12,7 +12,6 @@
 #include "gamestate.h"
 #include "menumain.h"
 
-extern s32 D_80083850;
 extern s32 D_801ECC10;
 extern s32 D_801ECE20;
 extern s32 D_801ECE24;

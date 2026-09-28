@@ -228,7 +228,7 @@ INCLUDE_ASM("asm/nonmatchings/numstr", func_8002F4B0);
  * @brief Step to the next line of a message.
  *
  * Scans past the next newline (2) or page break (1 or 7). A colour command (6)
- * on the way stores its argument in @c D_8008386C.
+ * on the way stores its argument in @c g_messageColor.
  *
  * @param str Message in the game's encoding, or NULL.
  * @return The first byte of the next line, or NULL at the end of the message.
@@ -240,7 +240,7 @@ u8 *nextMessageLine(u8 *str) {
     if (str == NULL)
         return NULL;
 
-    colorPtr = &D_8008386C;
+    colorPtr = &g_messageColor;
 
     do {
         ch = *str++;
@@ -266,7 +266,7 @@ u8 *nextMessageLine(u8 *str) {
  * @brief Step to the next page of a message.
  *
  * Scans past the next page break (1 or 7); newlines do not stop it. A colour
- * command (6) on the way stores its argument in @c D_8008386C.
+ * command (6) on the way stores its argument in @c g_messageColor.
  *
  * @param str Message in the game's encoding, or NULL.
  * @return The first byte of the next page, or NULL at the end of the message.
@@ -278,7 +278,7 @@ static u8 *nextMessagePage(u8 *str) {
     if (str == NULL)
         return NULL;
 
-    colorPtr = &D_8008386C;
+    colorPtr = &g_messageColor;
 
     do {
         ch = *str++;
@@ -416,22 +416,22 @@ static inline u8 *getNumberString(s32 code, u8 *buf) {
     case 0x20: case 0x21: case 0x22: case 0x23:
     case 0x24: case 0x25: case 0x26: case 0x27:
         valIdx -= 0x20;
-        intToDecString(dialogs->msgValues[valIdx], buf, D_80083858.digits[0]);
-        func_8002F320(buf, 10, D_80083858.digits[0]);
-        func_8002F4B0(buf, D_80083858.separator);
+        intToDecString(dialogs->msgValues[valIdx], buf, g_numberFormat.digits[0]);
+        func_8002F320(buf, 10, g_numberFormat.digits[0]);
+        func_8002F4B0(buf, g_numberFormat.separator);
         break;
     case 0x30: case 0x31: case 0x32: case 0x33:
     case 0x34: case 0x35: case 0x36: case 0x37:
         valIdx -= 0x30;
-        intToDecString(dialogs->msgValues[valIdx], buf, D_80083858.digits[0]);
-        func_8002F320(buf, 10, D_80083858.digits[0]);
+        intToDecString(dialogs->msgValues[valIdx], buf, g_numberFormat.digits[0]);
+        func_8002F320(buf, 10, g_numberFormat.digits[0]);
         break;
     case 0x40: case 0x41: case 0x42: case 0x43:
     case 0x44: case 0x45: case 0x46: case 0x47:
         valIdx -= 0x40;
         u32ToHexTiles(dialogs->msgValues[valIdx], buf, 1);
         for (hexPtr = buf; *hexPtr != 0; hexPtr++) {
-            *hexPtr = (D_80083858.digits - 1)[*hexPtr];
+            *hexPtr = (g_numberFormat.digits - 1)[*hexPtr];
         }
         break;
     }
@@ -499,7 +499,7 @@ static inline u8 *insertArgString(u8 *dst, s32 code, u8 *buf) {
  *   MSG_ARG_NUMBER: getNumberString's format switch (40-entry jump table, 0x20-0x47):
  *     0x20-0x27 → Decimal with separator (intToDecString + F320 + F4B0)
  *     0x30-0x37 → Decimal plain (intToDecString + F320)
- *     0x40-0x47 → Hex, remapped to the D_80083858 digit glyphs (u32ToHexTiles)
+ *     0x40-0x47 → Hex, remapped to the g_numberFormat digit glyphs (u32ToHexTiles)
  *
  * insertArgString is inlined at its three call sites, producing 6 separate
  * jump tables. Handler code is shared across the expansions via

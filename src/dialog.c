@@ -220,9 +220,7 @@ enum {
  */
 #define DIALOG_MARKER_BLINK_OFF 0x10
 
-extern s32 D_800831D8;
-extern s8 D_800831DC;
-extern s32 D_80083850;
+extern u32 g_textBlinkTint; // Same as g_dialogs.state.textBlinkTint
 extern u8 D_800834D8[];
 static void updateTextBlinkColors(void);
 static void applyWindowBrightness(s32 index);
@@ -614,15 +612,22 @@ static void scaleDialogRect(RECT *rect, s32 scale, s32 arg2) {
 }
 
 
-/** @brief Set the global dialog flag. */
-void setDialogGlobalFlag(s32 val) {
-    D_800831DC = val;
+/**
+ * @brief Give a dialog the input focus (@c state.focusedDialog): only the focused
+ *        dialog reads the pad, to turn pages and pick a choice.
+ * @param idx Dialog index, or -1 for none.
+ */
+void setFocusedDialog(s32 idx) {
+    g_dialogs.state.focusedDialog = idx;
 }
 
 
-/** @brief Get the global dialog flag. */
-s32 getDialogGlobalFlag(void) {
-    return D_800831DC;
+/**
+ * @brief Get the dialog with the input focus (@c state.focusedDialog).
+ * @return Dialog index, or -1 for none.
+ */
+s32 getFocusedDialog(void) {
+    return g_dialogs.state.focusedDialog;
 }
 
 
@@ -779,7 +784,7 @@ static inline void updateOpenDialogScale(s32 index) {
  * @c firstChoice and @c lastChoice. Cross or Square confirms (@c choiceMade = 1);
  * Triangle jumps to the cancel choice in @c ctrl.bits.cancelChoice, if one is set.
  *
- * Only the window that owns input (@c state.activeFlag) sees the buttons.
+ * Only the focused window (@c state.focusedDialog) reads the buttons.
  *
  * @param index  Dialog index.
  * @param input  Pressed buttons: bits 0-15 drive paging, bits 16-31 the choice
@@ -799,7 +804,7 @@ static void updateDialog(s32 index, u32 input, u32 repeat) {
     updateOpenDialogScale(index);
 
     entry = &g_dialogs.entries[index];
-    if (g_dialogs.state.activeFlag == index) {
+    if (g_dialogs.state.focusedDialog == index) {
         pressed = input & 0xFFFF;
         choicePressed = input >> 16;
     } else {
@@ -1575,7 +1580,7 @@ void setMessageValue(s32 index, s32 value) {
 void resetAllDialogs(void) {
     DialogSystem *sys = &g_dialogs;
     s32 i;
-    sys->state.activeFlag = -1;
+    sys->state.focusedDialog = -1;
     for (i = 0; i < 8; i++) {
         initDialog(i);
     }
@@ -1947,13 +1952,13 @@ s32 getFirstLineWidth(u8 *str) {
  * @brief Set the menu brightness: store a grey in @c g_menuTint[MENU_TINT_NORMAL], the tint of
  *        everything the menus draw, and refresh the blink copies.
  *
- * The raw value is kept in @c D_80083850, where menus read it back to restore it.
+ * The raw value is kept in @c g_menuBrightness, where menus read it back to restore it.
  *
  * @param brightness Brightness, @ref BRIGHTNESS_NORMAL = normal; shifted down by 5,
  *                   its low 8 bits become r, g and b (0x80 draws graphics unmodulated).
  */
 void setMenuBrightness(s32 brightness) {
-    D_80083850 = brightness;
+    g_menuBrightness = brightness;
     {
         s32 val = (u32)brightness >> 5;
         brightness = val & 0xFF;
@@ -2080,7 +2085,7 @@ TSPRT *drawDecodedText(P_TAG *ot, TSPRT *p, s32 x, s32 y, u8 *str, s32 colour) {
  * @brief Fill one 12x12 text-font sprite and prepend it to the OT chain.
  *
  * The text renderers' counterpart of emitTextGlyph: colours 0-7 use @c state.textTint,
- * 8-15 (the blinking ones) @c D_800831D8, and the low 3 bits of the colour
+ * 8-15 (the blinking ones) @c g_textBlinkTint, and the low 3 bits of the colour
  * pick the CLUT row.
  *
  * @param head   Current OT chain head (tag image of the previous packet).
@@ -2102,7 +2107,7 @@ static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy
     colour &= 7;
     p->clut = (colour << 6) + getClut(TEXT_CLUT_X, TEXT_CLUT_Y);
     if (hi != 0) {
-        colour = D_800831D8;
+        colour = g_textBlinkTint;
     } else {
         colour = g_dialogs.state.textTint;
     }
@@ -2163,7 +2168,7 @@ u8 *drawMessageText(P_TAG *ot, s32 x, s32 y, u8 *str) {
                 goto end;
             }
             decodeMessage(str, buf, -1);
-            D_8008386C = colour;
+            g_messageColor = colour;
             str = nextMessageLine(str);
 
             s = buf;
@@ -2269,7 +2274,7 @@ static void drawDialogText(P_TAG *ot, Dialog *entry) {
     if (line >= first && line <= last) {
         x = entry->textX + DIALOG_TEXT_MARGIN + DIALOG_CHOICE_INDENT;
     }
-    D_8008386C = entry->pageColor;
+    g_messageColor = entry->pageColor;
 
     while (y < -DIALOG_LINE_HEIGHT) {
         if (str == NULL) {
@@ -2277,7 +2282,7 @@ static void drawDialogText(P_TAG *ot, Dialog *entry) {
         }
         str = nextMessageLine(str);
         y += DIALOG_LINE_HEIGHT;
-        colour = D_8008386C & 0xF;
+        colour = g_messageColor & 0xF;
         line++;
     }
 
@@ -2295,7 +2300,7 @@ static void drawDialogText(P_TAG *ot, Dialog *entry) {
                 c = entry->typedChars;
             }
             decodeMessage(str, buf, c);
-            D_8008386C = colour;
+            g_messageColor = colour;
             str = nextMessageLine(str);
             line++;
 

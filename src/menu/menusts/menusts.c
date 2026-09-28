@@ -159,7 +159,7 @@ s32 func_801E72D8(s32 displayList, s32 ot, s32 x, s32 y, s32 mode) {
     u8 strBuf[16];
     StatusEntry *entry = D_801E95CC;
     s32 i = 0;
-    s32 digitBase = D_80083858.digits[0];
+    s32 digitBase = g_numberFormat.digits[0];
     s32 drawn;
     s32 yStep;
     MenuDisplayConfig *cfgPtr;

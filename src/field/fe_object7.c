@@ -287,7 +287,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
         rect.y = 0x70 - rect.h / 2;
         setDialogRect(6, &rect);
         openDialogAnimated(6);
-        setDialogGlobalFlag(6);
+        setFocusedDialog(6);
         g_fieldVars->dialogStartMask |= 0x40;
 
         if (tableResult & 0x80) {
@@ -343,14 +343,14 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
         setDialogRect(6, &rect);
         setDialogChoiceMessage(6, text, 1, D_800DE4D4 + 1, 2, 1);
         openDialogAnimated(6);
-        setDialogGlobalFlag(6);
+        setFocusedDialog(6);
         g_fieldVars->dialogStartMask |= 0x40;
         g_fieldVars->dialogActiveMask |= 0x40;
         actor->field_0x204++;
         break;
 
     case 3:
-        setDialogGlobalFlag(6);
+        setFocusedDialog(6);
         D_800DE4D2 = getDialogChoice(6);
         if ((s8)D_800DE4D2 < 0) {
             return 1;
@@ -422,7 +422,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
         rect.y = 0x70 - rect.h / 2;
         setDialogRect(6, &rect);
         openDialogAnimated(6);
-        setDialogGlobalFlag(6);
+        setFocusedDialog(6);
         g_fieldVars->dialogStartMask |= 0x40;
         actor->field_0x204++;
         break;

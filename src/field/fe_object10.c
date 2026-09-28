@@ -1213,7 +1213,7 @@ void func_800BF4A4(void) {
             setDialogMessage(i, (u8 *)D_80085300[i].payload);
             setDialogRect(i, &D_80085300[i].rect);
             openDialogAnimated(i);
-            setDialogGlobalFlag(i);
+            setFocusedDialog(i);
         }
         setDialogEntityType(i, D_80085300[i].type);
         setDialogBrightness(i, D_80085300[i].brightness);

@@ -492,7 +492,7 @@ s32 opHandler_MESW(ScriptContext *context) {
         }
         setDialogMessage(dialogIdx, getOffsetTableEntry(g_curFieldMessages, val1));
         openDialogAnimated(dialogIdx);
-        setDialogGlobalFlag(dialogIdx);
+        setFocusedDialog(dialogIdx);
         do {
             mask = g_fieldVars->dialogStartMask;
             g_fieldVars->dialogStartMask = mask | (1 << dialogIdx);
@@ -555,7 +555,7 @@ s32 opHandler_MES(ScriptContext *context) {
     data = getOffsetTableEntry(g_curFieldMessages, val1);
     setDialogMessage(dialogIdx, data);
     openDialogAnimated(dialogIdx);
-    setDialogGlobalFlag(dialogIdx);
+    setFocusedDialog(dialogIdx);
 
     g_fieldVars->dialogStartMask  |= (1 << dialogIdx);
     g_fieldVars->dialogEntryMask  |= (1 << dialogIdx);
@@ -624,7 +624,7 @@ s32 opHandler_AMESW(ScriptContext *context) {
         func_800BC258(&buf);
         setDialogRect(dialogIdx, &buf);
         openDialogAnimated(dialogIdx);
-        setDialogGlobalFlag(dialogIdx);
+        setFocusedDialog(dialogIdx);
         g_fieldVars->dialogStartMask |= (1 << dialogIdx);
         func_800BC12C(dialogIdx, (s32)data, (u16 *)&buf);
         return 1;
@@ -669,7 +669,7 @@ s32 opHandler_AMES(ScriptContext *context) {
     func_800BC258(&buf);
     setDialogRect(dialogIdx, &buf);
     openDialogAnimated(dialogIdx);
-    setDialogGlobalFlag(dialogIdx);
+    setFocusedDialog(dialogIdx);
 
     g_fieldVars->dialogStartMask |= (1 << dialogIdx);
     g_fieldVars->dialogEntryMask |= (1 << dialogIdx);
@@ -712,7 +712,7 @@ s32 opHandler_RAMESW(ScriptContext *context) {
     func_800BC258(&buf);
     setDialogRect(dialogIdx, &buf);
     openDialogAnimated(dialogIdx);
-    setDialogGlobalFlag(dialogIdx);
+    setFocusedDialog(dialogIdx);
 
     g_fieldVars->dialogStartMask |= (1 << dialogIdx);
     func_800BC12C(dialogIdx, (s32)data, (u16 *)&buf);
@@ -757,7 +757,7 @@ s32 opHandler_ASK(Actor *actor) {
         if ((g_fieldVars->dialogActiveMask >> dialogIdx) & 1) {
             return 5;
         }
-        D_800DE4D8 = getDialogGlobalFlag();
+        D_800DE4D8 = getFocusedDialog();
         data = getOffsetTableEntry(g_curFieldMessages, textIdx);
         setDialogChoiceMessage(dialogIdx, data, paramY, paramZ, paramW, paramV);
         openDialogAnimated(dialogIdx);
@@ -768,7 +768,7 @@ s32 opHandler_ASK(Actor *actor) {
         state = actor->field_0x204;
         switch (state) {
         case 0:
-            setDialogGlobalFlag(dialogIdx);
+            setFocusedDialog(dialogIdx);
             r = getDialogChoice(dialogIdx);
             actor->context.resultSlots[0] = r;
             if (r >= 0) {
@@ -780,7 +780,7 @@ s32 opHandler_ASK(Actor *actor) {
             if (getOpenDialogScale(dialogIdx) == 0) {
                 g_fieldVars->dialogActiveMask &= ~(state << dialogIdx);
                 actor->context.stackPtr -= 6;
-                setDialogGlobalFlag(D_800DE4D8);
+                setFocusedDialog(D_800DE4D8);
                 return 3;
             }
             break;
@@ -838,7 +838,7 @@ s32 opHandler_AASK(Actor *actor) {
         if ((g_fieldVars->dialogActiveMask >> dialogIdx) & 1) {
             return 5;
         }
-        D_800DE4DC = getDialogGlobalFlag();
+        D_800DE4DC = getFocusedDialog();
         text = getOffsetTableEntry(g_curFieldMessages, textIdx);
         dims = measureMessage(text);
         buf.w = (dims & 0xFFFF) + 0x30;
@@ -854,7 +854,7 @@ s32 opHandler_AASK(Actor *actor) {
         state = actor->field_0x204;
         switch (state) {
         case 0:
-            setDialogGlobalFlag(dialogIdx);
+            setFocusedDialog(dialogIdx);
             r = getDialogChoice(dialogIdx);
             actor->context.resultSlots[0] = r;
             if (r >= 0) {
@@ -866,7 +866,7 @@ s32 opHandler_AASK(Actor *actor) {
             if (getOpenDialogScale(dialogIdx) == 0) {
                 g_fieldVars->dialogActiveMask &= ~(state << dialogIdx);
                 actor->context.stackPtr -= 8;
-                setDialogGlobalFlag(D_800DE4DC);
+                setFocusedDialog(D_800DE4DC);
                 return 3;
             }
             break;
@@ -925,10 +925,10 @@ s32 opHandler_MESSYNC(ScriptContext *context) {
 }
 
 /**
- * @brief Pop the top stack slot and pass it to @c setDialogGlobalFlag.
+ * @brief Pop the top stack slot and pass it to @c setFocusedDialog.
  */
 s32 opHandler_MESFORCUS(ScriptContext *context) {
-    setDialogGlobalFlag(POP(context));
+    setFocusedDialog(POP(context));
     return 2;
 }
 

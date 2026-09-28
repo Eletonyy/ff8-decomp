@@ -487,7 +487,7 @@ void func_8009B550(s32 slotIdx, s32 strIdx, u8 *text, s32 arg3, s32 arg4, s32 ar
     setDialogTextSpeed(id, getFieldTextSpeed());
     setDialogEntityType(id, 6);
     setDialogAnimSpeed(id, D_800C526C[slotIdx].field03);
-    setDialogGlobalFlag(id);
+    setFocusedDialog(id);
 
     dim = measureMessage(ptr);
     v = dim + 0x20;

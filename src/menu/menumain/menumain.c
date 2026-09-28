@@ -16,7 +16,6 @@
 #include "main.h"
 
 /* Main-executable symbols without an owner header yet. */
-extern u16 D_80083850;
 extern u16 g_configFlags;
 extern u8 D_80077E6C[];
 extern u16 D_800780E8;
@@ -840,12 +839,12 @@ void func_801F1AE8(s32 a0, s32 a1) {
     D_801FAB7B = a1;
 }
 
-/** @brief Snapshot current controller input state. */
+/** @brief Save the current menu brightness. */
 void func_801F1AFC(void) {
-    D_801FAB78 = D_80083850;
+    D_801FAB78 = g_menuBrightness;
 }
 
-/** @brief Restore saved controller input state for menu processing. */
+/** @brief Restore the saved menu brightness, and the GPU colour with it. */
 void func_801F1B10(void) {
     setMenuBrightness(D_801FAB78);
     buildGrayscaleGpuColor(D_801FAB78);
@@ -1244,7 +1243,7 @@ void func_801F3994(u8 *text, s32 a1, s32 a2, s32 a3, s32 a4, s32 a5) {
  */
 void func_801F39D0(s32 val, s32 ctx, s32 dl, s32 y, s32 a4, s32 a5) {
     u8 buf[16];
-    s32 digits = D_80083858.digits[0];
+    s32 digits = g_numberFormat.digits[0];
     s32 cursor;
     u8 *str;
 

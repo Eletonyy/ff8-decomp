@@ -66,7 +66,7 @@ INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem2", func_801EAB8C);
  * @brief Render item detail sub-menu with multiple panel sections.
  *
  * Switches the menu brightness to the context's value (setMenuBrightness)
- * and, after drawing, restores the previous one read from @c D_80083850; the early
+ * and, after drawing, restores the previous one read from @c g_menuBrightness; the early
  * return below leaves the new value in place. If the display mode
  * returned by func_801F0D84 is 0xF, renders several sub-panels: item name
  * (func_801EA500), description (func_801EA538), icon (func_801EA714),
@@ -82,7 +82,7 @@ s32 func_801EAC54(s32 a0, s32 a1, s32 a2) {
     s32 ctx = a0;
     s32 render = a1;
     s32 state = a2;
-    s32 saved = D_80083850;
+    s32 saved = g_menuBrightness;
     s32 result;
     s32 qty;
 

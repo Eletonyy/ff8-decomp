@@ -84,12 +84,6 @@ typedef struct {
     u8 dstData2[12];
 } BlitParams;
 
-/** @brief Message formatting config (D_80083858). */
-typedef struct {
-    u8 digits[0x10];           /* glyph codes of the digits 0-F; [0] is the decimal digit base */
-    u8 separator;              /* thousands separator character */
-} MsgFormatConfig;
-
 
 typedef enum {
     CTRL_ACTIVE     = 0x01,
@@ -819,7 +813,6 @@ extern s16             D_8005F158;
 extern BattleCharState g_battleChars; // 0x80078720
 //D_80078DF8 = g_battleChars.levelEntries[15].abilityFlags
 extern BattleConfig    g_battleConfig; // 0x80082C08
-extern MsgFormatConfig D_80083858;
 extern u8              D_80098030[];
 extern BattleSceneCtx* D_800D244C;
 extern s32             D_800E19B4[];
