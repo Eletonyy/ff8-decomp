@@ -110,9 +110,9 @@ void func_800A7B48(void);
 
 void func_800A7C64(s32, s32);
 
-// func_800A7CEC
+s32 func_800A7CEC(s32, BattleEntityData*);
 
-// func_800A7D8C
+s32 func_800A7D8C(s32, BattleEntityData*, s32);
 
 u8 func_800A7EE0(BattleEntityData*, s32);
 
