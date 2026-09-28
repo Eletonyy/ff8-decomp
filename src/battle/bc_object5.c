@@ -411,7 +411,7 @@ void func_800AAF48(s32 arg0) {
 * @param a1 Signed 16-bit offset to add.
 */
 
-void func_800AAF70(s32 arg0, s16 hpQuantity) { // not sure about the name for arg1
+void func_800AAF70(s32 arg0, s16 hpQuantity) {
     BattleEntity* temp_v0;
 
     temp_v0 = func_800AA57C(200, arg0);
