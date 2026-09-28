@@ -36,7 +36,7 @@ typedef enum {
 } RenderMode;
 
 /* Display / render state owned by main.c. */
-extern s16            g_currentMusicTrack;
+extern s16 g_curFieldId; /**< Global id of the current field map. */
 extern TILE           g_clearTiles[];
 extern volatile u16   g_bufferIndex; /* volatile for codegen match (forces sign extension, prevents CSE) */
 extern volatile u8    g_fadeMode;    /* volatile for codegen match (forces reload each access) */

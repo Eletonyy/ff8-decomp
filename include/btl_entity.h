@@ -14,12 +14,12 @@ extern void setBattleEntityBase(s32 val);
 extern s32  getMaxBattleEntities(void);
 extern u8   getDigitBaseCode(void);
 extern void setDigitBaseCode(u8 val);
-extern void setSfxEntryParams(s32 idx, s32 val30, s32 val32);
-extern void setSfxEntryTimings(s32 idx, s32 val29, s32 val2A, s32 val2C);
-extern void setSfxEntryField2B(s32 idx, s32 val);
-extern void setSfxEntryField34(s32 idx, s32 val);
-extern void setSfxEntryField38(s32 idx, s32 val);
-extern void setSfxEntryVolume(s32 idx, s32 val);
+extern void setDialogTextOrigin(s32 idx, s32 x, s32 y);
+extern void setDialogChoices(s32 idx, s32 first, s32 last, s32 cancel);
+extern void setDialogChoiceCursor(s32 idx, s32 val);
+extern void setDialogDrawCallback(s32 idx, DialogDrawCallback val);
+extern void setDialogUpdateCallback(s32 idx, DialogCallback val);
+extern void setDialogBrightness(s32 idx, s32 val);
 
 /**
  * @brief Emit one sprite per glyph of @p str and link them into @p ot.

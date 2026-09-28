@@ -90,7 +90,7 @@ s32 tripleTriadMainLoop(void) {
         func_800A1C6C();
         flipBuffers();
     }
-    clearAllSfx();
+    clearAllDialogs();
     g_vsyncRate = 100;
     return 0;
 }

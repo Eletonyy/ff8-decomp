@@ -310,9 +310,9 @@ void func_800BD804(s32 stepDelta) {
  *
  * On entry, mirrors party gil/dreamGil from @c g_gameState to
  * @c g_fieldVars, mirrors the audio-channel marker @c fieldD1 into
- * @c g_fieldEntity.unk1AB, and fades out per-slot SFX whose ambient
- * trigger has expired (@c sfxStartMask bit set without
- * @c sfxEntryMask). Then calls @c getPackedField2Bit for the active
+ * @c g_fieldEntity.unk1AB, and closes the per-slot dialogs whose ambient
+ * trigger has expired (@c dialogStartMask bit set without
+ * @c dialogEntryMask). Then calls @c getPackedField2Bit for the active
  * dispatcher slot and stores the result into @c g_fieldEntity.packedFlagSlot.
  *
  * Runs four script-VM dispatch loops in order:
@@ -359,18 +359,18 @@ void func_800BD9C4(FieldFrameBuf *frame) {
     {
         s32 i;
         for (i = 0; i < getMaxBattleEntities(); i++) {
-            if ((g_fieldVars->sfxEntryMask >> i) & 1) continue;
-            if (!((g_fieldVars->sfxStartMask >> i) & 1)) continue;
+            if ((g_fieldVars->dialogEntryMask >> i) & 1) continue;
+            if (!((g_fieldVars->dialogStartMask >> i) & 1)) continue;
             if (g_fieldEntity.ambientFlags & 0xC0) {
-                if (getSfxField28(i)) {
-                    if (!((g_fieldVars->sfxActiveMask >> i) & 1)) {
-                        fadeOutSfxSlow(i);
+                if (getDialogTypingDone(i)) {
+                    if (!((g_fieldVars->dialogActiveMask >> i) & 1)) {
+                        closeDialogAnimated(i);
                     }
                 }
             }
-            if (getSfxField1C(i)) continue;
-            if (!getSfxField28(i)) continue;
-            g_fieldVars->sfxStartMask &= ~(1 << i);
+            if (getOpenDialogScale(i)) continue;
+            if (!getDialogTypingDone(i)) continue;
+            g_fieldVars->dialogStartMask &= ~(1 << i);
         }
     }
 
@@ -1188,10 +1188,10 @@ void func_800BF28C(s32 a0) {
 
 
 /**
- * @brief Restore SFX/anim channels and dialog state after a load.
+ * @brief Restore the dialogs and anim channels after a load.
  *
  * Calls @c func_800BF28C(1) to do early setup, then iterates active
- * SFX slots restoring playback for any with their @c sfxStartMask
+ * dialog slots, reopening any with their @c dialogStartMask
  * bit set, then iterates anim slots dispatching to @c setupAnimEntry
  * or @c setupAnimEntryFull based on the @c flag field. Finally
  * restores the dialog state from @c g_fieldVars and clears the
@@ -1209,14 +1209,14 @@ void func_800BF4A4(void) {
     func_800BF28C(1);
 
     for (i = 0; i < getMaxBattleEntities(); i++) {
-        if ((g_fieldVars->sfxStartMask >> i) & 1) {
-            initSfxPlayback(i, (u8 *)D_80085300[i].payload);
-            func_8002E064(i, (s16 *)&D_80085300[i]);
-            startSfxSlow(i);
-            setSfxGlobalFlag(i);
+        if ((g_fieldVars->dialogStartMask >> i) & 1) {
+            setDialogMessage(i, (u8 *)D_80085300[i].payload);
+            setDialogRect(i, &D_80085300[i].rect);
+            openDialogAnimated(i);
+            setFocusedDialog(i);
         }
-        setSfxEntityType(i, D_80085300[i].type);
-        setSfxEntryVolume(i, D_80085300[i].volume);
+        setDialogEntityType(i, D_80085300[i].type);
+        setDialogBrightness(i, D_80085300[i].brightness);
     }
 
     for (i = 0; i < 2; i++) {

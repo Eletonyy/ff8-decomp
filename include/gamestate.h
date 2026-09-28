@@ -335,8 +335,8 @@ typedef struct {
     /* 0x20 */ LimitBreakData limitBreaks;                /**< Limit break progress (16 bytes). */
     /* 0x30 */ u8            battleOrder[32];              /**< Battle item menu ordering. */
     /* 0x50 */ ItemSlot      itemSlots[198];  /**< Item inventory (198 slots). */
-    /* 0x1DC */ volatile s32  frameCounter;                /**< @c 0xCD0: game frame counter; incremented ~every 12 frames by @ref VsyncHandler (VSync ISR). */
-    /* 0x1E0 */ volatile s32  countdownTimer;                  /**< @c 0xCD4: battle countdown timer. Set/get by field event opcodes, decremented by @ref VsyncHandler while nonzero; battle & color code read it as active / camera-shake state. */
+    /* 0x1DC */ volatile s32  playTimeSeconds;             /**< @c 0xCD0: play time in seconds; @ref VsyncHandler steps it every ~59.8 vsyncs (a second on NTSC). */
+    /* 0x1E0 */ volatile s32  countdownTimer;                  /**< @c 0xCD4: countdown in seconds. Set/get by field event opcodes, decremented by @ref VsyncHandler at the play time's rate while nonzero; battle & color code read it as active / camera-shake state. */
     /* 0x1E4 */ u8           pad1E4[0x04];
     /* 0x1E8 */ s32          fieldCDC;                     /**< Snapshotted by @c func_800BFBBC into @c FieldVars.field14. */
     /* 0x1EC */ u16          fieldCE0;                     /**< Snapshotted by @c func_800BFBBC into @c FieldVars.field18. */
@@ -363,7 +363,7 @@ typedef struct {
  */
 typedef struct {
     /* 0x00 */ u16 vsyncRate;
-    /* 0x02 */ u16 musicTrack;
+    /* 0x02 */ u16 fieldId;          /**< Saved @c g_curFieldId. */
     /* 0x04 */ u16 field120;         /**< Saved copy of g_fieldEntity.field_0x120. */
     /* 0x06 */ u16 positionsX[3];    /**< Party member X positions (>>12 integer). */
     /* 0x0C */ u16 positionsY[3];    /**< Party member Y positions (>>12 integer). */
@@ -425,9 +425,10 @@ extern void setMcBusy(void);
 extern u32  isMcBusy(void);
 
 
-/** @brief Halfword lookup table indexed by @c GameConfig.fieldMsgSpeed.
- *         Used as the per-entity SFX pitch in @c func_800BF718's common tail. */
-extern u16 D_800562C8[];
+/** @brief Dialog text speed for each Config "Message speed" slider position
+ * (@c GameConfig.fieldMsgSpeed): 0x1C00 (1.75 characters a frame)
+ * down to 0x0C00. */
+extern u16 g_textSpeeds[];
 
 /** @brief Stop all sound playback (gamestate.c); installed as the VSync
  *         callback during field-engine init. */

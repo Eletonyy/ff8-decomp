@@ -2,6 +2,8 @@
 #define BATTLE_ANIM_H
 
 #include "common.h"
+#include "psxsdk/libgpu.h"
+#include "dialog.h"
 
 /* Battle animation state shared across the battle, field, menu, and Triple Triad
  * code. g_battleAnims is a main-RAM global (0x80082DD0); the Triple Triad minigame
@@ -69,13 +71,10 @@ typedef struct {
     /* 0x1DA */ u16 clipTop;                /**< Clip region top edge. */
     /* 0x1DC */ u16 clipRight;              /**< Clip region right edge. */
     /* 0x1DE */ u16 clipBottom;             /**< Clip region bottom edge. */
-    /* 0x1E0 */ u8 defaultColor;             /**< Default color value for entity init. */
-    /* 0x1E1 */ u8 pad1E1[0x59];             /**< Unknown. */
-    /* 0x23A */ s16 field23A;                /**< Saved as SFX volume across transition. */
-    /* 0x23C */ u8 pad23C[0x14];             /**< Unknown. */
-    /* 0x250 */ u16 field250;                /**< Saved/cleared across transition. */
-    /* 0x252 */ u8 field252;                 /**< Saved/cleared across transition. */
-    /* 0x253 */ u8 pad253[0x3ED];            /**< Unknown. */
+    /* 0x1E0 */ U16Split repeatDelays;       /**< Pad auto-repeat timing (autoRepeatPadChannel): restart delay in @c b.lo, repeat interval in @c b.hi. */
+    /* 0x1E2 */ u8 pad1E2[0x3E];             /**< Unknown. */
+    /* 0x220 */ DialogSystem dialogs;               /**< Message windows; also addressed directly as @c g_dialogs. */
+    /* 0x440 */ u8 pad440[0x200];            /**< Unknown. */
     /* 0x640 */ DisplayListBuf bufs[2];         /**< Double-buffered GPU display lists (2 × 0x58). */
     /* 0x6F0 */ DisplayListBuf *active;      /**< Pointer to active display list buffer. */
     /* 0x6F4 */ s32 halfSize;                /**< Half of total VRAM size. */

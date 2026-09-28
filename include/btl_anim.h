@@ -13,6 +13,8 @@ extern u8  *emitDrawEnvPackets(P_TAG *ot, u8 *pkt); /**< Emit SetDrawArea/SetDra
 extern s32  getDisplayListHead(void);              /**< Next free packet in the active display-list buffer. */
 extern void setBattleEntityBoundRect(s32 idx, RECT *src); /**< Set an entity's bounding rect from @p src. */
 extern void setBattleEntityRectClamp(s32 idx, RECT *src); /**< Set an entity's clamp rect from @p src. */
+extern struct BattleDisplayEntity *getBattleEntity(s32 idx); /**< Battle entity @p idx. */
+extern void copyDisplayRect(RECT *dst); /**< Copy the active draw environment's clip rect to @p dst. */
 
 extern s32 getAnimGlobalState(void);
 extern s32 setAnimGlobalState(s32 value);

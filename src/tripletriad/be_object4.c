@@ -9,6 +9,7 @@
 #include "psxsdk/libgpu.h"
 #include "drawbar.h"
 #include "battle_anim.h"
+#include "menu_tint.h"
 #include "btl_anim.h"
 #include "tripletriad/be_object1.h"
 #include "tripletriad/be_object1b.h"
@@ -17,28 +18,35 @@
 #include "tripletriad/be_object3b.h"
 #include "tripletriad/be_object4.h"
 
+/** @brief @c DialogConfig.flags: open and close the dialog without the animation. */
+#define DIALOG_CONFIG_INSTANT 0x01
+/** @brief @c DialogConfig.flags: center the text in the box. */
+#define DIALOG_CONFIG_CENTER_TEXT 0x02
+/** @brief @c DialogConfig.flags: the rect's x/y is the box's center, not its corner. */
+#define DIALOG_CONFIG_CENTER_BOX 0x04
+
 /* s32 view: btl_color.h's u16 (u16) makes the caller mask the argument and result. */
 extern s32 remapControllerInput(s32 arg);
 
 /**
- * @brief Reset and reconfigure the seven SFX channels.
+ * @brief Reset and configure the seven dialogs.
  *
- * Resets all sound effects, runs a (60, 32) init via @c func_800A4504, then for
- * each of the seven channels applies the per-channel settings from the
- * @c D_80182E70 config table: reverb mode = channel index, field 0x2F and pitch
- * from the table entry, and zeroed entry params.
+ * Resets all dialogs, runs a (60, 32) init via @c func_800A4504, then for
+ * each of the seven dialogs applies its settings from the
+ * @c D_80182E70 config table: anim speed = dialog index, corner icon and text
+ * speed from the table entry, and a zeroed text origin.
  */
 void func_800A1BE0(void)
 {
     s32 i;
 
-    resetAllSfx();
+    resetAllDialogs();
     func_800A4504(0x3C, 0x20);
     for (i = 0; i < 7; i++) {
-        setSfxReverbMode(i, i);
-        setSfxField2F(i, D_80182E70[i].field2F);
-        setSfxPitch(i, D_80182E70[i].pitch);
-        setSfxEntryParams(i, 0, 0);
+        setDialogAnimSpeed(i, i);
+        setDialogCornerIcon(i, D_80182E70[i].field2F);
+        setDialogTextSpeed(i, D_80182E70[i].textSpeed);
+        setDialogTextOrigin(i, 0, 0);
     }
 }
 
@@ -49,8 +57,9 @@ void func_800A1BE0(void)
  * cursor state machine with the current input snapshots and records the
  * resulting card-display slot; otherwise idles the state machine and clears the
  * slot. Then refreshes the display, renders the battle ordering table, and
- * counts down each SFX entry's fade timer — firing a fast or slow fade-out (per
- * the entry's flag bit 0) on the frame a timer reaches zero.
+ * counts down each dialog's @c fadeTimer — closing the dialog at once or with its
+ * animation (per the entry's @ref DIALOG_CONFIG_INSTANT) on the frame the timer
+ * reaches zero.
  */
 void func_800A1C6C(void)
 {
@@ -71,10 +80,10 @@ void func_800A1C6C(void)
         if (D_80182E70[i].fadeTimer != 0) {
             D_80182E70[i].fadeTimer--;
             if (D_80182E70[i].fadeTimer == 0) {
-                if (D_80182E70[i].flags & 1) {
-                    fadeOutSfxFast(i);
+                if (D_80182E70[i].flags & DIALOG_CONFIG_INSTANT) {
+                    closeDialogInstant(i);
                 } else {
-                    fadeOutSfxSlow(i);
+                    closeDialogAnimated(i);
                 }
             }
         }
@@ -82,30 +91,31 @@ void func_800A1C6C(void)
 }
 
 /**
- * @brief Lay out a Triple Triad message-banner box and trigger its SFX/animation.
+ * @brief Lay out a Triple Triad message-banner box and open its dialog.
  *
  * Measures @p str (and, for @p id 5, the appended "Play / Quit" suffix) to size the
  * box, copies the box rect from @c D_80182E70[id], applies defaults ("size to text"
- * when w/h are 0), then either centers it (flag bit 2) or pulls it in from the
- * right/bottom edge for negative origins.  Registers the rect (func_8002E064),
- * dispatches the banner's audio by @p id (5 = multi-line, 6 = fixed, otherwise the
- * generic path), optionally offsets the SFX entry (flag bit 1), starts it
- * normal/slow (flag bit 0), and records @p param as the entry's fade timer.
+ * when w/h are 0), then either centers it (@ref DIALOG_CONFIG_CENTER_BOX) or pulls
+ * it in from the right/bottom edge for negative origins.  Registers the rect
+ * (setDialogRect), sets the message by @p id (5 and 6 with choices, otherwise
+ * plain), optionally centers the text in the box (@ref DIALOG_CONFIG_CENTER_TEXT),
+ * opens it at once or animated (@ref DIALOG_CONFIG_INSTANT), and records @p param
+ * as the entry's fade timer.
  *
- * @param id    Message/SFX slot index into @c D_80182E70.
- * @param str   FF8-encoded message string.
+ * @param id Dialog index into @c D_80182E70.
+ * @param str FF8-encoded message string.
  * @param param Fade-timer / display-duration value stored into the entry.
  */
 void func_800A1D68(s32 id, u8 *str, s32 param) {
-    GlyphSize dim;   /* text block size from getGlyphWidthA */
-    GlyphSize sfx;   /* "Play / Quit" suffix size (id 5 only) */
+    GlyphSize dim; /* text block size from getTextSize */
+    GlyphSize sfx; /* "Play / Quit" suffix size (id 5 only) */
     RECT rect;
 
-    dim.raw[0] = getGlyphWidthA(str);
+    dim.raw[0] = getTextSize(str);
 
     if (id == 5) {
         s16 m;
-        sfx.raw[0] = getGlyphWidthA((u8 *)&D_801826E2 - 0x62 + D_801826E2);
+        sfx.raw[0] = getTextSize((u8 *)&D_801826E2 - 0x62 + D_801826E2);
         m = (u16)sfx.wh[0] + 0x20;
         sfx.wh[0] = m;
         if (dim.wh[0] < m) {
@@ -120,7 +130,7 @@ void func_800A1D68(s32 id, u8 *str, s32 param) {
     if (rect.h == 0) {
         rect.h = (u16)dim.wh[1] + 0x10;
     }
-    if (D_80182E70[id].flags & 4) {
+    if (D_80182E70[id].flags & DIALOG_CONFIG_CENTER_BOX) {
         rect.x = (u16)rect.x - rect.w / 2;
         rect.y = (u16)rect.y - rect.h / 2;
     } else {
@@ -131,84 +141,78 @@ void func_800A1D68(s32 id, u8 *str, s32 param) {
             rect.y = (u16)rect.y + 0xE0 - rect.h;
         }
     }
-    func_8002E064(id, &rect);
+    setDialogRect(id, &rect);
 
     if (id == 5) {
-        goto sfx5;
+        goto dialog5;
     }
     if (id != 6) {
-        goto sfxDefault;
+        goto dialogDefault;
     }
-    func_8002D784(6, str, 1, 2, 1, 2);
-    setSfxGlobalFlag(6);
-    goto sfxDone;
-sfx5:
+    setDialogChoiceMessage(6, str, 1, 2, 1, 2);
+    setFocusedDialog(6);
+    goto dialogDone;
+dialog5:
     {
         s32 lines = dim.wh[1] / 16;
-        func_8002D784(5, str, lines - 1, lines, lines - 1, lines);
+        setDialogChoiceMessage(5, str, lines - 1, lines, lines - 1, lines);
     }
-    setSfxGlobalFlag(5);
-    goto sfxDone;
-sfxDefault:
-    initSfxPlayback(id, str);
-sfxDone:;
+    setFocusedDialog(5);
+    goto dialogDone;
+dialogDefault:
+    setDialogMessage(id, str);
+dialogDone:;
 
-    if (D_80182E70[id].flags & 2) {
+    if (D_80182E70[id].flags & DIALOG_CONFIG_CENTER_TEXT) {
         s32 px = rect.w - 0x10;
         s32 py = rect.h - 0x10;
-        setSfxEntryParams(id, (px - dim.wh[0]) / 2, (py - dim.wh[1]) / 2);
+        setDialogTextOrigin(id, (px - dim.wh[0]) / 2, (py - dim.wh[1]) / 2);
     }
-    if (D_80182E70[id].flags & 1) {
-        startSfxNormal(id);
+    if (D_80182E70[id].flags & DIALOG_CONFIG_INSTANT) {
+        openDialogInstant(id);
     } else {
-        startSfxSlow(id);
+        openDialogAnimated(id);
     }
 
     D_80182E70[id].fadeTimer = param;
 }
 
 /**
- * @brief Start or stop an SFX entry based on its type flag.
+ * @brief Close a dialog, at once or with its animation per its
+ * @ref DIALOG_CONFIG_INSTANT flag.
  *
- * Looks up the entry at D_80182E70[a0 * 12], checks bit 0 of byte 0.
- * If set, calls fadeOutSfxFast (stop). Otherwise calls fadeOutSfxSlow (start).
- *
- * @param a0 Object index.
+ * @param id Dialog index into @c D_80182E70.
  */
-void func_800A2054(s32 a0) {
-    u8 *base = (u8 *)D_80182E70;
-    u8 *entry;
-
-    entry = base + a0 * 12;
-    if (entry[0] & 1) {
-        fadeOutSfxFast();
+void func_800A2054(s32 id) {
+    if (D_80182E70[id].flags & DIALOG_CONFIG_INSTANT) {
+        closeDialogInstant(id);
     } else {
-        fadeOutSfxSlow();
+        closeDialogAnimated(id);
     }
 }
 
 /**
- * @brief Reset all 7 SFX entries and finalize.
+ * @brief Close all 7 dialogs at once and finalize.
  *
- * Calls fadeOutSfxFast for each of the 7 objects (indices 0-6),
+ * Calls closeDialogInstant for each of dialogs 0-6,
  * then calls func_800A44BC to set D_801D49E2.
  */
 void func_800A20B0(void) {
     s32 i = 0;
     do {
-        fadeOutSfxFast(i);
+        closeDialogInstant(i);
         i++;
     } while (i < 7);
     func_800A44BC();
 }
 
 /**
- * @brief Poll a player-input gate; thin wrapper forwarding @p gate to func_8002CE84.
+ * @brief Poll a player-input gate; thin wrapper forwarding @p gate to getDialogChoice.
  * @param gate Gate / channel id to poll.
  * @return Gate result: <0 while still waiting, otherwise the player's selection.
  */
 s32 func_800A20F4(s32 gate) {
-    return func_8002CE84(gate);
+    return getDialogChoice(gate);
 }
 
 /**
@@ -242,14 +246,14 @@ void showCardDetail(s32 cardId) {
 }
 
 /**
- * @brief Clear all 7 SFX entries by calling setSfxEntryParams with zero params.
+ * @brief Clear all 7 dialogs' params by calling setDialogTextOrigin with zeros.
  *
- * Iterates indices 0-6, calling setSfxEntryParams(i, 0, 0) for each.
+ * Iterates indices 0-6, calling setDialogTextOrigin(i, 0, 0) for each.
  */
-void clearAllSfx(void) {
+void clearAllDialogs(void) {
     s32 i = 0;
     do {
-        setSfxEntryParams(i, 0, 0);
+        setDialogTextOrigin(i, 0, 0);
         i++;
     } while (i < 7);
 }
@@ -595,7 +599,7 @@ u8 *initTripleTriadRenderList(void) {
  *    @p newVal there.
  *  - Masks both new and previous bitmasks by the side's relevance mask
  *    (`elem->unk10[side]`): @c result = new active bits, @c prevMasked = old.
- *  - @c base->defaultColor packs the timing: low byte = initial/restart delay,
+ *  - @c base->repeatDelays packs the timing: low byte = initial/restart delay,
  *    high byte = repeat interval.
  *  - If the masked new and old bits overlap (a sustained event), ticks the
  *    countdown in @ref D_801D4B08 [entry][side] (reloading the restart delay when
@@ -606,11 +610,11 @@ u8 *initTripleTriadRenderList(void) {
  * Drives keyboard-style auto-repeat for whatever per-side cue the bits represent.
  * Called four times (once per side) by @ref func_800A2A8C, which ORs the results.
  *
- * @param base   Battle-anim state; base->defaultColor packs the two delays.
- * @param elem   Battle-anim entity; elem->unk10[side] is the per-side mask.
+ * @param base Battle-anim state; base->repeatDelays packs the two delays.
+ * @param elem Battle-anim entity; elem->unk10[side] is the per-side mask.
  * @param newVal Raw new edge bitmask for this frame.
- * @param side   Card side index, 0..3.
- * @param entry  Card slot index.
+ * @param side Card side index, 0..3.
+ * @param entry Card slot index.
  * @return The masked event bits that should fire this frame, or 0 while suppressed.
  *
  * @note Purpose inferred. Decomp scratch: https://decomp.me/scratch/7L33D
@@ -625,7 +629,7 @@ s32 func_800A29D4(BattleAnimState *base, BattleAnimEntity *elem, u16 newVal, s32
 
     prevMasked = D_801D4AF8[entry][side];
     D_801D4AF8[entry][side] = newVal;
-    restartDelay = *(u16 *)&base->defaultColor;
+    restartDelay = base->repeatDelays.hword;
     repeatTimer = D_801D4B08[entry][side];
     mask = elem->unk10[side];
 
@@ -1366,7 +1370,7 @@ s32 func_800A390C(s32 flags0, s32 flags1) {
 /**
  * @brief Build a 12x12 font-glyph sprite and prepend it to the ordering table.
  *
- * Fills a free-size @c SPRT (code 0x64, carried in @c g_menuColor) for tile
+ * Fills a free-size @c SPRT (code 0x64, carried in @c g_menuTint) for tile
  * @p tileIdx of a 21-tile-per-row font texture: CLUT from @p palArg's low 3 bits,
  * menu color chosen by its high bits, 12x12 size, position @p xy, and UV from the
  * tile's column/row. Links the primitive at the head of the OT carried in @p ot
@@ -1398,9 +1402,9 @@ u32 func_800A3C7C(u32 ot, SPRT *prim, s32 tileIdx, s32 palArg, u32 xy) {
     palArg = palArg & 7;
     prim->clut = (palArg << 6) + 0x3812; /* getClut(288, 224 + palette) */
     if (head) {
-        palArg = g_menuColor[1]; /* palette register reused: now the color */
+        palArg = g_menuTint[MENU_TINT_BLINK]; /* palette register reused: now the color */
     } else {
-        palArg = g_menuColor[0];
+        palArg = g_menuTint[MENU_TINT_NORMAL];
     }
 
     *(u32 *)&prim->w = 0xC000C; /* 12 x 12 */
@@ -1541,12 +1545,12 @@ INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object4", func_800A3EE0);
 /**
  * @brief Wrapper for func_800A3EE0 that selects a lookup table entry based on the 5th argument.
  *
- * If stack0 >= 8, uses g_menuColor[1] and subtracts 8 from stack0.
- * Otherwise uses g_menuColor[0] with stack0 unchanged.
+ * If stack0 >= 8, uses g_menuTint[MENU_TINT_BLINK] and subtracts 8 from stack0.
+ * Otherwise uses g_menuTint[MENU_TINT_NORMAL] with stack0 unchanged.
  * Passes the lookup value and adjusted stack0 as extra args to func_800A3EE0.
  *
  * @param a0-a3 Parameters passed through to func_800A3EE0.
- * @param stack0 Index parameter; if >= 8, adjusted by -8 and table index 1 is used.
+ * @param stack0 Index parameter; if >= 8, adjusted by -8 and the blink tint is used.
  * @return The advanced packet cursor from func_800A3EE0 (returned by the tail call;
  *         func_800A40F0 threads it through). Typed @c void* rather than @c void.
  */
@@ -1554,11 +1558,11 @@ void *func_800A4098(void *a0, void *a1, s32 a2, s32 a3, s32 stack0) {
     s32 idx;
     if (stack0 >= 8) {
         stack0 -= 8;
-        idx = 1;
+        idx = MENU_TINT_BLINK;
     } else {
-        idx = 0;
+        idx = MENU_TINT_NORMAL;
     }
-    return func_800A3EE0(a0, a1, a2, a3, g_menuColor[idx], stack0);
+    return func_800A3EE0(a0, a1, a2, a3, g_menuTint[idx], stack0);
 }
 
 /**

@@ -3,8 +3,8 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
 #include "battle.h"
+#include "menu_tint.h"
 
-extern s32 g_menuColor[];
 
 /**
  * @brief Scene render context staged in PS1 scratchpad each frame.
@@ -38,10 +38,10 @@ void drawColorDefault(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
 
 
 /**
- * @brief Call func_800330F4 with a color from g_menuColor selected by arg4.
+ * @brief Call func_800330F4 with a color from g_menuTint selected by arg4.
  *
- * If arg4 >= 8, subtracts 8 and uses g_menuColor[1]; otherwise uses
- * g_menuColor[0]. Passes the selected color as the 5th arg and the
+ * If arg4 >= 8, subtracts 8 and uses g_menuTint[MENU_TINT_BLINK]; otherwise uses
+ * g_menuTint[MENU_TINT_NORMAL]. Passes the selected color as the 5th arg and the
  * modified arg4 as the 6th.
  *
  * @param a0 First argument passed through.
@@ -54,16 +54,16 @@ s32 drawColorByMenuPalette(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
     s32 idx;
     if (arg4 >= 8) {
         arg4 -= 8;
-        idx = 1;
+        idx = MENU_TINT_BLINK;
     } else {
-        idx = 0;
+        idx = MENU_TINT_NORMAL;
     }
-    func_800330F4(a0, a1, a2, a3, g_menuColor[idx], arg4);
+    func_800330F4(a0, a1, a2, a3, g_menuTint[idx], arg4);
 }
 
 
 /**
- * Calls func_800330F4 with g_menuColor as the 5th arg and 7 as the 6th (mode).
+ * Calls func_800330F4 with g_menuTint[MENU_TINT_NORMAL] as the 5th arg and 7 as the 6th (mode).
  *
  * @param a0 First argument passed through
  * @param a1 Second argument passed through
@@ -71,7 +71,7 @@ s32 drawColorByMenuPalette(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
  * @param a3 Fourth argument passed through
  */
 void drawMenuColorDefault(s32 a0, s32 a1, s32 a2, s32 a3) {
-    func_800330F4(a0, a1, a2, a3, g_menuColor[0], 7);
+    func_800330F4(a0, a1, a2, a3, g_menuTint[MENU_TINT_NORMAL], 7);
 }
 
 

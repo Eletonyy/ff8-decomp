@@ -1,10 +1,11 @@
 #include "common.h"
+#include "menu_tint.h"
+#include "menutmag.h"
 
 extern u8 D_801E764C[];
 extern u8 D_801E63EC[];
 extern u8 D_801E63F8[];
 extern u16 g_menuDisplayCfg[];
-extern s32 g_menuColor;
 
 void func_801E5800(s32 a0);
 void func_801E6170(s32 a0, s32 a1, s32 a2);
@@ -83,7 +84,7 @@ void func_801E6008(s32 a0, s32 a1, s32 xOff, s32 yOff, u16 *src) {
     g_menuDisplayCfg[1] = src[1] + yOff;
     g_menuDisplayCfg[2] = src[2];
     g_menuDisplayCfg[3] = src[3];
-    func_801E5F5C(a0, a1, g_menuDisplayCfg, g_menuColor, src);
+    func_801E5F5C(a0, a1, g_menuDisplayCfg, g_menuTint[MENU_TINT_NORMAL], src);
 }
 
 /**

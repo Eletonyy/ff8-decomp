@@ -5,6 +5,7 @@
 #include "battle.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
+#include "dialog.h"
 #include "thread.h"
 
 
@@ -17,8 +18,6 @@ void func_800472F4(void);
 s32 getAnimFrameParam(s32, s32);
 u16 remapControllerInput(s32);
 s32 getAnimFrameStatusFlags(s32, s32);
-s32 func_8002CF54(s32);
-void decrementSfxCounter(void);
 s32 GetActiveFlag(s32);
 void dispatchBattleEntity(s32, s32, s32);
 void updateCameraVibrate(void);
@@ -217,10 +216,10 @@ void resetAnimEntity(s32 idx, s32 frameId) {
     entity = &g_battleAnims.entities[g_battleAnims.entities[idx].linkedIdx];
     entity->frameCounter = 0;
     entity->field0A = 0;
-    entity->field0C = g_battleAnims.defaultColor;
-    entity->field0D = g_battleAnims.defaultColor;
-    entity->field0E = g_battleAnims.defaultColor;
-    entity->field0F = g_battleAnims.defaultColor;
+    entity->field0C = g_battleAnims.repeatDelays.b.lo;
+    entity->field0D = g_battleAnims.repeatDelays.b.lo;
+    entity->field0E = g_battleAnims.repeatDelays.b.lo;
+    entity->field0F = g_battleAnims.repeatDelays.b.lo;
 
     fid = frameId;
     for (i = 0; 8 > i; i++) {
@@ -244,19 +243,20 @@ void resetAnimEntity(s32 idx, s32 frameId) {
 
 
 /**
- * @brief Initialize a battle entity's color fields from the global default.
+ * @brief Reset a battle-anim entity's auto-repeat countdowns and frames.
  *
- * Sets all four color fields (0C-0F) to g_battleAnims.defaultColor,
- * then calls resetAnimEntity to reset frame state.
+ * Sets field0C-0F, the per-channel pad auto-repeat countdowns (func_80027038
+ * ticks them), to the restart delay g_battleAnims.repeatDelays.b.lo, then
+ * calls resetAnimEntity to reset frame state.
  *
  * @param idx Entity index (0 or 1).
  */
 void initAnimEntityColor(s32 idx) {
     BattleAnimEntity *entity = &g_battleAnims.entities[idx];
-    entity->field0C = g_battleAnims.defaultColor;
-    entity->field0D = g_battleAnims.defaultColor;
-    entity->field0E = g_battleAnims.defaultColor;
-    entity->field0F = g_battleAnims.defaultColor;
+    entity->field0C = g_battleAnims.repeatDelays.b.lo;
+    entity->field0D = g_battleAnims.repeatDelays.b.lo;
+    entity->field0E = g_battleAnims.repeatDelays.b.lo;
+    entity->field0F = g_battleAnims.repeatDelays.b.lo;
     resetAnimEntity(idx, 0);
 }
 
@@ -1864,7 +1864,7 @@ done:
 /**
  * @brief Apply GPU draw area/offset setup if the card file overlay is active.
  *
- * When g_cardFileActive is set, calls func_8002E8DC to process the overlay
+ * When g_cardFileActive is set, calls drawDecodedText to process the overlay
  * data, then emitDrawEnvPackets to emit draw area/offset packets into the OT.
  * Returns the packet pointer unchanged if inactive.
  *
@@ -1874,7 +1874,7 @@ done:
  */
 s32 transformValueIfActive(s32 ot, s32 pkt) {
     if (g_cardFileActive != 0) {
-        s32 result = func_8002E8DC(ot, pkt, g_cardFileSlot, g_cardFileType, (u8 *)g_cardFilename, 7);
+        s32 result = drawDecodedText(ot, pkt, g_cardFileSlot, g_cardFileType, (u8 *)g_cardFilename, 7);
         pkt = (s32)emitDrawEnvPackets((P_TAG *)ot, (u8 *)result);
     }
     return pkt;
@@ -2144,7 +2144,7 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
                 } else {
                     frameData[i] = param;
                 }
-                statusData[i] = func_8002CF54(param);
+                statusData[i] = autoRepeatPad(param);
             }
         }
     }
@@ -2154,7 +2154,7 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
         param = frameData[count];
         frameVal = param;
         statusVal = val;
-        decrementSfxCounter();
+        tickTextBlink();
         for (j = 0; j < 8; j++) {
             if (GetActiveFlag(j)) {
                 dispatchBattleEntity(j, frameVal, statusVal);
@@ -2367,10 +2367,10 @@ void initBattleAnimSystem(s32 vramBase, s32 vramSize)
     g_battleAnims.active = &g_battleAnims.bufs[1];
     swapDisplayList();
     initAllBattleEntities();
-    resetAllSfx();
+    resetAllDialogs();
     setDefaultGpuColor();
     buildGrayscaleGpuColor(0x1000);
-    setMenuColorIntensity(0x1000);
+    setMenuBrightness(BRIGHTNESS_NORMAL);
     btlColorStub0234();
     buildAnimEasingCurves();
     resetBattleCameraState();

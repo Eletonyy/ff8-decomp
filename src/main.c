@@ -21,6 +21,23 @@
 #include "psxsdk/libetc.h"
 #include "main.h"
 
+/** @brief Global field ids of the maps a new game and a game over go to. */
+#define FIELD_ID_START0 74 /**< start0, the first map of a new game. */
+#define FIELD_ID_GOVER 75 /**< gover, the game-over map. */
+
+/** @brief A world-map entrance: the field it leads to and where the party appears there. */
+typedef struct {
+    /* 0x00 */ u16 position_x;
+    /* 0x02 */ u16 position_y;
+    /* 0x04 */ u16 spawnTriIdx;  /**< Navmesh triangle, copied to @c SystemState::spawnTriIdx. */
+    /* 0x06 */ s16 fieldId;      /**< Global id of the destination field. */
+    /* 0x08 */ u8  anim_state;
+    /* 0x09 */ u8  pad09[0xF];
+} WorldEntrance; /* 0x18 */
+
+/** @brief The 72 entrances of data/eng/wm2field.tbl, loaded here at boot. */
+#define WORLD_ENTRANCES ((WorldEntrance *)0x80097940)
+
 
 /** @brief Clears the GPU ordering tables and flushes the GPU pipeline, used
  *         to blank the display during transitions (e.g. while a fade finishes).
@@ -42,7 +59,7 @@ void flushGpuOt(void) {
 /** @brief VSync callback handler, registered via VSyncCallback in InitHardware.
  *
  *  Dispatches per-frame rendering by the current render mode and advances the
- *  game's frame-timing counters.
+ * play time and the countdown, both counted in seconds.
  */
 void VsyncHandler(void) {
     switch (g_renderMode) {
@@ -73,7 +90,7 @@ void VsyncHandler(void) {
 
     D_8005F154 += 0x88F;
     if (D_8005F154 >> 17) {
-        g_gameState.mainData.frameCounter++;
+        g_gameState.mainData.playTimeSeconds++;
         D_8005F154 &= 0xFFFF;
     }
 
@@ -122,7 +139,7 @@ void func_80011870(void) {
         g_gameState.cameraSnapshot.vsyncRate = 1;
     }
 
-    g_gameState.cameraSnapshot.musicTrack = g_currentMusicTrack;
+    g_gameState.cameraSnapshot.fieldId = g_curFieldId;
     g_gameState.cameraSnapshot.field120 = g_fieldEntity.field_0x120;
 
     for (i = 0; i < 3; i++) {
@@ -149,7 +166,7 @@ void RestoreSnapshot(void) {
         g_vsyncRate = 1;
     }
 
-    g_currentMusicTrack = g_gameState.cameraSnapshot.musicTrack;
+    g_curFieldId = g_gameState.cameraSnapshot.fieldId;
 
     entity = &g_fieldEntity;
 
@@ -292,19 +309,6 @@ void loadFileTable(void) {
         ;
 }
 
-/**
- * @brief Battle-map transition entry: where the party lands coming out of a
- *        battle — spawn position, navmesh triangle, music and animation.
- */
-typedef struct {
-    /* 0x00 */ u16 position_x;
-    /* 0x02 */ u16 position_y;
-    /* 0x04 */ u16 spawnTriIdx;  /**< Navmesh triangle, copied to @c SystemState::spawnTriIdx. */
-    /* 0x06 */ s16 musicTrack;
-    /* 0x08 */ u8  anim_state;
-    /* 0x09 */ u8  pad09[0xF];
-} BattleMapEntry; /* 0x18 */
-
 /* ff8main's post-battle handling reads several g_fieldVars fields (continue /
  * game-over flags and the expected disc id) to choose the next transition. */
 
@@ -320,10 +324,10 @@ typedef struct {
  * without that call. */
 void ff8main(void) __asm__("main");
 void ff8main(void) {
-    BattleMapEntry *entry;
+    WorldEntrance *entry;
     s16 i;
     s16 mode;
-    s16 musicTrack;
+    s16 fieldId;
     s32 result;
     s32 mapAddr;
     preInitStub();
@@ -354,7 +358,7 @@ void ff8main(void) {
             loadFieldDataA();
             SmInitEventAll(0);
         } else {
-            g_currentMusicTrack = 0x4A;
+            g_curFieldId = FIELD_ID_START0;
             g_gameState.battleParty[0] = 0;
             g_gameState.battleParty[1] = 0xFF;
             g_gameState.battleParty[2] = 0xFF;
@@ -411,12 +415,12 @@ void ff8main(void) {
                 D_8005F14C = 2;
                 switch (D_80082C8C.mode) {
                 case 1:
-                    entry = & ((BattleMapEntry * ) 0x80097940)[D_80082C8C.unk02];
-                    musicTrack = entry->musicTrack;
+                    entry = &WORLD_ENTRANCES[D_80082C8C.unk02];
+                    fieldId = entry->fieldId;
                     g_fieldEntity.position_x = entry->position_x;
                     g_fieldEntity.position_y = entry->position_y;
                     g_fieldEntity.spawnTriIdx = entry->spawnTriIdx;
-                    g_currentMusicTrack = musicTrack;
+                    g_curFieldId = fieldId;
                     g_fieldEntity.anim_state = entry->anim_state;
                     g_vsyncRate = 1;
                     sndCmd21(-1, 0);
@@ -455,7 +459,7 @@ void ff8main(void) {
                     break;
                 }
                 if ((g_battleConfig.result == 1) && (!(g_fieldVars->fieldB6 & 0x200))) {
-                    g_currentMusicTrack = 0x4B;
+                    g_curFieldId = FIELD_ID_GOVER;
                     D_8005F14C = 0;
                     g_vsyncRate = 1;
                     break;
@@ -464,7 +468,7 @@ void ff8main(void) {
                     if (g_fieldVars->fieldB6 & 0x100) {
                         g_fieldVars->stateFlags &= ~FIELD_STATE_CAMERA_SHAKE;
                     } else {
-                        g_currentMusicTrack = 0x4B;
+                        g_curFieldId = FIELD_ID_GOVER;
                         D_8005F14C = 0;
                         g_vsyncRate = 1;
                         break;
@@ -533,7 +537,7 @@ void ff8main(void) {
                     break;
                 }
                 if ((g_battleConfig.result == 1) && (!(g_fieldVars->fieldB6 & 0x200))) {
-                    g_currentMusicTrack = 0x4B;
+                    g_curFieldId = FIELD_ID_GOVER;
                     D_8005F14C = 0;
                     g_vsyncRate = 1;
                     break;
@@ -542,7 +546,7 @@ void ff8main(void) {
                     if (g_fieldVars->fieldB6 & 0x100) {
                         g_fieldVars->stateFlags &= ~FIELD_STATE_CAMERA_SHAKE;
                     } else {
-                        g_currentMusicTrack = 0x4B;
+                        g_curFieldId = FIELD_ID_GOVER;
                         D_8005F14C = 0;
                         g_vsyncRate = 1;
                         break;
@@ -573,7 +577,7 @@ void ff8main(void) {
                     loadSecondaryData();
                     D_8005F14C = 0;
                     g_vsyncRate = mode;
-                    g_currentMusicTrack = g_fieldEntity.counter;
+                    g_curFieldId = g_fieldEntity.counter;
                 }
                 break;
             }

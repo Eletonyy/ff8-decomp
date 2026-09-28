@@ -263,9 +263,9 @@ typedef struct {
     /* 0xCF */ u8 fieldCF;              /**< Blocks random encounters while set (func_800A5D28 guard); also read by fe_object7 dispatch. */
     /* 0xD0 */ u8 padD0;
     /* 0xD1 */ u8 fieldD1;              /**< Bit 0 toggled by fe_object6 helper. */
-    /* 0xD2 */ u8 sfxActiveMask;        /**< Per-slot SFX active bitmask (set on play, cleared on completion). */
-    /* 0xD3 */ u8 sfxStartMask;         /**< Per-slot SFX start bitmask (set on play). */
-    /* 0xD4 */ u8 sfxEntryMask;         /**< Per-slot SFX entry-table bitmask (set when slot is registered in @c D_80085300). */
+    /* 0xD2 */ u8 dialogActiveMask;        /**< Per-slot dialog active bitmask (set when shown, cleared when done). */
+    /* 0xD3 */ u8 dialogStartMask;         /**< Per-slot dialog start bitmask (set when shown). */
+    /* 0xD4 */ u8 dialogEntryMask;         /**< Per-slot dialog entry-table bitmask (set when the slot is registered in @c D_80085300). */
     /* 0xD5 */ u8 nextSoundBank;        /**< Sound bank ID staged by MUSICCHANGE; copied into @c audioChannel0State on swap. */
     /* 0xD6 */ u8 soundLoadComplete;    /**< Set to 1 after sound bank loading finishes. */
     /* 0xD7 */ u8 padD7;
@@ -820,29 +820,29 @@ extern void func_800383B8(s32 key, s32 status);
 extern void setTransitionPhase7(void);
 
 /* ======================================================================== */
-/* Field-overlay SFX / animation entry tables                                */
+/* Field-overlay dialog / animation entry tables                                */
 /* ======================================================================== */
 
 /**
- * @brief One slot in the field SFX-shadow table @ref D_80085300.
+ * @brief One slot in the field dialog-shadow table @ref D_80085300.
  *
- * Populated by the field-script VM when an SFX instance is registered.
- * @c rect is a 4-halfword on-screen rectangle (used by text/balloon
- * SFX), @c payload typically holds the SFX data pointer cast to s32,
- * and @c volume / @c type mirror the values previously set via
- * @c setSfxEntryVolume / @c setSfxEntityType for the slot. Distinct
- * from the runtime @c SfxEntry in @c battle.h, which is the active
+ * Populated by the field-script VM when a dialog is registered.
+ * @c rect is a 4-halfword on-screen rectangle (the dialog's
+ * box), @c payload typically holds the message pointer cast to s32,
+ * and @c brightness / @c type mirror the values previously set via
+ * @c setDialogBrightness / @c setDialogEntityType for the slot. Distinct
+ * from the runtime @c Dialog in @c dialog.h, which is the active
  * playback state — this is just the script-VM's last-set shadow.
  */
 typedef struct {
-    /* 0x0 */ u16 rect[4];
+    /* 0x0 */ RECT rect;
     /* 0x8 */ s32 payload;
-    /* 0xC */ u16 volume;
+    /* 0xC */ u16 brightness;
     /* 0xE */ u16 type;
-} FieldSfxSlot;
+} FieldDialogSlot;
 
-/** @brief Per-slot SFX shadow table populated by field-VM SFX opcodes. */
-extern FieldSfxSlot D_80085300[];
+/** @brief Per-slot dialog shadow table populated by the field VM's message opcodes. */
+extern FieldDialogSlot D_80085300[];
 
 /**
  * @brief One slot in the field anim-shadow table @ref D_80085398.
@@ -866,13 +866,6 @@ typedef struct {
 /** @brief Per-slot anim shadow table populated by field-VM anim opcodes. */
 extern FieldAnimSlot D_80085398[];
 
-/** @brief Small on-screen rectangle in halfword coords (used by SFX balloons). */
-typedef struct {
-    s16 x;
-    s16 y;
-    s16 w;
-    s16 h;
-} Rect;
 
 /** @brief The field's message table; the same word as @c SystemState::fieldMessages. */
 extern OffsetTable *g_curFieldMessages;
@@ -882,7 +875,7 @@ extern OffsetTable *g_curFieldMessages;
 /** @brief Field-side dialog companion scalar. */
 extern s32 D_800DE4DC;
 
-/** @brief Stashed SFX global flag, saved/restored around dialog SFX. */
+/** @brief Stashed dialog global flag, saved and restored around a dialog. */
 extern s32 D_800DE4D8;
 
 /** @brief Global SFX-status flags packed scalar (tested with 0xC0 etc.). */
@@ -1079,7 +1072,7 @@ extern u16 D_800704AA;
 extern u8 D_800DE8D2;
 
 /* ======================================================================== */
-/* Spatial / text / SFX helpers (defined in main binary)                    */
+/* Spatial / text / dialog helpers (defined in main binary)                    */
 /* ======================================================================== */
 
 /**
@@ -1094,15 +1087,6 @@ extern u8 D_800DE8D2;
  * Returns a per-entity pointer in @c v0 (used by callers of @c 0x1F);
  * callers that ignore the return value just drop it.
  */
-
-/** @brief Measure a text string, returning width|height packed as one s32. */
-extern s32 func_8002E680(u8 *text);
-
-/** @brief Stash an SFX-slot scalar (paramY/Z/W/V signature). */
-extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
-
-/** @brief Read the per-slot SFX status word at the table offset 0x?. */
-extern s32 func_8002CE84(s32 idx);
 
 /* ======================================================================== */
 /* fe_object5 movie-load tables and movie-overlay (0x801E0000) entry points */

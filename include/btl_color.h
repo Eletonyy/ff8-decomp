@@ -55,7 +55,7 @@ extern BattleCameraState g_cameraShake;       /* 0x800834D0 */
 extern u16              g_cameraVibrateIntensity; /* 0x800834D4 */
 extern PaletteTransition D_80083754;          /* 0x80083754 */
 
-extern void clearEntityColor(SfxEntry *entry);
+extern void resetDialogTyping(Dialog *entry);
 extern void buildGrayscaleGpuColor(s32 intensity);
 extern void buildRgbGpuColor(s32 r, s32 g, s32 b);
 extern void setDefaultGpuColor(void);

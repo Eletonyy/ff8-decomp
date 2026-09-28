@@ -274,7 +274,7 @@ static s32 func_801E59D8(s16 *stringCodes, s16 *xOffsets, s32 arg2) {
         }
 
         str = func_801F08D4(1, arg2, stringCode, 0);
-        width = getGlyphStatusU16(str);
+        width = getFirstLineWidth(str);
         width += 10;
         xOffset += width;
         *xOffsets = xOffset;
@@ -659,10 +659,10 @@ restart:
                 u8 *msg;
                 sendSpuCommand(5);
                 msg = func_801F6AA4(STRING_SHOP_NOT_ENOUGH_MONEY);
-                initSfxPlayback(0, msg);
+                setDialogMessage(0, msg);
                 func_801F23D0(0, 104, msg);
-                setSfxPitch(0, 0);
-                startSfxNormal(0);
+                setDialogTextSpeed(0, 0);
+                openDialogInstant(0);
                 s->unk4C = 600;
                 *statePtr = 15;
                 break;
@@ -673,9 +673,9 @@ restart:
                 sendSpuCommand(5);
                 msg = func_801F6AA4(STRING_SHOP_CANT_CARRY_ANY_MORE);
                 func_801F23D0(0, 104, msg);
-                initSfxPlayback(0, msg);
-                setSfxPitch(0, 0);
-                startSfxNormal(0);
+                setDialogMessage(0, msg);
+                setDialogTextSpeed(0, 0);
+                openDialogInstant(0);
                 s->unk4C = 600;
                 *statePtr = 15;
                 break;
@@ -713,7 +713,7 @@ restart:
             s->unk4C = 0;
         }
         if (s->unk4C <= 0) {
-            fadeOutSfxFast(0);
+            closeDialogInstant(0);
             *statePtr = 6;
         }
         break;
@@ -1106,7 +1106,7 @@ static s32 func_801E6E0C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     g_menuDisplayCfg.y = arg3;
     g_menuDisplayCfg.w = 336;
     g_menuDisplayCfg.h = 21;
-    return func_801EF9AC(arg0, arg1, 4096, g_menuColor);
+    return func_801EF9AC(arg0, arg1, 4096, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -1232,7 +1232,7 @@ static s32 func_801E6FD8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
         itemName = getItemName(itemId);
         itemGlyph = func_801E5904(itemId) + 223;
 
-        arg1 = func_8002FF34(arg0, arg1, itemGlyph, xBase + 11, yBase + 8, g_menuColor);
+        arg1 = func_8002FF34(arg0, arg1, itemGlyph, xBase + 11, yBase + 8, g_menuTint[MENU_TINT_NORMAL]);
 
         x = xBase + 25;
         y = yBase + 10;
@@ -1301,7 +1301,7 @@ static s32 func_801E722C(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
     cfg->y = arg4;
     cfg->h = 119;
 
-    return func_801EF9AC(arg1, arg2, 4096, g_menuColor);
+    return func_801EF9AC(arg1, arg2, 4096, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -1333,16 +1333,16 @@ static s32 func_801E7374(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
     g_menuDisplayCfg.dataPtr = (s32)s;
 
     if (s->shopAction == SHOP_BUY) {
-        arg2 = func_8002FF34(arg1, arg2, ICON_PRICE, arg3 + 168, arg4, g_menuColor);
-        arg2 = func_801F5F30(arg1, arg2, arg3 + 28, arg4, g_menuColor, s->pageStart);
+        arg2 = func_8002FF34(arg1, arg2, ICON_PRICE, arg3 + 168, arg4, g_menuTint[MENU_TINT_NORMAL]);
+        arg2 = func_801F5F30(arg1, arg2, arg3 + 28, arg4, g_menuTint[MENU_TINT_NORMAL], s->pageStart);
     }
     else {
-        arg2 = func_8002FF34(arg1, arg2, ICON_PRICE, arg3 + 128, arg4, g_menuColor);
-        arg2 = func_8002FF34(arg1, arg2, ICON_NUM, arg3 + 214, arg4, g_menuColor);
-        arg2 = func_801F5EFC(arg1, arg2, arg3 + 28, arg4, g_menuColor, s->pageStart);
+        arg2 = func_8002FF34(arg1, arg2, ICON_PRICE, arg3 + 128, arg4, g_menuTint[MENU_TINT_NORMAL]);
+        arg2 = func_8002FF34(arg1, arg2, ICON_NUM, arg3 + 214, arg4, g_menuTint[MENU_TINT_NORMAL]);
+        arg2 = func_801F5EFC(arg1, arg2, arg3 + 28, arg4, g_menuTint[MENU_TINT_NORMAL], s->pageStart);
     }
     
-    arg2 = func_801F5F60(arg1, arg2, g_menuColor, 3);
+    arg2 = func_801F5F60(arg1, arg2, g_menuTint[MENU_TINT_NORMAL], 3);
     return func_801EFBB4(arg1, arg2, func_801E6FD8);
 }
 
@@ -1372,7 +1372,7 @@ static s32 func_801E7508(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
 
     x = arg3 + 323;
     y = arg4 + 8;
-    arg2 = func_8002FF34(arg1, arg2, ICON_GIL, x, y, g_menuColor);
+    arg2 = func_8002FF34(arg1, arg2, ICON_GIL, x, y, g_menuTint[MENU_TINT_NORMAL]);
 
     g_menuDisplayCfg.iconType = ICON_INFO;
     g_menuDisplayCfg.iconSubType = 0;
@@ -1381,7 +1381,7 @@ static s32 func_801E7508(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
     g_menuDisplayCfg.y = arg4;
     g_menuDisplayCfg.h = 23;
 
-    return func_801EF9AC(arg1, arg2, 4096, g_menuColor);
+    return func_801EF9AC(arg1, arg2, 4096, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -1442,7 +1442,7 @@ static s32 func_801E7628(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
     cfg->y = arg4;
     cfg->h = 66;
 
-    return func_801EF9AC(arg1, arg2, 4096, g_menuColor);
+    return func_801EF9AC(arg1, arg2, 4096, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -1486,7 +1486,7 @@ s32 func_801E77EC(s32 fieldShopId, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
         name = func_801F6AA4(STRING_JUNK_SHOP_ABILITY);
     }
 
-    x = (width - getGlyphStatusU16(name)) / 2;
+    x = (width - getFirstLineWidth(name)) / 2;
     x += arg3;
 
     y = 5;
@@ -1507,7 +1507,7 @@ s32 func_801E77EC(s32 fieldShopId, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
         cfg->h = 20;
     }
 
-    arg2 = func_801EF9AC(arg1, arg2, 4096, g_menuColor);
+    arg2 = func_801EF9AC(arg1, arg2, 4096, g_menuTint[MENU_TINT_NORMAL]);
     return arg2;
 }
 
@@ -1539,7 +1539,7 @@ static void func_801E791C(u8 *msg, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     cfg->w = 218;
     cfg->y = arg4;
     cfg->h = 21;
-    func_801EF9AC(arg1, arg2, 4096, g_menuColor);
+    func_801EF9AC(arg1, arg2, 4096, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -1571,7 +1571,7 @@ static s32 func_801E79D4(ShopMenuState *s, s32 arg1, s32 arg2) {
     val = D_801FA3C8[(val < 0 ? -val : val) / 64];
 
     func_801F1AFC();
-    setMenuColorIntensity(s->menuColorIntensity);
+    setMenuBrightness(s->menuColorIntensity);
 
     x = 24;
     y = 29;

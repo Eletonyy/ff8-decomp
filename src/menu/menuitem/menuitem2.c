@@ -1,6 +1,7 @@
 #include "common.h"
 #include "menu.h"
 #include "menuitem2.h"
+#include "dialog.h"
 
 /* Second translation unit of the item menu. splat's jumptable-alignment
  * heuristic placed the file boundary at 0x801E9F94, and the jump tables from
@@ -10,7 +11,7 @@
 INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem2", func_801E9F94);
 
 /**
- * @brief Call func_800375A0 with rearranged args and g_menuColor as 6th arg.
+ * @brief Call func_800375A0 with rearranged args and g_menuTint[MENU_TINT_NORMAL] as 6th arg.
  * @param a0 First parameter passed through
  * @param a1 Second parameter passed through
  * @param a2 Becomes 4th argument to callee
@@ -19,7 +20,7 @@ INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem2", func_801E9F94);
  */
 s32 func_801EA500(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg5) {
 
-    return func_800375A0(a0, a1, arg5, a2, a3, g_menuColor);
+    return func_800375A0(a0, a1, arg5, a2, a3, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem2", func_801EA538);
@@ -38,7 +39,7 @@ INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem2", func_801EAA04);
  * Calls func_801EAA04 with adjusted position args (a3+8 for width,
  * arg5+0xA pushed to stack). Configures g_menuDisplayCfg with panel position,
  * size, and display properties, then calls func_801EF9AC with the result
- * and g_menuColor as the OT pointer.
+ * and the menu tint g_menuTint.
  *
  * @param a0 First parameter passed through.
  * @param a1 Text data parameter.
@@ -56,7 +57,7 @@ s32 func_801EAB00(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg5) {
     g_menuDisplayCfg.w = 0x102;
     g_menuDisplayCfg.y = arg5;
     g_menuDisplayCfg.h = 0x7D;
-    return func_801EF9AC(a1, result, 0x1000, g_menuColor);
+    return func_801EF9AC(a1, result, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem2", func_801EAB8C);
@@ -64,7 +65,9 @@ INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem2", func_801EAB8C);
 /**
  * @brief Render item detail sub-menu with multiple panel sections.
  *
- * Saves and restores a global state via setMenuColorIntensity. If the display mode
+ * Switches the menu brightness to the context's value (setMenuBrightness)
+ * and, after drawing, restores the previous one read from @c g_menuBrightness; the early
+ * return below leaves the new value in place. If the display mode
  * returned by func_801F0D84 is 0xF, renders several sub-panels: item name
  * (func_801EA500), description (func_801EA538), icon (func_801EA714),
  * stats (func_801EA7E0), info (func_801EAB00), and list (func_801EAB8C).
@@ -79,11 +82,11 @@ s32 func_801EAC54(s32 a0, s32 a1, s32 a2) {
     s32 ctx = a0;
     s32 render = a1;
     s32 state = a2;
-    s32 saved = D_80083850;
+    s32 saved = g_menuBrightness;
     s32 result;
     s32 qty;
 
-    setMenuColorIntensity(*(s32 *)(ctx + 0x28));
+    setMenuBrightness(*(s32 *)(ctx + 0x28));
     if (func_801F0D84() != 0xF) {
         return state;
     }
@@ -97,7 +100,7 @@ s32 func_801EAC54(s32 a0, s32 a1, s32 a2) {
     result = func_801EAB00(ctx, render, result, 0x6A, state);
     result = func_801EAB8C(render, result, 0x10E, 0x6);
     state = result;
-    setMenuColorIntensity(saved);
+    setMenuBrightness(saved);
     return state;
 }
 

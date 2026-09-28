@@ -7,12 +7,12 @@
 #include "numstr.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
+#include "dialog.h"
 
 extern AbilityEntry  D_8007CEE0[];
 
 extern s32  getAbilityDesc(s32 id);
 extern u8  *getAbilityName(s32 abilityId);
-extern void setMenuColorIntensity(s32 intensity);
 extern s32  func_8002FF34(s32 ctx, s32 a1, s32 a2, s32 x, s32 y, s32 color);
 extern void func_801F0A78(s32 ctx, s32 idx, s32 unused, s32 x, s32 y);
 extern void func_801F1AFC(void);
@@ -28,11 +28,7 @@ extern s32  func_801F0D84(void);
 extern void func_801F18FC(s32 *ctx);
 extern s32  func_801F0BB0(void);
 extern void func_801F7BEC(s32 cfg);
-extern void initSfxPlayback(s32 ch, u8 *buf);
 extern void sendSpuCommand(s32 cmd);
-extern void setSfxPitch(s32 ch, s32 pitch);
-extern void startSfxNormal(s32 ch);
-extern void fadeOutSfxFast(s32 ch);
 
 /**
  * @brief Render one cell of an ability grid at a per-slot X offset.
@@ -239,7 +235,7 @@ restart:
                         if (g_gameState.mainData.partyLockFlag & 1) {
                             ptr = func_801F6AA4(0x4F);
                             func_801F23D0(0, 0x68, ptr);
-                            initSfxPlayback(0, ptr);
+                            setDialogMessage(0, ptr);
                             *statePtr = 0x10;
                             break;
                         }
@@ -252,7 +248,7 @@ restart:
                         if (func_801E2934() == 0) {
                             ptr = (u8 *)func_801F6AFC(0x36);
                             func_801F23D0(0, 0x68, ptr);
-                            initSfxPlayback(0, ptr);
+                            setDialogMessage(0, ptr);
                             *statePtr = 0x10;
                             break;
                         }
@@ -506,8 +502,8 @@ restart:
     case 16:
         sendSpuCommand(5);
         s->field_30 = 0x258;
-        setSfxPitch(0, 0);
-        startSfxNormal(0);
+        setDialogTextSpeed(0, 0);
+        openDialogInstant(0);
         *statePtr = 0x11;
         /* fall through */
     case 17:
@@ -517,7 +513,7 @@ restart:
             s->field_30 = 0;
         }
         if (s->field_30 <= 0) {
-            fadeOutSfxFast(0);
+            closeDialogInstant(0);
             *statePtr = 3;
             break;
         }
@@ -615,7 +611,7 @@ s32 func_801E3530(s32 a0, s32 a1, s16 a2, s16 a3) {
     cfg->w           = 0xF4;
     cfg->h           = 0x12;
     cfg->y           = a3;
-    return func_801EF9AC(a0, a1, 0x1000, g_menuColor);
+    return func_801EF9AC(a0, a1, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -718,7 +714,7 @@ s32 func_801E36AC(s32 ctx, s32 pkt, s32 col, s32 row, s32 scrollOffset) {
     y = y + (row * 13);
     index = (col * 11) + row;
     if (index < D_801E3D9C) {
-        pkt = func_8002FF34(ctx, pkt, 0xDE, x, y - 2, g_menuColor);
+        pkt = func_8002FF34(ctx, pkt, 0xDE, x, y - 2, g_menuTint[MENU_TINT_NORMAL]);
         x += 13;
         abilityId = D_801E3D84[index];
         entry = func_801E2920(abilityId);
@@ -766,8 +762,8 @@ s32 func_801E381C(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
     cfg->dataPtr      = (s32)ctx;
 
     if (D_801E3D9C >= 0xC) {
-        s32 scrollbar = func_801F5F30(a1, a2, a3 + 0x28, stackArg, g_menuColor, ctx->pageStart);
-        a2 = func_801F5F60(a1, scrollbar, g_menuColor, 3);
+        s32 scrollbar = func_801F5F30(a1, a2, a3 + 0x28, stackArg, g_menuTint[MENU_TINT_NORMAL], ctx->pageStart);
+        a2 = func_801F5F60(a1, scrollbar, g_menuTint[MENU_TINT_NORMAL], 3);
     }
     return func_801EFBB4(a1, a2, func_801E36AC);
 }
@@ -842,7 +838,7 @@ s32 func_801E39E0(SoundMenuState *s, s32 ot, s32 a2, s32 a3, s32 stackArg) {
     cfg->dataPtr      = (s32)s;
 
     if (D_801E3DB8 >= 0xC) {
-        s32 scrollbar = func_801F5F30(ot, a2, a3 + 0x20, stackArg, g_menuColor, s->field_38);
+        s32 scrollbar = func_801F5F30(ot, a2, a3 + 0x20, stackArg, g_menuTint[MENU_TINT_NORMAL], s->field_38);
         s32 mode;
         if (s->field_38 == 0) {
             mode = 2;
@@ -851,7 +847,7 @@ s32 func_801E39E0(SoundMenuState *s, s32 ot, s32 a2, s32 a3, s32 stackArg) {
             scrollbar++;
             scrollbar--;
         }
-        a2 = func_801F5F60(ot, scrollbar, g_menuColor, mode);
+        a2 = func_801F5F60(ot, scrollbar, g_menuTint[MENU_TINT_NORMAL], mode);
     }
     callback = func_801E3904;
     return func_801EFBB4(ot, a2, callback);
@@ -862,7 +858,7 @@ s32 func_801E39E0(SoundMenuState *s, s32 ot, s32 a2, s32 a3, s32 stackArg) {
  *
  * Only draws when func_801F0D84() reports state 0xE (active display); otherwise
  * returns @p a2 unchanged. When active: takes a fresh GPU display list, primes
- * the menu draw state via func_801F1AFC + setMenuColorIntensity (using the
+ * the menu draw state via func_801F1AFC + setMenuBrightness (using the
  * menu's fade level at @c s->field_2C), then composites four panels — title
  * border (func_801E3530), track list (func_801E3630), main ability grid
  * (func_801E381C), and an optional waveform/animation strip (func_801E39E0).
@@ -895,7 +891,7 @@ s32 func_801E3AE0(SoundMenuState *s, s32 a1, s32 a2) {
 
     dl = getDisplayListHead();
     func_801F1AFC();
-    setMenuColorIntensity(s->field_2C);
+    setMenuBrightness(s->field_2C);
 
     dl2 = func_801E3530(a1, dl, 0x18, 0xA);
     stackArg = 0x1D;

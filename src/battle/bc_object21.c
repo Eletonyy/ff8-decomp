@@ -1,4 +1,5 @@
 #include "common.h"
+#include "battle/bc_object21.h"
 
 extern u8 D_80103180[];
 extern u8 D_80103182[];
@@ -199,49 +200,49 @@ void func_800DF7C8(s32 a0, s32 a1) {
     getDisplayListHead();
 }
 
-/** @brief Wrapper for setSfxEntryParams. */
+/** @brief Wrapper for setDialogTextOrigin. */
 void func_800DF804(void) {
-    setSfxEntryParams();
+    setDialogTextOrigin();
 }
 
-/** @brief Wrapper for initSfxPlayback. */
+/** @brief Wrapper for setDialogMessage. */
 void func_800DF824(void) {
-    initSfxPlayback();
+    setDialogMessage();
 }
 
-/** @brief Wrapper for fadeOutSfxFast. */
+/** @brief Wrapper for closeDialogInstant. */
 void func_800DF844(void) {
-    fadeOutSfxFast();
+    closeDialogInstant();
 }
 
-/** @brief Wrapper for startSfxNormal. */
+/** @brief Wrapper for openDialogInstant. */
 void func_800DF864(void) {
-    startSfxNormal();
+    openDialogInstant();
 }
 
-/** @brief Wrapper for func_8002E064. */
+/** @brief Wrapper for setDialogRect. */
 void func_800DF884(void) {
-    func_8002E064();
+    setDialogRect();
 }
 
-/** @brief Wrapper for setSfxPitch. */
+/** @brief Wrapper for setDialogTextSpeed. */
 void func_800DF8A4(void) {
-    setSfxPitch();
+    setDialogTextSpeed();
 }
 
-/** @brief Wrapper for setSfxReverbMode. */
+/** @brief Wrapper for setDialogAnimSpeed. */
 void func_800DF8C4(void) {
-    setSfxReverbMode();
+    setDialogAnimSpeed();
 }
 
-/** @brief Wrapper for setSfxField2F. */
+/** @brief Wrapper for setDialogCornerIcon. */
 void func_800DF8E4(void) {
-    setSfxField2F();
+    setDialogCornerIcon();
 }
 
-/** @brief Wrapper for resetAllSfx. */
+/** @brief Wrapper for resetAllDialogs. */
 void func_800DF904(void) {
-    resetAllSfx();
+    resetAllDialogs();
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object21", func_800DF924);

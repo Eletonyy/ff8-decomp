@@ -6,7 +6,7 @@
 #include "btl_anim_packet.h"
 #include "menushop2.h"
 #include "btl_color.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 #include "game.h"
 
 #define SYMBOL_PERCENT 20 // Passed as argument to func_801F6AFC
@@ -127,10 +127,10 @@ static void func_801E81A4(JunkShopMenuState *s) {
                 if (!((0x3F >> charId) & 1)) {
                     u8 *msg;
                     msg = func_801F6AA4(STRING_JUNK_SHOP_CANT_REMODEL_YOUR_WEAPON);
-                    initSfxPlayback(0, msg);
+                    setDialogMessage(0, msg);
                     func_801F23D0(0, 0x68, msg);
-                    setSfxPitch(0, 0);
-                    startSfxNormal(0);
+                    setDialogTextSpeed(0, 0);
+                    openDialogInstant(0);
                     s->unk4C = 600;
                     *statePtr = 4;
                 }
@@ -148,7 +148,7 @@ static void func_801E81A4(JunkShopMenuState *s) {
             s->unk4C = 0;
         }
         if (s->unk4C <= 0) {
-            fadeOutSfxFast(0);
+            closeDialogInstant(0);
             *statePtr = 3;
         }
         break;
@@ -189,10 +189,10 @@ static void func_801E81A4(JunkShopMenuState *s) {
                     u8 *msg;
                     sendSpuCommand(5);
                     msg = func_801F6AA4(STRING_JUNK_SHOP_YOU_HAVE_IT_ALREADY);
-                    initSfxPlayback(0, msg);
+                    setDialogMessage(0, msg);
                     func_801F23D0(0, 0x68, msg);
-                    setSfxPitch(0, 0);
-                    startSfxNormal(0);
+                    setDialogTextSpeed(0, 0);
+                    openDialogInstant(0);
                     s->unk4C = 600;
                     *statePtr = 9;
                 } else {
@@ -207,10 +207,10 @@ static void func_801E81A4(JunkShopMenuState *s) {
                 } else {
                     msg = func_801F6AA4(STRING_JUNK_SHOP_NOT_ENOUGH_MONEY);
                 }
-                initSfxPlayback(0, msg);
+                setDialogMessage(0, msg);
                 func_801F23D0(0, 0x68, msg);
-                setSfxPitch(0, 0);
-                startSfxNormal(0);
+                setDialogTextSpeed(0, 0);
+                openDialogInstant(0);
                 s->unk4C = 600;
                 *statePtr = 9;
             }
@@ -224,7 +224,7 @@ static void func_801E81A4(JunkShopMenuState *s) {
             s->unk4C = 0;
         }
         if (s->unk4C <= 0) {
-            fadeOutSfxFast(0);
+            closeDialogInstant(0);
             *statePtr = 7;
         }
         break;
@@ -403,7 +403,7 @@ static s32 func_801E8978(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 availableCh
     cfg->w = 136;
     cfg->h = 105;
 
-    arg1 = func_801EF9AC(arg0, arg1, 4096, g_menuColor);
+    arg1 = func_801EF9AC(arg0, arg1, 4096, g_menuTint[MENU_TINT_NORMAL]);
     return arg1;
 }
 
@@ -527,7 +527,7 @@ static s32 func_801E8BD8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
     cfg->w = 200;
     cfg->h = 105;
 
-    arg2 = func_801EF9AC(arg1, arg2, 4096, g_menuColor);
+    arg2 = func_801EF9AC(arg1, arg2, 4096, g_menuTint[MENU_TINT_NORMAL]);
     return arg2;
 }
 
@@ -607,7 +607,7 @@ static s32 func_801E8D84(JunkShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
     cfg->w = 136;
     cfg->h = 105;
 
-    a2 = func_801EF9AC(a1, a2, 4096, g_menuColor);
+    a2 = func_801EF9AC(a1, a2, 4096, g_menuTint[MENU_TINT_NORMAL]);
     return a2;
 }
 
@@ -705,11 +705,11 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
 
     x = arg3 + 323;
     y = arg4 + 23;
-    arg2 = func_8002FF34(arg1, arg2, ICON_GIL, x, y, g_menuColor);
+    arg2 = func_8002FF34(arg1, arg2, ICON_GIL, x, y, g_menuTint[MENU_TINT_NORMAL]);
 
     x = arg3 + 128;
     y = arg4 + 5;
-    arg2 = func_800300F8(arg1, arg2, ICON_STR, x, y, g_menuColor, 0x80);
+    arg2 = func_800300F8(arg1, arg2, ICON_STR, x, y, g_menuTint[MENU_TINT_NORMAL], 0x80);
 
     x = arg3 + 184;
     y = arg4 + 7;
@@ -722,7 +722,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
 
     x = arg3 + 128;
     y = arg4 + 19;
-    arg2 = func_800300F8(arg1, arg2, ICON_HIT, x, y, g_menuColor, 0x80);
+    arg2 = func_800300F8(arg1, arg2, ICON_HIT, x, y, g_menuTint[MENU_TINT_NORMAL], 0x80);
 
     x = arg3 + 184;
     y = arg4 + 21;
@@ -772,7 +772,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
             tmp = ICON_ARROW_DOWN;
         }
         if (tmp != 0) {
-            arg2 = func_800300F8(arg1, arg2, tmp, x, y, g_menuColor, (color * 64) + 2);
+            arg2 = func_800300F8(arg1, arg2, tmp, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
 
         color = func_801E8FF8(oldWeaponHit, newWeaponHit);
@@ -796,7 +796,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
             tmp = ICON_ARROW_DOWN;
         }
         if (tmp != 0) {
-            arg2 = func_800300F8(arg1, arg2, tmp, x, y, g_menuColor, (color * 64) + 2);
+            arg2 = func_800300F8(arg1, arg2, tmp, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
     }
     
@@ -823,7 +823,7 @@ static s32 func_801E9554(JunkShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
     g_menuDisplayCfg.w = 336;
     g_menuDisplayCfg.y = a4;
     g_menuDisplayCfg.h = 38;
-    return func_801EF9AC(a1, a2, 4096, g_menuColor);
+    return func_801EF9AC(a1, a2, 4096, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -851,7 +851,7 @@ static s32 func_801E95DC(u8 *msg, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     g_menuDisplayCfg.w = 336;
     g_menuDisplayCfg.y = arg4;
     g_menuDisplayCfg.h = 20;
-    return func_801EF9AC(arg1, arg2, 4096, g_menuColor);
+    return func_801EF9AC(arg1, arg2, 4096, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -877,7 +877,7 @@ static s32 func_801E9684(JunkShopMenuState *s, s32 arg1, s32 arg2) {
 
     pkt = getDisplayListHead();
     func_801F1AFC();
-    setMenuColorIntensity(s->menuColorIntensity);
+    setMenuBrightness(s->menuColorIntensity);
     
     if ((s->menuPhase & 2) && (s->menuTransitionProgress != 0) && (s->menuColorIntensity == 4096)) {
         u8 *msg;

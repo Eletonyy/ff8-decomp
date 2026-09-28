@@ -3,21 +3,21 @@
 #include "psxsdk/libc.h"
 #include "battle.h"
 #include "btl_display.h"
+#include "btl_anim.h"
 
 extern BattleDisplayEntity g_battleEntities[];
-extern void copyDisplayRect(RECT *dst);
 
 /**
- * @brief Set a battle entity's type and compute draw mode from bit 0.
+ * @brief Set a battle entity's type and compute its draw mode from @ref BATTLE_ENTITY_SEMI_TRANS.
  * @param idx Entity index.
- * @param val Entity type; if bit 0 is set, drawMode = 0x3A000000, else 0x38000000.
+ * @param val Entity type; semi-transparent gives drawMode 0x3A000000, else 0x38000000.
  */
 void setBattleEntityType(s32 idx, s32 val) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
     s32 v;
     entity->entityType = val;
     v = 0x38;
-    if (val & 1) {
+    if (val & BATTLE_ENTITY_SEMI_TRANS) {
         v = 0x3A;
     }
     entity->drawMode = v << 24;
@@ -119,24 +119,24 @@ s32 GetActiveFlag(s32 idx) {
 
 
 /**
- * @brief Set a battle entity's scale factor.
+ * @brief Set a battle entity's brightness.
  * @param idx Entity index.
- * @param val Scale value (0x1000 = 1.0).
+ * @param val Brightness (0x1000 = full).
  */
-void setBattleEntityScale(s32 idx, s32 val) {
+void setBattleEntityBrightness(s32 idx, s32 val) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
-    entity->scale = val;
+    entity->brightness = val;
 }
 
 
 /**
- * @brief Get a battle entity's scale factor.
+ * @brief Get a battle entity's brightness.
  * @param idx Entity index.
- * @return Scale value (0x1000 = 1.0).
+ * @return Brightness (0x1000 = full).
  */
-s32 getBattleEntityScale(s32 idx) {
+s32 getBattleEntityBrightness(s32 idx) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
-    return entity->scale;
+    return entity->brightness;
 }
 
 
@@ -144,19 +144,19 @@ s32 getBattleEntityScale(s32 idx) {
  * @brief Initialize a battle entity to default values.
  *
  * Sets up a default bounding rect (64,64,128,128), entity type 6,
- * clears fields, sets anim speed to 3, scale to 0x1000.
+ * clears fields, sets anim speed to 3, brightness to 0x1000.
  *
  * @param idx Entity index.
  */
 void initBattleEntity(s32 idx) {
-    s16 rect[4];
+    RECT rect;
     s32 i;
-    rect[0] = 0x40;
-    rect[1] = 0x40;
-    rect[2] = 0x80;
-    rect[3] = 0x80;
-    setBattleEntityBoundRect(idx, rect);
-    setBattleEntityRectClamp(idx, rect);
+    rect.x = 64;
+    rect.y = 64;
+    rect.w = 128;
+    rect.h = 128;
+    setBattleEntityBoundRect(idx, &rect);
+    setBattleEntityRectClamp(idx, &rect);
     setBattleEntityType(idx, 6);
     setBattleEntityField04(idx, 0);
     setBattleEntityField00(idx, 0);
@@ -166,7 +166,7 @@ void initBattleEntity(s32 idx) {
         setBattleEntitySubField(idx, i, 0);
     }
     setBattleEntitySubField(idx, 1, idx);
-    setBattleEntityScale(idx, 0x1000);
+    setBattleEntityBrightness(idx, 0x1000);
     setBattleEntityField36(idx, 0);
 }
 

@@ -42,16 +42,15 @@ extern s32 g_battleTimer;               /* 0x80083750 — battle timer */
 extern u8 g_animCurveFadeOut[];         /* 0x800837B0 — 65-step fade curve */
 extern u8 D_80052A64[];
 extern s32 func_800432D8(void);
-extern void copyDisplayRect(RECT *dst);
 
 /**
- * @brief Clear the RGB color fields of an SFX entry.
- * @param entry Pointer to the SFX entry to clear.
+ * @brief Reset a dialog's typing progress: @c typedChars, @c typingRow and @c typingLine.
+ * @param entry The dialog.
  */
-void clearEntityColor(SfxEntry *entry) {
-    entry->field20 = 0;
-    entry->field22 = 0;
-    entry->field21 = 0;
+void resetDialogTyping(Dialog *entry) {
+    entry->typedChars = 0;
+    entry->typingLine = 0;
+    entry->typingRow = 0;
 }
 
 

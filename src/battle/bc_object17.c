@@ -124,10 +124,10 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800D0844);
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800D0868);
 
 /**
- * @brief Wrapper for setSfxGlobalFlag.
+ * @brief Wrapper for setFocusedDialog.
  */
 void func_800D08C4(void) {
-    setSfxGlobalFlag();
+    setFocusedDialog();
 }
 
 /**

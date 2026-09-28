@@ -80,7 +80,7 @@ extern void closeMenu(void);
 extern void func_800A1C6C(void);
 /** @brief Flush the queued Triple Triad SFX to the SPU and empty the queue. */
 extern void flushTriadSfxQueue(void);
-extern void clearAllSfx(void);
+extern void clearAllDialogs(void);
 /** @brief Show a card's name, or build its detail popup buffer. */
 extern void showCardDetail(s32 cardId);
 /** @brief Open the Triple Triad in-game menu and freeze card input. */
@@ -88,21 +88,21 @@ extern void openTriadMenu(void);
 
 /* Message-gate / banner + hand-build UI helpers (used by be_object3 / be_object3b). */
 extern void func_800A1D68(s32 a0, u8 *a1, s32 a2);  /**< Show a banner/message string. */
-extern void func_800A2054(s32 a0);                  /**< Acknowledge/advance a message gate. */
+extern void func_800A2054(s32 id); /**< Close dialog id, at once or with its animation per its flag. */
 extern void func_800A44CC(void);   /**< Reset the hand-build UI state for a new claim sequence. */
 extern void func_800A44B0(s32 a0); /**< Enable (1) / disable (0) the hand-build input prompt. */
 extern void func_800A44BC(void);   /**< Tear down the claim UI at the end of the sequence. */
 
 /* ───────────────────── be_object4-internal typedefs ───────────────────── */
 
-/** @brief One 0x0C-byte entry of the D_80182E70 per-SFX configuration table. */
+/** @brief One 0x0C-byte entry of the D_80182E70 per-dialog configuration table. */
 typedef struct {
-    /* 0x00 */ u8 flags;     /**< bit0 stop/start fade (func_800A2054); bit1 offset-params, bit2 center (func_800A1D68). */
-    /* 0x01 */ u8 field2F;   /**< Value written to each SFX entry's field 0x2F. */
-    /* 0x02 */ u8 pitch;     /**< Pitch value. */
+    /* 0x00 */ u8 flags;     /**< DIALOG_CONFIG_* bits. */
+    /* 0x01 */ u8 field2F;   /**< Written to each dialog's cornerIcon. */
+    /* 0x02 */ u8 textSpeed; /**< Text speed (setDialogTextSpeed). */
     /* 0x03 */ u8 fadeTimer; /**< Frame countdown; on reaching 0 the entry is faded out (see func_800A1C6C). */
     /* 0x04 */ RECT rect;    /**< Message-box rect (func_800A1D68); 0 w/h means "size to the text". */
-} SfxConfig;
+} DialogConfig;
 
 /** @brief The Triple Triad board view + cursor state at D_801D49C8.
  *
@@ -127,7 +127,7 @@ typedef struct {
     /* 0x24 */ u8 unk24;
 } CursorState;
 
-/** @brief getGlyphWidthA's packed {width, height} result, held in an 8-byte stack slot. */
+/** @brief getTextSize's packed {width, height} result, held in an 8-byte stack slot. */
 typedef union {
     s32 raw[2];   /**< raw[0] = the packed result word; the pair sizes the 8-byte slot. */
     s16 wh[2];    /**< wh[0] = width, wh[1] = height (overlay of raw[0]). */
@@ -179,7 +179,6 @@ extern s32  getAnimFrameParam(s32 slot, s32 sub);     /**< Per-controller input-
 extern u8  g_battleConfig[];   /**< Shared battle config; [9] bit 0 = sound-bank selector. */
 extern u8  D_80082C11;         /**< Sound-bank selector flag (same byte as g_battleConfig[9]). */
 extern s16 D_8005F11C;
-extern s32 g_menuColor[];
 extern u8  D_801A1B88[];       /**< Start of the Triple Triad sound region uploaded to a bank. */
 extern s16 D_801D49E2;
 extern s16 D_801D49F8[];
@@ -193,7 +192,7 @@ extern s32 D_801D4B30[]; /**< Per-controller newly-pressed mask. */
 extern s32 D_801D4B24;   /**< = D_801D4B20[1] (player 2); split symbol for the readPads write. */
 extern s32 D_801D4B2C;   /**< = D_801D4B28[1] (player 2). */
 extern s32 D_801D4B34;   /**< = D_801D4B30[1] (player 2). */
-extern SfxConfig D_80182E70[];
+extern DialogConfig D_80182E70[];
 extern u8 D_80182EC8[];
 extern u8 D_801D4568[];
 extern u8 D_801D4968[];

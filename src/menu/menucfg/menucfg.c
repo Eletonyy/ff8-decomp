@@ -153,7 +153,6 @@ static u8 *func_801E59CC(s32 a0) {
 INCLUDE_ASM("asm/ovl/menucfg/nonmatchings/menucfg", func_801E59F8);
 
 extern s32 func_801EF9AC(void *arg0, s32 arg1, s32 arg2, s32 arg3);
-extern s32 g_menuColor;
 extern MenuDisplayConfig g_menuDisplayCfg;
 
 /**
@@ -188,7 +187,7 @@ static void func_801E61A0(u8 *text, void *data, s32 value, s32 x, s32 y)
     s->y = y;
     s->h = 0x16;
 
-    func_801EF9AC(data, value, 0x1000, g_menuColor);
+    func_801EF9AC(data, value, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 INCLUDE_ASM("asm/ovl/menucfg/nonmatchings/menucfg", func_801E625C);
@@ -201,8 +200,8 @@ INCLUDE_ASM("asm/ovl/menucfg/nonmatchings/menucfg", func_801E6538);
  * @brief Configure display panel and invoke rendering callback.
  *
  * Sets up g_menuDisplayCfg with the given position, fixed size (0x11C x 0x25),
- * clears icon fields, and calls func_801EF9AC with g_menuColor and a
- * caller-supplied 0x1000 parameter.
+ * clears icon fields, and calls func_801EF9AC with g_menuTint[MENU_TINT_NORMAL]
+ * and a caller-supplied 0x1000 parameter.
  *
  * @param a0 Unused.
  * @param a1 First parameter passed through to func_801EF9AC.
@@ -219,7 +218,7 @@ static s32 func_801E67A8(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
     *(s16 *)(cfg + 4) = 0x11C;
     *(s16 *)(cfg + 6) = 0x25;
     *(s16 *)(cfg + 2) = arg4;
-    return func_801EF9AC(a1, a2, 0x1000, g_menuColor);
+    return func_801EF9AC(a1, a2, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 INCLUDE_ASM("asm/ovl/menucfg/nonmatchings/menucfg", func_801E6804);

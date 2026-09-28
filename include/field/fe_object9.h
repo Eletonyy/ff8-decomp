@@ -28,7 +28,7 @@ extern s32  opHandler_SETMESSPEED(ScriptContext *context);
 extern s32  opHandler_MESW(ScriptContext *context);
 extern void func_800BC12C(s32 idx, s32 val, u16 *src);
 extern s32  opHandler_MES(ScriptContext *context);
-extern void func_800BC258(Rect *r);
+extern void func_800BC258(RECT *r);
 extern s32  opHandler_AMESW(ScriptContext *context);
 extern s32  opHandler_AMES(ScriptContext *context);
 extern s32  opHandler_RAMESW(ScriptContext *context);

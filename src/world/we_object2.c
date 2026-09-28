@@ -3,7 +3,7 @@
 #include "field.h"
 #include "gamestate.h"
 #include "sound.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 #include "world.h"
 #include "world/we_object2.h"
 #include "world/we_object3.h"
@@ -320,7 +320,7 @@ void func_8009D3F4(void) {
 
 /**
  * @brief Enter scene mode @c 3 with a packed @c marker, then mass-reset
- *        the world @c SfxSlot table and trigger a render flush.
+ * the world @c WorldDialogSlot table and trigger a render flush.
  *
  * Steps:
  *  1. Snapshot @p marker into @c D_800C8CEA, tear down prior scene
@@ -328,8 +328,8 @@ void func_8009D3F4(void) {
  *     with the marker's two bytes in @c unk02 / @c unk03 and the
  *     current dispatch code (@c D_800C4D38) in @c cmd.
  *  2. @c func_800B3FD4(D_800D226C, 3) re-enters the scene driver.
- *  3. Walk the first 13 @c D_800C526C @c SfxSlot entries: fade out each
- *     active slot via @c fadeOutSfxFast and mark it inactive (@c -1).
+ *  3. Walk the first 13 @c D_800C526C @c WorldDialogSlot entries: close each
+ * active slot's dialog via @c closeDialogInstant and mark it inactive (@c -1).
  *  4. Force a full render: @c renderAndUpdateDisplay(2) then dispatch
  *     the world display list at @c D_800D244C+0x74.
  */
@@ -344,9 +344,9 @@ void func_8009D44C(s32 marker) {
     func_800B3FD4(D_800D226C, 3);
     g_battleConfig.unk2 = 0;
     for (i = 0; i < 13; i++) {
-        s32 sfx = D_800C526C[i].field02;
+        s32 dialogIdx = D_800C526C[i].field02;
         D_800C526C[i].field00 = -1;
-        fadeOutSfxFast(sfx);
+        closeDialogInstant(dialogIdx);
     }
     renderAndUpdateDisplay(2);
     renderBattleDisplayList(&D_800D244C->primList[BSC_COLORTAG_IDX]);
@@ -470,45 +470,45 @@ void func_8009D840(s32 a0) {
 
 
 /**
- * @brief Dispatch a table-driven SFX slot cleanup if the slot is active.
+ * @brief Dispatch a table-driven dialog slot cleanup if the slot is active.
  *
  * Looks up @c D_800C526C[idx]; if its @c field00 isn't -1 (active),
- * forwards its @c field02 to @c func_8002CE84 (an SFX helper in btl_sfx).
+ * forwards its @c field02 to @c getDialogChoice (in dialog.c).
  *
- * @param idx Index into the SFX slot table.
+ * @param idx Index into the dialog slot table.
  */
 void func_8009D864(s32 idx) {
     if (D_800C526C[idx].field00 != -1) {
-        func_8002CE84(D_800C526C[idx].field02);
+        getDialogChoice(D_800C526C[idx].field02);
     }
 }
 
 
 /**
- * @brief Fade out the SFX referenced by slot @p idx and mark the slot inactive.
+ * @brief Close the dialog of slot @p idx (animated) and mark the slot inactive.
  *
  * If the slot is active (@c field00 != -1), writes -1 to deactivate it and
- * calls @c fadeOutSfxSlow with the slot's SFX index (@c field02).
+ * calls @c closeDialogAnimated with the slot's dialog index (@c field02).
  *
- * @param idx Index into the @c D_800C526C SFX slot table.
+ * @param idx Index into the @c D_800C526C dialog slot table.
  */
 void func_8009D8A8(s32 idx) {
     s32 field00 = D_800C526C[idx].field00;
     s32 field02 = D_800C526C[idx].field02;
     if (field00 != -1) {
         D_800C526C[idx].field00 = -1;
-        fadeOutSfxSlow(field02);
+        closeDialogAnimated(field02);
     }
 }
 
 /**
- * @brief Fade out every active SFX slot in @c D_800C526C and mark them inactive.
+ * @brief Close every active dialog slot in @c D_800C526C (animated) and mark them inactive.
  *
  * Per-slot loop version of @c func_8009D8A8 — walks all 13 entries of
  * @c D_800C526C, and for each slot whose @c field00 is not @c -1, writes
- * @c -1 into @c field00 and calls @c fadeOutSfxSlow with the slot's
- * @c field02 (SFX index). Used at world-map teardown to silence every
- * field-engine-owned SFX channel in one pass.
+ * @c -1 into @c field00 and calls @c closeDialogAnimated with the slot's
+ * @c field02 (dialog index). Used at world-map teardown to close every
+ * field-engine-owned dialog in one pass.
  */
 void func_8009D8F0(void) {
     s32 i;
@@ -517,18 +517,18 @@ void func_8009D8F0(void) {
         s32 field02 = D_800C526C[i].field02;
         if (field00 != -1) {
             D_800C526C[i].field00 = -1;
-            fadeOutSfxSlow(field02);
+            closeDialogAnimated(field02);
         }
     }
 }
 
 
 /**
- * @brief Hard tear-down: fade every @c D_800C526C SFX slot fast, then push
+ * @brief Hard tear-down: close every @c D_800C526C dialog slot at once, then push
  *        a 2-frame display flush.
  *
  * Walks all 13 entries of @c D_800C526C and unconditionally marks each
- * @c field00 inactive (@c -1) and calls @c fadeOutSfxFast on its
+ * @c field00 inactive (@c -1) and calls @c closeDialogInstant on its
  * @c field02 — the harder/faster sibling of @c func_8009D8F0, which
  * only acts on already-active slots. Then pushes @c 2 frames via
  * @c renderAndUpdateDisplay and flushes the battle scene's
@@ -540,9 +540,9 @@ void func_8009D8F0(void) {
 void func_8009D954(void) {
     s32 i;
     for (i = 0; i < 13; i++) {
-        s32 sfxIdx = D_800C526C[i].field02;
+        s32 dialogIdx = D_800C526C[i].field02;
         D_800C526C[i].field00 = -1;
-        fadeOutSfxFast(sfxIdx);
+        closeDialogInstant(dialogIdx);
     }
     renderAndUpdateDisplay(2);
     renderBattleDisplayList(&D_800D244C->primList[BSC_COLORTAG_IDX]);
@@ -550,27 +550,27 @@ void func_8009D954(void) {
 
 
 /**
- * @brief Return whether SFX slot @p idx is active AND its SFX has pending state.
+ * @brief Return whether dialog slot @p idx is active and its dialog still has pending state.
  *
  * Checks @c D_800C526C[idx].field00 — if the slot is inactive (-1) returns 0.
- * Otherwise queries @c getSfxField28 with the slot's SFX index and returns
+ * Otherwise queries @c getDialogTypingDone with the slot's dialog index and returns
  * 1 iff the result is nonzero, else 0.
  *
- * @param idx Index into the @c D_800C526C SFX slot table.
- * @return 1 if slot is active and its SFX is busy, else 0.
+ * @param idx Index into the @c D_800C526C dialog slot table.
+ * @return 1 if the slot is active and its dialog is busy, else 0.
  */
 s32 func_8009D9C8(s32 idx) {
     s32 field00 = D_800C526C[idx].field00;
     s32 field02 = D_800C526C[idx].field02;
     s32 result = 0;
     if (field00 != -1) {
-        result = getSfxField28(field02) != 0;
+        result = getDialogTypingDone(field02) != 0;
     }
     return result;
 }
 
 /**
- * @brief Find the first active SFX slot in the high range [9, 13).
+ * @brief Find the first active dialog slot in the high range [9, 13).
  *
  * Scans @c D_800C526C[9..12] looking for a slot whose @c field00 is
  * not -1 (active). Returns the matching slot index, or -1 if none.

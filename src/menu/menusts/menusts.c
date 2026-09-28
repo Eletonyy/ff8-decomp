@@ -112,7 +112,7 @@ void func_801E6994(s32 a0, s32 a1, s16 a2, s16 a3) {
     *(s16 *)(cfg + 0x4) = 0xF4;
     *(s16 *)(cfg + 0x6) = 0x12;
     *(s16 *)(cfg + 0x2) = a3;
-    func_801EF9AC(a0, a1, 0x1000, g_menuColor);
+    func_801EF9AC(a0, a1, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 INCLUDE_ASM("asm/ovl/menusts/nonmatchings/menusts", func_801E69E4);
@@ -159,7 +159,7 @@ s32 func_801E72D8(s32 displayList, s32 ot, s32 x, s32 y, s32 mode) {
     u8 strBuf[16];
     StatusEntry *entry = D_801E95CC;
     s32 i = 0;
-    s32 digitBase = D_80083858.digits[0];
+    s32 digitBase = g_numberFormat.digits[0];
     s32 drawn;
     s32 yStep;
     MenuDisplayConfig *cfgPtr;
@@ -182,7 +182,7 @@ s32 func_801E72D8(s32 displayList, s32 ot, s32 x, s32 y, s32 mode) {
         if (statusFlags & mask) {
             if (drawn >= 3) break;
             yPos = y + yStep;
-            ot = func_8002FF34(displayList, ot, entry->statusId, x + 0xA, yPos, g_menuColor);
+            ot = func_8002FF34(displayList, ot, entry->statusId, x + 0xA, yPos, g_menuTint[MENU_TINT_NORMAL]);
             drawn++;
             yPos += 4;
             intToDecStringShort(D_801E9EE4.atkStatusHit - 100, strBuf, digitBase);
@@ -206,7 +206,7 @@ s32 func_801E72D8(s32 displayList, s32 ot, s32 x, s32 y, s32 mode) {
         cfgPtr->y = y;
         cfgPtr->w = 0x82;
         cfgPtr->h = 0x38;
-        ot = func_801EF9AC(displayList, ot, mode, g_menuColor);
+        ot = func_801EF9AC(displayList, ot, mode, g_menuTint[MENU_TINT_NORMAL]);
     }
 
     return ot;
@@ -218,11 +218,11 @@ INCLUDE_ASM("asm/ovl/menusts/nonmatchings/menusts", func_801E750C);
  * @brief Compute centered X position after subtracting rendered width.
  * @param a0 Base X position
  * @param a1 Total available width
- * @param a2 Text or item to measure via getGlyphStatusU16
+ * @param a2 Text or item to measure via getFirstLineWidth
  * @return Base X + (available width - rendered width) / 2
  */
-s32 func_801E7644(s32 a0, s32 a1, s32 a2) {
-    s32 rendered = getGlyphStatusU16(a2);
+s32 func_801E7644(s32 a0, s32 a1, u8 *a2) {
+    s32 rendered = getFirstLineWidth(a2);
     return a0 + (a1 - rendered) / 2;
 }
 
@@ -322,7 +322,7 @@ void func_801E8950(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg5, s32 arg6) {
 void func_801E8990(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg5, s32 arg6, s32 arg7) {
     s32 (*fn)(s32, s32, s32, s32, s32, s32) = (void *)D_801E961C[a1];
     s32 result = fn(a0, a2, a3, arg5, arg6, arg7);
-    func_801EF9AC(a2, result, arg7, g_menuColor);
+    func_801EF9AC(a2, result, arg7, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 INCLUDE_ASM("asm/ovl/menusts/nonmatchings/menusts", func_801E8A08);

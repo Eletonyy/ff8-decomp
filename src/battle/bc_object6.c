@@ -1029,14 +1029,14 @@ void func_800AEB50(void) {
 /**
  * @brief Check conditions and trigger callback mode 3 for entity system.
  *
- * Returns early if g_battleConfig[7] is non-zero, or if bit 2 of the
- * halfword at g_battleConfig+2 is clear, or if g_gameState[0xCD4] is
- * non-zero, or if the halfword at g_battleConfig equals 0x13D.
+ * Returns early if g_battleConfig[7] is non-zero, or if
+ * @ref BATTLE_FLAG_COUNTDOWN is clear in g_battleConfig.unk2, or if the
+ * countdown has not reached 0, or if the halfword at g_battleConfig equals 0x13D.
  * Otherwise calls func_800AEACC(-1), sets mode to 3, stores 3 in
  * D_800EE449, and registers func_8009AD7C as callback.
  */
 void func_800AEC04(void) {
-    if ((g_battleConfig.result == 0) && (g_battleConfig.unk2 & 4) && (g_gameState.mainData.countdownTimer == 0) && (g_battleConfig.battleSceneId != 317)) {
+    if ((g_battleConfig.result == 0) && (g_battleConfig.unk2 & BATTLE_FLAG_COUNTDOWN) && (g_gameState.mainData.countdownTimer == 0) && (g_battleConfig.battleSceneId != 317)) {
         func_800AEACC(-1);
         g_battleConfig.result = 3;
         D_800ED148.unk1301 = 3;

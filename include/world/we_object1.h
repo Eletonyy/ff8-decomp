@@ -104,17 +104,7 @@ extern POLY_FT4  D_800C8648[2]; /* double-buffered worldmap quad primitive */
 extern void func_8009C528(s32 rc);
 extern void func_8009FEDC(u8 *work, u8 type);
 extern void func_800A5D10(void);
-extern s32  getCurrentFieldMusic(void); /* defined u16 in btl_sfx; used full-width here */
-extern void setSfxPitch(s32 idx, s32 val);
-extern void setSfxEntityType(s32 idx, s32 val);
-extern void setSfxReverbMode(s32 idx, s32 val);
-extern void setSfxGlobalFlag(s32 val);
-extern void startSfxSlow(s32 idx);
-extern void func_8002D784(s32 sfxIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
-extern void func_8002E064(s32 index, RECT *srcRect);
-extern s32  func_8002E680(u8 *text);
-extern void fadeOutSfxSlow(s32 idx);
-extern void initSfxPlayback(s32 index, u8 *data);
+extern s32 getFieldTextSpeed(void); /* defined u16 in gamestate.c; read full-width here */
 extern s32  sndProcessAudio(s32 a, s32 b);
 extern s32  sndGetStatus(void);
 extern s32  getScrollState(s32 key, u8 *p18, s32 *p1C, s32 *p20, s32 *p24, s32 *p28);

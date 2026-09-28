@@ -5,7 +5,7 @@
 #include "sound.h"
 #include "btl_color.h"
 #include "btl_entity.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 #include "cd.h"
 #include "field/fe_object1.h"
 #include "field/fe_object1_2.h"
@@ -40,8 +40,8 @@
  *   - @ref FIELD_STATE_CAMERA_SHAKE → arm camera shake/vibrate.
  *   - @ref FIELD_STATE_FIELD_READY clear and @c levelUpDisplayTimer @c > @c 0
  *     → fire the SeeD level-up notification via @ref func_800316D4.
- *   - For each active battle entity, push the configured field pitch
- *     to the SPU via @ref setSfxPitch.
+ *   - Set each dialog's text speed from the message-speed setting
+ * (@ref setDialogTextSpeed).
  *   - Mirror @c D_80078DF8 bit @c 0x10 → @c FieldVars.field58 and,
  *     if @c fieldF0 is set, forward it through @ref func_800A4550.
  *
@@ -152,7 +152,7 @@ void func_800BF718(s32 mode) {
         }
     }
     for (i = 0; i < getMaxBattleEntities(); i++) {
-        setSfxPitch(i, D_800562C8[g_gameState.config.fieldMsgSpeed]);
+        setDialogTextSpeed(i, g_textSpeeds[g_gameState.config.fieldMsgSpeed]);
     }
     g_fieldVars->field58 = (g_battleChars.levelEntries[15].abilityFlags & 0x10) >> 4;
     if (g_fieldVars->fieldF0 != 0) {
@@ -166,7 +166,7 @@ void func_800BF718(s32 mode) {
  * @brief Field-engine area-load / scene-reset.
  *
  * Repopulates @ref g_fieldVars, snapshots a few @c SaveMainData fields,
- * resets SFX/camera state, then — for @c mode @c == @c 1 or @c 3 —
+ * resets dialog/camera state, then — for @c mode @c == @c 1 or @c 3 —
  * wipes and re-primes the script-VM entity pools and rebinds each
  * active party slot to its @ref Actor.
  *
@@ -229,7 +229,7 @@ s32 *func_800BFBBC(u8 *entity, Eline *eline, u16 *a2, s32 mode) {
     seed->field56 = D_80082C8D;
     D_800DE8C8[1] = 2;
     ((u8 *)D_800DE8C8)[0xB] = 0;
-    resetAllSfx();
+    resetAllDialogs();
     setCameraVibrateIntensity(0x1000);
     D_800DE4FD[0] = 0;
     D_800DE7B0.count = 0;
@@ -245,12 +245,12 @@ s32 *func_800BFBBC(u8 *entity, Eline *eline, u16 *a2, s32 mode) {
         g_fieldVars->stateFlags &= ~FIELD_STATE_FLAG_400;
         g_fieldVars->fieldCF = 0;
         g_fieldVars->fieldD1 &= 0xFC;
-        g_fieldVars->sfxStartMask = 0;
-        g_fieldVars->sfxEntryMask = 0;
-        g_fieldVars->sfxActiveMask = 0;
+        g_fieldVars->dialogStartMask = 0;
+        g_fieldVars->dialogEntryMask = 0;
+        g_fieldVars->dialogActiveMask = 0;
         for (i = 0; i < getMaxBattleEntities(); i++) {
             D_80085300[i].type = 6;
-            D_80085300[i].volume = 0x1000;
+            D_80085300[i].brightness = 0x1000;
         }
         g_fieldVars->fieldF0 = 0;
         g_fieldVars->fieldF1 = 0;

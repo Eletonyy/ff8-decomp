@@ -11,7 +11,7 @@
 #include "ability_list.h"
 
 #include "menujnc2.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 #include "card.h"
 #include "psxsdk/libetc.h"
 
@@ -93,7 +93,7 @@ next_string:
         goto end;
     }
     decodeMessage(src, buf, -1);
-    src = func_8002F548(src);
+    src = nextMessageLine(src);
     pos = buf;
 
     for (;;) {
@@ -3029,11 +3029,11 @@ dispatch:
         case 0x43:
             sendSpuCommand(5);
             ctx->unk66 = 0x258;
-            initSfxPlayback(0, D_801EF1B0);
+            setDialogMessage(0, D_801EF1B0);
             func_801F23D0(0, 0x68, D_801EF1B0);
-            setSfxField2F(0, 0x56);
-            setSfxPitch(0, 0);
-            startSfxNormal(0);
+            setDialogCornerIcon(0, 0x56);
+            setDialogTextSpeed(0, 0);
+            openDialogInstant(0);
             *statePtr = 0x44;
             break;
         case 0x44:
@@ -3043,7 +3043,7 @@ dispatch:
                 ctx->unk66 = 0;
             }
             if ((s16)ctx->unk66 <= 0) {
-                fadeOutSfxFast(0);
+                closeDialogInstant(0);
                 *statePtr = 0x29;
             }
             break;
@@ -3204,11 +3204,11 @@ s32 renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
             color = 3;
         }
 
-        cy2 = func_8002FF34(renderCtx, cursorY, entry->labelId, x, y, g_menuColor);
+        cy2 = func_8002FF34(renderCtx, cursorY, entry->labelId, x, y, g_menuTint[MENU_TINT_NORMAL]);
         x += 0x39;
         y += 4;
         if (indicator != 7) {
-            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuColor, (color * 64) + 2);
+            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
         x += 0xA;
         intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
@@ -3228,7 +3228,7 @@ s32 renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
     cfg->y = yBase;
     cfg->w = 0xDA;
     cfg->h = 0x59;
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -3287,11 +3287,11 @@ s32 renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
             indicator = 0x6D;
             color = 3;
         }
-        cy2 = func_8002FF34(renderCtx, cursorY, entry->labelId, x, y, g_menuColor);
+        cy2 = func_8002FF34(renderCtx, cursorY, entry->labelId, x, y, g_menuTint[MENU_TINT_NORMAL]);
         x += 0x39;
         y += 4;
         if (indicator != 7) {
-            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuColor, (color * 64) + 2);
+            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
         x += 0xA;
         intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
@@ -3311,7 +3311,7 @@ s32 renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
     cfg->y = yBase;
     cfg->w = 0xDA;
     cfg->h = 0x60;
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -3392,11 +3392,11 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
             indicator = 0x6D;
             color = 3;
         }
-        cy2 = func_8002FF34(renderCtx, cursorY, entry->labelId, x, y, g_menuColor);
+        cy2 = func_8002FF34(renderCtx, cursorY, entry->labelId, x, y, g_menuTint[MENU_TINT_NORMAL]);
         x += 0x39;
         y += 4;
         if (indicator != 7) {
-            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuColor, (color * 64) + 2);
+            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
         x += 0xA;
         intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
@@ -3416,7 +3416,7 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
     cfg->y = yBase;
     cfg->w = 0xDA;
     cfg->h = 0x43;
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -3486,14 +3486,14 @@ s32 renderStatTableD(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
             color = 3;
         }
         if (func_801F5144(currentVal) != 0) {
-            cursorY = func_8002FF34(renderCtx, cursorY, 0xAF, x + 0x12, y, g_menuColor);
+            cursorY = func_8002FF34(renderCtx, cursorY, 0xAF, x + 0x12, y, g_menuTint[MENU_TINT_NORMAL]);
         }
         currentVal = func_801F510C(currentVal);
-        cy2 = func_8002FF34(renderCtx, cursorY, entry->labelId, x, y, g_menuColor);
+        cy2 = func_8002FF34(renderCtx, cursorY, entry->labelId, x, y, g_menuTint[MENU_TINT_NORMAL]);
         x += 0x39;
         y += 4;
         if (indicator != 7) {
-            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuColor, (color * 64) + 2);
+            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
         x += 0xA;
         intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
@@ -3513,7 +3513,7 @@ s32 renderStatTableD(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
     cfg->y = yBase;
     cfg->w = 0xDA;
     cfg->h = 0x43;
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -3550,7 +3550,7 @@ s32 renderStatGrid(s32 renderCtx, s32 cursorY, s32 x, s32 y) {
             yOff = rem * 13 + 11;
             xPos = x + xOff;
             yPos = y + yOff;
-            cursorY = func_8002FF34(ctx, cursorY, table->category + 0xD8, xPos, yPos - 2, g_menuColor);
+            cursorY = func_8002FF34(ctx, cursorY, table->category + 0xD8, xPos, yPos - 2, g_menuTint[MENU_TINT_NORMAL]);
             xPos += 14;
             namePtr = getAbilityName(table->slotIndex);
             gfInfo = 7;
@@ -3566,7 +3566,7 @@ s32 renderStatGrid(s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     cfg->w = 0x150;
     cfg->y = y;
     cfg->h = 0xA0;
-    return func_801EF9AC(ctx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(ctx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -3636,7 +3636,7 @@ s32 renderStatDeltaBar(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, 
     cfg->y = y;
     cfg->w = 244;
     cfg->h = h;
-    return func_801EF9AC(renderCtx, result, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, result, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -3708,7 +3708,7 @@ s32 renderStatDeltaBarExt(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 
     g_menuDisplayCfg.w = barW;
     g_menuDisplayCfg.h = h;
 
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -3833,7 +3833,7 @@ s32 renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBas
             }
 
             namePtr = getMagicNamePtr(i + 0x40);
-            cursorY = func_8002E8DC(renderCtx, cursorY, x, y - 3, namePtr, color);
+            cursorY = drawDecodedText(renderCtx, cursorY, x, y - 3, namePtr, color);
         }
     } while (++i < numGfs);
 
@@ -3846,7 +3846,7 @@ s32 renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBas
     cursorY++;
     cursorY--;
     cfg->h = 0x5E;
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -3888,7 +3888,7 @@ s32 renderGfMagicEntry(s32 renderCtx, s32 cursorY, s32 col, s32 row, s32 xOff) {
         if (gf->charIdx != 0xFF) {
             ysum = 7 + g_menuDisplayCfg.y + row * 13;
             xsum = 0x6C + g_menuDisplayCfg.x + xOff;
-            cursorY = func_8002FF34(renderCtx, cursorY, 0xC0, xsum, ysum, g_menuColor);
+            cursorY = func_8002FF34(renderCtx, cursorY, 0xC0, xsum, ysum, g_menuTint[MENU_TINT_NORMAL]);
         }
         ysum = 7 + g_menuDisplayCfg.y + row * 13;
         xsum = 0x90 + g_menuDisplayCfg.x + xOff;
@@ -3930,13 +3930,13 @@ s32 renderGfMagicPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, 
     g_menuDisplayCfg.itemId = ctx->discCount;
     g_menuDisplayCfg.itemAttr = ctx->charIdx;
 
-    result = func_8002FF34(renderCtx, cursorY, 0x17, x + 0x7F, y, g_menuColor);
+    result = func_8002FF34(renderCtx, cursorY, 0x17, x + 0x7F, y, g_menuTint[MENU_TINT_NORMAL]);
 
     if (ctx->discCount >= 5) {
-        result = func_801F5F60(renderCtx, result, g_menuColor, 3);
+        result = func_801F5F60(renderCtx, result, g_menuTint[MENU_TINT_NORMAL], 3);
     }
 
-    result = func_801F5F30(renderCtx, result, x + 0x16, y, g_menuColor, ctx->unk44);
+    result = func_801F5F30(renderCtx, result, x + 0x16, y, g_menuTint[MENU_TINT_NORMAL], ctx->unk44);
     return func_801EFBB4(renderCtx, result, renderGfMagicEntry);
 }
 
@@ -4010,7 +4010,7 @@ s32 renderJunctionSlotDetail(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 wideM
     available = checkJunctionCompat(availFlags, gfFlags, abilityBit);
 
     xPos = x;
-    cursorY = func_800300F8(renderCtx, cursorY, entry->labelId, xPos, y, g_menuColor,
+    cursorY = func_800300F8(renderCtx, cursorY, entry->labelId, xPos, y, g_menuTint[MENU_TINT_NORMAL],
                             (!available) ? 0x1C0 : 0x80);
 
     if (wideMode) {
@@ -4066,7 +4066,7 @@ s32 renderJunctionSlotDetail(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 wideM
     xPos = x + 0x6A;
     yPos = y + 2;
     if (icon != 7) {
-        cursorY = func_800300F8(renderCtx, cursorY, icon, xPos, yPos, g_menuColor, (available * 64) + 2);
+        cursorY = func_800300F8(renderCtx, cursorY, icon, xPos, yPos, g_menuTint[MENU_TINT_NORMAL], (available * 64) + 2);
     }
 
     if (flags & 1) {
@@ -4125,7 +4125,7 @@ s32 renderHpJunctionSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, 
     available = checkJunctionCompat(g_junctionChars[charIdx].availFlags, gfEntry->abilityFlags, 0x400);
 
     {
-        s32 menuCol = g_menuColor;
+        s32 menuCol = g_menuTint[MENU_TINT_NORMAL];
         /* Regalloc: y++/-- and do{cursorY++/--}while(0) raise reference counts
            to assign cursorY→s0, y→s1 (instead of default renderCtx→s0). */
         y++;
@@ -4150,7 +4150,7 @@ s32 renderStatusDefSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s
     available = checkJunctionCompat(g_junctionChars[charIdx].availFlags, gfEntry->abilityFlags, 0x19000);
 
     {
-        s32 menuCol = g_menuColor;
+        s32 menuCol = g_menuTint[MENU_TINT_NORMAL];
         /* Regalloc: see renderHpJunctionSlot comment. */
         y++;
         y--;
@@ -4174,7 +4174,7 @@ s32 renderElemAtkSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32
     available = checkJunctionCompat(g_junctionChars[charIdx].availFlags, gfEntry->abilityFlags, 0x200);
 
     {
-        s32 menuCol = g_menuColor;
+        s32 menuCol = g_menuTint[MENU_TINT_NORMAL];
         /* Regalloc: see renderHpJunctionSlot comment. */
         y++;
         y--;
@@ -4198,7 +4198,7 @@ s32 renderElemDefSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32
     available = checkJunctionCompat(g_junctionChars[charIdx].availFlags, gfEntry->abilityFlags, 0x6800);
 
     {
-        s32 menuCol = g_menuColor;
+        s32 menuCol = g_menuTint[MENU_TINT_NORMAL];
         /* Regalloc: see renderHpJunctionSlot comment. */
         y++;
         y--;
@@ -4249,7 +4249,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
     available = checkJunctionCompat(junc->availFlags, gfEntry->abilityFlags, 0x200);
     xPos = x + 0x10;
     yPos = y + 4;
-    cursorY = func_800300F8(renderCtx, cursorY, 0x12A, xPos, yPos, g_menuColor,
+    cursorY = func_800300F8(renderCtx, cursorY, 0x12A, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
                             (!available) ? 0x1C0 : 0x80);
     magicId = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_ELEM];
     if (magicId == 0) {
@@ -4268,7 +4268,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
         /* No defensive slots available — draw a single empty row. */
         xPos = x + 0x10;
         yPos = y + 0x11;
-        cursorY = func_800300F8(renderCtx, cursorY, 0x12B, xPos, yPos, g_menuColor, 0x1C0);
+        cursorY = func_800300F8(renderCtx, cursorY, 0x12B, xPos, yPos, g_menuTint[MENU_TINT_NORMAL], 0x1C0);
         xPos = x + 0x30;
         name = renderInnerPanel(0x1A);
         cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, 0);
@@ -4277,7 +4277,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
             available = checkJunctionCompat(i < charSlots, i < gfSlots, 1);
             xPos = x + 0x10;
             yPos = y + 0x11 + i * 13;
-            cursorY = func_800300F8(renderCtx, cursorY, 0x12B, xPos, yPos, g_menuColor,
+            cursorY = func_800300F8(renderCtx, cursorY, 0x12B, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
                                     (!available) ? 0x1C0 : 0x80);
             xPos = x + 0x30;
             magicId = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_ELEM_0 + i];
@@ -4331,7 +4331,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
     available = checkJunctionCompat(junc->availFlags, gfEntry->abilityFlags, 0x400);
     xPos = x + 0x10;
     yPos = y + 4;
-    cursorY = func_800300F8(renderCtx, cursorY, 0x128, xPos, yPos, g_menuColor,
+    cursorY = func_800300F8(renderCtx, cursorY, 0x128, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
                             (!available) ? 0x1C0 : 0x80);
     magicId = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_STATUS];
     if (magicId == 0) {
@@ -4350,7 +4350,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
         /* No defensive slots available — draw a single empty row. */
         xPos = x + 0x10;
         yPos = y + 0x11;
-        cursorY = func_800300F8(renderCtx, cursorY, 0x129, xPos, yPos, g_menuColor, 0x1C0);
+        cursorY = func_800300F8(renderCtx, cursorY, 0x129, xPos, yPos, g_menuTint[MENU_TINT_NORMAL], 0x1C0);
         xPos = x + 0x30;
         name = renderInnerPanel(0x1A);
         cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, 0);
@@ -4359,7 +4359,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
             available = checkJunctionCompat(i < charSlots, i < gfSlots, 1);
             xPos = x + 0x10;
             yPos = y + 0x11 + i * 13;
-            cursorY = func_800300F8(renderCtx, cursorY, 0x129, xPos, yPos, g_menuColor,
+            cursorY = func_800300F8(renderCtx, cursorY, 0x129, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
                                     (!available) ? 0x1C0 : 0x80);
             xPos = x + 0x30;
             magicId = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_STATUS_0 + i];
@@ -4453,7 +4453,7 @@ s32 setupStatBorderPanel(s32 ctx, s32 mode, s32 x, s32 y, s32 renderParam) {
     g_menuDisplayCfg.w = 0x150;
     g_menuDisplayCfg.h = 0x48;
     g_menuDisplayCfg.y = y;
-    return func_801EF9AC(ctx, mode, renderParam, g_menuColor);
+    return func_801EF9AC(ctx, mode, renderParam, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -4506,9 +4506,9 @@ s32 renderJunctionHeader(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x
 
     xPos = x + 8;
     yPos = y + 7;
-    cursorY = func_8002FF34(renderCtx, cursorY, icon1, xPos, yPos, g_menuColor);
+    cursorY = func_8002FF34(renderCtx, cursorY, icon1, xPos, yPos, g_menuTint[MENU_TINT_NORMAL]);
     xPos = x + 0x41;
-    cursorY = func_8002FF34(renderCtx, cursorY, icon2, xPos, yPos, g_menuColor);
+    cursorY = func_8002FF34(renderCtx, cursorY, icon2, xPos, yPos, g_menuTint[MENU_TINT_NORMAL]);
 
     cfg->iconType = 0;
     cfg->iconSubType = 0;
@@ -4516,7 +4516,7 @@ s32 renderJunctionHeader(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x
     cfg->y = y;
     cfg->w = 0xAE;
     cfg->h = 0x16;
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -4602,7 +4602,7 @@ s32 renderMagicJunctionEntry(s32 renderCtx, s32 cursorY, s32 col, s32 row, s32 x
         if (func_801F1CE8(charIdx, magicId) != 0) {
             ysum = 7 + g_menuDisplayCfg.y + row * 13;
             xsum = 0x49 + g_menuDisplayCfg.x + xOff;
-            cursorY = func_8002FF34(renderCtx, cursorY, 0xC0, xsum, ysum, g_menuColor);
+            cursorY = func_8002FF34(renderCtx, cursorY, 0xC0, xsum, ysum, g_menuTint[MENU_TINT_NORMAL]);
             color = 1;
         }
         bit = 1 << slot;
@@ -4651,11 +4651,11 @@ s32 renderMagicListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x
     g_menuDisplayCfg.dataPtr = ctx->dataPtr2;
 
     if (ctx->discCount >= 5) {
-        cursorY = func_801F5F60(renderCtx, cursorY, g_menuColor, 3);
+        cursorY = func_801F5F60(renderCtx, cursorY, g_menuTint[MENU_TINT_NORMAL], 3);
     }
 
-    cursorY = func_8002FF34(renderCtx, cursorY, 0x4D, x + 0x54, y, g_menuColor);
-    cursorY = func_801F5F30(renderCtx, cursorY, x + 0x24, y, g_menuColor, ctx->unk44);
+    cursorY = func_8002FF34(renderCtx, cursorY, 0x4D, x + 0x54, y, g_menuTint[MENU_TINT_NORMAL]);
+    cursorY = func_801F5F30(renderCtx, cursorY, x + 0x24, y, g_menuTint[MENU_TINT_NORMAL], ctx->unk44);
     return func_801EFBB4(renderCtx, cursorY, renderMagicJunctionEntry);
 }
 
@@ -4709,7 +4709,7 @@ s32 renderAbilityListEntry(s32 ctx, s32 cursorY, s32 row, s32 col, s32 panelX) {
                 highlight = 7;
             }
             if (iconId != 0xFF) {
-                cursorY = func_8002FF34(ctx, cursorY, iconId + 0xD8, stringX, textY - 2, g_menuColor);
+                cursorY = func_8002FF34(ctx, cursorY, iconId + 0xD8, stringX, textY - 2, g_menuTint[MENU_TINT_NORMAL]);
             }
             {
                 s32 xOff = panelX + 0x24;
@@ -4810,10 +4810,10 @@ s32 renderAbilityListPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32
         break;
     }
 
-    cursorY = func_801F5F30(renderCtx, cursorY, panelX + 0x28, y, g_menuColor, ctx->unk44);
+    cursorY = func_801F5F30(renderCtx, cursorY, panelX + 0x28, y, g_menuTint[MENU_TINT_NORMAL], ctx->unk44);
 
     if (cfg->itemId >= 0xC) {
-        cursorY = func_801F5F60(renderCtx, cursorY, g_menuColor, 3);
+        cursorY = func_801F5F60(renderCtx, cursorY, g_menuTint[MENU_TINT_NORMAL], 3);
     }
 
     return func_801EFBB4(renderCtx, cursorY, renderAbilityListEntry);
@@ -4882,12 +4882,12 @@ s32 renderStatRowGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s
         if (cmdId != 0) {
             /* FIXME: regalloc hack — xPos is reused here as scratch for the category icon */
             xPos = getAbilityCategory(cmdId) + 0xD8;
-            cursorY = func_8002FF34(renderCtx, cursorY, xPos, x + 0x13, yPos - 2, g_menuColor);
+            cursorY = func_8002FF34(renderCtx, cursorY, xPos, x + 0x13, yPos - 2, g_menuTint[MENU_TINT_NORMAL]);
             xPos = x + 0x21;
             cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, getAbilityName(cmdId), highlight);
         }
         xPos = x + 7;
-        cursorY = func_8002FF34(renderCtx, cursorY, 0x7E, xPos, yPos + 2, g_menuColor);
+        cursorY = func_8002FF34(renderCtx, cursorY, 0x7E, xPos, yPos + 2, g_menuTint[MENU_TINT_NORMAL]);
     }
 
     cfg->iconType = 0x48;
@@ -4896,7 +4896,7 @@ s32 renderStatRowGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s
     cfg->y = y;
     cfg->w = 0xAE;
     cfg->h = 0x48;
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -4937,11 +4937,11 @@ s32 renderGfCompatGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, 
             y2 = y + 9 + i * 13;
             gf = g_gameState.chars[charIdx].abilities[i];
             if (gf != 0) {
-                result = func_8002FF34(renderCtx, result, getAbilityCategory(gf) + 0xD8, x + 0x2E, y2 - 2, g_menuColor);
+                result = func_8002FF34(renderCtx, result, getAbilityCategory(gf) + 0xD8, x + 0x2E, y2 - 2, g_menuTint[MENU_TINT_NORMAL]);
                 cursorY = x + 0x3C;
                 result = func_801F0FEC(renderCtx, result, cursorY, y2, getAbilityName(gf), new_var);
             }
-            result = func_8002FF34(renderCtx, result, 0x7E, x + 0x22, y2 + 2, g_menuColor);
+            result = func_8002FF34(renderCtx, result, 0x7E, x + 0x22, y2 + 2, g_menuTint[MENU_TINT_NORMAL]);
             i++;
         } while (i < g_junctionChars[charIdx].abilityRows);
     }
@@ -4951,7 +4951,7 @@ s32 renderGfCompatGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, 
     cfg->y = y;
     cfg->w = 0xAE;
     cfg->h = 0x48;
-    return func_801EF9AC(renderCtx, result, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, result, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -5049,7 +5049,7 @@ s32 renderCharNameBar(s32 renderCtx, s32 cursorY, s32 x, s32 height, s32 charIdx
             u8 *namePtr = getCharName(g_gameState.chars[charIdx].characterId);
             cursorY = func_801F0FEC(renderCtx, cursorY, x, height, namePtr, gfInfo);
         }
-        return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+        return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
     } while (0);
 }
 
@@ -5128,7 +5128,7 @@ s32 renderJunctionMenu(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY) {
     scale = D_801FA3C8[scale / 64];
     pos = 10;
     func_801F1AFC();
-    setMenuColorIntensity(ctx->unk3A);
+    setMenuBrightness(ctx->unk3A);
     showGf = 0;
     dl = renderStatDeltaBarExt(ctx, renderCtx, dl, 0x18, pos);
     cursorY = renderStatDeltaBar(ctx, renderCtx, cursorY, 0x18, pos);

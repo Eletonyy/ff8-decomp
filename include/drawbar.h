@@ -10,5 +10,6 @@
 extern DR_AREA *func_8002B3A0(P_TAG *ot, DR_AREA *prim, RECT *rect, s32 color, s32 mode);
 extern DR_AREA *func_8002B898(P_TAG *ot, DR_AREA *prim, RECT *rect, s32 color);
 extern DR_AREA *func_8002B8BC(P_TAG *ot, DR_AREA *prim, RECT *rect, s32 color, s32 a4);
+extern DR_AREA *drawWindowBackground(P_TAG *ot, DR_AREA *prim, RECT *rect, s32 color);
 
 #endif /* DRAWBAR_H */

@@ -2,6 +2,7 @@
 #include "menu.h"
 #include "menucrd.h"
 #include "overlay.h"
+#include "dialog.h"
 
 /**
  * @brief Card menu task state, allocated by func_801F179C.
@@ -25,7 +26,6 @@ typedef struct {
     /* 0x42 */ u8 unk42;
 } CardMenuState;
 
-extern s32 g_menuColor;
 extern s16 D_801E7D64;
 extern s16 D_801E7D66;
 extern MenuDisplayConfig g_menuDisplayCfg;
@@ -234,7 +234,7 @@ INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E60E8);
  * @return Result from func_800376A8
  */
 s32 func_801E6228(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
-    return func_800376A8(a1, a2, (s32)&D_801E7870, 0xB, a3, stackArg, g_menuColor);
+    return func_800376A8(a1, a2, (s32)&D_801E7870, 0xB, a3, stackArg, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -309,7 +309,7 @@ s32 func_801E69AC(CardMenuState *state, s32 a1, s32 a2) {
 
     saved = getDisplayListHead();
     func_801F1AFC();
-    setMenuColorIntensity(state->intensity);
+    setMenuBrightness(state->intensity);
     v1 = 0x1E;
     result = func_801E645C(state, a1, a2, 0xC0, v1);
     v1 = 0x6A;

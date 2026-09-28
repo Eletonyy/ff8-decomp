@@ -65,7 +65,6 @@ extern u8 g_testHeaderText[];
 extern TestChoiceMark g_testChoiceMarks[];
 extern MenuDisplayConfig g_menuDisplayCfg;
 extern u8 D_801FABD4;
-extern s32 g_menuColor;
 extern u8 g_gameState;
 extern u32 D_801E69B8;
 
@@ -191,8 +190,8 @@ INCLUDE_ASM("asm/ovl/menutest/nonmatchings/menutest", func_801E5D74);
 
 /**
  * Sets up a GPU frame with centered text display for the header area.
- * Measures text width via func_8002E680, centers it within 0xF4 pixels,
- * draws via func_8002EAD0, configures g_menuDisplayCfg display struct
+ * Measures text width via measureMessage, centers it within 0xF4 pixels,
+ * draws via drawMessageText, configures g_menuDisplayCfg display struct
  * (0x18, 0x6, 0xF4, 0x16), and submits via func_801EF9AC.
  * @param a0 Display list pointer
  * @param a1 OT pointer
@@ -206,22 +205,22 @@ s32 func_801E64B4(s32 a0, s32 a1) {
     s32 v0;
     s32 buf;
 
-    v0 = func_8002E680(ot + text - ot); // liveness trick: the extra uses of ot put it in s1
+    v0 = measureMessage(ot + text - ot); // liveness trick: the extra uses of ot put it in s1
     CalcCenter(maxW, v0, 0xF4); // the macro's do/break/while(1) shape puts maxW in s3
-    func_8002EAD0(disp, v0 + 0x18, 0xC, text);
+    drawMessageText(disp, v0 + 0x18, 0xC, text);
     g_menuDisplayCfg.iconType = 0;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = 0x18;
     g_menuDisplayCfg.y = 6;
     g_menuDisplayCfg.w = maxW;
     g_menuDisplayCfg.h = 0x16;
-    return func_801EF9AC(disp, ot, 0x1000, g_menuColor);
+    return func_801EF9AC(disp, ot, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
  * Sets up GPU display for the scrollable text body area.
  * Computes scroll offset from D_801FA3C8 animation table (same pattern as
- * func_801E582C), draws text at the scroll-adjusted X position via func_8002EAD0,
+ * func_801E582C), draws text at the scroll-adjusted X position via drawMessageText,
  * then configures two g_menuDisplayCfg display regions:
  * first (0x1C, 0x21, 0x148, 0x9F) submitted via func_801EF800,
  * second (0x18, 0x1D, 0x150, 0xA7) submitted via func_801EF9AC.
@@ -245,7 +244,7 @@ s32 func_801E6570(TestMenuState *state, s32 a1, s32 a2) {
     x -= v0 >> 12;
 
     a2 = func_801EF8D8(disp, a2);
-    func_8002EAD0(disp, x, 0x23, g_testQuestionText);
+    drawMessageText(disp, x, 0x23, g_testQuestionText);
 
     cfg->x = 0x1C;
     cfg->y = 0x21;
@@ -259,12 +258,12 @@ s32 func_801E6570(TestMenuState *state, s32 a1, s32 a2) {
     cfg->y = 0x1D;
     cfg->w = 0x150;
     cfg->h = 0xA7;
-    return func_801EF9AC(disp, v0, 0x1000, g_menuColor);
+    return func_801EF9AC(disp, v0, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
  * Sets up GPU display for a secondary text area, similar to func_801E64B4.
- * Centers @c state->text within 0x150 pixels, draws via func_8002EAD0
+ * Centers @c state->text within 0x150 pixels, draws via drawMessageText
  * at Y=0xC8, configures g_menuDisplayCfg (0x18, 0xC4, 0x150, 0x14), and submits
  * via func_801EF9AC.
  * @param state Test menu state.
@@ -278,16 +277,16 @@ s32 func_801E66A8(TestMenuState *state, s32 a1, s32 a2) {
     s32 maxW;
     s32 v0;
 
-    v0 = func_8002E680(ot + state->text - ot); // liveness trick: the extra uses of ot put it in s0
+    v0 = measureMessage(ot + state->text - ot); // liveness trick: the extra uses of ot put it in s0
     CalcCenter(maxW, v0, 0x150);
-    func_8002EAD0(disp, v0 + 0x18, 0xC8, state->text);
+    drawMessageText(disp, v0 + 0x18, 0xC8, state->text);
     g_menuDisplayCfg.iconType = 0;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = 0x18;
     g_menuDisplayCfg.y = 0xC4;
     g_menuDisplayCfg.w = maxW;
     g_menuDisplayCfg.h = 0x14;
-    return func_801EF9AC(disp, ot, 0x1000, g_menuColor);
+    return func_801EF9AC(disp, ot, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -301,7 +300,7 @@ s32 func_801E6760(TestMenuState *state, s32 a1, s32 a2) {
     s32 v0;
 
     func_801F1AFC();
-    setMenuColorIntensity(state->intensity);
+    setMenuBrightness(state->intensity);
     buildGrayscaleGpuColor(state->intensity);
     v0 = func_801E64B4(a1, a2);
     v0 = func_801E6570(state, a1, v0);

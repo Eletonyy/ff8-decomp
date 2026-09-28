@@ -66,32 +66,32 @@ typedef union {
 /*
  * GP stack allocation — allocates `size` bytes from the GP-relative area,
  * returning the current GP in `ptr`. Used for temporary scratchpad structs.
+ * One asm statement: when `ptr` lives on the stack, its store lands after
+ * both instructions (dialog/drawDialogText).
  */
 #define GP_ALLOC(ptr, size) \
-    asm volatile("addu %0, $gp, $zero" : "=r"(ptr)); \
-    asm volatile("addi $gp, $gp, %0" : : "i"(size))
+    asm volatile("addu %0, $gp, $zero\n\taddi $gp, $gp, %1" : "=r"(ptr) : "i"(size))
 
 /* Free `size` bytes from the GP stack (reverses GP_ALLOC). */
 #define GP_FREE(size) \
     asm volatile("addi $gp, $gp, -%0" : : "i"(size))
 
-/*
- * Combined GP save+set scratchpad macro — saves $gp to `saved`, then points
- * $gp at the scratchpad (0x1F800300). The compiler materializes the address.
- */
-#define GP_SAVE_SCRATCH(saved) \
+/* Combined GP save+set macro — saves $gp to `saved`, then points $gp at `addr`. */
+#define GP_SAVE_SET(saved, addr) \
     asm volatile("addu %0, $gp, $zero" : "=r"(saved)); \
-    asm volatile("addu $gp, %0, $zero" : : "r"((u8 *)0x1F800300))
+    asm volatile("addu $gp, %0, $zero" : : "r"(addr))
+
+/* GP_SAVE_SET onto the scratchpad (0x1F800300). The compiler materializes the address. */
+#define GP_SAVE_SCRATCH(saved) GP_SAVE_SET(saved, (u8 *)0x1F800300)
 
 /*
  * Combined GP get return + restore macro — captures $gp (scratchpad pointer)
- * into ret, then restores original $gp from `saved`.
+ * into ret, then restores original $gp from `saved`. Two asm statements: when
+ * `saved` lives on the stack, its reload lands between them (dialog/drawMessageText).
  */
 #define GP_RESTORE_RET(saved, ret) \
-    asm volatile( \
-        "addu %0, $gp, $zero\n\t" \
-        "addu $gp, %1, $zero" \
-        : "=r"(ret) : "r"(saved))
+    asm volatile("addu %0, $gp, $zero" : "=r"(ret)); \
+    asm volatile("addu $gp, %0, $zero" : : "r"(saved))
 
 /*
  * Hand-tuned addPrim — the 4-instruction sll/lwl/swl/swl sequence that
@@ -172,9 +172,19 @@ typedef union {
  * addOtFast prepends packet p to the chain: stores the current head into p's
  * tag and leaves p's own tag image (p << 8) as the new head; the scratch
  * input's register carries the image (clobbered by the template, in the
- * addPrimFast style). */
-#define getAddrNewFast(ot, dst) { u32 _pad; __asm__ __volatile__("lwl %0, 2(%2)" : "=r"(dst) : "0"(_pad), "r"(ot) : "memory"); }
+ * addPrimFast style).
+ * getAddrNewFast has no "memory" clobber: reorg must be able to see that a
+ * reload of `ot` made before it is still valid after it (dialog/drawMessageText).
+ * getAddrNewFast writes the result back into its scratch. That is dead code
+ * where the macro runs once, but inside a loop the scratch becomes
+ * loop-carried: dialog.c's text renderers reload it from its stack slot into
+ * the head register and store it back around the lwl.
+ * addOtTagFast is addOtFast without the final copy: it leaves p's tag image in
+ * the allocated temp `tag` ("+r", so an uninitialised temp is live from
+ * function entry) and the caller moves it into the head itself. */
+#define getAddrNewFast(ot, dst) { u32 _pad; __asm__ __volatile__("lwl %0, 2(%2)" : "=r"(dst) : "0"(_pad), "r"(ot)); _pad = dst; }
 #define addOtFast(p, head) { u32 _tmp; __asm__ __volatile__("sll %1, %2, 8\n\tswl %0, 2(%2)\n\taddu %0, %1, $0" : "+r"(head) : "r"(_tmp), "r"(p) : "memory"); }
+#define addOtTagFast(p, head, tag) __asm__ __volatile__("sll %0, %2, 8\n\tswl %1, 2(%2)" : "+r"(tag) : "r"(head), "r"(p) : "memory")
 
 /* Mark an uninitialised variable as deliberately carrying whatever garbage
  * its register holds. The empty volatile asm is a definition the optimiser

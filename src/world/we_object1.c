@@ -12,7 +12,7 @@
 #include "psxsdk/libgte.h"
 #include "psxsdk/libetc.h"
 #include "psxsdk/libc.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 #include "btl_anim.h"
 #include "world/we_object9.h"
 //#include "world/we_object6.h" // Deliberately not included for matching reasons, original code likely forgot to include this
@@ -374,24 +374,24 @@ void func_8009AD3C(void) {
 INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009AEE4);
 
 /**
- * @brief Set up a positioned world-map SFX/voice clip, skipping if already current.
+ * @brief Set up a positioned world-map dialog, skipping if already current.
  *
  * Sibling of @c func_8009B550. Resolves the clip's data pointer (explicit @p text,
  * else a self-relative @c D_800C97D4 string-table lookup) but first early-outs when
  * the slot already records this @p strIdx and no explicit @p text was given. Primes
- * the voice via @c initSfxPlayback, then sets pitch (from the current field music),
- * entity type 6 and reverb (@c field03). Finally it sizes a text box —
- * @c func_8002E680 returns the rendered dimensions packed as @c width|(height<<16) —
+ * the voice via @c setDialogMessage, then sets the text speed (the message-speed setting's, via getFieldTextSpeed),
+ * entity type 6 and anim speed (@c field03). Finally it sizes a text box —
+ * @c measureMessage returns the rendered dimensions packed as @c width|(height<<16) —
  * positioned relative to the slot anchor (@c field04, @c field06) per the alignment
- * mode @c field01, submits it via @c func_8002E064, and starts the SFX.
+ * mode @c field01, submits it via @c setDialogRect, and opens the dialog.
  *
  * @note Declared non-void to match the original's codegen: a non-void return keeps
  *       @c v0 live, which leaves the early-return branch-delay slot as a @c nop.
  *       No meaningful value is returned.
  *
- * @param slotIdx Index into the @c D_800C526C SFX-slot table.
- * @param strIdx  String-table index (@c -2 = none); also the "already current" key.
- * @param text    Explicit clip pointer; overrides @p strIdx when non-NULL.
+ * @param slotIdx Index into the @c D_800C526C dialog-slot table.
+ * @param strIdx String-table index (@c -2 = none); also the "already current" key.
+ * @param text Explicit clip pointer; overrides @p strIdx when non-NULL.
  */
 s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text) {
     RECT rect;
@@ -418,12 +418,12 @@ s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text) {
         D_800C526C[slotIdx].field00 = -2;
     }
 
-    initSfxPlayback(id, ptr);
-    setSfxPitch(id, getCurrentFieldMusic());
-    setSfxEntityType(id, 6);
-    setSfxReverbMode(id, D_800C526C[slotIdx].field03);
+    setDialogMessage(id, ptr);
+    setDialogTextSpeed(id, getFieldTextSpeed());
+    setDialogEntityType(id, 6);
+    setDialogAnimSpeed(id, D_800C526C[slotIdx].field03);
 
-    dim = func_8002E680(ptr);
+    dim = measureMessage(ptr);
     hi = (u32)dim >> 16;
     if (D_800C526C[slotIdx].field01 == 1) {
         setRECT(&rect, D_800C526C[slotIdx].field04 - dim - 0x10, D_800C526C[slotIdx].field06, dim + 0x10, hi + 0x10);
@@ -434,31 +434,31 @@ s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text) {
     } else if (D_800C526C[slotIdx].field01 == 3) {
         setRECT(&rect, D_800C526C[slotIdx].field04 - dim - 0x10, D_800C526C[slotIdx].field06 - hi - 0x10, dim + 0x10, hi + 0x10);
     }
-    func_8002E064(id, &rect);
-    startSfxSlow(id);
+    setDialogRect(id, &rect);
+    openDialogAnimated(id);
 }
 
 
 /**
- * @brief Configure and start a positioned world-map SFX/voice clip on a slot.
+ * @brief Configure and open a positioned world-map dialog on a slot.
  *
- * Resolves the clip's data pointer: the caller-supplied @p text when non-NULL,
+ * Resolves the dialog's text: the caller-supplied @p text when non-NULL,
  * otherwise — unless @p strIdx is the @c -2 sentinel — a self-relative lookup
  * @c (u8 *)D_800C97D4 + D_800C97D4->first[strIdx] into the string table. The
- * slot's @c field00 records @p strIdx (or @c -2). After priming the voice via
- * @c func_8002D784, it sets pitch from the current field music, entity type 6,
- * reverb from @c field03, and the global flag.
+ * slot's @c field00 records @p strIdx (or @c -2). After starting the message via
+ * @c setDialogChoiceMessage, it sets the text speed from the message-speed setting, entity type 6,
+ * anim speed from @c field03, and the global flag.
  *
- * It then sizes a text box: @c func_8002E680 returns the rendered dimensions
+ * It then sizes a text box: @c measureMessage returns the rendered dimensions
  * packed as @c width|(height<<16); the @ref RECT is placed relative to the
  * slot's anchor (@c field04, @c field06) per the alignment mode @c field01
  * (0 = top-left, 1/3 = right-aligned, 2 = centered, 3 = also bottom-aligned),
- * submitted via @c func_8002E064, and the SFX is started with @c startSfxSlow.
+ * submitted via @c setDialogRect, and the dialog is opened with @c openDialogAnimated.
  *
- * @param slotIdx Index into the @c D_800C526C SFX-slot table.
- * @param strIdx  String-table index for the clip text (@c -2 = none).
- * @param text    Explicit text/data pointer; overrides @p strIdx when non-NULL.
- * @param arg3..arg6 Forwarded to @c func_8002D784.
+ * @param slotIdx Index into the @c D_800C526C dialog-slot table.
+ * @param strIdx String-table index for the clip text (@c -2 = none).
+ * @param text Explicit text/data pointer; overrides @p strIdx when non-NULL.
+ * @param arg3..arg6 Forwarded to @c setDialogChoiceMessage.
  */
 void func_8009B550(s32 slotIdx, s32 strIdx, u8 *text, s32 arg3, s32 arg4, s32 arg5, s32 arg6) {
     RECT rect;
@@ -483,13 +483,13 @@ void func_8009B550(s32 slotIdx, s32 strIdx, u8 *text, s32 arg3, s32 arg4, s32 ar
         D_800C526C[slotIdx].field00 = -2;
     }
 
-    func_8002D784(id, ptr, arg3, arg4, arg5, arg6);
-    setSfxPitch(id, getCurrentFieldMusic());
-    setSfxEntityType(id, 6);
-    setSfxReverbMode(id, D_800C526C[slotIdx].field03);
-    setSfxGlobalFlag(id);
+    setDialogChoiceMessage(id, ptr, arg3, arg4, arg5, arg6);
+    setDialogTextSpeed(id, getFieldTextSpeed());
+    setDialogEntityType(id, 6);
+    setDialogAnimSpeed(id, D_800C526C[slotIdx].field03);
+    setFocusedDialog(id);
 
-    dim = func_8002E680(ptr);
+    dim = measureMessage(ptr);
     v = dim + 0x20;
     hi = (u32)dim >> 16;
     if (D_800C526C[slotIdx].field01 == 1) {
@@ -501,13 +501,13 @@ void func_8009B550(s32 slotIdx, s32 strIdx, u8 *text, s32 arg3, s32 arg4, s32 ar
     } else if (D_800C526C[slotIdx].field01 == 3) {
         setRECT(&rect, D_800C526C[slotIdx].field04 - v - 0x10, D_800C526C[slotIdx].field06 - hi - 0x10, dim + 0x30, hi + 0x10);
     }
-    func_8002E064(id, &rect);
-    startSfxSlow(id);
+    setDialogRect(id, &rect);
+    openDialogAnimated(id);
 }
 
 
 /**
- * @brief One-shot: silence the high SFX slots when a trigger fires.
+ * @brief One-shot: close the high dialog slots when a trigger fires.
  *
  * Gated by two early-outs — the global disable byte @c D_800D23D8[0] and the
  * one-shot latch @c D_800C4DBC (so the body runs at most once until the latch
@@ -517,7 +517,7 @@ void func_8009B550(s32 slotIdx, s32 strIdx, u8 *text, s32 arg3, s32 arg4, s32 ar
  * active buffer and @c (idx+1)%2 is the previous frame's buffer. If input bit
  * @c 0x40 is newly pressed this frame — @c cur & ~prev & 0x40, written as
  * @c cur & (cur ^ prev) & 0x40 — or the external trigger @c D_800C4D50 is set,
- * it fades out @c D_800C526C SFX slots 9..12 (@c fadeOutSfxSlow on each active
+ * it closes the dialogs of @c D_800C526C slots 9..12 (@c closeDialogAnimated on each active
  * slot's @c field02, then marks @c field00 inactive) and latches @c D_800C4DBC.
  *
  * @note The exact meaning of input bit @c 0x40 is uncertain.
@@ -545,7 +545,7 @@ void func_8009B748(void) {
             s32 field02 = D_800C526C[i].field02;
             if (field00 != -1) {
                 D_800C526C[i].field00 = -1;
-                fadeOutSfxSlow(field02);
+                closeDialogAnimated(field02);
             }
         }
         D_800C4DBC = 1;
@@ -554,20 +554,20 @@ void func_8009B748(void) {
 
 
 /**
- * @brief Sync the world-map voice/SFX on channel 1 to the requested clip.
+ * @brief Keep world-map dialog 1 in step with the requested text.
  *
  * Drives a one-voice state machine from the request slot @c D_800C4D90 and the
  * currently-playing tracker @c D_800C4D94 (both @c -1 when idle):
  *  - Request pending (@c D_800C4D90 @c >= @c 0) and nothing playing
  *    (@c D_800C4D94 @c < @c 0): resolve the clip record from the @c D_800C97D4
  *    string-table blob (@c table @c + @c table->first[req]), start playback
- *    (@c initSfxPlayback), set its pitch from the current field music and its
+ * (@c setDialogMessage), set its text speed from the message-speed setting and its
  *    entity type to 6, build a horizontally-centered display @c RECT from the
- *    clip's packed dimensions (@c func_8002E680 returns @c width|height<<16) and
- *    submit it (@c func_8002E064), then @c startSfxSlow and latch
+ * clip's packed dimensions (@c measureMessage returns @c width|height<<16) and
+ * submit it (@c setDialogRect), then @c openDialogAnimated and latch
  *    @c D_800C4D94 @c = @c D_800C4D90.
  *  - No request (@c D_800C4D90 @c < @c 0) but a clip is playing
- *    (@c D_800C4D94 @c >= @c 0): @c fadeOutSfxSlow and clear the tracker to -1.
+ * (@c D_800C4D94 @c >= @c 0): @c closeDialogAnimated and clear the tracker to -1.
  *
  * Centering uses screen half-width @c D_800C97EA:
  * @c x @c = @c D_800C97EA/2 @c - @c width/2, with a 16px margin on the others.
@@ -581,21 +581,21 @@ void func_8009B840(void) {
             RECT rect;
             u32 dims;
 
-            initSfxPlayback(1, record);
-            setSfxPitch(1, getCurrentFieldMusic());
-            setSfxEntityType(1, 6);
-            dims = func_8002E680(record);
+            setDialogMessage(1, record);
+            setDialogTextSpeed(1, getFieldTextSpeed());
+            setDialogEntityType(1, 6);
+            dims = measureMessage(record);
             rect.x = (D_800C97EA >> 1) - ((dims & 0xFFFF) >> 1);
             rect.y = 0x10;
             rect.w = dims + 0x10;
             rect.h = (dims >> 16) + 0x10;
-            func_8002E064(1, &rect);
-            startSfxSlow(1);
+            setDialogRect(1, &rect);
+            openDialogAnimated(1);
             D_800C4D94 = D_800C4D90;
         }
     } else {
         if (D_800C4D94 >= 0) {
-            fadeOutSfxSlow(1);
+            closeDialogAnimated(1);
             D_800C4D94 = -1;
         }
     }
@@ -733,7 +733,7 @@ void func_8009C1A4(void) {
  * state; if a command descriptor @c D_800C4D64 is active, its flag bit is mirrored
  * into @c D_800D226C->unk6C (bit @c 0x100). Finally it stamps the scene state
  * @c D_80082C8C (mode 1, dispatch code, markers), calls @c func_800B3FD4, clears
- * the slot's action byte, fades out all @c D_800C526C SFX, pushes 2 display frames,
+ * the slot's action byte, closes every @c D_800C526C slot's dialog at once, pushes 2 display frames,
  * and submits the scene color tag.
  *
  * @param cmd Dispatch command code being handed off.
@@ -763,9 +763,9 @@ void func_8009C294(s32 cmd) {
     func_800B3FD4(D_800D226C, 1);
     D_800D226C->bytes[1] = 0;
     for (i = 0; i < 13; i++) {
-        s32 sfxIdx = D_800C526C[i].field02;
+        s32 dialogIdx = D_800C526C[i].field02;
         D_800C526C[i].field00 = -1;
-        fadeOutSfxFast(sfxIdx);
+        closeDialogInstant(dialogIdx);
     }
     renderAndUpdateDisplay(2);
     renderBattleDisplayList(&D_800D244C->primList[BSC_COLORTAG_IDX]);
@@ -985,15 +985,15 @@ void func_8009C808(void) {
 }
 
 /**
- * @brief Fade out SFX slot tracked by D_800C4D94 (if any) and clear the slot.
+ * @brief Close the dialog tracked by D_800C4D94 (if any) and clear the tracker.
  *
  * If D_800C4D94 holds a non-negative value (an active slot handle), calls
- * @c fadeOutSfxSlow(1) to fade channel 1, then resets the tracker to -1
+ * @c closeDialogAnimated(1) to close dialog 1, then resets the tracker to -1
  * (inactive). A no-op when already inactive.
  */
 void func_8009C834(void) {
     if (D_800C4D94 >= 0) {
-        fadeOutSfxSlow(1);
+        closeDialogAnimated(1);
         D_800C4D94 = -1;
     }
 }

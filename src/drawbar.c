@@ -7,10 +7,8 @@
 /*
  * Clipped colour-bar GPU primitive builders.
  *
- * These were originally split into the psxsdk/libgcc.c translation unit because they sit
- * immediately before the GCC 64-bit-math runtime (__udivdi3) and splat groups by address.
- * They are GPU drawers, not math helpers: func_8002B3A0 unpacks its RECT argument and emits
- * GP0 packets (e.g. the 0xE100041E draw-mode word), so they were re-split out into this file.
+ * func_8002B3A0 unpacks its RECT argument and emits GP0 packets (e.g. the 0xE100041E
+ * draw-mode word); the rest wrap it or func_8002B8BC.
  */
 
 INCLUDE_ASM("asm/nonmatchings/drawbar", func_8002B3A0);
@@ -29,3 +27,18 @@ DR_AREA *func_8002B898(P_TAG *ot, DR_AREA *prim, RECT *rect, s32 color) {
 }
 
 INCLUDE_ASM("asm/nonmatchings/drawbar", func_8002B8BC);
+
+/**
+ * @brief Draw a window's background: func_8002B8BC with @p a4 = 0.
+ *
+ * A semi-transparent colour word draws a see-through box.
+ *
+ * @param ot Ordering table.
+ * @param prim Primitive buffer cursor.
+ * @param rect The window rect.
+ * @param color Colour word.
+ * @return The primitive cursor after the packets.
+ */
+DR_AREA *drawWindowBackground(P_TAG *ot, DR_AREA *prim, RECT *rect, s32 color) {
+    return func_8002B8BC(ot, prim, rect, color, 0);
+}

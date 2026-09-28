@@ -86,8 +86,8 @@ void func_80098314(void) {
 /**
  * @brief Load/refresh the active field map's asset bundle from CD.
  *
- * Either issues a fresh CD read (when @c D_8005F14A is 0 or the current area
- * @c g_currentMusicTrack differs from the cached @c D_8005F100) or restores from the
+ * Either issues a fresh CD read (when @c D_8005F14A is 0 or the current field
+ * @c g_curFieldId differs from the cached @c D_8005F100) or restores from the
  * cached pointer @c D_8005F104. Then loads the field data archive, latches
  * its members into globals (@c g_curFieldInfo, @c g_curFieldSfx, @c g_fieldEntity),
  * copies the script member to the @c FIELD_SCRIPT_STAGE staging region, and
@@ -124,9 +124,9 @@ s32 *func_800983F0(void) {
     s32 size;
     u8 *heapEnd;
 
-    if (D_8005F14A == 0 || g_currentMusicTrack != D_8005F100) {
-        func_80038868(D_800C0900[D_800C2568[g_currentMusicTrack] * 6],
-                      D_800C0900[D_800C2568[g_currentMusicTrack] * 6 + 1], (u8 *)FIELD_BUNDLE_BUF,
+    if (D_8005F14A == 0 || g_curFieldId != D_8005F100) {
+        func_80038868(D_800C0900[D_800C2568[g_curFieldId] * 6],
+                      D_800C0900[D_800C2568[g_curFieldId] * 6 + 1], (u8 *)FIELD_BUNDLE_BUF,
                       NULL);
         while (func_800393C8() != 0) {}
     } else {
@@ -141,8 +141,8 @@ s32 *func_800983F0(void) {
 
     D_8005F100 = 0;
     D_8005F142 = 0;
-    func_80038868(D_800C0908[D_800C2568[g_currentMusicTrack] * 6],
-                  D_800C0908[D_800C2568[g_currentMusicTrack] * 6 + 1], (u8 *)FIELD_BUNDLE_BUF, NULL);
+    func_80038868(D_800C0908[D_800C2568[g_curFieldId] * 6],
+                  D_800C0908[D_800C2568[g_curFieldId] * 6 + 1], (u8 *)FIELD_BUNDLE_BUF, NULL);
     while (func_800393C8() != 0) {}
 
     g_curFieldInfo = *g_fieldInfo;
@@ -206,11 +206,11 @@ s32 *func_800983F0(void) {
 
     if (g_curFieldInfo->unk0D == 0) {
         buf = (u8 *)func_800AA8A0(buf, buf + 0x20000, D_800C30DC, D_800C311C,
-                                  (u8 *)&D_800C0910[D_800C2568[g_currentMusicTrack] * 3], 0, D_800C06A0,
+                                  (u8 *)&D_800C0910[D_800C2568[g_curFieldId] * 3], 0, D_800C06A0,
                                   heapEnd);
     } else {
         buf = (u8 *)func_800AA8A0(buf, buf + 0x20000, D_800C30DC, D_800C315C,
-                                  (u8 *)&D_800C0910[D_800C2568[g_currentMusicTrack] * 3], 0, D_800C06A0,
+                                  (u8 *)&D_800C0910[D_800C2568[g_curFieldId] * 3], 0, D_800C06A0,
                                   heapEnd);
     }
 
@@ -296,7 +296,7 @@ void func_80098934(void) {
  *       @c g_fieldWalkmeshAdjacency was missing the @c +4 offset. Three more surfaced
  *       while closing the last 2%: both @c isrgb24 clears on the
  *       @c DISPENV pair were absent before @c PutDispEnv; state==1 stored
- *       @c g_currentMusicTrack after @c sndCmd21 instead of before (the original
+ * @c g_curFieldId after @c sndCmd21 instead of before (the original
  *       loads @c counter first and lets dbr sink the store into the jal
  *       delay slot, so doing it after reads a post-call value); and the
  *       loop body ended in an unconditional @c break, dropping out of the
@@ -472,7 +472,7 @@ void func_8009895C(void) {
         if (state == 7) {
             g_fieldEntity.mode = 0;
             g_vsyncRate = 2;
-            g_fieldEntity.field_0x120 = g_currentMusicTrack;
+            g_fieldEntity.field_0x120 = g_curFieldId;
             D_80082C8C.unk02 = g_fieldEntity.counter;
             D_80082C8C.cmd = g_fieldEntity.spawnTriIdx;
             D_80082C8C.unk03 = g_fieldEntity.anim_state;
@@ -481,8 +481,8 @@ void func_8009895C(void) {
         }
         if (state == 1) {
             g_fieldEntity.mode = 0;
-            g_fieldEntity.field_0x120 = g_currentMusicTrack;
-            g_currentMusicTrack = g_fieldEntity.counter;
+            g_fieldEntity.field_0x120 = g_curFieldId;
+            g_curFieldId = g_fieldEntity.counter;
             sndCmd21(-2, g_fieldEntity.field1B4);
             if (g_fieldEntity.unk1B0 != 1) {
                 func_800ACB10();
@@ -509,18 +509,18 @@ void func_8009895C(void) {
  * @note Purpose unknown. It survives as a real function -- the linker kept
  *       its address and @c fe_object1.h still declares it -- so it was most
  *       likely a debug or teardown hook whose body was compiled out, sitting
- *       as it does between the shutdown path above and the SFX fade-out in
+ * as it does between the shutdown path above and the dialog close in
  *       @ref func_8009912C.
  */
 void func_80099124(void) {
 }
 
-/** @brief Call fadeOutSfxFast for sound channels 0-7, then renderAndUpdateDisplay(1). */
+/** @brief Close dialogs 0-7 at once (closeDialogInstant), then renderAndUpdateDisplay(1). */
 void func_8009912C(void) {
     s16 i = 0;
 
     do {
-        fadeOutSfxFast(i);
+        closeDialogInstant(i);
         i++;
     } while (i < 8);
 
