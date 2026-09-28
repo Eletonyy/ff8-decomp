@@ -404,16 +404,16 @@ s32 func_8003646C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 
     setMcBusy();
 
-    saved250 = g_battleAnims.field250;
+    saved250 = g_battleAnims.sfx.entries[0].field30;
     D_80085210 = arg0;
-    saved252 = g_battleAnims.field252;
+    saved252 = g_battleAnims.sfx.entries[0].field32;
     D_8008520A = 0;
     saved703 = g_battleAnims.field703;
     saved9B0 = g_battleAnims.field9B0;
     saved9C0 = g_battleAnims.field9C0;
 
-    g_battleAnims.field252 = 0;
-    D_8008520C = (g_battleAnims.field250 = 0);
+    g_battleAnims.sfx.entries[0].field32 = 0;
+    D_8008520C = (g_battleAnims.sfx.entries[0].field30 = 0);
     g_battleAnims.field703 = 0;
     g_battleAnims.field9B0 = 0;
     g_battleAnims.field9C0 = 0;
@@ -421,7 +421,7 @@ s32 func_8003646C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 
     initBattleTransition();
 
-    savedVolume = g_battleAnims.field23A;
+    savedVolume = g_battleAnims.sfx.entries[0].volume;
     savedEntityType = readSfxEntityType(0);
     setSfxEntityType(0, 6);
     setSfxEntryVolume(0, 0x1000);
@@ -459,8 +459,8 @@ s32 func_8003646C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     setSfxEntryVolume(0, savedVolume);
     setSfxField2F(0, 0);
     setSfxEntityType(0, savedEntityType);
-    g_battleAnims.field250 = saved250;
-    g_battleAnims.field252 = saved252;
+    g_battleAnims.sfx.entries[0].field30 = saved250;
+    g_battleAnims.sfx.entries[0].field32 = saved252;
     return D_8008513C;
 }
 

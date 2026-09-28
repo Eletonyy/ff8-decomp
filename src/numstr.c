@@ -6,8 +6,6 @@
 #include "gamestate.h"
 #include "numstr.h"
 
-extern u8 D_8008386C;
-
 extern u8 D_80052A30[];
 extern u8 D_8008369C[];
 extern SfxSystem g_sfxEntries;

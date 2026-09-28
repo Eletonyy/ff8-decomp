@@ -595,7 +595,7 @@ u8 *initTripleTriadRenderList(void) {
  *    @p newVal there.
  *  - Masks both new and previous bitmasks by the side's relevance mask
  *    (`elem->unk10[side]`): @c result = new active bits, @c prevMasked = old.
- *  - @c base->defaultColor packs the timing: low byte = initial/restart delay,
+ *  - @c base->repeatDelays packs the timing: low byte = initial/restart delay,
  *    high byte = repeat interval.
  *  - If the masked new and old bits overlap (a sustained event), ticks the
  *    countdown in @ref D_801D4B08 [entry][side] (reloading the restart delay when
@@ -606,7 +606,7 @@ u8 *initTripleTriadRenderList(void) {
  * Drives keyboard-style auto-repeat for whatever per-side cue the bits represent.
  * Called four times (once per side) by @ref func_800A2A8C, which ORs the results.
  *
- * @param base   Battle-anim state; base->defaultColor packs the two delays.
+ * @param base   Battle-anim state; base->repeatDelays packs the two delays.
  * @param elem   Battle-anim entity; elem->unk10[side] is the per-side mask.
  * @param newVal Raw new edge bitmask for this frame.
  * @param side   Card side index, 0..3.
@@ -625,7 +625,7 @@ s32 func_800A29D4(BattleAnimState *base, BattleAnimEntity *elem, u16 newVal, s32
 
     prevMasked = D_801D4AF8[entry][side];
     D_801D4AF8[entry][side] = newVal;
-    restartDelay = *(u16 *)&base->defaultColor;
+    restartDelay = base->repeatDelays.hword;
     repeatTimer = D_801D4B08[entry][side];
     mask = elem->unk10[side];
 

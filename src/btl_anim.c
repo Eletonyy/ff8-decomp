@@ -5,6 +5,7 @@
 #include "battle.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
+#include "btl_sfx.h"
 #include "thread.h"
 
 
@@ -17,8 +18,6 @@ void func_800472F4(void);
 s32 getAnimFrameParam(s32, s32);
 u16 remapControllerInput(s32);
 s32 getAnimFrameStatusFlags(s32, s32);
-s32 func_8002CF54(s32);
-void decrementSfxCounter(void);
 s32 GetActiveFlag(s32);
 void dispatchBattleEntity(s32, s32, s32);
 void updateCameraVibrate(void);
@@ -217,10 +216,10 @@ void resetAnimEntity(s32 idx, s32 frameId) {
     entity = &g_battleAnims.entities[g_battleAnims.entities[idx].linkedIdx];
     entity->frameCounter = 0;
     entity->field0A = 0;
-    entity->field0C = g_battleAnims.defaultColor;
-    entity->field0D = g_battleAnims.defaultColor;
-    entity->field0E = g_battleAnims.defaultColor;
-    entity->field0F = g_battleAnims.defaultColor;
+    entity->field0C = g_battleAnims.repeatDelays.b.lo;
+    entity->field0D = g_battleAnims.repeatDelays.b.lo;
+    entity->field0E = g_battleAnims.repeatDelays.b.lo;
+    entity->field0F = g_battleAnims.repeatDelays.b.lo;
 
     fid = frameId;
     for (i = 0; 8 > i; i++) {
@@ -244,19 +243,20 @@ void resetAnimEntity(s32 idx, s32 frameId) {
 
 
 /**
- * @brief Initialize a battle entity's color fields from the global default.
+ * @brief Reset a battle-anim entity's auto-repeat countdowns and frames.
  *
- * Sets all four color fields (0C-0F) to g_battleAnims.defaultColor,
- * then calls resetAnimEntity to reset frame state.
+ * Sets field0C-0F, the per-channel pad auto-repeat countdowns (func_80027038
+ * ticks them), to the restart delay g_battleAnims.repeatDelays.b.lo, then
+ * calls resetAnimEntity to reset frame state.
  *
  * @param idx Entity index (0 or 1).
  */
 void initAnimEntityColor(s32 idx) {
     BattleAnimEntity *entity = &g_battleAnims.entities[idx];
-    entity->field0C = g_battleAnims.defaultColor;
-    entity->field0D = g_battleAnims.defaultColor;
-    entity->field0E = g_battleAnims.defaultColor;
-    entity->field0F = g_battleAnims.defaultColor;
+    entity->field0C = g_battleAnims.repeatDelays.b.lo;
+    entity->field0D = g_battleAnims.repeatDelays.b.lo;
+    entity->field0E = g_battleAnims.repeatDelays.b.lo;
+    entity->field0F = g_battleAnims.repeatDelays.b.lo;
     resetAnimEntity(idx, 0);
 }
 

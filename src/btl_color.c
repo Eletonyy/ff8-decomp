@@ -42,7 +42,6 @@ extern s32 g_battleTimer;               /* 0x80083750 — battle timer */
 extern u8 g_animCurveFadeOut[];         /* 0x800837B0 — 65-step fade curve */
 extern u8 D_80052A64[];
 extern s32 func_800432D8(void);
-extern void copyDisplayRect(RECT *dst);
 
 /**
  * @brief Clear the RGB color fields of an SFX entry.

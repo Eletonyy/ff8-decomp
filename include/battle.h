@@ -32,27 +32,6 @@ typedef struct {
 /* Tim / TimSection are the canonical PS1 TIM file structs — now in tim.h
  * (included above), shared with the world and tripletriad overlays. */
 
-struct BattleDisplayEntity;
-typedef void (*EntityCallback)(struct BattleDisplayEntity *);
-
-typedef struct BattleDisplayEntity {
-    EntityCallback callback; /* update function pointer */
-    s32 unk4;
-    RECT boundRect;
-    RECT dispRect;
-    u8 pad18[0x18];
-    s32 drawMode;
-    u8 activeFlag;
-    u8 unk35;
-    u8 unk36;
-    u8 animSpeed;
-    u8 entityType;
-    u8 pad39;
-    u8 subFields[2];
-    s16 scale;
-    s16 pad3E;
-} BattleDisplayEntity;
-
 /** @brief Clipped rectangle result: the clipped rect + saved pre-clip position. */
 typedef struct {
     RECT rect;       /* 0x00: clipped rectangle */
@@ -65,6 +44,33 @@ typedef struct {
     ClipResult disp;
 } ClipWork;
 
+struct BattleDisplayEntity;
+typedef void (*EntityCallback)(struct BattleDisplayEntity *);
+
+typedef struct BattleDisplayEntity {
+    EntityCallback callback; /* update function pointer */
+    s32 unk4;
+    RECT boundRect;
+    RECT dispRect;
+    ClipResult clipBound; /**< @c boundRect clipped by @ref clipBlitRects. */
+    ClipResult clipClamp; /**< @c dispRect clipped by @ref clipBlitRects. */
+    s32 drawMode;
+    u8 activeFlag;
+    u8 unk35;
+    u8 unk36;
+    u8 animSpeed;
+    u8 entityType;
+    u8 pad39;
+    u8 subFields[2];
+    s16 scale;
+    s16 pad3E;
+} BattleDisplayEntity;
+
+/** @brief @c BattleDisplayEntity.entityType bits. */
+#define BATTLE_ENTITY_SEMI_TRANS 0x01 /**< Drawn semi-transparent. */
+#define BATTLE_ENTITY_FLAG_02    0x02
+#define BATTLE_ENTITY_FLAG_08    0x08
+
 /** @brief Parameters for a double-blit operation with source rects and destination buffers. */
 typedef struct {
     u8 pad0[8];
@@ -73,87 +79,6 @@ typedef struct {
     u8 dstData1[12];
     u8 dstData2[12];
 } BlitParams;
-
-/**
- * @brief Bit of @c SfxEntry.ctrl.raw: the window shows its blinking corner marker.
- *
- * It is bit 7 of @c ctrl.fields.markerBlink; the blink bit below is spelled on
- * the shifted byte instead, because the two tests only compile to the original
- * instruction pair when written that way.
- */
-#define SFX_CTRL_MARKER 0x00800000
-
-/** @brief Position of @c SfxEntry.ctrl.fields.markerBlink inside @c ctrl.raw. */
-#define SFX_CTRL_MARKER_BLINK_SHIFT 16
-
-/**
- * @brief Bit of the 7-bit blink counter in @c SfxEntry.ctrl.fields.markerBlink.
- *
- * Set for 16 of every 32 ticks; the corner marker is blanked while it is set.
- */
-#define SFX_MARKER_BLINK_OFF 0x10
-
-typedef struct {
-    RECT rect;
-    u8 *dataPtr;
-    u8 *dataPtrCopy;
-    s16 pitch;
-    u16 field12;
-    union {
-        u32 raw;
-        struct {
-            s16 field14;
-            u8 state;
-            u8 field17;
-        } fields;
-    } flags;
-    u8 entityIdx;
-    s8 field19;
-    s16 volume;
-    s16 field1C;
-    s16 rateDelta;
-    u8 field20;
-    u8 field21;
-    u8 field22;
-    u8 field23;
-    s32 seqState;
-    u8 field28;
-    u8 field29;
-    u8 field2A;
-    u8 field2B;
-    union {
-        u32 raw;
-        struct {
-            u8 field2C;
-            u8 mode;
-            u8 markerBlink; /**< Bits 0-6: blink counter; bit 7: @ref SFX_CTRL_MARKER. */
-            u8 field2F;
-        } fields;
-    } ctrl;
-    u16 field30;
-    u8 field32;
-    u8 pad33;
-    s32 field34;
-    s32 field38;
-} SfxEntry;
-
-typedef struct {
-    u8 pad0[3];
-    u8 counter;
-    u32 color1;         /* flash color (processed) */
-    u32 color2;         /* flash color (output) */
-    s8 activeFlag;
-    u8 padD[7];
-    s8 counters[4];     /* per-channel auto-repeat countdown (func_8002CECC) */
-    u16 stored[4];      /* per-channel latched edge bits (func_8002CECC) */
-} SfxGlobalState;       /* 0x20 */
-
-/** @brief Complete SFX system: 8 entry slots + global state + message display values. */
-typedef struct {
-    SfxEntry entries[8];       /* 8 × 60 = 480 bytes */
-    SfxGlobalState state;      /* global SFX state (0x20 bytes) */
-    u32 msgValues[8];          /* numeric values formatted by decodeMessage */
-} SfxSystem;
 
 /** @brief Message formatting config (D_80083858). */
 typedef struct {

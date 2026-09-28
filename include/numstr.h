@@ -18,6 +18,9 @@ typedef struct {
     u8 pad23;
 } MsgState;
 
+/** @brief Text colour the message decoder is in; its colour code (0x06) sets it. */
+extern u8 D_8008386C;
+
 /* Public prototypes */
 extern void intToDecString(u32 value, u8 *buf, s32 digitBase);
 extern void intToDecStringShort(u32 value, u8 *buf, s32 digitBase);
@@ -28,6 +31,8 @@ extern void decodeMessage(u8 *input, u8 *output, s32 maxLen);
 extern void func_8002FD28(MsgState *msg, u8 *output);
 extern void advanceAndDecodeMessage(MsgState *msg, u8 *output);
 extern void decodeMessageDirect(MsgState *msg, u8 *output);
+/** Returns the next character of @p msg in bits 0-7 and its command byte in bits 8-15. */
+extern s32 func_8002FE0C(MsgState *msg, u8 *output);
 
 u8 *func_8002F548(u8 *src);
 

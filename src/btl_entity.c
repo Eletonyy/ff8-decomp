@@ -255,24 +255,24 @@ void setSfxEntryField2B(s32 idx, s32 val) {
 
 
 /**
- * @brief Set field34 on an SFX entry.
+ * @brief Set an SFX entry's draw hook.
  * @param idx SFX entry index.
- * @param val Value to store.
+ * @param val Hook to run, or NULL for none.
  */
-void setSfxEntryField34(s32 idx, s32 val) {
+void setSfxEntryField34(s32 idx, SfxEntryDrawCallback val) {
     SfxEntry *entry = &g_sfxEntries.entries[idx];
-    entry->field34 = val;
+    entry->drawCallback = val;
 }
 
 
 /**
- * @brief Set field38 on an SFX entry.
+ * @brief Set an SFX entry's per-frame update hook.
  * @param idx SFX entry index.
- * @param val Value to store.
+ * @param val Hook to run, or NULL for none.
  */
-void setSfxEntryField38(s32 idx, s32 val) {
+void setSfxEntryField38(s32 idx, SfxEntryCallback val) {
     SfxEntry *entry = &g_sfxEntries.entries[idx];
-    entry->field38 = val;
+    entry->updateCallback = val;
 }
 
 

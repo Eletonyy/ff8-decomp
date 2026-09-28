@@ -1,11 +1,15 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
+#include "psxsdk/libetc.h"
 #include "battle.h"
 #include "btl_sfx.h"
+#include "numstr.h"
 #include "btl_entity.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
 #include "btl_color.h"
+#include "drawbar.h"
+#include "psxsdk/libgcc.h"
 
 /**
  * @brief One 8-byte sprite cell of a glyph in the @c D_80052A68 font table.
@@ -74,6 +78,18 @@ extern GlyphTable D_80052A68;
 /** @brief Primitive code 0x64 (SPRT) in the colour word. */
 #define SPRT_CODE 0x64000000
 
+/** @brief r, g and b of a colour word shifted right once, without the bits
+ *  each channel took from the one above. */
+#define RGB_HALF_MASK 0x7F7F7F
+
+/** @brief Semi-transparency option bit of a primitive in the colour word. */
+#define SPRT_ABE (SPRT_CODE_ABE << SPRT_CODE_SHIFT)
+
+/** @brief Draw-offset command word: the code, then 11-bit x and y fields. */
+#define DR_OFFSET_CODE 0xE5000000
+#define DR_OFFSET_COORD_MASK 0x7FF
+#define DR_OFFSET_Y_SHIFT 11
+
 /** @brief VRAM position of the font's CLUT row; a cell's CLUT offset is added to it. */
 #define GLYPH_CLUT_X 256
 #define GLYPH_CLUT_Y 224
@@ -88,6 +104,9 @@ extern GlyphTable D_80052A68;
 /** @brief Glyph drawn in the bottom-right corner of a message window. */
 #define GLYPH_WINDOW_MARKER 6
 
+/** @brief Glyph drawn in front of the selected choice. */
+#define GLYPH_CHOICE_CURSOR 0
+
 /* Whole-word setters for a TSPRT's r0/g0/b0/code, u0/v0/clut and w/h groups: the
  * glyph cells hold those groups ready-made, so they are stored in one piece.
  * The do/while(0) of setGlyphUVClut is load-bearing: the scheduler moves nothing
@@ -97,18 +116,110 @@ extern GlyphTable D_80052A68;
 #define setGlyphUVClut(p, word) do { *(u32 *)&(p)->u0 = (word); } while (0)
 #define setGlyphWH(p, word)     (*(u32 *)&(p)->w = (word))
 
+/** @brief Values of @c SfxEntry.seqState, the text state machine run by func_8002D040. */
+enum {
+    SFX_SEQ_START,              /**< Clear the button auto-repeat state. */
+    SFX_SEQ_TICK,               /**< Advance the character timer by the text speed. */
+    SFX_SEQ_PRINT,              /**< Wait for the character timer, then print. */
+    SFX_SEQ_NEXT_CHAR,          /**< Decode the next character or command. */
+    SFX_SEQ_NEWLINE,            /**< Scroll first if the window is full. */
+    SFX_SEQ_SCROLL,             /**< Scroll up by one line. */
+    SFX_SEQ_END,                /**< End of the message. */
+    SFX_SEQ_DONE,               /**< Finished; nothing left to run. */
+    SFX_SEQ_PAGE,               /**< Page break: set up the corner marker. */
+    SFX_SEQ_PAGE_RELEASE,       /**< Wait until only the d-pad is held. */
+    SFX_SEQ_PAGE_WAIT,          /**< Wait for Cross or Square, then start the next page. */
+    SFX_SEQ_CHOICE_START,
+    SFX_SEQ_CHOICE_RELEASE,     /**< Wait until no button is pressed. */
+    SFX_SEQ_CHOICE,             /**< Move the choice cursor, confirm or cancel. */
+    SFX_SEQ_WAIT_START,
+    SFX_SEQ_WAIT,               /**< Count down @c SfxEntry.waitTimer. */
+    SFX_SEQ_DPAD_RELEASE_START,
+    SFX_SEQ_DPAD_RELEASE        /**< Wait for the d-pad to be released, then offer the choice. */
+};
+
+/** @brief Characters of a decoded message that the text state machine acts on. */
+enum {
+    MSG_END = 0x00,
+    MSG_NEW_PAGE = 0x01,
+    MSG_NEWLINE = 0x02,
+    MSG_NEW_PAGE_MARKED = 0x07  /**< Page break that shows the corner marker (name is a guess). */
+};
+
+/** @brief Command bytes returned in bits 8-15 by func_8002FE0C. */
+enum {
+    MSG_CMD_ICON = 0x05,        /**< Argument is an icon, drawn as a multi-cell glyph. */
+    MSG_CMD_COLOR = 0x06,       /**< Argument is the text colour. */
+    MSG_CMD_SPEED = 0x08,       /**< Argument sets the text speed (guess from its use). */
+    MSG_CMD_WAIT = 0x09         /**< Argument is a delay in frames. */
+};
+
+/** @brief Text colour index of white, the colour a message starts in. */
+#define SFX_COLOR_WHITE 7
+
+/** @brief Command arguments are stored offset by this value (' '). */
+#define MSG_ARG_BASE 0x20
+
+/** @brief @c SfxEntry.field29 / @c field2A (first / last choice line) when the message offers no choice. */
+#define SFX_NO_CHOICE 0xFF
+
+/** @brief Size of the $gp scratch buffer a message is decoded into. */
+#define SFX_MSG_BUF_SIZE 128
+
+/** @brief Height of one text line in pixels; a scroll steps @c field12 once per frame until a line has passed. */
+#define SFX_LINE_HEIGHT 16
+
+/** @brief The clamp rect of a message window sits this many pixels inside its bound rect. */
+#define SFX_CLAMP_INSET 6
+
+/** @brief Text starts this many pixels right of and below the window's text origin. */
+#define SFX_TEXT_MARGIN 2
+
+/** @brief Lines that hold choices are indented by this much, room for the cursor. */
+#define SFX_CHOICE_INDENT 32
+
+/** @brief Position of the choice cursor within its line. */
+#define SFX_CURSOR_X 4
+#define SFX_CURSOR_Y 5
+
+/** @brief Text glyphs are this many pixels square, and a font texture row holds this many. */
+#define TEXT_GLYPH_SIZE 12
+#define TEXT_GLYPHS_PER_ROW 21
+
+/** @brief CLUT of text colour 0; colour n uses the CLUT n rows below it. */
+#define TEXT_CLUT_X 288
+#define TEXT_CLUT_Y 224
+
+/** @brief Bit of a text glyph number that selects the font's second texture page. */
+#define TEXT_GLYPH_PAGE2 0x400
+
+/** @brief Glyph index within its texture page. */
+#define TEXT_GLYPH_INDEX_MASK 0x3FF
+
+/** @brief Draw-mode words for the font's first and second texture page. */
+#define TEXT_TPAGE_PAGE1 0xE100041F
+#define TEXT_TPAGE_PAGE2 0xE100041D
+
 extern SfxSystem g_sfxEntries;
 extern s32 g_flashColor;
+extern s32 D_800831D8;
 extern s8 D_800831DC;
 extern u8 D_800831D3;
 extern s32 D_80083850;
 extern s32 g_menuColor[2];
 extern u8 D_800834D8[];
-void func_8002D970(void);
-void func_8002DBF8(void);
 static void func_8002CAE0(P_TAG *ot, SfxEntry *entry);
 static TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y);
-void func_8002CC4C(s32 idx, s32 arg0);
+static inline void updateSfxFade(s32 index);
+static void func_8002D040(s32 index, u32 input, u32 repeat);
+static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy);
+static void func_8002EE10(P_TAG *ot, SfxEntry *entry);
+static void func_8002CC4C(s32 index, P_TAG *ot);
+static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, SfxSystem *sys, u16 newVal, s32 channel);
+static void func_8002D8CC(P_TAG *ot, s32 index);
+static inline u32 linkPacket(u32 head, void *p);
+static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt);
+static u8 *func_8002DBF8(BattleDisplayEntity *entity, u32 input, u32 repeat);
 void func_8002CDE4(RECT *rect, s32 scale, s32 arg2);
 
 
@@ -353,7 +464,66 @@ static void func_8002CAE0(P_TAG *ot, SfxEntry *entry) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002CC4C);
+/**
+ * @brief Draw a message window's choice cursor, corner marker and text.
+ *
+ * Once the message has reached its choices (@c field28), glyph
+ * @ref GLYPH_CHOICE_CURSOR goes in front of the selected line @c field2B, grey
+ * at the window's brightness (@c volume, 0x1000 = full), followed by a
+ * draw-area packet for the window entity's clipped bound rect. Then the corner
+ * marker (func_8002CAE0), the text (func_8002EE10) and a draw-mode packet that
+ * resets the texture page. A window without a message draws nothing.
+ *
+ * @param index SFX entry index.
+ * @param ot    Ordering table the packets are linked into.
+ */
+static void func_8002CC4C(s32 index, P_TAG *ot) {
+    SfxEntry *entry = &g_sfxEntries.entries[index];
+    GlyphTable *table;
+    DR_AREA *area;
+    DR_TPAGE *tpage;
+    BattleDisplayEntity *ent;
+    u32 link;
+    u32 link2;
+    s32 volume;
+    s32 colour;
+    s32 y;
+    s32 val;
+    s32 line;
+
+    if (entry->dataPtr == NULL) {
+        return;
+    }
+    table = &D_80052A68;
+    volume = entry->volume;
+    if (entry->field29 != SFX_NO_CHOICE) {
+        if (entry->field28 == 1) {
+            /* val holds the entity index here and the mode word below: two
+             * variables swap the registers of the closing packet. */
+            val = entry->entityIdx;
+            ent = getBattleEntity(val);
+            line = entry->field2B;
+            y = line * SFX_LINE_HEIGHT + SFX_CURSOR_Y;
+            area = (DR_AREA *)getDisplayListHead();
+            if (table != NULL) { /* the original tests the fixed table address */
+                colour = volume / 32;
+                colour = SPRT_CODE | (colour << 16) | (colour << 8) | colour;
+                area = func_8002FF34(ot, area, GLYPH_CHOICE_CURSOR, SFX_CURSOR_X, y, colour);
+            }
+            SetDrawArea(area, &ent->clipBound.rect);
+            addPrimFastWithTempOperand(ot, area, link);
+            storeGpuPacket((u32)(area + 1));
+        }
+    }
+    func_8002CAE0(ot, entry);
+    func_8002EE10(ot, entry);
+    tpage = (DR_TPAGE *)getDisplayListHead();
+    setlen(tpage, 1);
+    val = _get_mode(1, 0, 0);
+    tpage->code[0] = val;
+    addPrimFastWithTempOperand(ot, tpage, link2);
+    storeGpuPacket((u32)(tpage + 1));
+}
 
 
 /**
@@ -443,21 +613,6 @@ s32 func_8002CE84(s32 idx) {
 }
 
 
-/** @brief Holds the packed auto-repeat delays for @ref func_8002CECC (@c a0).
- *  @note Real type TBD — a structure that sits before @c g_sfxEntries; the
- *        caller @c func_8002CF54 passes @c &g_sfxEntries-0x220. */
-typedef struct {
-    u8 pad00[0x1E0];
-    u16 delays; /**< 0x1E0: repeatInterval (high byte) | restartDelay (low byte). */
-} SfxRepeatBase;
-
-/** @brief Per-item element carrying the per-channel edge masks (@c a1).
- *  @note Real type TBD — a @c 0xC4-byte element within @ref SfxRepeatBase. */
-typedef struct {
-    u8 pad00[0x10];
-    u16 masks[4]; /**< 0x10: per-channel edge mask. */
-} SfxRepeatElem;
-
 /**
  * @brief Keyboard-style auto-repeat for one SFX channel's edge bits.
  *
@@ -469,14 +624,14 @@ typedef struct {
  * fires. When the bits do not overlap the countdown resets to the restart delay and
  * fires. Mirrors @c func_800A29D4 (the Triple Triad edge auto-repeat).
  *
- * @param base    Packed repeat delays (@c base->delays).
- * @param elem    Per-channel edge masks (@c elem->masks).
- * @param sys     SFX system (@c &g_sfxEntries); holds the stored bits and counters.
+ * @param anims   Battle-anim state; @c repeatDelays packs the two delays.
+ * @param entity  Battle-anim entity; @c unk10[channel] is the channel's edge mask.
+ * @param sys     SFX system (@c &anims->sfx); holds the stored bits and counters.
  * @param newVal  Raw new edge bitmask for this frame.
  * @param channel SFX channel index, 0..3.
  * @return The masked edge bits that should fire this frame, or 0 while suppressed.
  */
-s32 func_8002CECC(SfxRepeatBase *base, SfxRepeatElem *elem, SfxSystem *sys, u16 newVal, s32 channel) {
+static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, SfxSystem *sys, u16 newVal, s32 channel) {
     s32 counter;
     s32 restartDelay;
     s32 repeatInterval;
@@ -485,9 +640,9 @@ s32 func_8002CECC(SfxRepeatBase *base, SfxRepeatElem *elem, SfxSystem *sys, u16 
 
     prevMasked = sys->state.stored[channel];
     sys->state.stored[channel] = newVal;
-    restartDelay = base->delays;
+    restartDelay = anims->repeatDelays.hword;
     counter = sys->state.counters[channel];
-    mask = elem->masks[channel];
+    mask = entity->unk10[channel];
 
     repeatInterval = restartDelay >> 8;
     restartDelay &= 0xFF;
@@ -511,17 +666,338 @@ s32 func_8002CECC(SfxRepeatBase *base, SfxRepeatElem *elem, SfxSystem *sys, u16 
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002CF54);
+/**
+ * @brief Auto-repeat the four channels of this frame's pad bits.
+ *
+ * Runs func_8002CECC on @p input for channels 0-3 against the entity linked
+ * to battle-anim entity 0, and ORs the bits that fire.
+ *
+ * @param input Pad bits of this frame.
+ * @return The bits that fire this frame.
+ */
+s32 func_8002CF54(s32 input) {
+    SfxSystem *sys = &g_battleAnims.sfx;
+    BattleAnimState *anims = &g_battleAnims;
+    u16 bits = input;
+    BattleAnimEntity *entity = &anims->entities[anims->entities[0].linkedIdx];
+    u16 result;
+
+    result = 0;
+    result |= func_8002CECC(anims, entity, sys, bits, 0);
+    result |= func_8002CECC(anims, entity, sys, bits, 1);
+    result |= func_8002CECC(anims, entity, sys, bits, 2);
+    result |= func_8002CECC(anims, entity, sys, bits, 3);
+    return result;
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002D040);
+/**
+ * @brief Step a message window's open/close fade and size its entity to it.
+ *
+ * Adds @c rateDelta to the fade level @c field1C, clamped to 0..ONE (1.0).
+ * While the window is open, its entity is enabled and its bound rect is the
+ * window rect scaled by the fade, with the clamp rect @ref SFX_CLAMP_INSET
+ * pixels inside that. At 0 the entity is disabled.
+ *
+ * @param index SFX entry index.
+ */
+static inline void updateSfxFade(s32 index) {
+    SfxEntry *entry = &g_sfxEntries.entries[index];
+    s32 fade;
+    s32 entityId;
+
+    fade = entry->field1C;
+    fade += entry->rateDelta;
+    fade = CLAMP(fade, 0, ONE);
+    entityId = entry->entityIdx;
+    entry->field1C = fade;
+
+    if (fade != 0) {
+        RECT rect;
+
+        setBattleEntityField35(entityId, 1);
+        rect = entry->rect;
+        func_8002CDE4(&rect, fade, entry->rateDelta);
+        setBattleEntityBoundRect(entityId, &rect);
+        rect.x += SFX_CLAMP_INSET;
+        rect.y += SFX_CLAMP_INSET;
+        rect.w -= SFX_CLAMP_INSET * 2;
+        rect.h -= SFX_CLAMP_INSET * 2;
+        setBattleEntityRectClamp(entityId, &rect);
+    } else {
+        setBattleEntityField35(entityId, 0);
+        entry->flags.fields.state = 0;
+    }
+}
+
+/**
+ * @brief Per-frame update of one message window: fade, then run its text.
+ *
+ * After the fade (updateSfxFade), a fully open window with a message runs
+ * the @c SFX_SEQ_* state machine in @c seqState. The message is decoded into
+ * a @ref SFX_MSG_BUF_SIZE-byte buffer taken from the $gp area: characters appear at the text
+ * speed (@c pitch added to the timer @c flags.fields.field14 each frame), full
+ * windows scroll, page breaks wait for Cross or Square, and at the end a
+ * message with choices lets the player move the cursor @c field2B between
+ * @c field29 and @c field2A. Cross or Square confirms (@c field19 = 1);
+ * Triangle jumps to the cancel choice in @c ctrl.fields.field2C, if one is set.
+ *
+ * Only the window that owns input (@c state.activeFlag) sees the buttons.
+ *
+ * @param index  SFX entry index.
+ * @param input  Pressed buttons: bits 0-15 drive paging, bits 16-31 the choice
+ *               (the split is a guess from the tests made on each half).
+ * @param repeat Auto-repeating buttons; Up and Down move the choice cursor.
+ */
+static void func_8002D040(s32 index, u32 input, u32 repeat) {
+    SfxEntry *entry;
+    s32 *seqState;
+    u8 *msgBuf;
+    u32 pressed;
+    u32 choicePressed;
+    s32 state;
+    s32 ch;
+    s32 cmd;
+
+    updateSfxFade(index);
+
+    entry = &g_sfxEntries.entries[index];
+    if (g_sfxEntries.state.activeFlag == index) {
+        pressed = input & 0xFFFF;
+        choicePressed = input >> 16;
+    } else {
+        pressed = 0;
+        repeat = 0;
+        choicePressed = 0;
+    }
+
+    if (entry->dataPtr != NULL && entry->field1C >= ONE) {
+        GP_ALLOC(msgBuf, SFX_MSG_BUF_SIZE);
+        seqState = &entry->seqState;
+        state = *seqState;
+        /* Re-entering the switch is a goto, not a while/for: gcc treats a C
+         * loop as one and hoists the constants 1 and 7 into saved registers,
+         * which the original does not (93.99% with while (1) and continue). */
+    dispatch:
+        switch (state) {
+        case SFX_SEQ_START:
+            g_sfxEntries.state.stored[0] = 0;
+            g_sfxEntries.state.stored[1] = 0;
+            g_sfxEntries.state.counters[0] = 0;
+            g_sfxEntries.state.counters[1] = 0;
+            *seqState = SFX_SEQ_TICK;
+            /* fallthrough */
+        case SFX_SEQ_TICK:
+            entry->flags.fields.field14 += entry->pitch;
+            /* fallthrough */
+        case SFX_SEQ_PRINT:
+            if (entry->pitch == 0 || entry->flags.fields.field14 >= ONE) {
+                entry->flags.fields.field14 -= ONE;
+                /* SfxEntry begins with the MsgState cursor the decoder works on. */
+                decodeMessageDirect((MsgState *)entry, msgBuf);
+                state = SFX_SEQ_NEXT_CHAR;
+                goto dispatch;
+            }
+            break;
+
+        case SFX_SEQ_NEXT_CHAR:
+            ch = msgBuf[entry->field20];
+            if (ch == MSG_NEW_PAGE || ch == MSG_NEW_PAGE_MARKED) {
+                state = SFX_SEQ_PAGE;
+                goto dispatch;
+            }
+            ch = func_8002FE0C((MsgState *)entry, msgBuf);
+            cmd = ch >> 8;
+            ch &= 0xFF;
+            if (ch == MSG_NEWLINE) {
+                state = SFX_SEQ_NEWLINE;
+                goto dispatch;
+            }
+            if (ch == MSG_END) {
+                state = SFX_SEQ_END;
+                goto dispatch;
+            }
+            if (cmd == MSG_CMD_SPEED) {
+                s32 speed = ch - MSG_ARG_BASE;
+
+                if (speed == 0) {
+                    speed = ONE;
+                } else if (speed == 1) {
+                    speed = 0;
+                } else {
+                    speed = ONE / (ch - (MSG_ARG_BASE + 1));
+                }
+                entry->pitch = speed;
+            } else if (cmd == MSG_CMD_WAIT) {
+                /* Through an s32 local: assigned straight to the u8 field,
+                 * gcc folds the (u8) away and loses the andi. */
+                s32 frames = (u8)ch - MSG_ARG_BASE;
+
+                entry->waitTimer = frames;
+                state = SFX_SEQ_WAIT_START;
+                goto dispatch;
+            } else if (cmd == MSG_CMD_COLOR) {
+                entry->flags.bits.color = ch;
+                state = SFX_SEQ_NEXT_CHAR;
+                goto dispatch;
+            } else {
+                state = SFX_SEQ_PRINT;
+                if (entry->pitch == 0) {
+                    state = SFX_SEQ_NEXT_CHAR;
+                }
+                goto dispatch;
+            }
+            state = SFX_SEQ_NEXT_CHAR;
+            goto dispatch;
+
+        case SFX_SEQ_NEWLINE:
+            state = SFX_SEQ_NEXT_CHAR;
+            if (entry->field21 >= entry->field23) {
+                entry->flags.fields.field14 += ONE;
+                entry->field21--;
+                *seqState = SFX_SEQ_SCROLL;
+                state = SFX_SEQ_SCROLL;
+            }
+            goto dispatch;
+
+        case SFX_SEQ_SCROLL:
+            entry->field12++;
+            if (entry->field12 % SFX_LINE_HEIGHT == 0) {
+                *seqState = SFX_SEQ_TICK;
+            }
+            break;
+
+        case SFX_SEQ_PAGE:
+            if (ch == MSG_NEW_PAGE_MARKED) {
+                entry->ctrl.bits.marker = 1;
+                entry->ctrl.bits.blink = 0;
+            } else {
+                entry->ctrl.bits.marker = 0;
+            }
+            *seqState = SFX_SEQ_PAGE_RELEASE;
+            break;
+
+        case SFX_SEQ_PAGE_RELEASE:
+            entry->ctrl.bits.blink++;
+            pressed &= ~(PADLup | PADLright | PADLdown | PADLleft);
+            if (pressed == 0) {
+                *seqState = SFX_SEQ_PAGE_WAIT;
+            }
+            break;
+
+        case SFX_SEQ_PAGE_WAIT:
+            entry->ctrl.bits.blink++;
+            if (pressed & (PADRdown | PADRleft)) {
+                entry->ctrl.bits.marker = 0;
+                entry->flags.bits.pageColor = entry->flags.bits.color;
+                decodeMessageDirect((MsgState *)entry, msgBuf);
+                func_8002FE0C((MsgState *)entry, msgBuf);
+                decodeMessageDirect((MsgState *)entry, msgBuf);
+                *seqState = SFX_SEQ_TICK;
+            }
+            break;
+
+        case SFX_SEQ_END:
+            entry->field28 = 1;
+            state = SFX_SEQ_CHOICE_START;
+            if (entry->field29 == SFX_NO_CHOICE) {
+                *seqState = SFX_SEQ_DONE;
+                state = SFX_SEQ_DONE;
+            }
+            goto dispatch;
+
+        case SFX_SEQ_CHOICE_START:
+            *seqState = SFX_SEQ_CHOICE_RELEASE;
+            state = SFX_SEQ_CHOICE_RELEASE;
+            goto dispatch;
+
+        case SFX_SEQ_CHOICE_RELEASE:
+            if (pressed == 0) {
+                *seqState = SFX_SEQ_CHOICE;
+            }
+            break;
+
+        case SFX_SEQ_WAIT_START:
+            *seqState = SFX_SEQ_WAIT;
+            /* fallthrough */
+        case SFX_SEQ_WAIT:
+            if (entry->waitTimer == 0) {
+                *seqState = SFX_SEQ_TICK;
+                state = SFX_SEQ_PRINT;
+                goto dispatch;
+            }
+            entry->waitTimer--;
+            break;
+
+        case SFX_SEQ_CHOICE:
+            if (choicePressed & (PADRdown | PADRleft)) {
+                entry->field19 = 1;
+                sendSpuCommand(2);
+                *seqState = SFX_SEQ_DONE;
+                state = SFX_SEQ_DONE;
+                goto dispatch;
+            }
+            if (choicePressed & PADRup) {
+                s8 cancel = entry->ctrl.fields.field2C;
+                s32 cancelChoice;
+
+                if (cancel >= 0) {
+                    cancelChoice = cancel;
+                    sendSpuCommand(3);
+                }
+                /* With no cancel choice this clamps whatever cancelChoice
+                 * held; the original reads the register uninitialised too. */
+                entry->field2B = CLAMP(cancelChoice, entry->field29, entry->field2A);
+            } else if (repeat & PADLup) {
+                s32 cursor;
+                s32 prev;
+
+                cursor = entry->field2B;
+                prev = cursor;
+                cursor--;
+                if (cursor < entry->field29) {
+                    cursor = entry->field2A;
+                }
+                if (prev != cursor) {
+                    sendSpuCommand(1);
+                }
+                entry->field2B = cursor;
+            } else if (repeat & PADLdown) {
+                s32 cursor;
+                s32 prev;
+
+                cursor = entry->field2B;
+                prev = cursor;
+                cursor++;
+                if (entry->field2A < cursor) {
+                    cursor = entry->field29;
+                }
+                if (prev != cursor) {
+                    sendSpuCommand(1);
+                }
+                entry->field2B = cursor;
+            }
+            break;
+
+        case SFX_SEQ_DPAD_RELEASE_START:
+            *seqState = SFX_SEQ_DPAD_RELEASE;
+            /* fallthrough */
+        case SFX_SEQ_DPAD_RELEASE:
+            if (!(pressed & (PADLup | PADLright | PADLdown | PADLleft))) {
+                *seqState = SFX_SEQ_CHOICE_START;
+            }
+            break;
+        }
+        GP_FREE(SFX_MSG_BUF_SIZE);
+    }
+}
 
 
 /**
  * @brief Initialize a sound effect entry for playback.
  *
- * Clears fields, stores the data pointer, sets up the packed flags
- * nibbles, calls clearEntityColor, and sets default volume bytes.
+ * Clears fields, stores the data pointer, starts both text colours at white,
+ * calls clearEntityColor, and marks the message as offering no choice.
  *
  * @param index SFX entry index.
  * @param data  Pointer to SFX script data (or NULL).
@@ -533,14 +1009,14 @@ void initSfxPlayback(s32 index, u8 *data) {
     entry->dataPtr = data;
     entry->dataPtrCopy = data;
     entry->field12 = 0;
-    entry->seqState = 0;
-    entry->flags.raw = (entry->flags.raw & 0x0FFFFFFF) | 0x70000000;
-    entry->flags.raw = (entry->flags.raw & 0xF0FFFFFF) | (entry->flags.raw >> 28 << 24);
+    entry->seqState = SFX_SEQ_START;
+    entry->flags.bits.pageColor = SFX_COLOR_WHITE;
+    entry->flags.bits.color = entry->flags.bits.pageColor;
 
     clearEntityColor(entry);
 
-    entry->field29 = 0xFF;
-    entry->field2A = 0xFF;
+    entry->field29 = SFX_NO_CHOICE;
+    entry->field2A = SFX_NO_CHOICE;
     entry->field19 = 0;
 }
 
@@ -592,18 +1068,18 @@ void func_8002D818(s32 arg0, u8 *str, s32 count, s32 min, s32 max, s32 val, s32 
 
 
 /**
- * @brief Execute an SFX entry's callback and update colors.
+ * @brief Draw an active message window.
  *
  * If the entry is active (state != 0), switches GP to scratchpad,
- * invokes the entry's callback (field34) if set, updates flash/GPU
- * colors via dispatchSfxColorUpdate, and processes the entry via
- * func_8002CC4C. Restores GP before returning.
+ * runs the entry's @c drawCallback if set, updates flash/GPU
+ * colors via dispatchSfxColorUpdate, and draws the window's cursor,
+ * marker and text via func_8002CC4C. Restores GP before returning.
  *
- * @param arg0 Value passed as second arg to the callback and func_8002CC4C.
+ * @param ot    Ordering table, passed to the hook and func_8002CC4C.
  * @param index SFX entry index.
  * @see https://decomp.me/scratch/mYKYb
  */
-void func_8002D8CC(s32 arg0, s32 index) {
+static void func_8002D8CC(P_TAG *ot, s32 index) {
     SfxEntry *entry = &g_sfxEntries.entries[index];
 
     if (entry->flags.fields.state != 0) {
@@ -616,20 +1092,155 @@ void func_8002D8CC(s32 arg0, s32 index) {
          * truncation happens) forces the same GP-save register routing the
          * original compiler emitted. */
         saved = savedGp;
-        if (entry->field34 != 0) {
-            ((void (*)(SfxEntry *, s32))entry->field34)(entry, arg0);
+        if (entry->drawCallback != NULL) {
+            entry->drawCallback(entry, ot);
         }
         dispatchSfxColorUpdate(index);
-        func_8002CC4C(index, arg0);
+        func_8002CC4C(index, ot);
         GP_RESTORE_RET(saved, ret);
     }
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002D970);
+/** @brief Prepend packet @p p to an OT chain; returns the new chain head. */
+static inline u32 linkPacket(u32 head, void *p) {
+    u32 tag;
+
+    addOtTagFast(p, head, tag);
+    return tag;
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002DBF8);
+/**
+ * @brief Render callback of a message window's battle entity.
+ *
+ * Draws the window contents (func_8002D8CC) when the clamp rect has room for
+ * a glyph, then links a draw area for the entity's clamp rect and a draw
+ * offset at the window's inner corner (@ref SFX_CLAMP_INSET in from @c rect).
+ * Links prepend to the OT, so the GPU runs these before the contents.
+ * When the linked entity has both @ref BATTLE_ENTITY_FLAG_02 and
+ * @ref BATTLE_ENTITY_FLAG_08, the window also gets its @c field2F glyph (if
+ * non-zero) at the window origin and two bars, grey at the entity's @c scale
+ * (the second one halved and semi-transparent for a
+ * @ref BATTLE_ENTITY_SEMI_TRANS entity), then a draw area for the bound rect
+ * and a draw offset back at the clip origin.
+ *
+ * @param ot     Ordering table.
+ * @param entity The window's battle entity.
+ * @param pkt    Packet cursor, stored back before drawing.
+ * @return The packet cursor after the last packet.
+ */
+static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
+    SfxEntry *entry;
+    RECT *winRect;
+    BattleDisplayEntity *ent;
+    DR_AREA *p;
+    DR_OFFSET *offset;
+    RECT r;
+    u32 head;
+    u32 colour;
+    u32 code;
+    s32 index;
+    s32 n;
+    s32 y;
+
+    index = entity->subFields[0];
+    storeGpuPacket(pkt);
+    if (entity->clipClamp.rect.w >= TEXT_GLYPH_SIZE && entity->clipClamp.rect.h >= TEXT_GLYPH_SIZE) {
+        func_8002D8CC(ot, index);
+    }
+    p = (DR_AREA *)getDisplayListHead();
+    index = entity->subFields[0];
+    entry = &g_sfxEntries.entries[index];
+    winRect = &entry->rect;
+    getAddrNewFast(ot, head);
+
+    SetDrawArea(p, &entity->clipClamp.rect);
+    head = linkPacket(head, p);
+    p++;
+
+    offset = (DR_OFFSET *)p;
+    copyDisplayRect(&r);
+    r.x += entry->rect.x;
+    r.y += entry->rect.y;
+    r.x += SFX_CLAMP_INSET;
+    r.y += SFX_CLAMP_INSET;
+    SetDrawOffset(offset, &r);
+    head = linkPacket(head, offset);
+    ent = getBattleEntity(entry->entityIdx);
+    p = (DR_AREA *)(offset + 1);
+
+    if ((ent->entityType & BATTLE_ENTITY_FLAG_02) && (ent->entityType & BATTLE_ENTITY_FLAG_08)) {
+        colour = entity->scale;
+        colour >>= 5;
+        code = SPRT_CODE;
+        colour |= (colour << 16) | ((colour << 8) | code);
+        setAddrFast(ot, head);
+        n = entry->ctrl.fields.field2F;
+        if (n != 0) {
+            p = func_8002FF34(ot, p, n, entry->rect.x, entry->rect.y, colour);
+        }
+        p = func_8002B898(ot, p, &entity->boundRect, colour);
+        if (ent->entityType & BATTLE_ENTITY_SEMI_TRANS) {
+            colour >>= 1;
+            colour &= RGB_HALF_MASK;
+            colour |= code;
+            colour |= SPRT_ABE;
+        }
+        p = __udivdi3(ot, p, winRect, colour);
+        getAddrNewFast(ot, head);
+
+        SetDrawArea(p, &entity->clipBound.rect);
+        head = linkPacket(head, p);
+        p++;
+
+        offset = (DR_OFFSET *)p;
+        copyDisplayRect(&r);
+        setlen(offset, 2);
+        /* y is read before code[1] is cleared and x after: gcc keeps both
+         * reads on their side of that store. */
+        y = r.y & DR_OFFSET_COORD_MASK;
+        offset->code[1] = 0;
+        offset->code[0] = DR_OFFSET_CODE | (y << DR_OFFSET_Y_SHIFT) | (r.x & DR_OFFSET_COORD_MASK);
+        head = linkPacket(head, offset);
+        p = (DR_AREA *)(offset + 1);
+    }
+    setAddrFast(ot, head);
+    return p;
+}
+
+
+/**
+ * @brief Update callback of a message window's battle entity.
+ *
+ * With $gp on the scratchpad, runs the window's @c updateCallback, if any,
+ * and its text (func_8002D040) while the window is active.
+ *
+ * @param entity The window's battle entity.
+ * @param input  Pressed buttons.
+ * @param repeat Auto-repeating buttons.
+ * @return The scratchpad $gp.
+ */
+static u8 *func_8002DBF8(BattleDisplayEntity *entity, u32 input, u32 repeat) {
+    u8 *tempGp;
+    u8 *savedGp;
+    u8 *ret;
+    s32 index;
+
+    GP_SAVE_SCRATCH(tempGp);
+    index = entity->subFields[0];
+    savedGp = tempGp;
+    if (getSfxState(index) != 0) {
+        SfxEntry *entry = &g_sfxEntries.entries[index];
+
+        if (entry->updateCallback != NULL) {
+            entry->updateCallback(entry, input, repeat);
+        }
+        func_8002D040(index, input, repeat);
+    }
+    GP_RESTORE_RET(savedGp, ret);
+    return ret;
+}
 
 
 /**
@@ -791,8 +1402,8 @@ void initSfxSlot(s32 idx) {
 /**
  * @brief Initialize an SFX slot: set active flag, callbacks, entity index, and clear fields.
  *
- * Activates the battle entity, assigns update/render callbacks (func_8002D970
- * and func_8002DBF8), links the entity index, configures the sub-field, calls
+ * Activates the battle entity, assigns its render (func_8002D970) and update
+ * (func_8002DBF8) callbacks, links the entity index, configures the sub-field, calls
  * initSfxSlot for default values, then clears sequence state and status bits.
  *
  * @param idx SFX entry index.
@@ -808,13 +1419,13 @@ void func_8002DF5C(s32 idx) {
     setBattleEntitySubField(idx, 0, idx);
     initSfxSlot(idx);
 
-    entry->seqState = 0;
+    entry->seqState = SFX_SEQ_START;
     entry->field30 = 0;
     entry->field32 = 0;
     entry->ctrl.raw &= ~SFX_CTRL_MARKER;
 
-    setSfxEntryField34(idx, 0);
-    setSfxEntryField38(idx, 0);
+    setSfxEntryField34(idx, NULL);
+    setSfxEntryField38(idx, NULL);
 }
 
 
@@ -832,8 +1443,9 @@ void getSfxRect(s32 idx, RECT *dst) {
 /**
  * @brief Configure an SFX entry's rectangle and propagate it to its battle entity.
  *
- * Inflates the source rect inwards by 6 on each side (width/height shrink by 12),
- * derives field23 as the inset height divided by 16 (minimum 1), copies the
+ * Insets the source rect by @ref SFX_CLAMP_INSET on each side, sets field23 to
+ * the number of text lines that fit (inset height / @ref SFX_LINE_HEIGHT,
+ * minimum 1), copies the
  * original source rect into the entry, and forwards the original rect (offset by
  * the entry's stored offsets) to the entity's bound rect. The inset rect is then
  * passed to the entity's clamp rect.
@@ -853,12 +1465,12 @@ void func_8002E064(s32 index, RECT *srcRect) {
     rect.y = srcRect->y;
     rect.w = srcRect->w;
     rect.h = srcRect->h;
-    rect.x += 6;
-    rect.y += 6;
-    rect.w -= 12;
-    rect.h -= 12;
+    rect.x += SFX_CLAMP_INSET;
+    rect.y += SFX_CLAMP_INSET;
+    rect.w -= SFX_CLAMP_INSET * 2;
+    rect.h -= SFX_CLAMP_INSET * 2;
 
-    ep->field23 = rect.h / 16;
+    ep->field23 = rect.h / SFX_LINE_HEIGHT;
     if (ep->field23 == 0) {
         ep->field23 = 1;
     }
@@ -869,10 +1481,10 @@ void func_8002E064(s32 index, RECT *srcRect) {
     func_8002CDE4(&rect, ep->field1C, ep->rateDelta);
     setBattleEntityBoundRect(entityId, &rect);
 
-    rect.x += 6;
-    rect.y += 6;
-    rect.w -= 12;
-    rect.h -= 12;
+    rect.x += SFX_CLAMP_INSET;
+    rect.y += SFX_CLAMP_INSET;
+    rect.w -= SFX_CLAMP_INSET * 2;
+    rect.h -= SFX_CLAMP_INSET * 2;
     setBattleEntityRectClamp(entityId, &rect);
 }
 
@@ -1050,10 +1662,11 @@ s32 func_8002E3A4(s32 idx) {
 
 /** @brief Extracts a 4-bit nibble from packed byte array D_800834D8.
  *  Even indices return the low nibble; odd indices return the high nibble.
+ *  @note inline: func_8002EE10 has it expanded in place.
  *  @param idx Nibble index.
  *  @return The 4-bit value (0-15).
  */
-s32 getNibbleValue(s32 idx) {
+inline s32 getNibbleValue(s32 idx) {
     u8 *base = D_800834D8;
     u32 val = base[idx >> 1];
     if (idx & 1) {
@@ -1185,7 +1798,47 @@ s32 func_8002E4AC(u8 *s, s32 flag) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002E680);
+/**
+ * @brief Measure a message: the widest of its decoded lines and its height.
+ *
+ * Decodes the message one line at a time (func_8002F548 steps to the next,
+ * NULL after the last) into a buffer taken from a $gp area set up on the
+ * display-list head, and keeps the widest line. The height comes from
+ * measuring the raw message as a whole.
+ *
+ * @param str Message in the game's text encoding.
+ * @return Width in the low 16 bits, height in the high 16 bits (see
+ *         func_8002E4AC).
+ */
+s32 func_8002E680(u8 *str) {
+    u8 *tempGp;
+    u8 *savedGp;
+    s32 head;
+    u8 *buf;
+    u8 *ret;
+    s32 height;
+    s32 maxWidth;
+    s32 width;
+
+    height = func_8002E4AC(str, 1) >> 16;
+    height <<= 16;
+    head = getDisplayListHead();
+    GP_SAVE_SET(tempGp, head);
+    savedGp = tempGp;
+    GP_ALLOC(buf, SFX_MSG_BUF_SIZE);
+    maxWidth = 0;
+    do {
+        decodeMessage(str, buf, -1);
+        width = func_8002E4AC(buf, 0) & 0xFFFF;
+        if (maxWidth < width) {
+            maxWidth = width;
+        }
+        str = func_8002F548(str);
+    } while (str != NULL);
+    GP_FREE(SFX_MSG_BUF_SIZE);
+    GP_RESTORE_RET(savedGp, ret);
+    return maxWidth | height;
+}
 
 
 /** @brief Get a string's packed {width, height} (variant A). */
@@ -1238,30 +1891,403 @@ void setMenuColorIntensity(s32 intensity) {
 
 
 /**
- * @brief Build a tile sprite GPU primitive for a font glyph.
+ * @brief Fill one 12x12 text-font sprite in the menu colours and prepend it to the OT chain.
  *
- * Sets up a 12x12 tile sprite with OT linkage, palette, tpage,
- * color (from D_8008384C or g_menuColor based on palette page),
- * and UV coordinates computed from the tile index (21 tiles per row).
- * Uses swl-based setaddr (non-standard OT macro variant).
+ * Colours 0-7 use @c g_menuColor[0], 8-15 @c g_menuColor[1]; the low 3 bits of
+ * the colour pick the CLUT row. Declared inline: func_8002E8DC has it expanded
+ * in place.
  *
- * @param ot   Current OT link value.
- * @param prim Pointer to the tile sprite primitive to fill.
- * @param tileIdx Tile index (bit 10 selects alternate tpage).
- * @param palArg  Palette argument (bits 2:0 = palette, bits 7:3 = page).
- * @param xy   Packed x|y position.
- * @return Updated OT link value for the next primitive.
- * @see https://decomp.me/scratch/IELV1
+ * @param head   Current OT chain head (tag image of the previous packet).
+ * @param p      Sprite to fill.
+ * @param glyph  Text glyph number; @ref TEXT_GLYPH_PAGE2 selects the second texture page.
+ * @param colour Text colour index (0-15).
+ * @param xy     Packed position, x in the low half and y in the high half.
+ * @return The new chain head (@p p's tag image).
  */
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002E810);
+inline u32 func_8002E810(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy) {
+    u32 tag;
+    u32 hi;
+    u32 tpage;
+
+    setlen(p, 5);
+    addOtTagFast(p, head, tag);
+    head = tag;
+    hi = colour >> 3;
+    colour &= 7;
+    p->clut = (colour << 6) + getClut(TEXT_CLUT_X, TEXT_CLUT_Y);
+    if (hi != 0) {
+        colour = g_menuColor[1];
+    } else {
+        colour = g_menuColor[0];
+    }
+    if (glyph & TEXT_GLYPH_PAGE2) {
+        glyph &= TEXT_GLYPH_INDEX_MASK;
+        tpage = TEXT_TPAGE_PAGE2;
+    } else {
+        tpage = TEXT_TPAGE_PAGE1;
+    }
+    setGlyphWH(p, (TEXT_GLYPH_SIZE << 16) | TEXT_GLYPH_SIZE);
+    setGlyphRGBC(p, colour);
+    *(u32 *)&p->x0 = xy;
+    p->drawMode = tpage;
+    *(u16 *)&p->u0 = (glyph % TEXT_GLYPHS_PER_ROW | (glyph / TEXT_GLYPHS_PER_ROW) << 8) * TEXT_GLYPH_SIZE;
+    return head;
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002E8DC);
+/**
+ * @brief Draw a text string with the 12x12 font into the packets at @p p.
+ *
+ * Emits one sprite per glyph with func_8002E810, starting at (@p x, @p y).
+ * Newlines return to @p x and move down a line; any other code below 0x19 ends
+ * the string. Nothing is drawn when @p y is off screen, and the string stops at
+ * the right screen edge. Unlike func_8002EAD0 the text is already decoded.
+ *
+ * @param ot     OT slot the sprites are linked into.
+ * @param p      First free packet.
+ * @param x      Left edge in pixels.
+ * @param y      Top edge in pixels.
+ * @param str    Decoded text, or NULL to draw nothing.
+ * @param colour Text colour index (0-15).
+ * @return The first packet after the ones drawn.
+ */
+TSPRT *func_8002E8DC(P_TAG *ot, TSPRT *p, s32 x, s32 y, u8 *str, s32 colour) {
+    u32 head;
+    s32 startX;
+    s32 c;
+
+    if (str == NULL) {
+        return p;
+    }
+    getAddrNewFast(ot, head);
+    startX = x;
+    if (y >= 0x101) { /* below the screen */
+        return p;
+    }
+    if (y < -8) { /* above the screen */
+        return p;
+    }
+    for (;;) {
+        c = *str++;
+        if (c == MSG_NEWLINE) {
+            x = startX;
+            y += SFX_LINE_HEIGHT;
+            continue;
+        }
+        if (c < 0x19) {
+            break;
+        }
+        if (x >= 0x181) { /* past the right screen edge */
+            break;
+        }
+        if (c >= 0x20) { /* one-byte glyph */
+            c -= 0x20;
+        } else if (c < 0x1C) { /* two-byte glyph, first page */
+            c *= 0xE0;
+            c += *str++;
+            c -= 0x1520;
+        } else { /* two-byte glyph, second page */
+            c *= 0xE0;
+            c += *str++;
+            c -= 0x18A0;
+            c |= TEXT_GLYPH_PAGE2;
+        }
+        head = func_8002E810(head, p, c, colour, (y << 16) | (x & 0xFFFF));
+        p++;
+        x += getNibbleValue(c);
+    }
+    setAddrFast(ot, head);
+    return p;
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002EAD0);
+/**
+ * @brief Fill one 12x12 text-font sprite and prepend it to the OT chain.
+ *
+ * The text renderers' counterpart of func_8002E810: colours 0-7 use @ref g_flashColor,
+ * 8-15 (the blinking ones) @c D_800831D8, and the low 3 bits of the colour
+ * pick the CLUT row.
+ *
+ * @param head   Current OT chain head (tag image of the previous packet).
+ * @param p      Sprite to fill.
+ * @param glyph  Text glyph number; @ref TEXT_GLYPH_PAGE2 selects the second texture page.
+ * @param colour Text colour index (0-15).
+ * @param xy     Packed position, x in the low half and y in the high half.
+ * @return The new chain head (@p p's tag image).
+ */
+static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy) {
+    u32 tag;
+    u32 hi;
+    u32 tpage;
+
+    setlen(p, 5);
+    addOtTagFast(p, head, tag);
+    head = tag; /* taken here rather than at the return, as the original's copy order needs */
+    hi = colour >> 3;
+    colour &= 7;
+    p->clut = (colour << 6) + getClut(TEXT_CLUT_X, TEXT_CLUT_Y);
+    if (hi != 0) {
+        colour = D_800831D8;
+    } else {
+        colour = g_flashColor;
+    }
+    if (glyph & TEXT_GLYPH_PAGE2) {
+        glyph &= TEXT_GLYPH_INDEX_MASK;
+        tpage = TEXT_TPAGE_PAGE2;
+    } else {
+        tpage = TEXT_TPAGE_PAGE1;
+    }
+    setGlyphWH(p, (TEXT_GLYPH_SIZE << 16) | TEXT_GLYPH_SIZE);
+    setGlyphRGBC(p, colour);
+    *(u32 *)&p->x0 = xy;
+    p->drawMode = tpage;
+    *(u16 *)&p->u0 = (glyph % TEXT_GLYPHS_PER_ROW | (glyph / TEXT_GLYPHS_PER_ROW) << 8) * TEXT_GLYPH_SIZE;
+    return head;
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_sfx", func_8002EE10);
+/**
+ * @brief Draw a text string at (@p x, @p y) with the message-window font.
+ *
+ * Decodes @p str one line at a time into a scratch buffer and emits a sprite
+ * per glyph, starting in white. While it runs, $gp points at the scratchpad
+ * (0x1F800300), which holds the decode buffer. Newlines return to @p x and move
+ * down a line; icons (code 0x05) are drawn with func_8002E298, colour codes
+ * (0x06) switch the text colour, and a page break or the end of the text stops.
+ *
+ * @param ot  OT slot the text is linked into.
+ * @param x   Left edge in pixels.
+ * @param y   Top edge in pixels.
+ * @param str Encoded text, or NULL to draw nothing.
+ * @return The scratchpad pointer $gp held while the text was drawn.
+ */
+u8 *func_8002EAD0(P_TAG *ot, s32 x, s32 y, u8 *str) {
+    u8 *buf;
+    s32 startX;
+    u8 *savedGp;
+    u8 *tempGp;
+    u8 *ret;
+    TSPRT *p;
+    u32 head;
+    u32 colour;
+    u8 *s;
+    s32 c;
+
+    startX = x;
+    GP_SAVE_SCRATCH(tempGp);
+    savedGp = tempGp;
+    colour = SFX_COLOR_WHITE;
+    GP_ALLOC(buf, SFX_MSG_BUF_SIZE);
+    p = (TSPRT *)getDisplayListHead();
+    getAddrNewFast(ot, head);
+
+    /* str is tested here and at the top of the loop, as in func_8002EE10. */
+    if (str != NULL) {
+        for (;;) {
+            if (str == NULL) {
+                goto end;
+            }
+            decodeMessage(str, buf, -1);
+            D_8008386C = colour;
+            str = func_8002F548(str);
+
+            s = buf;
+            for (;;) {
+                c = *s++;
+                if (c >= 0x19) {
+                    if (c >= 0x20) { /* one-byte glyph */
+                        c -= 0x20;
+                    } else if (c < 0x1C) { /* two-byte glyph, first page */
+                        c *= 0xE0;
+                        c += *s++;
+                        c -= 0x1520;
+                    } else { /* two-byte glyph, second page */
+                        c *= 0xE0;
+                        c += *s++;
+                        c -= 0x18A0;
+                        c |= TEXT_GLYPH_PAGE2;
+                    }
+                    head = addTextGlyph(head, p, c, colour, (y << 16) | (x & 0xFFFF));
+                    p++;
+                    x += getNibbleValue(c);
+                    continue;
+                }
+                if (c == MSG_NEWLINE) {
+                    x = startX;
+                    y += SFX_LINE_HEIGHT;
+                    break;
+                }
+                if (c == MSG_NEW_PAGE || c == MSG_NEW_PAGE_MARKED || c == MSG_END) {
+                    goto end;
+                }
+                if (c >= 0x10) { /* codes 0x10-0x18 take no argument */
+                    continue;
+                }
+                if (c == MSG_CMD_ICON) {
+                    setAddrFast(ot, head);
+                    c = *s++;
+                    c = func_8002C734(c);
+                    p = func_8002E298(ot, p, c, x, y);
+                    x += func_8002E3A4(c);
+                    x++;
+                    getAddrNewFast(ot, head);
+                    continue;
+                }
+                if (c == MSG_CMD_COLOR) {
+                    colour = *s++;
+                    colour &= 0xF;
+                    continue;
+                }
+                s++; /* skip the argument of any other command */
+            }
+        }
+    }
+end:
+    setAddrFast(ot, head);
+    storeGpuPacket((u32)p);
+    GP_FREE(SFX_MSG_BUF_SIZE);
+    GP_RESTORE_RET(savedGp, ret);
+    return ret;
+}
+
+
+/**
+ * @brief Draw the text of a message window.
+ *
+ * Decodes the message one line at a time into a scratch buffer taken from the
+ * $gp area and emits a sprite per glyph, starting at the window's text origin
+ * (@c field30, @c field32) scrolled up by @c field12. Lines scrolled out above
+ * the window are skipped, and lines @c field29 to @c field2A (the choices) are
+ * indented for the cursor. Lines before @c field22 are drawn whole; the line
+ * being typed shows its first @c field20 characters. Icons (code 0x05) are
+ * drawn as multi-cell glyphs with func_8002E298, colour codes (0x06) switch the
+ * text colour, and a page break or the end of the message stops the text.
+ *
+ * @param ot    OT slot the text is linked into.
+ * @param entry Message window.
+ */
+static void func_8002EE10(P_TAG *ot, SfxEntry *entry) {
+    u8 *buf;
+    s32 first;
+    s32 last;
+    u8 *str;
+    TSPRT *p;
+    s32 line;
+    u32 head;
+    s32 y;
+    s32 x;
+    u32 colour;
+    u8 *s;
+    s32 c;
+
+    GP_ALLOC(buf, SFX_MSG_BUF_SIZE);
+    first = entry->field29;
+    str = entry->dataPtr;
+    last = entry->field2A;
+    p = (TSPRT *)getDisplayListHead();
+    line = 0;
+    getAddrNewFast(ot, head);
+    /* The scroll offset is read signed (lh) here; func_8002D040 counts it unsigned. */
+    y = entry->field32 + (SFX_TEXT_MARGIN - (s16)entry->field12);
+    x = entry->field30 + SFX_TEXT_MARGIN;
+    colour = entry->flags.bits.pageColor;
+    if (line >= first && line <= last) {
+        x = entry->field30 + SFX_TEXT_MARGIN + SFX_CHOICE_INDENT;
+    }
+    D_8008386C = entry->flags.bits.pageColor;
+
+    while (y < -SFX_LINE_HEIGHT) {
+        if (str == NULL) {
+            break;
+        }
+        str = func_8002F548(str);
+        y += SFX_LINE_HEIGHT;
+        colour = D_8008386C & 0xF;
+        line++;
+    }
+
+    /* str is tested both here and at the top of the loop, as in the original.
+     * The loop is left through goto: with break, gcc rotates the test to the
+     * bottom, which the original does not do (98.48%). */
+    if (str != NULL) {
+        for (;;) {
+            if (str == NULL) {
+                goto end;
+            }
+            /* c doubles as the length limit, as the original's register does. */
+            c = -1;
+            if (line >= entry->field22) {
+                c = entry->field20;
+            }
+            decodeMessage(str, buf, c);
+            D_8008386C = colour;
+            str = func_8002F548(str);
+            line++;
+
+            s = buf;
+            for (;;) {
+                c = *s++;
+                if (c >= 0x19) {
+                    if (c >= 0x20) { /* one-byte glyph */
+                        c -= 0x20;
+                    } else if (c < 0x1C) { /* two-byte glyph, first page */
+                        /* The second byte is read before the multiply: that is
+                         * what schedules its load ahead of it, as in the original. */
+                        s32 lo = *s++;
+
+                        c *= 0xE0;
+                        c += lo;
+                        c -= 0x1520;
+                    } else { /* two-byte glyph, second page */
+                        s32 lo = *s++;
+
+                        c *= 0xE0;
+                        c += lo;
+                        c -= 0x18A0;
+                        c |= TEXT_GLYPH_PAGE2;
+                    }
+                    head = addTextGlyph(head, p, c, colour, (y << 16) | (x & 0xFFFF));
+                    p++;
+                    x += getNibbleValue(c);
+                    continue;
+                }
+                if (c == MSG_NEWLINE) {
+                    x = entry->field30 + SFX_TEXT_MARGIN;
+                    if (line >= first && line <= last) {
+                        x = entry->field30 + SFX_TEXT_MARGIN + SFX_CHOICE_INDENT;
+                    }
+                    y += SFX_LINE_HEIGHT;
+                    break;
+                }
+                if (c == MSG_NEW_PAGE || c == MSG_NEW_PAGE_MARKED || c == MSG_END) {
+                    goto end;
+                }
+                if (c >= 0x10) { /* codes 0x10-0x18 take no argument */
+                    continue;
+                }
+                if (c == MSG_CMD_ICON) {
+                    setAddrFast(ot, head);
+                    c = *s++;
+                    c = func_8002C734(c);
+                    p = func_8002E298(ot, p, c, x, y);
+                    x += func_8002E3A4(c);
+                    x++;
+                    getAddrNewFast(ot, head);
+                    continue;
+                }
+                if (c == MSG_CMD_COLOR) {
+                    colour = *s++;
+                    colour &= 0xF;
+                    continue;
+                }
+                s++; /* skip the argument of any other command */
+            }
+        }
+    }
+end:
+    setAddrFast(ot, head);
+    storeGpuPacket((u32)p);
+    GP_FREE(SFX_MSG_BUF_SIZE);
+}
 
 

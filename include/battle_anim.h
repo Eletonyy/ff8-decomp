@@ -2,6 +2,7 @@
 #define BATTLE_ANIM_H
 
 #include "common.h"
+#include "psxsdk/libgpu.h"
 
 /* Battle animation state shared across the battle, field, menu, and Triple Triad
  * code. g_battleAnims is a main-RAM global (0x80082DD0); the Triple Triad minigame
@@ -59,6 +60,110 @@ typedef struct {
     u32 pktBase;
 } DisplayListBuf;
 
+/**
+ * @brief Bit of @c SfxEntry.ctrl.raw: the window shows its blinking corner marker.
+ *
+ * It is bit 7 of @c ctrl.fields.markerBlink; the blink bit below is spelled on
+ * the shifted byte instead, because the two tests only compile to the original
+ * instruction pair when written that way.
+ */
+#define SFX_CTRL_MARKER 0x00800000
+
+/** @brief Position of @c SfxEntry.ctrl.fields.markerBlink inside @c ctrl.raw. */
+#define SFX_CTRL_MARKER_BLINK_SHIFT 16
+
+/**
+ * @brief Bit of the 7-bit blink counter in @c SfxEntry.ctrl.fields.markerBlink.
+ *
+ * Set for 16 of every 32 ticks; the corner marker is blanked while it is set.
+ */
+#define SFX_MARKER_BLINK_OFF 0x10
+
+struct SfxEntry;
+
+/** @brief Per-frame hook of an SFX window, run with the frame's pad input. */
+typedef void (*SfxEntryCallback)(struct SfxEntry *entry, u32 input, u32 repeat);
+
+/** @brief Draw hook of an SFX window, run before the window is drawn. */
+typedef void (*SfxEntryDrawCallback)(struct SfxEntry *entry, P_TAG *ot);
+
+typedef struct SfxEntry {
+    RECT rect;
+    u8 *dataPtr;
+    u8 *dataPtrCopy;
+    s16 pitch;
+    u16 field12;
+    union {
+        u32 raw;
+        struct {
+            s16 field14;
+            u8 state;
+            u8 field17;
+        } fields;
+        struct {
+            u32 field14 : 16;
+            u32 state : 8;
+            u32 color : 4;      /**< Current text colour, set by the message colour command. */
+            u32 pageColor : 4;  /**< Colour the next page starts in. */
+        } bits;
+    } flags;
+    u8 entityIdx;
+    s8 field19;
+    s16 volume;
+    s16 field1C;
+    s16 rateDelta;
+    u8 field20;
+    u8 field21;
+    u8 field22;
+    u8 field23;
+    s32 seqState;
+    u8 field28;
+    u8 field29;
+    u8 field2A;
+    u8 field2B;
+    union {
+        u32 raw;
+        struct {
+            u8 field2C;
+            u8 mode;
+            u8 markerBlink; /**< Bits 0-6: blink counter; bit 7: @ref SFX_CTRL_MARKER. */
+            u8 field2F;
+        } fields;
+        /** The marker byte as bitfields: writing @c blink or @c marker is a
+         *  read-modify-write of the whole word, as in the original. */
+        struct {
+            u32 field2C : 8;
+            u32 mode : 8;
+            u32 blink : 7;
+            u32 marker : 1;
+            u32 field2F : 8;
+        } bits;
+    } ctrl;
+    u16 field30;
+    u8 field32;
+    u8 waitTimer; /**< Frames left of a message {Wait} command. */
+    SfxEntryDrawCallback drawCallback;
+    SfxEntryCallback updateCallback;
+} SfxEntry;
+
+typedef struct {
+    u8 pad0[3];
+    u8 counter;
+    u32 color1;         /* flash color (processed) */
+    u32 color2;         /* flash color (output) */
+    s8 activeFlag;
+    u8 padD[7];
+    s8 counters[4];     /* per-channel auto-repeat countdown (func_8002CECC) */
+    u16 stored[4];      /* per-channel latched edge bits (func_8002CECC) */
+} SfxGlobalState;       /* 0x20 */
+
+/** @brief Complete SFX system: 8 entry slots + global state + message display values. */
+typedef struct {
+    SfxEntry entries[8];       /* 8 × 60 = 480 bytes */
+    SfxGlobalState state;      /* global SFX state (0x20 bytes) */
+    u32 msgValues[8];          /* numeric values formatted by decodeMessage */
+} SfxSystem;
+
 /** @brief Complete battle animation state (entities + global coords). */
 typedef struct {
     /* 0x000 */ BattleAnimEntity entities[2]; /**< Two animation entities. */
@@ -69,13 +174,10 @@ typedef struct {
     /* 0x1DA */ u16 clipTop;                /**< Clip region top edge. */
     /* 0x1DC */ u16 clipRight;              /**< Clip region right edge. */
     /* 0x1DE */ u16 clipBottom;             /**< Clip region bottom edge. */
-    /* 0x1E0 */ u8 defaultColor;             /**< Default color value for entity init. */
-    /* 0x1E1 */ u8 pad1E1[0x59];             /**< Unknown. */
-    /* 0x23A */ s16 field23A;                /**< Saved as SFX volume across transition. */
-    /* 0x23C */ u8 pad23C[0x14];             /**< Unknown. */
-    /* 0x250 */ u16 field250;                /**< Saved/cleared across transition. */
-    /* 0x252 */ u8 field252;                 /**< Saved/cleared across transition. */
-    /* 0x253 */ u8 pad253[0x3ED];            /**< Unknown. */
+    /* 0x1E0 */ U16Split repeatDelays;       /**< Pad auto-repeat timing (func_8002CECC): restart delay in @c b.lo, repeat interval in @c b.hi. */
+    /* 0x1E2 */ u8 pad1E2[0x3E];             /**< Unknown. */
+    /* 0x220 */ SfxSystem sfx;               /**< Message windows; also addressed directly as @c g_sfxEntries. */
+    /* 0x440 */ u8 pad440[0x200];            /**< Unknown. */
     /* 0x640 */ DisplayListBuf bufs[2];         /**< Double-buffered GPU display lists (2 × 0x58). */
     /* 0x6F0 */ DisplayListBuf *active;      /**< Pointer to active display list buffer. */
     /* 0x6F4 */ s32 halfSize;                /**< Half of total VRAM size. */

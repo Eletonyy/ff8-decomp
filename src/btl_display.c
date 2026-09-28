@@ -3,9 +3,9 @@
 #include "psxsdk/libc.h"
 #include "battle.h"
 #include "btl_display.h"
+#include "btl_anim.h"
 
 extern BattleDisplayEntity g_battleEntities[];
-extern void copyDisplayRect(RECT *dst);
 
 /**
  * @brief Set a battle entity's type and compute draw mode from bit 0.
@@ -149,14 +149,14 @@ s32 getBattleEntityScale(s32 idx) {
  * @param idx Entity index.
  */
 void initBattleEntity(s32 idx) {
-    s16 rect[4];
+    RECT rect;
     s32 i;
-    rect[0] = 0x40;
-    rect[1] = 0x40;
-    rect[2] = 0x80;
-    rect[3] = 0x80;
-    setBattleEntityBoundRect(idx, rect);
-    setBattleEntityRectClamp(idx, rect);
+    rect.x = 64;
+    rect.y = 64;
+    rect.w = 128;
+    rect.h = 128;
+    setBattleEntityBoundRect(idx, &rect);
+    setBattleEntityRectClamp(idx, &rect);
     setBattleEntityType(idx, 6);
     setBattleEntityField04(idx, 0);
     setBattleEntityField00(idx, 0);
