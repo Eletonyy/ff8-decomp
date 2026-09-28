@@ -320,7 +320,7 @@ void func_8009D3F4(void) {
 
 /**
  * @brief Enter scene mode @c 3 with a packed @c marker, then mass-reset
- *        the world @c WorldDialogSlot table and trigger a render flush.
+ * the world @c WorldDialogSlot table and trigger a render flush.
  *
  * Steps:
  *  1. Snapshot @p marker into @c D_800C8CEA, tear down prior scene
@@ -329,7 +329,7 @@ void func_8009D3F4(void) {
  *     current dispatch code (@c D_800C4D38) in @c cmd.
  *  2. @c func_800B3FD4(D_800D226C, 3) re-enters the scene driver.
  *  3. Walk the first 13 @c D_800C526C @c WorldDialogSlot entries: close each
- *     active slot's dialog via @c closeDialogInstant and mark it inactive (@c -1).
+ * active slot's dialog via @c closeDialogInstant and mark it inactive (@c -1).
  *  4. Force a full render: @c renderAndUpdateDisplay(2) then dispatch
  *     the world display list at @c D_800D244C+0x74.
  */

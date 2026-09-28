@@ -19,11 +19,11 @@
 #include "tripletriad/be_object4.h"
 
 /** @brief @c DialogConfig.flags: open and close the dialog without the animation. */
-#define DIALOG_CONFIG_INSTANT     0x01
+#define DIALOG_CONFIG_INSTANT 0x01
 /** @brief @c DialogConfig.flags: center the text in the box. */
 #define DIALOG_CONFIG_CENTER_TEXT 0x02
 /** @brief @c DialogConfig.flags: the rect's x/y is the box's center, not its corner. */
-#define DIALOG_CONFIG_CENTER_BOX  0x04
+#define DIALOG_CONFIG_CENTER_BOX 0x04
 
 /* s32 view: btl_color.h's u16 (u16) makes the caller mask the argument and result. */
 extern s32 remapControllerInput(s32 arg);
@@ -102,13 +102,13 @@ void func_800A1C6C(void)
  * opens it at once or animated (@ref DIALOG_CONFIG_INSTANT), and records @p param
  * as the entry's fade timer.
  *
- * @param id    Dialog index into @c D_80182E70.
- * @param str   FF8-encoded message string.
+ * @param id Dialog index into @c D_80182E70.
+ * @param str FF8-encoded message string.
  * @param param Fade-timer / display-duration value stored into the entry.
  */
 void func_800A1D68(s32 id, u8 *str, s32 param) {
-    GlyphSize dim;   /* text block size from getTextSize */
-    GlyphSize sfx;   /* "Play / Quit" suffix size (id 5 only) */
+    GlyphSize dim; /* text block size from getTextSize */
+    GlyphSize sfx; /* "Play / Quit" suffix size (id 5 only) */
     RECT rect;
 
     dim.raw[0] = getTextSize(str);
@@ -179,7 +179,7 @@ dialogDone:;
 
 /**
  * @brief Close a dialog, at once or with its animation per its
- *        @ref DIALOG_CONFIG_INSTANT flag.
+ * @ref DIALOG_CONFIG_INSTANT flag.
  *
  * @param id Dialog index into @c D_80182E70.
  */
@@ -610,11 +610,11 @@ u8 *initTripleTriadRenderList(void) {
  * Drives keyboard-style auto-repeat for whatever per-side cue the bits represent.
  * Called four times (once per side) by @ref func_800A2A8C, which ORs the results.
  *
- * @param base   Battle-anim state; base->repeatDelays packs the two delays.
- * @param elem   Battle-anim entity; elem->unk10[side] is the per-side mask.
+ * @param base Battle-anim state; base->repeatDelays packs the two delays.
+ * @param elem Battle-anim entity; elem->unk10[side] is the per-side mask.
  * @param newVal Raw new edge bitmask for this frame.
- * @param side   Card side index, 0..3.
- * @param entry  Card slot index.
+ * @param side Card side index, 0..3.
+ * @param entry Card slot index.
  * @return The masked event bits that should fire this frame, or 0 while suppressed.
  *
  * @note Purpose inferred. Decomp scratch: https://decomp.me/scratch/7L33D

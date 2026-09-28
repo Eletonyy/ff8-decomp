@@ -14,7 +14,7 @@
 #define BATTLE_RESULT_WIN           4
 
 /** @brief BattleConfig.unk2 flag: a countdown is running. The menu clock shows it
- *  instead of the play time, and a battle ends when it reaches 0. */
+ * instead of the play time, and a battle ends when it reaches 0. */
 #define BATTLE_FLAG_COUNTDOWN 0x04
 
 #define GET_OFFSET(type, ptr, var) ((type*)(var + (intrptr_t)ptr))
@@ -38,8 +38,8 @@ typedef struct {
 
 /** @brief Clipped rectangle result: the clipped rect + saved pre-clip position. */
 typedef struct {
-    RECT rect;       /* 0x00: clipped rectangle */
-    s32 savedPos;    /* 0x08: packed original x|y before clipping */
+    RECT rect; /* 0x00: clipped rectangle */
+    s32 savedPos; /* 0x08: packed original x|y before clipping */
 } ClipResult;
 
 /** @brief Scratch workspace for rectangle clipping operations. */

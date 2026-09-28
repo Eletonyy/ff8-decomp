@@ -56,15 +56,15 @@ extern GlyphTable D_80052A68;
 #define GLYPH_WH_MASK 0x00FF00FF
 
 /** @brief Shift that brings the blend rate of @c GlyphCell.texInfo (bits 30-31)
- *  down to bit 0. */
+ * down to bit 0. */
 #define GLYPH_ABR_SHIFT 30
 
 /** @brief Width of the blend rate once shifted down. getTPage masks again, but
- *  dropping this one costs the match. */
+ * dropping this one costs the match. */
 #define GLYPH_ABR_MASK 3
 
 /** @brief Shift that lands the semi-transparency flag of @c GlyphCell.texInfo
- *  (bit 27) on @ref SPRT_CODE_ABE. */
+ * (bit 27) on @ref SPRT_CODE_ABE. */
 #define GLYPH_ABE_SHIFT 26
 
 /** @brief Semi-transparency option bit of a primitive's code byte. */
@@ -80,7 +80,7 @@ extern GlyphTable D_80052A68;
 #define SPRT_CODE 0x64000000
 
 /** @brief r, g and b of a colour word shifted right once, without the bits
- *  each channel took from the one above. */
+ * each channel took from the one above. */
 #define RGB_HALF_MASK 0x7F7F7F
 
 /** @brief Semi-transparency option bit of a primitive in the colour word. */
@@ -113,30 +113,30 @@ extern GlyphTable D_80052A68;
  * The do/while(0) of setGlyphUVClut is load-bearing: the scheduler moves nothing
  * across it, which keeps the u/v/CLUT store ahead of the texture-page code.
  * Wrapping the colour setter the same way breaks drawDialogMarker's match. */
-#define setGlyphRGBC(p, word)   (*(u32 *)&(p)->r0 = (word))
+#define setGlyphRGBC(p, word) (*(u32 *)&(p)->r0 = (word))
 #define setGlyphUVClut(p, word) do { *(u32 *)&(p)->u0 = (word); } while (0)
-#define setGlyphWH(p, word)     (*(u32 *)&(p)->w = (word))
+#define setGlyphWH(p, word) (*(u32 *)&(p)->w = (word))
 
 /** @brief Values of @c Dialog.seqState, the text state machine run by updateDialog. */
 enum {
-    DIALOG_SEQ_START,              /**< Clear the button auto-repeat state. */
-    DIALOG_SEQ_TICK,               /**< Advance the character timer by the text speed. */
-    DIALOG_SEQ_PRINT,              /**< Wait for the character timer, then print. */
-    DIALOG_SEQ_NEXT_CHAR,          /**< Decode the next character or command. */
-    DIALOG_SEQ_NEWLINE,            /**< Scroll first if the window is full. */
-    DIALOG_SEQ_SCROLL,             /**< Scroll up by one line. */
-    DIALOG_SEQ_END,                /**< End of the message. */
-    DIALOG_SEQ_DONE,               /**< Finished; nothing left to run. */
-    DIALOG_SEQ_PAGE,               /**< Page break: set up the corner marker. */
-    DIALOG_SEQ_PAGE_RELEASE,       /**< Wait until only the d-pad is held. */
-    DIALOG_SEQ_PAGE_WAIT,          /**< Wait for Cross or Square, then start the next page. */
+    DIALOG_SEQ_START, /**< Clear the button auto-repeat state. */
+    DIALOG_SEQ_TICK, /**< Advance the character timer by the text speed. */
+    DIALOG_SEQ_PRINT, /**< Wait for the character timer, then print. */
+    DIALOG_SEQ_NEXT_CHAR, /**< Decode the next character or command. */
+    DIALOG_SEQ_NEWLINE, /**< Scroll first if the window is full. */
+    DIALOG_SEQ_SCROLL, /**< Scroll up by one line. */
+    DIALOG_SEQ_END, /**< End of the message. */
+    DIALOG_SEQ_DONE, /**< Finished; nothing left to run. */
+    DIALOG_SEQ_PAGE, /**< Page break: set up the corner marker. */
+    DIALOG_SEQ_PAGE_RELEASE, /**< Wait until only the d-pad is held. */
+    DIALOG_SEQ_PAGE_WAIT, /**< Wait for Cross or Square, then start the next page. */
     DIALOG_SEQ_CHOICE_START,
-    DIALOG_SEQ_CHOICE_RELEASE,     /**< Wait until no button is pressed. */
-    DIALOG_SEQ_CHOICE,             /**< Move the choice cursor, confirm or cancel. */
+    DIALOG_SEQ_CHOICE_RELEASE, /**< Wait until no button is pressed. */
+    DIALOG_SEQ_CHOICE, /**< Move the choice cursor, confirm or cancel. */
     DIALOG_SEQ_WAIT_START,
-    DIALOG_SEQ_WAIT,               /**< Count down @c Dialog.waitTimer. */
+    DIALOG_SEQ_WAIT, /**< Count down @c Dialog.waitTimer. */
     DIALOG_SEQ_DPAD_RELEASE_START,
-    DIALOG_SEQ_DPAD_RELEASE        /**< Wait for the d-pad to be released, then offer the choice. */
+    DIALOG_SEQ_DPAD_RELEASE /**< Wait for the d-pad to be released, then offer the choice. */
 };
 
 /** @brief Characters of a decoded message that the text state machine acts on. */
@@ -144,15 +144,15 @@ enum {
     MSG_END = 0x00,
     MSG_NEW_PAGE = 0x01,
     MSG_NEWLINE = 0x02,
-    MSG_NEW_PAGE_MARKED = 0x07  /**< Page break that shows the corner marker (name is a guess). */
+    MSG_NEW_PAGE_MARKED = 0x07 /**< Page break that shows the corner marker (name is a guess). */
 };
 
 /** @brief Command bytes returned in bits 8-15 by nextDialogChar. */
 enum {
-    MSG_CMD_ICON = 0x05,        /**< Argument is an icon, drawn as a multi-cell glyph. */
-    MSG_CMD_COLOR = 0x06,       /**< Argument is the text colour. */
-    MSG_CMD_SPEED = 0x08,       /**< Argument sets the text speed (guess from its use). */
-    MSG_CMD_WAIT = 0x09         /**< Argument is a delay in frames. */
+    MSG_CMD_ICON = 0x05, /**< Argument is an icon, drawn as a multi-cell glyph. */
+    MSG_CMD_COLOR = 0x06, /**< Argument is the text colour. */
+    MSG_CMD_SPEED = 0x08, /**< Argument sets the text speed (guess from its use). */
+    MSG_CMD_WAIT = 0x09 /**< Argument is a delay in frames. */
 };
 
 /** @brief Text colour index of white, the colour a message starts in. */
@@ -206,7 +206,7 @@ enum {
 
 /**
  * @brief Bit of @c Dialog.ctrl.raw: @c ctrl.bits.marker, the window shows its
- *        blinking corner marker.
+ * blinking corner marker.
  */
 #define DIALOG_CTRL_MARKER 0x00800000
 
@@ -290,7 +290,7 @@ void tickTextBlink(void) {
 /**
  * @brief Set the text brightness: store a grey in @c state.textTint and refresh the blink copies.
  * @param brightness Brightness, @ref BRIGHTNESS_NORMAL = normal; divided by 32, its
- *                   low 8 bits become r, g and b (0x80 draws the font unmodulated).
+ * low 8 bits become r, g and b (0x80 draws the font unmodulated).
  */
 void setTextBrightness(s32 brightness) {
     brightness /= 32;
@@ -416,16 +416,16 @@ s32 getOpenDialogScale(s32 idx) {
  * position.
  *
  * @note Same emitter as @ref drawTextIcon plus the colour masking, with the
- *       same two load-bearing spellings. The @c (u8) narrowing of the blend
- *       rate is a no-op on the value (at most 0x60) but hides its range from
- *       the compiler, which otherwise proves @c _get_mode's 0x9FF mask
- *       redundant and drops it; the original keeps it. The colour word is
- *       built one operation per statement because the original computes the
- *       whole chain in the result's own register, which a single expression
- *       does not. @c head is handed to @c p and taken back after the loop,
- *       the way btl_anim.c threads its packet cursor.
+ * same two load-bearing spellings. The @c (u8) narrowing of the blend
+ * rate is a no-op on the value (at most 0x60) but hides its range from
+ * the compiler, which otherwise proves @c _get_mode's 0x9FF mask
+ * redundant and drops it; the original keeps it. The colour word is
+ * built one operation per statement because the original computes the
+ * whole chain in the result's own register, which a single expression
+ * does not. @c head is handed to @c p and taken back after the loop,
+ * the way btl_anim.c threads its packet cursor.
  *
- * @param ot    Ordering-table slot the sprites are linked into.
+ * @param ot Ordering-table slot the sprites are linked into.
  * @param entry Dialog the marker belongs to.
  */
 static void drawDialogMarker(P_TAG *ot, Dialog *entry) {
@@ -487,7 +487,7 @@ static void drawDialogMarker(P_TAG *ot, Dialog *entry) {
         word = cell->metrics;
         val = word & GLYPH_WH_MASK;
         setGlyphWH(p, val);
-        val = (s8)(word >> 24);  /* signed Y offset, byte 3 */
+        val = (s8)(word >> 24); /* signed Y offset, byte 3 */
         word <<= 16;
         word = (s8)(word >> 24); /* signed X offset, byte 1 */
         setXY0(p, x + word, y + val);
@@ -510,7 +510,7 @@ static void drawDialogMarker(P_TAG *ot, Dialog *entry) {
  * resets the texture page. A window without a message draws nothing.
  *
  * @param index Dialog index.
- * @param ot    Ordering table the packets are linked into.
+ * @param ot Ordering table the packets are linked into.
  */
 static void drawDialogContents(s32 index, P_TAG *ot) {
     Dialog *entry = &g_dialogs.entries[index];
@@ -578,9 +578,9 @@ static void drawDialogContents(s32 index, P_TAG *ot) {
  * block so the compiler emits both extractions before the multiplies rather
  * than interleaving them.
  *
- * @param rect  Rectangle to scale in place.
+ * @param rect Rectangle to scale in place.
  * @param scale Q12 fixed-point scale factor (@c 0x1000 == 1.0).
- * @param arg2  Unused by this routine (the caller passes @c openDialogStep).
+ * @param arg2 Unused by this routine (the caller passes @c openDialogStep).
  */
 static void scaleDialogRect(RECT *rect, s32 scale, s32 arg2) {
     s32 x, y, w, h, prodW, prodH;
@@ -614,7 +614,7 @@ static void scaleDialogRect(RECT *rect, s32 scale, s32 arg2) {
 
 /**
  * @brief Give a dialog the input focus (@c state.focusedDialog): only the focused
- *        dialog reads the pad, to turn pages and pick a choice.
+ * dialog reads the pad, to turn pages and pick a choice.
  * @param idx Dialog index, or -1 for none.
  */
 void setFocusedDialog(s32 idx) {
@@ -666,10 +666,10 @@ s32 getDialogChoice(s32 idx) {
  * fires. When the bits do not overlap the countdown resets to the restart delay and
  * fires. Mirrors @c func_800A29D4 (the Triple Triad edge auto-repeat).
  *
- * @param anims   Battle-anim state; @c repeatDelays packs the two delays.
- * @param entity  Battle-anim entity; @c unk10[channel] is the channel's edge mask.
- * @param sys     Dialog system (@c &anims->dialogs); holds the stored bits and counters.
- * @param newVal  Raw new edge bitmask for this frame.
+ * @param anims Battle-anim state; @c repeatDelays packs the two delays.
+ * @param entity Battle-anim entity; @c unk10[channel] is the channel's edge mask.
+ * @param sys Dialog system (@c &anims->dialogs); holds the stored bits and counters.
+ * @param newVal Raw new edge bitmask for this frame.
  * @param channel Pad channel index, 0..3.
  * @return The masked edge bits that should fire this frame, or 0 while suppressed.
  */
@@ -786,9 +786,9 @@ static inline void updateOpenDialogScale(s32 index) {
  *
  * Only the focused window (@c state.focusedDialog) reads the buttons.
  *
- * @param index  Dialog index.
- * @param input  Pressed buttons: bits 0-15 drive paging, bits 16-31 the choice
- *               (the split is a guess from the tests made on each half).
+ * @param index Dialog index.
+ * @param input Pressed buttons: bits 0-15 drive paging, bits 16-31 the choice
+ * (the split is a guess from the tests made on each half).
  * @param repeat Auto-repeating buttons; Up and Down move the choice cursor.
  */
 static void updateDialog(s32 index, u32 input, u32 repeat) {
@@ -1041,7 +1041,7 @@ static void updateDialog(s32 index, u32 input, u32 repeat) {
  * calls resetDialogTyping, and marks the message as offering no choice.
  *
  * @param index Dialog index.
- * @param data  The message (or NULL).
+ * @param data The message (or NULL).
  */
 void setDialogMessage(s32 index, u8 *data) {
     Dialog *entry = &g_dialogs.entries[index];
@@ -1070,7 +1070,7 @@ void setDialogMessage(s32 index, u8 *data) {
  * the original @p a0 and @p a1.
  *
  * @param index Dialog index.
- * @param data  Pointer to the start of the string data.
+ * @param data Pointer to the start of the string data.
  * @param count Number of strings to skip.
  */
 void setDialogMessageAfterStrings(s32 index, u8 *data, s32 count) {
@@ -1091,9 +1091,9 @@ void setDialogMessageAfterStrings(s32 index, u8 *data, s32 count) {
  *
  * @param arg0 Dialog index.
  * @param data The message.
- * @param min  First choice line.
- * @param max  Last choice line.
- * @param val  Line the cursor starts on.
+ * @param min First choice line.
+ * @param max Last choice line.
+ * @param val Line the cursor starts on.
  * @param arg5 Cancel choice (@c ctrl.bits.cancelChoice).
  */
 void setDialogChoiceMessage(s32 arg0, u8 *data, s32 min, s32 max, s32 val, s32 arg5) {
@@ -1107,15 +1107,15 @@ void setDialogChoiceMessage(s32 arg0, u8 *data, s32 min, s32 max, s32 val, s32 a
 
 /**
  * @brief Start a message with choices on a dialog, after skipping @p count
- *        null-terminated strings of @p str (see setDialogChoiceMessage).
+ * null-terminated strings of @p str (see setDialogChoiceMessage).
  *
- * @param arg0  Dialog index.
- * @param str   The strings; the message is the one after the first @p count.
+ * @param arg0 Dialog index.
+ * @param str The strings; the message is the one after the first @p count.
  * @param count Strings to skip.
- * @param min   First choice line.
- * @param max   Last choice line.
- * @param val   Line the cursor starts on.
- * @param arg6  Cancel choice (@c ctrl.bits.cancelChoice).
+ * @param min First choice line.
+ * @param max Last choice line.
+ * @param val Line the cursor starts on.
+ * @param arg6 Cancel choice (@c ctrl.bits.cancelChoice).
  */
 void setDialogChoiceMessageAfterStrings(s32 arg0, u8 *str, s32 count, s32 min, s32 max, s32 val, s32 arg6) {
     s32 clamped;
@@ -1141,7 +1141,7 @@ void setDialogChoiceMessageAfterStrings(s32 arg0, u8 *str, s32 count, s32 min, s
  * to its text and marker (applyWindowBrightness), and draws the window's cursor,
  * marker and text via drawDialogContents. Restores GP before returning.
  *
- * @param ot    Ordering table, passed to the hook and drawDialogContents.
+ * @param ot Ordering table, passed to the hook and drawDialogContents.
  * @param index Dialog index.
  */
 static void drawDialog(P_TAG *ot, s32 index) {
@@ -1190,9 +1190,9 @@ static inline u32 linkPacket(u32 head, void *p) {
  * @ref BATTLE_ENTITY_SEMI_TRANS entity), then a draw area for the bound rect
  * and a draw offset back at the clip origin.
  *
- * @param ot     Ordering table.
+ * @param ot Ordering table.
  * @param entity The window's battle entity.
- * @param pkt    Packet cursor, stored back before drawing.
+ * @param pkt Packet cursor, stored back before drawing.
  * @return The packet cursor after the last packet.
  */
 static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
@@ -1282,7 +1282,7 @@ static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 p
  * and its text (updateDialog) while the window is active.
  *
  * @param entity The window's battle entity.
- * @param input  Pressed buttons.
+ * @param input Pressed buttons.
  * @param repeat Auto-repeating buttons.
  * @return The scratchpad $gp.
  */
@@ -1310,7 +1310,7 @@ static u8 *updateDialogEntity(BattleDisplayEntity *entity, u32 input, u32 repeat
 
 /**
  * @brief Open a dialog: activate it and set its open step and mode.
- * @param idx  Dialog index.
+ * @param idx Dialog index.
  * @param step Open step: 0x200 opens over 8 frames, 0x1000 at once.
  * @param mode Mode byte (@c ctrl.bits.mode).
  */
@@ -1336,7 +1336,7 @@ void openDialogInstant(s32 idx) {
 
 /**
  * @brief Close a dialog by giving it a negative open step.
- * @param idx  Dialog index.
+ * @param idx Dialog index.
  * @param step Open step: -0x200 closes over 8 frames, -0x1000 at once.
  */
 void closeDialog(s32 idx, s32 step) {
@@ -1620,15 +1620,15 @@ void dispatchDialogAnimSpeed(s32 idx) {
  * are added to (@p x, @p y).
  *
  * @note @c head is handed to @c p and taken back for the return, the way
- *       @ref drawDialogMarker threads its packet cursor; returning @c p directly
- *       moves the cursor copy in the prologue. The @c (u8) narrowing of the
- *       blend rate keeps @c _get_mode's mask, see @ref drawDialogMarker.
+ * @ref drawDialogMarker threads its packet cursor; returning @c p directly
+ * moves the cursor copy in the prologue. The @c (u8) narrowing of the
+ * blend rate keeps @c _get_mode's mask, see @ref drawDialogMarker.
  *
- * @param ot   Ordering-table slot the sprites are linked into.
+ * @param ot Ordering-table slot the sprites are linked into.
  * @param head First free packet.
- * @param idx  Glyph index into @c D_80052A68.
- * @param x    Left edge of the glyph.
- * @param y    Top edge of the glyph.
+ * @param idx Glyph index into @c D_80052A68.
+ * @param x Left edge of the glyph.
+ * @param y Top edge of the glyph.
  * @return The first free packet after the ones written.
  */
 static TSPRT *drawTextIcon(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
@@ -1672,7 +1672,7 @@ static TSPRT *drawTextIcon(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
         word = cell->metrics;
         val = word & GLYPH_WH_MASK;
         setGlyphWH(p, val);
-        val = (s8)(word >> 24);  /* signed Y offset, byte 3 */
+        val = (s8)(word >> 24); /* signed Y offset, byte 3 */
         word <<= 16;
         word = (s8)(word >> 24); /* signed X offset, byte 1 */
         setXY0(p, x + word, y + val);
@@ -1692,8 +1692,8 @@ static TSPRT *drawTextIcon(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
  * Y offset), returning the peak width (low byte).
  *
  * @note The peak height is computed but unused by the return value — the caller
- *       presumably only needs the advance width. Purpose inferred from the
- *       neighbouring glyph-metric routines.
+ * presumably only needs the advance width. Purpose inferred from the
+ * neighbouring glyph-metric routines.
  *
  * @param idx Glyph index into @c D_80052A68.
  * @return Bounding width of the glyph, masked to 8 bits.
@@ -1728,10 +1728,10 @@ s32 getIconWidth(s32 idx) {
 
 
 /** @brief Extracts a 4-bit nibble from packed byte array D_800834D8.
- *  Even indices return the low nibble; odd indices return the high nibble.
- *  @note inline: drawDialogText has it expanded in place.
- *  @param idx Nibble index.
- *  @return The 4-bit value (0-15).
+ * Even indices return the low nibble; odd indices return the high nibble.
+ * @note inline: drawDialogText has it expanded in place.
+ * @param idx Nibble index.
+ * @return The 4-bit value (0-15).
  */
 inline s32 getNibbleValue(s32 idx) {
     u8 *base = D_800834D8;
@@ -1787,10 +1787,10 @@ static s32 getCharWidth(s32 idx) {
  * line count; codes below 0x10 (other than 1/2/5/7) consume a following
  * argument byte. When @p flag is 0 the scan stops at the first line break.
  *
- * @param s    Null-terminated message string.
+ * @param s Null-terminated message string.
  * @param flag If nonzero, measure every line; if zero, stop at the first break.
  * @return Packed dimensions: width in the low 16 bits, @c (lines*16 - 4) in the
- *         high 16 bits.
+ * high 16 bits.
  */
 static s32 measureText(u8 *s, s32 flag) {
     s32 width = 0;
@@ -1875,7 +1875,7 @@ static s32 measureText(u8 *s, s32 flag) {
  *
  * @param str Message in the game's text encoding.
  * @return Width in the low 16 bits, height in the high 16 bits (see
- *         measureText).
+ * measureText).
  */
 s32 measureMessage(u8 *str) {
     u8 *tempGp;
@@ -1950,12 +1950,12 @@ s32 getFirstLineWidth(u8 *str) {
 
 /**
  * @brief Set the menu brightness: store a grey in @c g_menuTint[MENU_TINT_NORMAL], the tint of
- *        everything the menus draw, and refresh the blink copies.
+ * everything the menus draw, and refresh the blink copies.
  *
  * The raw value is kept in @c g_menuBrightness, where menus read it back to restore it.
  *
  * @param brightness Brightness, @ref BRIGHTNESS_NORMAL = normal; shifted down by 5,
- *                   its low 8 bits become r, g and b (0x80 draws graphics unmodulated).
+ * its low 8 bits become r, g and b (0x80 draws graphics unmodulated).
  */
 void setMenuBrightness(s32 brightness) {
     g_menuBrightness = brightness;
@@ -1977,11 +1977,11 @@ void setMenuBrightness(s32 brightness) {
  * the low 3 bits of the colour pick the CLUT row. Declared inline: drawDecodedText
  * has it expanded in place.
  *
- * @param head   Current OT chain head (tag image of the previous packet).
- * @param p      Sprite to fill.
- * @param glyph  Text glyph number; @ref TEXT_GLYPH_PAGE2 selects the second texture page.
+ * @param head Current OT chain head (tag image of the previous packet).
+ * @param p Sprite to fill.
+ * @param glyph Text glyph number; @ref TEXT_GLYPH_PAGE2 selects the second texture page.
  * @param colour Text colour index (0-15).
- * @param xy     Packed position, x in the low half and y in the high half.
+ * @param xy Packed position, x in the low half and y in the high half.
  * @return The new chain head (@p p's tag image).
  */
 inline u32 emitTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy) {
@@ -2023,11 +2023,11 @@ inline u32 emitTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy) {
  * the string. Nothing is drawn when @p y is off screen, and the string stops at
  * the right screen edge. Unlike drawMessageText the text is already decoded.
  *
- * @param ot     OT slot the sprites are linked into.
- * @param p      First free packet.
- * @param x      Left edge in pixels.
- * @param y      Top edge in pixels.
- * @param str    Decoded text, or NULL to draw nothing.
+ * @param ot OT slot the sprites are linked into.
+ * @param p First free packet.
+ * @param x Left edge in pixels.
+ * @param y Top edge in pixels.
+ * @param str Decoded text, or NULL to draw nothing.
  * @param colour Text colour index (0-15).
  * @return The first packet after the ones drawn.
  */
@@ -2088,11 +2088,11 @@ TSPRT *drawDecodedText(P_TAG *ot, TSPRT *p, s32 x, s32 y, u8 *str, s32 colour) {
  * 8-15 (the blinking ones) @c g_textBlinkTint, and the low 3 bits of the colour
  * pick the CLUT row.
  *
- * @param head   Current OT chain head (tag image of the previous packet).
- * @param p      Sprite to fill.
- * @param glyph  Text glyph number; @ref TEXT_GLYPH_PAGE2 selects the second texture page.
+ * @param head Current OT chain head (tag image of the previous packet).
+ * @param p Sprite to fill.
+ * @param glyph Text glyph number; @ref TEXT_GLYPH_PAGE2 selects the second texture page.
  * @param colour Text colour index (0-15).
- * @param xy     Packed position, x in the low half and y in the high half.
+ * @param xy Packed position, x in the low half and y in the high half.
  * @return The new chain head (@p p's tag image).
  */
 static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy) {
@@ -2135,9 +2135,9 @@ static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy
  * down a line; icons (code 0x05) are drawn with drawTextIcon, colour codes
  * (0x06) switch the text colour, and a page break or the end of the text stops.
  *
- * @param ot  OT slot the text is linked into.
- * @param x   Left edge in pixels.
- * @param y   Top edge in pixels.
+ * @param ot OT slot the text is linked into.
+ * @param x Left edge in pixels.
+ * @param y Top edge in pixels.
  * @param str Encoded text, or NULL to draw nothing.
  * @return The scratchpad pointer $gp held while the text was drawn.
  */
@@ -2243,7 +2243,7 @@ end:
  * drawn as multi-cell glyphs with drawTextIcon, colour codes (0x06) switch the
  * text colour, and a page break or the end of the message stops the text.
  *
- * @param ot    OT slot the text is linked into.
+ * @param ot OT slot the text is linked into.
  * @param entry Message window.
  */
 static void drawDialogText(P_TAG *ot, Dialog *entry) {

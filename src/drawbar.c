@@ -33,9 +33,9 @@ INCLUDE_ASM("asm/nonmatchings/drawbar", func_8002B8BC);
  *
  * A semi-transparent colour word draws a see-through box.
  *
- * @param ot    Ordering table.
- * @param prim  Primitive buffer cursor.
- * @param rect  The window rect.
+ * @param ot Ordering table.
+ * @param prim Primitive buffer cursor.
+ * @param rect The window rect.
  * @param color Colour word.
  * @return The primitive cursor after the packets.
  */

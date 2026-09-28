@@ -18,10 +18,10 @@ INCLUDE_ASM("asm/nonmatchings/btl_entity", func_8002BAA0);
 
 /**
  * @brief Draw a window box: its frame (func_8002B3A0, fill mode 3), then its
- *        background (drawWindowBackground).
- * @param ot    Ordering table.
- * @param prim  Primitive buffer cursor.
- * @param rect  The window rect.
+ * background (drawWindowBackground).
+ * @param ot Ordering table.
+ * @param prim Primitive buffer cursor.
+ * @param rect The window rect.
  * @param color Colour word.
  * @return The primitive cursor after the packets.
  */
@@ -228,8 +228,8 @@ s32 func_8002C734(s32 c) {
 /**
  * @brief Set a dialog's text origin.
  * @param idx Dialog index.
- * @param x   Text origin x in pixels (@c textX).
- * @param y   Text origin y in pixels (@c textY).
+ * @param x Text origin x in pixels (@c textX).
+ * @param y Text origin y in pixels (@c textY).
  */
 void setDialogTextOrigin(s32 idx, s32 x, s32 y) {
     Dialog *entry = &g_dialogs.entries[idx];
@@ -240,9 +240,9 @@ void setDialogTextOrigin(s32 idx, s32 x, s32 y) {
 
 /**
  * @brief Set a dialog's choice lines.
- * @param idx    Dialog index.
- * @param first  First choice line (@c firstChoice).
- * @param last   Last choice line (@c lastChoice).
+ * @param idx Dialog index.
+ * @param first First choice line (@c firstChoice).
+ * @param last Last choice line (@c lastChoice).
  * @param cancel Line Triangle moves the cursor to, negative for none (@c cancelChoice).
  */
 void setDialogChoices(s32 idx, s32 first, s32 last, s32 cancel) {

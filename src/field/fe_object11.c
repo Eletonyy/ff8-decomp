@@ -41,7 +41,7 @@
  *   - @ref FIELD_STATE_FIELD_READY clear and @c levelUpDisplayTimer @c > @c 0
  *     → fire the SeeD level-up notification via @ref func_800316D4.
  *   - Set each dialog's text speed from the message-speed setting
- *     (@ref setDialogTextSpeed).
+ * (@ref setDialogTextSpeed).
  *   - Mirror @c D_80078DF8 bit @c 0x10 → @c FieldVars.field58 and,
  *     if @c fieldF0 is set, forward it through @ref func_800A4550.
  *

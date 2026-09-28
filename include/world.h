@@ -256,7 +256,7 @@ extern s32            D_800C4DB0;
 extern s32            D_800C4DB4;
 extern s32            D_800C4DBC;
 extern SeqEntry       D_800C4FD8[];      /**< Sequence/SFX clip table. */
-extern WorldDialogSlot D_800C526C[];     /**< The world map's dialog slots. */
+extern WorldDialogSlot D_800C526C[]; /**< The world map's dialog slots. */
 extern s16            D_800C53C4[];      /**< Per-map halfword param table. */
 extern s16            D_800C53D0[];
 extern s16            D_800C53DC[];

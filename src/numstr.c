@@ -25,7 +25,7 @@ extern s32 D_800834CC;
 enum {
     MSG_ARG_BATTLE_CHAR = 0,    /* low 5 bits: battle character slot */
     MSG_ARG_NAME = 3,           /* low byte: character, Angelo, Griever or Boko name */
-    MSG_ARG_NUMBER = 4          /* low byte: format and message value slot */
+    MSG_ARG_NUMBER = 4 /* low byte: format and message value slot */
 };
 
 static inline u8 *appendString(u8 *dst, u8 *str);
@@ -478,7 +478,7 @@ static inline u8 *insertArgString(u8 *dst, s32 code, u8 *buf) {
  * Control codes:
  *   0x00, 0x01, 0x02, 0x07 — String terminators
  *   0x03 + byte — Two-byte name/string reference (type 3: names, locations)
- *   0x04 + byte — Two-byte numeric value format (type 4: the dialogs' message values)
+ * 0x04 + byte — Two-byte numeric value format (type 4: the dialogs' message values)
  *   0x05-0x06, 0x08-0x0B + byte — Escape: next byte stored literally
  *   0x0C + byte — Magic spell name lookup via getMagicNamePtr
  *   0x0D + byte — Item name lookup via getItemName
@@ -499,7 +499,7 @@ static inline u8 *insertArgString(u8 *dst, s32 code, u8 *buf) {
  *   MSG_ARG_NUMBER: getNumberString's format switch (40-entry jump table, 0x20-0x47):
  *     0x20-0x27 → Decimal with separator (intToDecString + F320 + F4B0)
  *     0x30-0x37 → Decimal plain (intToDecString + F320)
- *     0x40-0x47 → Hex, remapped to the g_numberFormat digit glyphs (u32ToHexTiles)
+ * 0x40-0x47 → Hex, remapped to the g_numberFormat digit glyphs (u32ToHexTiles)
  *
  * insertArgString is inlined at its three call sites, producing 6 separate
  * jump tables. Handler code is shared across the expansions via
@@ -641,7 +641,7 @@ void decodeMessageDirect(Dialog *dialog, u8 *output) {
  * @param dialog The dialog.
  * @param output Its decoded-line buffer.
  * @return The byte read; for a two-byte code, the first byte in bits 8-15 and
- *         the second in bits 0-7.
+ * the second in bits 0-7.
  */
 INCLUDE_ASM("asm/nonmatchings/numstr", nextDialogChar);
 

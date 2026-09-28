@@ -430,8 +430,8 @@ s32 opHandler_MESVAR(ScriptContext *context) {
  */
 s32 opHandler_MESMODE(ScriptContext *context) {
     s32 brightness = POP(context);
-    s32 kind       = POP(context);
-    s32 idx        = POP(context);
+    s32 kind = POP(context);
+    s32 idx = POP(context);
 
     setDialogBrightness(idx, brightness);
 
@@ -443,7 +443,7 @@ s32 opHandler_MESMODE(ScriptContext *context) {
 
     setDialogEntityType(idx, kind);
     D_80085300[idx].brightness = brightness;
-    D_80085300[idx].type       = kind;
+    D_80085300[idx].type = kind;
     return 2;
 }
 
@@ -513,9 +513,9 @@ s32 opHandler_MESW(ScriptContext *context) {
  * input halfwords from @c src into @c entry->rect. The trailing
  * @c brightness / @c type fields are left untouched.
  *
- * @param idx  Entry index in @c D_80085300.
- * @param val  s32 payload (typically a message pointer cast to s32).
- * @param src  4-halfword source block, copied into @c entry->rect.
+ * @param idx Entry index in @c D_80085300.
+ * @param val s32 payload (typically a message pointer cast to s32).
+ * @param src 4-halfword source block, copied into @c entry->rect.
  */
 void func_800BC12C(s32 idx, s32 val, u16 *src) {
     FieldDialogSlot *base = D_80085300;
@@ -557,8 +557,8 @@ s32 opHandler_MES(ScriptContext *context) {
     openDialogAnimated(dialogIdx);
     setFocusedDialog(dialogIdx);
 
-    g_fieldVars->dialogStartMask  |= (1 << dialogIdx);
-    g_fieldVars->dialogEntryMask  |= (1 << dialogIdx);
+    g_fieldVars->dialogStartMask |= (1 << dialogIdx);
+    g_fieldVars->dialogEntryMask |= (1 << dialogIdx);
 
     context->stackPtr -= 2;
     func_800BC12C(dialogIdx, (s32)data, (u16 *)buf);
@@ -607,7 +607,7 @@ s32 opHandler_AMESW(ScriptContext *context) {
     u8 *data;
     s32 dims;
 
-    dialogIdx  = context->stack[(s8)context->stackPtr - 3];
+    dialogIdx = context->stack[(s8)context->stackPtr - 3];
     textIdx = context->stack[(s8)context->stackPtr - 2];
     buf.x   = (u16)context->stack[(s8)context->stackPtr - 1];
     buf.y   = (u16)context->stack[(s8)context->stackPtr];
@@ -652,7 +652,7 @@ s32 opHandler_AMES(ScriptContext *context) {
     u8 *data;
     s32 dims;
 
-    dialogIdx  = context->stack[(s8)context->stackPtr - 3];
+    dialogIdx = context->stack[(s8)context->stackPtr - 3];
     textIdx = context->stack[(s8)context->stackPtr - 2];
     buf.x   = (u16)context->stack[(s8)context->stackPtr - 1];
     buf.y   = (u16)context->stack[(s8)context->stackPtr];
@@ -698,7 +698,7 @@ s32 opHandler_RAMESW(ScriptContext *context) {
     buf.y   = POP(context);
     buf.x   = POP(context);
     textIdx = POP(context);
-    dialogIdx  = POP(context);
+    dialogIdx = POP(context);
 
     if ((g_fieldVars->dialogStartMask >> dialogIdx) & 1) {
         return 5;
@@ -751,7 +751,7 @@ s32 opHandler_ASK(Actor *actor) {
     paramZ  = actor->context.stack[(s8)actor->context.stackPtr - 2];
     paramY  = actor->context.stack[(s8)actor->context.stackPtr - 3];
     textIdx = actor->context.stack[(s8)actor->context.stackPtr - 4];
-    dialogIdx  = actor->context.stack[(s8)actor->context.stackPtr - 5];
+    dialogIdx = actor->context.stack[(s8)actor->context.stackPtr - 5];
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         if ((g_fieldVars->dialogActiveMask >> dialogIdx) & 1) {
@@ -762,7 +762,7 @@ s32 opHandler_ASK(Actor *actor) {
         setDialogChoiceMessage(dialogIdx, data, paramY, paramZ, paramW, paramV);
         openDialogAnimated(dialogIdx);
         actor->field_0x204 = 0;
-        g_fieldVars->dialogStartMask  |= (1 << dialogIdx);
+        g_fieldVars->dialogStartMask |= (1 << dialogIdx);
         g_fieldVars->dialogActiveMask |= (1 << dialogIdx);
     } else {
         state = actor->field_0x204;
@@ -798,16 +798,16 @@ s32 opHandler_ASK(Actor *actor) {
  * current @c scriptSlot is set:
  *   - Returns 5 if the dialog slot is already active (bit set in @c field_0xD2).
  *   - Otherwise, saves the current global dialog flag, resolves a text pointer,
- *     measures it via @c measureMessage, fills the rect's bottom-right corner
+ * measures it via @c measureMessage, fills the rect's bottom-right corner
  *     (+0x30 X, +0x11 Y), runs the display setup chain, kicks off the slow
- *     dialog, and sets the slot's bits in both @c field_0xD2 and @c field_0xD3.
+ * dialog, and sets the slot's bits in both @c field_0xD2 and @c field_0xD3.
  * Otherwise, runs a 2-state machine on @c field_0x204:
  *   - State 0: set the global dialog flag, query the answer
- *     (@c getDialogChoice), store to @c result; if non-negative, close the
- *     dialog and advance the state.
+ * (@c getDialogChoice), store to @c result; if non-negative, close the
+ * dialog and advance the state.
  *   - State 1: when the dialog has fully closed (@c getOpenDialogScale == 0),
  *     clear the slot's bit in @c field_0xD2, pop 8 stack slots, restore
- *     the saved dialog flag, and return 3.
+ * the saved dialog flag, and return 3.
  *
  * @return 1 while still working, 3 once the dialog has shut in state 1,
  *         5 when the slot was already active.
@@ -832,7 +832,7 @@ s32 opHandler_AASK(Actor *actor) {
     paramZ  = actor->context.stack[actor->context.stackPtr - 4];
     paramY  = actor->context.stack[actor->context.stackPtr - 5];
     textIdx = actor->context.stack[actor->context.stackPtr - 6];
-    dialogIdx  = actor->context.stack[actor->context.stackPtr - 7];
+    dialogIdx = actor->context.stack[actor->context.stackPtr - 7];
 
     if ((actor->context.activeMask >> actor->context.scriptSlot) & 1) {
         if ((g_fieldVars->dialogActiveMask >> dialogIdx) & 1) {

@@ -1146,10 +1146,10 @@ u16 func_801F2370(void) {
  *       original.
  * @note measureMessage (src/dialog.c) is called without a prototype here,
  *       as in the original build; field.h/we_object1.h carry the u8*
- *       declaration for their units until a dialog.h consolidation pass.
+ * declaration for their units until a dialog.h consolidation pass.
  *
- * @param idx  Region slot index (passed to setDialogRect).
- * @param y    Screen Y for the region.
+ * @param idx Region slot index (passed to setDialogRect).
+ * @param y Screen Y for the region.
  * @param text Text to measure.
  */
 void func_801F23D0(s32 idx, s32 y, u8 *text) {
@@ -1175,18 +1175,18 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F3270);
 
 /**
  * @brief Draw the menu clock: the play time as hours:minutes, or the running
- *        countdown as minutes:seconds.
+ * countdown as minutes:seconds.
  *
  * The colon is drawn at the menu brightness while @c colonTimer runs and at 2/3
  * of it otherwise, so it blinks once a second; a countdown at 0 keeps it bright.
  *
- * @param ctx        The main menu's context.
- * @param ot         Ordering table.
- * @param pkt        Packet cursor.
- * @param x          Left edge of the clock icon; the digits follow it.
- * @param y          Top of the clock.
- * @param time       The play time, divided by 60 (50 on PAL) into minutes, or the
- *                   countdown in seconds.
+ * @param ctx The main menu's context.
+ * @param ot Ordering table.
+ * @param pkt Packet cursor.
+ * @param x Left edge of the clock icon; the digits follow it.
+ * @param y Top of the clock.
+ * @param time The play time, divided by 60 (50 on PAL) into minutes, or the
+ * countdown in seconds.
  * @param isPlayTime Non-zero for the play time.
  * @return The packet cursor after the clock.
  */

@@ -9,8 +9,8 @@ struct Dialog;
 
 /** @brief How numbers are printed: the digit glyphs and the thousands separator. */
 typedef struct {
-    u8 digits[0x10];           /* glyph codes of the digits 0-F; [0] is the decimal digit base */
-    u8 separator;              /* thousands separator character */
+    u8 digits[0x10]; /* glyph codes of the digits 0-F; [0] is the decimal digit base */
+    u8 separator; /* thousands separator character */
 } MsgFormatConfig;
 
 extern MsgFormatConfig g_numberFormat;

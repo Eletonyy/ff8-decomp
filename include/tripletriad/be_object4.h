@@ -88,7 +88,7 @@ extern void openTriadMenu(void);
 
 /* Message-gate / banner + hand-build UI helpers (used by be_object3 / be_object3b). */
 extern void func_800A1D68(s32 a0, u8 *a1, s32 a2);  /**< Show a banner/message string. */
-extern void func_800A2054(s32 id);                  /**< Close dialog id, at once or with its animation per its flag. */
+extern void func_800A2054(s32 id); /**< Close dialog id, at once or with its animation per its flag. */
 extern void func_800A44CC(void);   /**< Reset the hand-build UI state for a new claim sequence. */
 extern void func_800A44B0(s32 a0); /**< Enable (1) / disable (0) the hand-build input prompt. */
 extern void func_800A44BC(void);   /**< Tear down the claim UI at the end of the sequence. */

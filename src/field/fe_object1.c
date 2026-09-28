@@ -296,7 +296,7 @@ void func_80098934(void) {
  *       @c g_fieldWalkmeshAdjacency was missing the @c +4 offset. Three more surfaced
  *       while closing the last 2%: both @c isrgb24 clears on the
  *       @c DISPENV pair were absent before @c PutDispEnv; state==1 stored
- *       @c g_curFieldId after @c sndCmd21 instead of before (the original
+ * @c g_curFieldId after @c sndCmd21 instead of before (the original
  *       loads @c counter first and lets dbr sink the store into the jal
  *       delay slot, so doing it after reads a post-call value); and the
  *       loop body ended in an unconditional @c break, dropping out of the
@@ -509,7 +509,7 @@ void func_8009895C(void) {
  * @note Purpose unknown. It survives as a real function -- the linker kept
  *       its address and @c fe_object1.h still declares it -- so it was most
  *       likely a debug or teardown hook whose body was compiled out, sitting
- *       as it does between the shutdown path above and the dialog close in
+ * as it does between the shutdown path above and the dialog close in
  *       @ref func_8009912C.
  */
 void func_80099124(void) {

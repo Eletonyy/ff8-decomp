@@ -23,7 +23,7 @@
 
 /** @brief Global field ids of the maps a new game and a game over go to. */
 #define FIELD_ID_START0 74 /**< start0, the first map of a new game. */
-#define FIELD_ID_GOVER  75 /**< gover, the game-over map. */
+#define FIELD_ID_GOVER 75 /**< gover, the game-over map. */
 
 /** @brief A world-map entrance: the field it leads to and where the party appears there. */
 typedef struct {
@@ -59,7 +59,7 @@ void flushGpuOt(void) {
 /** @brief VSync callback handler, registered via VSyncCallback in InitHardware.
  *
  *  Dispatches per-frame rendering by the current render mode and advances the
- *  play time and the countdown, both counted in seconds.
+ * play time and the countdown, both counted in seconds.
  */
 void VsyncHandler(void) {
     switch (g_renderMode) {

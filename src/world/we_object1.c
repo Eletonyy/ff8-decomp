@@ -390,8 +390,8 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009AEE4);
  *       No meaningful value is returned.
  *
  * @param slotIdx Index into the @c D_800C526C dialog-slot table.
- * @param strIdx  String-table index (@c -2 = none); also the "already current" key.
- * @param text    Explicit clip pointer; overrides @p strIdx when non-NULL.
+ * @param strIdx String-table index (@c -2 = none); also the "already current" key.
+ * @param text Explicit clip pointer; overrides @p strIdx when non-NULL.
  */
 s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text) {
     RECT rect;
@@ -456,8 +456,8 @@ s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text) {
  * submitted via @c setDialogRect, and the dialog is opened with @c openDialogAnimated.
  *
  * @param slotIdx Index into the @c D_800C526C dialog-slot table.
- * @param strIdx  String-table index for the clip text (@c -2 = none).
- * @param text    Explicit text/data pointer; overrides @p strIdx when non-NULL.
+ * @param strIdx String-table index for the clip text (@c -2 = none).
+ * @param text Explicit text/data pointer; overrides @p strIdx when non-NULL.
  * @param arg3..arg6 Forwarded to @c setDialogChoiceMessage.
  */
 void func_8009B550(s32 slotIdx, s32 strIdx, u8 *text, s32 arg3, s32 arg4, s32 arg5, s32 arg6) {
@@ -561,13 +561,13 @@ void func_8009B748(void) {
  *  - Request pending (@c D_800C4D90 @c >= @c 0) and nothing playing
  *    (@c D_800C4D94 @c < @c 0): resolve the clip record from the @c D_800C97D4
  *    string-table blob (@c table @c + @c table->first[req]), start playback
- *    (@c setDialogMessage), set its text speed from the message-speed setting and its
+ * (@c setDialogMessage), set its text speed from the message-speed setting and its
  *    entity type to 6, build a horizontally-centered display @c RECT from the
- *    clip's packed dimensions (@c measureMessage returns @c width|height<<16) and
- *    submit it (@c setDialogRect), then @c openDialogAnimated and latch
+ * clip's packed dimensions (@c measureMessage returns @c width|height<<16) and
+ * submit it (@c setDialogRect), then @c openDialogAnimated and latch
  *    @c D_800C4D94 @c = @c D_800C4D90.
  *  - No request (@c D_800C4D90 @c < @c 0) but a clip is playing
- *    (@c D_800C4D94 @c >= @c 0): @c closeDialogAnimated and clear the tracker to -1.
+ * (@c D_800C4D94 @c >= @c 0): @c closeDialogAnimated and clear the tracker to -1.
  *
  * Centering uses screen half-width @c D_800C97EA:
  * @c x @c = @c D_800C97EA/2 @c - @c width/2, with a 16px margin on the others.

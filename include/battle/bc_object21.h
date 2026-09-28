@@ -3,7 +3,7 @@
 
 #include "common.h"
 
-extern s32  func_800DD238(void);
+extern s32 func_800DD238(void);
 extern void func_800DD274(s32 a0);
 extern void func_800DD280(s32 a0);
 extern void func_800DDF6C(void);

@@ -12,8 +12,8 @@
  *       each overlay's own header, never in a shared one.
  *
  * @note @c menugf.c declares @c g_menuDisplayCfg at file scope instead of
- *       including @c menu.h: that header types it as a @c MenuDisplayConfig
- *       struct while this unit walks it as raw bytes
+ * including @c menu.h: that header types it as a @c MenuDisplayConfig
+ * struct while this unit walks it as raw bytes
  *       (@c *(s16 *)&g_menuDisplayCfg[0]); including @c menu.h therefore
  *       requires converting those accesses to struct fields first, which is a
  *       codegen-affecting decomp change rather than a header cleanup.
