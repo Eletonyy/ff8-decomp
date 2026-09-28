@@ -363,7 +363,7 @@ typedef struct {
  */
 typedef struct {
     /* 0x00 */ u16 vsyncRate;
-    /* 0x02 */ u16 musicTrack;
+    /* 0x02 */ u16 fieldId;          /**< Saved @c g_curFieldId. */
     /* 0x04 */ u16 field120;         /**< Saved copy of g_fieldEntity.field_0x120. */
     /* 0x06 */ u16 positionsX[3];    /**< Party member X positions (>>12 integer). */
     /* 0x0C */ u16 positionsY[3];    /**< Party member Y positions (>>12 integer). */
