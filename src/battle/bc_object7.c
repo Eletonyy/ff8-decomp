@@ -89,7 +89,7 @@ void func_800AF6BC(s32 arg0) {
     partyMember = &g_gameState.chars[g_gameState.mainData.party.party[arg0]];
     
     partyMember->currentHp = entity->currentHp;
-    partyMember->statusFlags = entity->status &= 0xFFDF;
+    partyMember->statusFlags = entity->status &= ~STATUS_BERSERK;
     func_800AE4A0(arg0);
 }
 
