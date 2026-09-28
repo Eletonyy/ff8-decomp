@@ -28,7 +28,7 @@ extern u8 D_80077BA8[];
  *    music 5, both volumes 0x7F, SeeD exp 500, the @ref FIELD_STATE_TRANSITION
  *    and @ref FIELD_STATE_FIELD_READY state bits,
  *    and message speed 2 (@c GameConfig.fieldMsgSpeed).
- *  - Always: clears the SFX masks and the first two anim-shadow slots,
+ *  - Always: clears the dialog masks and the first two anim-shadow slots,
  *    disables reverb, resets the sound-bank selector, and marks all
  *    three audio channel states and both sound handles inactive (-1).
  *  - Mirrors @c fieldB6 into @c g_battleConfig.unk2; when
@@ -77,9 +77,9 @@ void SmInitEventAll(s32 fullReset)
         g_gameState.config.fieldMsgSpeed = 2;
     }
 
-    g_fieldVars->sfxStartMask = 0;
-    g_fieldVars->sfxEntryMask = 0;
-    g_fieldVars->sfxActiveMask = 0;
+    g_fieldVars->dialogStartMask = 0;
+    g_fieldVars->dialogEntryMask = 0;
+    g_fieldVars->dialogActiveMask = 0;
     for (i = 0; i < 2; i++) {
         D_80085398[i].flag = 0;
         clearAnimEntryActive(i);

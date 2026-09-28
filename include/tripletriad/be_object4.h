@@ -80,7 +80,7 @@ extern void closeMenu(void);
 extern void func_800A1C6C(void);
 /** @brief Flush the queued Triple Triad SFX to the SPU and empty the queue. */
 extern void flushTriadSfxQueue(void);
-extern void clearAllSfx(void);
+extern void clearAllDialogs(void);
 /** @brief Show a card's name, or build its detail popup buffer. */
 extern void showCardDetail(s32 cardId);
 /** @brief Open the Triple Triad in-game menu and freeze card input. */
@@ -88,21 +88,21 @@ extern void openTriadMenu(void);
 
 /* Message-gate / banner + hand-build UI helpers (used by be_object3 / be_object3b). */
 extern void func_800A1D68(s32 a0, u8 *a1, s32 a2);  /**< Show a banner/message string. */
-extern void func_800A2054(s32 a0);                  /**< Acknowledge/advance a message gate. */
+extern void func_800A2054(s32 a0);                  /**< Close dialog a0, at once or with its animation per its flag. */
 extern void func_800A44CC(void);   /**< Reset the hand-build UI state for a new claim sequence. */
 extern void func_800A44B0(s32 a0); /**< Enable (1) / disable (0) the hand-build input prompt. */
 extern void func_800A44BC(void);   /**< Tear down the claim UI at the end of the sequence. */
 
 /* ───────────────────── be_object4-internal typedefs ───────────────────── */
 
-/** @brief One 0x0C-byte entry of the D_80182E70 per-SFX configuration table. */
+/** @brief One 0x0C-byte entry of the D_80182E70 per-dialog configuration table. */
 typedef struct {
-    /* 0x00 */ u8 flags;     /**< bit0 stop/start fade (func_800A2054); bit1 offset-params, bit2 center (func_800A1D68). */
-    /* 0x01 */ u8 field2F;   /**< Value written to each SFX entry's field 0x2F. */
-    /* 0x02 */ u8 pitch;     /**< Pitch value. */
+    /* 0x00 */ u8 flags;     /**< bit0 open and close without the animation (func_800A1D68, func_800A2054); bit1 offset-params, bit2 center (func_800A1D68). */
+    /* 0x01 */ u8 field2F;   /**< Value written to each dialog's field2F. */
+    /* 0x02 */ u8 textSpeed; /**< Text speed (setDialogTextSpeed). */
     /* 0x03 */ u8 fadeTimer; /**< Frame countdown; on reaching 0 the entry is faded out (see func_800A1C6C). */
     /* 0x04 */ RECT rect;    /**< Message-box rect (func_800A1D68); 0 w/h means "size to the text". */
-} SfxConfig;
+} DialogConfig;
 
 /** @brief The Triple Triad board view + cursor state at D_801D49C8.
  *
@@ -192,7 +192,7 @@ extern s32 D_801D4B30[]; /**< Per-controller newly-pressed mask. */
 extern s32 D_801D4B24;   /**< = D_801D4B20[1] (player 2); split symbol for the readPads write. */
 extern s32 D_801D4B2C;   /**< = D_801D4B28[1] (player 2). */
 extern s32 D_801D4B34;   /**< = D_801D4B30[1] (player 2). */
-extern SfxConfig D_80182E70[];
+extern DialogConfig D_80182E70[];
 extern u8 D_80182EC8[];
 extern u8 D_801D4568[];
 extern u8 D_801D4968[];

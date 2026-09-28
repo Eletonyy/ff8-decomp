@@ -54,7 +54,6 @@ extern void func_8009D630(void);
 extern s32  func_800BD380(s16 *outLow, s16 *outHigh);
 extern s32  func_800BD2A0(s16 *outLow, s16 *outHigh);
 extern s32  func_800BD460(s16 *outLow, s16 *outHigh);
-extern s32  func_8002CE84(s32 idx);
 extern s32  func_800A017C(SVECTOR *v);
 
 /* Shared world helper: copies @p pos's low-16-bit angle triple into @p out and

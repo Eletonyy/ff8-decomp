@@ -17,7 +17,6 @@ extern u8 D_8005F388[];
 extern u8 D_80063388[];
 extern s32 D_80085220;
 extern u8 D_8005644B[];
-extern u16 D_800562C8[];
 extern s32 D_800562D4;
 extern s32 findNthSetBit(s32, s32);
 extern s32 func_80021300(void);
@@ -826,9 +825,14 @@ u8 lookupFieldTable(s32 tableIdx) {
 }
 
 
-/** @brief Returns halfword from D_800562C8 table indexed by the field message speed. */
-u16 getCurrentFieldMusic(void) {
-    return D_800562C8[g_gameState.config.fieldMsgSpeed];
+/**
+ * @brief Get the dialogs' text speed for the field message-speed setting.
+ *
+ * @c config.fieldMsgSpeed is the Config menu slider position; @c g_textSpeeds maps
+ * it to a text speed, from 0x1C00 (1.75 characters a frame) down to 0x0C00.
+ */
+u16 getFieldTextSpeed(void) {
+    return g_textSpeeds[g_gameState.config.fieldMsgSpeed];
 }
 
 

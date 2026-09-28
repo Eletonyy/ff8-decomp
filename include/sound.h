@@ -301,22 +301,6 @@ typedef struct {
     /* 0x12 */ s16 field12;     /**< Sequence runtime state (cleared by stop helper). */
 } SeqEntry; /* 0x14 = 20 bytes */
 
-/**
- * @brief SFX slot entry (stride 16 bytes).
- *
- * Used by world's SFX slot table to track active SFX with their
- * associated signed index values.
- */
-typedef struct {
-    /* 0x00 */ s8  field00;     /**< Slot enable flag; -1 = inactive, -2 = direct. */
-    /* 0x01 */ s8  field01;     /**< Text-box position/alignment mode (0..3). */
-    /* 0x02 */ s8  field02;     /**< Signed SFX index. */
-    /* 0x03 */ s8  field03;     /**< Reverb mode. */
-    /* 0x04 */ u16 field04;     /**< Text-box anchor X. */
-    /* 0x06 */ u16 field06;     /**< Text-box anchor Y. */
-    /* 0x08 */ u8  pad08[8];
-} SfxSlot; /* 0x10 = 16 bytes */
-
 /** @brief Toggle the current sound-bank-selector flag and return a pointer to the new bank table. */
 extern u8 *toggleSoundBank(void);
 

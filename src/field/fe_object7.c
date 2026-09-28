@@ -9,6 +9,12 @@
 #include "field/fe_object1b.h"
 #include "field/fe_object7.h"
 
+/* dialog.h is not included: opHandler_DRAWPOINT passes an s16[4] rect to
+ * func_8002E064, which it declares as taking RECT *. setDialogChoiceMessage and
+ * getDialogChoice keep the prototypes their calls were built with. */
+extern void setDialogChoiceMessage(s32 dialogIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
+extern s32 getDialogChoice(s32 idx);
+
 /**
  * @brief Pop a key item ID and store its value.
  *
@@ -262,8 +268,8 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
     switch (actor->field_0x204) {
     case 0:
         g_fieldVars->fieldF2 = fieldIdx;
-        setSfxEntryBrightness(6, 0x1000);
-        setSfxEntityType(6, 6);
+        setDialogBrightness(6, 0x1000);
+        setDialogEntityType(6, 6);
 
         if (func_800B5990()) {
             i = getPackedField2Bit(fieldIdx);
@@ -278,16 +284,16 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
             text = func_800B574C(getOffsetTableEntry(&D_8005630C, 7));
         }
 
-        initSfxPlayback(6, text);
+        setDialogMessage(6, text);
         dims = func_8002E680(text);
         rect[2] = (dims & 0xFFFF) + 0x10;
         rect[3] = (dims >> 16) + 0x11;
         rect[0] = 0xA0 - rect[2] / 2;
         rect[1] = 0x70 - rect[3] / 2;
         func_8002E064(6, rect);
-        startSfxSlow(6);
-        setSfxGlobalFlag(6);
-        g_fieldVars->sfxStartMask |= 0x40;
+        openDialogAnimated(6);
+        setDialogGlobalFlag(6);
+        g_fieldVars->dialogStartMask |= 0x40;
 
         if (tableResult & 0x80) {
             D_800DE4D0 = 0x14;
@@ -305,7 +311,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
         break;
 
     case 1:
-        if (g_fieldVars->sfxStartMask & 0x40) {
+        if (g_fieldVars->dialogStartMask & 0x40) {
             return 1;
         }
 
@@ -340,22 +346,22 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
         rect[0] = 0xA0 - rect[2] / 2;
         rect[1] = 0x70 - rect[3] / 2;
         func_8002E064(6, rect);
-        func_8002D784(6, text, 1, D_800DE4D4 + 1, 2, 1);
-        startSfxSlow(6);
-        setSfxGlobalFlag(6);
-        g_fieldVars->sfxStartMask |= 0x40;
-        g_fieldVars->sfxActiveMask |= 0x40;
+        setDialogChoiceMessage(6, text, 1, D_800DE4D4 + 1, 2, 1);
+        openDialogAnimated(6);
+        setDialogGlobalFlag(6);
+        g_fieldVars->dialogStartMask |= 0x40;
+        g_fieldVars->dialogActiveMask |= 0x40;
         actor->field_0x204++;
         break;
 
     case 3:
-        setSfxGlobalFlag(6);
-        D_800DE4D2 = func_8002CE84(6);
+        setDialogGlobalFlag(6);
+        D_800DE4D2 = getDialogChoice(6);
         if ((s8)D_800DE4D2 < 0) {
             return 1;
         }
-        fadeOutSfxSlow(6);
-        g_fieldVars->sfxActiveMask &= ~0x40;
+        closeDialogAnimated(6);
+        g_fieldVars->dialogActiveMask &= ~0x40;
 
         if ((s8)D_800DE4D2 == 0) {
             actor->context.resultSlots[0] = 0;
@@ -369,7 +375,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
 
     case 4:
         D_800DE4D3 = func_80037C6C(g_gameState.battleParty[D_800DE4D2]);
-        if (getSfxField1C(6)) {
+        if (getOpenDialogScale(6)) {
             return 1;
         }
 
@@ -413,21 +419,21 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
 
         func_800B578C(3, g_gameState.battleParty[D_800DE4D2]);
         text = func_800B578C(0xC, tableResult & 0x3F);
-        initSfxPlayback(6, text);
+        setDialogMessage(6, text);
         dims = func_8002E680(text);
         rect[2] = (dims & 0xFFFF) + 0x10;
         rect[3] = (dims >> 16) + 0x11;
         rect[0] = 0xA0 - rect[2] / 2;
         rect[1] = 0x70 - rect[3] / 2;
         func_8002E064(6, rect);
-        startSfxSlow(6);
-        setSfxGlobalFlag(6);
-        g_fieldVars->sfxStartMask |= 0x40;
+        openDialogAnimated(6);
+        setDialogGlobalFlag(6);
+        g_fieldVars->dialogStartMask |= 0x40;
         actor->field_0x204++;
         break;
 
     case 7:
-        if (g_fieldVars->sfxStartMask & 0x40) {
+        if (g_fieldVars->dialogStartMask & 0x40) {
             return 1;
         }
 

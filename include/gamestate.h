@@ -425,9 +425,10 @@ extern void setMcBusy(void);
 extern u32  isMcBusy(void);
 
 
-/** @brief Halfword lookup table indexed by @c GameConfig.fieldMsgSpeed.
- *         Used as the per-entity SFX pitch in @c func_800BF718's common tail. */
-extern u16 D_800562C8[];
+/** @brief Dialog text speed for each Config "Message speed" slider position
+ *         (@c GameConfig.fieldMsgSpeed): 0x1C00 (1.75 characters a frame)
+ *         down to 0x0C00. */
+extern u16 g_textSpeeds[];
 
 /** @brief Stop all sound playback (gamestate.c); installed as the VSync
  *         callback during field-engine init. */

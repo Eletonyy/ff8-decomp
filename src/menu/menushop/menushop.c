@@ -659,10 +659,10 @@ restart:
                 u8 *msg;
                 sendSpuCommand(5);
                 msg = func_801F6AA4(STRING_SHOP_NOT_ENOUGH_MONEY);
-                initSfxPlayback(0, msg);
+                setDialogMessage(0, msg);
                 func_801F23D0(0, 104, msg);
-                setSfxPitch(0, 0);
-                startSfxNormal(0);
+                setDialogTextSpeed(0, 0);
+                openDialogInstant(0);
                 s->unk4C = 600;
                 *statePtr = 15;
                 break;
@@ -673,9 +673,9 @@ restart:
                 sendSpuCommand(5);
                 msg = func_801F6AA4(STRING_SHOP_CANT_CARRY_ANY_MORE);
                 func_801F23D0(0, 104, msg);
-                initSfxPlayback(0, msg);
-                setSfxPitch(0, 0);
-                startSfxNormal(0);
+                setDialogMessage(0, msg);
+                setDialogTextSpeed(0, 0);
+                openDialogInstant(0);
                 s->unk4C = 600;
                 *statePtr = 15;
                 break;
@@ -713,7 +713,7 @@ restart:
             s->unk4C = 0;
         }
         if (s->unk4C <= 0) {
-            fadeOutSfxFast(0);
+            closeDialogInstant(0);
             *statePtr = 6;
         }
         break;

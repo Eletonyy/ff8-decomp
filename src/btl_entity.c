@@ -6,7 +6,7 @@
 extern BattleDisplayEntity g_battleEntities[];
 extern s32 D_800834CC;
 extern u8 g_digitBaseCode;
-extern SfxSystem g_sfxEntries;
+extern DialogSystem g_dialogs;
 extern DisplayListBuf *D_800834C0;
 extern u16 D_80052974[];
 extern s32 reverseButtonRemap(s32 index);
@@ -216,27 +216,27 @@ s32 func_8002C734(s32 c) {
 
 
 /**
- * @brief Set field30 and field32 on an SFX entry.
- * @param idx SFX entry index.
+ * @brief Set field30 and field32 on a dialog.
+ * @param idx Dialog index.
  * @param val30 Value for field30.
  * @param val32 Value for field32.
  */
-void setSfxEntryParams(s32 idx, s32 val30, s32 val32) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void setDialogParams(s32 idx, s32 val30, s32 val32) {
+    Dialog *entry = &g_dialogs.entries[idx];
     entry->field30 = val30;
     entry->field32 = val32;
 }
 
 
 /**
- * @brief Set timing fields on an SFX entry.
- * @param idx SFX entry index.
+ * @brief Set timing fields on a dialog.
+ * @param idx Dialog index.
  * @param val29 Value for field29.
  * @param val2A Value for field2A.
  * @param val2C Value for field2C.
  */
-void setSfxEntryTimings(s32 idx, s32 val29, s32 val2A, s32 val2C) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void setDialogTimings(s32 idx, s32 val29, s32 val2A, s32 val2C) {
+    Dialog *entry = &g_dialogs.entries[idx];
     entry->field29 = val29;
     entry->field2A = val2A;
     entry->ctrl.fields.field2C = val2C;
@@ -244,45 +244,45 @@ void setSfxEntryTimings(s32 idx, s32 val29, s32 val2A, s32 val2C) {
 
 
 /**
- * @brief Set field2B on an SFX entry.
- * @param idx SFX entry index.
+ * @brief Set field2B on a dialog.
+ * @param idx Dialog index.
  * @param val Value to store.
  */
-void setSfxEntryField2B(s32 idx, s32 val) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void setDialogField2B(s32 idx, s32 val) {
+    Dialog *entry = &g_dialogs.entries[idx];
     entry->field2B = val;
 }
 
 
 /**
- * @brief Set an SFX entry's draw hook.
- * @param idx SFX entry index.
+ * @brief Set a dialog's draw hook.
+ * @param idx Dialog index.
  * @param val Hook to run, or NULL for none.
  */
-void setSfxEntryField34(s32 idx, SfxEntryDrawCallback val) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void setDialogField34(s32 idx, DialogDrawCallback val) {
+    Dialog *entry = &g_dialogs.entries[idx];
     entry->drawCallback = val;
 }
 
 
 /**
- * @brief Set an SFX entry's per-frame update hook.
- * @param idx SFX entry index.
+ * @brief Set a dialog's per-frame update hook.
+ * @param idx Dialog index.
  * @param val Hook to run, or NULL for none.
  */
-void setSfxEntryField38(s32 idx, SfxEntryCallback val) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void setDialogField38(s32 idx, DialogCallback val) {
+    Dialog *entry = &g_dialogs.entries[idx];
     entry->updateCallback = val;
 }
 
 
 /**
  * @brief Set a message window's brightness and copy it to the window's display entity.
- * @param idx SFX entry index.
+ * @param idx Dialog index.
  * @param val Brightness (0x1000 = full).
  */
-void setSfxEntryBrightness(s32 idx, s32 val) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void setDialogBrightness(s32 idx, s32 val) {
+    Dialog *entry = &g_dialogs.entries[idx];
     entry->brightness = val;
     setBattleEntityBrightness(entry->entityIdx, val);
 }

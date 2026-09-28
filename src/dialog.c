@@ -2,7 +2,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
 #include "battle.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 #include "numstr.h"
 #include "btl_entity.h"
 #include "btl_anim.h"
@@ -117,26 +117,26 @@ extern GlyphTable D_80052A68;
 #define setGlyphUVClut(p, word) do { *(u32 *)&(p)->u0 = (word); } while (0)
 #define setGlyphWH(p, word)     (*(u32 *)&(p)->w = (word))
 
-/** @brief Values of @c SfxEntry.seqState, the text state machine run by func_8002D040. */
+/** @brief Values of @c Dialog.seqState, the text state machine run by func_8002D040. */
 enum {
-    SFX_SEQ_START,              /**< Clear the button auto-repeat state. */
-    SFX_SEQ_TICK,               /**< Advance the character timer by the text speed. */
-    SFX_SEQ_PRINT,              /**< Wait for the character timer, then print. */
-    SFX_SEQ_NEXT_CHAR,          /**< Decode the next character or command. */
-    SFX_SEQ_NEWLINE,            /**< Scroll first if the window is full. */
-    SFX_SEQ_SCROLL,             /**< Scroll up by one line. */
-    SFX_SEQ_END,                /**< End of the message. */
-    SFX_SEQ_DONE,               /**< Finished; nothing left to run. */
-    SFX_SEQ_PAGE,               /**< Page break: set up the corner marker. */
-    SFX_SEQ_PAGE_RELEASE,       /**< Wait until only the d-pad is held. */
-    SFX_SEQ_PAGE_WAIT,          /**< Wait for Cross or Square, then start the next page. */
-    SFX_SEQ_CHOICE_START,
-    SFX_SEQ_CHOICE_RELEASE,     /**< Wait until no button is pressed. */
-    SFX_SEQ_CHOICE,             /**< Move the choice cursor, confirm or cancel. */
-    SFX_SEQ_WAIT_START,
-    SFX_SEQ_WAIT,               /**< Count down @c SfxEntry.waitTimer. */
-    SFX_SEQ_DPAD_RELEASE_START,
-    SFX_SEQ_DPAD_RELEASE        /**< Wait for the d-pad to be released, then offer the choice. */
+    DIALOG_SEQ_START,              /**< Clear the button auto-repeat state. */
+    DIALOG_SEQ_TICK,               /**< Advance the character timer by the text speed. */
+    DIALOG_SEQ_PRINT,              /**< Wait for the character timer, then print. */
+    DIALOG_SEQ_NEXT_CHAR,          /**< Decode the next character or command. */
+    DIALOG_SEQ_NEWLINE,            /**< Scroll first if the window is full. */
+    DIALOG_SEQ_SCROLL,             /**< Scroll up by one line. */
+    DIALOG_SEQ_END,                /**< End of the message. */
+    DIALOG_SEQ_DONE,               /**< Finished; nothing left to run. */
+    DIALOG_SEQ_PAGE,               /**< Page break: set up the corner marker. */
+    DIALOG_SEQ_PAGE_RELEASE,       /**< Wait until only the d-pad is held. */
+    DIALOG_SEQ_PAGE_WAIT,          /**< Wait for Cross or Square, then start the next page. */
+    DIALOG_SEQ_CHOICE_START,
+    DIALOG_SEQ_CHOICE_RELEASE,     /**< Wait until no button is pressed. */
+    DIALOG_SEQ_CHOICE,             /**< Move the choice cursor, confirm or cancel. */
+    DIALOG_SEQ_WAIT_START,
+    DIALOG_SEQ_WAIT,               /**< Count down @c Dialog.waitTimer. */
+    DIALOG_SEQ_DPAD_RELEASE_START,
+    DIALOG_SEQ_DPAD_RELEASE        /**< Wait for the d-pad to be released, then offer the choice. */
 };
 
 /** @brief Characters of a decoded message that the text state machine acts on. */
@@ -156,35 +156,35 @@ enum {
 };
 
 /** @brief Text colour index of white, the colour a message starts in. */
-#define SFX_COLOR_WHITE 7
+#define DIALOG_COLOR_WHITE 7
 
 /** @brief Command arguments are stored offset by this value (' '). */
 #define MSG_ARG_BASE 0x20
 
-/** @brief Bit of @c SfxGlobalState.textBlinkClock that dims blinking text; set for 16 of every 32 frames. */
-#define SFX_TEXT_BLINK_DIM 0x10
+/** @brief Bit of @c DialogGlobalState.textBlinkClock that dims blinking text; set for 16 of every 32 frames. */
+#define DIALOG_TEXT_BLINK_DIM 0x10
 
-/** @brief @c SfxEntry.field29 / @c field2A (first / last choice line) when the message offers no choice. */
-#define SFX_NO_CHOICE 0xFF
+/** @brief @c Dialog.field29 / @c field2A (first / last choice line) when the message offers no choice. */
+#define DIALOG_NO_CHOICE 0xFF
 
 /** @brief Size of the $gp scratch buffer a message is decoded into. */
-#define SFX_MSG_BUF_SIZE 128
+#define DIALOG_MSG_BUF_SIZE 128
 
 /** @brief Height of one text line in pixels; a scroll steps @c field12 once per frame until a line has passed. */
-#define SFX_LINE_HEIGHT 16
+#define DIALOG_LINE_HEIGHT 16
 
 /** @brief The clamp rect of a message window sits this many pixels inside its bound rect. */
-#define SFX_CLAMP_INSET 6
+#define DIALOG_CLAMP_INSET 6
 
 /** @brief Text starts this many pixels right of and below the window's text origin. */
-#define SFX_TEXT_MARGIN 2
+#define DIALOG_TEXT_MARGIN 2
 
 /** @brief Lines that hold choices are indented by this much, room for the cursor. */
-#define SFX_CHOICE_INDENT 32
+#define DIALOG_CHOICE_INDENT 32
 
 /** @brief Position of the choice cursor within its line. */
-#define SFX_CURSOR_X 4
-#define SFX_CURSOR_Y 5
+#define DIALOG_CURSOR_X 4
+#define DIALOG_CURSOR_Y 5
 
 /** @brief Text glyphs are this many pixels square, and a font texture row holds this many. */
 #define TEXT_GLYPH_SIZE 12
@@ -204,21 +204,21 @@ enum {
 #define TEXT_TPAGE_PAGE1 0xE100041F
 #define TEXT_TPAGE_PAGE2 0xE100041D
 
-extern SfxSystem g_sfxEntries;
+extern DialogSystem g_dialogs;
 extern s32 D_800831D8;
 extern s8 D_800831DC;
 extern s32 D_80083850;
 extern u8 D_800834D8[];
 static void updateTextBlinkColors(void);
 static void applyWindowBrightness(s32 index);
-static void func_8002CAE0(P_TAG *ot, SfxEntry *entry);
+static void func_8002CAE0(P_TAG *ot, Dialog *entry);
 static TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y);
-static inline void updateSfxFade(s32 index);
+static inline void updateOpenDialogScale(s32 index);
 static void func_8002D040(s32 index, u32 input, u32 repeat);
 static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy);
-static void func_8002EE10(P_TAG *ot, SfxEntry *entry);
+static void func_8002EE10(P_TAG *ot, Dialog *entry);
 static void func_8002CC4C(s32 index, P_TAG *ot);
-static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, SfxSystem *sys, u16 newVal, s32 channel);
+static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, DialogSystem *sys, u16 newVal, s32 channel);
 static void func_8002D8CC(P_TAG *ot, s32 index);
 static inline u32 linkPacket(u32 head, void *p);
 static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt);
@@ -232,17 +232,17 @@ void func_8002CDE4(RECT *rect, s32 scale, s32 arg2);
  * Text colours 8-15 are the blinking variants of colours 0-7: message text
  * takes its tint from @c state.textBlinkTint instead of @c state.textTint, and menu
  * text from @c g_menuTint[MENU_TINT_BLINK] instead of @c g_menuTint[MENU_TINT_NORMAL]. While
- * @ref SFX_TEXT_BLINK_DIM is set in @c state.textBlinkClock each copy is a grey at
+ * @ref DIALOG_TEXT_BLINK_DIM is set in @c state.textBlinkClock each copy is a grey at
  * 75% of its base's red channel (the brightness setters only ever store greys);
  * otherwise it equals the base. The clock steps once per frame, so the text blinks
  * between full and 75% brightness every 16 frames.
  */
 static void updateTextBlinkColors(void) {
-    u32 textBlinkTint = g_sfxEntries.state.textTint;
-    u8 blinkClock = g_sfxEntries.state.textBlinkClock;
+    u32 textBlinkTint = g_dialogs.state.textTint;
+    u8 blinkClock = g_dialogs.state.textBlinkClock;
     u32 menuBlinkTint = g_menuTint[MENU_TINT_NORMAL];
 
-    if (blinkClock & SFX_TEXT_BLINK_DIM) {
+    if (blinkClock & DIALOG_TEXT_BLINK_DIM) {
         textBlinkTint &= 0xFF;
         textBlinkTint = (textBlinkTint * 3) >> 2;
         textBlinkTint = textBlinkTint | ((textBlinkTint << 16) | (textBlinkTint << 8));
@@ -254,7 +254,7 @@ static void updateTextBlinkColors(void) {
         menuBlinkTint |= SPRT_CODE;
     }
 
-    g_sfxEntries.state.textBlinkTint = textBlinkTint;
+    g_dialogs.state.textBlinkTint = textBlinkTint;
     g_menuTint[MENU_TINT_BLINK] = menuBlinkTint;
 }
 
@@ -266,7 +266,7 @@ static void updateTextBlinkColors(void) {
  * (updateTextBlinkColors).
  */
 void tickTextBlink(void) {
-    g_sfxEntries.state.textBlinkClock--;
+    g_dialogs.state.textBlinkClock--;
     updateTextBlinkColors();
 }
 
@@ -281,7 +281,7 @@ void setTextBrightness(s32 brightness) {
     brightness &= 0xFF;
     brightness |= (brightness << 16) | (brightness << 8);
     brightness |= SPRT_CODE;
-    g_sfxEntries.state.textTint = brightness;
+    g_dialogs.state.textTint = brightness;
     updateTextBlinkColors();
 }
 
@@ -292,10 +292,10 @@ void setTextBrightness(s32 brightness) {
  * Sets the text brightness (setTextBrightness) and @c g_gpuColor, the tint of
  * the window's corner marker (buildGrayscaleGpuColor).
  *
- * @param index Message window (SFX entry) index.
+ * @param index Dialog index.
  */
 static void applyWindowBrightness(s32 index) {
-    SfxEntry *entry = &g_sfxEntries.entries[index];
+    Dialog *entry = &g_dialogs.entries[index];
     s32 val = entry->brightness;
     setTextBrightness(val);
     buildGrayscaleGpuColor(val);
@@ -303,24 +303,24 @@ static void applyWindowBrightness(s32 index) {
 
 
 /**
- * @brief Set the linked battle entity index on an SFX entry.
- * @param idx SFX entry index.
+ * @brief Set the linked battle entity index on a dialog.
+ * @param idx Dialog index.
  * @param val Battle entity index.
  */
-void setSfxEntityIndex(s32 idx, s32 val) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void setDialogEntityIndex(s32 idx, s32 val) {
+    Dialog *entry = &g_dialogs.entries[idx];
     entry->entityIdx = val;
 }
 
 
 /**
- * @brief Swap the state of an SFX entry, returning the old value.
- * @param idx SFX entry index.
+ * @brief Swap the state of a dialog, returning the old value.
+ * @param idx Dialog index.
  * @param val New state value.
  * @return Previous state value.
  */
-s32 swapSfxState(s32 idx, s32 val) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+s32 swapDialogState(s32 idx, s32 val) {
+    Dialog *entry = &g_dialogs.entries[idx];
     s32 old = entry->flags.fields.state;
     entry->flags.fields.state = val;
     return old;
@@ -328,58 +328,58 @@ s32 swapSfxState(s32 idx, s32 val) {
 
 
 /**
- * @brief Get the state of an SFX entry.
- * @param idx SFX entry index.
+ * @brief Get the state of a dialog.
+ * @param idx Dialog index.
  * @return State value (0 = inactive, 1 = active).
  */
-s32 getSfxState(s32 idx) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+s32 getDialogState(s32 idx) {
+    Dialog *entry = &g_dialogs.entries[idx];
     return entry->flags.fields.state;
 }
 
 
 /**
- * @brief Set pitch and clear field14 on an SFX entry.
- * @param idx SFX entry index.
- * @param val Pitch value.
+ * @brief Set a dialog's text speed and restart its character timer (@c field14).
+ * @param idx Dialog index.
+ * @param val Text speed: added to the timer each frame (0x1000 = a character a frame).
  */
-void setSfxPitch(s32 idx, s32 val) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
-    entry->pitch = val;
+void setDialogTextSpeed(s32 idx, s32 val) {
+    Dialog *entry = &g_dialogs.entries[idx];
+    entry->textSpeed = val;
     entry->flags.fields.field14 = 0;
 }
 
 
 /**
- * @brief Set field1C on an SFX entry.
- * @param idx SFX entry index.
- * @param val Value to store.
+ * @brief Set a dialog's open scale.
+ * @param idx Dialog index.
+ * @param val Open scale: 0 shut, 0x1000 fully open.
  */
-void setSfxField1C(s32 idx, s32 val) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
-    entry->field1C = val;
+void setOpenDialogScale(s32 idx, s32 val) {
+    Dialog *entry = &g_dialogs.entries[idx];
+    entry->openDialogScale = val;
 }
 
 
 /**
- * @brief Set the rate delta on an SFX entry.
- * @param idx SFX entry index.
- * @param val Rate delta value (negative = fade out).
+ * @brief Set a dialog's open step, added to its open scale each frame.
+ * @param idx Dialog index.
+ * @param val Open step; negative closes.
  */
-void setSfxRateDelta(s32 idx, s32 val) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
-    entry->rateDelta = val;
+void setOpenDialogStep(s32 idx, s32 val) {
+    Dialog *entry = &g_dialogs.entries[idx];
+    entry->openDialogStep = val;
 }
 
 
 /**
- * @brief Get field1C of an SFX entry.
- * @param idx SFX entry index.
- * @return Signed 16-bit value.
+ * @brief Get a dialog's open scale.
+ * @param idx Dialog index.
+ * @return The open scale: 0 once shut, 0x1000 once fully open.
  */
-s32 getSfxField1C(s32 idx) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
-    return entry->field1C;
+s32 getOpenDialogScale(s32 idx) {
+    Dialog *entry = &g_dialogs.entries[idx];
+    return entry->openDialogScale;
 }
 
 
@@ -410,9 +410,9 @@ s32 getSfxField1C(s32 idx) {
  *       the way btl_anim.c threads its packet cursor.
  *
  * @param ot    Ordering-table slot the sprites are linked into.
- * @param entry SFX entry (message window) the marker belongs to.
+ * @param entry Dialog the marker belongs to.
  */
-static void func_8002CAE0(P_TAG *ot, SfxEntry *entry) {
+static void func_8002CAE0(P_TAG *ot, Dialog *entry) {
     GlyphTable *table;
     GlyphCell *cell;
     TSPRT *p;
@@ -428,8 +428,8 @@ static void func_8002CAE0(P_TAG *ot, SfxEntry *entry) {
     s32 y;
 
     flags = entry->ctrl.raw;
-    if (!(flags & SFX_CTRL_MARKER) ||
-        ((flags >> SFX_CTRL_MARKER_BLINK_SHIFT) & SFX_MARKER_BLINK_OFF)) {
+    if (!(flags & DIALOG_CTRL_MARKER) ||
+        ((flags >> DIALOG_CTRL_MARKER_BLINK_SHIFT) & DIALOG_MARKER_BLINK_OFF)) {
         return;
     }
 
@@ -490,11 +490,11 @@ static void func_8002CAE0(P_TAG *ot, SfxEntry *entry) {
  * marker (func_8002CAE0), the text (func_8002EE10) and a draw-mode packet that
  * resets the texture page. A window without a message draws nothing.
  *
- * @param index SFX entry index.
+ * @param index Dialog index.
  * @param ot    Ordering table the packets are linked into.
  */
 static void func_8002CC4C(s32 index, P_TAG *ot) {
-    SfxEntry *entry = &g_sfxEntries.entries[index];
+    Dialog *entry = &g_dialogs.entries[index];
     GlyphTable *table;
     DR_AREA *area;
     DR_TPAGE *tpage;
@@ -512,19 +512,19 @@ static void func_8002CC4C(s32 index, P_TAG *ot) {
     }
     table = &D_80052A68;
     brightness = entry->brightness;
-    if (entry->field29 != SFX_NO_CHOICE) {
+    if (entry->field29 != DIALOG_NO_CHOICE) {
         if (entry->field28 == 1) {
             /* val holds the entity index here and the mode word below: two
              * variables swap the registers of the closing packet. */
             val = entry->entityIdx;
             ent = getBattleEntity(val);
             line = entry->field2B;
-            y = line * SFX_LINE_HEIGHT + SFX_CURSOR_Y;
+            y = line * DIALOG_LINE_HEIGHT + DIALOG_CURSOR_Y;
             area = (DR_AREA *)getDisplayListHead();
             if (table != NULL) { /* the original tests the fixed table address */
                 colour = brightness / 32;
                 colour = SPRT_CODE | (colour << 16) | (colour << 8) | colour;
-                area = func_8002FF34(ot, area, GLYPH_CHOICE_CURSOR, SFX_CURSOR_X, y, colour);
+                area = func_8002FF34(ot, area, GLYPH_CHOICE_CURSOR, DIALOG_CURSOR_X, y, colour);
             }
             SetDrawArea(area, &ent->clipBound.rect);
             addPrimFastWithTempOperand(ot, area, link);
@@ -543,7 +543,7 @@ static void func_8002CC4C(s32 index, P_TAG *ot) {
 
 
 /**
- * @brief Scale a battle SFX rectangle about its center by a fixed-point factor.
+ * @brief Scale a dialog rectangle about its center by a fixed-point factor.
  *
  * @p scale is a signed Q12 fixed-point multiplier where @c 0x1000 (4096 == ONE)
  * is 1.0; at exactly 1.0 the rectangle is left unchanged. Otherwise each axis is
@@ -561,7 +561,7 @@ static void func_8002CC4C(s32 index, P_TAG *ot) {
  *
  * @param rect  Rectangle to scale in place.
  * @param scale Q12 fixed-point scale factor (@c 0x1000 == 1.0).
- * @param arg2  Unused by this routine (the caller passes @c rateDelta).
+ * @param arg2  Unused by this routine (the caller passes @c openDialogStep).
  */
 void func_8002CDE4(RECT *rect, s32 scale, s32 arg2) {
     s32 x, y, w, h, prodW, prodH;
@@ -593,30 +593,30 @@ void func_8002CDE4(RECT *rect, s32 scale, s32 arg2) {
 }
 
 
-/** @brief Set the global SFX flag. */
-void setSfxGlobalFlag(s32 val) {
+/** @brief Set the global dialog flag. */
+void setDialogGlobalFlag(s32 val) {
     D_800831DC = val;
 }
 
 
-/** @brief Get the global SFX flag. */
-s32 getSfxGlobalFlag(void) {
+/** @brief Get the global dialog flag. */
+s32 getDialogGlobalFlag(void) {
     return D_800831DC;
 }
 
 
 /**
- * @brief Get the remaining duration for an SFX entry.
+ * @brief Get the choice the player confirmed in a dialog.
  *
- * Returns -1 if inactive, otherwise the difference between
- * total length (field2B) and current position (field29).
+ * Returns -1 until the player has confirmed (@c field19), then the selected
+ * line (@c field2B) minus the first choice line (@c field29).
  *
- * @param idx SFX entry index.
- * @return Remaining duration, or -1 if inactive.
+ * @param idx Dialog index.
+ * @return The chosen answer (0 = the first choice), or -1.
  */
-s32 func_8002CE84(s32 idx) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
-    SfxEntry *e2;
+s32 getDialogChoice(s32 idx) {
+    Dialog *entry = &g_dialogs.entries[idx];
+    Dialog *e2;
     s32 always;
     e2 = entry;
     always = 1; /* Regalloc */
@@ -630,7 +630,7 @@ s32 func_8002CE84(s32 idx) {
 
 
 /**
- * @brief Keyboard-style auto-repeat for one SFX channel's edge bits.
+ * @brief Keyboard-style auto-repeat for one pad channel's edge bits.
  *
  * Latches @p newVal into @c sys->state.repeatLatched[channel] and, using the per-channel
  * mask, decides whether the (masked) edge bits should fire this frame. If the new
@@ -642,12 +642,12 @@ s32 func_8002CE84(s32 idx) {
  *
  * @param anims   Battle-anim state; @c repeatDelays packs the two delays.
  * @param entity  Battle-anim entity; @c unk10[channel] is the channel's edge mask.
- * @param sys     SFX system (@c &anims->sfx); holds the stored bits and counters.
+ * @param sys     Dialog system (@c &anims->dialogs); holds the stored bits and counters.
  * @param newVal  Raw new edge bitmask for this frame.
- * @param channel SFX channel index, 0..3.
+ * @param channel Pad channel index, 0..3.
  * @return The masked edge bits that should fire this frame, or 0 while suppressed.
  */
-static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, SfxSystem *sys, u16 newVal, s32 channel) {
+static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, DialogSystem *sys, u16 newVal, s32 channel) {
     s32 counter;
     s32 restartDelay;
     s32 repeatInterval;
@@ -692,7 +692,7 @@ static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, SfxSy
  * @return The bits that fire this frame.
  */
 s32 func_8002CF54(s32 input) {
-    SfxSystem *sys = &g_battleAnims.sfx;
+    DialogSystem *sys = &g_battleAnims.dialogs;
     BattleAnimState *anims = &g_battleAnims;
     u16 bits = input;
     BattleAnimEntity *entity = &anims->entities[anims->entities[0].linkedIdx];
@@ -708,37 +708,37 @@ s32 func_8002CF54(s32 input) {
 
 
 /**
- * @brief Step a message window's open/close fade and size its entity to it.
+ * @brief Step a dialog's open/close animation and size its entity to it.
  *
- * Adds @c rateDelta to the fade level @c field1C, clamped to 0..ONE (1.0).
- * While the window is open, its entity is enabled and its bound rect is the
- * window rect scaled by the fade, with the clamp rect @ref SFX_CLAMP_INSET
- * pixels inside that. At 0 the entity is disabled.
+ * Adds @c openDialogStep to @c openDialogScale, clamped to 0..ONE (1.0).
+ * While the dialog is open, its entity is enabled and its bound rect is the
+ * dialog rect scaled by @c openDialogScale, with the clamp rect
+ * @ref DIALOG_CLAMP_INSET pixels inside that. At 0 the entity is disabled.
  *
- * @param index SFX entry index.
+ * @param index Dialog index.
  */
-static inline void updateSfxFade(s32 index) {
-    SfxEntry *entry = &g_sfxEntries.entries[index];
-    s32 fade;
+static inline void updateOpenDialogScale(s32 index) {
+    Dialog *entry = &g_dialogs.entries[index];
+    s32 scale;
     s32 entityId;
 
-    fade = entry->field1C;
-    fade += entry->rateDelta;
-    fade = CLAMP(fade, 0, ONE);
+    scale = entry->openDialogScale;
+    scale += entry->openDialogStep;
+    scale = CLAMP(scale, 0, ONE);
     entityId = entry->entityIdx;
-    entry->field1C = fade;
+    entry->openDialogScale = scale;
 
-    if (fade != 0) {
+    if (scale != 0) {
         RECT rect;
 
         setBattleEntityField35(entityId, 1);
         rect = entry->rect;
-        func_8002CDE4(&rect, fade, entry->rateDelta);
+        func_8002CDE4(&rect, scale, entry->openDialogStep);
         setBattleEntityBoundRect(entityId, &rect);
-        rect.x += SFX_CLAMP_INSET;
-        rect.y += SFX_CLAMP_INSET;
-        rect.w -= SFX_CLAMP_INSET * 2;
-        rect.h -= SFX_CLAMP_INSET * 2;
+        rect.x += DIALOG_CLAMP_INSET;
+        rect.y += DIALOG_CLAMP_INSET;
+        rect.w -= DIALOG_CLAMP_INSET * 2;
+        rect.h -= DIALOG_CLAMP_INSET * 2;
         setBattleEntityRectClamp(entityId, &rect);
     } else {
         setBattleEntityField35(entityId, 0);
@@ -747,12 +747,12 @@ static inline void updateSfxFade(s32 index) {
 }
 
 /**
- * @brief Per-frame update of one message window: fade, then run its text.
+ * @brief Per-frame update of one message window: open/close step, then run its text.
  *
- * After the fade (updateSfxFade), a fully open window with a message runs
- * the @c SFX_SEQ_* state machine in @c seqState. The message is decoded into
- * a @ref SFX_MSG_BUF_SIZE-byte buffer taken from the $gp area: characters appear at the text
- * speed (@c pitch added to the timer @c flags.fields.field14 each frame), full
+ * After the open/close step (updateOpenDialogScale), a fully open window with a message runs
+ * the @c DIALOG_SEQ_* state machine in @c seqState. The message is decoded into
+ * a @ref DIALOG_MSG_BUF_SIZE-byte buffer taken from the $gp area: characters appear at the text
+ * speed (@c textSpeed added to the timer @c flags.fields.field14 each frame), full
  * windows scroll, page breaks wait for Cross or Square, and at the end a
  * message with choices lets the player move the cursor @c field2B between
  * @c field29 and @c field2A. Cross or Square confirms (@c field19 = 1);
@@ -760,13 +760,13 @@ static inline void updateSfxFade(s32 index) {
  *
  * Only the window that owns input (@c state.activeFlag) sees the buttons.
  *
- * @param index  SFX entry index.
+ * @param index  Dialog index.
  * @param input  Pressed buttons: bits 0-15 drive paging, bits 16-31 the choice
  *               (the split is a guess from the tests made on each half).
  * @param repeat Auto-repeating buttons; Up and Down move the choice cursor.
  */
 static void func_8002D040(s32 index, u32 input, u32 repeat) {
-    SfxEntry *entry;
+    Dialog *entry;
     s32 *seqState;
     u8 *msgBuf;
     u32 pressed;
@@ -775,10 +775,10 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
     s32 ch;
     s32 cmd;
 
-    updateSfxFade(index);
+    updateOpenDialogScale(index);
 
-    entry = &g_sfxEntries.entries[index];
-    if (g_sfxEntries.state.activeFlag == index) {
+    entry = &g_dialogs.entries[index];
+    if (g_dialogs.state.activeFlag == index) {
         pressed = input & 0xFFFF;
         choicePressed = input >> 16;
     } else {
@@ -787,8 +787,8 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
         choicePressed = 0;
     }
 
-    if (entry->dataPtr != NULL && entry->field1C >= ONE) {
-        GP_ALLOC(msgBuf, SFX_MSG_BUF_SIZE);
+    if (entry->dataPtr != NULL && entry->openDialogScale >= ONE) {
+        GP_ALLOC(msgBuf, DIALOG_MSG_BUF_SIZE);
         seqState = &entry->seqState;
         state = *seqState;
         /* Re-entering the switch is a goto, not a while/for: gcc treats a C
@@ -796,41 +796,40 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
          * which the original does not (93.99% with while (1) and continue). */
     dispatch:
         switch (state) {
-        case SFX_SEQ_START:
-            g_sfxEntries.state.repeatLatched[0] = 0;
-            g_sfxEntries.state.repeatLatched[1] = 0;
-            g_sfxEntries.state.repeatCounters[0] = 0;
-            g_sfxEntries.state.repeatCounters[1] = 0;
-            *seqState = SFX_SEQ_TICK;
+        case DIALOG_SEQ_START:
+            g_dialogs.state.repeatLatched[0] = 0;
+            g_dialogs.state.repeatLatched[1] = 0;
+            g_dialogs.state.repeatCounters[0] = 0;
+            g_dialogs.state.repeatCounters[1] = 0;
+            *seqState = DIALOG_SEQ_TICK;
             /* fallthrough */
-        case SFX_SEQ_TICK:
-            entry->flags.fields.field14 += entry->pitch;
+        case DIALOG_SEQ_TICK:
+            entry->flags.fields.field14 += entry->textSpeed;
             /* fallthrough */
-        case SFX_SEQ_PRINT:
-            if (entry->pitch == 0 || entry->flags.fields.field14 >= ONE) {
+        case DIALOG_SEQ_PRINT:
+            if (entry->textSpeed == 0 || entry->flags.fields.field14 >= ONE) {
                 entry->flags.fields.field14 -= ONE;
-                /* SfxEntry begins with the MsgState cursor the decoder works on. */
-                decodeMessageDirect((MsgState *)entry, msgBuf);
-                state = SFX_SEQ_NEXT_CHAR;
+                decodeMessageDirect(entry, msgBuf);
+                state = DIALOG_SEQ_NEXT_CHAR;
                 goto dispatch;
             }
             break;
 
-        case SFX_SEQ_NEXT_CHAR:
+        case DIALOG_SEQ_NEXT_CHAR:
             ch = msgBuf[entry->field20];
             if (ch == MSG_NEW_PAGE || ch == MSG_NEW_PAGE_MARKED) {
-                state = SFX_SEQ_PAGE;
+                state = DIALOG_SEQ_PAGE;
                 goto dispatch;
             }
-            ch = func_8002FE0C((MsgState *)entry, msgBuf);
+            ch = func_8002FE0C(entry, msgBuf);
             cmd = ch >> 8;
             ch &= 0xFF;
             if (ch == MSG_NEWLINE) {
-                state = SFX_SEQ_NEWLINE;
+                state = DIALOG_SEQ_NEWLINE;
                 goto dispatch;
             }
             if (ch == MSG_END) {
-                state = SFX_SEQ_END;
+                state = DIALOG_SEQ_END;
                 goto dispatch;
             }
             if (cmd == MSG_CMD_SPEED) {
@@ -843,114 +842,114 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
                 } else {
                     speed = ONE / (ch - (MSG_ARG_BASE + 1));
                 }
-                entry->pitch = speed;
+                entry->textSpeed = speed;
             } else if (cmd == MSG_CMD_WAIT) {
                 /* Through an s32 local: assigned straight to the u8 field,
                  * gcc folds the (u8) away and loses the andi. */
                 s32 frames = (u8)ch - MSG_ARG_BASE;
 
                 entry->waitTimer = frames;
-                state = SFX_SEQ_WAIT_START;
+                state = DIALOG_SEQ_WAIT_START;
                 goto dispatch;
             } else if (cmd == MSG_CMD_COLOR) {
                 entry->flags.bits.color = ch;
-                state = SFX_SEQ_NEXT_CHAR;
+                state = DIALOG_SEQ_NEXT_CHAR;
                 goto dispatch;
             } else {
-                state = SFX_SEQ_PRINT;
-                if (entry->pitch == 0) {
-                    state = SFX_SEQ_NEXT_CHAR;
+                state = DIALOG_SEQ_PRINT;
+                if (entry->textSpeed == 0) {
+                    state = DIALOG_SEQ_NEXT_CHAR;
                 }
                 goto dispatch;
             }
-            state = SFX_SEQ_NEXT_CHAR;
+            state = DIALOG_SEQ_NEXT_CHAR;
             goto dispatch;
 
-        case SFX_SEQ_NEWLINE:
-            state = SFX_SEQ_NEXT_CHAR;
+        case DIALOG_SEQ_NEWLINE:
+            state = DIALOG_SEQ_NEXT_CHAR;
             if (entry->field21 >= entry->field23) {
                 entry->flags.fields.field14 += ONE;
                 entry->field21--;
-                *seqState = SFX_SEQ_SCROLL;
-                state = SFX_SEQ_SCROLL;
+                *seqState = DIALOG_SEQ_SCROLL;
+                state = DIALOG_SEQ_SCROLL;
             }
             goto dispatch;
 
-        case SFX_SEQ_SCROLL:
+        case DIALOG_SEQ_SCROLL:
             entry->field12++;
-            if (entry->field12 % SFX_LINE_HEIGHT == 0) {
-                *seqState = SFX_SEQ_TICK;
+            if (entry->field12 % DIALOG_LINE_HEIGHT == 0) {
+                *seqState = DIALOG_SEQ_TICK;
             }
             break;
 
-        case SFX_SEQ_PAGE:
+        case DIALOG_SEQ_PAGE:
             if (ch == MSG_NEW_PAGE_MARKED) {
                 entry->ctrl.bits.marker = 1;
                 entry->ctrl.bits.blink = 0;
             } else {
                 entry->ctrl.bits.marker = 0;
             }
-            *seqState = SFX_SEQ_PAGE_RELEASE;
+            *seqState = DIALOG_SEQ_PAGE_RELEASE;
             break;
 
-        case SFX_SEQ_PAGE_RELEASE:
+        case DIALOG_SEQ_PAGE_RELEASE:
             entry->ctrl.bits.blink++;
             pressed &= ~(PADLup | PADLright | PADLdown | PADLleft);
             if (pressed == 0) {
-                *seqState = SFX_SEQ_PAGE_WAIT;
+                *seqState = DIALOG_SEQ_PAGE_WAIT;
             }
             break;
 
-        case SFX_SEQ_PAGE_WAIT:
+        case DIALOG_SEQ_PAGE_WAIT:
             entry->ctrl.bits.blink++;
             if (pressed & (PADRdown | PADRleft)) {
                 entry->ctrl.bits.marker = 0;
                 entry->flags.bits.pageColor = entry->flags.bits.color;
-                decodeMessageDirect((MsgState *)entry, msgBuf);
-                func_8002FE0C((MsgState *)entry, msgBuf);
-                decodeMessageDirect((MsgState *)entry, msgBuf);
-                *seqState = SFX_SEQ_TICK;
+                decodeMessageDirect(entry, msgBuf);
+                func_8002FE0C(entry, msgBuf);
+                decodeMessageDirect(entry, msgBuf);
+                *seqState = DIALOG_SEQ_TICK;
             }
             break;
 
-        case SFX_SEQ_END:
+        case DIALOG_SEQ_END:
             entry->field28 = 1;
-            state = SFX_SEQ_CHOICE_START;
-            if (entry->field29 == SFX_NO_CHOICE) {
-                *seqState = SFX_SEQ_DONE;
-                state = SFX_SEQ_DONE;
+            state = DIALOG_SEQ_CHOICE_START;
+            if (entry->field29 == DIALOG_NO_CHOICE) {
+                *seqState = DIALOG_SEQ_DONE;
+                state = DIALOG_SEQ_DONE;
             }
             goto dispatch;
 
-        case SFX_SEQ_CHOICE_START:
-            *seqState = SFX_SEQ_CHOICE_RELEASE;
-            state = SFX_SEQ_CHOICE_RELEASE;
+        case DIALOG_SEQ_CHOICE_START:
+            *seqState = DIALOG_SEQ_CHOICE_RELEASE;
+            state = DIALOG_SEQ_CHOICE_RELEASE;
             goto dispatch;
 
-        case SFX_SEQ_CHOICE_RELEASE:
+        case DIALOG_SEQ_CHOICE_RELEASE:
             if (pressed == 0) {
-                *seqState = SFX_SEQ_CHOICE;
+                *seqState = DIALOG_SEQ_CHOICE;
             }
             break;
 
-        case SFX_SEQ_WAIT_START:
-            *seqState = SFX_SEQ_WAIT;
+        case DIALOG_SEQ_WAIT_START:
+            *seqState = DIALOG_SEQ_WAIT;
             /* fallthrough */
-        case SFX_SEQ_WAIT:
+        case DIALOG_SEQ_WAIT:
             if (entry->waitTimer == 0) {
-                *seqState = SFX_SEQ_TICK;
-                state = SFX_SEQ_PRINT;
+                *seqState = DIALOG_SEQ_TICK;
+                state = DIALOG_SEQ_PRINT;
                 goto dispatch;
             }
             entry->waitTimer--;
             break;
 
-        case SFX_SEQ_CHOICE:
+        case DIALOG_SEQ_CHOICE:
             if (choicePressed & (PADRdown | PADRleft)) {
                 entry->field19 = 1;
                 sendSpuCommand(2);
-                *seqState = SFX_SEQ_DONE;
-                state = SFX_SEQ_DONE;
+                *seqState = DIALOG_SEQ_DONE;
+                state = DIALOG_SEQ_DONE;
                 goto dispatch;
             }
             if (choicePressed & PADRup) {
@@ -995,79 +994,104 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
             }
             break;
 
-        case SFX_SEQ_DPAD_RELEASE_START:
-            *seqState = SFX_SEQ_DPAD_RELEASE;
+        case DIALOG_SEQ_DPAD_RELEASE_START:
+            *seqState = DIALOG_SEQ_DPAD_RELEASE;
             /* fallthrough */
-        case SFX_SEQ_DPAD_RELEASE:
+        case DIALOG_SEQ_DPAD_RELEASE:
             if (!(pressed & (PADLup | PADLright | PADLdown | PADLleft))) {
-                *seqState = SFX_SEQ_CHOICE_START;
+                *seqState = DIALOG_SEQ_CHOICE_START;
             }
             break;
         }
-        GP_FREE(SFX_MSG_BUF_SIZE);
+        GP_FREE(DIALOG_MSG_BUF_SIZE);
     }
 }
 
 
 /**
- * @brief Initialize a sound effect entry for playback.
+ * @brief Start a message on a dialog.
  *
  * Clears fields, stores the data pointer, starts both text colours at white,
- * calls clearEntityColor, and marks the message as offering no choice.
+ * calls resetDialogTyping, and marks the message as offering no choice.
  *
- * @param index SFX entry index.
- * @param data  Pointer to SFX script data (or NULL).
+ * @param index Dialog index.
+ * @param data  The message (or NULL).
  */
-void initSfxPlayback(s32 index, u8 *data) {
-    SfxEntry *entry = &g_sfxEntries.entries[index];
+void setDialogMessage(s32 index, u8 *data) {
+    Dialog *entry = &g_dialogs.entries[index];
 
     entry->field28 = 0;
     entry->dataPtr = data;
-    entry->dataPtrCopy = data;
+    entry->linePtr = data;
     entry->field12 = 0;
-    entry->seqState = SFX_SEQ_START;
-    entry->flags.bits.pageColor = SFX_COLOR_WHITE;
+    entry->seqState = DIALOG_SEQ_START;
+    entry->flags.bits.pageColor = DIALOG_COLOR_WHITE;
     entry->flags.bits.color = entry->flags.bits.pageColor;
 
-    clearEntityColor(entry);
+    resetDialogTyping(entry);
 
-    entry->field29 = SFX_NO_CHOICE;
-    entry->field2A = SFX_NO_CHOICE;
+    entry->field29 = DIALOG_NO_CHOICE;
+    entry->field2A = DIALOG_NO_CHOICE;
     entry->field19 = 0;
 }
 
 
 /**
- * @brief Skips past a given number of null-terminated strings, then calls initSfxPlayback.
+ * @brief Skips past a given number of null-terminated strings, then calls setDialogMessage.
  *
  * Advances @p a1 past @p a2 null-terminated strings by scanning bytes until
- * null is found for each string. After skipping, calls initSfxPlayback with
+ * null is found for each string. After skipping, calls setDialogMessage with
  * the original @p a0 and @p a1.
  *
- * @param index SFX entry index.
+ * @param index Dialog index.
  * @param data  Pointer to the start of the string data.
  * @param count Number of strings to skip.
  */
-void initSfxPlaybackAfterStrings(s32 index, u8 *data, s32 count) {
+void setDialogMessageAfterStrings(s32 index, u8 *data, s32 count) {
     while (count > 0) {
         while (*data++ != 0) {
         }
         count--;
     }
-    initSfxPlayback(index, data);
+    setDialogMessage(index, data);
 }
 
 
-void func_8002D784(s32 arg0, u8 *data, s32 min, s32 max, s32 val, s32 arg5) {
+/**
+ * @brief Start a message with choices on a dialog.
+ *
+ * Lines @p min to @p max of the message are the choices; the cursor starts on
+ * @p val, clamped to them, and Triangle jumps to the choice @p arg5.
+ *
+ * @param arg0 Dialog index.
+ * @param data The message.
+ * @param min  First choice line.
+ * @param max  Last choice line.
+ * @param val  Line the cursor starts on.
+ * @param arg5 Cancel choice (@c ctrl.fields.field2C).
+ */
+void setDialogChoiceMessage(s32 arg0, u8 *data, s32 min, s32 max, s32 val, s32 arg5) {
     val = CLAMP(val, min, max);
 
-    initSfxPlayback(arg0, data);
-    setSfxEntryTimings(arg0, min, max, arg5);
-    setSfxEntryField2B(arg0, val);
+    setDialogMessage(arg0, data);
+    setDialogTimings(arg0, min, max, arg5);
+    setDialogField2B(arg0, val);
 }
 
 
-void func_8002D818(s32 arg0, u8 *str, s32 count, s32 min, s32 max, s32 val, s32 arg6) {
+/**
+ * @brief Start a message with choices on a dialog, after skipping @p count
+ *        null-terminated strings of @p str (see setDialogChoiceMessage).
+ *
+ * @param arg0  Dialog index.
+ * @param str   The strings; the message is the one after the first @p count.
+ * @param count Strings to skip.
+ * @param min   First choice line.
+ * @param max   Last choice line.
+ * @param val   Line the cursor starts on.
+ * @param arg6  Cancel choice (@c ctrl.fields.field2C).
+ */
+void setDialogChoiceMessageAfterStrings(s32 arg0, u8 *str, s32 count, s32 min, s32 max, s32 val, s32 arg6) {
     s32 clamped;
     while (count > 0) {
         while (*str++) { }
@@ -1077,9 +1101,9 @@ void func_8002D818(s32 arg0, u8 *str, s32 count, s32 min, s32 max, s32 val, s32 
     clamped = val;
     clamped = CLAMP(clamped, min, max);
 
-    initSfxPlayback(arg0, str);
-    setSfxEntryTimings(arg0, min, max, arg6);
-    setSfxEntryField2B(arg0, clamped);
+    setDialogMessage(arg0, str);
+    setDialogTimings(arg0, min, max, arg6);
+    setDialogField2B(arg0, clamped);
 }
 
 
@@ -1092,11 +1116,10 @@ void func_8002D818(s32 arg0, u8 *str, s32 count, s32 min, s32 max, s32 val, s32 
  * marker and text via func_8002CC4C. Restores GP before returning.
  *
  * @param ot    Ordering table, passed to the hook and func_8002CC4C.
- * @param index SFX entry index.
- * @see https://decomp.me/scratch/mYKYb
+ * @param index Dialog index.
  */
 static void func_8002D8CC(P_TAG *ot, s32 index) {
-    SfxEntry *entry = &g_sfxEntries.entries[index];
+    Dialog *entry = &g_dialogs.entries[index];
 
     if (entry->flags.fields.state != 0) {
         s32 savedGp;
@@ -1132,7 +1155,7 @@ static inline u32 linkPacket(u32 head, void *p) {
  *
  * Draws the window contents (func_8002D8CC) when the clamp rect has room for
  * a glyph, then links a draw area for the entity's clamp rect and a draw
- * offset at the window's inner corner (@ref SFX_CLAMP_INSET in from @c rect).
+ * offset at the window's inner corner (@ref DIALOG_CLAMP_INSET in from @c rect).
  * Links prepend to the OT, so the GPU runs these before the contents.
  * When the linked entity has both @ref BATTLE_ENTITY_FLAG_02 and
  * @ref BATTLE_ENTITY_FLAG_08, the window also gets its @c field2F glyph (if
@@ -1147,7 +1170,7 @@ static inline u32 linkPacket(u32 head, void *p) {
  * @return The packet cursor after the last packet.
  */
 static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
-    SfxEntry *entry;
+    Dialog *entry;
     RECT *winRect;
     BattleDisplayEntity *ent;
     DR_AREA *p;
@@ -1167,7 +1190,7 @@ static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
     }
     p = (DR_AREA *)getDisplayListHead();
     index = entity->subFields[0];
-    entry = &g_sfxEntries.entries[index];
+    entry = &g_dialogs.entries[index];
     winRect = &entry->rect;
     getAddrNewFast(ot, head);
 
@@ -1179,8 +1202,8 @@ static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
     copyDisplayRect(&r);
     r.x += entry->rect.x;
     r.y += entry->rect.y;
-    r.x += SFX_CLAMP_INSET;
-    r.y += SFX_CLAMP_INSET;
+    r.x += DIALOG_CLAMP_INSET;
+    r.y += DIALOG_CLAMP_INSET;
     SetDrawOffset(offset, &r);
     head = linkPacket(head, offset);
     ent = getBattleEntity(entry->entityIdx);
@@ -1246,8 +1269,8 @@ static u8 *func_8002DBF8(BattleDisplayEntity *entity, u32 input, u32 repeat) {
     GP_SAVE_SCRATCH(tempGp);
     index = entity->subFields[0];
     savedGp = tempGp;
-    if (getSfxState(index) != 0) {
-        SfxEntry *entry = &g_sfxEntries.entries[index];
+    if (getDialogState(index) != 0) {
+        Dialog *entry = &g_dialogs.entries[index];
 
         if (entry->updateCallback != NULL) {
             entry->updateCallback(entry, input, repeat);
@@ -1260,64 +1283,64 @@ static u8 *func_8002DBF8(BattleDisplayEntity *entity, u32 input, u32 repeat) {
 
 
 /**
- * @brief Configure an SFX entry for playback: mark as active, set rate, and set mode.
- * @param idx SFX entry index.
- * @param rate Playback rate value (e.g. 0x200, 0x1000).
- * @param mode Playback mode byte.
+ * @brief Open a dialog: activate it and set its open step and mode.
+ * @param idx  Dialog index.
+ * @param step Open step: 0x200 opens over 8 frames, 0x1000 at once.
+ * @param mode Mode byte (@c ctrl.fields.mode).
  */
-void configureSfxPlayback(s32 idx, s32 rate, s32 mode) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void openDialog(s32 idx, s32 step, s32 mode) {
+    Dialog *entry = &g_dialogs.entries[idx];
     entry->flags.fields.state = 1;
-    entry->rateDelta = rate;
+    entry->openDialogStep = step;
     entry->ctrl.fields.mode = mode;
 }
 
 
-/** @brief Start SFX entry playback at slow rate (0x200). */
-void startSfxSlow(s32 idx) {
-    configureSfxPlayback(idx, 0x200, 0);
+/** @brief Open a dialog with its animation: step 0x200, fully open after 8 frames. */
+void openDialogAnimated(s32 idx) {
+    openDialog(idx, 0x200, 0);
 }
 
 
-/** @brief Start SFX entry playback at normal rate (0x1000). */
-void startSfxNormal(s32 idx) {
-    configureSfxPlayback(idx, 0x1000, 0);
+/** @brief Open a dialog at once: step 0x1000. */
+void openDialogInstant(s32 idx) {
+    openDialog(idx, 0x1000, 0);
 }
 
 
 /**
- * @brief Set the rate delta for an SFX entry (wrapper).
- * @param idx SFX entry index.
- * @param val Rate delta value (negative = fade out).
+ * @brief Close a dialog by giving it a negative open step.
+ * @param idx  Dialog index.
+ * @param step Open step: -0x200 closes over 8 frames, -0x1000 at once.
  */
-void setSfxFadeRate(s32 idx, s32 val) {
-    setSfxRateDelta(idx, val);
+void closeDialog(s32 idx, s32 step) {
+    setOpenDialogStep(idx, step);
 }
 
 
-/** @brief Set SFX entry to fade out at slow rate (-0x200). */
-void fadeOutSfxSlow(s32 idx) {
-    setSfxFadeRate(idx, -0x200);
+/** @brief Close a dialog with its animation: step -0x200, shut after 8 frames. */
+void closeDialogAnimated(s32 idx) {
+    closeDialog(idx, -0x200);
 }
 
 
-/** @brief Set SFX entry to fade out at fast rate (-0x1000). */
-void fadeOutSfxFast(s32 idx) {
-    setSfxFadeRate(idx, -0x1000);
+/** @brief Close a dialog at once: step -0x1000. */
+void closeDialogInstant(s32 idx) {
+    closeDialog(idx, -0x1000);
 }
 
 
 /**
- * @brief Set reverb mode on the SFX entry's linked entity, clamped to [3, 11].
+ * @brief Set the anim speed of a dialog's linked entity: @p val + 3, clamped to [3, 11].
  *
  * Adds 3 to @p val, clamps to [3, 11], then calls setBattleEntityAnimSpeed with
  * the entry's entityIdx and the clamped value.
  *
- * @param idx SFX entry index.
- * @param val Base reverb mode value.
+ * @param idx Dialog index.
+ * @param val Anim speed before the +3.
  */
-void setSfxReverbMode(s32 idx, s32 val) {
-    SfxEntry *entry;
+void setDialogAnimSpeed(s32 idx, s32 val) {
+    Dialog *entry;
     s32 clamped;
     val += 3;
     if (val >= 3) {
@@ -1328,81 +1351,81 @@ void setSfxReverbMode(s32 idx, s32 val) {
     } else {
         clamped = 3;
     }
-    entry = &g_sfxEntries.entries[idx];
+    entry = &g_dialogs.entries[idx];
     setBattleEntityAnimSpeed(entry->entityIdx, clamped);
 }
 
 
 /**
- * @brief Get field28 of an SFX entry.
- * @param idx SFX entry index.
+ * @brief Get field28 of a dialog.
+ * @param idx Dialog index.
  * @return Value of field28.
  */
-s32 getSfxField28(s32 idx) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+s32 getDialogField28(s32 idx) {
+    Dialog *entry = &g_dialogs.entries[idx];
     return entry->field28;
 }
 
 
 /**
- * @brief Set entity type flags on the battle entity linked to an SFX entry.
+ * @brief Set entity type flags on the battle entity linked to a dialog.
  *
- * Reads the entity index from the SFX entry, then sets entity type
+ * Reads the entity index from the dialog, then sets entity type
  * (and derived draw mode) on that battle entity with the value OR'd with 8.
  *
- * @param idx SFX entry index.
+ * @param idx Dialog index.
  * @param val Flag value to OR with 8 before storing.
  */
-void setSfxEntityType(s32 idx, s32 val) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void setDialogEntityType(s32 idx, s32 val) {
+    Dialog *entry = &g_dialogs.entries[idx];
     setBattleEntityType(entry->entityIdx, val | 8);
 }
 
 
 /**
- * @brief Read the entity type of the battle entity linked to an SFX entry.
- * @param idx SFX entry index.
+ * @brief Read the entity type of the battle entity linked to a dialog.
+ * @param idx Dialog index.
  * @return The entity type byte of the linked battle entity.
  */
-s32 readSfxEntityType(s32 idx) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+s32 readDialogEntityType(s32 idx) {
+    Dialog *entry = &g_dialogs.entries[idx];
     return getBattleEntityType(entry->entityIdx);
 }
 
 
 /**
- * @brief Set field2F on an SFX entry.
- * @param idx SFX entry index.
+ * @brief Set field2F on a dialog.
+ * @param idx Dialog index.
  * @param val Value to store.
  */
-void setSfxField2F(s32 idx, s32 val) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void setDialogField2F(s32 idx, s32 val) {
+    Dialog *entry = &g_dialogs.entries[idx];
     entry->ctrl.fields.field2F = val;
 }
 
 
 /**
- * @brief Initialize an SFX entity slot to default values.
+ * @brief Initialize a dialog to default values.
  *
  * Zeros out field14, field19, field2F, then configures defaults:
- * pitch = 0x1000, state = 0, reverb mode = 3, rate = 0, delta = 0,
+ * text speed = 0x1000, state = 0, anim speed = 3, open scale = 0, open step = 0,
  * entity flags = 6|8, display rect = (64,64,128,128), brightness = 0x1000.
  *
- * @param idx SFX entry index.
+ * @param idx Dialog index.
  */
-void initSfxSlot(s32 idx) {
+void initDialogSlot(s32 idx) {
     u8 *nullData = 0;
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+    Dialog *entry = &g_dialogs.entries[idx];
     entry->flags.fields.field14 = 0;
     entry->field19 = 0;
     entry->ctrl.fields.field2F = 0;
-    initSfxPlayback(idx, nullData);
-    setSfxPitch(idx, 0x1000);
-    swapSfxState(idx, 0);
-    setSfxReverbMode(idx, 3);
-    setSfxField1C(idx, 0);
-    setSfxRateDelta(idx, 0);
-    setSfxEntityType(idx, 6);
+    setDialogMessage(idx, nullData);
+    setDialogTextSpeed(idx, 0x1000);
+    swapDialogState(idx, 0);
+    setDialogAnimSpeed(idx, 3);
+    setOpenDialogScale(idx, 0);
+    setOpenDialogStep(idx, 0);
+    setDialogEntityType(idx, 6);
     {
         RECT buf;
         buf.x = 0x40;
@@ -1411,21 +1434,21 @@ void initSfxSlot(s32 idx) {
         buf.h = 0x80;
         func_8002E064(idx, &buf);
     }
-    setSfxEntryBrightness(idx, 0x1000);
+    setDialogBrightness(idx, 0x1000);
 }
 
 
 /**
- * @brief Initialize an SFX slot: set active flag, callbacks, entity index, and clear fields.
+ * @brief Initialize a dialog slot: set active flag, callbacks, entity index, and clear fields.
  *
  * Activates the battle entity, assigns its render (func_8002D970) and update
  * (func_8002DBF8) callbacks, links the entity index, configures the sub-field, calls
- * initSfxSlot for default values, then clears sequence state and status bits.
+ * initDialogSlot for default values, then clears sequence state and status bits.
  *
- * @param idx SFX entry index.
+ * @param idx Dialog index.
  */
 void func_8002DF5C(s32 idx) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+    Dialog *entry = &g_dialogs.entries[idx];
 
     setBattleEntityActive(idx, 1);
     entry->entityIdx = idx;
@@ -1433,47 +1456,47 @@ void func_8002DF5C(s32 idx) {
     setBattleEntityField00(idx, (s32)func_8002DBF8);
     setBattleEntityField35(idx, 0);
     setBattleEntitySubField(idx, 0, idx);
-    initSfxSlot(idx);
+    initDialogSlot(idx);
 
-    entry->seqState = SFX_SEQ_START;
+    entry->seqState = DIALOG_SEQ_START;
     entry->field30 = 0;
     entry->field32 = 0;
-    entry->ctrl.raw &= ~SFX_CTRL_MARKER;
+    entry->ctrl.raw &= ~DIALOG_CTRL_MARKER;
 
-    setSfxEntryField34(idx, NULL);
-    setSfxEntryField38(idx, NULL);
+    setDialogField34(idx, NULL);
+    setDialogField38(idx, NULL);
 }
 
 
 /**
- * @brief Copy an SFX entry's source rectangle to destination.
- * @param idx SFX entry index.
+ * @brief Copy a dialog's source rectangle to destination.
+ * @param idx Dialog index.
  * @param dst Destination RECT.
  */
-void getSfxRect(s32 idx, RECT *dst) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void getDialogRect(s32 idx, RECT *dst) {
+    Dialog *entry = &g_dialogs.entries[idx];
     *dst = entry->rect;
 }
 
 
 /**
- * @brief Configure an SFX entry's rectangle and propagate it to its battle entity.
+ * @brief Configure a dialog's rectangle and propagate it to its battle entity.
  *
- * Insets the source rect by @ref SFX_CLAMP_INSET on each side, sets field23 to
- * the number of text lines that fit (inset height / @ref SFX_LINE_HEIGHT,
+ * Insets the source rect by @ref DIALOG_CLAMP_INSET on each side, sets field23 to
+ * the number of text lines that fit (inset height / @ref DIALOG_LINE_HEIGHT,
  * minimum 1), copies the
  * original source rect into the entry, and forwards the original rect (offset by
  * the entry's stored offsets) to the entity's bound rect. The inset rect is then
  * passed to the entity's clamp rect.
  *
- * @param index SFX entry index.
+ * @param index Dialog index.
  * @param srcRect Source rectangle.
  */
 void func_8002E064(s32 index, RECT *srcRect) {
-    SfxEntry *entry = &g_sfxEntries.entries[index];
+    Dialog *entry = &g_dialogs.entries[index];
     RECT rect;
     s32 entityId;
-    SfxEntry *ep = entry;
+    Dialog *ep = entry;
 
     entityId = ep->entityIdx;
 
@@ -1481,12 +1504,12 @@ void func_8002E064(s32 index, RECT *srcRect) {
     rect.y = srcRect->y;
     rect.w = srcRect->w;
     rect.h = srcRect->h;
-    rect.x += SFX_CLAMP_INSET;
-    rect.y += SFX_CLAMP_INSET;
-    rect.w -= SFX_CLAMP_INSET * 2;
-    rect.h -= SFX_CLAMP_INSET * 2;
+    rect.x += DIALOG_CLAMP_INSET;
+    rect.y += DIALOG_CLAMP_INSET;
+    rect.w -= DIALOG_CLAMP_INSET * 2;
+    rect.h -= DIALOG_CLAMP_INSET * 2;
 
-    ep->field23 = rect.h / SFX_LINE_HEIGHT;
+    ep->field23 = rect.h / DIALOG_LINE_HEIGHT;
     if (ep->field23 == 0) {
         ep->field23 = 1;
     }
@@ -1494,13 +1517,13 @@ void func_8002E064(s32 index, RECT *srcRect) {
     ep->rect = *srcRect;
     rect = *srcRect;
 
-    func_8002CDE4(&rect, ep->field1C, ep->rateDelta);
+    func_8002CDE4(&rect, ep->openDialogScale, ep->openDialogStep);
     setBattleEntityBoundRect(entityId, &rect);
 
-    rect.x += SFX_CLAMP_INSET;
-    rect.y += SFX_CLAMP_INSET;
-    rect.w -= SFX_CLAMP_INSET * 2;
-    rect.h -= SFX_CLAMP_INSET * 2;
+    rect.x += DIALOG_CLAMP_INSET;
+    rect.y += DIALOG_CLAMP_INSET;
+    rect.w -= DIALOG_CLAMP_INSET * 2;
+    rect.h -= DIALOG_CLAMP_INSET * 2;
     setBattleEntityRectClamp(entityId, &rect);
 }
 
@@ -1515,28 +1538,28 @@ void func_8002E064(s32 index, RECT *srcRect) {
  * @param value Value to store.
  */
 void func_8002E1B4(s32 index, s32 value) {
-    SfxSystem *data = &g_sfxEntries;
+    DialogSystem *data = &g_dialogs;
     s32 clamped = CLAMP(index, 0, 7);
     data->msgValues[clamped] = value;
 }
 
 
 /**
- * @brief Reset all SFX entries and clear global SFX state.
+ * @brief Reset all dialogs and clear global dialog state.
  *
- * Marks the global state as inactive, reinitializes all 8 SFX slots,
+ * Marks the global state as inactive, reinitializes all 8 dialog slots,
  * clears the text blink clock and the pad auto-repeat state of channels 0 and 1,
  * then calls func_8002C130 to finalize.
  */
-void resetAllSfx(void) {
-    SfxSystem *sys = &g_sfxEntries;
+void resetAllDialogs(void) {
+    DialogSystem *sys = &g_dialogs;
     s32 i;
     sys->state.activeFlag = -1;
     for (i = 0; i < 8; i++) {
         func_8002DF5C(i);
     }
     /* Through the global, not sys: the original stores it with its own %hi/%lo pair. */
-    g_sfxEntries.state.textBlinkClock = 0;
+    g_dialogs.state.textBlinkClock = 0;
     sys->state.repeatLatched[0] = 0;
     sys->state.repeatLatched[1] = 0;
     sys->state.repeatCounters[0] = 0;
@@ -1548,13 +1571,13 @@ void resetAllSfx(void) {
 /**
  * @brief Look up linked entity's animation speed and dispatch.
  *
- * Reads the entity index from the SFX entry, gets its animation speed,
+ * Reads the entity index from the dialog, gets its animation speed,
  * then passes the result to getEntityTablePtr.
  *
- * @param idx SFX entry index.
+ * @param idx Dialog index.
  */
-void dispatchSfxAnimSpeed(s32 idx) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
+void dispatchDialogAnimSpeed(s32 idx) {
+    Dialog *entry = &g_dialogs.entries[idx];
     s32 val = getBattleEntityAnimSpeed(entry->entityIdx);
     getEntityTablePtr(val);
 }
@@ -1600,7 +1623,7 @@ static TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
     n = word >> 16;
     word &= 0xFFFF;
     cell = (GlyphCell *)((u8 *)cell + word);
-    color = g_sfxEntries.state.textTint;
+    color = g_dialogs.state.textTint;
 
     for (; n > 0; p++, cell++, n--) {
         word = cell->texInfo;
@@ -1695,15 +1718,15 @@ inline s32 getNibbleValue(s32 idx) {
 
 
 /**
- * @brief Remap a battle SFX id into a range, then extract its 4-bit nibble.
+ * @brief Get the width of character code @p idx from the glyph width table.
  *
- * Folds the SFX id @p idx into a compact table index depending on which of
+ * Folds the character code @p idx into a glyph index depending on which of
  * three ranges it falls in (< 0x100, < 0x1C00, or higher — the last range is
  * offset and tagged with bit 0x400), then reads the packed nibble table
  * @c D_800834D8 exactly like @ref getNibbleValue: even indices take the low
  * nibble, odd indices the high nibble.
  *
- * @param idx SFX id to look up.
+ * @param idx Character code.
  * @return The 4-bit table value (0-15).
  */
 s32 func_8002E454(s32 idx) {
@@ -1843,7 +1866,7 @@ s32 func_8002E680(u8 *str) {
     head = getDisplayListHead();
     GP_SAVE_SET(tempGp, head);
     savedGp = tempGp;
-    GP_ALLOC(buf, SFX_MSG_BUF_SIZE);
+    GP_ALLOC(buf, DIALOG_MSG_BUF_SIZE);
     maxWidth = 0;
     do {
         decodeMessage(str, buf, -1);
@@ -1853,7 +1876,7 @@ s32 func_8002E680(u8 *str) {
         }
         str = func_8002F548(str);
     } while (str != NULL);
-    GP_FREE(SFX_MSG_BUF_SIZE);
+    GP_FREE(DIALOG_MSG_BUF_SIZE);
     GP_RESTORE_RET(savedGp, ret);
     return maxWidth | height;
 }
@@ -1990,7 +2013,7 @@ TSPRT *func_8002E8DC(P_TAG *ot, TSPRT *p, s32 x, s32 y, u8 *str, s32 colour) {
         c = *str++;
         if (c == MSG_NEWLINE) {
             x = startX;
-            y += SFX_LINE_HEIGHT;
+            y += DIALOG_LINE_HEIGHT;
             continue;
         }
         if (c < 0x19) {
@@ -2048,7 +2071,7 @@ static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy
     if (hi != 0) {
         colour = D_800831D8;
     } else {
-        colour = g_sfxEntries.state.textTint;
+        colour = g_dialogs.state.textTint;
     }
     if (glyph & TEXT_GLYPH_PAGE2) {
         glyph &= TEXT_GLYPH_INDEX_MASK;
@@ -2095,8 +2118,8 @@ u8 *func_8002EAD0(P_TAG *ot, s32 x, s32 y, u8 *str) {
     startX = x;
     GP_SAVE_SCRATCH(tempGp);
     savedGp = tempGp;
-    colour = SFX_COLOR_WHITE;
-    GP_ALLOC(buf, SFX_MSG_BUF_SIZE);
+    colour = DIALOG_COLOR_WHITE;
+    GP_ALLOC(buf, DIALOG_MSG_BUF_SIZE);
     p = (TSPRT *)getDisplayListHead();
     getAddrNewFast(ot, head);
 
@@ -2133,7 +2156,7 @@ u8 *func_8002EAD0(P_TAG *ot, s32 x, s32 y, u8 *str) {
                 }
                 if (c == MSG_NEWLINE) {
                     x = startX;
-                    y += SFX_LINE_HEIGHT;
+                    y += DIALOG_LINE_HEIGHT;
                     break;
                 }
                 if (c == MSG_NEW_PAGE || c == MSG_NEW_PAGE_MARKED || c == MSG_END) {
@@ -2164,7 +2187,7 @@ u8 *func_8002EAD0(P_TAG *ot, s32 x, s32 y, u8 *str) {
 end:
     setAddrFast(ot, head);
     storeGpuPacket((u32)p);
-    GP_FREE(SFX_MSG_BUF_SIZE);
+    GP_FREE(DIALOG_MSG_BUF_SIZE);
     GP_RESTORE_RET(savedGp, ret);
     return ret;
 }
@@ -2177,7 +2200,7 @@ end:
  * $gp area and emits a sprite per glyph, starting at the window's text origin
  * (@c field30, @c field32) scrolled up by @c field12. Lines scrolled out above
  * the window are skipped, and lines @c field29 to @c field2A (the choices) are
- * indented for the cursor. Lines before @c field22 are drawn whole; the line
+ * indented for the cursor. Lines before @c typingLine are drawn whole; the line
  * being typed shows its first @c field20 characters. Icons (code 0x05) are
  * drawn as multi-cell glyphs with func_8002E298, colour codes (0x06) switch the
  * text colour, and a page break or the end of the message stops the text.
@@ -2185,7 +2208,7 @@ end:
  * @param ot    OT slot the text is linked into.
  * @param entry Message window.
  */
-static void func_8002EE10(P_TAG *ot, SfxEntry *entry) {
+static void func_8002EE10(P_TAG *ot, Dialog *entry) {
     u8 *buf;
     s32 first;
     s32 last;
@@ -2199,7 +2222,7 @@ static void func_8002EE10(P_TAG *ot, SfxEntry *entry) {
     u8 *s;
     s32 c;
 
-    GP_ALLOC(buf, SFX_MSG_BUF_SIZE);
+    GP_ALLOC(buf, DIALOG_MSG_BUF_SIZE);
     first = entry->field29;
     str = entry->dataPtr;
     last = entry->field2A;
@@ -2207,20 +2230,20 @@ static void func_8002EE10(P_TAG *ot, SfxEntry *entry) {
     line = 0;
     getAddrNewFast(ot, head);
     /* The scroll offset is read signed (lh) here; func_8002D040 counts it unsigned. */
-    y = entry->field32 + (SFX_TEXT_MARGIN - (s16)entry->field12);
-    x = entry->field30 + SFX_TEXT_MARGIN;
+    y = entry->field32 + (DIALOG_TEXT_MARGIN - (s16)entry->field12);
+    x = entry->field30 + DIALOG_TEXT_MARGIN;
     colour = entry->flags.bits.pageColor;
     if (line >= first && line <= last) {
-        x = entry->field30 + SFX_TEXT_MARGIN + SFX_CHOICE_INDENT;
+        x = entry->field30 + DIALOG_TEXT_MARGIN + DIALOG_CHOICE_INDENT;
     }
     D_8008386C = entry->flags.bits.pageColor;
 
-    while (y < -SFX_LINE_HEIGHT) {
+    while (y < -DIALOG_LINE_HEIGHT) {
         if (str == NULL) {
             break;
         }
         str = func_8002F548(str);
-        y += SFX_LINE_HEIGHT;
+        y += DIALOG_LINE_HEIGHT;
         colour = D_8008386C & 0xF;
         line++;
     }
@@ -2235,7 +2258,7 @@ static void func_8002EE10(P_TAG *ot, SfxEntry *entry) {
             }
             /* c doubles as the length limit, as the original's register does. */
             c = -1;
-            if (line >= entry->field22) {
+            if (line >= entry->typingLine) {
                 c = entry->field20;
             }
             decodeMessage(str, buf, c);
@@ -2271,11 +2294,11 @@ static void func_8002EE10(P_TAG *ot, SfxEntry *entry) {
                     continue;
                 }
                 if (c == MSG_NEWLINE) {
-                    x = entry->field30 + SFX_TEXT_MARGIN;
+                    x = entry->field30 + DIALOG_TEXT_MARGIN;
                     if (line >= first && line <= last) {
-                        x = entry->field30 + SFX_TEXT_MARGIN + SFX_CHOICE_INDENT;
+                        x = entry->field30 + DIALOG_TEXT_MARGIN + DIALOG_CHOICE_INDENT;
                     }
-                    y += SFX_LINE_HEIGHT;
+                    y += DIALOG_LINE_HEIGHT;
                     break;
                 }
                 if (c == MSG_NEW_PAGE || c == MSG_NEW_PAGE_MARKED || c == MSG_END) {
@@ -2306,7 +2329,7 @@ static void func_8002EE10(P_TAG *ot, SfxEntry *entry) {
 end:
     setAddrFast(ot, head);
     storeGpuPacket((u32)p);
-    GP_FREE(SFX_MSG_BUF_SIZE);
+    GP_FREE(DIALOG_MSG_BUF_SIZE);
 }
 
 

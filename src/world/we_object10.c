@@ -7,7 +7,7 @@
 #include "world/we_object6.h"
 #include "world/we_object10.h"
 #include "world/we_object3.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 #include "btl_anim.h"
 #include "world/we_object1.h"
 #include "world/we_object9.h"
@@ -773,19 +773,19 @@ void func_800BE9F8(s32 arg) {
 
 
 /**
- * @brief Tear down the battle scene: clear state flag, fade SFX, render two frames.
+ * @brief Tear down the battle scene: clear state flag, close dialog 0, render two frames.
  *
  * Typical end-of-battle / scene-transition cleanup sequence:
  *  1. @c DrawSync(0) — system/display reset.
  *  2. Clear the @c D_800C5D54 flag.
- *  3. @c fadeOutSfxFast(0) — stop channel 0 SFX.
+ *  3. @c closeDialogInstant(0) — close dialog 0 at once.
  *  4. @c renderAndUpdateDisplay(2) — push 2 frames.
  *  5. Flush the battle scene's colorTag into the display list.
  */
 void func_800BEA34(void) {
     DrawSync(0);
     D_800C5D54 = 0;
-    fadeOutSfxFast(0);
+    closeDialogInstant(0);
     renderAndUpdateDisplay(2);
     renderBattleDisplayList(&D_800D244C->primList[BSC_COLORTAG_IDX]);
 }

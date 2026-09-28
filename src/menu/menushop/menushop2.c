@@ -6,7 +6,7 @@
 #include "btl_anim_packet.h"
 #include "menushop2.h"
 #include "btl_color.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 #include "game.h"
 
 #define SYMBOL_PERCENT 20 // Passed as argument to func_801F6AFC
@@ -127,10 +127,10 @@ static void func_801E81A4(JunkShopMenuState *s) {
                 if (!((0x3F >> charId) & 1)) {
                     u8 *msg;
                     msg = func_801F6AA4(STRING_JUNK_SHOP_CANT_REMODEL_YOUR_WEAPON);
-                    initSfxPlayback(0, msg);
+                    setDialogMessage(0, msg);
                     func_801F23D0(0, 0x68, msg);
-                    setSfxPitch(0, 0);
-                    startSfxNormal(0);
+                    setDialogTextSpeed(0, 0);
+                    openDialogInstant(0);
                     s->unk4C = 600;
                     *statePtr = 4;
                 }
@@ -148,7 +148,7 @@ static void func_801E81A4(JunkShopMenuState *s) {
             s->unk4C = 0;
         }
         if (s->unk4C <= 0) {
-            fadeOutSfxFast(0);
+            closeDialogInstant(0);
             *statePtr = 3;
         }
         break;
@@ -189,10 +189,10 @@ static void func_801E81A4(JunkShopMenuState *s) {
                     u8 *msg;
                     sendSpuCommand(5);
                     msg = func_801F6AA4(STRING_JUNK_SHOP_YOU_HAVE_IT_ALREADY);
-                    initSfxPlayback(0, msg);
+                    setDialogMessage(0, msg);
                     func_801F23D0(0, 0x68, msg);
-                    setSfxPitch(0, 0);
-                    startSfxNormal(0);
+                    setDialogTextSpeed(0, 0);
+                    openDialogInstant(0);
                     s->unk4C = 600;
                     *statePtr = 9;
                 } else {
@@ -207,10 +207,10 @@ static void func_801E81A4(JunkShopMenuState *s) {
                 } else {
                     msg = func_801F6AA4(STRING_JUNK_SHOP_NOT_ENOUGH_MONEY);
                 }
-                initSfxPlayback(0, msg);
+                setDialogMessage(0, msg);
                 func_801F23D0(0, 0x68, msg);
-                setSfxPitch(0, 0);
-                startSfxNormal(0);
+                setDialogTextSpeed(0, 0);
+                openDialogInstant(0);
                 s->unk4C = 600;
                 *statePtr = 9;
             }
@@ -224,7 +224,7 @@ static void func_801E81A4(JunkShopMenuState *s) {
             s->unk4C = 0;
         }
         if (s->unk4C <= 0) {
-            fadeOutSfxFast(0);
+            closeDialogInstant(0);
             *statePtr = 7;
         }
         break;

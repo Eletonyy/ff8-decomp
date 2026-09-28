@@ -61,37 +61,37 @@ typedef struct {
 } DisplayListBuf;
 
 /**
- * @brief Bit of @c SfxEntry.ctrl.raw: the window shows its blinking corner marker.
+ * @brief Bit of @c Dialog.ctrl.raw: the window shows its blinking corner marker.
  *
  * It is bit 7 of @c ctrl.fields.markerBlink; the blink bit below is spelled on
  * the shifted byte instead, because the two tests only compile to the original
  * instruction pair when written that way.
  */
-#define SFX_CTRL_MARKER 0x00800000
+#define DIALOG_CTRL_MARKER 0x00800000
 
-/** @brief Position of @c SfxEntry.ctrl.fields.markerBlink inside @c ctrl.raw. */
-#define SFX_CTRL_MARKER_BLINK_SHIFT 16
+/** @brief Position of @c Dialog.ctrl.fields.markerBlink inside @c ctrl.raw. */
+#define DIALOG_CTRL_MARKER_BLINK_SHIFT 16
 
 /**
- * @brief Bit of the 7-bit blink counter in @c SfxEntry.ctrl.fields.markerBlink.
+ * @brief Bit of the 7-bit blink counter in @c Dialog.ctrl.fields.markerBlink.
  *
  * Set for 16 of every 32 ticks; the corner marker is blanked while it is set.
  */
-#define SFX_MARKER_BLINK_OFF 0x10
+#define DIALOG_MARKER_BLINK_OFF 0x10
 
-struct SfxEntry;
+struct Dialog;
 
-/** @brief Per-frame hook of an SFX window, run with the frame's pad input. */
-typedef void (*SfxEntryCallback)(struct SfxEntry *entry, u32 input, u32 repeat);
+/** @brief Per-frame hook of a dialog window, run with the frame's pad input. */
+typedef void (*DialogCallback)(struct Dialog *entry, u32 input, u32 repeat);
 
-/** @brief Draw hook of an SFX window, run before the window is drawn. */
-typedef void (*SfxEntryDrawCallback)(struct SfxEntry *entry, P_TAG *ot);
+/** @brief Draw hook of a dialog window, run before the window is drawn. */
+typedef void (*DialogDrawCallback)(struct Dialog *entry, P_TAG *ot);
 
-typedef struct SfxEntry {
+typedef struct Dialog {
     RECT rect;
     u8 *dataPtr;
-    u8 *dataPtrCopy;
-    s16 pitch;
+    u8 *linePtr;          /**< Start of the line being typed. */
+    s16 textSpeed;        /**< Added to the character timer each frame; a character prints when it reaches ONE (0 = no wait). */
     u16 field12;
     union {
         u32 raw;
@@ -110,11 +110,11 @@ typedef struct SfxEntry {
     u8 entityIdx;
     s8 field19;
     s16 brightness;  /**< Window brightness, 0x1000 = full (grey 0x80: drawn unmodulated). */
-    s16 field1C;
-    s16 rateDelta;
+    s16 openDialogScale; /**< Box scale of the open/close animation: 0 shut, 0x1000 fully open. */
+    s16 openDialogStep;  /**< Added to openDialogScale each frame: 0x200 opens over 8 frames, 0x1000 at once, negative closes. */
     u8 field20;
     u8 field21;
-    u8 field22;
+    u8 typingLine;        /**< Line being typed; the lines before it are drawn whole. */
     u8 field23;
     s32 seqState;
     u8 field28;
@@ -126,7 +126,7 @@ typedef struct SfxEntry {
         struct {
             u8 field2C;
             u8 mode;
-            u8 markerBlink; /**< Bits 0-6: blink counter; bit 7: @ref SFX_CTRL_MARKER. */
+            u8 markerBlink; /**< Bits 0-6: blink counter; bit 7: @ref DIALOG_CTRL_MARKER. */
             u8 field2F;
         } fields;
         /** The marker byte as bitfields: writing @c blink or @c marker is a
@@ -142,9 +142,9 @@ typedef struct SfxEntry {
     u16 field30;
     u8 field32;
     u8 waitTimer; /**< Frames left of a message {Wait} command. */
-    SfxEntryDrawCallback drawCallback;
-    SfxEntryCallback updateCallback;
-} SfxEntry;
+    DialogDrawCallback drawCallback;
+    DialogCallback updateCallback;
+} Dialog;
 
 typedef struct {
     u8 pad0[3];
@@ -156,14 +156,14 @@ typedef struct {
     u8 padD[7];
     s8 repeatCounters[4];  /**< Per-channel pad auto-repeat countdown (func_8002CECC). */
     u16 repeatLatched[4];  /**< Per-channel pad bits latched on the previous frame (func_8002CECC). */
-} SfxGlobalState;       /* 0x20 */
+} DialogGlobalState;       /* 0x20 */
 
-/** @brief Complete SFX system: 8 entry slots + global state + message display values. */
+/** @brief Complete dialog system: 8 entry slots + global state + message display values. */
 typedef struct {
-    SfxEntry entries[8];       /* 8 × 60 = 480 bytes */
-    SfxGlobalState state;      /* global SFX state (0x20 bytes) */
+    Dialog entries[8];       /* 8 × 60 = 480 bytes */
+    DialogGlobalState state;      /* global dialog state (0x20 bytes) */
     u32 msgValues[8];          /* numeric values formatted by decodeMessage */
-} SfxSystem;
+} DialogSystem;
 
 /** @brief Complete battle animation state (entities + global coords). */
 typedef struct {
@@ -177,7 +177,7 @@ typedef struct {
     /* 0x1DE */ u16 clipBottom;             /**< Clip region bottom edge. */
     /* 0x1E0 */ U16Split repeatDelays;       /**< Pad auto-repeat timing (func_8002CECC): restart delay in @c b.lo, repeat interval in @c b.hi. */
     /* 0x1E2 */ u8 pad1E2[0x3E];             /**< Unknown. */
-    /* 0x220 */ SfxSystem sfx;               /**< Message windows; also addressed directly as @c g_sfxEntries. */
+    /* 0x220 */ DialogSystem dialogs;               /**< Message windows; also addressed directly as @c g_dialogs. */
     /* 0x440 */ u8 pad440[0x200];            /**< Unknown. */
     /* 0x640 */ DisplayListBuf bufs[2];         /**< Double-buffered GPU display lists (2 × 0x58). */
     /* 0x6F0 */ DisplayListBuf *active;      /**< Pointer to active display list buffer. */

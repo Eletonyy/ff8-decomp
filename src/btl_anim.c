@@ -5,7 +5,7 @@
 #include "battle.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 #include "thread.h"
 
 
@@ -2367,7 +2367,7 @@ void initBattleAnimSystem(s32 vramBase, s32 vramSize)
     g_battleAnims.active = &g_battleAnims.bufs[1];
     swapDisplayList();
     initAllBattleEntities();
-    resetAllSfx();
+    resetAllDialogs();
     setDefaultGpuColor();
     buildGrayscaleGpuColor(0x1000);
     setMenuBrightness(BRIGHTNESS_NORMAL);

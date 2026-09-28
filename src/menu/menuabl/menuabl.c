@@ -7,7 +7,7 @@
 #include "numstr.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 
 extern AbilityEntry  D_8007CEE0[];
 
@@ -28,11 +28,7 @@ extern s32  func_801F0D84(void);
 extern void func_801F18FC(s32 *ctx);
 extern s32  func_801F0BB0(void);
 extern void func_801F7BEC(s32 cfg);
-extern void initSfxPlayback(s32 ch, u8 *buf);
 extern void sendSpuCommand(s32 cmd);
-extern void setSfxPitch(s32 ch, s32 pitch);
-extern void startSfxNormal(s32 ch);
-extern void fadeOutSfxFast(s32 ch);
 
 /**
  * @brief Render one cell of an ability grid at a per-slot X offset.
@@ -239,7 +235,7 @@ restart:
                         if (g_gameState.mainData.partyLockFlag & 1) {
                             ptr = func_801F6AA4(0x4F);
                             func_801F23D0(0, 0x68, ptr);
-                            initSfxPlayback(0, ptr);
+                            setDialogMessage(0, ptr);
                             *statePtr = 0x10;
                             break;
                         }
@@ -252,7 +248,7 @@ restart:
                         if (func_801E2934() == 0) {
                             ptr = (u8 *)func_801F6AFC(0x36);
                             func_801F23D0(0, 0x68, ptr);
-                            initSfxPlayback(0, ptr);
+                            setDialogMessage(0, ptr);
                             *statePtr = 0x10;
                             break;
                         }
@@ -506,8 +502,8 @@ restart:
     case 16:
         sendSpuCommand(5);
         s->field_30 = 0x258;
-        setSfxPitch(0, 0);
-        startSfxNormal(0);
+        setDialogTextSpeed(0, 0);
+        openDialogInstant(0);
         *statePtr = 0x11;
         /* fall through */
     case 17:
@@ -517,7 +513,7 @@ restart:
             s->field_30 = 0;
         }
         if (s->field_30 <= 0) {
-            fadeOutSfxFast(0);
+            closeDialogInstant(0);
             *statePtr = 3;
             break;
         }

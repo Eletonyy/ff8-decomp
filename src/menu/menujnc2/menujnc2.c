@@ -11,7 +11,7 @@
 #include "ability_list.h"
 
 #include "menujnc2.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 #include "card.h"
 #include "psxsdk/libetc.h"
 
@@ -3029,11 +3029,11 @@ dispatch:
         case 0x43:
             sendSpuCommand(5);
             ctx->unk66 = 0x258;
-            initSfxPlayback(0, D_801EF1B0);
+            setDialogMessage(0, D_801EF1B0);
             func_801F23D0(0, 0x68, D_801EF1B0);
-            setSfxField2F(0, 0x56);
-            setSfxPitch(0, 0);
-            startSfxNormal(0);
+            setDialogField2F(0, 0x56);
+            setDialogTextSpeed(0, 0);
+            openDialogInstant(0);
             *statePtr = 0x44;
             break;
         case 0x44:
@@ -3043,7 +3043,7 @@ dispatch:
                 ctx->unk66 = 0;
             }
             if ((s16)ctx->unk66 <= 0) {
-                fadeOutSfxFast(0);
+                closeDialogInstant(0);
                 *statePtr = 0x29;
             }
             break;

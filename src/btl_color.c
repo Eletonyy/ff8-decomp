@@ -44,12 +44,12 @@ extern u8 D_80052A64[];
 extern s32 func_800432D8(void);
 
 /**
- * @brief Clear the RGB color fields of an SFX entry.
- * @param entry Pointer to the SFX entry to clear.
+ * @brief Reset a dialog's typing progress: @c field20, @c field21 and @c typingLine.
+ * @param entry The dialog.
  */
-void clearEntityColor(SfxEntry *entry) {
+void resetDialogTyping(Dialog *entry) {
     entry->field20 = 0;
-    entry->field22 = 0;
+    entry->typingLine = 0;
     entry->field21 = 0;
 }
 

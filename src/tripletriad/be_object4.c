@@ -22,24 +22,24 @@
 extern s32 remapControllerInput(s32 arg);
 
 /**
- * @brief Reset and reconfigure the seven SFX channels.
+ * @brief Reset and configure the seven dialogs.
  *
  * Resets all sound effects, runs a (60, 32) init via @c func_800A4504, then for
  * each of the seven channels applies the per-channel settings from the
- * @c D_80182E70 config table: reverb mode = channel index, field 0x2F and pitch
+ * @c D_80182E70 config table: anim speed = dialog index, field2F and text speed
  * from the table entry, and zeroed entry params.
  */
 void func_800A1BE0(void)
 {
     s32 i;
 
-    resetAllSfx();
+    resetAllDialogs();
     func_800A4504(0x3C, 0x20);
     for (i = 0; i < 7; i++) {
-        setSfxReverbMode(i, i);
-        setSfxField2F(i, D_80182E70[i].field2F);
-        setSfxPitch(i, D_80182E70[i].pitch);
-        setSfxEntryParams(i, 0, 0);
+        setDialogAnimSpeed(i, i);
+        setDialogField2F(i, D_80182E70[i].field2F);
+        setDialogTextSpeed(i, D_80182E70[i].textSpeed);
+        setDialogParams(i, 0, 0);
     }
 }
 
@@ -50,8 +50,8 @@ void func_800A1BE0(void)
  * cursor state machine with the current input snapshots and records the
  * resulting card-display slot; otherwise idles the state machine and clears the
  * slot. Then refreshes the display, renders the battle ordering table, and
- * counts down each SFX entry's fade timer — firing a fast or slow fade-out (per
- * the entry's flag bit 0) on the frame a timer reaches zero.
+ * counts down each dialog's @c fadeTimer — closing the dialog at once or with its
+ * animation (per the entry's flag bit 0) on the frame the timer reaches zero.
  */
 void func_800A1C6C(void)
 {
@@ -73,9 +73,9 @@ void func_800A1C6C(void)
             D_80182E70[i].fadeTimer--;
             if (D_80182E70[i].fadeTimer == 0) {
                 if (D_80182E70[i].flags & 1) {
-                    fadeOutSfxFast(i);
+                    closeDialogInstant(i);
                 } else {
-                    fadeOutSfxSlow(i);
+                    closeDialogAnimated(i);
                 }
             }
         }
@@ -83,17 +83,17 @@ void func_800A1C6C(void)
 }
 
 /**
- * @brief Lay out a Triple Triad message-banner box and trigger its SFX/animation.
+ * @brief Lay out a Triple Triad message-banner box and open its dialog.
  *
  * Measures @p str (and, for @p id 5, the appended "Play / Quit" suffix) to size the
  * box, copies the box rect from @c D_80182E70[id], applies defaults ("size to text"
  * when w/h are 0), then either centers it (flag bit 2) or pulls it in from the
  * right/bottom edge for negative origins.  Registers the rect (func_8002E064),
  * dispatches the banner's audio by @p id (5 = multi-line, 6 = fixed, otherwise the
- * generic path), optionally offsets the SFX entry (flag bit 1), starts it
+ * generic path), optionally offsets the dialog (flag bit 1), opens it
  * normal/slow (flag bit 0), and records @p param as the entry's fade timer.
  *
- * @param id    Message/SFX slot index into @c D_80182E70.
+ * @param id    Dialog index into @c D_80182E70.
  * @param str   FF8-encoded message string.
  * @param param Fade-timer / display-duration value stored into the entry.
  */
@@ -135,44 +135,45 @@ void func_800A1D68(s32 id, u8 *str, s32 param) {
     func_8002E064(id, &rect);
 
     if (id == 5) {
-        goto sfx5;
+        goto dialog5;
     }
     if (id != 6) {
-        goto sfxDefault;
+        goto dialogDefault;
     }
-    func_8002D784(6, str, 1, 2, 1, 2);
-    setSfxGlobalFlag(6);
-    goto sfxDone;
-sfx5:
+    setDialogChoiceMessage(6, str, 1, 2, 1, 2);
+    setDialogGlobalFlag(6);
+    goto dialogDone;
+dialog5:
     {
         s32 lines = dim.wh[1] / 16;
-        func_8002D784(5, str, lines - 1, lines, lines - 1, lines);
+        setDialogChoiceMessage(5, str, lines - 1, lines, lines - 1, lines);
     }
-    setSfxGlobalFlag(5);
-    goto sfxDone;
-sfxDefault:
-    initSfxPlayback(id, str);
-sfxDone:;
+    setDialogGlobalFlag(5);
+    goto dialogDone;
+dialogDefault:
+    setDialogMessage(id, str);
+dialogDone:;
 
     if (D_80182E70[id].flags & 2) {
         s32 px = rect.w - 0x10;
         s32 py = rect.h - 0x10;
-        setSfxEntryParams(id, (px - dim.wh[0]) / 2, (py - dim.wh[1]) / 2);
+        setDialogParams(id, (px - dim.wh[0]) / 2, (py - dim.wh[1]) / 2);
     }
     if (D_80182E70[id].flags & 1) {
-        startSfxNormal(id);
+        openDialogInstant(id);
     } else {
-        startSfxSlow(id);
+        openDialogAnimated(id);
     }
 
     D_80182E70[id].fadeTimer = param;
 }
 
 /**
- * @brief Start or stop an SFX entry based on its type flag.
+ * @brief Close dialog @p a0, at once or with its animation per its flag.
  *
  * Looks up the entry at D_80182E70[a0 * 12], checks bit 0 of byte 0.
- * If set, calls fadeOutSfxFast (stop). Otherwise calls fadeOutSfxSlow (start).
+ * If set, calls closeDialogInstant, otherwise closeDialogAnimated. Both calls pass
+ * no argument: the dialog they close is @p a0, still in $a0.
  *
  * @param a0 Object index.
  */
@@ -182,34 +183,34 @@ void func_800A2054(s32 a0) {
 
     entry = base + a0 * 12;
     if (entry[0] & 1) {
-        fadeOutSfxFast();
+        closeDialogInstant();
     } else {
-        fadeOutSfxSlow();
+        closeDialogAnimated();
     }
 }
 
 /**
- * @brief Reset all 7 SFX entries and finalize.
+ * @brief Close all 7 dialogs at once and finalize.
  *
- * Calls fadeOutSfxFast for each of the 7 objects (indices 0-6),
+ * Calls closeDialogInstant for each of dialogs 0-6,
  * then calls func_800A44BC to set D_801D49E2.
  */
 void func_800A20B0(void) {
     s32 i = 0;
     do {
-        fadeOutSfxFast(i);
+        closeDialogInstant(i);
         i++;
     } while (i < 7);
     func_800A44BC();
 }
 
 /**
- * @brief Poll a player-input gate; thin wrapper forwarding @p gate to func_8002CE84.
+ * @brief Poll a player-input gate; thin wrapper forwarding @p gate to getDialogChoice.
  * @param gate Gate / channel id to poll.
  * @return Gate result: <0 while still waiting, otherwise the player's selection.
  */
 s32 func_800A20F4(s32 gate) {
-    return func_8002CE84(gate);
+    return getDialogChoice(gate);
 }
 
 /**
@@ -243,14 +244,14 @@ void showCardDetail(s32 cardId) {
 }
 
 /**
- * @brief Clear all 7 SFX entries by calling setSfxEntryParams with zero params.
+ * @brief Clear all 7 dialogs' params by calling setDialogParams with zeros.
  *
- * Iterates indices 0-6, calling setSfxEntryParams(i, 0, 0) for each.
+ * Iterates indices 0-6, calling setDialogParams(i, 0, 0) for each.
  */
-void clearAllSfx(void) {
+void clearAllDialogs(void) {
     s32 i = 0;
     do {
-        setSfxEntryParams(i, 0, 0);
+        setDialogParams(i, 0, 0);
         i++;
     } while (i < 7);
 }

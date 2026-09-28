@@ -9,7 +9,7 @@
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
 #include "btl_color.h"
-#include "btl_sfx.h"
+#include "dialog.h"
 #include "numstr.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
@@ -1145,9 +1145,9 @@ u16 func_801F2370(void) {
  * @note @c w holds the packed measurement first and is then reassigned to
  *       the mapped width — the reuse is what allocates s0/s1/s2 like the
  *       original.
- * @note func_8002E680 (src/btl_sfx.c) is called without a prototype here,
+ * @note func_8002E680 (src/dialog.c) is called without a prototype here,
  *       as in the original build; field.h/we_object1.h carry the u8*
- *       declaration for their units until a btl_sfx.h consolidation pass.
+ *       declaration for their units until a dialog.h consolidation pass.
  *
  * @param idx  Region slot index (passed to func_8002E064).
  * @param y    Screen Y for the region.

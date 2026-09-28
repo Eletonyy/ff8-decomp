@@ -509,18 +509,18 @@ void func_8009895C(void) {
  * @note Purpose unknown. It survives as a real function -- the linker kept
  *       its address and @c fe_object1.h still declares it -- so it was most
  *       likely a debug or teardown hook whose body was compiled out, sitting
- *       as it does between the shutdown path above and the SFX fade-out in
+ *       as it does between the shutdown path above and the dialog close in
  *       @ref func_8009912C.
  */
 void func_80099124(void) {
 }
 
-/** @brief Call fadeOutSfxFast for sound channels 0-7, then renderAndUpdateDisplay(1). */
+/** @brief Close dialogs 0-7 at once (closeDialogInstant), then renderAndUpdateDisplay(1). */
 void func_8009912C(void) {
     s16 i = 0;
 
     do {
-        fadeOutSfxFast(i);
+        closeDialogInstant(i);
         i++;
     } while (i < 8);
 
