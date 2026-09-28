@@ -252,8 +252,7 @@ typedef struct {
     /* 0x20 */ s32 unk20;
     /* 0x24 */ s32 unk24[8];
     /* 0x44 */ u16 elemDef[8];
-    /* 0x54 */ s16 perBit[14];
-    /* 0x70 */ u8 pad70[4];
+    /* 0x54 */ s16 perBit[16];
     /* 0x74 */ u16 animParam1;
     /* 0x76 */ u16 animParam2;
     /* 0x78 */ u16 animParam3;
