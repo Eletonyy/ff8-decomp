@@ -179,7 +179,6 @@ extern s32  getAnimFrameParam(s32 slot, s32 sub);     /**< Per-controller input-
 extern u8  g_battleConfig[];   /**< Shared battle config; [9] bit 0 = sound-bank selector. */
 extern u8  D_80082C11;         /**< Sound-bank selector flag (same byte as g_battleConfig[9]). */
 extern s16 D_8005F11C;
-extern s32 g_menuColor[];
 extern u8  D_801A1B88[];       /**< Start of the Triple Triad sound region uploaded to a bank. */
 extern s16 D_801D49E2;
 extern s16 D_801D49F8[];

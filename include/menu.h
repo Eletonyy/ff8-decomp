@@ -2,6 +2,7 @@
 #define MENU_H
 
 #include "common.h"
+#include "menu_tint.h"
 
 /** @brief Load address of the menu sub-overlays and their page data. */
 #define MENU_SUBOVERLAY_ADDR 0x801D1000
@@ -64,9 +65,6 @@ typedef s32 (*MenuRowCallback)(s32, s32, s32, s32, s32);
 
 /** @brief Shared menu display state (lives in menumain BSS at 0x801FAB00). */
 extern MenuDisplayConfig g_menuDisplayCfg;
-
-/** @brief Current menu text color (RGB packed, lives in main exe data at 0x80083848). */
-extern s32 g_menuColor;
 
 /**
  * @brief Per-character junction menu state (g_junctionChars, stride 28).

@@ -2154,7 +2154,7 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
         param = frameData[count];
         frameVal = param;
         statusVal = val;
-        decrementSfxCounter();
+        tickTextBlink();
         for (j = 0; j < 8; j++) {
             if (GetActiveFlag(j)) {
                 dispatchBattleEntity(j, frameVal, statusVal);
@@ -2370,7 +2370,7 @@ void initBattleAnimSystem(s32 vramBase, s32 vramSize)
     resetAllSfx();
     setDefaultGpuColor();
     buildGrayscaleGpuColor(0x1000);
-    setMenuColorIntensity(0x1000);
+    setMenuBrightness(BRIGHTNESS_NORMAL);
     btlColorStub0234();
     buildAnimEasingCurves();
     resetBattleCameraState();

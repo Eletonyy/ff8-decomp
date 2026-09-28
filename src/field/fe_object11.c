@@ -250,7 +250,7 @@ s32 *func_800BFBBC(u8 *entity, Eline *eline, u16 *a2, s32 mode) {
         g_fieldVars->sfxActiveMask = 0;
         for (i = 0; i < getMaxBattleEntities(); i++) {
             D_80085300[i].type = 6;
-            D_80085300[i].volume = 0x1000;
+            D_80085300[i].brightness = 0x1000;
         }
         g_fieldVars->fieldF0 = 0;
         g_fieldVars->fieldF1 = 0;

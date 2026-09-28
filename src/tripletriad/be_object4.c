@@ -9,6 +9,7 @@
 #include "psxsdk/libgpu.h"
 #include "drawbar.h"
 #include "battle_anim.h"
+#include "menu_tint.h"
 #include "btl_anim.h"
 #include "tripletriad/be_object1.h"
 #include "tripletriad/be_object1b.h"
@@ -1366,7 +1367,7 @@ s32 func_800A390C(s32 flags0, s32 flags1) {
 /**
  * @brief Build a 12x12 font-glyph sprite and prepend it to the ordering table.
  *
- * Fills a free-size @c SPRT (code 0x64, carried in @c g_menuColor) for tile
+ * Fills a free-size @c SPRT (code 0x64, carried in @c g_menuTint) for tile
  * @p tileIdx of a 21-tile-per-row font texture: CLUT from @p palArg's low 3 bits,
  * menu color chosen by its high bits, 12x12 size, position @p xy, and UV from the
  * tile's column/row. Links the primitive at the head of the OT carried in @p ot
@@ -1398,9 +1399,9 @@ u32 func_800A3C7C(u32 ot, SPRT *prim, s32 tileIdx, s32 palArg, u32 xy) {
     palArg = palArg & 7;
     prim->clut = (palArg << 6) + 0x3812; /* getClut(288, 224 + palette) */
     if (head) {
-        palArg = g_menuColor[1]; /* palette register reused: now the color */
+        palArg = g_menuTint[MENU_TINT_BLINK]; /* palette register reused: now the color */
     } else {
-        palArg = g_menuColor[0];
+        palArg = g_menuTint[MENU_TINT_NORMAL];
     }
 
     *(u32 *)&prim->w = 0xC000C; /* 12 x 12 */
@@ -1541,12 +1542,12 @@ INCLUDE_ASM("asm/ovl/tripletriad/nonmatchings/be_object4", func_800A3EE0);
 /**
  * @brief Wrapper for func_800A3EE0 that selects a lookup table entry based on the 5th argument.
  *
- * If stack0 >= 8, uses g_menuColor[1] and subtracts 8 from stack0.
- * Otherwise uses g_menuColor[0] with stack0 unchanged.
+ * If stack0 >= 8, uses g_menuTint[MENU_TINT_BLINK] and subtracts 8 from stack0.
+ * Otherwise uses g_menuTint[MENU_TINT_NORMAL] with stack0 unchanged.
  * Passes the lookup value and adjusted stack0 as extra args to func_800A3EE0.
  *
  * @param a0-a3 Parameters passed through to func_800A3EE0.
- * @param stack0 Index parameter; if >= 8, adjusted by -8 and table index 1 is used.
+ * @param stack0 Index parameter; if >= 8, adjusted by -8 and the blink tint is used.
  * @return The advanced packet cursor from func_800A3EE0 (returned by the tail call;
  *         func_800A40F0 threads it through). Typed @c void* rather than @c void.
  */
@@ -1554,11 +1555,11 @@ void *func_800A4098(void *a0, void *a1, s32 a2, s32 a3, s32 stack0) {
     s32 idx;
     if (stack0 >= 8) {
         stack0 -= 8;
-        idx = 1;
+        idx = MENU_TINT_BLINK;
     } else {
-        idx = 0;
+        idx = MENU_TINT_NORMAL;
     }
-    return func_800A3EE0(a0, a1, a2, a3, g_menuColor[idx], stack0);
+    return func_800A3EE0(a0, a1, a2, a3, g_menuTint[idx], stack0);
 }
 
 /**

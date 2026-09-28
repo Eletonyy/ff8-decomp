@@ -8,7 +8,7 @@
 #include "field/fe_object9.h"
 
 // Intentionally NOT included — these headers would pull in void prototypes
-// for setSfxEntryVolume, setSfxEntityType, updateAnimEntry, setupAnimEntry,
+// for setSfxEntryBrightness, setSfxEntityType, updateAnimEntry, setupAnimEntry,
 // and setupAnimEntryFull. We need gcc to implicit-int-declare those at the
 // call sites below to match the original K&R-style scheduling. Without that,
 // four functions mismatch.
@@ -419,20 +419,20 @@ s32 opHandler_MESVAR(ScriptContext *context) {
 }
 
 /**
- * @brief Register an SFX entry's volume and type via VM stack args.
+ * @brief Register an SFX entry's brightness and type via VM stack args.
  *
- * Pops three values from the Actor stack: @c vol (top), @c kind, then
- * @c idx. Forwards @c vol to @c setSfxEntryVolume and remaps the
+ * Pops three values from the Actor stack: @c brightness (top), @c kind, then
+ * @c idx. Forwards @c brightness to @c setSfxEntryBrightness and remaps the
  * caller-supplied @c kind through a 3-way switch (0→2, 1→3, 2→0) before
  * calling @c setSfxEntityType. Mirrors both into the per-slot SFX entry
  * at @c D_80085300[idx]. Returns 2 (VM continue).
  */
 s32 opHandler_MESMODE(ScriptContext *context) {
-    s32 vol  = POP(context);
-    s32 kind = POP(context);
-    s32 idx  = POP(context);
+    s32 brightness = POP(context);
+    s32 kind       = POP(context);
+    s32 idx        = POP(context);
 
-    setSfxEntryVolume(idx, vol);
+    setSfxEntryBrightness(idx, brightness);
 
     switch (kind) {
     case 0: kind = 2; break;
@@ -441,8 +441,8 @@ s32 opHandler_MESMODE(ScriptContext *context) {
     }
 
     setSfxEntityType(idx, kind);
-    D_80085300[idx].volume = vol;
-    D_80085300[idx].type   = kind;
+    D_80085300[idx].brightness = brightness;
+    D_80085300[idx].type       = kind;
     return 2;
 }
 
@@ -510,7 +510,7 @@ s32 opHandler_MESW(ScriptContext *context) {
  *
  * Stores the s32 @c val into @c entry->payload and copies the four
  * input halfwords from @c src into @c entry->rect. The trailing
- * @c volume / @c type fields are left untouched.
+ * @c brightness / @c type fields are left untouched.
  *
  * @param idx  Entry index in @c D_80085300.
  * @param val  s32 payload (typically an SFX data pointer cast to s32).

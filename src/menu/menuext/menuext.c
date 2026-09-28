@@ -449,7 +449,6 @@ typedef struct {
 } ExtMenuCtx;
 
 extern CharRecord g_characters[];
-extern s32 g_menuColor;
 
 extern u32 func_801F57A4(s32 a0);
 extern u8 *getCharName(s32 charId);
@@ -464,7 +463,7 @@ extern s32 func_801EF9AC(s32 renderCtx, s32 cursorY, s32 width, s32 color);
  * magic name, and a colored count indicator pulled from D_801E8C10
  * (treated as 0 when 0xFF). Always finishes by configuring the panel
  * box (size 0xA8 × 0x28 at @p x,@p y) and dispatching the draw via
- * func_801EF9AC with the current g_menuColor.
+ * func_801EF9AC with g_menuTint[MENU_TINT_NORMAL].
  *
  * @param ctx        Extension menu context (charIdx/magicId at +0x48/0x4B).
  * @param renderCtx  Render context handle.
@@ -512,7 +511,7 @@ s32 func_801E7EB4(ExtMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     cfg->y = y;
     cfg->w = 0xA8;
     cfg->h = 0x28;
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 INCLUDE_ASM("asm/ovl/menuext/nonmatchings/menuext", func_801E8058);

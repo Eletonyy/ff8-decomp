@@ -829,15 +829,15 @@ extern void setTransitionPhase7(void);
  * Populated by the field-script VM when an SFX instance is registered.
  * @c rect is a 4-halfword on-screen rectangle (used by text/balloon
  * SFX), @c payload typically holds the SFX data pointer cast to s32,
- * and @c volume / @c type mirror the values previously set via
- * @c setSfxEntryVolume / @c setSfxEntityType for the slot. Distinct
+ * and @c brightness / @c type mirror the values previously set via
+ * @c setSfxEntryBrightness / @c setSfxEntityType for the slot. Distinct
  * from the runtime @c SfxEntry in @c battle.h, which is the active
  * playback state — this is just the script-VM's last-set shadow.
  */
 typedef struct {
     /* 0x0 */ u16 rect[4];
     /* 0x8 */ s32 payload;
-    /* 0xC */ u16 volume;
+    /* 0xC */ u16 brightness;
     /* 0xE */ u16 type;
 } FieldSfxSlot;
 

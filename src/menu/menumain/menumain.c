@@ -16,7 +16,6 @@
 #include "main.h"
 
 /* Main-executable symbols without an owner header yet. */
-extern s32 D_8008384C;
 extern u16 D_80083850;
 extern u16 g_configFlags;
 extern u8 D_80077E6C[];
@@ -504,10 +503,10 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F0E5C);
  * @brief Build a 12x12 menu-font sprite primitive and prepend it to the OT chain.
  *
  * Fills the SPRT at @p spr: CLUT selected by the low 3 bits of
- * @p clutFlags (base 0x3812), color from D_8008384C when any higher flag
- * bit is set, else g_menuColor; UV computed from the glyph index in the
- * 21-glyphs-per-row 12px font atlas. Links the sprite via addOtFast and
- * returns the new chain head.
+ * @p clutFlags (base 0x3812), color from g_menuTint[MENU_TINT_BLINK] when any
+ * higher flag bit is set, else g_menuTint[MENU_TINT_NORMAL]; UV computed from
+ * the glyph index in the 21-glyphs-per-row 12px font atlas. Links the sprite
+ * via addOtFast and returns the new chain head.
  *
  * @note @c clutFlags is reused for the color word after its flag bits are
  *       consumed — the reuse gives color a3 (regalloc match).
@@ -528,9 +527,9 @@ s32 func_801F0F20(s32 head, SPRT *spr, s32 glyph, u32 clutFlags, s32 xy) {
     clutFlags &= 7;
     spr->clut = (clutFlags << 6) + 0x3812;
     if (hi != 0) {
-        clutFlags = D_8008384C;
+        clutFlags = g_menuTint[MENU_TINT_BLINK];
     } else {
-        clutFlags = g_menuColor;
+        clutFlags = g_menuTint[MENU_TINT_NORMAL];
     }
     /* Word stores: w/h pair (12x12) and the r0g0b0+code word. */
     *(u32 *)&spr->w = 0xC000C;
@@ -604,7 +603,7 @@ s32 func_801F16AC(s32 ctx, s32 dl) {
     s32 (*drawCb)(MenuTask *, s32, s32);
 
     g_menuDisplayCfg.animCounter++;
-    setMenuColorIntensity(0x1000);
+    setMenuBrightness(BRIGHTNESS_NORMAL);
     t = D_801FA450;
     dl = func_801F0AC8(ctx, dl);
     storeGpuPacket(func_801F2FAC(ctx, getDisplayListHead()));
@@ -814,7 +813,7 @@ void func_801F1AFC(void) {
 
 /** @brief Restore saved controller input state for menu processing. */
 void func_801F1B10(void) {
-    setMenuColorIntensity(D_801FAB78);
+    setMenuBrightness(D_801FAB78);
     buildGrayscaleGpuColor(D_801FAB78);
 }
 
@@ -1165,7 +1164,7 @@ void func_801F38F8(s32 a0, s32 a1, s32 a2) {
     g_menuDisplayCfg.x = 0x18;
     g_menuDisplayCfg.y = 7;
     *(s32 *)&g_menuDisplayCfg.w = 0x001900F4; /* w=0xF4, h=0x19 packed */
-    func_801EF9AC(a1, ret2, 0x1000, g_menuColor);
+    func_801EF9AC(a1, ret2, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /** @brief Render text with explicit parameters (arg-reorder wrapper for func_801F0FEC). */
@@ -1198,7 +1197,7 @@ void func_801F39D0(s32 val, s32 ctx, s32 dl, s32 y, s32 a4, s32 a5) {
     s32 cursor;
     u8 *str;
 
-    cursor = func_800300F8(ctx, dl, 0x145, y, a4, g_menuColor, (a5 << 6) + 2);
+    cursor = func_800300F8(ctx, dl, 0x145, y, a4, g_menuTint[MENU_TINT_NORMAL], (a5 << 6) + 2);
     y += 0x12;
     intToDecStringShort(val, buf, digits);
     str = (u8 *)getMenuString(0xB);
@@ -1288,7 +1287,7 @@ void func_801F4918(s32 a0, s32 a1, s32 a2) {
     g_menuDisplayCfg.y = 0xBE;
     g_menuDisplayCfg.w = 0xF4;
     g_menuDisplayCfg.h = 0x1A;
-    func_801EF9AC(a1, ret, 0x1000, g_menuColor);
+    func_801EF9AC(a1, ret, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /* ======================================================================== */
@@ -1578,7 +1577,7 @@ s32 func_801F5B54(s32 ctx, s32 dl, s32 x, s32 y, s32 textCat, u16 *ids, s32 para
     cfg->y = y;
     cfg->w = maxWidth + 0x10;
     cfg->h = count * 12 + 0xA;
-    dl = func_801EF9AC(ctx, dl, param, g_menuColor);
+    dl = func_801EF9AC(ctx, dl, param, g_menuTint[MENU_TINT_NORMAL]);
     return dl;
 }
 
@@ -1763,7 +1762,7 @@ s32 func_801F6234(s32 ctx, s32 dl, s32 x, s32 y, s32 mask) {
             s32 row = drawn / 3;
             s32 col = drawn - row * 3;
 
-            dl = func_8002FF34(ctx, dl, i + 0x110, x + col * 18, y + row * 18, g_menuColor);
+            dl = func_8002FF34(ctx, dl, i + 0x110, x + col * 18, y + row * 18, g_menuTint[MENU_TINT_NORMAL]);
             drawn++;
         }
     }
@@ -1816,7 +1815,7 @@ s32 func_801F6418(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4) {
     s32 mask = menumain_getPartyMemberMask();
 
     if (((mask & 0xFFFF) >> a0) & 1) {
-        a2 = func_8002FF34(a1, a2, 0xD6, a3, a4, g_menuColor);
+        a2 = func_8002FF34(a1, a2, 0xD6, a3, a4, g_menuTint[MENU_TINT_NORMAL]);
     }
     return a2;
 }
@@ -1871,7 +1870,7 @@ void func_801F66B0(s32 ctx, s32 dl, s32 x, s32 y, s32 weaponId) {
     y += 7;
     name = getWeaponName(weaponId);
     dl = func_801F0FEC(ctx, dl, x, y, name, 7);
-    func_801EF9AC(ctx, dl, 0x1000, g_menuColor);
+    func_801EF9AC(ctx, dl, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -2045,7 +2044,7 @@ void func_801F6C9C(s32 ctx, s32 dl, s32 x, s32 y, s32 a4, u16 mask) {
     cfg->x = x;
     cfg->y = y;
     cfg->h = 0x78;
-    func_801EF9AC(ctx, dl, a4, g_menuColor);
+    func_801EF9AC(ctx, dl, a4, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F6D88);
@@ -2144,8 +2143,8 @@ void func_801F739C(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4, MenuRowCallback a5) {
     *(u8 *)(base + 0x13) = 4;     /* columnCount */
     *(u8 *)(base + 0x1E) = a4;    /* itemId */
 
-    ret1 = func_801F5F30(a0, a1, a2 + 0x24, a3, g_menuColor, *(u8 *)(base + 0x16) /* pageStart */);
-    ret2 = func_801F5F60(a0, ret1, g_menuColor, 3);
+    ret1 = func_801F5F30(a0, a1, a2 + 0x24, a3, g_menuTint[MENU_TINT_NORMAL], *(u8 *)(base + 0x16) /* pageStart */);
+    ret2 = func_801F5F60(a0, ret1, g_menuTint[MENU_TINT_NORMAL], 3);
     func_801EFBB4(a0, ret2, a5);
 }
 

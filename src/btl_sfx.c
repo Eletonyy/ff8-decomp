@@ -10,6 +10,7 @@
 #include "btl_color.h"
 #include "drawbar.h"
 #include "psxsdk/libgcc.h"
+#include "menu_tint.h"
 
 /**
  * @brief One 8-byte sprite cell of a glyph in the @c D_80052A68 font table.
@@ -160,6 +161,9 @@ enum {
 /** @brief Command arguments are stored offset by this value (' '). */
 #define MSG_ARG_BASE 0x20
 
+/** @brief Bit of @c SfxGlobalState.textBlinkClock that dims blinking text; set for 16 of every 32 frames. */
+#define SFX_TEXT_BLINK_DIM 0x10
+
 /** @brief @c SfxEntry.field29 / @c field2A (first / last choice line) when the message offers no choice. */
 #define SFX_NO_CHOICE 0xFF
 
@@ -201,13 +205,12 @@ enum {
 #define TEXT_TPAGE_PAGE2 0xE100041D
 
 extern SfxSystem g_sfxEntries;
-extern s32 g_flashColor;
 extern s32 D_800831D8;
 extern s8 D_800831DC;
-extern u8 D_800831D3;
 extern s32 D_80083850;
-extern s32 g_menuColor[2];
 extern u8 D_800834D8[];
+static void updateTextBlinkColors(void);
+static void applyWindowBrightness(s32 index);
 static void func_8002CAE0(P_TAG *ot, SfxEntry *entry);
 static TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y);
 static inline void updateSfxFade(s32 index);
@@ -224,64 +227,77 @@ void func_8002CDE4(RECT *rect, s32 scale, s32 arg2);
 
 
 /**
- * @brief Process flash color based on SFX counter flags.
+ * @brief Refresh the colours that blinking text is tinted with.
  *
- * If counter bit 4 is set, attenuates both the flash color and menu color
- * to 75% intensity. Stores the results to the global state output fields.
+ * Text colours 8-15 are the blinking variants of colours 0-7: message text
+ * takes its tint from @c state.textBlinkTint instead of @c state.textTint, and menu
+ * text from @c g_menuTint[MENU_TINT_BLINK] instead of @c g_menuTint[MENU_TINT_NORMAL]. While
+ * @ref SFX_TEXT_BLINK_DIM is set in @c state.textBlinkClock each copy is a grey at
+ * 75% of its base's red channel (the brightness setters only ever store greys);
+ * otherwise it equals the base. The clock steps once per frame, so the text blinks
+ * between full and 75% brightness every 16 frames.
  */
-void func_8002C8A4(void) {
-    u32 color1 = g_sfxEntries.state.color1;
-    u8 flags = g_sfxEntries.state.counter;
-    u32 color2 = g_menuColor[0];
+static void updateTextBlinkColors(void) {
+    u32 textBlinkTint = g_sfxEntries.state.textTint;
+    u8 blinkClock = g_sfxEntries.state.textBlinkClock;
+    u32 menuBlinkTint = g_menuTint[MENU_TINT_NORMAL];
 
-    if (flags & 0x10) {
-        color1 &= 0xFF;
-        color1 = (color1 * 3) >> 2;
-        color1 = color1 | ((color1 << 16) | (color1 << 8));
-        color1 |= 0x64000000;
+    if (blinkClock & SFX_TEXT_BLINK_DIM) {
+        textBlinkTint &= 0xFF;
+        textBlinkTint = (textBlinkTint * 3) >> 2;
+        textBlinkTint = textBlinkTint | ((textBlinkTint << 16) | (textBlinkTint << 8));
+        textBlinkTint |= SPRT_CODE;
 
-        color2 &= 0xFF;
-        color2 = (color2 * 3) >> 2;
-        color2 = color2 | ((color2 << 16) | (color2 << 8));
-        color2 |= 0x64000000;
+        menuBlinkTint &= 0xFF;
+        menuBlinkTint = (menuBlinkTint * 3) >> 2;
+        menuBlinkTint = menuBlinkTint | ((menuBlinkTint << 16) | (menuBlinkTint << 8));
+        menuBlinkTint |= SPRT_CODE;
     }
 
-    g_sfxEntries.state.color2 = color1;
-    g_menuColor[1] = color2;
+    g_sfxEntries.state.textBlinkTint = textBlinkTint;
+    g_menuTint[MENU_TINT_BLINK] = menuBlinkTint;
 }
 
 
 /**
- * @brief Decrement the global SFX counter and trigger an SFX update.
+ * @brief Step the text blink clock by one frame.
+ *
+ * Counts @c state.textBlinkClock down and refreshes the blink colours
+ * (updateTextBlinkColors).
  */
-void decrementSfxCounter(void) {
-    g_sfxEntries.state.counter--;
-    func_8002C8A4();
+void tickTextBlink(void) {
+    g_sfxEntries.state.textBlinkClock--;
+    updateTextBlinkColors();
 }
 
 
 /**
- * @brief Build a packed grayscale color from intensity and store as flash color.
- * @param intensity Scalar intensity value (divided by 32, clamped to 0-255).
+ * @brief Set the text brightness: store a grey in @c state.textTint and refresh the blink copies.
+ * @param brightness Brightness, @ref BRIGHTNESS_NORMAL = normal; divided by 32, its
+ *                   low 8 bits become r, g and b (0x80 draws the font unmodulated).
  */
-void setFlashColor(s32 intensity) {
-    intensity /= 32;
-    intensity &= 0xFF;
-    intensity |= (intensity << 16) | (intensity << 8);
-    intensity |= 0x64000000;
-    g_flashColor = intensity;
-    func_8002C8A4();
+void setTextBrightness(s32 brightness) {
+    brightness /= 32;
+    brightness &= 0xFF;
+    brightness |= (brightness << 16) | (brightness << 8);
+    brightness |= SPRT_CODE;
+    g_sfxEntries.state.textTint = brightness;
+    updateTextBlinkColors();
 }
 
 
 /**
- * @brief Read volume from an SFX entry and dispatch to color/effect updates.
- * @param idx SFX entry index.
+ * @brief Apply a message window's @c brightness (0x1000 = normal) to its text and marker.
+ *
+ * Sets the text brightness (setTextBrightness) and @c g_gpuColor, the tint of
+ * the window's corner marker (buildGrayscaleGpuColor).
+ *
+ * @param index Message window (SFX entry) index.
  */
-void dispatchSfxColorUpdate(s32 idx) {
-    SfxEntry *entry = &g_sfxEntries.entries[idx];
-    s32 val = entry->volume;
-    setFlashColor(val);
+static void applyWindowBrightness(s32 index) {
+    SfxEntry *entry = &g_sfxEntries.entries[index];
+    s32 val = entry->brightness;
+    setTextBrightness(val);
     buildGrayscaleGpuColor(val);
 }
 
@@ -469,7 +485,7 @@ static void func_8002CAE0(P_TAG *ot, SfxEntry *entry) {
  *
  * Once the message has reached its choices (@c field28), glyph
  * @ref GLYPH_CHOICE_CURSOR goes in front of the selected line @c field2B, grey
- * at the window's brightness (@c volume, 0x1000 = full), followed by a
+ * at the window's @c brightness (0x1000 = full), followed by a
  * draw-area packet for the window entity's clipped bound rect. Then the corner
  * marker (func_8002CAE0), the text (func_8002EE10) and a draw-mode packet that
  * resets the texture page. A window without a message draws nothing.
@@ -485,7 +501,7 @@ static void func_8002CC4C(s32 index, P_TAG *ot) {
     BattleDisplayEntity *ent;
     u32 link;
     u32 link2;
-    s32 volume;
+    s32 brightness;
     s32 colour;
     s32 y;
     s32 val;
@@ -495,7 +511,7 @@ static void func_8002CC4C(s32 index, P_TAG *ot) {
         return;
     }
     table = &D_80052A68;
-    volume = entry->volume;
+    brightness = entry->brightness;
     if (entry->field29 != SFX_NO_CHOICE) {
         if (entry->field28 == 1) {
             /* val holds the entity index here and the mode word below: two
@@ -506,7 +522,7 @@ static void func_8002CC4C(s32 index, P_TAG *ot) {
             y = line * SFX_LINE_HEIGHT + SFX_CURSOR_Y;
             area = (DR_AREA *)getDisplayListHead();
             if (table != NULL) { /* the original tests the fixed table address */
-                colour = volume / 32;
+                colour = brightness / 32;
                 colour = SPRT_CODE | (colour << 16) | (colour << 8) | colour;
                 area = func_8002FF34(ot, area, GLYPH_CHOICE_CURSOR, SFX_CURSOR_X, y, colour);
             }
@@ -616,10 +632,10 @@ s32 func_8002CE84(s32 idx) {
 /**
  * @brief Keyboard-style auto-repeat for one SFX channel's edge bits.
  *
- * Latches @p newVal into @c sys->state.stored[channel] and, using the per-channel
+ * Latches @p newVal into @c sys->state.repeatLatched[channel] and, using the per-channel
  * mask, decides whether the (masked) edge bits should fire this frame. If the new
  * and previous masked bits overlap (a held cue) it ticks the per-channel countdown
- * @c sys->state.counters[channel]: while it is running the event is suppressed
+ * @c sys->state.repeatCounters[channel]: while it is running the event is suppressed
  * (returns 0), and when it expires the countdown reloads to the repeat interval and
  * fires. When the bits do not overlap the countdown resets to the restart delay and
  * fires. Mirrors @c func_800A29D4 (the Triple Triad edge auto-repeat).
@@ -638,10 +654,10 @@ static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, SfxSy
     u16 mask;
     u16 prevMasked;
 
-    prevMasked = sys->state.stored[channel];
-    sys->state.stored[channel] = newVal;
+    prevMasked = sys->state.repeatLatched[channel];
+    sys->state.repeatLatched[channel] = newVal;
     restartDelay = anims->repeatDelays.hword;
-    counter = sys->state.counters[channel];
+    counter = sys->state.repeatCounters[channel];
     mask = entity->unk10[channel];
 
     repeatInterval = restartDelay >> 8;
@@ -661,7 +677,7 @@ static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, SfxSy
     } else {
         counter = restartDelay;
     }
-    sys->state.counters[channel] = counter;
+    sys->state.repeatCounters[channel] = counter;
     return newVal;
 }
 
@@ -781,10 +797,10 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
     dispatch:
         switch (state) {
         case SFX_SEQ_START:
-            g_sfxEntries.state.stored[0] = 0;
-            g_sfxEntries.state.stored[1] = 0;
-            g_sfxEntries.state.counters[0] = 0;
-            g_sfxEntries.state.counters[1] = 0;
+            g_sfxEntries.state.repeatLatched[0] = 0;
+            g_sfxEntries.state.repeatLatched[1] = 0;
+            g_sfxEntries.state.repeatCounters[0] = 0;
+            g_sfxEntries.state.repeatCounters[1] = 0;
             *seqState = SFX_SEQ_TICK;
             /* fallthrough */
         case SFX_SEQ_TICK:
@@ -1071,8 +1087,8 @@ void func_8002D818(s32 arg0, u8 *str, s32 count, s32 min, s32 max, s32 val, s32 
  * @brief Draw an active message window.
  *
  * If the entry is active (state != 0), switches GP to scratchpad,
- * runs the entry's @c drawCallback if set, updates flash/GPU
- * colors via dispatchSfxColorUpdate, and draws the window's cursor,
+ * runs the entry's @c drawCallback if set, applies the window's brightness
+ * to its text and marker (applyWindowBrightness), and draws the window's cursor,
  * marker and text via func_8002CC4C. Restores GP before returning.
  *
  * @param ot    Ordering table, passed to the hook and func_8002CC4C.
@@ -1095,7 +1111,7 @@ static void func_8002D8CC(P_TAG *ot, s32 index) {
         if (entry->drawCallback != NULL) {
             entry->drawCallback(entry, ot);
         }
-        dispatchSfxColorUpdate(index);
+        applyWindowBrightness(index);
         func_8002CC4C(index, ot);
         GP_RESTORE_RET(saved, ret);
     }
@@ -1120,7 +1136,7 @@ static inline u32 linkPacket(u32 head, void *p) {
  * Links prepend to the OT, so the GPU runs these before the contents.
  * When the linked entity has both @ref BATTLE_ENTITY_FLAG_02 and
  * @ref BATTLE_ENTITY_FLAG_08, the window also gets its @c field2F glyph (if
- * non-zero) at the window origin and two bars, grey at the entity's @c scale
+ * non-zero) at the window origin and two bars, grey at the entity's @c brightness
  * (the second one halved and semi-transparent for a
  * @ref BATTLE_ENTITY_SEMI_TRANS entity), then a draw area for the bound rect
  * and a draw offset back at the clip origin.
@@ -1171,7 +1187,7 @@ static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
     p = (DR_AREA *)(offset + 1);
 
     if ((ent->entityType & BATTLE_ENTITY_FLAG_02) && (ent->entityType & BATTLE_ENTITY_FLAG_08)) {
-        colour = entity->scale;
+        colour = entity->brightness;
         colour >>= 5;
         code = SPRT_CODE;
         colour |= (colour << 16) | ((colour << 8) | code);
@@ -1370,7 +1386,7 @@ void setSfxField2F(s32 idx, s32 val) {
  *
  * Zeros out field14, field19, field2F, then configures defaults:
  * pitch = 0x1000, state = 0, reverb mode = 3, rate = 0, delta = 0,
- * entity flags = 6|8, display rect = (64,64,128,128), volume = 0x1000.
+ * entity flags = 6|8, display rect = (64,64,128,128), brightness = 0x1000.
  *
  * @param idx SFX entry index.
  */
@@ -1395,7 +1411,7 @@ void initSfxSlot(s32 idx) {
         buf.h = 0x80;
         func_8002E064(idx, &buf);
     }
-    setSfxEntryVolume(idx, 0x1000);
+    setSfxEntryBrightness(idx, 0x1000);
 }
 
 
@@ -1509,7 +1525,8 @@ void func_8002E1B4(s32 index, s32 value) {
  * @brief Reset all SFX entries and clear global SFX state.
  *
  * Marks the global state as inactive, reinitializes all 8 SFX slots,
- * clears global counters, then calls func_8002C130 to finalize.
+ * clears the text blink clock and the pad auto-repeat state of channels 0 and 1,
+ * then calls func_8002C130 to finalize.
  */
 void resetAllSfx(void) {
     SfxSystem *sys = &g_sfxEntries;
@@ -1518,11 +1535,12 @@ void resetAllSfx(void) {
     for (i = 0; i < 8; i++) {
         func_8002DF5C(i);
     }
-    D_800831D3 = 0;
-    sys->state.stored[0] = 0;
-    sys->state.stored[1] = 0;
-    sys->state.counters[0] = 0;
-    sys->state.counters[1] = 0;
+    /* Through the global, not sys: the original stores it with its own %hi/%lo pair. */
+    g_sfxEntries.state.textBlinkClock = 0;
+    sys->state.repeatLatched[0] = 0;
+    sys->state.repeatLatched[1] = 0;
+    sys->state.repeatCounters[0] = 0;
+    sys->state.repeatCounters[1] = 0;
     func_8002C130();
 }
 
@@ -1546,7 +1564,7 @@ void dispatchSfxAnimSpeed(s32 idx) {
  * @brief Draw one glyph of the font table as a run of sprites.
  *
  * Emits every cell of glyph @p idx of the @c D_80052A68 font table as one
- * @ref TSPRT, tinted with @c g_flashColor and linked into @p ot. Per cell:
+ * @ref TSPRT, tinted with @c state.textTint and linked into @p ot. Per cell:
  * the u/v/CLUT word is the cell's own plus the font CLUT; the texture page is
  * the font page with the cell's blend rate; the colour word gets the cell's
  * semi-transparency bit; width/height are copied and the cell's signed offsets
@@ -1582,7 +1600,7 @@ static TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
     n = word >> 16;
     word &= 0xFFFF;
     cell = (GlyphCell *)((u8 *)cell + word);
-    color = g_flashColor;
+    color = g_sfxEntries.state.textTint;
 
     for (; n > 0; p++, cell++, n--) {
         word = cell->texInfo;
@@ -1870,32 +1888,33 @@ u16 getGlyphStatusU16(u8 *code) {
 
 
 /**
- * @brief Store raw intensity and build packed grayscale color for the menu overlay.
+ * @brief Set the menu brightness: store a grey in @c g_menuTint[MENU_TINT_NORMAL], the tint of
+ *        everything the menus draw, and refresh the blink copies.
  *
- * Saves the raw value, builds a packed RGB color (R=G=B), sets command
- * byte to 0x64, stores to g_menuColor, then triggers an SFX update.
+ * The raw value is kept in @c D_80083850, where menus read it back to restore it.
  *
- * @param intensity Scalar intensity value.
+ * @param brightness Brightness, @ref BRIGHTNESS_NORMAL = normal; shifted down by 5,
+ *                   its low 8 bits become r, g and b (0x80 draws graphics unmodulated).
  */
-void setMenuColorIntensity(s32 intensity) {
-    D_80083850 = intensity;
+void setMenuBrightness(s32 brightness) {
+    D_80083850 = brightness;
     {
-        s32 val = (u32)intensity >> 5;
-        intensity = val & 0xFF;
+        s32 val = (u32)brightness >> 5;
+        brightness = val & 0xFF;
     }
-    intensity |= (intensity << 16) | (intensity << 8);
-    intensity |= 0x64000000;
-    g_menuColor[0] = intensity;
-    func_8002C8A4();
+    brightness |= (brightness << 16) | (brightness << 8);
+    brightness |= SPRT_CODE;
+    g_menuTint[MENU_TINT_NORMAL] = brightness;
+    updateTextBlinkColors();
 }
 
 
 /**
  * @brief Fill one 12x12 text-font sprite in the menu colours and prepend it to the OT chain.
  *
- * Colours 0-7 use @c g_menuColor[0], 8-15 @c g_menuColor[1]; the low 3 bits of
- * the colour pick the CLUT row. Declared inline: func_8002E8DC has it expanded
- * in place.
+ * Colours 0-7 use @c g_menuTint[MENU_TINT_NORMAL], 8-15 @c g_menuTint[MENU_TINT_BLINK];
+ * the low 3 bits of the colour pick the CLUT row. Declared inline: func_8002E8DC
+ * has it expanded in place.
  *
  * @param head   Current OT chain head (tag image of the previous packet).
  * @param p      Sprite to fill.
@@ -1916,9 +1935,9 @@ inline u32 func_8002E810(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy) {
     colour &= 7;
     p->clut = (colour << 6) + getClut(TEXT_CLUT_X, TEXT_CLUT_Y);
     if (hi != 0) {
-        colour = g_menuColor[1];
+        colour = g_menuTint[MENU_TINT_BLINK];
     } else {
-        colour = g_menuColor[0];
+        colour = g_menuTint[MENU_TINT_NORMAL];
     }
     if (glyph & TEXT_GLYPH_PAGE2) {
         glyph &= TEXT_GLYPH_INDEX_MASK;
@@ -2004,7 +2023,7 @@ TSPRT *func_8002E8DC(P_TAG *ot, TSPRT *p, s32 x, s32 y, u8 *str, s32 colour) {
 /**
  * @brief Fill one 12x12 text-font sprite and prepend it to the OT chain.
  *
- * The text renderers' counterpart of func_8002E810: colours 0-7 use @ref g_flashColor,
+ * The text renderers' counterpart of func_8002E810: colours 0-7 use @c state.textTint,
  * 8-15 (the blinking ones) @c D_800831D8, and the low 3 bits of the colour
  * pick the CLUT row.
  *
@@ -2029,7 +2048,7 @@ static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy
     if (hi != 0) {
         colour = D_800831D8;
     } else {
-        colour = g_flashColor;
+        colour = g_sfxEntries.state.textTint;
     }
     if (glyph & TEXT_GLYPH_PAGE2) {
         glyph &= TEXT_GLYPH_INDEX_MASK;

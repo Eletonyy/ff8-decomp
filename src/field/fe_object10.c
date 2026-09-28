@@ -1216,7 +1216,7 @@ void func_800BF4A4(void) {
             setSfxGlobalFlag(i);
         }
         setSfxEntityType(i, D_80085300[i].type);
-        setSfxEntryVolume(i, D_80085300[i].volume);
+        setSfxEntryBrightness(i, D_80085300[i].brightness);
     }
 
     for (i = 0; i < 2; i++) {

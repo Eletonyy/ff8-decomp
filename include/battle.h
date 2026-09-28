@@ -62,7 +62,7 @@ typedef struct BattleDisplayEntity {
     u8 entityType;
     u8 pad39;
     u8 subFields[2];
-    s16 scale;
+    s16 brightness; /**< 0x1000 = full: tint of a window's frame, background and icon. */
     s16 pad3E;
 } BattleDisplayEntity;
 

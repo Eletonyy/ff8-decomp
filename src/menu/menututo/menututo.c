@@ -5,6 +5,7 @@
 #include "menututo.h"
 #include "numstr.h"
 #include "psxsdk/libetc.h"
+#include "btl_sfx.h"
 
 /**
  * @brief Read tutorial column index 1.
@@ -894,7 +895,7 @@ s32 func_801E3EC0(s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     cfg->y = y;
     cfg->h = 0x16;
 
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -931,7 +932,7 @@ u32 func_801E3F8C(TutoState *state, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     cfg->w = w;
     cfg->h = h;
 
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -993,7 +994,7 @@ u32 func_801E4080(void *state, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     cfg->w = 0x86;
     cfg->h = 0x80;
 
-    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+    return func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -1068,7 +1069,7 @@ u32 func_801E431C(TutoState *state, s32 renderCtx, s32 cursorY, s16 x, s16 y) {
     cfg->scrollOffset = state->scrollAnim;
 
     if (D_800780AB >= 0xB) {
-        cursorY = func_801F5F60(renderCtx, cursorY, g_menuColor, 3);
+        cursorY = func_801F5F60(renderCtx, cursorY, g_menuTint[MENU_TINT_NORMAL], 3);
     }
 
     return func_801EFBB4(renderCtx, cursorY, func_801E4214);
@@ -1129,7 +1130,7 @@ s32 func_801E43D4(TutoState *state, s32 renderCtx, s32 cursorY) {
         cfg->y = 57;
         cfg->w = 202;
         cfg->h = 143 - (9 - state->availCount) * 15;
-        cursorY = func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuColor);
+        cursorY = func_801EF9AC(renderCtx, cursorY, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
     }
     return cursorY;
 }
@@ -1165,7 +1166,7 @@ s32 func_801E4598(TutoState *state, s32 renderCtx, s32 cursorY) {
     }
 
     func_801F1AFC();
-    setMenuColorIntensity(state->fadePos);
+    setMenuBrightness(state->fadePos);
 
     cursorY = func_801E3EC0(renderCtx, cursorY, 0x18, 6);
     yArg = 0x1D;

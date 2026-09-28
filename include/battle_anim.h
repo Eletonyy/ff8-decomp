@@ -109,7 +109,7 @@ typedef struct SfxEntry {
     } flags;
     u8 entityIdx;
     s8 field19;
-    s16 volume;
+    s16 brightness;  /**< Window brightness, 0x1000 = full (grey 0x80: drawn unmodulated). */
     s16 field1C;
     s16 rateDelta;
     u8 field20;
@@ -148,13 +148,14 @@ typedef struct SfxEntry {
 
 typedef struct {
     u8 pad0[3];
-    u8 counter;
-    u32 color1;         /* flash color (processed) */
-    u32 color2;         /* flash color (output) */
+    u8 textBlinkClock;  /**< Counts down once per frame; bit 0x10 marks the dim half of the text blink. */
+    u32 textTint;       /**< Grey tint of message and string text (0x80 = unmodulated). */
+    u32 textBlinkTint;  /**< Tint of text colours 8-15: @c textTint on the full half of the blink,
+                             a grey at 75% of its red channel on the dim half. */
     s8 activeFlag;
     u8 padD[7];
-    s8 counters[4];     /* per-channel auto-repeat countdown (func_8002CECC) */
-    u16 stored[4];      /* per-channel latched edge bits (func_8002CECC) */
+    s8 repeatCounters[4];  /**< Per-channel pad auto-repeat countdown (func_8002CECC). */
+    u16 repeatLatched[4];  /**< Per-channel pad bits latched on the previous frame (func_8002CECC). */
 } SfxGlobalState;       /* 0x20 */
 
 /** @brief Complete SFX system: 8 entry slots + global state + message display values. */

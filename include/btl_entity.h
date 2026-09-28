@@ -19,7 +19,7 @@ extern void setSfxEntryTimings(s32 idx, s32 val29, s32 val2A, s32 val2C);
 extern void setSfxEntryField2B(s32 idx, s32 val);
 extern void setSfxEntryField34(s32 idx, SfxEntryDrawCallback val);
 extern void setSfxEntryField38(s32 idx, SfxEntryCallback val);
-extern void setSfxEntryVolume(s32 idx, s32 val);
+extern void setSfxEntryBrightness(s32 idx, s32 val);
 
 /**
  * @brief Emit one sprite per glyph of @p str and link them into @p ot.

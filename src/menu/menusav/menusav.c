@@ -1,4 +1,6 @@
 #include "common.h"
+#include "menu_tint.h"
+#include "menusav.h"
 
 extern u8 D_801EC294;
 extern u8 D_801EC301;
@@ -10,7 +12,6 @@ extern u16 D_801EBD24[];
 extern s32 D_801EC2E4;
 extern u8 g_gameState[];
 extern u16 g_menuDisplayCfg[];
-extern s32 g_menuColor;
 
 /**
  * @brief Compute save slot data address.
@@ -433,7 +434,7 @@ INCLUDE_ASM("asm/ovl/menusav/nonmatchings/menusav", func_801E613C); /* 0x84 */
  * @brief Build a parameter struct on the stack and call func_8002B898.
  *
  * Constructs a 3-field struct: {u16 a2+0x80, u16 a3+0x1F, u32 0x1600D0}
- * and passes it along with the g_menuColor global to func_8002B898.
+ * and passes it along with g_menuTint[MENU_TINT_NORMAL] to func_8002B898.
  *
  * @param a0 First parameter (passed through).
  * @param a1 Second parameter (passed through).
@@ -445,7 +446,7 @@ void func_801E61C0(s32 a0, s32 a1, s32 a2, s32 a3) {
     *(u16 *)((u8 *)buf + 0) = a2 + 0x80;
     *(u16 *)((u8 *)buf + 2) = a3 + 0x1F;
     *(s32 *)((u8 *)buf + 4) = 0x1600D0;
-    func_8002B898(a0, a1, (s32)buf, g_menuColor);
+    func_8002B898(a0, a1, (s32)buf, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 INCLUDE_ASM("asm/ovl/menusav/nonmatchings/menusav", func_801E6204); /* 0x338 */
@@ -825,7 +826,7 @@ void func_801E9D84(s32 a0, s32 a1, s32 a2, s32 a3, u16 *src) {
     g_menuDisplayCfg[1] = src[1] + a3;
     g_menuDisplayCfg[2] = src[2];
     g_menuDisplayCfg[3] = src[3];
-    func_801E9CD4(a0, a1, (s32)g_menuDisplayCfg, g_menuColor, (s32)src);
+    func_801E9CD4(a0, a1, (s32)g_menuDisplayCfg, g_menuTint[MENU_TINT_NORMAL], (s32)src);
 }
 
 INCLUDE_ASM("asm/ovl/menusav/nonmatchings/menusav", func_801E9DE8); /* 0x128 */

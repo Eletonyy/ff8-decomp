@@ -1,10 +1,10 @@
 #include "common.h"
+#include "menu_tint.h"
 #include "card.h"
 #include "menugf.h"
 
 extern u8 g_menuDisplayCfg[];
 extern u8 g_gameState[];
-extern s32 g_menuColor;
 
 s32 func_801E6A8C(s32, s32, s32, s32, s32);
 
@@ -123,7 +123,7 @@ void func_801E6C84(s32 a0, s32 a1) {
     *(s16 *)(cfg + 0x02) = 0x38;
     *(s16 *)(cfg + 0x04) = 0x150;
     *(s16 *)(cfg + 0x06) = 0xA0;
-    func_801EF9AC(ctx, result, 0x1000, g_menuColor);
+    func_801EF9AC(ctx, result, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -162,7 +162,7 @@ void func_801E6D20(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4, volatile unsigned i
     new_var2 = arg4;
 
     if (((*((u16 *)((base + ((2 * new_var2) * 76)) + new_var5))) >> arg6) & 1) {
-        new_var4 = g_menuColor;
+        new_var4 = g_menuTint[MENU_TINT_NORMAL];
         result = (new_var2 = new_var4);
         a1 = func_8002FF34(a0, a1, 0xC0, a2 - 10, a3, result);
     }

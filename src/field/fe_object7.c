@@ -262,7 +262,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
     switch (actor->field_0x204) {
     case 0:
         g_fieldVars->fieldF2 = fieldIdx;
-        setSfxEntryVolume(6, 0x1000);
+        setSfxEntryBrightness(6, 0x1000);
         setSfxEntityType(6, 6);
 
         if (func_800B5990()) {

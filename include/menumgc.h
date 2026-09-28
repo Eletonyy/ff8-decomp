@@ -66,7 +66,7 @@ typedef struct {
     /* 0x48 */ s16 rearrangeSlide;     /**< Lower list's slide on the manual rearrange screen: 0x1000 off screen, stepped by 0x100 to 0 as it comes in. */
     /* 0x4A */ s16 partnerSlideOffset; /**< Lower (partner) panel slide, preset to -0xF80 or +0xF80 and stepped by 0x80 to 0 when the partner changes. */
     /* 0x4C */ u8 pad4C[0x4];          /**< Padding; nothing in menumgc reads or writes 0x4C-0x4F. */
-    /* 0x50 */ s16 fadeScale;          /**< Menu brightness 0-0x1000, raised by 0x100 per frame as the screen opens and lowered as it closes; the draw callback passes it to setMenuColorIntensity. */
+    /* 0x50 */ s16 fadeScale;          /**< Menu brightness 0-0x1000, raised by 0x100 per frame as the screen opens and lowered as it closes; the draw callback passes it to setMenuBrightness. */
     /* 0x52 */ s16 targetWindowSlide;  /**< Target window slide: 0 while it is fully in, 0x1000 once the spell list has focus again. */
     /* 0x54 */ u8 upperSlot;           /**< Manual rearrange: slot 0-31 picked in the upper list (the one being moved). */
     /* 0x55 */ u8 lowerSlot;           /**< Manual rearrange: slot 0-31 in the lower list it is swapped with; starts equal to upperSlot. */

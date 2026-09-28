@@ -119,24 +119,24 @@ s32 GetActiveFlag(s32 idx) {
 
 
 /**
- * @brief Set a battle entity's scale factor.
+ * @brief Set a battle entity's brightness.
  * @param idx Entity index.
- * @param val Scale value (0x1000 = 1.0).
+ * @param val Brightness (0x1000 = full).
  */
-void setBattleEntityScale(s32 idx, s32 val) {
+void setBattleEntityBrightness(s32 idx, s32 val) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
-    entity->scale = val;
+    entity->brightness = val;
 }
 
 
 /**
- * @brief Get a battle entity's scale factor.
+ * @brief Get a battle entity's brightness.
  * @param idx Entity index.
- * @return Scale value (0x1000 = 1.0).
+ * @return Brightness (0x1000 = full).
  */
-s32 getBattleEntityScale(s32 idx) {
+s32 getBattleEntityBrightness(s32 idx) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
-    return entity->scale;
+    return entity->brightness;
 }
 
 
@@ -144,7 +144,7 @@ s32 getBattleEntityScale(s32 idx) {
  * @brief Initialize a battle entity to default values.
  *
  * Sets up a default bounding rect (64,64,128,128), entity type 6,
- * clears fields, sets anim speed to 3, scale to 0x1000.
+ * clears fields, sets anim speed to 3, brightness to 0x1000.
  *
  * @param idx Entity index.
  */
@@ -166,7 +166,7 @@ void initBattleEntity(s32 idx) {
         setBattleEntitySubField(idx, i, 0);
     }
     setBattleEntitySubField(idx, 1, idx);
-    setBattleEntityScale(idx, 0x1000);
+    setBattleEntityBrightness(idx, 0x1000);
     setBattleEntityField36(idx, 0);
 }
 

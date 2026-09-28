@@ -674,8 +674,8 @@ void func_801E90D8(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg5) {
  *
  * Copies a 4-halfword rectangle template from @p arg5, adding @p a2 to the
  * X position and @p a3 to the Y position. Stores the result in g_menuDisplayCfg,
- * then calls func_801E90D8 to render with the display configuration and
- * g_menuColor as the OT pointer.
+ * then calls func_801E90D8 to render with the display configuration and the
+ * menu tint g_menuTint.
  *
  * @param a0 First parameter passed through to func_801E90D8.
  * @param a1 Second parameter passed through to func_801E90D8.
@@ -688,7 +688,7 @@ void func_801E91E4(s32 a0, s32 a1, s32 a2, s32 a3, u16 *src) {
     g_menuDisplayCfg.y = src[1] + a3;
     g_menuDisplayCfg.w = src[2];
     g_menuDisplayCfg.h = src[3];
-    func_801E90D8(a0, a1, &g_menuDisplayCfg, g_menuColor, src);
+    func_801E90D8(a0, a1, &g_menuDisplayCfg, g_menuTint[MENU_TINT_NORMAL], src);
 }
 
 INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem", func_801E9248);

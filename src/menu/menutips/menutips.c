@@ -20,7 +20,6 @@ extern s16 D_801ED422;
 void func_801E5A10(void *);
 extern s8 D_801E6B0C;
 extern s8 D_801E6B10[];
-extern s32 g_menuColor;
 
 /** @brief Look up string @p a0 in menu text category 0xD. */
 u8 *func_801E5800(s32 a0) {
@@ -366,7 +365,7 @@ s32 func_801E6514(s32 a0, s32 a1) {
     *(s16 *)(cfg + 0x2) = yPos;
     *(s16 *)(cfg + 0x4) = width;
     *(s16 *)(cfg + 0x6) = 0x14;
-    return func_801EF9AC(a0, ot, 0x1000, g_menuColor);
+    return func_801EF9AC(a0, ot, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -403,9 +402,9 @@ s32 func_801E6668(s32 arg0, s32 arg1) {
         var_a3 |= 2;
     }
     if (var_a3 != 0) {
-        var_s1 = func_801F5F60(arg0, var_s1, g_menuColor, var_a3);
+        var_s1 = func_801F5F60(arg0, var_s1, g_menuTint[MENU_TINT_NORMAL], var_a3);
     }
-    return func_801EF9AC(arg0, var_s1, 0x1000, g_menuColor);
+    return func_801EF9AC(arg0, var_s1, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -435,7 +434,7 @@ s32 func_801E6768(s32 a0, s32 a1) {
     }
     g_menuDisplayCfg.w = 0xF4;
     g_menuDisplayCfg.h = 0x16;
-    return func_801EF9AC(disp, ot, 0x1000, g_menuColor);
+    return func_801EF9AC(disp, ot, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -457,7 +456,7 @@ s32 func_801E67F4(s32 a0, s32 a1, s32 a2) {
 
     if (*(s16 *)(state + 0x2A) != 0) {
         func_801F1AFC();
-        setMenuColorIntensity(*(s16 *)(state + 0x24));
+        setMenuBrightness(*(s16 *)(state + 0x24));
         buildGrayscaleGpuColor(*(s16 *)(state + 0x24));
         ot = func_801E6768(disp, ot);
         ot = func_801E6668(disp, ot);

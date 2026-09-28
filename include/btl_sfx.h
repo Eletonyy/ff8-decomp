@@ -5,10 +5,11 @@
 #include "psxsdk/libgpu.h"
 #include "battle.h"
 
-extern void func_8002C8A4(void);
-extern void decrementSfxCounter(void);
-extern void setFlashColor(s32 intensity);
-extern void dispatchSfxColorUpdate(s32 idx);
+/** @brief Brightness 1.0 on the 0x1000 scale: graphics are drawn at their own colour. */
+#define BRIGHTNESS_NORMAL 0x1000
+
+extern void tickTextBlink(void);
+extern void setTextBrightness(s32 brightness);
 extern void setSfxEntityIndex(s32 idx, s32 val);
 extern s32  swapSfxState(s32 idx, s32 val);
 extern s32  getSfxState(s32 idx);
@@ -49,6 +50,6 @@ extern s32  getGlyphWidthA(u8 *code);
 extern void getGlyphWidthB(u8 *code);
 extern u16  getGlyphWidthU16(u8 *code);
 extern u16  getGlyphStatusU16(u8 *code);
-extern void setMenuColorIntensity(s32 intensity);
+extern void setMenuBrightness(s32 brightness);
 
 #endif

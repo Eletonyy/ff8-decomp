@@ -65,7 +65,6 @@ extern u8 g_testHeaderText[];
 extern TestChoiceMark g_testChoiceMarks[];
 extern MenuDisplayConfig g_menuDisplayCfg;
 extern u8 D_801FABD4;
-extern s32 g_menuColor;
 extern u8 g_gameState;
 extern u32 D_801E69B8;
 
@@ -215,7 +214,7 @@ s32 func_801E64B4(s32 a0, s32 a1) {
     g_menuDisplayCfg.y = 6;
     g_menuDisplayCfg.w = maxW;
     g_menuDisplayCfg.h = 0x16;
-    return func_801EF9AC(disp, ot, 0x1000, g_menuColor);
+    return func_801EF9AC(disp, ot, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -259,7 +258,7 @@ s32 func_801E6570(TestMenuState *state, s32 a1, s32 a2) {
     cfg->y = 0x1D;
     cfg->w = 0x150;
     cfg->h = 0xA7;
-    return func_801EF9AC(disp, v0, 0x1000, g_menuColor);
+    return func_801EF9AC(disp, v0, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -287,7 +286,7 @@ s32 func_801E66A8(TestMenuState *state, s32 a1, s32 a2) {
     g_menuDisplayCfg.y = 0xC4;
     g_menuDisplayCfg.w = maxW;
     g_menuDisplayCfg.h = 0x14;
-    return func_801EF9AC(disp, ot, 0x1000, g_menuColor);
+    return func_801EF9AC(disp, ot, 0x1000, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -301,7 +300,7 @@ s32 func_801E6760(TestMenuState *state, s32 a1, s32 a2) {
     s32 v0;
 
     func_801F1AFC();
-    setMenuColorIntensity(state->intensity);
+    setMenuBrightness(state->intensity);
     buildGrayscaleGpuColor(state->intensity);
     v0 = func_801E64B4(a1, a2);
     v0 = func_801E6570(state, a1, v0);

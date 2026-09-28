@@ -126,7 +126,7 @@ s32 allocBattleEntitySlot(void) {
  * @brief Initialize all 8 battle entity slots by calling initBattleEntity on each.
  *
  * Iterates slots 0 through 7, resetting each entity's display rects, flags,
- * position fields, and volume to default values.
+ * position fields, and brightness to default values.
  */
 void initAllBattleEntities(void) {
     s32 i;
@@ -277,14 +277,14 @@ void setSfxEntryField38(s32 idx, SfxEntryCallback val) {
 
 
 /**
- * @brief Set volume on an SFX entry and propagate to its linked entity's scale.
+ * @brief Set a message window's brightness and copy it to the window's display entity.
  * @param idx SFX entry index.
- * @param val Volume value (0x1000 = default).
+ * @param val Brightness (0x1000 = full).
  */
-void setSfxEntryVolume(s32 idx, s32 val) {
+void setSfxEntryBrightness(s32 idx, s32 val) {
     SfxEntry *entry = &g_sfxEntries.entries[idx];
-    entry->volume = val;
-    setBattleEntityScale(entry->entityIdx, val);
+    entry->brightness = val;
+    setBattleEntityBrightness(entry->entityIdx, val);
 }
 
 
