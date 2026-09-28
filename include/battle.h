@@ -13,6 +13,10 @@
 #define BATTLE_RESULT_ESCAPED       2
 #define BATTLE_RESULT_WIN           4
 
+/** @brief BattleConfig.unk2 flag: a countdown is running. The menu clock shows it
+ *  instead of the play time, and a battle ends when it reaches 0. */
+#define BATTLE_FLAG_COUNTDOWN 0x04
+
 #define GET_OFFSET(type, ptr, var) ((type*)(var + (intrptr_t)ptr))
 
 /** @brief Battle command config (g_battleConfig). */

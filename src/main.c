@@ -59,7 +59,7 @@ void flushGpuOt(void) {
 /** @brief VSync callback handler, registered via VSyncCallback in InitHardware.
  *
  *  Dispatches per-frame rendering by the current render mode and advances the
- *  game's frame-timing counters.
+ *  play time and the countdown, both counted in seconds.
  */
 void VsyncHandler(void) {
     switch (g_renderMode) {
@@ -90,7 +90,7 @@ void VsyncHandler(void) {
 
     D_8005F154 += 0x88F;
     if (D_8005F154 >> 17) {
-        g_gameState.mainData.frameCounter++;
+        g_gameState.mainData.playTimeSeconds++;
         D_8005F154 &= 0xFFFF;
     }
 

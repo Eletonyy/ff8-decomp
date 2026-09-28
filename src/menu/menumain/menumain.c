@@ -25,6 +25,40 @@ extern u8 D_800562A4;
 extern u8 D_80078D38[];
 extern s32 D_8005F138;
 
+/**
+ * @brief The main menu's view of its menu-task slot.
+ *
+ * func_801F6934 claims the slot with func_801F179C, registering func_801F2458 as
+ * the update callback and func_801F4A98 as the draw callback. The first 0x10 bytes
+ * are the shared MenuTask header (include/menumain.h); bytes of unknown use are
+ * padding.
+ */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x20];  /**< MenuTask header, then the update callback's state word. */
+    /* 0x20 */ u16 field20;     /**< func_80036EC0() at start; field23 counts its set bits. */
+    /* 0x22 */ u8 pad22;
+    /* 0x23 */ u8 field23;
+    /* 0x24 */ s32 colonTimer;  /**< Frames the clock colon stays bright: 30 (25 on PAL) each time the play time ticks, counted down to 0. */
+    /* 0x28 */ s32 lastPlayTime; /**< The play time colonTimer was last started for. */
+    /* 0x2C */ s16 brightness;  /**< Menu brightness, 0x1000 = full; raised by 0x100 per frame as the menu opens. */
+    /* 0x2E */ u8 pad2E[0x4];
+    /* 0x32 */ u16 field32;     /**< func_801F22F4() at start. */
+    /* 0x34 */ u8 pad34;
+    /* 0x35 */ u8 party[3];     /**< The active party's slot ids, saved from D_80077E6C. */
+    /* 0x38 */ u8 reserve[8];   /**< The other characters' slot ids, 0xFF for none. */
+    /* 0x40 */ u8 field40;
+    /* 0x41 */ u8 field41;      /**< D_801FAB30 at start. */
+    /* 0x42 */ u8 pad42;
+    /* 0x43 */ u8 field43;
+    /* 0x44 */ u16 field44;
+    /* 0x46 */ u8 pad46[0x5];
+    /* 0x4B */ u8 field4B;
+} MainMenuCtx;
+
+static void func_801F1E20(MainMenuCtx *ctx);
+static void func_801F1E54(MainMenuCtx *ctx);
+static void func_801F1F98(MainMenuCtx *ctx);
+
 /* ======================================================================== */
 /* Panel/Window Rendering                                                   */
 /* ======================================================================== */
@@ -908,20 +942,20 @@ void func_801F1DBC(s32 a0) {
 /* Party Member Switch                                                      */
 /* ======================================================================== */
 
-/** @brief Save 3 active party slot IDs from D_80077E6C to buffer at a0+0x35. */
-void func_801F1E20(u8 *a0) {
+/** @brief Save the 3 active party slot IDs from D_80077E6C into @c ctx->party. */
+static void func_801F1E20(MainMenuCtx *ctx) {
     u8 *src = D_80077E6C;
-    u8 *dst = a0 + 0x35;
+    u8 *dst = ctx->party;
     s32 i;
     for (i = 0; i < 3; i++) {
         *dst++ = *src++;
     }
 }
 
-/** @brief Restore 3 active party slot IDs from buffer at a0+0x35 to D_80077E6C. */
-void func_801F1E54(u8 *a0) {
+/** @brief Restore the 3 active party slot IDs from @c ctx->party to D_80077E6C. */
+static void func_801F1E54(MainMenuCtx *ctx) {
     u8 *dst = D_80077E6C;
-    u8 *src = a0 + 0x35;
+    u8 *src = ctx->party;
     s32 i;
     for (i = 0; i < 3; i++) {
         *dst++ = *src++;
@@ -944,9 +978,9 @@ void func_801F1F78(s32 a0, s32 a1) {
  * @brief Build sorted available character list from party data.
  *
  * Fills D_801FAB88 with 0xFF, then collects valid (non-0xFF) entries
- * from 3 active slots (a0+0x35) and 8 reserve slots (a0+0x38).
+ * from @c ctx->party and @c ctx->reserve.
  */
-void func_801F1F98(u8 *a0) {
+static void func_801F1F98(MainMenuCtx *ctx) {
     u8 *dst = D_801FAB88;
     s32 i;
     u8 *p;
@@ -962,14 +996,14 @@ void func_801F1F98(u8 *a0) {
     } while (i >= 0);
 
     for (i = 0; i < 3; i++) {
-        u8 val = *(a0 + i + 0x35);
+        u8 val = ctx->party[i];
         if (val != 0xFF) {
             *dst++ = val;
         }
     }
 
     for (i = 0; i < 8; i++) {
-        u8 val = *(a0 + i + 0x38);
+        u8 val = ctx->reserve[i];
         if (val != 0xFF) {
             *dst++ = val;
         }
@@ -1140,7 +1174,24 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F2FAC);
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F3270);
 
-INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F3464);
+/**
+ * @brief Draw the menu clock: the play time as hours:minutes, or the running
+ *        countdown as minutes:seconds.
+ *
+ * The colon is drawn at the menu brightness while @c colonTimer runs and at 2/3
+ * of it otherwise, so it blinks once a second; a countdown at 0 keeps it bright.
+ *
+ * @param ctx        The main menu's context.
+ * @param ot         Ordering table.
+ * @param pkt        Packet cursor.
+ * @param x          Left edge of the clock icon; the digits follow it.
+ * @param y          Top of the clock.
+ * @param time       The play time, divided by 60 (50 on PAL) into minutes, or the
+ *                   countdown in seconds.
+ * @param isPlayTime Non-zero for the play time.
+ * @return The packet cursor after the clock.
+ */
+INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", drawMenuClock);
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F36E8);
 
@@ -1945,35 +1996,35 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F6888);
  * context structure with GF availability, character masks, and defaults.
  */
 void func_801F6934(void) {
-    u8 *ctx;
+    MainMenuCtx *ctx;
 
     D_801FAB7C = 0;
     recalcPartyStats();
-    ctx = (u8 *)func_801F179C(func_801F2458, func_801F4A98);
+    ctx = func_801F179C(func_801F2458, func_801F4A98);
     func_801F1D2C((s32)&D_800562A4, (s32)&D_801F7DF4, (s32)D_801F8BB8);
     func_801F1D2C(0, (s32)&D_801F7E00, (s32)D_801F889C);
     func_801F1D2C(0, (s32)&D_801F7E0C, (s32)&D_801F87B8);
     func_801F1CAC();
     if (ctx != NULL) {
         D_801FAB28 = 0x1000;
-        *(u16 *)(ctx + 0x2C) = 0;
+        ctx->brightness = 0;
         D_801FAB2A = 0x1000;
-        *(u16 *)(ctx + 0x20) = func_80036EC0();
-        *(u16 *)(ctx + 0x32) = func_801F22F4();
-        *(u16 *)(ctx + 0x44) = 0;
-        *(u8 *)(ctx + 0x43) = 0;
-        *(u8 *)(ctx + 0x4B) = 0;
+        ctx->field20 = func_80036EC0();
+        ctx->field32 = func_801F22F4();
+        ctx->field44 = 0;
+        ctx->field43 = 0;
+        ctx->field4B = 0;
         func_801F5490((s32)ctx);
         func_801F1E54(ctx);
         func_801F202C();
-        *(u16 *)(ctx + 0x2C) = 0;
+        ctx->brightness = 0;
         func_801F2458((s32)ctx);
-        *(u8 *)(ctx + 0x23) = popcount(*(u16 *)(ctx + 0x20));
+        ctx->field23 = popcount(ctx->field20);
         {
             u8 tmp = D_801FAB30;
-            *(u8 *)(ctx + 0x40) = 0;
-            *(s32 *)(ctx + 0x24) = 0;
-            *(u8 *)(ctx + 0x41) = tmp;
+            ctx->field40 = 0;
+            ctx->colonTimer = 0;
+            ctx->field41 = tmp;
         }
     }
     func_801F1DB0(0);
