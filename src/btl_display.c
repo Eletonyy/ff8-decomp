@@ -8,16 +8,16 @@
 extern BattleDisplayEntity g_battleEntities[];
 
 /**
- * @brief Set a battle entity's type and compute draw mode from bit 0.
+ * @brief Set a battle entity's type and compute its draw mode from @ref BATTLE_ENTITY_SEMI_TRANS.
  * @param idx Entity index.
- * @param val Entity type; if bit 0 is set, drawMode = 0x3A000000, else 0x38000000.
+ * @param val Entity type; semi-transparent gives drawMode 0x3A000000, else 0x38000000.
  */
 void setBattleEntityType(s32 idx, s32 val) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
     s32 v;
     entity->entityType = val;
     v = 0x38;
-    if (val & 1) {
+    if (val & BATTLE_ENTITY_SEMI_TRANS) {
         v = 0x3A;
     }
     entity->drawMode = v << 24;

@@ -3,6 +3,7 @@
 #include "battle.h"
 #include "dialog.h"
 #include "btl_entity.h"
+#include "drawbar.h"
 
 extern BattleDisplayEntity g_battleEntities[];
 extern s32 D_800834CC;
@@ -15,13 +16,22 @@ extern s32 reverseButtonRemap(s32 index);
 INCLUDE_ASM("asm/nonmatchings/btl_entity", func_8002BAA0);
 
 
-u32 func_8002BC10(u32 arg0, u32 arg1, u32 arg2, u32 arg3)
+/**
+ * @brief Draw a window box: its frame (func_8002B3A0, fill mode 3), then its
+ *        background (drawWindowBackground).
+ * @param ot    Ordering table.
+ * @param prim  Primitive buffer cursor.
+ * @param rect  The window rect.
+ * @param color Colour word.
+ * @return The primitive cursor after the packets.
+ */
+DR_AREA *func_8002BC10(P_TAG *ot, DR_AREA *prim, RECT *rect, s32 color)
 {
-    u32 hi;
+    DR_AREA *p;
 
-    hi = func_8002B3A0(arg0, arg1, arg2, arg3, 3);
+    p = func_8002B3A0(ot, prim, rect, color, 3);
 
-    return __udivdi3(arg0, hi, arg2, arg3);
+    return drawWindowBackground(ot, p, rect, color);
 }
 
 

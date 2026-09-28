@@ -661,7 +661,6 @@ binaries:
     - [0x186F8, c, btl_anim]
     - [0x1B630, c, btl_display]
     - [0x1BBA0, c, drawbar]
-    - [0x1C280, c, psxsdk/libgcc]
     - [0x1C2A0, c, btl_entity]
     - [0x1D0A4, c, dialog]
     - [0x1FA3C, c, numstr]

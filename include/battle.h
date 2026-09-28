@@ -70,11 +70,6 @@ typedef struct BattleDisplayEntity {
     s16 pad3E;
 } BattleDisplayEntity;
 
-/** @brief @c BattleDisplayEntity.entityType bits. */
-#define BATTLE_ENTITY_SEMI_TRANS 0x01 /**< Drawn semi-transparent. */
-#define BATTLE_ENTITY_FLAG_02    0x02
-#define BATTLE_ENTITY_FLAG_08    0x08
-
 /** @brief Parameters for a double-blit operation with source rects and destination buffers. */
 typedef struct {
     u8 pad0[8];

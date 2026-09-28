@@ -5,11 +5,11 @@
 #include "dialog.h"
 #include "numstr.h"
 #include "btl_entity.h"
+#include "btl_display.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
 #include "btl_color.h"
 #include "drawbar.h"
-#include "psxsdk/libgcc.h"
 #include "menu_tint.h"
 
 /**
@@ -1183,8 +1183,8 @@ static inline u32 linkPacket(u32 head, void *p) {
  * a glyph, then links a draw area for the entity's clamp rect and a draw
  * offset at the window's inner corner (@ref DIALOG_CLAMP_INSET in from @c rect).
  * Links prepend to the OT, so the GPU runs these before the contents.
- * When the linked entity has both @ref BATTLE_ENTITY_FLAG_02 and
- * @ref BATTLE_ENTITY_FLAG_08, the window also gets its @c cornerIcon (if
+ * When the linked entity has both @ref BATTLE_ENTITY_BOX and
+ * @ref BATTLE_ENTITY_DIALOG, the window also gets its @c cornerIcon (if
  * non-zero) at the window origin and two bars, grey at the entity's @c brightness
  * (the second one halved and semi-transparent for a
  * @ref BATTLE_ENTITY_SEMI_TRANS entity), then a draw area for the bound rect
@@ -1235,7 +1235,7 @@ static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 p
     ent = getBattleEntity(entry->entityIdx);
     p = (DR_AREA *)(offset + 1);
 
-    if ((ent->entityType & BATTLE_ENTITY_FLAG_02) && (ent->entityType & BATTLE_ENTITY_FLAG_08)) {
+    if ((ent->entityType & BATTLE_ENTITY_BOX) && (ent->entityType & BATTLE_ENTITY_DIALOG)) {
         colour = entity->brightness;
         colour >>= 5;
         code = SPRT_CODE;
@@ -1252,7 +1252,7 @@ static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 p
             colour |= code;
             colour |= SPRT_ABE;
         }
-        p = __udivdi3(ot, p, winRect, colour);
+        p = drawWindowBackground(ot, p, winRect, colour);
         getAddrNewFast(ot, head);
 
         SetDrawArea(p, &entity->clipBound.rect);
@@ -1397,14 +1397,14 @@ s32 getDialogTypingDone(s32 idx) {
  * @brief Set entity type flags on the battle entity linked to a dialog.
  *
  * Reads the entity index from the dialog, then sets entity type
- * (and derived draw mode) on that battle entity with the value OR'd with 8.
+ * (and derived draw mode) on that battle entity, adding @ref BATTLE_ENTITY_DIALOG.
  *
  * @param idx Dialog index.
- * @param val Flag value to OR with 8 before storing.
+ * @param val Entity type bits (BATTLE_ENTITY_*).
  */
 void setDialogEntityType(s32 idx, s32 val) {
     Dialog *entry = &g_dialogs.entries[idx];
-    setBattleEntityType(entry->entityIdx, val | 8);
+    setBattleEntityType(entry->entityIdx, val | BATTLE_ENTITY_DIALOG);
 }
 
 
