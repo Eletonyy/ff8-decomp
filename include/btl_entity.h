@@ -14,11 +14,11 @@ extern void setBattleEntityBase(s32 val);
 extern s32  getMaxBattleEntities(void);
 extern u8   getDigitBaseCode(void);
 extern void setDigitBaseCode(u8 val);
-extern void setDialogParams(s32 idx, s32 val30, s32 val32);
-extern void setDialogTimings(s32 idx, s32 val29, s32 val2A, s32 val2C);
-extern void setDialogField2B(s32 idx, s32 val);
-extern void setDialogField34(s32 idx, DialogDrawCallback val);
-extern void setDialogField38(s32 idx, DialogCallback val);
+extern void setDialogTextOrigin(s32 idx, s32 x, s32 y);
+extern void setDialogChoices(s32 idx, s32 first, s32 last, s32 cancel);
+extern void setDialogChoiceCursor(s32 idx, s32 val);
+extern void setDialogDrawCallback(s32 idx, DialogDrawCallback val);
+extern void setDialogUpdateCallback(s32 idx, DialogCallback val);
 extern void setDialogBrightness(s32 idx, s32 val);
 
 /**

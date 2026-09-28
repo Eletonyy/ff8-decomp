@@ -93,7 +93,7 @@ next_string:
         goto end;
     }
     decodeMessage(src, buf, -1);
-    src = func_8002F548(src);
+    src = nextMessageLine(src);
     pos = buf;
 
     for (;;) {
@@ -3031,7 +3031,7 @@ dispatch:
             ctx->unk66 = 0x258;
             setDialogMessage(0, D_801EF1B0);
             func_801F23D0(0, 0x68, D_801EF1B0);
-            setDialogField2F(0, 0x56);
+            setDialogCornerIcon(0, 0x56);
             setDialogTextSpeed(0, 0);
             openDialogInstant(0);
             *statePtr = 0x44;
@@ -3833,7 +3833,7 @@ s32 renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBas
             }
 
             namePtr = getMagicNamePtr(i + 0x40);
-            cursorY = func_8002E8DC(renderCtx, cursorY, x, y - 3, namePtr, color);
+            cursorY = drawDecodedText(renderCtx, cursorY, x, y - 3, namePtr, color);
         }
     } while (++i < numGfs);
 

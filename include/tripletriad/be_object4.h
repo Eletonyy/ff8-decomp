@@ -88,7 +88,7 @@ extern void openTriadMenu(void);
 
 /* Message-gate / banner + hand-build UI helpers (used by be_object3 / be_object3b). */
 extern void func_800A1D68(s32 a0, u8 *a1, s32 a2);  /**< Show a banner/message string. */
-extern void func_800A2054(s32 a0);                  /**< Close dialog a0, at once or with its animation per its flag. */
+extern void func_800A2054(s32 id);                  /**< Close dialog id, at once or with its animation per its flag. */
 extern void func_800A44CC(void);   /**< Reset the hand-build UI state for a new claim sequence. */
 extern void func_800A44B0(s32 a0); /**< Enable (1) / disable (0) the hand-build input prompt. */
 extern void func_800A44BC(void);   /**< Tear down the claim UI at the end of the sequence. */
@@ -97,8 +97,8 @@ extern void func_800A44BC(void);   /**< Tear down the claim UI at the end of the
 
 /** @brief One 0x0C-byte entry of the D_80182E70 per-dialog configuration table. */
 typedef struct {
-    /* 0x00 */ u8 flags;     /**< bit0 open and close without the animation (func_800A1D68, func_800A2054); bit1 offset-params, bit2 center (func_800A1D68). */
-    /* 0x01 */ u8 field2F;   /**< Value written to each dialog's field2F. */
+    /* 0x00 */ u8 flags;     /**< DIALOG_CONFIG_* bits. */
+    /* 0x01 */ u8 field2F;   /**< Written to each dialog's cornerIcon. */
     /* 0x02 */ u8 textSpeed; /**< Text speed (setDialogTextSpeed). */
     /* 0x03 */ u8 fadeTimer; /**< Frame countdown; on reaching 0 the entry is faded out (see func_800A1C6C). */
     /* 0x04 */ RECT rect;    /**< Message-box rect (func_800A1D68); 0 w/h means "size to the text". */
@@ -127,7 +127,7 @@ typedef struct {
     /* 0x24 */ u8 unk24;
 } CursorState;
 
-/** @brief getGlyphWidthA's packed {width, height} result, held in an 8-byte stack slot. */
+/** @brief getTextSize's packed {width, height} result, held in an 8-byte stack slot. */
 typedef union {
     s32 raw[2];   /**< raw[0] = the packed result word; the pair sizes the 8-byte slot. */
     s16 wh[2];    /**< wh[0] = width, wh[1] = height (overlay of raw[0]). */

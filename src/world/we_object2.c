@@ -553,7 +553,7 @@ void func_8009D954(void) {
  * @brief Return whether dialog slot @p idx is active and its dialog still has pending state.
  *
  * Checks @c D_800C526C[idx].field00 — if the slot is inactive (-1) returns 0.
- * Otherwise queries @c getDialogField28 with the slot's dialog index and returns
+ * Otherwise queries @c getDialogTypingDone with the slot's dialog index and returns
  * 1 iff the result is nonzero, else 0.
  *
  * @param idx Index into the @c D_800C526C dialog slot table.
@@ -564,7 +564,7 @@ s32 func_8009D9C8(s32 idx) {
     s32 field02 = D_800C526C[idx].field02;
     s32 result = 0;
     if (field00 != -1) {
-        result = getDialogField28(field02) != 0;
+        result = getDialogTypingDone(field02) != 0;
     }
     return result;
 }

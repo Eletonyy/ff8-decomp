@@ -355,9 +355,9 @@ s32 func_801E6514(s32 a0, s32 a1) {
         }
         resource = func_801E5800(arg);
     }
-    tw = func_8002E680(resource);
+    tw = measureMessage(resource);
     tw = (0x150 - (u16)tw) / 2;
-    func_8002EAD0(a0, xPos + tw, yPos + 4, resource);
+    drawMessageText(a0, xPos + tw, yPos + 4, resource);
     width = 0x150;
     cfg[0x10] = 0;
     cfg[0x11] = 0;
@@ -372,7 +372,7 @@ s32 func_801E6514(s32 a0, s32 a1) {
  * @brief Render the tips content panel with scroll state.
  *
  * Saves the current palette context, renders the tips text region via
- * func_8002EAD0, restores the palette, then configures the g_menuDisplayCfg
+ * drawMessageText, restores the palette, then configures the g_menuDisplayCfg
  * display panel and calls func_801F5F60 (if either scroll indicator is
  * active) followed by func_801EF9AC to draw the panel.
  *
@@ -388,7 +388,7 @@ s32 func_801E6668(s32 arg0, s32 arg1) {
     var_s1 = arg1;
     temp_s0 = getDisplayListHead();
     storeGpuPacket(var_s1);
-    func_8002EAD0(arg0, 0x22, 0x23, D_801E8310);
+    drawMessageText(arg0, 0x22, 0x23, D_801E8310);
     var_s1 = getDisplayListHead();
     storeGpuPacket(temp_s0);
     g_menuDisplayCfg.iconType = 0;
@@ -410,7 +410,7 @@ s32 func_801E6668(s32 arg0, s32 arg1) {
 /**
  * @brief Render tips header panel.
  *
- * Calls func_8002EAD0 to set up the display region using the D_801E7B10
+ * Calls drawMessageText to set up the display region using the D_801E7B10
  * data table, then configures g_menuDisplayCfg with fixed panel dimensions
  * and calls func_801EF9AC to render.
  *
@@ -426,7 +426,7 @@ s32 func_801E6768(s32 a0, s32 a1) {
         disp = a0;
         ot = a1;
         new_var = D_801E7B10;
-        func_8002EAD0(disp, 0x24, 0xC, (((s32)new_var) + ot) - ot);
+        drawMessageText(disp, 0x24, 0xC, (((s32)new_var) + ot) - ot);
         g_menuDisplayCfg.iconType = 0;
         g_menuDisplayCfg.iconSubType = 0;
         g_menuDisplayCfg.x = 0x18;

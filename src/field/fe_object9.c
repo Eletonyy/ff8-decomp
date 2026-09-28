@@ -7,17 +7,15 @@
 #include "field/fe_object1b.h"
 #include "field/fe_object9.h"
 
+#include "dialog.h"
+
 // Intentionally NOT included — these headers would pull in void prototypes
-// for setDialogBrightness, setDialogEntityType, updateAnimEntry, setupAnimEntry,
-// and setupAnimEntryFull. We need gcc to implicit-int-declare those at the
+// for setDialogBrightness, updateAnimEntry, setupAnimEntry and
+// setupAnimEntryFull. We need gcc to implicit-int-declare those at the
 // call sites below to match the original K&R-style scheduling. Without that,
 // four functions mismatch.
 // #include "btl_entity.h"
-// #include "dialog.h"
 // #include "btl_color.h"
-// setDialogChoiceMessage and getDialogChoice keep the prototypes their calls were built with.
-extern void setDialogChoiceMessage(s32 dialogIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
-extern s32 getDialogChoice(s32 idx);
 
 /**
  * @brief Snapshot a target entity's grid-cell position into the queued
@@ -407,17 +405,17 @@ s32 opHandler_FADEBLACK(void) {
 }
 
 /**
- * @brief Pop two stack slots and dispatch @c func_8002E1B4 with them.
+ * @brief Pop two stack slots and dispatch @c setMessageValue with them.
  *
  * Pops two values from the script stack and calls
- * @c func_8002E1B4(val2 & 7, val1) — val1 is the top slot, val2 the
+ * @c setMessageValue(val2 & 7, val1) — val1 is the top slot, val2 the
  * next. The @c & @c 7 mask suggests @c val2 is a 3-bit selector
  * (one of the 8 message values, @c g_dialogs.msgValues).
  */
 s32 opHandler_MESVAR(ScriptContext *context) {
     s32 val1 = POP(context);
     s32 val2 = POP(context);
-    func_8002E1B4(val2 & 7, val1);
+    setMessageValue(val2 & 7, val1);
     return 2;
 }
 
@@ -523,10 +521,10 @@ void func_800BC12C(s32 idx, s32 val, u16 *src) {
     FieldDialogSlot *base = D_80085300;
     FieldDialogSlot *entry = base + idx;
     entry->payload = val;
-    entry->rect[0] = src[0];
-    entry->rect[1] = src[1];
-    entry->rect[2] = src[2];
-    entry->rect[3] = src[3];
+    entry->rect.x = src[0];
+    entry->rect.y = src[1];
+    entry->rect.w = src[2];
+    entry->rect.h = src[3];
 }
 
 /**
@@ -574,7 +572,7 @@ s32 opHandler_MES(ScriptContext *context) {
  * (@c x+w < 0x130), then clamps @c x >= 8. Same for @c y / @c h
  * against the bottom edge (0xE0) and top edge (8).
  */
-void func_800BC258(Rect *r) {
+void func_800BC258(RECT *r) {
     if (r->x + r->w >= 0x130) {
         r->x = 0x138 - (u16)r->w;
     }
@@ -595,15 +593,15 @@ void func_800BC258(Rect *r) {
  * Variant of @c opHandler_MES that also constructs a clipped on-screen
  * rectangle around a piece of text: peeks @c dialogIdx / @c textIdx /
  * @c rect.x / @c rect.y from the stack, measures the text via
- * @c func_8002E680 to set @c rect.w / @c rect.h (with +0x10/+0x11
- * padding), clips via @c func_800BC258, and calls @c func_8002E064
+ * @c measureMessage to set @c rect.w / @c rect.h (with +0x10/+0x11
+ * padding), clips via @c func_800BC258, and calls @c setDialogRect
  * to install the rect for the dialog slot.
  *
  * @return 5 if slot busy, 1 on success (opens the dialog and registers its entry),
  *         3 once the slot frees up while inactive (pops 4).
  */
 s32 opHandler_AMESW(ScriptContext *context) {
-    Rect buf;
+    RECT buf;
     s32 dialogIdx;
     s32 textIdx;
     u8 *data;
@@ -620,11 +618,11 @@ s32 opHandler_AMESW(ScriptContext *context) {
         }
         data = getOffsetTableEntry(g_curFieldMessages, textIdx);
         setDialogMessage(dialogIdx, data);
-        dims = func_8002E680(data);
+        dims = measureMessage(data);
         buf.w = (dims & 0xFFFF) + 0x10;
         buf.h = (dims >> 16) + 0x11;
         func_800BC258(&buf);
-        func_8002E064(dialogIdx, (s16 *)&buf);
+        setDialogRect(dialogIdx, &buf);
         openDialogAnimated(dialogIdx);
         setDialogGlobalFlag(dialogIdx);
         g_fieldVars->dialogStartMask |= (1 << dialogIdx);
@@ -648,7 +646,7 @@ s32 opHandler_AMESW(ScriptContext *context) {
  * @return 5 if slot busy, 3 otherwise.
  */
 s32 opHandler_AMES(ScriptContext *context) {
-    Rect buf;
+    RECT buf;
     s32 dialogIdx;
     s32 textIdx;
     u8 *data;
@@ -665,11 +663,11 @@ s32 opHandler_AMES(ScriptContext *context) {
 
     data = getOffsetTableEntry(g_curFieldMessages, textIdx);
     setDialogMessage(dialogIdx, data);
-    dims = func_8002E680(data);
+    dims = measureMessage(data);
     buf.w = (dims & 0xFFFF) + 0x10;
     buf.h = (dims >> 16) + 0x11;
     func_800BC258(&buf);
-    func_8002E064(dialogIdx, &buf);
+    setDialogRect(dialogIdx, &buf);
     openDialogAnimated(dialogIdx);
     setDialogGlobalFlag(dialogIdx);
 
@@ -691,7 +689,7 @@ s32 opHandler_AMES(ScriptContext *context) {
  * @return 5 if slot busy, 2 on success.
  */
 s32 opHandler_RAMESW(ScriptContext *context) {
-    Rect buf;
+    RECT buf;
     s32 dialogIdx;
     s32 textIdx;
     u8 *data;
@@ -708,11 +706,11 @@ s32 opHandler_RAMESW(ScriptContext *context) {
 
     data = getOffsetTableEntry(g_curFieldMessages, textIdx);
     setDialogMessage(dialogIdx, data);
-    dims = func_8002E680(data);
+    dims = measureMessage(data);
     buf.w = (dims & 0xFFFF) + 0x10;
     buf.h = (dims >> 16) + 0x11;
     func_800BC258(&buf);
-    func_8002E064(dialogIdx, &buf);
+    setDialogRect(dialogIdx, &buf);
     openDialogAnimated(dialogIdx);
     setDialogGlobalFlag(dialogIdx);
 
@@ -800,7 +798,7 @@ s32 opHandler_ASK(Actor *actor) {
  * current @c scriptSlot is set:
  *   - Returns 5 if the dialog slot is already active (bit set in @c field_0xD2).
  *   - Otherwise, saves the current global dialog flag, resolves a text pointer,
- *     measures it via @c func_8002E680, fills the rect's bottom-right corner
+ *     measures it via @c measureMessage, fills the rect's bottom-right corner
  *     (+0x30 X, +0x11 Y), runs the display setup chain, kicks off the slow
  *     dialog, and sets the slot's bits in both @c field_0xD2 and @c field_0xD3.
  * Otherwise, runs a 2-state machine on @c field_0x204:
@@ -815,7 +813,7 @@ s32 opHandler_ASK(Actor *actor) {
  *         5 when the slot was already active.
  */
 s32 opHandler_AASK(Actor *actor) {
-    s16 buf[4];
+    RECT buf;
     s32 dialogIdx;
     s32 textIdx;
     s32 paramY;
@@ -827,8 +825,8 @@ s32 opHandler_AASK(Actor *actor) {
     s32 r;
     s32 state;
 
-    buf[1] = *(u16 *)&actor->context.stack[actor->context.stackPtr];
-    buf[0] = *(u16 *)&actor->context.stack[actor->context.stackPtr - 1];
+    buf.y = *(u16 *)&actor->context.stack[actor->context.stackPtr];
+    buf.x = *(u16 *)&actor->context.stack[actor->context.stackPtr - 1];
     paramV  = actor->context.stack[actor->context.stackPtr - 2];
     paramW  = actor->context.stack[actor->context.stackPtr - 3];
     paramZ  = actor->context.stack[actor->context.stackPtr - 4];
@@ -842,11 +840,11 @@ s32 opHandler_AASK(Actor *actor) {
         }
         D_800DE4DC = getDialogGlobalFlag();
         text = getOffsetTableEntry(g_curFieldMessages, textIdx);
-        dims = func_8002E680(text);
-        buf[2] = (dims & 0xFFFF) + 0x30;
-        buf[3] = (dims >> 16) + 0x11;
-        func_800BC258(buf);
-        func_8002E064(dialogIdx, buf);
+        dims = measureMessage(text);
+        buf.w = (dims & 0xFFFF) + 0x30;
+        buf.h = (dims >> 16) + 0x11;
+        func_800BC258(&buf);
+        setDialogRect(dialogIdx, &buf);
         setDialogChoiceMessage(dialogIdx, text, paramY, paramZ, paramW, paramV);
         openDialogAnimated(dialogIdx);
         actor->field_0x204 = 0;
@@ -887,8 +885,8 @@ s32 opHandler_AASK(Actor *actor) {
  * If the entry bit (@c dialogEntryMask) is set: also requires
  * @c dialogStartMask to be set (else return 1). Optionally closes the dialog via
  * @c closeDialogAnimated when @c D_80070600 has the @c 0xC0 flag bits,
- * @c getDialogField28 reports something, and the slot is no longer active.
- * Waits for @c getOpenDialogScale to drop to 0 and @c getDialogField28 to
+ * @c getDialogTypingDone reports something, and the slot is no longer active.
+ * Waits for @c getOpenDialogScale to drop to 0 and @c getDialogTypingDone to
  * become non-zero, then clears both @c dialogStartMask and @c dialogEntryMask
  * bits, pops one stack slot, and returns 2.
  *
@@ -904,14 +902,14 @@ s32 opHandler_MESSYNC(ScriptContext *context) {
         if (!((g_fieldVars->dialogStartMask >> dialogIdx) & 1)) {
             return 1;
         }
-        if ((D_80070600 & 0xC0) && getDialogField28(dialogIdx)
+        if ((D_80070600 & 0xC0) && getDialogTypingDone(dialogIdx)
             && !((g_fieldVars->dialogActiveMask >> dialogIdx) & 1)) {
             closeDialogAnimated(dialogIdx);
         }
         if (getOpenDialogScale(dialogIdx)) {
             return 1;
         }
-        if (!getDialogField28(dialogIdx)) {
+        if (!getDialogTypingDone(dialogIdx)) {
             return 1;
         }
         g_fieldVars->dialogStartMask &= ~(1 << dialogIdx);
@@ -939,11 +937,11 @@ s32 opHandler_MESFORCUS(ScriptContext *context) {
  *
  * Peeks @c dialogIdx and a 4-halfword rect from the stack. If the slot is
  * busy (@c dialogStartMask set) return 5. Otherwise clip the rect, install
- * it via @c func_8002E064, register an entry with @c data=0 via
+ * it via @c setDialogRect, register an entry with @c data=0 via
  * @c func_800BC12C, pop 5, and return 2.
  */
 s32 opHandler_WINSIZE(ScriptContext *context) {
-    Rect buf;
+    RECT buf;
     s32 dialogIdx = context->stack[(s8)context->stackPtr - 4];
 
     if ((g_fieldVars->dialogStartMask >> dialogIdx) & 1) {
@@ -956,7 +954,7 @@ s32 opHandler_WINSIZE(ScriptContext *context) {
     buf.x = (u16)context->stack[(s8)context->stackPtr - 3];
 
     func_800BC258(&buf);
-    func_8002E064(dialogIdx, &buf);
+    setDialogRect(dialogIdx, &buf);
     context->stackPtr -= 5;
     func_800BC12C(dialogIdx, 0, (u16 *)&buf);
     return 2;

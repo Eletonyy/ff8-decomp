@@ -8,12 +8,7 @@
 #include "field/fe_object1_2.h"
 #include "field/fe_object1b.h"
 #include "field/fe_object7.h"
-
-/* dialog.h is not included: opHandler_DRAWPOINT passes an s16[4] rect to
- * func_8002E064, which it declares as taking RECT *. setDialogChoiceMessage and
- * getDialogChoice keep the prototypes their calls were built with. */
-extern void setDialogChoiceMessage(s32 dialogIdx, u8 *data, s32 paramY, s32 paramZ, s32 paramW, s32 paramV);
-extern s32 getDialogChoice(s32 idx);
+#include "dialog.h"
 
 /**
  * @brief Pop a key item ID and store its value.
@@ -256,7 +251,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
     u8 *text;
     u32 dims;
     s32 i;
-    s16 rect[4];
+    RECT rect;
 
     fieldIdx = PEEK(&actor->context) - 1;
     tableResult = lookupFieldTable(fieldIdx);
@@ -285,12 +280,12 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
         }
 
         setDialogMessage(6, text);
-        dims = func_8002E680(text);
-        rect[2] = (dims & 0xFFFF) + 0x10;
-        rect[3] = (dims >> 16) + 0x11;
-        rect[0] = 0xA0 - rect[2] / 2;
-        rect[1] = 0x70 - rect[3] / 2;
-        func_8002E064(6, rect);
+        dims = measureMessage(text);
+        rect.w = (dims & 0xFFFF) + 0x10;
+        rect.h = (dims >> 16) + 0x11;
+        rect.x = 0xA0 - rect.w / 2;
+        rect.y = 0x70 - rect.h / 2;
+        setDialogRect(6, &rect);
         openDialogAnimated(6);
         setDialogGlobalFlag(6);
         g_fieldVars->dialogStartMask |= 0x40;
@@ -340,12 +335,12 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
 
         text = func_800B574C(getOffsetTableEntry(&D_8005630C, 4));
         text = func_800B57E8(D_800DE4D4, tableResult & 0x3F);
-        dims = func_8002E680(text);
-        rect[2] = (dims & 0xFFFF) + 0x30;
-        rect[3] = (dims >> 16) + 0x11;
-        rect[0] = 0xA0 - rect[2] / 2;
-        rect[1] = 0x70 - rect[3] / 2;
-        func_8002E064(6, rect);
+        dims = measureMessage(text);
+        rect.w = (dims & 0xFFFF) + 0x30;
+        rect.h = (dims >> 16) + 0x11;
+        rect.x = 0xA0 - rect.w / 2;
+        rect.y = 0x70 - rect.h / 2;
+        setDialogRect(6, &rect);
         setDialogChoiceMessage(6, text, 1, D_800DE4D4 + 1, 2, 1);
         openDialogAnimated(6);
         setDialogGlobalFlag(6);
@@ -404,7 +399,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
                 }
             }
 
-            func_8002E1B4(7, i);
+            setMessageValue(7, i);
 
             if (i != 0) {
                 text = func_800B574C(getOffsetTableEntry(&D_8005630C, 5));
@@ -420,12 +415,12 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
         func_800B578C(3, g_gameState.battleParty[D_800DE4D2]);
         text = func_800B578C(0xC, tableResult & 0x3F);
         setDialogMessage(6, text);
-        dims = func_8002E680(text);
-        rect[2] = (dims & 0xFFFF) + 0x10;
-        rect[3] = (dims >> 16) + 0x11;
-        rect[0] = 0xA0 - rect[2] / 2;
-        rect[1] = 0x70 - rect[3] / 2;
-        func_8002E064(6, rect);
+        dims = measureMessage(text);
+        rect.w = (dims & 0xFFFF) + 0x10;
+        rect.h = (dims >> 16) + 0x11;
+        rect.x = 0xA0 - rect.w / 2;
+        rect.y = 0x70 - rect.h / 2;
+        setDialogRect(6, &rect);
         openDialogAnimated(6);
         setDialogGlobalFlag(6);
         g_fieldVars->dialogStartMask |= 0x40;

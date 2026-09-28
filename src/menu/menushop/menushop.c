@@ -274,7 +274,7 @@ static s32 func_801E59D8(s16 *stringCodes, s16 *xOffsets, s32 arg2) {
         }
 
         str = func_801F08D4(1, arg2, stringCode, 0);
-        width = getGlyphStatusU16(str);
+        width = getFirstLineWidth(str);
         width += 10;
         xOffset += width;
         *xOffsets = xOffset;
@@ -1486,7 +1486,7 @@ s32 func_801E77EC(s32 fieldShopId, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
         name = func_801F6AA4(STRING_JUNK_SHOP_ABILITY);
     }
 
-    x = (width - getGlyphStatusU16(name)) / 2;
+    x = (width - getFirstLineWidth(name)) / 2;
     x += arg3;
 
     y = 5;

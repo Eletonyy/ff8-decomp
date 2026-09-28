@@ -1137,25 +1137,25 @@ u16 func_801F2370(void) {
 /**
  * @brief Register a horizontally centered text region.
  *
- * Measures text @p textId via func_8002E680 (packed w | h << 16), maps
+ * Measures text @p textId via measureMessage (packed w | h << 16), maps
  * both extents through func_801F738C/func_801F7394, then registers the
  * RECT — x centered on the 384-wide menu screen at row @p y — with
- * func_8002E064 under @p idx.
+ * setDialogRect under @p idx.
  *
  * @note @c w holds the packed measurement first and is then reassigned to
  *       the mapped width — the reuse is what allocates s0/s1/s2 like the
  *       original.
- * @note func_8002E680 (src/dialog.c) is called without a prototype here,
+ * @note measureMessage (src/dialog.c) is called without a prototype here,
  *       as in the original build; field.h/we_object1.h carry the u8*
  *       declaration for their units until a dialog.h consolidation pass.
  *
- * @param idx  Region slot index (passed to func_8002E064).
+ * @param idx  Region slot index (passed to setDialogRect).
  * @param y    Screen Y for the region.
  * @param text Text to measure.
  */
 void func_801F23D0(s32 idx, s32 y, u8 *text) {
     RECT r;
-    s32 w = func_8002E680(text);
+    s32 w = measureMessage(text);
     s32 upper = w >> 16;
     s32 h;
 
@@ -1165,7 +1165,7 @@ void func_801F23D0(s32 idx, s32 y, u8 *text) {
     r.y = y;
     r.w = w;
     r.h = h;
-    func_8002E064(idx, &r);
+    setDialogRect(idx, &r);
 }
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F2458);
@@ -1549,7 +1549,7 @@ s32 func_801F5938(s32 a0) {
  * @brief Build cumulative pixel-width table for menu item strings.
  *
  * Iterates a -1-terminated u16 source list, measures each string's
- * pixel width via getGlyphWidthA, and accumulates offsets into dst.
+ * pixel width via getTextSize, and accumulates offsets into dst.
  * Returns the item count.
  */
 s32 func_801F5984(u16 *src, u16 *dst, s32 a2) {
@@ -1562,7 +1562,7 @@ s32 func_801F5984(u16 *src, u16 *dst, s32 a2) {
         val = (s16)*src++;
         if (val == -1) break;
         ret = func_801F08D4(1, a2, val, 0);
-        ret = getGlyphWidthA((u8 *)ret) + 12;
+        ret = getTextSize((u8 *)ret) + 12;
         accum += ret;
         *dst++ = accum;
         count++;

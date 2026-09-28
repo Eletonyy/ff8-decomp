@@ -831,11 +831,11 @@ extern void setTransitionPhase7(void);
  * box), @c payload typically holds the message pointer cast to s32,
  * and @c brightness / @c type mirror the values previously set via
  * @c setDialogBrightness / @c setDialogEntityType for the slot. Distinct
- * from the runtime @c Dialog in @c battle.h, which is the active
+ * from the runtime @c Dialog in @c dialog.h, which is the active
  * playback state — this is just the script-VM's last-set shadow.
  */
 typedef struct {
-    /* 0x0 */ u16 rect[4];
+    /* 0x0 */ RECT rect;
     /* 0x8 */ s32 payload;
     /* 0xC */ u16 brightness;
     /* 0xE */ u16 type;
@@ -866,13 +866,6 @@ typedef struct {
 /** @brief Per-slot anim shadow table populated by field-VM anim opcodes. */
 extern FieldAnimSlot D_80085398[];
 
-/** @brief Small on-screen rectangle in halfword coords (used by dialog balloons). */
-typedef struct {
-    s16 x;
-    s16 y;
-    s16 w;
-    s16 h;
-} Rect;
 
 /** @brief The field's message table; the same word as @c SystemState::fieldMessages. */
 extern OffsetTable *g_curFieldMessages;
@@ -1094,9 +1087,6 @@ extern u8 D_800DE8D2;
  * Returns a per-entity pointer in @c v0 (used by callers of @c 0x1F);
  * callers that ignore the return value just drop it.
  */
-
-/** @brief Measure a text string, returning width|height packed as one s32. */
-extern s32 func_8002E680(u8 *text);
 
 /* ======================================================================== */
 /* fe_object5 movie-load tables and movie-overlay (0x801E0000) entry points */

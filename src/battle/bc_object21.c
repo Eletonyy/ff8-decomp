@@ -200,9 +200,9 @@ void func_800DF7C8(s32 a0, s32 a1) {
     getDisplayListHead();
 }
 
-/** @brief Wrapper for setDialogParams. */
+/** @brief Wrapper for setDialogTextOrigin. */
 void func_800DF804(void) {
-    setDialogParams();
+    setDialogTextOrigin();
 }
 
 /** @brief Wrapper for setDialogMessage. */
@@ -220,9 +220,9 @@ void func_800DF864(void) {
     openDialogInstant();
 }
 
-/** @brief Wrapper for func_8002E064. */
+/** @brief Wrapper for setDialogRect. */
 void func_800DF884(void) {
-    func_8002E064();
+    setDialogRect();
 }
 
 /** @brief Wrapper for setDialogTextSpeed. */
@@ -235,9 +235,9 @@ void func_800DF8C4(void) {
     setDialogAnimSpeed();
 }
 
-/** @brief Wrapper for setDialogField2F. */
+/** @brief Wrapper for setDialogCornerIcon. */
 void func_800DF8E4(void) {
-    setDialogField2F();
+    setDialogCornerIcon();
 }
 
 /** @brief Wrapper for resetAllDialogs. */

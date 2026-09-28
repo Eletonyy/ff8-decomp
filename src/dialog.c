@@ -112,12 +112,12 @@ extern GlyphTable D_80052A68;
  * glyph cells hold those groups ready-made, so they are stored in one piece.
  * The do/while(0) of setGlyphUVClut is load-bearing: the scheduler moves nothing
  * across it, which keeps the u/v/CLUT store ahead of the texture-page code.
- * Wrapping the colour setter the same way breaks func_8002CAE0's match. */
+ * Wrapping the colour setter the same way breaks drawDialogMarker's match. */
 #define setGlyphRGBC(p, word)   (*(u32 *)&(p)->r0 = (word))
 #define setGlyphUVClut(p, word) do { *(u32 *)&(p)->u0 = (word); } while (0)
 #define setGlyphWH(p, word)     (*(u32 *)&(p)->w = (word))
 
-/** @brief Values of @c Dialog.seqState, the text state machine run by func_8002D040. */
+/** @brief Values of @c Dialog.seqState, the text state machine run by updateDialog. */
 enum {
     DIALOG_SEQ_START,              /**< Clear the button auto-repeat state. */
     DIALOG_SEQ_TICK,               /**< Advance the character timer by the text speed. */
@@ -147,7 +147,7 @@ enum {
     MSG_NEW_PAGE_MARKED = 0x07  /**< Page break that shows the corner marker (name is a guess). */
 };
 
-/** @brief Command bytes returned in bits 8-15 by func_8002FE0C. */
+/** @brief Command bytes returned in bits 8-15 by nextDialogChar. */
 enum {
     MSG_CMD_ICON = 0x05,        /**< Argument is an icon, drawn as a multi-cell glyph. */
     MSG_CMD_COLOR = 0x06,       /**< Argument is the text colour. */
@@ -164,13 +164,13 @@ enum {
 /** @brief Bit of @c DialogGlobalState.textBlinkClock that dims blinking text; set for 16 of every 32 frames. */
 #define DIALOG_TEXT_BLINK_DIM 0x10
 
-/** @brief @c Dialog.field29 / @c field2A (first / last choice line) when the message offers no choice. */
+/** @brief @c Dialog.firstChoice / @c lastChoice when the message offers no choice. */
 #define DIALOG_NO_CHOICE 0xFF
 
 /** @brief Size of the $gp scratch buffer a message is decoded into. */
 #define DIALOG_MSG_BUF_SIZE 128
 
-/** @brief Height of one text line in pixels; a scroll steps @c field12 once per frame until a line has passed. */
+/** @brief Height of one text line in pixels; a scroll steps @c scrollY once per frame until a line has passed. */
 #define DIALOG_LINE_HEIGHT 16
 
 /** @brief The clamp rect of a message window sits this many pixels inside its bound rect. */
@@ -204,26 +204,44 @@ enum {
 #define TEXT_TPAGE_PAGE1 0xE100041F
 #define TEXT_TPAGE_PAGE2 0xE100041D
 
-extern DialogSystem g_dialogs;
+/**
+ * @brief Bit of @c Dialog.ctrl.raw: @c ctrl.bits.marker, the window shows its
+ *        blinking corner marker.
+ */
+#define DIALOG_CTRL_MARKER 0x00800000
+
+/** @brief Position of @c Dialog.ctrl.bits.markerBlink inside @c ctrl.raw. */
+#define DIALOG_CTRL_MARKER_BLINK_SHIFT 16
+
+/**
+ * @brief Bit of the 7-bit blink counter @c Dialog.ctrl.bits.markerBlink.
+ *
+ * Set for 16 of every 32 ticks; the corner marker is blanked while it is set.
+ */
+#define DIALOG_MARKER_BLINK_OFF 0x10
+
 extern s32 D_800831D8;
 extern s8 D_800831DC;
 extern s32 D_80083850;
 extern u8 D_800834D8[];
 static void updateTextBlinkColors(void);
 static void applyWindowBrightness(s32 index);
-static void func_8002CAE0(P_TAG *ot, Dialog *entry);
-static TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y);
+static void drawDialogMarker(P_TAG *ot, Dialog *entry);
+static TSPRT *drawTextIcon(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y);
 static inline void updateOpenDialogScale(s32 index);
-static void func_8002D040(s32 index, u32 input, u32 repeat);
+static void updateDialog(s32 index, u32 input, u32 repeat);
 static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy);
-static void func_8002EE10(P_TAG *ot, Dialog *entry);
-static void func_8002CC4C(s32 index, P_TAG *ot);
-static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, DialogSystem *sys, u16 newVal, s32 channel);
-static void func_8002D8CC(P_TAG *ot, s32 index);
+static void drawDialogText(P_TAG *ot, Dialog *entry);
+static void drawDialogContents(s32 index, P_TAG *ot);
+static s32 autoRepeatPadChannel(BattleAnimState *anims, BattleAnimEntity *entity, DialogSystem *sys, u16 newVal, s32 channel);
+static void drawDialog(P_TAG *ot, s32 index);
 static inline u32 linkPacket(u32 head, void *p);
-static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt);
-static u8 *func_8002DBF8(BattleDisplayEntity *entity, u32 input, u32 repeat);
-void func_8002CDE4(RECT *rect, s32 scale, s32 arg2);
+static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt);
+static u8 *updateDialogEntity(BattleDisplayEntity *entity, u32 input, u32 repeat);
+static void scaleDialogRect(RECT *rect, s32 scale, s32 arg2);
+static void initDialog(s32 idx);
+static s32 getCharWidth(s32 idx);
+static s32 measureText(u8 *s, s32 flag);
 
 
 /**
@@ -321,8 +339,8 @@ void setDialogEntityIndex(s32 idx, s32 val) {
  */
 s32 swapDialogState(s32 idx, s32 val) {
     Dialog *entry = &g_dialogs.entries[idx];
-    s32 old = entry->flags.fields.state;
-    entry->flags.fields.state = val;
+    s32 old = entry->state;
+    entry->state = val;
     return old;
 }
 
@@ -334,19 +352,19 @@ s32 swapDialogState(s32 idx, s32 val) {
  */
 s32 getDialogState(s32 idx) {
     Dialog *entry = &g_dialogs.entries[idx];
-    return entry->flags.fields.state;
+    return entry->state;
 }
 
 
 /**
- * @brief Set a dialog's text speed and restart its character timer (@c field14).
+ * @brief Set a dialog's text speed and restart its character timer (@c charTimer).
  * @param idx Dialog index.
  * @param val Text speed: added to the timer each frame (0x1000 = a character a frame).
  */
 void setDialogTextSpeed(s32 idx, s32 val) {
     Dialog *entry = &g_dialogs.entries[idx];
     entry->textSpeed = val;
-    entry->flags.fields.field14 = 0;
+    entry->charTimer = 0;
 }
 
 
@@ -399,7 +417,7 @@ s32 getOpenDialogScale(s32 idx) {
  * width/height are copied and the cell's signed offsets are added to the
  * position.
  *
- * @note Same emitter as @ref func_8002E298 plus the colour masking, with the
+ * @note Same emitter as @ref drawTextIcon plus the colour masking, with the
  *       same two load-bearing spellings. The @c (u8) narrowing of the blend
  *       rate is a no-op on the value (at most 0x60) but hides its range from
  *       the compiler, which otherwise proves @c _get_mode's 0x9FF mask
@@ -412,7 +430,7 @@ s32 getOpenDialogScale(s32 idx) {
  * @param ot    Ordering-table slot the sprites are linked into.
  * @param entry Dialog the marker belongs to.
  */
-static void func_8002CAE0(P_TAG *ot, Dialog *entry) {
+static void drawDialogMarker(P_TAG *ot, Dialog *entry) {
     GlyphTable *table;
     GlyphCell *cell;
     TSPRT *p;
@@ -427,6 +445,9 @@ static void func_8002CAE0(P_TAG *ot, Dialog *entry) {
     s32 x;
     s32 y;
 
+    /* On the bitfields gcc folds these two tests into one masked compare, or
+     * extracts the marker bit with a shift; only the whole word gives the
+     * original and/branch pair. */
     flags = entry->ctrl.raw;
     if (!(flags & DIALOG_CTRL_MARKER) ||
         ((flags >> DIALOG_CTRL_MARKER_BLINK_SHIFT) & DIALOG_MARKER_BLINK_OFF)) {
@@ -483,17 +504,17 @@ static void func_8002CAE0(P_TAG *ot, Dialog *entry) {
 /**
  * @brief Draw a message window's choice cursor, corner marker and text.
  *
- * Once the message has reached its choices (@c field28), glyph
- * @ref GLYPH_CHOICE_CURSOR goes in front of the selected line @c field2B, grey
+ * Once the whole message has been typed (@c typingDone), glyph
+ * @ref GLYPH_CHOICE_CURSOR goes in front of the selected line @c choiceCursor, grey
  * at the window's @c brightness (0x1000 = full), followed by a
  * draw-area packet for the window entity's clipped bound rect. Then the corner
- * marker (func_8002CAE0), the text (func_8002EE10) and a draw-mode packet that
+ * marker (drawDialogMarker), the text (drawDialogText) and a draw-mode packet that
  * resets the texture page. A window without a message draws nothing.
  *
  * @param index Dialog index.
  * @param ot    Ordering table the packets are linked into.
  */
-static void func_8002CC4C(s32 index, P_TAG *ot) {
+static void drawDialogContents(s32 index, P_TAG *ot) {
     Dialog *entry = &g_dialogs.entries[index];
     GlyphTable *table;
     DR_AREA *area;
@@ -512,13 +533,13 @@ static void func_8002CC4C(s32 index, P_TAG *ot) {
     }
     table = &D_80052A68;
     brightness = entry->brightness;
-    if (entry->field29 != DIALOG_NO_CHOICE) {
-        if (entry->field28 == 1) {
+    if (entry->firstChoice != DIALOG_NO_CHOICE) {
+        if (entry->typingDone == 1) {
             /* val holds the entity index here and the mode word below: two
              * variables swap the registers of the closing packet. */
             val = entry->entityIdx;
             ent = getBattleEntity(val);
-            line = entry->field2B;
+            line = entry->choiceCursor;
             y = line * DIALOG_LINE_HEIGHT + DIALOG_CURSOR_Y;
             area = (DR_AREA *)getDisplayListHead();
             if (table != NULL) { /* the original tests the fixed table address */
@@ -531,8 +552,8 @@ static void func_8002CC4C(s32 index, P_TAG *ot) {
             storeGpuPacket((u32)(area + 1));
         }
     }
-    func_8002CAE0(ot, entry);
-    func_8002EE10(ot, entry);
+    drawDialogMarker(ot, entry);
+    drawDialogText(ot, entry);
     tpage = (DR_TPAGE *)getDisplayListHead();
     setlen(tpage, 1);
     val = _get_mode(1, 0, 0);
@@ -563,7 +584,7 @@ static void func_8002CC4C(s32 index, P_TAG *ot) {
  * @param scale Q12 fixed-point scale factor (@c 0x1000 == 1.0).
  * @param arg2  Unused by this routine (the caller passes @c openDialogStep).
  */
-void func_8002CDE4(RECT *rect, s32 scale, s32 arg2) {
+static void scaleDialogRect(RECT *rect, s32 scale, s32 arg2) {
     s32 x, y, w, h, prodW, prodH;
 
     if (scale == 0x1000) {
@@ -608,8 +629,8 @@ s32 getDialogGlobalFlag(void) {
 /**
  * @brief Get the choice the player confirmed in a dialog.
  *
- * Returns -1 until the player has confirmed (@c field19), then the selected
- * line (@c field2B) minus the first choice line (@c field29).
+ * Returns -1 until the player has confirmed (@c choiceMade), then the selected
+ * line (@c choiceCursor) minus the first choice line (@c firstChoice).
  *
  * @param idx Dialog index.
  * @return The chosen answer (0 = the first choice), or -1.
@@ -621,10 +642,10 @@ s32 getDialogChoice(s32 idx) {
     e2 = entry;
     always = 1; /* Regalloc */
     if (always) {
-        if (entry->field19 == 0) {
+        if (entry->choiceMade == 0) {
             return -1;
         }
-        return e2->field2B - e2->field29;
+        return e2->choiceCursor - e2->firstChoice;
     }
 }
 
@@ -647,7 +668,7 @@ s32 getDialogChoice(s32 idx) {
  * @param channel Pad channel index, 0..3.
  * @return The masked edge bits that should fire this frame, or 0 while suppressed.
  */
-static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, DialogSystem *sys, u16 newVal, s32 channel) {
+static s32 autoRepeatPadChannel(BattleAnimState *anims, BattleAnimEntity *entity, DialogSystem *sys, u16 newVal, s32 channel) {
     s32 counter;
     s32 restartDelay;
     s32 repeatInterval;
@@ -685,13 +706,13 @@ static s32 func_8002CECC(BattleAnimState *anims, BattleAnimEntity *entity, Dialo
 /**
  * @brief Auto-repeat the four channels of this frame's pad bits.
  *
- * Runs func_8002CECC on @p input for channels 0-3 against the entity linked
+ * Runs autoRepeatPadChannel on @p input for channels 0-3 against the entity linked
  * to battle-anim entity 0, and ORs the bits that fire.
  *
  * @param input Pad bits of this frame.
  * @return The bits that fire this frame.
  */
-s32 func_8002CF54(s32 input) {
+s32 autoRepeatPad(s32 input) {
     DialogSystem *sys = &g_battleAnims.dialogs;
     BattleAnimState *anims = &g_battleAnims;
     u16 bits = input;
@@ -699,10 +720,10 @@ s32 func_8002CF54(s32 input) {
     u16 result;
 
     result = 0;
-    result |= func_8002CECC(anims, entity, sys, bits, 0);
-    result |= func_8002CECC(anims, entity, sys, bits, 1);
-    result |= func_8002CECC(anims, entity, sys, bits, 2);
-    result |= func_8002CECC(anims, entity, sys, bits, 3);
+    result |= autoRepeatPadChannel(anims, entity, sys, bits, 0);
+    result |= autoRepeatPadChannel(anims, entity, sys, bits, 1);
+    result |= autoRepeatPadChannel(anims, entity, sys, bits, 2);
+    result |= autoRepeatPadChannel(anims, entity, sys, bits, 3);
     return result;
 }
 
@@ -733,7 +754,7 @@ static inline void updateOpenDialogScale(s32 index) {
 
         setBattleEntityField35(entityId, 1);
         rect = entry->rect;
-        func_8002CDE4(&rect, scale, entry->openDialogStep);
+        scaleDialogRect(&rect, scale, entry->openDialogStep);
         setBattleEntityBoundRect(entityId, &rect);
         rect.x += DIALOG_CLAMP_INSET;
         rect.y += DIALOG_CLAMP_INSET;
@@ -742,7 +763,7 @@ static inline void updateOpenDialogScale(s32 index) {
         setBattleEntityRectClamp(entityId, &rect);
     } else {
         setBattleEntityField35(entityId, 0);
-        entry->flags.fields.state = 0;
+        entry->state = 0;
     }
 }
 
@@ -752,11 +773,11 @@ static inline void updateOpenDialogScale(s32 index) {
  * After the open/close step (updateOpenDialogScale), a fully open window with a message runs
  * the @c DIALOG_SEQ_* state machine in @c seqState. The message is decoded into
  * a @ref DIALOG_MSG_BUF_SIZE-byte buffer taken from the $gp area: characters appear at the text
- * speed (@c textSpeed added to the timer @c flags.fields.field14 each frame), full
+ * speed (@c textSpeed added to the timer @c charTimer each frame), full
  * windows scroll, page breaks wait for Cross or Square, and at the end a
- * message with choices lets the player move the cursor @c field2B between
- * @c field29 and @c field2A. Cross or Square confirms (@c field19 = 1);
- * Triangle jumps to the cancel choice in @c ctrl.fields.field2C, if one is set.
+ * message with choices lets the player move the cursor @c choiceCursor between
+ * @c firstChoice and @c lastChoice. Cross or Square confirms (@c choiceMade = 1);
+ * Triangle jumps to the cancel choice in @c ctrl.bits.cancelChoice, if one is set.
  *
  * Only the window that owns input (@c state.activeFlag) sees the buttons.
  *
@@ -765,7 +786,7 @@ static inline void updateOpenDialogScale(s32 index) {
  *               (the split is a guess from the tests made on each half).
  * @param repeat Auto-repeating buttons; Up and Down move the choice cursor.
  */
-static void func_8002D040(s32 index, u32 input, u32 repeat) {
+static void updateDialog(s32 index, u32 input, u32 repeat) {
     Dialog *entry;
     s32 *seqState;
     u8 *msgBuf;
@@ -804,11 +825,11 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
             *seqState = DIALOG_SEQ_TICK;
             /* fallthrough */
         case DIALOG_SEQ_TICK:
-            entry->flags.fields.field14 += entry->textSpeed;
+            entry->charTimer += entry->textSpeed;
             /* fallthrough */
         case DIALOG_SEQ_PRINT:
-            if (entry->textSpeed == 0 || entry->flags.fields.field14 >= ONE) {
-                entry->flags.fields.field14 -= ONE;
+            if (entry->textSpeed == 0 || entry->charTimer >= ONE) {
+                entry->charTimer -= ONE;
                 decodeMessageDirect(entry, msgBuf);
                 state = DIALOG_SEQ_NEXT_CHAR;
                 goto dispatch;
@@ -816,12 +837,12 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
             break;
 
         case DIALOG_SEQ_NEXT_CHAR:
-            ch = msgBuf[entry->field20];
+            ch = msgBuf[entry->typedChars];
             if (ch == MSG_NEW_PAGE || ch == MSG_NEW_PAGE_MARKED) {
                 state = DIALOG_SEQ_PAGE;
                 goto dispatch;
             }
-            ch = func_8002FE0C(entry, msgBuf);
+            ch = nextDialogChar(entry, msgBuf);
             cmd = ch >> 8;
             ch &= 0xFF;
             if (ch == MSG_NEWLINE) {
@@ -852,7 +873,7 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
                 state = DIALOG_SEQ_WAIT_START;
                 goto dispatch;
             } else if (cmd == MSG_CMD_COLOR) {
-                entry->flags.bits.color = ch;
+                entry->color = ch;
                 state = DIALOG_SEQ_NEXT_CHAR;
                 goto dispatch;
             } else {
@@ -867,17 +888,17 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
 
         case DIALOG_SEQ_NEWLINE:
             state = DIALOG_SEQ_NEXT_CHAR;
-            if (entry->field21 >= entry->field23) {
-                entry->flags.fields.field14 += ONE;
-                entry->field21--;
+            if (entry->typingRow >= entry->visibleRows) {
+                entry->charTimer += ONE;
+                entry->typingRow--;
                 *seqState = DIALOG_SEQ_SCROLL;
                 state = DIALOG_SEQ_SCROLL;
             }
             goto dispatch;
 
         case DIALOG_SEQ_SCROLL:
-            entry->field12++;
-            if (entry->field12 % DIALOG_LINE_HEIGHT == 0) {
+            entry->scrollY++;
+            if (entry->scrollY % DIALOG_LINE_HEIGHT == 0) {
                 *seqState = DIALOG_SEQ_TICK;
             }
             break;
@@ -885,7 +906,7 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
         case DIALOG_SEQ_PAGE:
             if (ch == MSG_NEW_PAGE_MARKED) {
                 entry->ctrl.bits.marker = 1;
-                entry->ctrl.bits.blink = 0;
+                entry->ctrl.bits.markerBlink = 0;
             } else {
                 entry->ctrl.bits.marker = 0;
             }
@@ -893,7 +914,7 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
             break;
 
         case DIALOG_SEQ_PAGE_RELEASE:
-            entry->ctrl.bits.blink++;
+            entry->ctrl.bits.markerBlink++;
             pressed &= ~(PADLup | PADLright | PADLdown | PADLleft);
             if (pressed == 0) {
                 *seqState = DIALOG_SEQ_PAGE_WAIT;
@@ -901,21 +922,21 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
             break;
 
         case DIALOG_SEQ_PAGE_WAIT:
-            entry->ctrl.bits.blink++;
+            entry->ctrl.bits.markerBlink++;
             if (pressed & (PADRdown | PADRleft)) {
                 entry->ctrl.bits.marker = 0;
-                entry->flags.bits.pageColor = entry->flags.bits.color;
+                entry->pageColor = entry->color;
                 decodeMessageDirect(entry, msgBuf);
-                func_8002FE0C(entry, msgBuf);
+                nextDialogChar(entry, msgBuf);
                 decodeMessageDirect(entry, msgBuf);
                 *seqState = DIALOG_SEQ_TICK;
             }
             break;
 
         case DIALOG_SEQ_END:
-            entry->field28 = 1;
+            entry->typingDone = 1;
             state = DIALOG_SEQ_CHOICE_START;
-            if (entry->field29 == DIALOG_NO_CHOICE) {
+            if (entry->firstChoice == DIALOG_NO_CHOICE) {
                 *seqState = DIALOG_SEQ_DONE;
                 state = DIALOG_SEQ_DONE;
             }
@@ -946,14 +967,14 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
 
         case DIALOG_SEQ_CHOICE:
             if (choicePressed & (PADRdown | PADRleft)) {
-                entry->field19 = 1;
+                entry->choiceMade = 1;
                 sendSpuCommand(2);
                 *seqState = DIALOG_SEQ_DONE;
                 state = DIALOG_SEQ_DONE;
                 goto dispatch;
             }
             if (choicePressed & PADRup) {
-                s8 cancel = entry->ctrl.fields.field2C;
+                s8 cancel = entry->ctrl.bits.cancelChoice;
                 s32 cancelChoice;
 
                 if (cancel >= 0) {
@@ -962,35 +983,35 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
                 }
                 /* With no cancel choice this clamps whatever cancelChoice
                  * held; the original reads the register uninitialised too. */
-                entry->field2B = CLAMP(cancelChoice, entry->field29, entry->field2A);
+                entry->choiceCursor = CLAMP(cancelChoice, entry->firstChoice, entry->lastChoice);
             } else if (repeat & PADLup) {
                 s32 cursor;
                 s32 prev;
 
-                cursor = entry->field2B;
+                cursor = entry->choiceCursor;
                 prev = cursor;
                 cursor--;
-                if (cursor < entry->field29) {
-                    cursor = entry->field2A;
+                if (cursor < entry->firstChoice) {
+                    cursor = entry->lastChoice;
                 }
                 if (prev != cursor) {
                     sendSpuCommand(1);
                 }
-                entry->field2B = cursor;
+                entry->choiceCursor = cursor;
             } else if (repeat & PADLdown) {
                 s32 cursor;
                 s32 prev;
 
-                cursor = entry->field2B;
+                cursor = entry->choiceCursor;
                 prev = cursor;
                 cursor++;
-                if (entry->field2A < cursor) {
-                    cursor = entry->field29;
+                if (entry->lastChoice < cursor) {
+                    cursor = entry->firstChoice;
                 }
                 if (prev != cursor) {
                     sendSpuCommand(1);
                 }
-                entry->field2B = cursor;
+                entry->choiceCursor = cursor;
             }
             break;
 
@@ -1020,19 +1041,19 @@ static void func_8002D040(s32 index, u32 input, u32 repeat) {
 void setDialogMessage(s32 index, u8 *data) {
     Dialog *entry = &g_dialogs.entries[index];
 
-    entry->field28 = 0;
+    entry->typingDone = 0;
     entry->dataPtr = data;
     entry->linePtr = data;
-    entry->field12 = 0;
+    entry->scrollY = 0;
     entry->seqState = DIALOG_SEQ_START;
-    entry->flags.bits.pageColor = DIALOG_COLOR_WHITE;
-    entry->flags.bits.color = entry->flags.bits.pageColor;
+    entry->pageColor = DIALOG_COLOR_WHITE;
+    entry->color = entry->pageColor;
 
     resetDialogTyping(entry);
 
-    entry->field29 = DIALOG_NO_CHOICE;
-    entry->field2A = DIALOG_NO_CHOICE;
-    entry->field19 = 0;
+    entry->firstChoice = DIALOG_NO_CHOICE;
+    entry->lastChoice = DIALOG_NO_CHOICE;
+    entry->choiceMade = 0;
 }
 
 
@@ -1068,14 +1089,14 @@ void setDialogMessageAfterStrings(s32 index, u8 *data, s32 count) {
  * @param min  First choice line.
  * @param max  Last choice line.
  * @param val  Line the cursor starts on.
- * @param arg5 Cancel choice (@c ctrl.fields.field2C).
+ * @param arg5 Cancel choice (@c ctrl.bits.cancelChoice).
  */
 void setDialogChoiceMessage(s32 arg0, u8 *data, s32 min, s32 max, s32 val, s32 arg5) {
     val = CLAMP(val, min, max);
 
     setDialogMessage(arg0, data);
-    setDialogTimings(arg0, min, max, arg5);
-    setDialogField2B(arg0, val);
+    setDialogChoices(arg0, min, max, arg5);
+    setDialogChoiceCursor(arg0, val);
 }
 
 
@@ -1089,7 +1110,7 @@ void setDialogChoiceMessage(s32 arg0, u8 *data, s32 min, s32 max, s32 val, s32 a
  * @param min   First choice line.
  * @param max   Last choice line.
  * @param val   Line the cursor starts on.
- * @param arg6  Cancel choice (@c ctrl.fields.field2C).
+ * @param arg6  Cancel choice (@c ctrl.bits.cancelChoice).
  */
 void setDialogChoiceMessageAfterStrings(s32 arg0, u8 *str, s32 count, s32 min, s32 max, s32 val, s32 arg6) {
     s32 clamped;
@@ -1102,8 +1123,8 @@ void setDialogChoiceMessageAfterStrings(s32 arg0, u8 *str, s32 count, s32 min, s
     clamped = CLAMP(clamped, min, max);
 
     setDialogMessage(arg0, str);
-    setDialogTimings(arg0, min, max, arg6);
-    setDialogField2B(arg0, clamped);
+    setDialogChoices(arg0, min, max, arg6);
+    setDialogChoiceCursor(arg0, clamped);
 }
 
 
@@ -1113,15 +1134,15 @@ void setDialogChoiceMessageAfterStrings(s32 arg0, u8 *str, s32 count, s32 min, s
  * If the entry is active (state != 0), switches GP to scratchpad,
  * runs the entry's @c drawCallback if set, applies the window's brightness
  * to its text and marker (applyWindowBrightness), and draws the window's cursor,
- * marker and text via func_8002CC4C. Restores GP before returning.
+ * marker and text via drawDialogContents. Restores GP before returning.
  *
- * @param ot    Ordering table, passed to the hook and func_8002CC4C.
+ * @param ot    Ordering table, passed to the hook and drawDialogContents.
  * @param index Dialog index.
  */
-static void func_8002D8CC(P_TAG *ot, s32 index) {
+static void drawDialog(P_TAG *ot, s32 index) {
     Dialog *entry = &g_dialogs.entries[index];
 
-    if (entry->flags.fields.state != 0) {
+    if (entry->state != 0) {
         s32 savedGp;
         s16 saved;
         s32 ret;
@@ -1135,7 +1156,7 @@ static void func_8002D8CC(P_TAG *ot, s32 index) {
             entry->drawCallback(entry, ot);
         }
         applyWindowBrightness(index);
-        func_8002CC4C(index, ot);
+        drawDialogContents(index, ot);
         GP_RESTORE_RET(saved, ret);
     }
 }
@@ -1153,12 +1174,12 @@ static inline u32 linkPacket(u32 head, void *p) {
 /**
  * @brief Render callback of a message window's battle entity.
  *
- * Draws the window contents (func_8002D8CC) when the clamp rect has room for
+ * Draws the window contents (drawDialog) when the clamp rect has room for
  * a glyph, then links a draw area for the entity's clamp rect and a draw
  * offset at the window's inner corner (@ref DIALOG_CLAMP_INSET in from @c rect).
  * Links prepend to the OT, so the GPU runs these before the contents.
  * When the linked entity has both @ref BATTLE_ENTITY_FLAG_02 and
- * @ref BATTLE_ENTITY_FLAG_08, the window also gets its @c field2F glyph (if
+ * @ref BATTLE_ENTITY_FLAG_08, the window also gets its @c cornerIcon (if
  * non-zero) at the window origin and two bars, grey at the entity's @c brightness
  * (the second one halved and semi-transparent for a
  * @ref BATTLE_ENTITY_SEMI_TRANS entity), then a draw area for the bound rect
@@ -1169,7 +1190,7 @@ static inline u32 linkPacket(u32 head, void *p) {
  * @param pkt    Packet cursor, stored back before drawing.
  * @return The packet cursor after the last packet.
  */
-static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
+static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
     Dialog *entry;
     RECT *winRect;
     BattleDisplayEntity *ent;
@@ -1186,7 +1207,7 @@ static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
     index = entity->subFields[0];
     storeGpuPacket(pkt);
     if (entity->clipClamp.rect.w >= TEXT_GLYPH_SIZE && entity->clipClamp.rect.h >= TEXT_GLYPH_SIZE) {
-        func_8002D8CC(ot, index);
+        drawDialog(ot, index);
     }
     p = (DR_AREA *)getDisplayListHead();
     index = entity->subFields[0];
@@ -1215,7 +1236,7 @@ static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
         code = SPRT_CODE;
         colour |= (colour << 16) | ((colour << 8) | code);
         setAddrFast(ot, head);
-        n = entry->ctrl.fields.field2F;
+        n = entry->ctrl.bits.cornerIcon;
         if (n != 0) {
             p = func_8002FF34(ot, p, n, entry->rect.x, entry->rect.y, colour);
         }
@@ -1253,14 +1274,14 @@ static DR_AREA *func_8002D970(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
  * @brief Update callback of a message window's battle entity.
  *
  * With $gp on the scratchpad, runs the window's @c updateCallback, if any,
- * and its text (func_8002D040) while the window is active.
+ * and its text (updateDialog) while the window is active.
  *
  * @param entity The window's battle entity.
  * @param input  Pressed buttons.
  * @param repeat Auto-repeating buttons.
  * @return The scratchpad $gp.
  */
-static u8 *func_8002DBF8(BattleDisplayEntity *entity, u32 input, u32 repeat) {
+static u8 *updateDialogEntity(BattleDisplayEntity *entity, u32 input, u32 repeat) {
     u8 *tempGp;
     u8 *savedGp;
     u8 *ret;
@@ -1275,7 +1296,7 @@ static u8 *func_8002DBF8(BattleDisplayEntity *entity, u32 input, u32 repeat) {
         if (entry->updateCallback != NULL) {
             entry->updateCallback(entry, input, repeat);
         }
-        func_8002D040(index, input, repeat);
+        updateDialog(index, input, repeat);
     }
     GP_RESTORE_RET(savedGp, ret);
     return ret;
@@ -1286,13 +1307,13 @@ static u8 *func_8002DBF8(BattleDisplayEntity *entity, u32 input, u32 repeat) {
  * @brief Open a dialog: activate it and set its open step and mode.
  * @param idx  Dialog index.
  * @param step Open step: 0x200 opens over 8 frames, 0x1000 at once.
- * @param mode Mode byte (@c ctrl.fields.mode).
+ * @param mode Mode byte (@c ctrl.bits.mode).
  */
 void openDialog(s32 idx, s32 step, s32 mode) {
     Dialog *entry = &g_dialogs.entries[idx];
-    entry->flags.fields.state = 1;
+    entry->state = 1;
     entry->openDialogStep = step;
-    entry->ctrl.fields.mode = mode;
+    entry->ctrl.bits.mode = mode;
 }
 
 
@@ -1357,13 +1378,13 @@ void setDialogAnimSpeed(s32 idx, s32 val) {
 
 
 /**
- * @brief Get field28 of a dialog.
+ * @brief Get whether a dialog has typed its whole message.
  * @param idx Dialog index.
- * @return Value of field28.
+ * @return @c typingDone: 1 once the end of the message has been typed.
  */
-s32 getDialogField28(s32 idx) {
+s32 getDialogTypingDone(s32 idx) {
     Dialog *entry = &g_dialogs.entries[idx];
-    return entry->field28;
+    return entry->typingDone;
 }
 
 
@@ -1394,20 +1415,20 @@ s32 readDialogEntityType(s32 idx) {
 
 
 /**
- * @brief Set field2F on a dialog.
+ * @brief Set the icon drawn at a dialog's top-left corner (@c cornerIcon).
  * @param idx Dialog index.
- * @param val Value to store.
+ * @param val Icon number, 0 for none.
  */
-void setDialogField2F(s32 idx, s32 val) {
+void setDialogCornerIcon(s32 idx, s32 val) {
     Dialog *entry = &g_dialogs.entries[idx];
-    entry->ctrl.fields.field2F = val;
+    entry->ctrl.bits.cornerIcon = val;
 }
 
 
 /**
  * @brief Initialize a dialog to default values.
  *
- * Zeros out field14, field19, field2F, then configures defaults:
+ * Zeros out charTimer, choiceMade, cornerIcon, then configures defaults:
  * text speed = 0x1000, state = 0, anim speed = 3, open scale = 0, open step = 0,
  * entity flags = 6|8, display rect = (64,64,128,128), brightness = 0x1000.
  *
@@ -1416,9 +1437,9 @@ void setDialogField2F(s32 idx, s32 val) {
 void initDialogSlot(s32 idx) {
     u8 *nullData = 0;
     Dialog *entry = &g_dialogs.entries[idx];
-    entry->flags.fields.field14 = 0;
-    entry->field19 = 0;
-    entry->ctrl.fields.field2F = 0;
+    entry->charTimer = 0;
+    entry->choiceMade = 0;
+    entry->ctrl.bits.cornerIcon = 0;
     setDialogMessage(idx, nullData);
     setDialogTextSpeed(idx, 0x1000);
     swapDialogState(idx, 0);
@@ -1432,7 +1453,7 @@ void initDialogSlot(s32 idx) {
         buf.y = 0x40;
         buf.w = 0x80;
         buf.h = 0x80;
-        func_8002E064(idx, &buf);
+        setDialogRect(idx, &buf);
     }
     setDialogBrightness(idx, 0x1000);
 }
@@ -1441,30 +1462,30 @@ void initDialogSlot(s32 idx) {
 /**
  * @brief Initialize a dialog slot: set active flag, callbacks, entity index, and clear fields.
  *
- * Activates the battle entity, assigns its render (func_8002D970) and update
- * (func_8002DBF8) callbacks, links the entity index, configures the sub-field, calls
+ * Activates the battle entity, assigns its render (renderDialogEntity) and update
+ * (updateDialogEntity) callbacks, links the entity index, configures the sub-field, calls
  * initDialogSlot for default values, then clears sequence state and status bits.
  *
  * @param idx Dialog index.
  */
-void func_8002DF5C(s32 idx) {
+static void initDialog(s32 idx) {
     Dialog *entry = &g_dialogs.entries[idx];
 
     setBattleEntityActive(idx, 1);
     entry->entityIdx = idx;
-    setBattleEntityField04(idx, (s32)func_8002D970);
-    setBattleEntityField00(idx, (s32)func_8002DBF8);
+    setBattleEntityField04(idx, (s32)renderDialogEntity);
+    setBattleEntityField00(idx, (s32)updateDialogEntity);
     setBattleEntityField35(idx, 0);
     setBattleEntitySubField(idx, 0, idx);
     initDialogSlot(idx);
 
     entry->seqState = DIALOG_SEQ_START;
-    entry->field30 = 0;
-    entry->field32 = 0;
-    entry->ctrl.raw &= ~DIALOG_CTRL_MARKER;
+    entry->textX = 0;
+    entry->textY = 0;
+    entry->ctrl.bits.marker = 0;
 
-    setDialogField34(idx, NULL);
-    setDialogField38(idx, NULL);
+    setDialogDrawCallback(idx, NULL);
+    setDialogUpdateCallback(idx, NULL);
 }
 
 
@@ -1482,7 +1503,7 @@ void getDialogRect(s32 idx, RECT *dst) {
 /**
  * @brief Configure a dialog's rectangle and propagate it to its battle entity.
  *
- * Insets the source rect by @ref DIALOG_CLAMP_INSET on each side, sets field23 to
+ * Insets the source rect by @ref DIALOG_CLAMP_INSET on each side, sets visibleRows to
  * the number of text lines that fit (inset height / @ref DIALOG_LINE_HEIGHT,
  * minimum 1), copies the
  * original source rect into the entry, and forwards the original rect (offset by
@@ -1492,7 +1513,7 @@ void getDialogRect(s32 idx, RECT *dst) {
  * @param index Dialog index.
  * @param srcRect Source rectangle.
  */
-void func_8002E064(s32 index, RECT *srcRect) {
+void setDialogRect(s32 index, RECT *srcRect) {
     Dialog *entry = &g_dialogs.entries[index];
     RECT rect;
     s32 entityId;
@@ -1509,15 +1530,15 @@ void func_8002E064(s32 index, RECT *srcRect) {
     rect.w -= DIALOG_CLAMP_INSET * 2;
     rect.h -= DIALOG_CLAMP_INSET * 2;
 
-    ep->field23 = rect.h / DIALOG_LINE_HEIGHT;
-    if (ep->field23 == 0) {
-        ep->field23 = 1;
+    ep->visibleRows = rect.h / DIALOG_LINE_HEIGHT;
+    if (ep->visibleRows == 0) {
+        ep->visibleRows = 1;
     }
 
     ep->rect = *srcRect;
     rect = *srcRect;
 
-    func_8002CDE4(&rect, ep->openDialogScale, ep->openDialogStep);
+    scaleDialogRect(&rect, ep->openDialogScale, ep->openDialogStep);
     setBattleEntityBoundRect(entityId, &rect);
 
     rect.x += DIALOG_CLAMP_INSET;
@@ -1537,7 +1558,7 @@ void func_8002E064(s32 index, RECT *srcRect) {
  * @param index Slot index (clamped to 0..7).
  * @param value Value to store.
  */
-void func_8002E1B4(s32 index, s32 value) {
+void setMessageValue(s32 index, s32 value) {
     DialogSystem *data = &g_dialogs;
     s32 clamped = CLAMP(index, 0, 7);
     data->msgValues[clamped] = value;
@@ -1556,7 +1577,7 @@ void resetAllDialogs(void) {
     s32 i;
     sys->state.activeFlag = -1;
     for (i = 0; i < 8; i++) {
-        func_8002DF5C(i);
+        initDialog(i);
     }
     /* Through the global, not sys: the original stores it with its own %hi/%lo pair. */
     g_dialogs.state.textBlinkClock = 0;
@@ -1594,9 +1615,9 @@ void dispatchDialogAnimSpeed(s32 idx) {
  * are added to (@p x, @p y).
  *
  * @note @c head is handed to @c p and taken back for the return, the way
- *       @ref func_8002CAE0 threads its packet cursor; returning @c p directly
+ *       @ref drawDialogMarker threads its packet cursor; returning @c p directly
  *       moves the cursor copy in the prologue. The @c (u8) narrowing of the
- *       blend rate keeps @c _get_mode's mask, see @ref func_8002CAE0.
+ *       blend rate keeps @c _get_mode's mask, see @ref drawDialogMarker.
  *
  * @param ot   Ordering-table slot the sprites are linked into.
  * @param head First free packet.
@@ -1605,7 +1626,7 @@ void dispatchDialogAnimSpeed(s32 idx) {
  * @param y    Top edge of the glyph.
  * @return The first free packet after the ones written.
  */
-static TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
+static TSPRT *drawTextIcon(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
     GlyphTable *table;
     GlyphCell *cell;
     TSPRT *p;
@@ -1618,7 +1639,7 @@ static TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
 
     p = head;
     table = &D_80052A68;
-    cell = (GlyphCell *)table; /* seeded from its own copy, see func_8002CAE0 */
+    cell = (GlyphCell *)table; /* seeded from its own copy, see drawDialogMarker */
     word = table->descriptors[idx];
     n = word >> 16;
     word &= 0xFFFF;
@@ -1672,7 +1693,7 @@ static TSPRT *func_8002E298(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
  * @param idx Glyph index into @c D_80052A68.
  * @return Bounding width of the glyph, masked to 8 bits.
  */
-s32 func_8002E3A4(s32 idx) {
+s32 getIconWidth(s32 idx) {
     GlyphCell *cell = (GlyphCell *)&D_80052A68;
     u32 word = D_80052A68.descriptors[idx];
     s32 cellCount = word >> 16;
@@ -1703,7 +1724,7 @@ s32 func_8002E3A4(s32 idx) {
 
 /** @brief Extracts a 4-bit nibble from packed byte array D_800834D8.
  *  Even indices return the low nibble; odd indices return the high nibble.
- *  @note inline: func_8002EE10 has it expanded in place.
+ *  @note inline: drawDialogText has it expanded in place.
  *  @param idx Nibble index.
  *  @return The 4-bit value (0-15).
  */
@@ -1729,7 +1750,7 @@ inline s32 getNibbleValue(s32 idx) {
  * @param idx Character code.
  * @return The 4-bit table value (0-15).
  */
-s32 func_8002E454(s32 idx) {
+static s32 getCharWidth(s32 idx) {
     u8 *base;
     u32 val;
 
@@ -1755,7 +1776,7 @@ s32 func_8002E454(s32 idx) {
  * @brief Measure a battle-message string's packed {width, height}.
  *
  * Scans the string @p s, interpreting control codes (1/2/7 = line breaks,
- * 5 = special glyph resolved via @c func_8002C734 / @c func_8002E3A4,
+ * 5 = special glyph resolved via @c func_8002C734 / @c getIconWidth,
  * 0x18-0x1F = multi-byte glyphs) and accumulating each line's pixel width from
  * the packed nibble-width table @ref D_800834D8. Tracks the widest line and the
  * line count; codes below 0x10 (other than 1/2/5/7) consume a following
@@ -1766,7 +1787,7 @@ s32 func_8002E454(s32 idx) {
  * @return Packed dimensions: width in the low 16 bits, @c (lines*16 - 4) in the
  *         high 16 bits.
  */
-s32 func_8002E4AC(u8 *s, s32 flag) {
+static s32 measureText(u8 *s, s32 flag) {
     s32 width = 0;
     s32 maxWidth = 0;
     s32 lines = 1;
@@ -1807,7 +1828,7 @@ s32 func_8002E4AC(u8 *s, s32 flag) {
             }
         } else if (c == 5) {
             c = *s++;
-            width += func_8002E3A4(func_8002C734(c));
+            width += getIconWidth(func_8002C734(c));
             width++;
         } else if (c < 0x10) {
             s++;
@@ -1842,16 +1863,16 @@ s32 func_8002E4AC(u8 *s, s32 flag) {
 /**
  * @brief Measure a message: the widest of its decoded lines and its height.
  *
- * Decodes the message one line at a time (func_8002F548 steps to the next,
+ * Decodes the message one line at a time (nextMessageLine steps to the next,
  * NULL after the last) into a buffer taken from a $gp area set up on the
  * display-list head, and keeps the widest line. The height comes from
  * measuring the raw message as a whole.
  *
  * @param str Message in the game's text encoding.
  * @return Width in the low 16 bits, height in the high 16 bits (see
- *         func_8002E4AC).
+ *         measureText).
  */
-s32 func_8002E680(u8 *str) {
+s32 measureMessage(u8 *str) {
     u8 *tempGp;
     u8 *savedGp;
     s32 head;
@@ -1861,7 +1882,7 @@ s32 func_8002E680(u8 *str) {
     s32 maxWidth;
     s32 width;
 
-    height = func_8002E4AC(str, 1) >> 16;
+    height = measureText(str, 1) >> 16;
     height <<= 16;
     head = getDisplayListHead();
     GP_SAVE_SET(tempGp, head);
@@ -1870,11 +1891,11 @@ s32 func_8002E680(u8 *str) {
     maxWidth = 0;
     do {
         decodeMessage(str, buf, -1);
-        width = func_8002E4AC(buf, 0) & 0xFFFF;
+        width = measureText(buf, 0) & 0xFFFF;
         if (maxWidth < width) {
             maxWidth = width;
         }
-        str = func_8002F548(str);
+        str = nextMessageLine(str);
     } while (str != NULL);
     GP_FREE(DIALOG_MSG_BUF_SIZE);
     GP_RESTORE_RET(savedGp, ret);
@@ -1882,31 +1903,43 @@ s32 func_8002E680(u8 *str) {
 }
 
 
-/** @brief Get a string's packed {width, height} (variant A). */
-s32 getGlyphWidthA(u8 *code) {
-    return func_8002E4AC(code, 1);
-}
-
-
-/** @brief Get glyph width (variant B). */
-void getGlyphWidthB(u8 *code) {
-    func_8002E4AC(code, 1);
-}
-
-
-/** @brief Get glyph width as u16. */
-u16 getGlyphWidthU16(u8 *code) {
-    return (u16)func_8002E4AC(code, 1);
+/**
+ * @brief Measure a text: the width of its widest line and its height.
+ * @param str Text in the game's encoding.
+ * @return Width in the low 16 bits, height in the high 16 bits (see measureText).
+ */
+s32 getTextSize(u8 *str) {
+    return measureText(str, 1);
 }
 
 
 /**
- * @brief Get glyph status as u16.
- * @param code Glyph code.
- * @return Status value truncated to 16 bits.
+ * @brief Same as getTextSize.
+ * @param str Text in the game's encoding.
+ * @return Width in the low 16 bits, height in the high 16 bits.
  */
-u16 getGlyphStatusU16(u8 *code) {
-    return (u16)func_8002E4AC(code, 0);
+s32 getTextSizeB(u8 *str) {
+    return measureText(str, 1);
+}
+
+
+/**
+ * @brief Get the width of a text's widest line.
+ * @param str Text in the game's encoding.
+ * @return Width in pixels.
+ */
+s32 getTextWidth(u8 *str) {
+    return measureText(str, 1) & 0xFFFF;
+}
+
+
+/**
+ * @brief Get the width of a text's first line.
+ * @param str Text in the game's encoding.
+ * @return Width in pixels.
+ */
+s32 getFirstLineWidth(u8 *str) {
+    return measureText(str, 0) & 0xFFFF;
 }
 
 
@@ -1936,7 +1969,7 @@ void setMenuBrightness(s32 brightness) {
  * @brief Fill one 12x12 text-font sprite in the menu colours and prepend it to the OT chain.
  *
  * Colours 0-7 use @c g_menuTint[MENU_TINT_NORMAL], 8-15 @c g_menuTint[MENU_TINT_BLINK];
- * the low 3 bits of the colour pick the CLUT row. Declared inline: func_8002E8DC
+ * the low 3 bits of the colour pick the CLUT row. Declared inline: drawDecodedText
  * has it expanded in place.
  *
  * @param head   Current OT chain head (tag image of the previous packet).
@@ -1946,7 +1979,7 @@ void setMenuBrightness(s32 brightness) {
  * @param xy     Packed position, x in the low half and y in the high half.
  * @return The new chain head (@p p's tag image).
  */
-inline u32 func_8002E810(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy) {
+inline u32 emitTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy) {
     u32 tag;
     u32 hi;
     u32 tpage;
@@ -1980,10 +2013,10 @@ inline u32 func_8002E810(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy) {
 /**
  * @brief Draw a text string with the 12x12 font into the packets at @p p.
  *
- * Emits one sprite per glyph with func_8002E810, starting at (@p x, @p y).
+ * Emits one sprite per glyph with emitTextGlyph, starting at (@p x, @p y).
  * Newlines return to @p x and move down a line; any other code below 0x19 ends
  * the string. Nothing is drawn when @p y is off screen, and the string stops at
- * the right screen edge. Unlike func_8002EAD0 the text is already decoded.
+ * the right screen edge. Unlike drawMessageText the text is already decoded.
  *
  * @param ot     OT slot the sprites are linked into.
  * @param p      First free packet.
@@ -1993,7 +2026,7 @@ inline u32 func_8002E810(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy) {
  * @param colour Text colour index (0-15).
  * @return The first packet after the ones drawn.
  */
-TSPRT *func_8002E8DC(P_TAG *ot, TSPRT *p, s32 x, s32 y, u8 *str, s32 colour) {
+TSPRT *drawDecodedText(P_TAG *ot, TSPRT *p, s32 x, s32 y, u8 *str, s32 colour) {
     u32 head;
     s32 startX;
     s32 c;
@@ -2034,7 +2067,7 @@ TSPRT *func_8002E8DC(P_TAG *ot, TSPRT *p, s32 x, s32 y, u8 *str, s32 colour) {
             c -= 0x18A0;
             c |= TEXT_GLYPH_PAGE2;
         }
-        head = func_8002E810(head, p, c, colour, (y << 16) | (x & 0xFFFF));
+        head = emitTextGlyph(head, p, c, colour, (y << 16) | (x & 0xFFFF));
         p++;
         x += getNibbleValue(c);
     }
@@ -2046,7 +2079,7 @@ TSPRT *func_8002E8DC(P_TAG *ot, TSPRT *p, s32 x, s32 y, u8 *str, s32 colour) {
 /**
  * @brief Fill one 12x12 text-font sprite and prepend it to the OT chain.
  *
- * The text renderers' counterpart of func_8002E810: colours 0-7 use @c state.textTint,
+ * The text renderers' counterpart of emitTextGlyph: colours 0-7 use @c state.textTint,
  * 8-15 (the blinking ones) @c D_800831D8, and the low 3 bits of the colour
  * pick the CLUT row.
  *
@@ -2094,7 +2127,7 @@ static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy
  * Decodes @p str one line at a time into a scratch buffer and emits a sprite
  * per glyph, starting in white. While it runs, $gp points at the scratchpad
  * (0x1F800300), which holds the decode buffer. Newlines return to @p x and move
- * down a line; icons (code 0x05) are drawn with func_8002E298, colour codes
+ * down a line; icons (code 0x05) are drawn with drawTextIcon, colour codes
  * (0x06) switch the text colour, and a page break or the end of the text stops.
  *
  * @param ot  OT slot the text is linked into.
@@ -2103,7 +2136,7 @@ static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy
  * @param str Encoded text, or NULL to draw nothing.
  * @return The scratchpad pointer $gp held while the text was drawn.
  */
-u8 *func_8002EAD0(P_TAG *ot, s32 x, s32 y, u8 *str) {
+u8 *drawMessageText(P_TAG *ot, s32 x, s32 y, u8 *str) {
     u8 *buf;
     s32 startX;
     u8 *savedGp;
@@ -2123,7 +2156,7 @@ u8 *func_8002EAD0(P_TAG *ot, s32 x, s32 y, u8 *str) {
     p = (TSPRT *)getDisplayListHead();
     getAddrNewFast(ot, head);
 
-    /* str is tested here and at the top of the loop, as in func_8002EE10. */
+    /* str is tested here and at the top of the loop, as in drawDialogText. */
     if (str != NULL) {
         for (;;) {
             if (str == NULL) {
@@ -2131,7 +2164,7 @@ u8 *func_8002EAD0(P_TAG *ot, s32 x, s32 y, u8 *str) {
             }
             decodeMessage(str, buf, -1);
             D_8008386C = colour;
-            str = func_8002F548(str);
+            str = nextMessageLine(str);
 
             s = buf;
             for (;;) {
@@ -2169,8 +2202,8 @@ u8 *func_8002EAD0(P_TAG *ot, s32 x, s32 y, u8 *str) {
                     setAddrFast(ot, head);
                     c = *s++;
                     c = func_8002C734(c);
-                    p = func_8002E298(ot, p, c, x, y);
-                    x += func_8002E3A4(c);
+                    p = drawTextIcon(ot, p, c, x, y);
+                    x += getIconWidth(c);
                     x++;
                     getAddrNewFast(ot, head);
                     continue;
@@ -2198,17 +2231,17 @@ end:
  *
  * Decodes the message one line at a time into a scratch buffer taken from the
  * $gp area and emits a sprite per glyph, starting at the window's text origin
- * (@c field30, @c field32) scrolled up by @c field12. Lines scrolled out above
- * the window are skipped, and lines @c field29 to @c field2A (the choices) are
+ * (@c textX, @c textY) scrolled up by @c scrollY. Lines scrolled out above
+ * the window are skipped, and lines @c firstChoice to @c lastChoice (the choices) are
  * indented for the cursor. Lines before @c typingLine are drawn whole; the line
- * being typed shows its first @c field20 characters. Icons (code 0x05) are
- * drawn as multi-cell glyphs with func_8002E298, colour codes (0x06) switch the
+ * being typed shows its first @c typedChars bytes. Icons (code 0x05) are
+ * drawn as multi-cell glyphs with drawTextIcon, colour codes (0x06) switch the
  * text colour, and a page break or the end of the message stops the text.
  *
  * @param ot    OT slot the text is linked into.
  * @param entry Message window.
  */
-static void func_8002EE10(P_TAG *ot, Dialog *entry) {
+static void drawDialogText(P_TAG *ot, Dialog *entry) {
     u8 *buf;
     s32 first;
     s32 last;
@@ -2223,26 +2256,26 @@ static void func_8002EE10(P_TAG *ot, Dialog *entry) {
     s32 c;
 
     GP_ALLOC(buf, DIALOG_MSG_BUF_SIZE);
-    first = entry->field29;
+    first = entry->firstChoice;
     str = entry->dataPtr;
-    last = entry->field2A;
+    last = entry->lastChoice;
     p = (TSPRT *)getDisplayListHead();
     line = 0;
     getAddrNewFast(ot, head);
-    /* The scroll offset is read signed (lh) here; func_8002D040 counts it unsigned. */
-    y = entry->field32 + (DIALOG_TEXT_MARGIN - (s16)entry->field12);
-    x = entry->field30 + DIALOG_TEXT_MARGIN;
-    colour = entry->flags.bits.pageColor;
+    /* The scroll offset is read signed (lh) here; updateDialog counts it unsigned. */
+    y = entry->textY + (DIALOG_TEXT_MARGIN - (s16)entry->scrollY);
+    x = entry->textX + DIALOG_TEXT_MARGIN;
+    colour = entry->pageColor;
     if (line >= first && line <= last) {
-        x = entry->field30 + DIALOG_TEXT_MARGIN + DIALOG_CHOICE_INDENT;
+        x = entry->textX + DIALOG_TEXT_MARGIN + DIALOG_CHOICE_INDENT;
     }
-    D_8008386C = entry->flags.bits.pageColor;
+    D_8008386C = entry->pageColor;
 
     while (y < -DIALOG_LINE_HEIGHT) {
         if (str == NULL) {
             break;
         }
-        str = func_8002F548(str);
+        str = nextMessageLine(str);
         y += DIALOG_LINE_HEIGHT;
         colour = D_8008386C & 0xF;
         line++;
@@ -2259,11 +2292,11 @@ static void func_8002EE10(P_TAG *ot, Dialog *entry) {
             /* c doubles as the length limit, as the original's register does. */
             c = -1;
             if (line >= entry->typingLine) {
-                c = entry->field20;
+                c = entry->typedChars;
             }
             decodeMessage(str, buf, c);
             D_8008386C = colour;
-            str = func_8002F548(str);
+            str = nextMessageLine(str);
             line++;
 
             s = buf;
@@ -2294,9 +2327,9 @@ static void func_8002EE10(P_TAG *ot, Dialog *entry) {
                     continue;
                 }
                 if (c == MSG_NEWLINE) {
-                    x = entry->field30 + DIALOG_TEXT_MARGIN;
+                    x = entry->textX + DIALOG_TEXT_MARGIN;
                     if (line >= first && line <= last) {
-                        x = entry->field30 + DIALOG_TEXT_MARGIN + DIALOG_CHOICE_INDENT;
+                        x = entry->textX + DIALOG_TEXT_MARGIN + DIALOG_CHOICE_INDENT;
                     }
                     y += DIALOG_LINE_HEIGHT;
                     break;
@@ -2311,8 +2344,8 @@ static void func_8002EE10(P_TAG *ot, Dialog *entry) {
                     setAddrFast(ot, head);
                     c = *s++;
                     c = func_8002C734(c);
-                    p = func_8002E298(ot, p, c, x, y);
-                    x += func_8002E3A4(c);
+                    p = drawTextIcon(ot, p, c, x, y);
+                    x += getIconWidth(c);
                     x++;
                     getAddrNewFast(ot, head);
                     continue;

@@ -18,16 +18,23 @@
 #include "tripletriad/be_object3b.h"
 #include "tripletriad/be_object4.h"
 
+/** @brief @c DialogConfig.flags: open and close the dialog without the animation. */
+#define DIALOG_CONFIG_INSTANT     0x01
+/** @brief @c DialogConfig.flags: center the text in the box. */
+#define DIALOG_CONFIG_CENTER_TEXT 0x02
+/** @brief @c DialogConfig.flags: the rect's x/y is the box's center, not its corner. */
+#define DIALOG_CONFIG_CENTER_BOX  0x04
+
 /* s32 view: btl_color.h's u16 (u16) makes the caller mask the argument and result. */
 extern s32 remapControllerInput(s32 arg);
 
 /**
  * @brief Reset and configure the seven dialogs.
  *
- * Resets all sound effects, runs a (60, 32) init via @c func_800A4504, then for
- * each of the seven channels applies the per-channel settings from the
- * @c D_80182E70 config table: anim speed = dialog index, field2F and text speed
- * from the table entry, and zeroed entry params.
+ * Resets all dialogs, runs a (60, 32) init via @c func_800A4504, then for
+ * each of the seven dialogs applies its settings from the
+ * @c D_80182E70 config table: anim speed = dialog index, corner icon and text
+ * speed from the table entry, and a zeroed text origin.
  */
 void func_800A1BE0(void)
 {
@@ -37,9 +44,9 @@ void func_800A1BE0(void)
     func_800A4504(0x3C, 0x20);
     for (i = 0; i < 7; i++) {
         setDialogAnimSpeed(i, i);
-        setDialogField2F(i, D_80182E70[i].field2F);
+        setDialogCornerIcon(i, D_80182E70[i].field2F);
         setDialogTextSpeed(i, D_80182E70[i].textSpeed);
-        setDialogParams(i, 0, 0);
+        setDialogTextOrigin(i, 0, 0);
     }
 }
 
@@ -51,7 +58,8 @@ void func_800A1BE0(void)
  * resulting card-display slot; otherwise idles the state machine and clears the
  * slot. Then refreshes the display, renders the battle ordering table, and
  * counts down each dialog's @c fadeTimer — closing the dialog at once or with its
- * animation (per the entry's flag bit 0) on the frame the timer reaches zero.
+ * animation (per the entry's @ref DIALOG_CONFIG_INSTANT) on the frame the timer
+ * reaches zero.
  */
 void func_800A1C6C(void)
 {
@@ -72,7 +80,7 @@ void func_800A1C6C(void)
         if (D_80182E70[i].fadeTimer != 0) {
             D_80182E70[i].fadeTimer--;
             if (D_80182E70[i].fadeTimer == 0) {
-                if (D_80182E70[i].flags & 1) {
+                if (D_80182E70[i].flags & DIALOG_CONFIG_INSTANT) {
                     closeDialogInstant(i);
                 } else {
                     closeDialogAnimated(i);
@@ -87,26 +95,27 @@ void func_800A1C6C(void)
  *
  * Measures @p str (and, for @p id 5, the appended "Play / Quit" suffix) to size the
  * box, copies the box rect from @c D_80182E70[id], applies defaults ("size to text"
- * when w/h are 0), then either centers it (flag bit 2) or pulls it in from the
- * right/bottom edge for negative origins.  Registers the rect (func_8002E064),
- * dispatches the banner's audio by @p id (5 = multi-line, 6 = fixed, otherwise the
- * generic path), optionally offsets the dialog (flag bit 1), opens it
- * normal/slow (flag bit 0), and records @p param as the entry's fade timer.
+ * when w/h are 0), then either centers it (@ref DIALOG_CONFIG_CENTER_BOX) or pulls
+ * it in from the right/bottom edge for negative origins.  Registers the rect
+ * (setDialogRect), sets the message by @p id (5 and 6 with choices, otherwise
+ * plain), optionally centers the text in the box (@ref DIALOG_CONFIG_CENTER_TEXT),
+ * opens it at once or animated (@ref DIALOG_CONFIG_INSTANT), and records @p param
+ * as the entry's fade timer.
  *
  * @param id    Dialog index into @c D_80182E70.
  * @param str   FF8-encoded message string.
  * @param param Fade-timer / display-duration value stored into the entry.
  */
 void func_800A1D68(s32 id, u8 *str, s32 param) {
-    GlyphSize dim;   /* text block size from getGlyphWidthA */
+    GlyphSize dim;   /* text block size from getTextSize */
     GlyphSize sfx;   /* "Play / Quit" suffix size (id 5 only) */
     RECT rect;
 
-    dim.raw[0] = getGlyphWidthA(str);
+    dim.raw[0] = getTextSize(str);
 
     if (id == 5) {
         s16 m;
-        sfx.raw[0] = getGlyphWidthA((u8 *)&D_801826E2 - 0x62 + D_801826E2);
+        sfx.raw[0] = getTextSize((u8 *)&D_801826E2 - 0x62 + D_801826E2);
         m = (u16)sfx.wh[0] + 0x20;
         sfx.wh[0] = m;
         if (dim.wh[0] < m) {
@@ -121,7 +130,7 @@ void func_800A1D68(s32 id, u8 *str, s32 param) {
     if (rect.h == 0) {
         rect.h = (u16)dim.wh[1] + 0x10;
     }
-    if (D_80182E70[id].flags & 4) {
+    if (D_80182E70[id].flags & DIALOG_CONFIG_CENTER_BOX) {
         rect.x = (u16)rect.x - rect.w / 2;
         rect.y = (u16)rect.y - rect.h / 2;
     } else {
@@ -132,7 +141,7 @@ void func_800A1D68(s32 id, u8 *str, s32 param) {
             rect.y = (u16)rect.y + 0xE0 - rect.h;
         }
     }
-    func_8002E064(id, &rect);
+    setDialogRect(id, &rect);
 
     if (id == 5) {
         goto dialog5;
@@ -154,12 +163,12 @@ dialogDefault:
     setDialogMessage(id, str);
 dialogDone:;
 
-    if (D_80182E70[id].flags & 2) {
+    if (D_80182E70[id].flags & DIALOG_CONFIG_CENTER_TEXT) {
         s32 px = rect.w - 0x10;
         s32 py = rect.h - 0x10;
-        setDialogParams(id, (px - dim.wh[0]) / 2, (py - dim.wh[1]) / 2);
+        setDialogTextOrigin(id, (px - dim.wh[0]) / 2, (py - dim.wh[1]) / 2);
     }
-    if (D_80182E70[id].flags & 1) {
+    if (D_80182E70[id].flags & DIALOG_CONFIG_INSTANT) {
         openDialogInstant(id);
     } else {
         openDialogAnimated(id);
@@ -169,23 +178,16 @@ dialogDone:;
 }
 
 /**
- * @brief Close dialog @p a0, at once or with its animation per its flag.
+ * @brief Close a dialog, at once or with its animation per its
+ *        @ref DIALOG_CONFIG_INSTANT flag.
  *
- * Looks up the entry at D_80182E70[a0 * 12], checks bit 0 of byte 0.
- * If set, calls closeDialogInstant, otherwise closeDialogAnimated. Both calls pass
- * no argument: the dialog they close is @p a0, still in $a0.
- *
- * @param a0 Object index.
+ * @param id Dialog index into @c D_80182E70.
  */
-void func_800A2054(s32 a0) {
-    u8 *base = (u8 *)D_80182E70;
-    u8 *entry;
-
-    entry = base + a0 * 12;
-    if (entry[0] & 1) {
-        closeDialogInstant();
+void func_800A2054(s32 id) {
+    if (D_80182E70[id].flags & DIALOG_CONFIG_INSTANT) {
+        closeDialogInstant(id);
     } else {
-        closeDialogAnimated();
+        closeDialogAnimated(id);
     }
 }
 
@@ -244,14 +246,14 @@ void showCardDetail(s32 cardId) {
 }
 
 /**
- * @brief Clear all 7 dialogs' params by calling setDialogParams with zeros.
+ * @brief Clear all 7 dialogs' params by calling setDialogTextOrigin with zeros.
  *
- * Iterates indices 0-6, calling setDialogParams(i, 0, 0) for each.
+ * Iterates indices 0-6, calling setDialogTextOrigin(i, 0, 0) for each.
  */
 void clearAllDialogs(void) {
     s32 i = 0;
     do {
-        setDialogParams(i, 0, 0);
+        setDialogTextOrigin(i, 0, 0);
         i++;
     } while (i < 7);
 }

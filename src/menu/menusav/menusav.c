@@ -766,7 +766,7 @@ INCLUDE_ASM("asm/ovl/menusav/nonmatchings/menusav", func_801E9988); /* 0xA8 */
  * @brief Render a centered text string in the save menu.
  *
  * If the string pointer a2 is non-null, computes the pixel width
- * via func_8002E680 and func_801F7394, centers it within 0xD8 pixels,
+ * via measureMessage and func_801F7394, centers it within 0xD8 pixels,
  * and renders via func_801F4274.
  *
  * @param a0 First render parameter (passed through).
@@ -777,7 +777,7 @@ INCLUDE_ASM("asm/ovl/menusav/nonmatchings/menusav", func_801E9988); /* 0xA8 */
 s32 func_801E9A30(s32 a0, s32 a1, s32 a2) {
     s32 s0 = a1;
     if (a2 != 0) {
-        s32 v0 = func_8002E680(a2);
+        s32 v0 = measureMessage(a2);
         v0 = func_801F7394((u32)v0 >> 16);
         s0 = func_801F4274(a0, s0, a2, 0xC0, (u32)(0xD8 - v0) >> 1, 0x1000);
     }

@@ -1,12 +1,12 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "battle.h"
+#include "dialog.h"
 #include "btl_entity.h"
 
 extern BattleDisplayEntity g_battleEntities[];
 extern s32 D_800834CC;
 extern u8 g_digitBaseCode;
-extern DialogSystem g_dialogs;
 extern DisplayListBuf *D_800834C0;
 extern u16 D_80052974[];
 extern s32 reverseButtonRemap(s32 index);
@@ -216,41 +216,41 @@ s32 func_8002C734(s32 c) {
 
 
 /**
- * @brief Set field30 and field32 on a dialog.
+ * @brief Set a dialog's text origin.
  * @param idx Dialog index.
- * @param val30 Value for field30.
- * @param val32 Value for field32.
+ * @param x   Text origin x in pixels (@c textX).
+ * @param y   Text origin y in pixels (@c textY).
  */
-void setDialogParams(s32 idx, s32 val30, s32 val32) {
+void setDialogTextOrigin(s32 idx, s32 x, s32 y) {
     Dialog *entry = &g_dialogs.entries[idx];
-    entry->field30 = val30;
-    entry->field32 = val32;
+    entry->textX = x;
+    entry->textY = y;
 }
 
 
 /**
- * @brief Set timing fields on a dialog.
- * @param idx Dialog index.
- * @param val29 Value for field29.
- * @param val2A Value for field2A.
- * @param val2C Value for field2C.
+ * @brief Set a dialog's choice lines.
+ * @param idx    Dialog index.
+ * @param first  First choice line (@c firstChoice).
+ * @param last   Last choice line (@c lastChoice).
+ * @param cancel Line Triangle moves the cursor to, negative for none (@c cancelChoice).
  */
-void setDialogTimings(s32 idx, s32 val29, s32 val2A, s32 val2C) {
+void setDialogChoices(s32 idx, s32 first, s32 last, s32 cancel) {
     Dialog *entry = &g_dialogs.entries[idx];
-    entry->field29 = val29;
-    entry->field2A = val2A;
-    entry->ctrl.fields.field2C = val2C;
+    entry->firstChoice = first;
+    entry->lastChoice = last;
+    entry->ctrl.bits.cancelChoice = cancel;
 }
 
 
 /**
- * @brief Set field2B on a dialog.
+ * @brief Put a dialog's choice cursor on a line (@c choiceCursor).
  * @param idx Dialog index.
- * @param val Value to store.
+ * @param val Choice line.
  */
-void setDialogField2B(s32 idx, s32 val) {
+void setDialogChoiceCursor(s32 idx, s32 val) {
     Dialog *entry = &g_dialogs.entries[idx];
-    entry->field2B = val;
+    entry->choiceCursor = val;
 }
 
 
@@ -259,7 +259,7 @@ void setDialogField2B(s32 idx, s32 val) {
  * @param idx Dialog index.
  * @param val Hook to run, or NULL for none.
  */
-void setDialogField34(s32 idx, DialogDrawCallback val) {
+void setDialogDrawCallback(s32 idx, DialogDrawCallback val) {
     Dialog *entry = &g_dialogs.entries[idx];
     entry->drawCallback = val;
 }
@@ -270,7 +270,7 @@ void setDialogField34(s32 idx, DialogDrawCallback val) {
  * @param idx Dialog index.
  * @param val Hook to run, or NULL for none.
  */
-void setDialogField38(s32 idx, DialogCallback val) {
+void setDialogUpdateCallback(s32 idx, DialogCallback val) {
     Dialog *entry = &g_dialogs.entries[idx];
     entry->updateCallback = val;
 }

@@ -362,14 +362,14 @@ void func_800BD9C4(FieldFrameBuf *frame) {
             if ((g_fieldVars->dialogEntryMask >> i) & 1) continue;
             if (!((g_fieldVars->dialogStartMask >> i) & 1)) continue;
             if (g_fieldEntity.ambientFlags & 0xC0) {
-                if (getDialogField28(i)) {
+                if (getDialogTypingDone(i)) {
                     if (!((g_fieldVars->dialogActiveMask >> i) & 1)) {
                         closeDialogAnimated(i);
                     }
                 }
             }
             if (getOpenDialogScale(i)) continue;
-            if (!getDialogField28(i)) continue;
+            if (!getDialogTypingDone(i)) continue;
             g_fieldVars->dialogStartMask &= ~(1 << i);
         }
     }
@@ -1211,7 +1211,7 @@ void func_800BF4A4(void) {
     for (i = 0; i < getMaxBattleEntities(); i++) {
         if ((g_fieldVars->dialogStartMask >> i) & 1) {
             setDialogMessage(i, (u8 *)D_80085300[i].payload);
-            func_8002E064(i, (s16 *)&D_80085300[i]);
+            setDialogRect(i, &D_80085300[i].rect);
             openDialogAnimated(i);
             setDialogGlobalFlag(i);
         }

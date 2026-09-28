@@ -218,11 +218,11 @@ INCLUDE_ASM("asm/ovl/menusts/nonmatchings/menusts", func_801E750C);
  * @brief Compute centered X position after subtracting rendered width.
  * @param a0 Base X position
  * @param a1 Total available width
- * @param a2 Text or item to measure via getGlyphStatusU16
+ * @param a2 Text or item to measure via getFirstLineWidth
  * @return Base X + (available width - rendered width) / 2
  */
-s32 func_801E7644(s32 a0, s32 a1, s32 a2) {
-    s32 rendered = getGlyphStatusU16(a2);
+s32 func_801E7644(s32 a0, s32 a1, u8 *a2) {
+    s32 rendered = getFirstLineWidth(a2);
     return a0 + (a1 - rendered) / 2;
 }
 

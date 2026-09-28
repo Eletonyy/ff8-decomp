@@ -1864,7 +1864,7 @@ done:
 /**
  * @brief Apply GPU draw area/offset setup if the card file overlay is active.
  *
- * When g_cardFileActive is set, calls func_8002E8DC to process the overlay
+ * When g_cardFileActive is set, calls drawDecodedText to process the overlay
  * data, then emitDrawEnvPackets to emit draw area/offset packets into the OT.
  * Returns the packet pointer unchanged if inactive.
  *
@@ -1874,7 +1874,7 @@ done:
  */
 s32 transformValueIfActive(s32 ot, s32 pkt) {
     if (g_cardFileActive != 0) {
-        s32 result = func_8002E8DC(ot, pkt, g_cardFileSlot, g_cardFileType, (u8 *)g_cardFilename, 7);
+        s32 result = drawDecodedText(ot, pkt, g_cardFileSlot, g_cardFileType, (u8 *)g_cardFilename, 7);
         pkt = (s32)emitDrawEnvPackets((P_TAG *)ot, (u8 *)result);
     }
     return pkt;
@@ -2144,7 +2144,7 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
                 } else {
                     frameData[i] = param;
                 }
-                statusData[i] = func_8002CF54(param);
+                statusData[i] = autoRepeatPad(param);
             }
         }
     }

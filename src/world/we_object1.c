@@ -381,9 +381,9 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object1", func_8009AEE4);
  * the slot already records this @p strIdx and no explicit @p text was given. Primes
  * the voice via @c setDialogMessage, then sets the text speed (the message-speed setting's, via getFieldTextSpeed),
  * entity type 6 and anim speed (@c field03). Finally it sizes a text box —
- * @c func_8002E680 returns the rendered dimensions packed as @c width|(height<<16) —
+ * @c measureMessage returns the rendered dimensions packed as @c width|(height<<16) —
  * positioned relative to the slot anchor (@c field04, @c field06) per the alignment
- * mode @c field01, submits it via @c func_8002E064, and opens the dialog.
+ * mode @c field01, submits it via @c setDialogRect, and opens the dialog.
  *
  * @note Declared non-void to match the original's codegen: a non-void return keeps
  *       @c v0 live, which leaves the early-return branch-delay slot as a @c nop.
@@ -423,7 +423,7 @@ s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text) {
     setDialogEntityType(id, 6);
     setDialogAnimSpeed(id, D_800C526C[slotIdx].field03);
 
-    dim = func_8002E680(ptr);
+    dim = measureMessage(ptr);
     hi = (u32)dim >> 16;
     if (D_800C526C[slotIdx].field01 == 1) {
         setRECT(&rect, D_800C526C[slotIdx].field04 - dim - 0x10, D_800C526C[slotIdx].field06, dim + 0x10, hi + 0x10);
@@ -434,7 +434,7 @@ s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text) {
     } else if (D_800C526C[slotIdx].field01 == 3) {
         setRECT(&rect, D_800C526C[slotIdx].field04 - dim - 0x10, D_800C526C[slotIdx].field06 - hi - 0x10, dim + 0x10, hi + 0x10);
     }
-    func_8002E064(id, &rect);
+    setDialogRect(id, &rect);
     openDialogAnimated(id);
 }
 
@@ -449,11 +449,11 @@ s32 func_8009B358(s32 slotIdx, s32 strIdx, u8 *text) {
  * @c setDialogChoiceMessage, it sets the text speed from the message-speed setting, entity type 6,
  * anim speed from @c field03, and the global flag.
  *
- * It then sizes a text box: @c func_8002E680 returns the rendered dimensions
+ * It then sizes a text box: @c measureMessage returns the rendered dimensions
  * packed as @c width|(height<<16); the @ref RECT is placed relative to the
  * slot's anchor (@c field04, @c field06) per the alignment mode @c field01
  * (0 = top-left, 1/3 = right-aligned, 2 = centered, 3 = also bottom-aligned),
- * submitted via @c func_8002E064, and the dialog is opened with @c openDialogAnimated.
+ * submitted via @c setDialogRect, and the dialog is opened with @c openDialogAnimated.
  *
  * @param slotIdx Index into the @c D_800C526C dialog-slot table.
  * @param strIdx  String-table index for the clip text (@c -2 = none).
@@ -489,7 +489,7 @@ void func_8009B550(s32 slotIdx, s32 strIdx, u8 *text, s32 arg3, s32 arg4, s32 ar
     setDialogAnimSpeed(id, D_800C526C[slotIdx].field03);
     setDialogGlobalFlag(id);
 
-    dim = func_8002E680(ptr);
+    dim = measureMessage(ptr);
     v = dim + 0x20;
     hi = (u32)dim >> 16;
     if (D_800C526C[slotIdx].field01 == 1) {
@@ -501,7 +501,7 @@ void func_8009B550(s32 slotIdx, s32 strIdx, u8 *text, s32 arg3, s32 arg4, s32 ar
     } else if (D_800C526C[slotIdx].field01 == 3) {
         setRECT(&rect, D_800C526C[slotIdx].field04 - v - 0x10, D_800C526C[slotIdx].field06 - hi - 0x10, dim + 0x30, hi + 0x10);
     }
-    func_8002E064(id, &rect);
+    setDialogRect(id, &rect);
     openDialogAnimated(id);
 }
 
@@ -563,8 +563,8 @@ void func_8009B748(void) {
  *    string-table blob (@c table @c + @c table->first[req]), start playback
  *    (@c setDialogMessage), set its text speed from the message-speed setting and its
  *    entity type to 6, build a horizontally-centered display @c RECT from the
- *    clip's packed dimensions (@c func_8002E680 returns @c width|height<<16) and
- *    submit it (@c func_8002E064), then @c openDialogAnimated and latch
+ *    clip's packed dimensions (@c measureMessage returns @c width|height<<16) and
+ *    submit it (@c setDialogRect), then @c openDialogAnimated and latch
  *    @c D_800C4D94 @c = @c D_800C4D90.
  *  - No request (@c D_800C4D90 @c < @c 0) but a clip is playing
  *    (@c D_800C4D94 @c >= @c 0): @c closeDialogAnimated and clear the tracker to -1.
@@ -584,12 +584,12 @@ void func_8009B840(void) {
             setDialogMessage(1, record);
             setDialogTextSpeed(1, getFieldTextSpeed());
             setDialogEntityType(1, 6);
-            dims = func_8002E680(record);
+            dims = measureMessage(record);
             rect.x = (D_800C97EA >> 1) - ((dims & 0xFFFF) >> 1);
             rect.y = 0x10;
             rect.w = dims + 0x10;
             rect.h = (dims >> 16) + 0x10;
-            func_8002E064(1, &rect);
+            setDialogRect(1, &rect);
             openDialogAnimated(1);
             D_800C4D94 = D_800C4D90;
         }

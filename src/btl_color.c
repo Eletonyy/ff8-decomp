@@ -44,13 +44,13 @@ extern u8 D_80052A64[];
 extern s32 func_800432D8(void);
 
 /**
- * @brief Reset a dialog's typing progress: @c field20, @c field21 and @c typingLine.
+ * @brief Reset a dialog's typing progress: @c typedChars, @c typingRow and @c typingLine.
  * @param entry The dialog.
  */
 void resetDialogTyping(Dialog *entry) {
-    entry->field20 = 0;
+    entry->typedChars = 0;
     entry->typingLine = 0;
-    entry->field21 = 0;
+    entry->typingRow = 0;
 }
 
 

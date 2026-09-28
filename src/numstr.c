@@ -2,13 +2,13 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libc.h"
 #include "battle.h"
+#include "dialog.h"
 #include "game.h"
 #include "gamestate.h"
 #include "numstr.h"
 
 extern u8 D_80052A30[];
 extern u8 D_8008369C[];
-extern DialogSystem g_dialogs;
 extern u8 *getMagicNamePtr(s32 magicId);
 extern u8 *getBattleCharNameWrapper(s32 entityIdx);
 extern u8 *getCharNameWrapper(s32 charId);
@@ -32,6 +32,7 @@ static inline u8 *appendString(u8 *dst, u8 *str);
 static inline u8 *getNameString(s32 code, u8 *buf);
 static inline u8 *getNumberString(s32 code, u8 *buf);
 static inline u8 *insertArgString(u8 *dst, s32 code, u8 *buf);
+static u8 *nextMessagePage(u8 *str);
 
 /**
  * @brief Convert an unsigned integer to a decimal digit string using divisor table D_800529F4.
@@ -224,24 +225,20 @@ INCLUDE_ASM("asm/nonmatchings/numstr", func_8002F4B0);
 
 
 /**
- * @brief Advance through a control-coded string to the next segment.
+ * @brief Step to the next line of a message.
  *
- * Scans @p str byte-by-byte, handling control codes:
- *  - 0: end of string (returns NULL).
- *  - 1: line break (returns pointer past it).
- *  - 2: page break (returns pointer past it).
- *  - 6: color code (reads next byte into D_8008386C, then continues).
- *  - 7: section end (returns pointer past it).
+ * Scans past the next newline (2) or page break (1 or 7). A colour command (6)
+ * on the way stores its argument in @c D_8008386C.
  *
- * @param str Pointer to control-coded string, or NULL.
- * @return Pointer to the next unprocessed byte, or NULL on end/null input.
+ * @param str Message in the game's encoding, or NULL.
+ * @return The first byte of the next line, or NULL at the end of the message.
  */
-u8 *func_8002F548(u8 *str) {
+u8 *nextMessageLine(u8 *str) {
     s32 ch;
     u8 *colorPtr;
 
-    if (str == 0)
-        return 0;
+    if (str == NULL)
+        return NULL;
 
     colorPtr = &D_8008386C;
 
@@ -261,28 +258,25 @@ u8 *func_8002F548(u8 *str) {
             return str;
     } while (ch != 0);
 
-    return 0;
+    return NULL;
 }
 
 
 /**
- * @brief Advance through a control-coded string, processing embedded commands.
+ * @brief Step to the next page of a message.
  *
- * Scans @p str byte-by-byte, handling control codes:
- *  - 0: end of string (returns NULL).
- *  - 1: line/segment break (returns pointer past the break).
- *  - 6: color code (reads next byte into D_8008386C, then continues).
- *  - 7: section end (returns pointer past it). 
+ * Scans past the next page break (1 or 7); newlines do not stop it. A colour
+ * command (6) on the way stores its argument in @c D_8008386C.
  *
- * @param str Pointer to control-coded string, or NULL.
- * @return Pointer to the next unprocessed byte, or NULL on end/null input.
+ * @param str Message in the game's encoding, or NULL.
+ * @return The first byte of the next page, or NULL at the end of the message.
  */
-u8 *func_8002F5B4(u8 *str) {
+static u8 *nextMessagePage(u8 *str) {
     s32 ch;
     u8 *colorPtr;
 
-    if (str == 0)
-        return 0;
+    if (str == NULL)
+        return NULL;
 
     colorPtr = &D_8008386C;
 
@@ -293,7 +287,7 @@ u8 *func_8002F5B4(u8 *str) {
             *colorPtr = *str++;
 
         if (ch == 0)
-            return 0;
+            return NULL;
 
         if (ch == 1)
             return str;
@@ -592,17 +586,17 @@ void decodeMessage(u8 *input, u8 *output, s32 maxLen) {
 /**
  * @brief Decode the line a dialog is typing.
  *
- * Advances past @c typingLine line breaks with func_8002F548, decodes from
+ * Advances past @c typingLine line breaks with nextMessageLine, decodes from
  * there, and records where that line starts in @c linePtr.
  *
  * @param dialog Dialog.
  * @param output Output buffer for decodeMessage.
  */
-void func_8002FD28(Dialog *dialog, u8 *output) {
+void decodeDialogLine(Dialog *dialog, u8 *output) {
     s32 skip = dialog->typingLine;
     u8 *stream = dialog->dataPtr;
     while (skip > 0) {
-        stream = func_8002F548(stream);
+        stream = nextMessageLine(stream);
         skip--;
     }
     decodeMessage(stream, output, -1);
@@ -613,11 +607,11 @@ void func_8002FD28(Dialog *dialog, u8 *output) {
 /**
  * @brief Step a dialog to its next line and decode it.
  *
- * @param dialog Dialog; @c linePtr is advanced with func_8002F548.
+ * @param dialog Dialog; @c linePtr is advanced with nextMessageLine.
  * @param output Output buffer for decodeMessage.
  */
 void advanceAndDecodeMessage(Dialog *dialog, u8 *output) {
-    u8 *next = func_8002F548(dialog->linePtr);
+    u8 *next = nextMessageLine(dialog->linePtr);
     dialog->linePtr = next;
     decodeMessage(next, output, -1);
 }
@@ -634,6 +628,21 @@ void decodeMessageDirect(Dialog *dialog, u8 *output) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/numstr", func_8002FE0C);
+/**
+ * @brief Take the next character of the line a dialog is typing.
+ *
+ * Reads the decoded line at @c typedChars and moves it on: one byte for codes
+ * 0x10-0x18 and 0x20 up, two for a command and its argument (0x03-0x0F) or a
+ * two-byte glyph (0x19-0x1F). A newline (0x02) decodes the next line
+ * (@c typedChars back to 0, @c typingLine and @c typingRow up by one); a page
+ * break (0x01 or 0x07) decodes the next page and resets those counters and
+ * @c scrollY. The end of the message (0x00) is not stepped past.
+ *
+ * @param dialog The dialog.
+ * @param output Its decoded-line buffer.
+ * @return The byte read; for a two-byte code, the first byte in bits 8-15 and
+ *         the second in bits 0-7.
+ */
+INCLUDE_ASM("asm/nonmatchings/numstr", nextDialogChar);
 
 
