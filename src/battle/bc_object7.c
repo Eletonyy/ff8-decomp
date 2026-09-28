@@ -4,47 +4,44 @@
 #include "kernel.h"
 #include "battle/bc_object7.h"
 
-static s32 func_800B054C(u32 arg0);
-
 extern u8 D_800EE490[];
 extern u8 D_800EEBE8[];
-s32 func_800B0204(u8 *, s32, s32, s32);
+s32 func_800B0204(u8*, s32, s32, s32);
 void func_800A4C84(s32);
 void func_800AE524(s32);
 extern u8 D_800E3CF0[];
 extern u8 D_800EE4E8[];
-void func_800AE4A0(void);
 
 void func_800AF254(void) {
     func_800AF740();
     
     switch (g_battleConfig.result) {
-    case 2:
-        g_gameState.mainData.fieldCE2++;
-        D_8005F158 = 5;
-        break;
-        
-    case 4:
-        g_gameState.mainData.fieldCDC++;
-        if (D_800ED148.unkCDD & 0x10) {
-            D_8005F158 = 100;
-        }
-            
-        else {
+        case 2:
+            g_gameState.mainData.fieldCE2++;
             D_8005F158 = 5;
-        }
-        
-        break;
-        
-    case 1:
-    case 3:
-        g_gameState.mainData.fieldCE0++;
-        D_8005F158 = 100;
-        break;
-        
-    case 5:
-        D_8005F158 = 100;
-        break;
+            break;
+            
+        case 4:
+            g_gameState.mainData.fieldCDC++;
+            if (D_800ED148.unkCDD & 0x10) {
+                D_8005F158 = 100;
+            }
+                
+            else {
+                D_8005F158 = 5;
+            }
+            
+            break;
+            
+        case 1:
+        case 3:
+            g_gameState.mainData.fieldCE0++;
+            D_8005F158 = 100;
+            break;
+            
+        case 5:
+            D_8005F158 = 100;
+            break;
     }
     
     sndCmdF1();
@@ -84,9 +81,17 @@ void func_800AF654(void) {
  *
  * @param a0 Entity index (stride 0xD0).
  */
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800AF6BC);
+void func_800AF6BC(s32 arg0) {
+    CharacterData* partyMember;
+    BattleEntity* entity;
 
-extern void func_800AF6BC(s32 a0);
+    entity = &D_800ED148.entities[arg0];
+    partyMember = &g_gameState.chars[g_gameState.mainData.party.party[arg0]];
+    
+    partyMember->currentHp = entity->currentHp;
+    partyMember->statusFlags = entity->status &= ~STATUS_BERSERK;
+    func_800AE4A0(arg0);
+}
 
 /**
  * @brief For each of the 3 party slots, mirror the entity's display status
@@ -102,11 +107,12 @@ void func_800AF740(void) {
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        if (D_800ED148.entities[i].comFileId != 0xFF) {
+        if (D_800ED148.entities[i].comFileId != 255) {
             func_800AF6BC(i);
             g_battleChars.chars[i].displayStatus = D_800ED148.entities[i].status;
         }
     }
+    
     func_800AF654();
 }
 
@@ -214,8 +220,8 @@ void func_800B0054(void) {
  * @param idx Entity index into D_800ED148.entities.
  * @return First s32 word at @c entities[idx].linkedPtr.
  */
-s32 func_800B0074(s32 idx) {
-    return (s32)*D_800ED148.entities[idx].entityData;
+BattleEntityData* func_800B0074(s32 idx) {
+    return *D_800ED148.entities[idx].entityData;
 }
 
 /**

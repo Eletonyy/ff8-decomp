@@ -78,9 +78,9 @@ s32 func_800A7080(s32);
 
 s32 func_800A7154(s32);
 
-void func_800A7188(BattleEntityData*);
+void func_800A7188(BattleEntity*);
 
-void func_800A71A0(BattleEntityData*);
+void func_800A71A0(BattleEntity*);
 
 void func_800A71C0(s32);
 
@@ -110,9 +110,9 @@ void func_800A7B48(void);
 
 void func_800A7C64(s32, s32);
 
-// func_800A7CEC
+s32 func_800A7CEC(s32, BattleEntityData*);
 
-// func_800A7D8C
+s32 func_800A7D8C(s32, BattleEntityData*, s32);
 
 u8 func_800A7EE0(BattleEntityData*, s32);
 
@@ -120,7 +120,7 @@ s32 func_800A7FB4(BattleEntityData*, s32);
 
 void func_800A7FD0(s32, s32, s32);
 
-s32 func_800A82A0(BattleAnimSubEntry*, BattleEntityData*, BattleEntityData*, s32);
+s32 func_800A82A0(BattleAnimSubEntry*, BattleEntityData*, BattleEntity*, s32);
 
 void func_800A8320(s32);
 

@@ -1395,8 +1395,7 @@ void func_8009EAEC(s32 charIdx) {
 
     if (count != 0) {
         for (i = 0; i < count; i++) {
-            g_gameState.gfs[sp10[i]].hp +=
-                (D_800ED148.effectMult * g_battleChars.gfEntries[sp10[i]].hp) / 100;
+            g_gameState.gfs[sp10[i]].hp += (D_800ED148.effectMult * g_battleChars.gfEntries[sp10[i]].hp) / 100;
 
             func_8002363C(sp10[i]);
 
@@ -1408,7 +1407,7 @@ void func_8009EAEC(s32 charIdx) {
             }
         }
 
-        if (D_800ED148.entities[charIdx].flags < 0) {
+        if (D_800ED148.entities[charIdx].flags & 0x80000000) {
             id = g_battleChars.chars[charIdx].unk1D - 64;
             g_battleChars.chars[charIdx].currentHp = g_battleChars.gfEntries[id].maxHp;
             D_800ED148.entities[charIdx].hpDisplay = g_battleChars.chars[charIdx].currentHp;

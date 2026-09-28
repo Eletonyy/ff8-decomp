@@ -307,7 +307,7 @@ void func_8009A3F4(void) {
  * @param off Hit-type table index.
  */
 void func_8009A42C(s32 idx, s32 off) {
-    SoundCmd *cmd = func_8009B134(0x66, 0x80, &D_800ED148.entities[idx].entityData);
+    SoundCmd *cmd = func_8009B134(0x66, 0x80, &D_800ED148.entities[idx]);
     cmd->unk0 = idx;
     cmd->unk2.hword = D_800ED148.unkD14[off];
 }
@@ -353,7 +353,7 @@ void func_8009A528(s32 idx, s32 off) {
 
     func_8009AFF0(idx);
     func_800A1CFC(idx);
-    cmd = func_8009B134(0x67, 0x80, (s32)&D_800ED148.entities[idx].entityData);
+    cmd = func_8009B134(0x67, 0x80, &D_800ED148.entities[idx]);
     cmd->unk0 = idx;
     cmd->unk2.b.lo = 1;
     
@@ -407,7 +407,7 @@ void func_8009A6A8(s32 idx) {
     func_800A240C(idx, D_800ED148.entities[idx].currentHp, &D_800ED148.entities[idx].status);
     func_8009AFF0(idx);
     func_800A1AB8(idx, D_800ED148.entities[idx].status, D_800ED148.entities[idx].flags);
-    cmd = func_8009B134(0x67, 0x80, &D_800ED148.entities[idx].entityData);
+    cmd = func_8009B134(0x67, 0x80, &D_800ED148.entities[idx]);
     cmd->unk0 = idx;
     cmd->unk2.b.lo = 0;
     cmd->unk2.b.hi = 0;
@@ -479,7 +479,7 @@ void func_8009A74C(void) {
  * @param idx Entity slot index.
  */
 void func_8009A8B4(s32 idx) {
-    SoundCmd *cmd = func_8009B134(0x66, 0x80, &D_800ED148.entities[idx].entityData);
+    SoundCmd *cmd = func_8009B134(0x66, 0x80, &D_800ED148.entities[idx]);
     cmd->unk0 = idx;
     cmd->unk2.hword = D_800ED148.entities[idx].comFileId;
 }
@@ -828,7 +828,7 @@ void func_8009AF3C(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
 void func_8009AF98(s32 idx) {
     SoundCmd *cmd;
     func_8009AFF0(idx);
-    cmd = func_8009B134(117, 128, &D_800ED148.entities[idx].entityData);
+    cmd = func_8009B134(117, 128, &D_800ED148.entities[idx]);
     cmd->unk0 = idx;
 }
 

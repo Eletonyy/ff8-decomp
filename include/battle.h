@@ -183,59 +183,23 @@ typedef struct {
     subStruct sub[4];
 } Struct_func_800A8794;
 
-/**
-* @brief Data block reached two indirections away through
-*        @c BattleEntity.linkedPtr->data.
-*
-* Size and most fields are unknown; only the byte at offset 0x14F
-* (read by @c func_800AF988) is mapped so far.
-*/
+typedef struct{
+    u8 unk0;
+    u8 unk1;
+    u8 unk2;
+    u8 unk3;
+} func_800A7D8C_Struct;
+
 typedef struct {
-    u8 pad0[8];
-    u32 unk8;
-    u8 padC[4];
-    volatile s32 unk10;  // volatile because func_800A5688, func_800A559C
-    volatile s32 unk14;  // volatile because func_800A5688, func_800A559C
-    s32 unk18;
-    s32 unk1C;
-    s32 unk20;
-    s32 unk24[7];
-    u8 pad40[4];
-    u16 unk44[8];
-    s16 unk54[16];
-    u8 pad74[0x7C - 0x74];
-    volatile s32 unk7C;
-    u16 unk80;
-    u8 pad82[2];
-    u16 unk84;
-    u16 unk86;
-    u8 unk88;
-    u8 unk89;
-    u8 unk8A;
-    u8 pad8B[5];
-    u8 unk90[40];
-    u8 unkB8;
-    u8 unkB9;
-    u8 unkBA;
-    u8 unkBB;
-    u8 unkBC;
-    u8 unkBD;
-    u8 unkBE;
-    u8 unkBF;
-    u8 unkC0;
-    u8 unkC1; 
-    u8 unkC2;
-    u8 unkC3;
-    u8 unkC4;
-    u8 unkC5;
-    u8 unkC6;
-    u8 unkC7;
-    u8 unkC8;
-    u8 padC9;
-    u8 unkCA;
-    u8 padCB;
-    u16 unkCC;
-    u8 padCE[0x26];
+    u8 pad0[0x18 - 0x00];
+    func_800A7D8C_Struct unk18;
+    func_800A7D8C_Struct unk1C;
+    func_800A7D8C_Struct unk20;
+    func_800A7D8C_Struct unk24;
+    func_800A7D8C_Struct unk28;
+    func_800A7D8C_Struct unk2C;
+    func_800A7D8C_Struct unk30;
+    u8 pad1C[0xF4 - 0x34];
     u8 unkF4;
     u8 unkF5;
     u8 unkF6;
@@ -254,9 +218,8 @@ typedef struct {
     u8 unk14D;
     u8 pad14E;
     u8 unk14F;          /* byte read by func_800AF988. */
-    u16 unk150[1];
-    u8 pad152[0xE];
-    u8 unk160[8]; 
+    u16 unk150[8];
+    u8 unk160[8]; // size not confirmed
     u8 unk168[40];// possibly size taken from func_800A7FD0 while calling func_800A7EE0
 } BattleEntityData;
 
@@ -280,22 +243,21 @@ typedef struct {
 typedef struct {
     /* 0x00 */ BattleEntityData** entityData;
     /* 0x04 */ Unk4Struct** monsterAiSection;
-    /* 0x08 */ s32 flags;
-    /* 0x0C */ s32 flagsBackup;
-    /* 0x10 */ s32 maxAtb;
+    /* 0x08 */ u32 flags;
+    /* 0x0C */ u32 flagsBackup;
+    /* 0x10 */ s32 volatile maxAtb;
     /* 0x14 */ s32 volatile curAtb;
     /* 0x18 */ s32 currentHp;
     /* 0x1C */ s32 maxHp;
     /* 0x20 */ s32 unk20;
-    /* 0x24 */ u8 pad24[0x20];
+    /* 0x24 */ s32 unk24[8];
     /* 0x44 */ u16 elemDef[8];
-    /* 0x54 */ s16 perBit[14];
-    /* 0x70 */ u8 pad70[4];
+    /* 0x54 */ s16 perBit[16];
     /* 0x74 */ u16 animParam1;
     /* 0x76 */ u16 animParam2;
     /* 0x78 */ u16 animParam3;
     /* 0x7A */ u8 pad7A[2];
-    /* 0x7C */ volatile ControlFlags controlFlags;
+    /* 0x7C */ ControlFlags volatile controlFlags;
     /* 0x80 */ u16 status;
     /* 0x82 */ u16 statusBackup;
     /* 0x84 */ s16 hpDisplay;     /* 0x84: HP value mirrored from BattleCharData.currentHp. */

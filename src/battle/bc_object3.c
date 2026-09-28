@@ -439,7 +439,7 @@ void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u
     s32 var_a0;
     s32 var_s1;
     
-    func_800A2638(arg1, (s32) *arg2, arg8, arg0);
+    func_800A2638(arg1, *arg2, arg8, arg0);
     if (D_800ED148.entities[arg0].flags & 0x800) {
         func_800A2548(arg0);
     } 
@@ -453,7 +453,7 @@ void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u
     }
 
     var_s1 = D_800ED148.entities[arg0].currentHp;
-    if ((arg0 < 3) && (D_800ED148.entities[arg0].hpDisplay != 0) && (D_800ED148.entities[arg0].flags < 0) && !(*arg3 & 1) && (g_battleChars.chars[arg0].unk14 != 0) && !(*arg2 & 1)) {
+    if ((arg0 < 3) && (D_800ED148.entities[arg0].hpDisplay != 0) && (D_800ED148.entities[arg0].flags & 0x80000000) && !(*arg3 & 1) && (g_battleChars.chars[arg0].unk14 != 0) && !(*arg2 & 1)) {
         var_a0 = D_800ED148.entities[arg0].hpDisplay - arg1;
         if (var_a0 < 0) {
             var_a0 = 0;
@@ -1427,7 +1427,7 @@ void func_800A44FC(s32 arg0) {
         return;
     }
     
-    if (D_800ED148.entities[temp_s0->unkC].flags < 0) {
+    if (D_800ED148.entities[temp_s0->unkC].flags & 0x80000000) {
         if (temp_s1->unk14 != 0) {
             return;
         }
@@ -1517,7 +1517,7 @@ void func_800A47E4(s32 arg0) {
 
 s32 func_800A4844(s32 arg0) {
     s32 status = D_800ED148.entities[arg0].status;
-    s32 flags = D_800ED148.entities[arg0].flags;
+    s32 flags  = D_800ED148.entities[arg0].flags;
     
     if((status & 0x25) || (flags & 0x02004009)) {
         return 0;
@@ -2026,28 +2026,28 @@ void func_800A5454(void) {
  * @param a0 Entity index (stride 208).
  */
 void func_800A554C(s32 arg0) {
-    BattleEntityData* temp_v1;
+    BattleEntity* temp_v1;
     
-    temp_v1 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
-    temp_v1->unk10 = (g_gameState.config.battleSpeed + 1) * 4000;
-    temp_v1->unk14 = 0;
+    temp_v1 = &D_800ED148.entities[arg0];
+    temp_v1->maxAtb = (g_gameState.config.battleSpeed + 1) * 4000;
+    temp_v1->curAtb = 0;
 }
 
 void func_800A559C(u32 arg0) {
     s32 result;
-    BattleEntityData* temp_a2; 
+    BattleEntity* temp_a2; 
 
     result = func_8009B15C() & 0x7F;
-    temp_a2 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    temp_a2 = &D_800ED148.entities[arg0];
     
-    temp_a2->unk14 = (temp_a2->unk10 / 100) * ((result + (temp_a2->unkC1 / 4)) - 34);
+    temp_a2->curAtb = (temp_a2->maxAtb / 100) * ((result + (temp_a2->unkBD[4] / 4)) - 34);
 
-    if (temp_a2->unk10 < temp_a2->unk14) {
-        temp_a2->unk14 = temp_a2->unk10;
+    if (temp_a2->maxAtb < temp_a2->curAtb) {
+        temp_a2->curAtb = temp_a2->maxAtb;
     }
     
-    if (temp_a2->unk14 < 0) {
-        temp_a2->unk14 = 0;
+    if (temp_a2->curAtb < 0) {
+        temp_a2->curAtb = 0;
     }
 }
 
@@ -2071,28 +2071,28 @@ void func_800A565C(s32 arg0) {
  */
 s32 func_800A5688(s32 arg0) {
     s32 var_a0;
-    BattleEntityData* currentEntityData; 
+    BattleEntity* entity;
     
     if ((D_800ED148.entities[arg0].flags & 9) || 
         (D_800ED148.entities[arg0].status & 4)) {
         return 0;
     }
 
-    currentEntityData = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    entity = &D_800ED148.entities[arg0];
     
     var_a0 = 10;
-    if (currentEntityData->unk8 & 2) {
+    if (entity->flags & 2) {
         var_a0 = 15;
     }
     
-    if (currentEntityData->unk8 & 4) {
+    if (entity->flags & 4) {
         var_a0 = 5;
     }
     
-    currentEntityData->unk14 += ((currentEntityData->unkC1 + 30) * g_kernel.misc.atbSpeed * var_a0) / 100;
+    entity->curAtb += ((entity->unkBD[4] + 30) * g_kernel.misc.atbSpeed * var_a0) / 100;
     
-    if (currentEntityData->unk10 <= currentEntityData->unk14) {
-        currentEntityData->unk14 = currentEntityData->unk10;
+    if (entity->maxAtb <= entity->curAtb) {
+        entity->curAtb = entity->maxAtb;
         return 1;
     }
     
@@ -2109,15 +2109,15 @@ s32 func_800A5688(s32 arg0) {
  * @param idx Entity index.
  */
 void func_800A5778(s32 arg0) {
-    BattleEntityData* temp_a1;
+    BattleEntity* temp_a1;
     BattleCharData* temp_v1;
 
-    temp_a1 = (BattleEntityData*)&D_800ED148.entities[arg0].entityData;
+    temp_a1 = &D_800ED148.entities[arg0];
     temp_v1 = &g_battleChars.chars[arg0];
     
     if (arg0 < 3) {
-        temp_v1->unk184 = temp_a1->unk14;
-        temp_v1->unk180 = temp_a1->unk10;
+        temp_v1->unk184 = temp_a1->curAtb;
+        temp_v1->unk180 = temp_a1->maxAtb;
     }
 }
 
