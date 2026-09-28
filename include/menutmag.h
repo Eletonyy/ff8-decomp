@@ -1,8 +1,3 @@
-/**
- * @file menutmag.h
- * @brief Public symbols of the menutmag overlay (@c src/menu/menutmag): its entries in
- *        menumain's screen table (@c D_801F7E6C, overlay 14).
- */
 #ifndef MENUTMAG_H
 #define MENUTMAG_H
 

@@ -1,8 +1,3 @@
-/**
- * @file menusav.h
- * @brief Public symbols of the menusav overlay (@c src/menu/menusav): its entries in
- *        menumain's screen table (@c D_801F7E6C, overlay 11).
- */
 #ifndef MENUSAV_H
 #define MENUSAV_H
 
