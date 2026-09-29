@@ -1,79 +1,105 @@
 #include "common.h"
-#include "battle.h"
 #include "btl_anim.h"
 #include "input/vibration.h"
 
+/* --- Private types --- */
+
+/** @brief The (value, duration) keyframes that drive one of the pad's two motor values. */
+typedef struct {
+    /* 0x00 */ u8 *start; /**< Start of the stream's data. */
+    /* 0x04 */ u8 *end; /**< End of the stream's data. */
+    /* 0x08 */ s16 cursor; /**< Current read position (-1 = not started). */
+    /* 0x0A */ u16 length; /**< Stream length in bytes. */
+    /* 0x0C */ u8 enabled; /**< 1 if the stream has data, 0 if empty. */
+    /* 0x0D */ u8 pad0D[3];
+} MotorStream;
+
+/** @brief One of the four slots a vibration plays in. */
+typedef struct {
+    /* 0x00 */ MotorStream streams[2]; /**< One per motor value. */
+    /* 0x20 */ u16 serial; /**< Bumped by every start (wraps at 0x400 to 1), so old ids stop matching. */
+    /* 0x22 */ s8 priority; /**< Priority of the playing vibration; 0 = the slot is free. */
+    /* 0x23 */ u8 index; /**< Slot index (0-3). */
+} VibrationSlot;
+
+/** @brief A vibration pattern in a packed data block: two stream lengths, then the streams. */
+typedef struct {
+    /* 0x00 */ u16 len1; /**< Length of stream 0. */
+    /* 0x02 */ u16 len2; /**< Length of stream 1. */
+    /* 0x04 */ u8 data[1]; /**< Stream 0's data[len1], then stream 1's data[len2]. */
+} VibrationPattern;
+
 /* --- Externs (sorted by address) --- */
 
-extern s32 g_battleTimer; /* 0x80083750 — battle timer */
-extern s32 D_80083870; /* 0x80083870 — peak stream 0 value of the running commands */
-extern s32 D_80083874; /* 0x80083874 — peak stream 1 value of the running commands */
-extern BattleCmdEntry g_battleCmdTable[]; /* 0x80083878 — battle command entries (4 × 0x24) */
+extern s32 g_vibrationClock; /* 0x80083750 — paces the vibration steps */
+extern s32 g_motorPeak0; /* 0x80083870 — largest stream 0 value of the playing vibrations */
+extern s32 g_motorPeak1; /* 0x80083874 — largest stream 1 value of the playing vibrations */
+extern VibrationSlot g_vibrationTable[]; /* 0x80083878 — the four vibration slots */
 
 /* --- Private functions --- */
 
-static BattleCmdEntry *getBattleCmdTable(void);
-static BattleCmdEntry *findBestBattleCmd(s32 threshold);
-static s32 func_80030A54(CmdStream *stream);
+static VibrationSlot *getVibrationTable(void);
+static VibrationSlot *findVibrationSlot(s32 threshold);
+static s32 stepMotorStream(MotorStream *stream);
 
 /**
- * @brief Get the battle command table.
- * @return Pointer to the battle command entry array.
+ * @brief Get the vibration table.
+ * @return Pointer to the four vibration entries.
  */
-static BattleCmdEntry *getBattleCmdTable(void) {
-    return g_battleCmdTable;
+static VibrationSlot *getVibrationTable(void) {
+    return g_vibrationTable;
 }
 
 /**
- * @brief Find the best available battle command entry.
+ * @brief Find the slot a new vibration should take.
  *
- * Scans the 4-entry battle command table for a free or low-priority slot.
- * If any entry has active == 0, returns it immediately (first-fit).
- * Otherwise, returns the entry with the lowest active value that is
- * still <= threshold. Returns NULL if no suitable entry is found.
+ * Scans the 4 slots of the vibration table for a free or low-priority one.
+ * If any slot has priority 0 (free), returns it immediately (first-fit).
+ * Otherwise, returns the slot with the lowest priority that is
+ * still <= threshold. Returns NULL if no suitable slot is found.
  *
- * @param threshold Maximum active value to consider as a candidate.
- * @return Pointer to the best entry, or NULL if none found.
+ * @param threshold Maximum priority to consider as a candidate.
+ * @return Pointer to the slot to take, or NULL if none found.
  */
-static BattleCmdEntry *findBestBattleCmd(s32 threshold) {
-    BattleCmdEntry* ptr;
+static VibrationSlot *findVibrationSlot(s32 threshold) {
+    VibrationSlot* ptr;
     s32 best;
     s32 i;
 
-    ptr = getBattleCmdTable();
+    ptr = getVibrationTable();
     ptr++; ptr--; /* Regalloc: boost ptr priority */
     best = 0xFF;
 
     for (i = 0; i < 4; i++, ptr++) {
-        if (ptr->active == 0) {
+        if (ptr->priority == 0) {
             return ptr;
         }
-        if (threshold >= ptr->active && ptr->active < best) {
+        if (threshold >= ptr->priority && ptr->priority < best) {
             best = i;
         }
     }
 
     if (best != 0xFF) {
-        return &getBattleCmdTable()[best];
+        return &getVibrationTable()[best];
     }
     return NULL;
 }
 
 
 /**
- * @brief Check if any battle command entry is active.
+ * @brief Check if any vibration is playing.
  *
- * Scans the 4-entry battle command table. Returns 1 immediately if any
- * entry has a non-zero active flag, or 0 if all are inactive.
+ * Scans the 4 slots of the vibration table. Returns 1 immediately if any
+ * slot has a non-zero priority, or 0 if all are free.
  *
- * @return 1 if any entry is active, 0 otherwise.
+ * @return 1 if any vibration is playing, 0 otherwise.
  */
-s32 isAnyBattleCmdActive(void) {
-    BattleCmdEntry* ptr = getBattleCmdTable();
+s32 isVibrating(void) {
+    VibrationSlot* ptr = getVibrationTable();
     s32 i;
 
     for (i = 0; i < 4; i++, ptr++) {
-        if (ptr->active != 0) {
+        if (ptr->priority != 0) {
             return 1;
         }
     }
@@ -82,26 +108,27 @@ s32 isAnyBattleCmdActive(void) {
 
 
 /**
- * @brief Check if a battle command matches the expected source entity.
+ * @brief Check if the vibration @p cmd, an id from startVibration, is still playing.
  *
- * Returns 0 if @p cmd is zero. Otherwise, looks up the entry at index
- * (cmd & 3), checks if it is active, then compares its sourceId against
- * (cmd >> 4).
+ * Returns 0 if @p cmd is zero. Otherwise, looks up the slot at index
+ * (cmd & 3), checks that it is playing (non-zero priority), then compares its
+ * serial against (cmd >> 4). Every start bumps the slot's serial, so the id
+ * of a vibration whose slot was taken over no longer matches.
  *
- * @param cmd Packed command: bits [1:0] = entry index, bits [15:4] = source ID.
- * @return 1 if active and source matches, 0 otherwise.
+ * @param cmd Vibration id: bits [1:0] = slot index, bits [15:4] = serial.
+ * @return 1 if playing and the serial matches, 0 otherwise.
  */
-s32 checkBattleCmdSource(s32 cmd) {
-    BattleCmdEntry *base;
-    BattleCmdEntry *entry;
+s32 isVibrationPlaying(s32 cmd) {
+    VibrationSlot *base;
+    VibrationSlot *entry;
 
     if (cmd == 0) {
         return 0;
     }
-    base = getBattleCmdTable();
+    base = getVibrationTable();
     entry = &base[cmd & 3];
-    if (entry->active != 0) {
-        if (entry->sourceId == (cmd >> 4)) {
+    if (entry->priority != 0) {
+        if (entry->serial == (cmd >> 4)) {
             return 1;
         }
     }
@@ -110,54 +137,54 @@ s32 checkBattleCmdSource(s32 cmd) {
 
 
 /**
- * @brief Deactivate a battle command entry or clear all entries.
+ * @brief Stop one vibration, or all of them.
  *
- * If @p id is -1, clears all 4 entries' active flag and resets anim
- * entity params. Otherwise, validates the command via checkBattleCmdSource
- * and clears just that entry's active flag.
+ * If @p id is -1, clears all 4 slots' priority and zeroes the pad's
+ * motor values (setAnimEntityParams). Otherwise, if @p id is still playing
+ * (isVibrationPlaying), clears just that slot's priority.
  *
- * @param id Packed command identifier, or -1 to clear all.
+ * @param id Vibration id from startVibration, or -1 to stop all.
  */
-void deactivateBattleCmd(s32 id) {
-    BattleCmdEntry* ptr = getBattleCmdTable();
+void stopVibration(s32 id) {
+    VibrationSlot* ptr = getVibrationTable();
     s32 i;
 
     if (id == -1) {
         for (i = 0; i < 4; i++, ptr++) {
-            ptr->active = 0;
+            ptr->priority = 0;
         }
         setAnimEntityParams(0, 0, 0);
     } else {
-        if (checkBattleCmdSource(id)) {
+        if (isVibrationPlaying(id)) {
             ptr += id & 3;
-            ptr->active = 0;
+            ptr->priority = 0;
         }
     }
 }
 
 
 /**
- * @brief Load a command from a packed data block into a battle command entry.
+ * @brief Start vibration pattern @p idx of the packed block at @p data.
  *
- * Finds a free or low-priority command slot via findBestBattleCmd, then
- * loads stream data from the packed block at @p data. The block contains
- * an offset table followed by variable-length stream pairs. Each pair
- * has a CmdStreamHeader (two u16 lengths) followed by the raw data.
+ * Takes a slot via findVibrationSlot, then loads the pattern's two streams
+ * from the packed block at @p data. The block contains an offset table
+ * followed by variable-length VibrationPatterns: two u16 stream lengths, then
+ * the two streams' data.
  *
- * @param data Pointer to packed command data block (offset table + streams).
+ * @param data Pointer to the packed block (offset table + streams).
  * @param idx Index into the offset table.
- * @param priority Priority value for the command slot.
- * @return Packed command ID (sourceId << 4 | index), 0 if no slot, -1 if no data.
+ * @param priority Priority of the vibration, kept in the slot.
+ * @return Vibration id (serial << 4 | index), 0 if no slot was free, -1 if no data.
  */
-s32 loadBattleCmd(u8 *data, s32 idx, s32 priority) {
-    BattleCmdEntry *cmd;
+s32 startVibration(u8 *data, s32 idx, s32 priority) {
+    VibrationSlot *cmd;
     s32 offset;
-    CmdStreamHeader *hdr;
+    VibrationPattern *hdr;
     u16 len1, len2;
     u8 *base;
     u8 *block2;
 
-    cmd = findBestBattleCmd(priority);
+    cmd = findVibrationSlot(priority);
     if (cmd == NULL) {
         return 0;
     }
@@ -168,7 +195,7 @@ s32 loadBattleCmd(u8 *data, s32 idx, s32 priority) {
         return -1;
     }
 
-    hdr = (CmdStreamHeader *)data;
+    hdr = (VibrationPattern *)data;
     len1 = hdr->len1;
     len2 = hdr->len2;
     base = hdr->data;
@@ -194,18 +221,18 @@ s32 loadBattleCmd(u8 *data, s32 idx, s32 priority) {
         cmd->streams[1].enabled = 0;
     }
 
-    cmd->active = priority;
-    cmd->sourceId++;
-    if (cmd->sourceId >= 0x400) {
-        cmd->sourceId = 1;
+    cmd->priority = priority;
+    cmd->serial++;
+    if (cmd->serial >= 0x400) {
+        cmd->serial = 1;
     }
 
-    return (cmd->sourceId << 4) | cmd->index;
+    return (cmd->serial << 4) | cmd->index;
 }
 
 
 /**
- * @brief Read and interpolate the next value from a command stream.
+ * @brief Read and interpolate the next value from a motor stream.
  *
  * Reads keyframe pairs (value, duration) from the stream. Linearly
  * interpolates between the current value and the next over the
@@ -216,11 +243,11 @@ s32 loadBattleCmd(u8 *data, s32 idx, s32 priority) {
  *
  * Stream format: [val0][dur0][val1][dur1]...[0xFF]
  *
- * @param stream Pointer to a CmdStream.
+ * @param stream Pointer to a MotorStream.
  * @return Interpolated value (0-255), or -1 if stream ended.
  * @see https://decomp.me/scratch/oOOHt
  */
-static s32 func_80030A54(CmdStream *stream) {
+static s32 stepMotorStream(MotorStream *stream) {
     u8 duration;
     u8 *ptr;
     u8 *end;
@@ -310,16 +337,16 @@ clamp:
 
 
 /**
- * @brief Step the four battle commands' value streams by one tick.
+ * @brief Step the four vibration slots' motor streams by one tick.
  *
- * Every active command reads the next value of both its streams
- * (func_80030A54); a command whose streams have both ended is deactivated.
- * The largest positive values of stream 0 and stream 1 over the running
- * commands are kept in D_80083870 and D_80083874, then clamped to 0-255 and
- * passed to setAnimEntityParams for entity 0 (0 and 0 when none is running).
+ * Every playing vibration reads the next value of both its streams
+ * (stepMotorStream); one whose streams have both ended is stopped.
+ * The largest positive values of stream 0 and stream 1 over the playing
+ * vibrations are kept in g_motorPeak0 and g_motorPeak1, then clamped to 0-255
+ * and passed to setAnimEntityParams for pad port 0 (0 and 0 when none is playing).
  */
-void func_80030B2C(void) {
-    BattleCmdEntry *entry;
+void stepVibrations(void) {
+    VibrationSlot *entry;
     s32 i;
     s32 val0;
     s32 val1;
@@ -328,31 +355,31 @@ void func_80030B2C(void) {
     s32 peak0;
     s32 peak1;
 
-    entry = getBattleCmdTable();
-    D_80083870 = 0;
-    D_80083874 = 0;
+    entry = getVibrationTable();
+    g_motorPeak0 = 0;
+    g_motorPeak1 = 0;
     for (i = 0; i < 4; i++, entry++) {
         running = 0;
-        if (entry->active != 0) {
-            val0 = func_80030A54(&entry->streams[0]);
-            val1 = func_80030A54(&entry->streams[1]);
+        if (entry->priority != 0) {
+            val0 = stepMotorStream(&entry->streams[0]);
+            val1 = stepMotorStream(&entry->streams[1]);
             if (val0 == -1 && val1 == -1) {
-                entry->active = 0;
+                entry->priority = 0;
             } else {
-                if (val0 > 0 && val0 > D_80083870) {
-                    D_80083870 = val0;
+                if (val0 > 0 && val0 > g_motorPeak0) {
+                    g_motorPeak0 = val0;
                 }
                 running = 1;
-                if (val1 > 0 && val1 > D_80083874) {
-                    D_80083874 = val1;
+                if (val1 > 0 && val1 > g_motorPeak1) {
+                    g_motorPeak1 = val1;
                 }
             }
         }
         anyRunning |= running;
     }
     if (anyRunning) {
-        peak0 = D_80083870;
-        peak1 = D_80083874;
+        peak0 = g_motorPeak0;
+        peak1 = g_motorPeak1;
     } else {
         peak0 = 0;
         peak1 = 0;
@@ -364,41 +391,41 @@ void func_80030B2C(void) {
 
 
 /**
- * @brief Add to the battle timer and process ticks.
+ * @brief Advance the vibration clock and step the vibrations.
  *
- * Accumulates @p delta into g_battleTimer. For every 4 units accumulated,
- * calls func_80030B2C() once. The remainder is stored back.
+ * Accumulates @p delta into g_vibrationClock. For every 4 units accumulated,
+ * calls stepVibrations() once. The remainder is stored back.
  *
- * @param delta Amount to add to the timer.
+ * @param delta Amount to add to the clock.
  */
-void advanceBattleTimer(s32 delta) {
-    s32 counter = g_battleTimer;
+void advanceVibrationClock(s32 delta) {
+    s32 counter = g_vibrationClock;
     counter += delta;
 top:
     if (counter >= 4) {
-        func_80030B2C();
+        stepVibrations();
         counter -= 4;
         goto top;
     }
-    g_battleTimer = counter;
+    g_vibrationClock = counter;
 }
 
 
 /**
- * @brief Initialize the 4 battle command entries and reset the battle timer.
+ * @brief Reset the 4 vibration slots and the clock that paces them.
  *
- * Sets each entry's index to its slot number, clears the active flag,
- * and sets sourceId to 1. Zeroes g_battleTimer.
+ * Sets each slot's index to its number, clears its priority, and sets its
+ * serial to 1. Zeroes g_vibrationClock.
  */
-void initBattleCmdEntries(void) {
-    BattleCmdEntry* ptr = getBattleCmdTable();
+void initVibration(void) {
+    VibrationSlot* ptr = getVibrationTable();
     s32 i;
 
     for (i = 0; i < 4; i++, ptr++) {
         ptr->index = i;
-        ptr->active = 0;
-        ptr->sourceId = 1;
+        ptr->priority = 0;
+        ptr->serial = 1;
     }
 
-    g_battleTimer = 0;
+    g_vibrationClock = 0;
 }

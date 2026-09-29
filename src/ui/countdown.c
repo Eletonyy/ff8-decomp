@@ -95,7 +95,7 @@ void updateCountdownBlink(void) {
  *
  * @see https://decomp.me/scratch/CEsOX
  */
-u8 *func_800302DC(void *ot, u8 *pkt) {
+u8 *drawCountdown(void *ot, u8 *pkt) {
     u8 buf[24];
     u8 *out;
     u32 color;
@@ -173,10 +173,10 @@ u8 *func_800302DC(void *ot, u8 *pkt) {
 /**
  * @brief Draw the countdown timer as MM:SS glyphs.
  *
- * The same display as func_800302DC, read from the same state: the countdown
+ * The same display as drawCountdown, read from the same state: the countdown
  * (clamped to 0x1797 seconds) is drawn at the position, brightness and blink phase kept
  * in @c g_battleAnims.countdown, the leading minutes digit is skipped when blank and the
- * colon shows while the blink counter is below 30. Unlike func_800302DC it shows
+ * colon shows while the blink counter is below 30. Unlike drawCountdown it shows
  * the countdown as is, uses the NTSC blink threshold whatever the video mode and
  * leaves the draw-environment packets to the caller.
  *
@@ -184,7 +184,7 @@ u8 *func_800302DC(void *ot, u8 *pkt) {
  * @param pkt First free packet.
  * @return The first free packet after the glyphs.
  */
-u8 *func_80030518(P_TAG *ot, u8 *pkt) {
+u8 *drawBattleCountdown(P_TAG *ot, u8 *pkt) {
     u8 buf[16];
     u8 *out;
     u32 color;

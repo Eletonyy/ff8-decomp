@@ -492,12 +492,12 @@ void func_8009895C(void) {
                 func_800ACB10();
             }
             D_8005F14A = 0;
-            deactivateBattleCmd(-1);
+            stopVibration(-1);
             func_80027448();
         }
     }
 
-    deactivateBattleCmd(-1);
+    stopVibration(-1);
     func_80027448();
     VSync(0);
 }

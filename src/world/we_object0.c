@@ -463,7 +463,7 @@ s32 func_800987D8(void)
     func_800C4450();
     flushCdAndWait();
     func_800A6358();
-    deactivateBattleCmd(-1);
+    stopVibration(-1);
     func_80027448();
     DrawSync(0);
     ResetGraph(3);

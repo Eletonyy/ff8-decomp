@@ -701,10 +701,11 @@ s32 opHandler_MOVIECUT(ScriptContext *context) {
 }
 
 /**
- * @brief Pop two values and stage a battle via @c loadBattleCmd. Top of
- *        stack supplies a flag byte (OR'd with @c 1), and the value
- *        below it supplies the encounter id. The returned handle is
- *        stashed in @c D_800DE878 for later use.
+ * @brief Pop two values and start a vibration via @c startVibration.
+ *
+ * The top of the stack is its priority (OR'd with 1), the value below it the
+ * index of the pattern in @c D_800C5FB0. The returned vibration id is kept in
+ * @c D_800DE878.
  */
 s32 opHandler_SETVIBRATE(ScriptContext *context) {
     u8 idx;
@@ -715,7 +716,7 @@ s32 opHandler_SETVIBRATE(ScriptContext *context) {
     val1 = context->stack[(s8)idx];
     context->stackPtr = idx - 2;
     val2 = context->stack[(s8)(idx - 1)];
-    *(s32 *)D_800DE878 = loadBattleCmd(D_800C5FB0, val2, val1 | 1);
+    D_800DE878 = startVibration(D_800C5FB0, val2, val1 | 1);
     return 2;
 }
 

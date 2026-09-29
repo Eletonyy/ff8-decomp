@@ -908,9 +908,8 @@ extern u8 D_800DE8D5;
  *         value in @c MOVIEREADY / @c SPUREADY. */
 extern s32 D_800DE4EC;
 
-/** @brief Movie subsystem state pointer (or buffer base) — stored to as
- *         a single u32 by the battle-load opcodes. */
-extern u8 D_800DE878[];
+/** @brief Id that startVibration returned for the field script's last SETVIBRATE. */
+extern s32 D_800DE878;
 
 /* ======================================================================== */
 /* Battle encounter params (populated by field-VM opcode 0x14C)             */
@@ -1089,8 +1088,10 @@ extern u8 D_800DE8D2;
 /* fe_object5 movie-load tables and movie-overlay (0x801E0000) entry points */
 /* ======================================================================== */
 
-/** @brief Battle-encounter scratch buffer; fe_object5 hands the pointer to
- *         @c loadBattleCmd as the asset-payload base. */
+/**
+ * @brief The field's vibration patterns: an offset table followed by stream
+ * pairs, the block @c startVibration reads.
+ */
 extern u8 D_800C5FB0[];
 
 /** @brief CD-entry @c {LBA,size} pairs for movie load opcodes (op04F MOVIE). */

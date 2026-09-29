@@ -2175,7 +2175,7 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
  */
 void renderAndUpdateDisplay(s32 frameCount) {
     processBattleAnimFrames(frameCount, 0);
-    advanceBattleTimer(frameCount);
+    advanceVibrationClock(frameCount);
 }
 
 
@@ -2260,7 +2260,7 @@ s32 renderBattleDisplayList(s32 *colorTag) {
     swapDisplayList();
     buf = g_battleAnims.active;
     head = (u8 *)getDisplayListHead();
-    head = func_800302DC(&buf->ot[1], head);
+    head = drawCountdown(&buf->ot[1], head);
     head = drawSeedRankNotification(&buf->ot[14], head);
     head = transformValueIfActive(&buf->ot[13], head);
     head = drawGauges(&buf->ot[13], head);
@@ -2374,7 +2374,7 @@ void initBattleAnimSystem(s32 vramBase, s32 vramSize)
     iconStub();
     buildAnimEasingCurves();
     resetCountdownDisplay();
-    initBattleCmdEntries();
+    initVibration();
     setAnimEntityOpacity(0, 0);
     setAnimEntityOpacity(1, 0);
     initButtonRemap();

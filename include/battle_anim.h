@@ -118,7 +118,7 @@ typedef struct {
     /* 0x700 */ CountdownDisplay countdown; /**< The countdown timer; its brightness is the HUD's grey level. */
     /* 0x708 */ u8 pad708[0x26C]; /**< Unknown. */
     /* 0x974 */ s32 palette[3];              /**< RGB888 palette (0x40BBGGRR). */
-    /* 0x980 */ s32 battleTimer; /**< Also addressed directly as @c g_battleTimer. */
+    /* 0x980 */ s32 vibrationClock; /**< Also addressed directly as @c g_vibrationClock. */
     /* 0x984 */ SeedRankNotification seedRankNotification; /**< The SeeD rank notification. */
     /* 0x9A2 */ Gauge gauges[GAUGE_COUNT]; /**< The two HUD gauges. */
     /* 0x9C2 */ s16 field9C2;               /**< Set to 0x4611 during GPU init. */
