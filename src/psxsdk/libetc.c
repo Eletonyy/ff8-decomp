@@ -170,4 +170,4 @@ INCLUDE_ASM("asm/nonmatchings/psxsdk/libetc", INTR_DMA_OBJ_278);
 
 INCLUDE_ASM("asm/nonmatchings/psxsdk/libetc", func_800432C4);
 
-INCLUDE_ASM("asm/nonmatchings/psxsdk/libetc", func_800432D8);
+INCLUDE_ASM("asm/nonmatchings/psxsdk/libetc", GetVideoMode);

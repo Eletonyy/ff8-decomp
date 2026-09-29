@@ -709,7 +709,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
 
     x = arg3 + 128;
     y = arg4 + 5;
-    arg2 = func_800300F8(arg1, arg2, ICON_STR, x, y, g_menuTint[MENU_TINT_NORMAL], 0x80);
+    arg2 = (s32)func_800300F8((void *)arg1, (TSPRT *)arg2, ICON_STR, x, y, g_menuTint[MENU_TINT_NORMAL], 0x80);
 
     x = arg3 + 184;
     y = arg4 + 7;
@@ -722,7 +722,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
 
     x = arg3 + 128;
     y = arg4 + 19;
-    arg2 = func_800300F8(arg1, arg2, ICON_HIT, x, y, g_menuTint[MENU_TINT_NORMAL], 0x80);
+    arg2 = (s32)func_800300F8((void *)arg1, (TSPRT *)arg2, ICON_HIT, x, y, g_menuTint[MENU_TINT_NORMAL], 0x80);
 
     x = arg3 + 184;
     y = arg4 + 21;
@@ -772,7 +772,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
             tmp = ICON_ARROW_DOWN;
         }
         if (tmp != 0) {
-            arg2 = func_800300F8(arg1, arg2, tmp, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
+            arg2 = (s32)func_800300F8((void *)arg1, (TSPRT *)arg2, tmp, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
 
         color = func_801E8FF8(oldWeaponHit, newWeaponHit);
@@ -796,7 +796,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
             tmp = ICON_ARROW_DOWN;
         }
         if (tmp != 0) {
-            arg2 = func_800300F8(arg1, arg2, tmp, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
+            arg2 = (s32)func_800300F8((void *)arg1, (TSPRT *)arg2, tmp, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
     }
     

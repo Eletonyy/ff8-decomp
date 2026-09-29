@@ -37,7 +37,7 @@
  *     reinit of each @c g_fieldEntity.slots[i] (mode/param/submode/p3-p6).
  *
  * After the dispatch all paths run a common tail:
- *   - @ref FIELD_STATE_CAMERA_SHAKE → arm camera shake/vibrate.
+ *   - @ref FIELD_STATE_COUNTDOWN → show the countdown timer again.
  *   - @ref FIELD_STATE_FIELD_READY clear and @c levelUpDisplayTimer @c > @c 0
  *     → fire the SeeD level-up notification via @ref func_800316D4.
  *   - Set each dialog's text speed from the message-speed setting
@@ -136,9 +136,9 @@ void func_800BF718(s32 mode) {
         break;
     }
 
-    if (g_fieldVars->stateFlags & FIELD_STATE_CAMERA_SHAKE) {
-        setCameraShakeParams(g_fieldVars->cameraShakeX, g_fieldVars->cameraShakeY);
-        setCameraVibrateState(1);
+    if (g_fieldVars->stateFlags & FIELD_STATE_COUNTDOWN) {
+        setCountdownPosition(g_fieldVars->countdownX, g_fieldVars->countdownY);
+        setCountdownVisible(1);
     }
     seed = g_fieldVars;
     if (!(seed->stateFlags & FIELD_STATE_FIELD_READY)) {
@@ -230,7 +230,7 @@ s32 *func_800BFBBC(u8 *entity, Eline *eline, u16 *a2, s32 mode) {
     D_800DE8C8[1] = 2;
     ((u8 *)D_800DE8C8)[0xB] = 0;
     resetAllDialogs();
-    setCameraVibrateIntensity(0x1000);
+    setHudBrightness(0x1000);
     D_800DE4FD[0] = 0;
     D_800DE7B0.count = 0;
     func_800BE30C(entity);

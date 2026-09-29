@@ -1247,7 +1247,7 @@ void func_801F39D0(s32 val, s32 ctx, s32 dl, s32 y, s32 a4, s32 a5) {
     s32 cursor;
     u8 *str;
 
-    cursor = func_800300F8(ctx, dl, 0x145, y, a4, g_menuTint[MENU_TINT_NORMAL], (a5 << 6) + 2);
+    cursor = (s32)func_800300F8((void *)ctx, (TSPRT *)dl, 0x145, y, a4, g_menuTint[MENU_TINT_NORMAL], (a5 << 6) + 2);
     y += 0x12;
     intToDecStringShort(val, buf, digits);
     str = (u8 *)getMenuString(0xB);
@@ -1775,11 +1775,11 @@ s32 func_801F5F60(s32 ctx, s32 dl, s32 color, s32 arrows) {
     }
     if (arrows & 1) {
         bottom = cfg->y + cfg->h - 10;
-        dl = func_800300F8(ctx, dl, 0x5C, g_menuDisplayCfg.x + 2, bottom, color, blink);
+        dl = (s32)func_800300F8((void *)ctx, (TSPRT *)dl, 0x5C, g_menuDisplayCfg.x + 2, bottom, color, blink);
     }
     if (arrows & 2) {
         bottom = cfg->y + cfg->h - 10;
-        dl = func_800300F8(ctx, dl, 0x5D, g_menuDisplayCfg.x + cfg->w - 9, bottom, color, blink);
+        dl = (s32)func_800300F8((void *)ctx, (TSPRT *)dl, 0x5D, g_menuDisplayCfg.x + cfg->w - 9, bottom, color, blink);
     }
     return dl;
 }

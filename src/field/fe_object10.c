@@ -4,6 +4,7 @@
 #include "gamestate.h"
 #include "character.h"
 #include "battle.h"
+#include "btl_color.h"
 #include "sound.h"
 #include "cd.h"
 #include "btl_entity.h"
@@ -110,7 +111,7 @@ s32 opHandler_OP168(Actor *actor) {
  *   4. Pays salary: @c gil += @c g_seedSalaryTable[level] * 10 (capped at
  *      99,999,999).
  *   5. If state isn't muted (flags 0x10 and 0x1000 both clear), triggers the
- *      level-up notification: palette transition (@c func_800316D4 with old/new
+ *      level-up notification: the SeeD rank banner (@c func_800316D4 with old/new
  *      rank and old/new salary) plus three rank-up sound effects.
  *   6. Stores @c totalKills as the new @c prevKillSum baseline.
  */
@@ -256,7 +257,7 @@ void func_800BD794(void) { s32 i = 0; do { s32 status = getPackedField2Bit(i) - 
  *   - @c seedExpStepAcc — fires the SeeD level-up tick every @c 0x6000 steps,
  *     then clamps @c seedExp to @c [100, 0xC1C].
  *   - @c levelUpDisplayTimer — counts down each step; fires
- *     @c setTransitionPhase7 the frame it reaches @c 0.
+ *     @c hideRankBanner the frame it reaches @c 0.
  *   - @c angeloLearnStepAcc — fires the Angelo trick learn tick every
  *     @c 0x250 steps.
  *
@@ -289,7 +290,7 @@ void func_800BD804(s32 stepDelta) {
         else if ((s16)g_fieldVars->seedExp >= 0xC1C) g_fieldVars->seedExp = 0xC1C;
     }
     if ((s16)g_fieldVars->levelUpDisplayTimer >= 0) {
-        if ((s16)g_fieldVars->levelUpDisplayTimer == 0) setTransitionPhase7();
+        if ((s16)g_fieldVars->levelUpDisplayTimer == 0) hideRankBanner();
         g_fieldVars->levelUpDisplayTimer--;
     }
     if (g_gameState.mainData.partyLockFlag & 0x10) return;
@@ -1224,12 +1225,12 @@ void func_800BF4A4(void) {
         buf[1] = D_80085398[i].fieldC;
         switch (D_80085398[i].flag) {
         case 1:
-            setupAnimEntry(i, D_80085398[i].fieldA, (s32)buf,
+            setupAnimEntry(i, D_80085398[i].fieldA, buf,
                            D_80085398[i].field8, D_80085398[i].field6,
                            D_80085398[i].field4);
             break;
         case 2:
-            setupAnimEntryFull(i, D_80085398[i].fieldA, (s32)buf,
+            setupAnimEntryFull(i, D_80085398[i].fieldA, buf,
                                D_80085398[i].field8, D_80085398[i].field6,
                                D_80085398[i].field4, D_80085398[i].field2);
             break;

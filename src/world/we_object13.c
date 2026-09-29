@@ -409,7 +409,7 @@ void func_800C4A74(void) {
  *   - @c seedExpStepAcc — fires the SeeD level-up tick every @c 0x6000 steps,
  *     then clamps @c seedExp to @c [100, 0xC1C].
  *   - @c levelUpDisplayTimer — counts down each step; fires
- *     @c setTransitionPhase7 the frame it reaches @c 0.
+ *     @c hideRankBanner the frame it reaches @c 0.
  *   - @c angeloLearnStepAcc — fires the Angelo trick learn tick every
  *     @c 0x250 steps.
  *
@@ -445,7 +445,7 @@ void func_800C4A74(void) {
  *         else if ((s16)g_fieldVars->seedExp >= 0xC1C) g_fieldVars->seedExp = 0xC1C;
  *     }
  *     if ((s16)g_fieldVars->levelUpDisplayTimer >= 0) {
- *         if ((s16)g_fieldVars->levelUpDisplayTimer == 0) setTransitionPhase7();
+ *         if ((s16)g_fieldVars->levelUpDisplayTimer == 0) hideRankBanner();
  *         g_fieldVars->levelUpDisplayTimer--;
  *     }
  *     if (g_gameState.mainData.partyLockFlag & 0x10) return;

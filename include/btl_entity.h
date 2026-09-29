@@ -5,7 +5,7 @@
 #include "battle.h"
 
 extern s32 *getEntityTablePtr(s32 idx);
-extern s32  func_8002BF24(s32 ot, s32 head);
+extern u8 *func_8002BF24(u32 *ot, u8 *head);
 extern s32  func_8002C734(s32 c);
 extern void dispatchBattleEntity(s32 idx);
 extern s32  allocBattleEntitySlot(void);

@@ -26,7 +26,8 @@
 #define DIALOG_CONFIG_CENTER_BOX 0x04
 
 /* s32 view: btl_color.h's u16 (u16) makes the caller mask the argument and result. */
-extern s32 remapControllerInput(s32 arg);
+// TODO: Drop this and include the prototype from the owner.
+extern s32 applyButtonRemapTranslation(s32 arg);
 
 /**
  * @brief Reset and configure the seven dialogs.
@@ -720,7 +721,7 @@ void readPads(void)
 
     func_800275D4();
 
-    padRaw = remapControllerInput(getAnimFrameParam(0, 0));
+    padRaw = applyButtonRemapTranslation(getAnimFrameParam(0, 0));
     oldPad = D_801D4B20[0];
     held = func_80027DB4(0, PAD_AXIS_X, 0);
     if (!(padRaw & 0xF000) && held >= 0) {
@@ -731,7 +732,7 @@ void readPads(void)
     repeat = func_800A2A8C(0, padRaw & 0xFFFF) & 0xFFFF;
     D_801D4B28[0] = repeat;
 
-    padRaw = remapControllerInput(getAnimFrameParam(1, 0));
+    padRaw = applyButtonRemapTranslation(getAnimFrameParam(1, 0));
     oldPad = D_801D4B20[1];
     held = func_80027DB4(1, PAD_AXIS_X, 0);
     if (!(padRaw & 0xF000) && held >= 0) {

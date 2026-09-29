@@ -239,7 +239,7 @@ s32 func_800987D8(void)
     func_800A6BE0();
     func_800A246C();
     SetGeomScreen(D_800C9730);
-    setCameraVibrateIntensity(0x1000);
+    setHudBrightness(0x1000);
     activateBattleAnim(0);
     VSync(0);
     SetDispMask(1);

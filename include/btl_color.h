@@ -4,111 +4,144 @@
 #include "common.h"
 #include "battle.h"
 
-/* --- Battle camera / palette transition state --- */
-
-typedef struct {
-    u16 intensity;      /* 0x00: shake intensity */
-    u8 direction;       /* 0x02: shake direction */
-    u8 enable;          /* 0x03: vibration enable flag */
-    u16 zoom;           /* 0x04: zoom/distance (default 0x1000) */
-    u8 counter;         /* 0x06: vibration timer (clamped to 0x40) */
-    u8 stateSnapshot;   /* 0x07: battle state byte for change detection */
-} BattleCameraState;
-
-/** @brief Palette transition state machine (D_80083754). */
-typedef struct {
-    u16 state;      /* 0x00 */
-    u16 pad02;      /* 0x02 */
-    s16 brightness; /* 0x04 */
-    s16 fade;       /* 0x06 */
-    u8 srcPalette;  /* 0x08 */
-    u8 dstPalette;  /* 0x09 */
-    u8 timer;       /* 0x0A */
-    u8 lineCount;   /* 0x0B */
-    u8 oldName[3];  /* 0x0C */
-    u8 newName[3];  /* 0x0F */
-    u8 oldName2[6]; /* 0x12 */
-    u8 newName2[6]; /* 0x18 */
-} PaletteTransition;
+/* --- Glyph font table --- */
 
 /**
- * @brief 0x280-byte scratch region immediately before the PaletteTransition
- * at D_80083754 (a separate global). vibrateIntensity is read as the block
- * before the transition base to keep the retail lhu -640($s5) form.
+ * @brief One 8-byte sprite cell of a glyph in the @c D_80052A68 font table.
+ *
+ * A glyph is drawn from one or more of these cells, and both words are baked in
+ * the layout the GPU packet wants so the emitters only mask and add.
+ *
+ * @c texInfo: bits 0-15 are u and v; bits 16-19 and 22-26 are the two pieces of
+ * a CLUT offset that is added to the font CLUT (@ref GLYPH_UVCLUT_MASK keeps
+ * exactly these and u/v); bit 27 is the semi-transparency flag and bits 30-31
+ * the blend rate. Bit 21 is set in every cell of the shipped table, but no
+ * emitter reads it.
+ *
+ * @c metrics packs four bytes: the sprite width, a signed X offset, the sprite
+ * height and a signed Y offset, so width + X offset is the cell's right edge
+ * and height + Y offset its bottom edge.
  */
 typedef struct {
-    /* 0x000 */ u16 vibrateIntensity; /* g_cameraVibrateIntensity */
-    /* 0x002 */ u8  pad[0x27E];       /* to D_80083754 */
-} CameraTransitionScratch;            /* sizeof == 0x280 */
+    /* 0x00 */ u32 texInfo; /**< u | v<<8 | CLUT offset bits | abe<<27 | abr<<30. */
+    /* 0x04 */ u32 metrics; /**< w | (s8)xOffset<<8 | h<<16 | (s8)yOffset<<24. */
+} GlyphCell;
 
-/* Load-bearing layout: size must stay 0x280 (see lhu -640($s5) access).
- * Negative-sized array typedefs fail compilation if it drifts. */
-typedef char camera_transition_scratch_vibrate_ok[
-    (((u32)&((CameraTransitionScratch *)0)->vibrateIntensity) == 0x000) ? 1 : -1];
-typedef char camera_transition_scratch_size_ok[
-    (sizeof(CameraTransitionScratch) == 0x280) ? 1 : -1];
+/**
+ * @brief Header view of the @c D_80052A68 font table (baked into executable data).
+ *
+ * A glyph count followed by one descriptor per glyph. Each descriptor packs the
+ * glyph's cell @c count (high 16 bits) and the byte offset from the table base
+ * to that glyph's @ref GlyphCell list (low 16 bits). The cell lists themselves
+ * live in the trailing area the descriptors point at.
+ */
+typedef struct {
+    /* 0x00 */ s32 glyphCount;
+    /* 0x04 */ u32 descriptors[1]; /**< cellCount<<16 | byteOffsetToCells. */
+} GlyphTable;
+
+/** @brief Font glyph table (glyph count + per-glyph descriptors + cell lists). */
+extern GlyphTable D_80052A68;
+
+/** @brief u, v and CLUT-offset bits of @c GlyphCell.texInfo. */
+#define GLYPH_UVCLUT_MASK 0x07CFFFFF
+
+/** @brief Width and height bytes of @c GlyphCell.metrics. */
+#define GLYPH_WH_MASK 0x00FF00FF
+
+/** @brief Shift that brings the blend rate of @c GlyphCell.texInfo (bits 30-31)
+ * down to bit 0. */
+#define GLYPH_ABR_SHIFT 30
+
+/** @brief Width of the blend rate once shifted down. getTPage masks again, but
+ * dropping this one costs the match. */
+#define GLYPH_ABR_MASK 3
+
+/** @brief Shift that lands the semi-transparency flag of @c GlyphCell.texInfo
+ * (bit 27) on @ref SPRT_CODE_ABE. */
+#define GLYPH_ABE_SHIFT 26
+
+/** @brief Semi-transparency option bit of a primitive's code byte. */
+#define SPRT_CODE_ABE 0x02
+
+/** @brief Position of the code byte inside the colour word. */
+#define SPRT_CODE_SHIFT 24
+
+/** @brief r, g, b and the two option bits of the code byte in the colour word. */
+#define SPRT_RGB_MASK 0x03FFFFFF
+
+/** @brief Primitive code 0x64 (SPRT) in the colour word. */
+#define SPRT_CODE 0x64000000
+
+/** @brief VRAM position of the font's CLUT row; a cell's CLUT offset is added to it. */
+#define GLYPH_CLUT_X 256
+#define GLYPH_CLUT_Y 224
+
+/** @brief VRAM position of the font's texture page. */
+#define GLYPH_TPAGE_X 896
+#define GLYPH_TPAGE_Y 256
+
+/* Whole-word setters for a TSPRT's r0/g0/b0/code, u0/v0/clut and w/h groups: the
+ * glyph cells hold those groups ready-made, so they are stored in one piece.
+ * The do/while(0) of setGlyphUVClut is load-bearing: the scheduler moves nothing
+ * across it, which keeps the u/v/CLUT store ahead of the texture-page code.
+ * Wrapping the colour setter the same way breaks drawDialogMarker's match. */
+#define setGlyphRGBC(p, word) (*(u32 *)&(p)->r0 = (word))
+#define setGlyphUVClut(p, word) do { *(u32 *)&(p)->u0 = (word); } while (0)
+#define setGlyphWH(p, word) (*(u32 *)&(p)->w = (word))
 
 /* --- Data externs (sorted by address) --- */
 
 extern s32              g_gpuColor;           /* 0x800834C8 */
-extern BattleCameraState g_cameraShake;       /* 0x800834D0 */
-extern u16              g_cameraVibrateIntensity; /* 0x800834D4 */
-extern PaletteTransition D_80083754;          /* 0x80083754 */
 
 extern void resetDialogTyping(Dialog *entry);
 extern void buildGrayscaleGpuColor(s32 intensity);
-extern void buildRgbGpuColor(s32 r, s32 g, s32 b);
 extern void setDefaultGpuColor(void);
 extern void btlColorStub0234(void);
-extern void setCameraVibrateIntensity(s32 val);
-extern void setCameraVibrateState(u32 enable);
-extern void setCameraShakeParams(s32 intensity, s32 direction);
-extern void updateCameraVibrate(void);
-extern void resetBattleCameraState(void);
-extern BattleCmdEntry *getBattleCmdTable(void);
-extern BattleCmdEntry *findBestBattleCmd(s32 threshold);
+extern void setHudBrightness(s32 brightness);
+extern void setCountdownVisible(u32 visible);
+extern void setCountdownPosition(s32 x, s32 y);
+extern void updateCountdownBlink(void);
+extern void resetCountdownDisplay(void);
 extern s32  isAnyBattleCmdActive(void);
 extern s32  checkBattleCmdSource(s32 cmd);
 extern void deactivateBattleCmd(s32 id);
 extern s32  loadBattleCmd(u8 *data, s32 idx, s32 priority);
+extern void func_80030B2C(void);
 extern void advanceBattleTimer(s32 delta);
 extern void initBattleCmdEntries(void);
 extern void sendSpuCommand(s32 idx);
 extern void playSoundEffect(s32 idx);
 extern void enableSoundReverb(s32 mask);
-extern void disableSoundReverb(s32 mask);
-extern u16  remapControllerInput(u16 bitmask);
-extern s32  remapButtonIndex(s32 index);
+extern u16 applyButtonRemapTranslation(u16 bitmask);
 extern s32  reverseButtonRemap(s32 index);
 extern void btlColorStub1044(void);
-extern void updatePaletteTransition(s32 arg0, s32 arg1);
-extern u8  *renderBattleString(P_TAG *ot, u8 *pkt, u8 *str, s32 y, s32 width, s32 color);
-extern u8  *func_80031224(P_TAG *ot, u8 *cursor, s32 leftWidth, s32 rightX);
-extern void setTransitionPhase7(void);
-extern void setTransitionFlag(s32 val);
-extern void initBattleTransition(void);
-extern s32  lerpRange(s32 rangeStart, s32 rangeEnd, s32 input, s32 maxOut);
+extern void updateRankBanner(void);
+extern void hideRankBanner(void);
+extern void setSalaryEnabled(s32 enabled);
+extern void resetRankBanner(void);
 extern void stepAnimEntries(void);
 extern void clearAnimEntryActive(s32 idx);
 extern void updateAnimEntry(s32 idx, s32 value);
-extern void copyAnimEntryField(s32 idx, u8 *src);
-extern void initAnimEntry(s32 idx, s32 flags, s32 src, s32 start, s32 end, s32 inStart, s32 inEnd);
-extern void setupAnimEntry(s32 idx, s32 flags, s32 src, s32 start, s32 end, s32 inStart);
-extern void setupAnimEntryFull(s32 idx, s32 flags, s32 src, s32 start, s32 end, s32 inStart, s32 inEnd);
+extern void setupAnimEntry(s32 idx, s32 flags, u16 *src, s32 start, s32 end, s32 inStart);
+extern void setupAnimEntryFull(s32 idx, s32 flags, u16 *src, s32 start, s32 end, s32 inStart, s32 inEnd);
 extern void clearAnimEntries(void);
 extern u8  *getBattleBuffer1(void);
-extern u8  *getBattleBuffer2(void);
-extern void waitBattleVSync(void);
+extern void waitGpuIdle(void);
 extern u32  getBattleAllocBase(void);
 extern s32  getBattleAllocSize(void);
 extern void flipBattleOtBuffer(void);
+extern void func_80032010(void);
+extern void func_800320BC(void);
+extern void renderBattleFrame(void);
 
-void *func_8002FF34(void *ot, void *pkt, s32 stringId, s32 x, s32 y, s32 color);
-s32 func_800300F8(s32 renderCtx, s32 x, s32 w, s32 y, s32 color, s32 menuColor, s32 selColor);
-s32 func_800302DC(P_TAG *ot, u8 *pkt);
-s32 func_80030A54(CmdStream *stream);
-s32 func_80031364(P_TAG *ot, u8 *pkt);
-void func_800316D4(s32 arg0, s32 arg1, s32 arg2, s32 arg3);
-s32 renderAnimOverlay(P_TAG *ot, u8 *pkt);
+void *func_8002FF34(void *ot, void *head, s32 idx, s32 x, s32 y, s32 color);
+void *func_800300F8(void *ot, TSPRT *p, s32 idx, s32 x, s32 y, s32 color, s32 clut);
+u8 *func_800302DC(void *ot, u8 *pkt);
+u8 *func_80030518(P_TAG *ot, u8 *pkt);
+u8 *func_80031364(void *ot, u8 *pkt);
+void func_800316D4(s32 oldRank, s32 newRank, s32 oldSalary, s32 newSalary);
+u8 *renderAnimOverlay(void *ot, u8 *pkt);
+
 
 #endif

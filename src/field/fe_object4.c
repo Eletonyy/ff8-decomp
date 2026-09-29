@@ -1057,7 +1057,7 @@ s32 opHandler_KEYON2(ScriptContext *context) {
 
 /**
  * Sets bits 0x18 in entity flags at g_fieldVars+0x68, then calls
- * setTransitionFlag with the inverted bit 3 value.
+ * setSalaryEnabled with the inverted bit 3 value.
  *
  * @param actor Unused.
  * @return 2 (continue processing).
@@ -1068,16 +1068,16 @@ s32 opHandler_SARALYOFF(ScriptContext *context) {
     flags = g_fieldVars->stateFlags;
     flags = flags | 0x18;
     g_fieldVars->stateFlags = flags;
-    setTransitionFlag(((u32)flags >> 3 ^ 1) & 1);
+    setSalaryEnabled(((u32)flags >> 3 ^ 1) & 1);
     return 2;
 }
 
 /**
- * @brief Clear seedState bits 0x18 and force transition state to phase 1.
+ * @brief Clear stateFlags bits 0x18 and enable the SeeD salary.
  *
  * Counterpart to @c opHandler_SARALYOFF which sets bits 0x18 + invokes
- * setTransitionFlag with the inverted bit-3 value; this one clears the
- * bits and explicitly calls setTransitionFlag(1).
+ * setSalaryEnabled with the inverted bit-3 value; this one clears the
+ * bits and explicitly calls setSalaryEnabled(1).
  *
  * @note The unreachable @c dummy[0]=0 after @c return reserves an extra
  *       8 bytes of stack frame to match the original (0x20 vs the 0x18
@@ -1087,7 +1087,7 @@ s32 opHandler_SARALYOFF(ScriptContext *context) {
 s32 opHandler_SARALYON() {
     s32 dummy[2];
     g_fieldVars->stateFlags &= ~(FIELD_STATE_TRANSITION | FIELD_STATE_FIELD_READY);
-    setTransitionFlag(1);
+    setSalaryEnabled(1);
     return 2;
     dummy[0] = 0;
 }

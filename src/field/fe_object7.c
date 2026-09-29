@@ -1,5 +1,6 @@
 #include "common.h"
 #include "battle.h"
+#include "btl_color.h"
 #include "gamestate.h"
 #include "field.h"
 #include "sound.h"
@@ -53,7 +54,7 @@ s32 opHandler_CARDGAME(ScriptContext *context) {
 
         if (result >= 5) {
             if (!(g_fieldVars->stateFlags & FIELD_STATE_FIELD_READY)) {
-                initBattleTransition();
+                resetRankBanner();
             }
 
             g_fieldEntity.mode = 8;
@@ -67,7 +68,7 @@ s32 opHandler_CARDGAME(ScriptContext *context) {
                 clearAnimEntryActive(i);
             }
 
-            setCameraVibrateState(0);
+            setCountdownVisible(0);
 
             if (g_fieldVars->soundHandle0 == SND_HANDLE_NONE) {
                 sndCmd11(0);

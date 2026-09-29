@@ -3208,7 +3208,7 @@ s32 renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         x += 0x39;
         y += 4;
         if (indicator != 7) {
-            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
+            cy2 = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
         x += 0xA;
         intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
@@ -3291,7 +3291,7 @@ s32 renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
         x += 0x39;
         y += 4;
         if (indicator != 7) {
-            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
+            cy2 = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
         x += 0xA;
         intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
@@ -3396,7 +3396,7 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         x += 0x39;
         y += 4;
         if (indicator != 7) {
-            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
+            cy2 = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
         x += 0xA;
         intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
@@ -3493,7 +3493,7 @@ s32 renderStatTableD(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
         x += 0x39;
         y += 4;
         if (indicator != 7) {
-            cy2 = func_800300F8(renderCtx, cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
+            cy2 = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cy2, indicator, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
         x += 0xA;
         intToDecStringShort(currentVal, buf, getMenuString(0xB)[1]);
@@ -4010,7 +4010,7 @@ s32 renderJunctionSlotDetail(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 wideM
     available = checkJunctionCompat(availFlags, gfFlags, abilityBit);
 
     xPos = x;
-    cursorY = func_800300F8(renderCtx, cursorY, entry->labelId, xPos, y, g_menuTint[MENU_TINT_NORMAL],
+    cursorY = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, entry->labelId, xPos, y, g_menuTint[MENU_TINT_NORMAL],
                             (!available) ? 0x1C0 : 0x80);
 
     if (wideMode) {
@@ -4066,7 +4066,7 @@ s32 renderJunctionSlotDetail(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 wideM
     xPos = x + 0x6A;
     yPos = y + 2;
     if (icon != 7) {
-        cursorY = func_800300F8(renderCtx, cursorY, icon, xPos, yPos, g_menuTint[MENU_TINT_NORMAL], (available * 64) + 2);
+        cursorY = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, icon, xPos, yPos, g_menuTint[MENU_TINT_NORMAL], (available * 64) + 2);
     }
 
     if (flags & 1) {
@@ -4132,7 +4132,7 @@ s32 renderHpJunctionSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, 
         y--;
         do { cursorY++; cursorY--; } while (0);
 
-        return func_800300F8(renderCtx, cursorY, 0x128, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
+        return (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, 0x128, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
     }
 }
 
@@ -4156,7 +4156,7 @@ s32 renderStatusDefSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s
         y--;
         do { cursorY++; cursorY--; } while (0);
 
-        return func_800300F8(renderCtx, cursorY, 0x129, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
+        return (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, 0x129, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
     }
 }
 
@@ -4180,7 +4180,7 @@ s32 renderElemAtkSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32
         y--;
         do { cursorY++; cursorY--; } while (0);
 
-        return func_800300F8(renderCtx, cursorY, 0x12A, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
+        return (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, 0x12A, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
     }
 }
 
@@ -4204,7 +4204,7 @@ s32 renderElemDefSlot(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charIdx, s32
         y--;
         do { cursorY++; cursorY--; } while (0);
 
-        return func_800300F8(renderCtx, cursorY, 0x12B, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
+        return (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, 0x12B, x, y, menuCol, (!available) ? 0x1C0 : 0x80);
     }
 }
 
@@ -4249,7 +4249,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
     available = checkJunctionCompat(junc->availFlags, gfEntry->abilityFlags, 0x200);
     xPos = x + 0x10;
     yPos = y + 4;
-    cursorY = func_800300F8(renderCtx, cursorY, 0x12A, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
+    cursorY = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, 0x12A, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
                             (!available) ? 0x1C0 : 0x80);
     magicId = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_ELEM];
     if (magicId == 0) {
@@ -4268,7 +4268,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
         /* No defensive slots available — draw a single empty row. */
         xPos = x + 0x10;
         yPos = y + 0x11;
-        cursorY = func_800300F8(renderCtx, cursorY, 0x12B, xPos, yPos, g_menuTint[MENU_TINT_NORMAL], 0x1C0);
+        cursorY = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, 0x12B, xPos, yPos, g_menuTint[MENU_TINT_NORMAL], 0x1C0);
         xPos = x + 0x30;
         name = renderInnerPanel(0x1A);
         cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, 0);
@@ -4277,7 +4277,7 @@ s32 renderElemJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 charId
             available = checkJunctionCompat(i < charSlots, i < gfSlots, 1);
             xPos = x + 0x10;
             yPos = y + 0x11 + i * 13;
-            cursorY = func_800300F8(renderCtx, cursorY, 0x12B, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
+            cursorY = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, 0x12B, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
                                     (!available) ? 0x1C0 : 0x80);
             xPos = x + 0x30;
             magicId = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_ELEM_0 + i];
@@ -4331,7 +4331,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
     available = checkJunctionCompat(junc->availFlags, gfEntry->abilityFlags, 0x400);
     xPos = x + 0x10;
     yPos = y + 4;
-    cursorY = func_800300F8(renderCtx, cursorY, 0x128, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
+    cursorY = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, 0x128, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
                             (!available) ? 0x1C0 : 0x80);
     magicId = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_STATUS];
     if (magicId == 0) {
@@ -4350,7 +4350,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
         /* No defensive slots available — draw a single empty row. */
         xPos = x + 0x10;
         yPos = y + 0x11;
-        cursorY = func_800300F8(renderCtx, cursorY, 0x129, xPos, yPos, g_menuTint[MENU_TINT_NORMAL], 0x1C0);
+        cursorY = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, 0x129, xPos, yPos, g_menuTint[MENU_TINT_NORMAL], 0x1C0);
         xPos = x + 0x30;
         name = renderInnerPanel(0x1A);
         cursorY = func_801F0FEC(renderCtx, cursorY, xPos, yPos, name, 0);
@@ -4359,7 +4359,7 @@ s32 renderStatusJunctionPanel(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 char
             available = checkJunctionCompat(i < charSlots, i < gfSlots, 1);
             xPos = x + 0x10;
             yPos = y + 0x11 + i * 13;
-            cursorY = func_800300F8(renderCtx, cursorY, 0x129, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
+            cursorY = (s32)func_800300F8((void *)renderCtx, (TSPRT *)cursorY, 0x129, xPos, yPos, g_menuTint[MENU_TINT_NORMAL],
                                     (!available) ? 0x1C0 : 0x80);
             xPos = x + 0x30;
             magicId = g_gameState.chars[charIdx].junctions[JUNCTION_DEF_STATUS_0 + i];

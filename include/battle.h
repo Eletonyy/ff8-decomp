@@ -842,8 +842,6 @@ void func_800406A4(u8 *p);
 void func_80040734(u8 *p);
 /* func_80040DE4 (the main binary's RotTransPers) is declared in psxsdk/libgte.h. */
 
-/** @brief Reset battle-transition state (clears @c btl_color flags). */
-void initBattleTransition(void);
 void func_800D0608(void); /* bc_object17: overlay VSync handler (RENDER_OVERLAY) */
 
 

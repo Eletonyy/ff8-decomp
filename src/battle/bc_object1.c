@@ -284,15 +284,15 @@ void func_8009A3BC(void) {
 }
 
 /**
- * @brief Conditionally apply vibration feedback.
+ * @brief Show the countdown timer in battle if the field was showing it.
  *
- * If bit 2 of g_battleConfig.unk2 is set, calls setCameraVibrateIntensity(0x1000) and
- * setCameraVibrateState(1) to trigger controller vibration.
+ * If bit 2 of g_battleConfig.unk2 is set (DISPTIMER sets it), calls
+ * setHudBrightness(0x1000) and setCountdownVisible(1).
  */
 void func_8009A3F4(void) {
     if (g_battleConfig.unk2 & 4) {
-        setCameraVibrateIntensity(0x1000);
-        setCameraVibrateState(1);
+        setHudBrightness(0x1000);
+        setCountdownVisible(1);
     }
 }
 

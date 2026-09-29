@@ -76,8 +76,6 @@ void waitForCorrectDisc(void);
 void func_80098FD4(s32 mode);
 
 /* --- External helpers called by the intro overlay ------------------------ */
-extern s32  func_8004D174(void);
-extern s32  func_8004D208(s32 a);
 extern void func_800275D4();          /* K&R prototype, intentional. */
 extern s32  func_800393C8(void);
 extern s32  getDiscId(void);
