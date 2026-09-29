@@ -116,32 +116,11 @@ extern void enableSoundReverb(s32 mask);
 extern u16 applyButtonRemapTranslation(u16 bitmask);
 extern s32  reverseButtonRemap(s32 index);
 extern void btlColorStub1044(void);
-extern void updateRankBanner(void);
-extern void hideRankBanner(void);
-extern void setSalaryEnabled(s32 enabled);
-extern void resetRankBanner(void);
-extern void stepAnimEntries(void);
-extern void clearAnimEntryActive(s32 idx);
-extern void updateAnimEntry(s32 idx, s32 value);
-extern void setupAnimEntry(s32 idx, s32 flags, u16 *src, s32 start, s32 end, s32 inStart);
-extern void setupAnimEntryFull(s32 idx, s32 flags, u16 *src, s32 start, s32 end, s32 inStart, s32 inEnd);
-extern void clearAnimEntries(void);
-extern u8  *getBattleBuffer1(void);
-extern void waitGpuIdle(void);
-extern u32  getBattleAllocBase(void);
-extern s32  getBattleAllocSize(void);
-extern void flipBattleOtBuffer(void);
-extern void func_80032010(void);
-extern void func_800320BC(void);
-extern void renderBattleFrame(void);
 
 void *func_8002FF34(void *ot, void *head, s32 idx, s32 x, s32 y, s32 color);
 void *func_800300F8(void *ot, TSPRT *p, s32 idx, s32 x, s32 y, s32 color, s32 clut);
 u8 *func_800302DC(void *ot, u8 *pkt);
 u8 *func_80030518(P_TAG *ot, u8 *pkt);
-u8 *func_80031364(void *ot, u8 *pkt);
-void func_800316D4(s32 oldRank, s32 newRank, s32 oldSalary, s32 newSalary);
-u8 *renderAnimOverlay(void *ot, u8 *pkt);
 
 
 #endif

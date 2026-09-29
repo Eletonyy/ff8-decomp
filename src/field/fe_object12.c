@@ -3,7 +3,8 @@
 #include "game.h"
 #include "field.h"
 #include "battle.h"
-#include "btl_color.h"
+#include "hud/gauge.h"
+#include "hud/seed_rank.h"
 #include "cdrom.h"
 #include "render.h"
 #include "snd_cd.h"
@@ -82,7 +83,7 @@ void SmInitEventAll(s32 fullReset)
     g_fieldVars->dialogActiveMask = 0;
     for (i = 0; i < 2; i++) {
         D_80085398[i].flag = 0;
-        clearAnimEntryActive(i);
+        hideGauge(i);
     }
     sndDisableReverb(0);
     g_fieldVars->soundBankSelector = 0;

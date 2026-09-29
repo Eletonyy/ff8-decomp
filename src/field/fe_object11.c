@@ -4,6 +4,7 @@
 #include "battle.h"
 #include "sound.h"
 #include "btl_color.h"
+#include "hud/seed_rank.h"
 #include "btl_entity.h"
 #include "dialog.h"
 #include "cd.h"
@@ -39,7 +40,7 @@
  * After the dispatch all paths run a common tail:
  *   - @ref FIELD_STATE_COUNTDOWN → show the countdown timer again.
  *   - @ref FIELD_STATE_FIELD_READY clear and @c levelUpDisplayTimer @c > @c 0
- *     → fire the SeeD level-up notification via @ref func_800316D4.
+ *     → fire the SeeD level-up notification via @ref showSeedRankNotification.
  *   - Set each dialog's text speed from the message-speed setting
  * (@ref setDialogTextSpeed).
  *   - Mirror @c D_80078DF8 bit @c 0x10 → @c FieldVars.field58 and,
@@ -145,7 +146,7 @@ void func_800BF718(s32 mode) {
         if ((s16)seed->levelUpDisplayTimer > 0) {
             prevLevel = (s32)((s16)seed->prevSeedExp) / 100;
             currLevel = (s32)((s16)seed->seedExp) / 100;
-            func_800316D4(prevLevel, currLevel,
+            showSeedRankNotification(prevLevel, currLevel,
                           g_seedSalaryTable[prevLevel] * 10,
                           g_seedSalaryTable[currLevel] * 10);
             g_fieldVars->levelUpDisplayTimer = 0x5A;

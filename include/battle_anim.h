@@ -4,6 +4,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "dialog.h"
+#include "hud/seed_rank.h"
 
 /* Battle animation state shared across the battle, field, menu, and Triple Triad
  * code. g_battleAnims is a main-RAM global (0x80082DD0); the Triple Triad minigame
@@ -61,6 +62,40 @@ typedef struct {
     u32 pktBase;
 } DisplayListBuf;
 
+/**
+ * @brief The on-screen countdown timer, drawn as MM:SS from
+ * @c g_gameState.mainData.countdownTimer.
+ */
+typedef struct {
+    u16 x; /* 0x00 */
+    u8 y; /* 0x02 */
+    u8 visible; /* 0x03 */
+    u16 brightness; /* 0x04: 0x1000 = full; also the SeeD rank notification's and the gauges' grey level */
+    u8 blinkFrames; /* 0x06: frames since lastSeconds changed, capped at 0x40 */
+    u8 lastSeconds; /* 0x07: low byte of the countdown when it last changed */
+} CountdownDisplay;
+
+/** @brief A HUD gauge: a bar showing @c value between @c minValue and @c maxValue. */
+typedef struct {
+    s16 x; /* 0x00 */
+    s16 y; /* 0x02 */
+    s16 minValue; /* 0x04: the value of an empty bar */
+    s16 maxValue; /* 0x06: the value of a full bar */
+    s16 value; /* 0x08 */
+    s16 width; /* 0x0A: the bar's length in pixels */
+    s16 fill; /* 0x0C: the filled length in pixels, moving toward the value's */
+    u8 flags; /* 0x0E: GAUGE_* */
+    u8 pad; /* 0x0F */
+} Gauge; /* 0x10 */
+
+/** @brief @c Gauge.flags bits. */
+#define GAUGE_BLINK_LOW 0x01 /**< Blink the gauge while its value is at most a quarter of the maximum. */
+#define GAUGE_SNAP 0x02 /**< setGaugeValue sets @c fill straight to the new value's width. */
+#define GAUGE_BLINK_ON 0x40 /**< Current blink phase: the bar is drawn white. */
+#define GAUGE_ACTIVE 0x80 /**< The gauge is shown. */
+
+#define GAUGE_COUNT 2
+
 /** @brief Complete battle animation state (entities + global coords). */
 typedef struct {
     /* 0x000 */ BattleAnimEntity entities[2]; /**< Two animation entities. */
@@ -80,15 +115,12 @@ typedef struct {
     /* 0x6F4 */ s32 halfSize;                /**< Half of total VRAM size. */
     /* 0x6F8 */ u8 pad6F8[4];                /**< Unknown. */
     /* 0x6FC */ s32 field6FC;                /**< Cleared during GPU init. */
-    /* 0x700 */ u8 pad700[3];                /**< Unknown. */
-    /* 0x703 */ u8 field703;                 /**< Saved/cleared across transition. */
-    /* 0x704 */ u8 pad704[0x270];            /**< Unknown. */
+    /* 0x700 */ CountdownDisplay countdown; /**< The countdown timer; its brightness is the HUD's grey level. */
+    /* 0x708 */ u8 pad708[0x26C]; /**< Unknown. */
     /* 0x974 */ s32 palette[3];              /**< RGB888 palette (0x40BBGGRR). */
-    /* 0x980 */ u8 pad980[0x30];             /**< Unknown. */
-    /* 0x9B0 */ u8 field9B0;                 /**< Saved/cleared across transition. */
-    /* 0x9B1 */ u8 pad9B1[0xF];              /**< Unknown. */
-    /* 0x9C0 */ u8 field9C0;                 /**< Saved/cleared across transition. */
-    /* 0x9C1 */ u8 pad9C1[1];                /**< Unknown. */
+    /* 0x980 */ s32 battleTimer; /**< Also addressed directly as @c g_battleTimer. */
+    /* 0x984 */ SeedRankNotification seedRankNotification; /**< The SeeD rank notification. */
+    /* 0x9A2 */ Gauge gauges[GAUGE_COUNT]; /**< The two HUD gauges. */
     /* 0x9C2 */ s16 field9C2;               /**< Set to 0x4611 during GPU init. */
     /* 0x9C4 */ s16 cdStreamCounter;         /**< CD stream counter. */
     /* 0x9C6 */ u8 pad9C6[2];                /**< Unknown. */

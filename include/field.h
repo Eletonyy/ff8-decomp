@@ -817,7 +817,7 @@ typedef struct {
 extern void func_800383B8(s32 key, s32 status);
 
 /* ======================================================================== */
-/* Field-overlay dialog / animation entry tables                                */
+/* Field-overlay dialog / gauge tables                                          */
 /* ======================================================================== */
 
 /**
@@ -842,12 +842,12 @@ typedef struct {
 extern FieldDialogSlot D_80085300[];
 
 /**
- * @brief One slot in the field anim-shadow table @ref D_80085398.
+ * @brief One slot in the field's gauge-shadow table @ref D_80085398.
  *
- * Eight halfwords of opcode-supplied animation parameters. @c flag at
+ * Eight halfwords of opcode-supplied gauge parameters. @c flag at
  * @c 0x0 is the slot-active marker (cleared by @c func_800BD1A4),
  * @c field2..fieldE are the per-opcode arg shadow (the same values
- * forwarded to @c setupAnimEntry / @c setupAnimEntryFull / @c updateAnimEntry).
+ * forwarded to @c showGauge / @c showGaugeFull / @c setGaugeValue).
  */
 typedef struct {
     /* 0x0 */ s16 flag;
@@ -860,7 +860,7 @@ typedef struct {
     /* 0xE */ u16 fieldE;
 } FieldAnimSlot;
 
-/** @brief Per-slot anim shadow table populated by field-VM anim opcodes. */
+/** @brief Per-gauge shadow table populated by the field VM's gauge opcodes. */
 extern FieldAnimSlot D_80085398[];
 
 

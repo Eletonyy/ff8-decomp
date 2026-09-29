@@ -1,6 +1,8 @@
 #include "common.h"
 #include "battle.h"
 #include "btl_color.h"
+#include "hud/gauge.h"
+#include "hud/seed_rank.h"
 #include "gamestate.h"
 #include "field.h"
 #include "sound.h"
@@ -54,7 +56,7 @@ s32 opHandler_CARDGAME(ScriptContext *context) {
 
         if (result >= 5) {
             if (!(g_fieldVars->stateFlags & FIELD_STATE_FIELD_READY)) {
-                resetRankBanner();
+                resetSeedRankNotification();
             }
 
             g_fieldEntity.mode = 8;
@@ -65,7 +67,7 @@ s32 opHandler_CARDGAME(ScriptContext *context) {
             }
 
             for (i = 0; i < 2; i++) {
-                clearAnimEntryActive(i);
+                hideGauge(i);
             }
 
             setCountdownVisible(0);

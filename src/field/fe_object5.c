@@ -6,6 +6,7 @@
 #include "cd.h"
 #include "battle.h"
 #include "btl_color.h"
+#include "hud/seed_rank.h"
 #include "overlay.h"
 #include "field/fe_object1.h"
 #include "field/fe_object1_2.h"
@@ -532,8 +533,8 @@ s32 opHandler_MOVIEREADY(ScriptContext *context) {
  * Once ready, doubles the three rate halfwords
  * (@c moveSpeed / @c msgChannel / @c field_0x208) of every active
  * entity — counterpart of @c func_800B14C8's halve step. If the
- * @ref FIELD_STATE_FIELD_READY is clear, also hides the SeeD rank banner
- * (@c resetRankBanner, so the next scene starts clean) and
+ * @ref FIELD_STATE_FIELD_READY is clear, also hides the SeeD rank notification
+ * (@c resetSeedRankNotification, so the next scene starts clean) and
  * resets @c g_fieldVars->levelUpDisplayTimer. Finally calls
  * @c func_801E870C to commit the mode switch.
  *
@@ -558,7 +559,7 @@ s32 opHandler_MOVIE(ScriptContext *context) {
             p++;
         }
         if (!(g_fieldVars->stateFlags & FIELD_STATE_FIELD_READY)) {
-            resetRankBanner();
+            resetSeedRankNotification();
             g_fieldVars->levelUpDisplayTimer = 0;
         }
         func_801E870C();

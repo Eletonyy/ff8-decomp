@@ -6,6 +6,8 @@
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
 #include "btl_color.h"
+#include "hud/gauge.h"
+#include "hud/seed_rank.h"
 #include "dialog.h"
 #include "thread.h"
 
@@ -2157,8 +2159,8 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
             }
         }
         updateCountdownBlink();
-        updateRankBanner();
-        stepAnimEntries();
+        updateSeedRankNotification();
+        stepGauges();
         count--;
     }
 }
@@ -2256,9 +2258,9 @@ s32 renderBattleDisplayList(s32 *colorTag) {
     buf = g_battleAnims.active;
     head = (u8 *)getDisplayListHead();
     head = func_800302DC(&buf->ot[1], head);
-    head = func_80031364(&buf->ot[14], head);
+    head = drawSeedRankNotification(&buf->ot[14], head);
     head = transformValueIfActive(&buf->ot[13], head);
-    head = renderAnimOverlay(&buf->ot[13], head);
+    head = drawGauges(&buf->ot[13], head);
     ot = buf->ot;
     storeGpuPacket(func_8002BF24(ot, head) + sizeof(buf->ot));
 
@@ -2340,7 +2342,7 @@ void buildAnimEasingCurves(void)
  *
  * Sets up display list buffers, computes half-size offsets for double
  * buffering, then initializes all battle subsystems: entities, SFX,
- * GPU colors, camera, command entries, transitions, and animation entries.
+ * GPU colors, camera, command entries, transitions, and the gauges.
  *
  * @param vramBase Display buffer base address in VRAM.
  * @param vramSize Display buffer total size (halved internally for double buffering).
@@ -2373,10 +2375,10 @@ void initBattleAnimSystem(s32 vramBase, s32 vramSize)
     setAnimEntityOpacity(0, 0);
     setAnimEntityOpacity(1, 0);
     btlColorStub1044();
-    resetRankBanner();
-    clearAnimEntries();
+    resetSeedRankNotification();
+    resetGauges();
     setDigitBaseCode(((u8 *)getMenuString(0xB))[1]);
-    g_battleAnims.pad980[6] = 0;
+    g_battleAnims.seedRankNotification.salaryEnabled = 0;
     g_cardFileActive = 0;
 }
 
