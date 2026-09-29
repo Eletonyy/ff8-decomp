@@ -142,27 +142,27 @@ u8 *func_800302DC(void *ot, u8 *pkt) {
     timer--;
     timer = (timer < 0) ? 0 : ((timer >= 0x1798) ? 0x1797 : timer);
 
-    intToDecStringShort(timer / 60, buf, 0x70);
+    intToDecStringShort(timer / 60, buf, ICON_BOLD_DIGIT_0);
 
     for (i = 3; i < 5; i++) {
         c = buf[i];
-        if (i != 3 || c != 0x70) {
-            out = func_8002FF34(ot, out, c, x, y, color);
+        if (i != 3 || c != ICON_BOLD_DIGIT_0) {
+            out = drawIcon(ot, out, c, x, y, color);
         }
         x += 10;
     }
 
     x++;
     if (disp->blinkFrames < threshold) {
-        out = func_8002FF34(ot, out, 0x7A, x, y, color);
+        out = drawIcon(ot, out, ICON_BOLD_COLON, x, y, color);
     }
 
     x += 7;
-    intToDecStringShort(timer % 60, buf, 0x70);
+    intToDecStringShort(timer % 60, buf, ICON_BOLD_DIGIT_0);
 
     for (i = 3; i < 5; i++) {
         c = buf[i];
-        out = func_8002FF34(ot, out, c, x, y, color);
+        out = drawIcon(ot, out, c, x, y, color);
         x += 10;
     }
 
@@ -221,27 +221,27 @@ u8 *func_80030518(P_TAG *ot, u8 *pkt) {
     color |= SPRT_CODE;
     timer = (timer < 0) ? 0 : ((timer >= 0x1798) ? 0x1797 : timer);
 
-    intToDecStringShort(timer / 60, buf, 0x70);
+    intToDecStringShort(timer / 60, buf, ICON_BOLD_DIGIT_0);
 
     for (i = 3; i < 5; i++) {
         c = buf[i];
-        if (i != 3 || c != 0x70) {
-            out = func_8002FF34(ot, out, c, x, y, color);
+        if (i != 3 || c != ICON_BOLD_DIGIT_0) {
+            out = drawIcon(ot, out, c, x, y, color);
         }
         x += 10;
     }
 
     x++;
     if (disp->blinkFrames < 30) {
-        out = func_8002FF34(ot, out, 0x7A, x, y, color);
+        out = drawIcon(ot, out, ICON_BOLD_COLON, x, y, color);
     }
 
     x += 7;
-    intToDecStringShort(timer % 60, buf, 0x70);
+    intToDecStringShort(timer % 60, buf, ICON_BOLD_DIGIT_0);
 
     for (i = 3; i < 5; i++) {
         c = buf[i];
-        out = func_8002FF34(ot, out, c, x, y, color);
+        out = drawIcon(ot, out, c, x, y, color);
         x += 10;
     }
 

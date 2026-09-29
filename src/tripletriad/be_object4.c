@@ -12,6 +12,7 @@
 #include "battle_anim.h"
 #include "menu_tint.h"
 #include "btl_anim.h"
+#include "ui/icon.h"
 #include "tripletriad/be_object1.h"
 #include "tripletriad/be_object1b.h"
 #include "tripletriad/be_object2.h"
@@ -847,17 +848,17 @@ void func_800A2F78(void) {
 /**
  * @brief Draw the blinking corner markers around the Triple Triad cursor's view rect.
  *
- * Emits up to two glyphs through @c func_800300F8, selected by @p corners:
- * bit 0 draws the left marker (glyph 0x5C) just inside the view's top-left, and
- * bit 1 draws the right marker (glyph 0x5D) just inside the top-right. Both sit
+ * Emits up to two glyphs through @c drawIconClut, selected by @p corners:
+ * bit 0 draws the left marker (@c ICON_ARROW_LEFT) just inside the view's top-left, and
+ * bit 1 draws the right marker (@c ICON_ARROW_RIGHT) just inside the top-right. Both sit
  * near the bottom of the view (@c view.y + view.h - 10). The markers blink in
  * step with @c CursorState::frameCounter: bit 3 of the counter selects a blink
  * parameter of 0 or 0x140, toggling every 8 frames. The running @p prim cursor
  * is threaded through each call and returned.
  *
- * @param renderCtx Render context forwarded to @c func_800300F8.
+ * @param renderCtx Render context forwarded to @c drawIconClut.
  * @param prim      Primitive/cursor threaded through and advanced by each glyph.
- * @param color     Color parameter forwarded to @c func_800300F8.
+ * @param color     Color parameter forwarded to @c drawIconClut.
  * @param corners   Bitmask: bit 0 = left marker, bit 1 = right marker.
  * @return The advanced @p prim cursor.
  */
@@ -874,11 +875,11 @@ void *func_800A2FCC(void *renderCtx, void *prim, s32 color, s32 corners)
 
     if (corners & 1) {
         yc = cs->view.y + cs->view.h - 10;
-        prim = func_800300F8(renderCtx, prim, 0x5C, cs->view.x + 2, yc, color, blink);
+        prim = drawIconClut(renderCtx, prim, ICON_ARROW_LEFT, cs->view.x + 2, yc, color, blink);
     }
     if (corners & 2) {
         yc = cs->view.y + cs->view.h - 10;
-        prim = func_800300F8(renderCtx, prim, 0x5D, (cs->view.x + cs->view.w) - 9, yc, color, blink);
+        prim = drawIconClut(renderCtx, prim, ICON_ARROW_RIGHT, (cs->view.x + cs->view.w) - 9, yc, color, blink);
     }
     return prim;
 }
@@ -887,16 +888,16 @@ void *func_800A2FCC(void *renderCtx, void *prim, s32 color, s32 corners)
  * @brief Render a number (with a fixed prefix glyph) into the ordering table.
  *
  * Formats @p value @c +1 to a decimal glyph string and blanks its leading zero,
- * then emits a fixed prefix glyph (@c 0x32) followed by the digit(s) via
- * @c func_8002FF34, advancing the glyph position between each. When @p twoDigit
+ * then emits @c ICON_PAGE followed by the digit(s) via
+ * @c drawIcon, advancing the glyph position between each. When @p twoDigit
  * is set both the tens and units digits are drawn (advancing 9 then 6);
  * otherwise only the units digit is drawn after the prefix.
  *
  * @param otBase   Ordering-table base for the glyph primitives.
  * @param pkt      Current GPU packet cursor.
- * @param pos      Starting glyph position (passed to @c func_8002FF34; advanced per glyph).
- * @param w        Glyph width forwarded to @c func_8002FF34.
- * @param col      Glyph color/palette forwarded to @c func_8002FF34.
+ * @param pos      Starting x position (passed to @c drawIcon; advanced per glyph).
+ * @param w        Y position forwarded to @c drawIcon.
+ * @param col      Color word forwarded to @c drawIcon.
  * @param value    Number to display (rendered as @c value @c + @c 1).
  * @param twoDigit Non-zero to draw the tens digit as well as the units digit.
  * @return The advanced packet cursor.
@@ -904,16 +905,16 @@ void *func_800A2FCC(void *renderCtx, void *prim, s32 color, s32 corners)
 void *func_800A30C8(void *otBase, void *pkt, s32 pos, s32 w, s32 col, s32 value, s32 twoDigit) {
     u8 buf[16];
 
-    intToDecStringShort(value + 1, buf, 0x28);
-    replaceLeadingZeros(&buf[3], 1, 0x28, 7);
+    intToDecStringShort(value + 1, buf, ICON_SMALL_DIGIT_0);
+    replaceLeadingZeros(&buf[3], 1, ICON_SMALL_DIGIT_0, ICON_BLANK);
 
-    pkt = func_8002FF34(otBase, pkt, 0x32, pos, w, col);
+    pkt = drawIcon(otBase, pkt, ICON_PAGE, pos, w, col);
     pos += 9;
     if (twoDigit != 0) {
-        pkt = func_8002FF34(otBase, pkt, buf[3], pos, w, col);
+        pkt = drawIcon(otBase, pkt, buf[3], pos, w, col);
         pos += 6;
     }
-    pkt = func_8002FF34(otBase, pkt, buf[4], pos, w, col);
+    pkt = drawIcon(otBase, pkt, buf[4], pos, w, col);
     return pkt;
 }
 
@@ -1575,7 +1576,7 @@ void *func_800A4098(void *a0, void *a1, s32 a2, s32 a3, s32 stack0) {
  * (@c D_801D4AF6). Otherwise it looks up the cell's card index in
  * @c D_801D4A88, picks a highlight color (7 if the card passes @c func_80023B14,
  * else 1), and emits three primitives at a position derived from the cursor
- * view rect: a glyph (@c func_8002FF34), the card image (@c func_800A3D2C), and
+ * view rect: a glyph (@c drawIcon), the card image (@c func_800A3D2C), and
  * a frame (@c func_800A4098). The packet cursor is threaded through and returned.
  *
  * @param otBase  Ordering-table base forwarded to each emitter.
@@ -1611,7 +1612,7 @@ void *func_800A40F0(void *otBase, void *pkt, s32 row, s32 col, s32 xOffset)
     x = (cardImg = D_801D49C8.view.x + xOffset);
     y = cs->view.y + col * 13 + 8;
 
-    pkt = func_8002FF34(otBase, pkt, 0xD7, x + 7, y, cs->packedColor);
+    pkt = drawIcon(otBase, pkt, ICON_CARD, x + 7, y, cs->packedColor);
     cardImg = (s32)func_80023A54(cell);
     pkt = func_800A3D2C(otBase, pkt, x + 0x15, y, cardImg, color);
     x += 0x9A;
@@ -1621,7 +1622,7 @@ void *func_800A40F0(void *otBase, void *pkt, s32 row, s32 col, s32 xOffset)
 /**
  * @brief Emit one glyph into the OT at a grid cell derived from a linear index.
  *
- * Forwards to the glyph emitter @c func_8002FF34 (glyph 0) with the position
+ * Forwards to @c drawIcon (@c ICON_CHOICE_CURSOR) with the position
  * taken from @p ctx and the column @c a3 @c % @c 11 at a 13px pitch. Returns
  * the advanced packet cursor.
  *
@@ -1631,7 +1632,7 @@ void *func_800A40F0(void *otBase, void *pkt, s32 row, s32 col, s32 xOffset)
  */
 void *func_800A4250(s32 *otBase, void *pkt, func_800A4250_arg2 *ctx, s32 a3) {
     s32 w = ctx->unk02 + 0xB;
-    return func_8002FF34(otBase, pkt, 0,
+    return drawIcon(otBase, pkt, ICON_CHOICE_CURSOR,
                          ctx->unk00 - 0x13,
                          w + (a3 % 11) * 13,
                          ctx->unk10);
@@ -1667,14 +1668,14 @@ void *func_800A42D0(void *otBase, void *pkt)
     }
 
     pkt = func_800A31EC(otBase, pkt);
-    pkt = func_8002FF34(otBase, pkt, 0x4D, cs->view.x + 0x7F, cs->view.y, cs->packedColor);
+    pkt = drawIcon(otBase, pkt, ICON_NUM, cs->view.x + 0x7F, cs->view.y, cs->packedColor);
 
     if (D_801D4AF6 >= 0xC) {
         pkt = func_800A2FCC(otBase, pkt, cs->packedColor, 3);
         pkt = func_800A31B8(otBase, pkt, cs->view.x + 0x28, cs->view.y, cs->packedColor, cs->row);
     }
 
-    pkt = func_8002FF34(otBase, pkt, 0x59, cs->view.x, cs->view.y, cs->packedColor);
+    pkt = drawIcon(otBase, pkt, ICON_CARDS, cs->view.x, cs->view.y, cs->packedColor);
     func_800A3398(cs->timer, &cs->view, &cs->work);
     pkt = func_800A3320(otBase, pkt, &cs->work);
     return func_800A3528(otBase, pkt, func_800A40F0);

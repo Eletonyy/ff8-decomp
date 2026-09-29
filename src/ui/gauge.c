@@ -8,10 +8,6 @@
 
 /* --- Local type definitions --- */
 
-/** @brief The glyphs of a gauge's two metal end caps. */
-#define GLYPH_GAUGE_LEFT_CAP 0x26
-#define GLYPH_GAUGE_RIGHT_CAP 0x27
-
 /** @brief A gauge's length in pixels when none is given. */
 #define GAUGE_DEFAULT_WIDTH 96
 
@@ -125,7 +121,7 @@ void stepGauges(void) {
  * @param ot Ordering-table slot the packets are linked into.
  * @param pkt First free packet.
  * @param idx Gauge index (0 or 1).
- * @param color Colour word of the glyphs, the background and the bar.
+ * @param color Colour word of the icons, the background and the bar.
  * @return The packet cursor after emitDrawEnvPackets.
  */
 static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
@@ -163,8 +159,8 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
         }
         x = originX;
         y = originY;
-        p = func_8002FF34(ot, p, GLYPH_GAUGE_LEFT_CAP, x + 8, y, color);
-        p = func_8002FF34(ot, p, GLYPH_GAUGE_RIGHT_CAP, x + gauge->width + 8, y, color);
+        p = drawIcon(ot, p, ICON_GAUGE_LEFT_CAP, x + 8, y, color);
+        p = drawIcon(ot, p, ICON_GAUGE_RIGHT_CAP, x + gauge->width + 8, y, color);
         tw = (DR_TWIN *)p;
         setlen(tw, 2);
         tw->code[0] = TEXWINDOW_OFF;
@@ -181,13 +177,13 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
             }
             *(u32 *)&p->r0 = barColor; /* r, g, b and code in one store; the code is set again below */
             setlen(p, 7);
-            p->drawMode = _get_mode(1, 0, getTPage(0, 0, GLYPH_TPAGE_X, GLYPH_TPAGE_Y));
+            p->drawMode = _get_mode(1, 0, getTPage(0, 0, ICON_TPAGE_X, ICON_TPAGE_Y));
             p->texWindow[0] = GAUGE_FILL_TEXWINDOW;
             p->texWindow[1] = 0;
             p->code = SPRT_CODE >> SPRT_CODE_SHIFT;
             setXY0(p, x, y);
             setWH(p, w, 8);
-            p->uvClut = getClut(GLYPH_CLUT_X, GAUGE_FILL_CLUT_Y) << 16;
+            p->uvClut = getClut(ICON_CLUT_X, GAUGE_FILL_CLUT_Y) << 16;
             addPrimFastWithTempOperand(ot, p, link2);
             p++;
             x += GAUGE_SPRITE_WIDTH;
@@ -202,13 +198,13 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
             }
             *(u32 *)&p->r0 = color;
             setlen(p, 7);
-            p->drawMode = _get_mode(1, 0, getTPage(0, 0, GLYPH_TPAGE_X, GLYPH_TPAGE_Y));
+            p->drawMode = _get_mode(1, 0, getTPage(0, 0, ICON_TPAGE_X, ICON_TPAGE_Y));
             p->texWindow[0] = GAUGE_TRACK_TEXWINDOW;
             p->texWindow[1] = 0;
             p->code = SPRT_CODE >> SPRT_CODE_SHIFT;
             setXY0(p, x, y);
             setWH(p, w, 16);
-            p->uvClut = getClut(GLYPH_CLUT_X, GAUGE_TRACK_CLUT_Y) << 16;
+            p->uvClut = getClut(ICON_CLUT_X, GAUGE_TRACK_CLUT_Y) << 16;
             addPrimFastWithTempOperand(ot, p, link3);
             p++;
             x += GAUGE_SPRITE_WIDTH;

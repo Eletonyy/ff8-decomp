@@ -714,7 +714,7 @@ s32 func_801E36AC(s32 ctx, s32 pkt, s32 col, s32 row, s32 scrollOffset) {
     y = y + (row * 13);
     index = (col * 11) + row;
     if (index < D_801E3D9C) {
-        pkt = (s32)func_8002FF34((void *)ctx, (void *)pkt, 0xDE, x, y - 2, g_menuTint[MENU_TINT_NORMAL]);
+        pkt = (s32)drawIcon((void *)ctx, (void *)pkt, ICON_ABILITY_MENU, x, y - 2, g_menuTint[MENU_TINT_NORMAL]);
         x += 13;
         abilityId = D_801E3D84[index];
         entry = func_801E2920(abilityId);

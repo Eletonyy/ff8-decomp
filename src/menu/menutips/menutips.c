@@ -457,7 +457,7 @@ s32 func_801E67F4(s32 a0, s32 a1, s32 a2) {
     if (*(s16 *)(state + 0x2A) != 0) {
         func_801F1AFC();
         setMenuBrightness(*(s16 *)(state + 0x24));
-        buildGrayscaleGpuColor(*(s16 *)(state + 0x24));
+        setNextPageMarkerBrightness(*(s16 *)(state + 0x24));
         ot = func_801E6768(disp, ot);
         ot = func_801E6668(disp, ot);
         ot = func_801E6514(disp, ot);

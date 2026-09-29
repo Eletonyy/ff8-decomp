@@ -301,7 +301,7 @@ s32 func_801E6760(TestMenuState *state, s32 a1, s32 a2) {
 
     func_801F1AFC();
     setMenuBrightness(state->intensity);
-    buildGrayscaleGpuColor(state->intensity);
+    setNextPageMarkerBrightness(state->intensity);
     v0 = func_801E64B4(a1, a2);
     v0 = func_801E6570(state, a1, v0);
     v0 = func_801E66A8(state, a1, v0);

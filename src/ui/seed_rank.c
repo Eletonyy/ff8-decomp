@@ -92,14 +92,14 @@ void updateSeedRankNotification(void) {
  * @brief Draw a zero-terminated glyph string, 9 pixels per character.
  *
  * Character 7 is a blank: it draws nothing but still takes its 9 pixels.
- * Every other character is drawn with func_8002FF34.
+ * Every other character is drawn with drawIcon.
  *
  * @param ot OT base pointer.
  * @param pkt Current packet buffer pointer.
  * @param str Zero-terminated glyph string.
  * @param x Left edge of the first character.
  * @param y Top edge.
- * @param color Color word passed to func_8002FF34.
+ * @param color Color word passed to drawIcon.
  * @return Updated packet buffer pointer after rendering.
  */
 static u8 *drawHudText(P_TAG *ot, u8 *pkt, u8 *str, s32 x, s32 y, s32 color) {
@@ -119,7 +119,7 @@ static u8 *drawHudText(P_TAG *ot, u8 *pkt, u8 *str, s32 x, s32 y, s32 color) {
         }
         if (ch == blank) goto skip;
         /* Emit one glyph packet and advance the cursor. */
-        pkt = func_8002FF34(otBase, pkt, ch, xPos, yPos, col);
+        pkt = drawIcon(otBase, pkt, ch, xPos, yPos, col);
     } while (0);
 skip:
     xPos = xPos + 9;
@@ -195,9 +195,9 @@ static void *drawSeedRankNotificationUnderlines(P_TAG *ot, LINE_F2 *line, s32 le
 /**
  * @brief Draw the SeeD rank notification and link it into the OT.
  *
- * Draws nothing while @c slide is 0. The rank half (glyph 0xB0, then the rank)
+ * Draws nothing while @c slide is 0. The rank half (@c ICON_SEED_LEVEL, then the rank)
  * slides in from 50 pixels to the left and the salary half (the salary, then
- * glyph 0xB1) from 59 pixels to the right, along g_animCurveFadeOut. Everything
+ * @c ICON_SEED_GIL) from 59 pixels to the right, along g_animCurveFadeOut. Everything
  * is clipped to a 12-pixel strip at y 196, where the old and new values roll
  * vertically while @c roll is between 0 and ONE;
  * drawSeedRankNotificationUnderlines then underlines the notification.
@@ -261,7 +261,7 @@ u8 *drawSeedRankNotification(void *ot, u8 *pkt) {
     leftShift = leftShiftFixed / ONE;
     rankLabelX = leftShift + 0x10;
 
-    out = func_8002FF34(ot, out, 0xB0, rankLabelX, y, color);
+    out = drawIcon(ot, out, ICON_SEED_LEVEL, rankLabelX, y, color);
     x = leftShift + 0x30;
 
     if (roll == 0) {
@@ -278,7 +278,7 @@ u8 *drawSeedRankNotification(void *ot, u8 *pkt) {
     rightShift = curve * 59 / ONE;
     x = rightShift + 0xF0;
 
-    out = func_8002FF34(ot, out, 0xB1, rightShift + 0x11D, y, color);
+    out = drawIcon(ot, out, ICON_SEED_GIL, rightShift + 0x11D, y, color);
 
     if (roll == 0) {
         out = drawHudText(ot, out, p->oldSalaryText, x, y, color);
@@ -314,7 +314,7 @@ void hideSeedRankNotification(void) {
  *
  * Restarts the notification with @c roll and @c slide at 0 and runs its first step.
  * The ranks are written as two digits, or from 31 up as the rankAText string
- * (a blank and glyph 0xB2, rank A), and the salaries as five digits. Leading
+ * (@c ICON_BLANK and @c ICON_SEED_RANK_A), and the salaries as five digits. Leading
  * zeros become blanks (7), and @c salaryBlanks gets the number of leading
  * blanks the two salaries share.
  *
@@ -342,19 +342,19 @@ void showSeedRankNotification(s32 oldRank, s32 newRank, s32 oldSalary, s32 newSa
 
     salaryDigits = &buf[5];
 
-    intToDecString(oldSalary, buf, 0x60);
+    intToDecString(oldSalary, buf, ICON_THIN_DIGIT_0);
     copyString(d->oldSalaryText, salaryDigits);
-    replaceLeadingZeros(d->oldSalaryText, 4, 0x60, 7);
+    replaceLeadingZeros(d->oldSalaryText, 4, ICON_THIN_DIGIT_0, ICON_BLANK);
 
-    intToDecString(newSalary, buf, 0x60);
+    intToDecString(newSalary, buf, ICON_THIN_DIGIT_0);
     copyString(d->newSalaryText, salaryDigits);
-    replaceLeadingZeros(d->newSalaryText, 4, 0x60, 7);
+    replaceLeadingZeros(d->newSalaryText, 4, ICON_THIN_DIGIT_0, ICON_BLANK);
 
     if (oldRank < 0x1F)
     {
-        intToDecStringShort(oldRank, buf, 0x60);
+        intToDecStringShort(oldRank, buf, ICON_THIN_DIGIT_0);
         copyString(d->oldRankText, &buf[3]);
-        replaceLeadingZeros(d->oldRankText, 1, 0x60, 7);
+        replaceLeadingZeros(d->oldRankText, 1, ICON_THIN_DIGIT_0, ICON_BLANK);
     }
     else
     {
@@ -363,9 +363,9 @@ void showSeedRankNotification(s32 oldRank, s32 newRank, s32 oldSalary, s32 newSa
 
     if (newRank < 0x1F)
     {
-        intToDecStringShort(newRank, buf, 0x60);
+        intToDecStringShort(newRank, buf, ICON_THIN_DIGIT_0);
         copyString(d->newRankText, &buf[3]);
-        replaceLeadingZeros(d->newRankText, 1, 0x60, 7);
+        replaceLeadingZeros(d->newRankText, 1, ICON_THIN_DIGIT_0, ICON_BLANK);
     }
     else
     {

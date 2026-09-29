@@ -2368,8 +2368,8 @@ void initBattleAnimSystem(s32 vramBase, s32 vramSize)
     swapDisplayList();
     initAllBattleEntities();
     resetAllDialogs();
-    setDefaultGpuColor();
-    buildGrayscaleGpuColor(0x1000);
+    resetNextPageMarkerBrightness();
+    setNextPageMarkerBrightness(0x1000);
     setMenuBrightness(BRIGHTNESS_NORMAL);
     iconStub();
     buildAnimEasingCurves();

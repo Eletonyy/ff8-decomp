@@ -78,10 +78,6 @@ typedef struct {
     s16 color;  /**< 0x6: color/font parameter. */
 } TextQueueEntry; /* 0x8 bytes */
 
-/** @brief Face-grid members: the switchable party (not Squall or Edea). */
-#define FACE_GRID_MEMBERS ((1 << CHAR_ZELL) | (1 << CHAR_IRVINE) | (1 << CHAR_QUISTIS) | \
-                           (1 << CHAR_RINOA) | (1 << CHAR_SELPHIE) | (1 << CHAR_SEIFER))
-
 /* ======================================================================== */
 /* Private prototypes                                                       */
 /* ======================================================================== */

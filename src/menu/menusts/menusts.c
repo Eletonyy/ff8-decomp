@@ -182,7 +182,7 @@ s32 func_801E72D8(s32 displayList, s32 ot, s32 x, s32 y, s32 mode) {
         if (statusFlags & mask) {
             if (drawn >= 3) break;
             yPos = y + yStep;
-            ot = func_8002FF34(displayList, ot, entry->statusId, x + 0xA, yPos, g_menuTint[MENU_TINT_NORMAL]);
+            ot = drawIcon(displayList, ot, entry->statusId, x + 0xA, yPos, g_menuTint[MENU_TINT_NORMAL]);
             drawn++;
             yPos += 4;
             intToDecStringShort(D_801E9EE4.atkStatusHit - 100, strBuf, digitBase);
