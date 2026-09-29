@@ -5,7 +5,8 @@
 #include "menushop.h"
 #include "menumain.h"
 #include "game.h"
-#include "btl_color.h"
+#include "ui/icon.h"
+#include "snd_sfx.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
 

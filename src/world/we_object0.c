@@ -1,6 +1,7 @@
 #include "common.h"
 #include "gamestate.h"
-#include "btl_color.h"
+#include "ui/countdown.h"
+#include "input/vibration.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libetc.h"

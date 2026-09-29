@@ -164,13 +164,10 @@ typedef struct {
 /* Imported functions kept as externs here, each for a concrete reason (numstr, controller-
    input, battle-display and colour-bar GPU helpers were migrated to numstr.h / thread.h /
    btl_anim.h / drawbar.h):
-     - sendSpuCommand, func_800300F8 — owned by btl_color.c, whose btl_color.h pulls in battle.h
-       (for BattleCmdEntry); tripletriad is decoupled from battle.h, and this header does not
-       include battle.h.
+     - func_800300F8 — owned by ui/icon.c, whose ui/icon.h pulls in battle.h; tripletriad
+       is decoupled from battle.h, and this header does not include battle.h.
      - getAnimFrameParam — returns u16 (thread.c) but this caller needs the s32 view with no
        widening mask; adopting the true u16 measurably breaks the match (see thread.h). */
-// TODO: Drop this and include the prototype from the owner.
-extern void sendSpuCommand(s32 idx);
 // TODO: Drop this and include the prototype from the owner.
 extern void *func_800300F8(void *ot, TSPRT *p, s32 idx, s32 x, s32 y, s32 color, s32 clut);
 extern s32  getAnimFrameParam(s32 slot, s32 sub);     /**< Per-controller input-frame param. Defined u16 in thread.c, but the original caller uses it as s32 (no widening mask) — match-load-bearing, so kept here rather than via thread.h. */

@@ -237,7 +237,7 @@ extern s32              D_800D2474;   /**< Repeat step counter. */
 
 /* getAnimFrameParam returns u16 in thread.c, but every caller uses the result as
    s32 with no widening mask; thread.h documents that those callers keep their own
-   declaration. applyButtonRemapTranslation is u16 (u16) in btl_color.h; this caller
+   declaration. applyButtonRemapTranslation is u16 (u16) in input/button_remap.h; this caller
    needs the s32 view, which the u16 prototype would mask. */
 extern s32              getAnimFrameParam(s32 slot, s32 sub);
 // TODO: Drop this and include the prototype from the owner.

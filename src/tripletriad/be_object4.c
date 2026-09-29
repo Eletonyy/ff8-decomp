@@ -4,6 +4,7 @@
 #include "numstr.h"
 #include "sound.h"
 #include "snd_init.h"
+#include "snd_sfx.h"
 #include "thread.h"
 #include "psxsdk/libc.h"
 #include "psxsdk/libgpu.h"
@@ -25,7 +26,7 @@
 /** @brief @c DialogConfig.flags: the rect's x/y is the box's center, not its corner. */
 #define DIALOG_CONFIG_CENTER_BOX 0x04
 
-/* s32 view: btl_color.h's u16 (u16) makes the caller mask the argument and result. */
+/* s32 view: input/button_remap.h's u16 (u16) makes the caller mask the argument and result. */
 // TODO: Drop this and include the prototype from the owner.
 extern s32 applyButtonRemapTranslation(s32 arg);
 

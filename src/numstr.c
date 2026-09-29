@@ -646,3 +646,12 @@ void decodeMessageDirect(Dialog *dialog, u8 *output) {
 INCLUDE_ASM("asm/nonmatchings/numstr", nextDialogChar);
 
 
+/**
+ * @brief Reset a dialog's typing progress: @c typedChars, @c typingRow and @c typingLine.
+ * @param entry The dialog.
+ */
+void resetDialogTyping(Dialog *entry) {
+    entry->typedChars = 0;
+    entry->typingLine = 0;
+    entry->typingRow = 0;
+}

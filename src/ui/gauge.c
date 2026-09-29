@@ -3,8 +3,8 @@
 #include "psxsdk/libc.h"
 #include "battle_anim.h"
 #include "btl_anim.h"
-#include "btl_color.h"
-#include "hud/gauge.h"
+#include "ui/gauge.h"
+#include "ui/icon.h"
 
 /* --- Local type definitions --- */
 

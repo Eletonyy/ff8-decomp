@@ -1,7 +1,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "battle.h"
-#include "btl_color.h"
+#include "ui/countdown.h"
 #include "gf.h"
 #include "gamestate.h"
 #include "ability.h"

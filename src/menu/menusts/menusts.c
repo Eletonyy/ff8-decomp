@@ -4,7 +4,7 @@
 #include "menusts.h"
 #include "numstr.h"
 #include "gamestate.h"
-#include "btl_color.h"
+#include "ui/icon.h"
 #include "btl_entity.h"
 #include "game.h"
 

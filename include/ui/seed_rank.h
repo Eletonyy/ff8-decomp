@@ -1,5 +1,5 @@
-#ifndef HUD_SEED_RANK_H
-#define HUD_SEED_RANK_H
+#ifndef UI_SEED_RANK_H
+#define UI_SEED_RANK_H
 
 #include "common.h"
 

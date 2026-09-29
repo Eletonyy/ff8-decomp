@@ -1,5 +1,5 @@
-#ifndef HUD_GAUGE_H
-#define HUD_GAUGE_H
+#ifndef UI_GAUGE_H
+#define UI_GAUGE_H
 
 #include "common.h"
 

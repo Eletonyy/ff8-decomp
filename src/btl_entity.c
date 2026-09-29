@@ -1,7 +1,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "battle.h"
-#include "btl_color.h"
+#include "input/button_remap.h"
 #include "dialog.h"
 #include "btl_entity.h"
 #include "drawbar.h"

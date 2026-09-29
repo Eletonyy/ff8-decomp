@@ -4,7 +4,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "dialog.h"
-#include "hud/seed_rank.h"
+#include "ui/seed_rank.h"
 
 /* Battle animation state shared across the battle, field, menu, and Triple Triad
  * code. g_battleAnims is a main-RAM global (0x80082DD0); the Triple Triad minigame

@@ -2,7 +2,7 @@
 #include "psxsdk/libetc.h"
 #include "psxsdk/libgpu.h"
 #include "battle.h"
-#include "hud/seed_rank.h"
+#include "ui/seed_rank.h"
 #include "cd.h"
 #include "gamestate.h"
 #include "overlay.h"

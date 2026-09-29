@@ -530,7 +530,7 @@ void func_8009912C(void) {
 extern s32  getAnimFrameParam(s32 slot, s32 sub); /* per-pad input-frame param (s32 view) */
 extern s32  func_80027A58(s32 a, s32 b);          /* per-pad newly-pressed input */
 // TODO: Drop this and include the prototype from the owner.
-extern s32 applyButtonRemapTranslation(s32 arg); /* s32 view: btl_color.h's u16 (u16) masks arg and result, changing codegen */
+extern s32 applyButtonRemapTranslation(s32 arg); /* s32 view: input/button_remap.h's u16 (u16) masks arg and result, changing codegen */
 
 /**
  * @brief Per-tick controller-input sampling for the field engine's two pad slots.

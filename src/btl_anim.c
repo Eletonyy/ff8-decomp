@@ -5,9 +5,12 @@
 #include "battle.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
-#include "btl_color.h"
-#include "hud/gauge.h"
-#include "hud/seed_rank.h"
+#include "ui/icon.h"
+#include "ui/countdown.h"
+#include "input/vibration.h"
+#include "ui/gauge.h"
+#include "ui/seed_rank.h"
+#include "input/button_remap.h"
 #include "dialog.h"
 #include "thread.h"
 
@@ -2368,13 +2371,13 @@ void initBattleAnimSystem(s32 vramBase, s32 vramSize)
     setDefaultGpuColor();
     buildGrayscaleGpuColor(0x1000);
     setMenuBrightness(BRIGHTNESS_NORMAL);
-    btlColorStub0234();
+    iconStub();
     buildAnimEasingCurves();
     resetCountdownDisplay();
     initBattleCmdEntries();
     setAnimEntityOpacity(0, 0);
     setAnimEntityOpacity(1, 0);
-    btlColorStub1044();
+    initButtonRemap();
     resetSeedRankNotification();
     resetGauges();
     setDigitBaseCode(((u8 *)getMenuString(0xB))[1]);

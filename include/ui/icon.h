@@ -1,5 +1,5 @@
-#ifndef BTL_COLOR_H
-#define BTL_COLOR_H
+#ifndef UI_ICON_H
+#define UI_ICON_H
 
 #include "common.h"
 #include "battle.h"
@@ -94,33 +94,12 @@ extern GlyphTable D_80052A68;
 
 extern s32              g_gpuColor;           /* 0x800834C8 */
 
-extern void resetDialogTyping(Dialog *entry);
 extern void buildGrayscaleGpuColor(s32 intensity);
 extern void setDefaultGpuColor(void);
-extern void btlColorStub0234(void);
-extern void setHudBrightness(s32 brightness);
-extern void setCountdownVisible(u32 visible);
-extern void setCountdownPosition(s32 x, s32 y);
-extern void updateCountdownBlink(void);
-extern void resetCountdownDisplay(void);
-extern s32  isAnyBattleCmdActive(void);
-extern s32  checkBattleCmdSource(s32 cmd);
-extern void deactivateBattleCmd(s32 id);
-extern s32  loadBattleCmd(u8 *data, s32 idx, s32 priority);
-extern void func_80030B2C(void);
-extern void advanceBattleTimer(s32 delta);
-extern void initBattleCmdEntries(void);
-extern void sendSpuCommand(s32 idx);
-extern void playSoundEffect(s32 idx);
-extern void enableSoundReverb(s32 mask);
-extern u16 applyButtonRemapTranslation(u16 bitmask);
-extern s32  reverseButtonRemap(s32 index);
-extern void btlColorStub1044(void);
+extern void iconStub(void);
 
 void *func_8002FF34(void *ot, void *head, s32 idx, s32 x, s32 y, s32 color);
 void *func_800300F8(void *ot, TSPRT *p, s32 idx, s32 x, s32 y, s32 color, s32 clut);
-u8 *func_800302DC(void *ot, u8 *pkt);
-u8 *func_80030518(P_TAG *ot, u8 *pkt);
 
 
 #endif

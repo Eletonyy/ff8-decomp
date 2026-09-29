@@ -3,9 +3,9 @@
 #include "psxsdk/libgte.h"
 #include "battle_anim.h"
 #include "btl_anim.h"
-#include "btl_color.h"
-#include "hud/seed_rank.h"
 #include "numstr.h"
+#include "ui/icon.h"
+#include "ui/seed_rank.h"
 
 /** @brief Primitive code 0x40 (flat line) in the colour word. */
 #define LINE_F2_CODE 0x40000000

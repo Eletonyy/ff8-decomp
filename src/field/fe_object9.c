@@ -15,7 +15,7 @@
 // call sites below to match the original K&R-style scheduling. Without that,
 // four functions mismatch.
 // #include "btl_entity.h"
-// #include "hud/gauge.h"
+// #include "ui/gauge.h"
 
 /**
  * @brief Snapshot a target entity's grid-cell position into the queued

@@ -1,4 +1,4 @@
-#include "btl_color.h"
+#include "snd_sfx.h"
 #include "character.h"
 #include "common.h"
 #include "game.h"
