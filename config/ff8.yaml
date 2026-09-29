@@ -667,6 +667,7 @@ binaries:
     - [0x20724, c, btl_color]
     - [0x2184C, c, hud/seed_rank]
     - [0x22110, c, hud/gauge]
+    - [0x22750, c, battle_results/display]
     - [0x22A8C, c, entity]
     - [0x238F4, c, color]
     - [0x25A94, c, render]

@@ -10,13 +10,5 @@ extern void setGaugeValue(s32 idx, s32 value);
 extern void showGauge(s32 idx, s32 flags, u16 *pos, s32 minValue, s32 maxValue, s32 value);
 extern void showGaugeFull(s32 idx, s32 flags, u16 *pos, s32 minValue, s32 maxValue, s32 value, s32 width);
 extern void resetGauges(void);
-extern u8 *getBattleBuffer1(void);
-extern void waitGpuIdle(void);
-extern u32 getBattleAllocBase(void);
-extern s32 getBattleAllocSize(void);
-extern void flipBattleOtBuffer(void);
-extern void func_80032010(void);
-extern void func_800320BC(void);
-extern void renderBattleFrame(void);
 
 #endif

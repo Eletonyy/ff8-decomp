@@ -1,7 +1,6 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libc.h"
-#include "psxsdk/libetc.h"
 #include "battle_anim.h"
 #include "btl_anim.h"
 #include "btl_color.h"
@@ -45,29 +44,12 @@ typedef struct {
     u16 w, h;
 } GaugeSprt;
 
-/** @brief Battle HUD OT buffer (smaller display list for UI elements). */
-typedef struct {
-    DISPENV disp; /* 0x00 */
-    DRAWENV draw; /* 0x14 */
-    u32 ot[2]; /* 0x70: 2-entry ordering table */
-    void *pktAlloc; /* 0x78: current packet allocation pointer */
-    u32 pktBase; /* 0x7C: packet buffer start */
-} HudDisplayBuf;
-
-/* --- Externs (sorted by address) --- */
-
-extern HudDisplayBuf *D_80083918; /* 0x80083918 — active HUD display buffer */
-extern HudDisplayBuf *D_80083920[]; /* 0x80083920 — HUD display buffer pair */
-extern u8 D_80083938[]; /* 0x80083938 — battle OT data */
-extern u8 D_80085134[]; /* 0x80085134 — battle display buffer */
-
 /* --- Private functions --- */
 
 static s32 lerpRange(s32 rangeStart, s32 rangeEnd, s32 input, s32 maxOut);
 static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color);
 static void setGaugePosition(s32 idx, u16 *pos);
 static void initGauge(s32 idx, s32 flags, u16 *pos, s32 minValue, s32 maxValue, s32 value, s32 width);
-static u8 *getBattleBuffer2(void);
 
 /**
  * @brief Perform linear interpolation within a range.
@@ -362,160 +344,4 @@ void resetGauges(void) {
     for (i = 0; i < GAUGE_COUNT; i++, gauge++) {
         gauge->flags = 0;
     }
-}
-
-
-
-/* ========================================================================
- * Likely file boundary: the HUD display buffers start here, after the
- * gauges' resetGauges.
- * ======================================================================== */
-
-
-/**
- * @brief Get a pointer to the global buffer D_80085134.
- * @return Address of D_80085134.
- */
-u8 *getBattleBuffer1(void) {
-    return D_80085134;
-}
-
-/**
- * @brief Get a pointer to the global buffer D_80083938.
- * @return Address of D_80083938.
- */
-static u8 *getBattleBuffer2(void) {
-    return D_80083938;
-}
-
-/**
- * @brief Spin until the GPU is idle.
- *
- * Polls IsIdleGPU with a count of 1 until it stops returning -1, i.e. until
- * the GPU is ready for commands.
- */
-void waitGpuIdle(void) {
-    while (IsIdleGPU(1) == -1) {
-    }
-}
-
-
-/**
- * @brief Return the base address of the battle allocation region.
- * @return 0x801F4000 (fixed address in PS1 RAM).
- */
-u32 getBattleAllocBase(void) {
-    return 0x801F4000;
-}
-
-
-/**
- * @brief Return the size of the battle allocation region.
- * @return 0x4000 (16384 bytes / 16 KB).
- */
-s32 getBattleAllocSize(void) {
-    return 0x4000;
-}
-
-
-/**
- * @brief Flip the double-buffered HUD ordering table.
- *
- * Selects the inactive buffer from D_80083920, sets it as active,
- * clears its OT, and resets the packet allocation pointer.
- */
-void flipBattleOtBuffer(void) {
-    HudDisplayBuf *buf;
-    HudDisplayBuf *active;
-
-    buf = D_80083920[0];
-    if (D_80083918 == buf) {
-        buf = D_80083920[1];
-    }
-    D_80083918 = buf;
-    ClearOTag(buf->ot, 2);
-    active = D_80083918;
-    active->pktAlloc = &active->pktBase;
-}
-
-
-/**
- * @brief Put the HUD draw environment at the head of the HUD ordering table, then
- * splice the table into the GPU's current drawing.
- *
- * BreakDraw stops the GPU's linked-list DMA and returns the address it stopped at,
- * or -1 while it cannot; it is tried up to 500 times. ContinueDraw then inserts the
- * HUD table and continues from that address.
- */
-void func_80032010(void) {
-    HudDisplayBuf *buf;
-    DR_ENV *env;
-    u32 *ot;
-    u32 *next;
-    s32 i;
-
-    buf = D_80083918;
-    env = buf->pktAlloc;
-    ot = buf->ot;
-    SetDrawEnv(env, &buf->draw);
-    addPrimFast(ot, env, s2);
-    env++;
-    D_80083918->pktAlloc = env;
-    for (i = 0; i < 500; i++) {
-        next = BreakDraw();
-        if (next != (u32 *)-1) {
-            break;
-        }
-    }
-    if (next != (u32 *)-1) {
-        ContinueDraw(ot, next);
-    }
-}
-
-
-/**
- * @brief Set up the HUD display buffer pair for 384x224 double buffering at VRAM x=0
- * and x=512, each buffer drawing where the other displays, clearing to black.
- *
- * The screen is moved down 8 lines, and 24 more when GetVideoMode reports PAL.
- */
-void func_800320BC(void) {
-    s32 i;
-
-    SetDefDispEnv(&D_80083920[0]->disp, 0, 0, 384, 224);
-    SetDefDispEnv(&D_80083920[1]->disp, 512, 0, 384, 224);
-    SetDefDrawEnv(&D_80083920[1]->draw, 0, 0, 384, 224);
-    SetDefDrawEnv(&D_80083920[0]->draw, 512, 0, 384, 224);
-    for (i = 0; i < 2; i++) {
-        D_80083920[i]->draw.isbg = 1;
-        setRGB0(&D_80083920[i]->draw, 0, 0, 0);
-        D_80083920[i]->disp.screen.y += 8;
-        D_80083920[i]->disp.screen.h = 224;
-        if (GetVideoMode() == MODE_PAL) {
-            D_80083920[i]->disp.screen.y += 24;
-        }
-    }
-}
-
-
-/**
- * @brief Start a HUD frame: flip the HUD ordering table, clear the screen with a
- * black 384x224 tile, then call func_80032010.
- */
-void renderBattleFrame(void) {
-    HudDisplayBuf *buf;
-    TILE *tile;
-    u32 *ot;
-
-    flipBattleOtBuffer();
-    buf = D_80083918;
-    tile = buf->pktAlloc;
-    ot = buf->ot; /* read before the tile is filled, the retail load order */
-    setTile(tile);
-    setRGB0(tile, 0, 0, 0);
-    setXY0(tile, 0, 0);
-    setWH(tile, 384, 224);
-    addPrimFast(ot, tile, s0);
-    D_80083918->pktAlloc = tile + 1;
-    func_80032010();
 }
