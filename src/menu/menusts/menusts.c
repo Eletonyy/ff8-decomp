@@ -1,16 +1,13 @@
 #include "common.h"
 #include "battle.h"
 #include "menu.h"
+#include "menumain.h"
 #include "menusts.h"
 #include "numstr.h"
 #include "gamestate.h"
 #include "ui/icon.h"
 #include "btl_entity.h"
 #include "game.h"
-
-/* menumain is called at a fixed overlay address, so its prototype stays
- * file-local here (overlay-conflict rule, as in the other sub-overlays). */
-extern s32 func_801EF9AC(s32 displayList, s32 ot, s32 mode, s32 color);
 
 /** @brief Look up value from D_801FA3C8 table by dividing input by 64. */
 u16 func_801E5800(s32 a0) {

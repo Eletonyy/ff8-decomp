@@ -1,5 +1,6 @@
 #include "common.h"
 #include "menu.h"
+#include "menumain.h"
 #include "menucfg.h"
 #include "thread.h"
 
@@ -38,12 +39,12 @@ static void func_801E58EC(s32 a0, s32 a1);
 static void func_801E5918(s32 a0, s32 a1, s32 a2);
 static u8  *func_801E59A0(s32 a0);
 static u8  *func_801E59CC(s32 a0);
-static void func_801E61A0(u8 *text, void *data, s32 value, s32 x, s32 y);
+static void func_801E61A0(u8 *text, s32 data, s32 value, s32 x, s32 y);
 static s32  func_801E67A8(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4);
 
 /** @brief Config menu entry point — delegates to func_801F798C. */
 void func_801E5800(s32 a0) {
-    func_801F798C(a0);
+    func_801F798C();
 }
 
 /**
@@ -152,9 +153,6 @@ static u8 *func_801E59CC(s32 a0) {
 
 INCLUDE_ASM("asm/ovl/menucfg/nonmatchings/menucfg", func_801E59F8);
 
-extern s32 func_801EF9AC(void *arg0, s32 arg1, s32 arg2, s32 arg3);
-extern MenuDisplayConfig g_menuDisplayCfg;
-
 /**
  * @brief Render a bordered panel at the given position.
  *
@@ -163,13 +161,13 @@ extern MenuDisplayConfig g_menuDisplayCfg;
  * with the given position (fixed size 0xF4 x 0x16, iconType=0x55,
  * iconSubType=0) and calls func_801EF9AC to draw the panel.
  *
- * @param text   Text to draw in the panel, or NULL for none.
- * @param data   Pointer passed to rendering functions.
- * @param value  Value passed to rendering functions.
- * @param x      X position of the panel.
- * @param y      Y position of the panel.
+ * @param text Text to draw in the panel, or NULL for none.
+ * @param data Passed on to the rendering functions.
+ * @param value Value passed to rendering functions.
+ * @param x X position of the panel.
+ * @param y Y position of the panel.
  */
-static void func_801E61A0(u8 *text, void *data, s32 value, s32 x, s32 y)
+static void func_801E61A0(u8 *text, s32 data, s32 value, s32 x, s32 y)
 {
     MenuDisplayConfig *s = &g_menuDisplayCfg;
     s32 xoff = x + 10;

@@ -28,7 +28,6 @@ typedef struct {
 
 extern s16 D_801E7D64;
 extern s16 D_801E7D66;
-extern MenuDisplayConfig g_menuDisplayCfg;
 extern u8 D_801E7870;
 
 extern s16 getGameStateS16(void);

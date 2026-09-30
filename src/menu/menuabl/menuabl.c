@@ -15,20 +15,7 @@ extern AbilityEntry  D_8007CEE0[];
 
 extern s32  getAbilityDesc(s32 id);
 extern u8  *getAbilityName(s32 abilityId);
-extern void func_801F0A78(s32 ctx, s32 idx, s32 unused, s32 x, s32 y);
-extern void func_801F1AFC(void);
-extern void func_801F1B10(void);
-extern s32  func_801F72B4(void);
-
-
-extern s32  func_801F6768(u16 flags, s32 max, s32 current);
-extern void func_801EFFE4(s32 trackId);
-extern void func_801F0BF8(s32 mode);
-extern void func_801F0C5C(u8 mode, void *ctx);
-extern s32  func_801F0D84(void);
 extern void func_801F18FC(s32 *ctx);
-extern s32  func_801F0BB0(void);
-extern void func_801F7BEC(s32 cfg);
 
 /**
  * @brief Render one cell of an ability grid at a per-slot X offset.

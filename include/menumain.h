@@ -121,6 +121,25 @@ void func_801F202C(void);
 void func_801F72C4(void);
 s32  func_801F738C(s32);
 s32  func_801F7394(s32);
+void func_801F0A34(s32, s32, s32, s32);
+void func_801F0A78(s32, s32, s32, s32, s32);
+void func_801F0BF8(s32);
+void func_801F0C5C(u8, void *);
+void func_801F1B10(void);
+void func_801F1B4C(s32);
+void func_801F5400(s32);
+void func_801F576C(s32, s32);
+s32 func_801F57A4(s32);
+s32 func_801F6768(u16, s32, s32);
+void func_801F6F88(s32);
+s32 func_801F76E0(s32, s32, s32);
+void func_801F7BEC(s32);
+s32 menumain_getPartyMemberMask(void);
+void func_801EFFE4(s32);
+s32 func_801F0BB0(void);
+s32 func_801F0D84(void);
+void func_801F1AFC(void);
+s32 func_801F72B4(void);
 
 /* ======================================================================== */
 /* Data (unit-owned, menumain overlay region)                               */

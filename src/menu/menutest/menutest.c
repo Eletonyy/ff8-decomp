@@ -63,7 +63,6 @@ extern u8 D_801E7ADC;
 extern u8 g_testQuestionText[];
 extern u8 g_testHeaderText[];
 extern TestChoiceMark g_testChoiceMarks[];
-extern MenuDisplayConfig g_menuDisplayCfg;
 extern u8 D_801FABD4;
 extern u8 g_gameState;
 extern u32 D_801E69B8;

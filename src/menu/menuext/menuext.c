@@ -1,5 +1,6 @@
 #include "common.h"
 #include "menu.h"
+#include "menumain.h"
 #include "character.h"
 #include "menuext.h"
 
@@ -450,11 +451,9 @@ typedef struct {
 
 extern CharRecord g_characters[];
 
-extern u32 func_801F57A4(s32 a0);
 extern u8 *getCharName(s32 charId);
 extern u8 *getMagicNamePtr(s32 magicId);
 extern s32 drawColorByMenuPalette(s32 renderCtx, s32 cursorY, s32 packedYX, s32 byteVal, s32 attr);
-extern s32 func_801EF9AC(s32 renderCtx, s32 cursorY, s32 width, s32 color);
 
 /**
  * @brief Render a character/magic equipment row + selection highlight.
