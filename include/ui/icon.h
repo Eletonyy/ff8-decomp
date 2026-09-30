@@ -54,9 +54,9 @@ enum {
     ICON_TARGET_RETICLE_2 = 0x05,
     ICON_NEXT_PAGE_MARKER = 0x06, /**< Drawn in a message window's bottom-right corner. */
     ICON_BLANK = 0x07, /**< An empty cell, for blanked leading zeros. */
-    ICON_SQUALL_JP = 0x08, /**< "Squall" in katakana, left from the Japanese release. */
-    ICON_ZELL_JP = 0x09,
-    ICON_RINOA_JP = 0x0A,
+    ICON_PARTY_NAME_0 = 0x08, /**< A 96x16 strip the battle renders party member 0's name into (func_80037308). */
+    ICON_PARTY_NAME_1 = 0x09,
+    ICON_PARTY_NAME_2 = 0x0A,
     ICON_GIL = 0x0B, /**< "G" */
     ICON_LETTER_P = 0x0C,
     ICON_DASH = 0x0D,
@@ -196,8 +196,8 @@ enum {
     ICON_SEED_LEVEL = 0xB0, /**< "S-Lv." */
     ICON_SEED_GIL = 0xB1, /**< The "G" after a SeeD salary. */
     ICON_SEED_RANK_A = 0xB2,
-    ICON_DOG = 0xB8, /**< A white dog, in two frames. */
-    ICON_DOG_2 = 0xB9,
+    ICON_CHOICE_CURSOR_DOWN = 0xB8, /**< The hand cursor, pointing down. */
+    ICON_CHOICE_CURSOR_DOWN_2 = 0xB9, /**< The same hand 4 pixels lower: the other frame of its bob. */
     ICON_RED_CROSS = 0xBA,
     ICON_JUNCTION_MARK = 0xC0, /**< A boxed J: the GF is junctioned. */
     ICON_TINY_LEFT_CAP = 0xC8,
