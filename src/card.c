@@ -444,7 +444,7 @@ void setPartyLeader(s32 charId) {
  *
  * @return Bitmask where bit N is set if character N is available.
  */
-u16 func_80036EC0(void) {
+s32 func_80036EC0(void) {
     s32 i;
     u16 charMask;
     u16 partyMask;

@@ -84,7 +84,7 @@ s32 getAbilityCategory(s32 slotIndex);
 void setPartyLeader(s32 charId);
 
 /** @brief Bitmask of characters currently available to the party. */
-u16 func_80036EC0(void);
+s32 func_80036EC0(void);
 
 /** @brief Copy GF @p gfIdx's runtime HP into its save-data entry. */
 void copyGfHpToSave(s32 gfIdx);

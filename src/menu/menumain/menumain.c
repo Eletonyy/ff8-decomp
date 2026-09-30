@@ -6,6 +6,7 @@
 #include "gamestate.h"
 #include "game.h"
 #include "gf.h"
+#include "card.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
 #include "ui/icon.h"
@@ -1096,14 +1097,9 @@ void func_801F22A8(void) {
  * @c STATUS_KO, then intersects with the character availability mask
  * from func_80036EC0.
  *
- * @return u16 bitmask of usable characters, bit index = character ID.
- *
- * @note func_80036EC0 (src/card.c) is deliberately called without a
- *       prototype, as in the original build: card.h's u16 declaration must
- *       not be visible here or the call gains a spurious @c andi truncation
- *       (same ABI split as getGfAvailabilityMask — see card.h).
+ * @return Bitmask of usable characters, bit index = character ID.
  */
-u16 func_801F22F4(void) {
+s32 func_801F22F4(void) {
     s32 avail = func_80036EC0();
     u16 mask = 0;
     s32 i;
@@ -1513,7 +1509,7 @@ u16 func_801F57DC(s32 a0) {
 }
 
 /** @brief Set entity current HP (updates both primary and cache tables). */
-void func_801F5868(s32 a0, s16 a1) {
+void func_801F5868(s32 a0, s32 a1) {
     if (a0 >= 16) {
         s32 idx = a0 - 16;
         s32 base2 = (s32)&g_battleChars;
