@@ -79,6 +79,5 @@ void func_80098FD4(s32 mode);
 extern void func_800275D4();          /* K&R prototype, intentional. */
 extern s32  func_800393C8(void);
 extern s32  getDiscId(void);
-extern s32  getAnimFrameParam(s32 slot, s32 sub);
 
 #endif /* INTRO_H */

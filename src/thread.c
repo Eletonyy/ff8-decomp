@@ -4,6 +4,10 @@
 #include "battle.h"
 #include "thread.h"
 
+static void stepPadPort(s32 a0, PadPort *port, s32 a2);
+static void stepPadPorts(s32 a0);
+static u16 getPadReadReleased(s32 idx, s32 offset);
+
 INCLUDE_ASM("asm/nonmatchings/thread", func_80026ADC);
 
 
@@ -120,24 +124,24 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_800270B0);
 
 
 /**
- * @brief Poll the CD stream state and update a pad port accordingly.
+ * @brief Step a pad port's state machine.
  *
- * Queries the current stream status via func_8003AC10 and stores it in
+ * Queries the port's state via func_8003AC10 and stores it in
  * @c field1A, then dispatches on it:
  * - 1: flag the port active (field0A) and pending (field19).
  * - 2: same, but also clear vibrationMask.
  * - 4, 5: no-op.
- * - 6: on the first tick after a pending flag (field19 == 1), start the
- *      stream (func_800270B0, func_8003AF50, func_8003AFD0); on later
+ * - 6: on the first tick after a pending flag (field19 == 1), run the
+ *      port's setup (func_800270B0, func_8003AF50, func_8003AFD0); on later
  *      ticks refresh field01/field02 from motor[0]/motor[1] masked by
  *      vibrationMask.
  * - other (0, 3, out of range): reset to active/pending with a zero vibrationMask.
  *
  * @param a0 Base context passed through to func_800270B0.
  * @param port Port to update.
- * @param a2 Stream channel selector passed to the CD helpers.
+ * @param a2 Driver port number: 0x00 for port 0, 0x10 for port 1.
  */
-void func_80027220(s32 a0, PadPort *port, s32 a2) {
+static void stepPadPort(s32 a0, PadPort *port, s32 a2) {
     s32 status;
     func_80047384();
     status = func_8003AC10(a2);
@@ -228,10 +232,10 @@ s32 func_80027360(s32 a0) {
 
 
 /**
- * @brief Mark a pad port as active.
+ * @brief Make stepPadPort rerun a pad port's setup on its next state-6 tick.
  * @param idx Index into g_engine.ports.
  */
-void activateBattleAnim(s32 idx) {
+void requestPadSetup(s32 idx) {
     PadPort *port = &g_engine.ports[idx];
     port->field19 = 1;
     port->field0A = 1;
@@ -239,13 +243,12 @@ void activateBattleAnim(s32 idx) {
 
 
 /**
- * @brief Initialize two consecutive PadPort entries via func_80027220.
- * @param a0 Base address of the first entry.
- * @note Initializes the first entry with mode 0, and the second (at +0xC4) with mode 0x10.
+ * @brief Step both pad ports: port 0 as driver port 0x00, port 1 as 0x10.
+ * @param a0 Address of the first port.
  */
-void initBattleAnimPair(s32 a0) {
-    func_80027220(a0, (PadPort *)a0, 0);
-    func_80027220(a0, (PadPort *)(a0 + 0xC4), 0x10);
+static void stepPadPorts(s32 a0) {
+    stepPadPort(a0, (PadPort *)a0, 0);
+    stepPadPort(a0, (PadPort *)(a0 + 0xC4), 0x10);
 }
 
 
@@ -253,10 +256,10 @@ void initBattleAnimPair(s32 a0) {
  * @brief Step both pad ports until they settle.
  *
  * For each port: clears both motor levels, then repeatedly waits on
- * cdReadStatusWrapper and steps the port via func_80027220 until its state
+ * cdReadStatusWrapper and steps the port via stepPadPort until its state
  * (field1A) is 0 or 2, or has read 6 twice.
  */
-void func_80027448(void) {
+void settlePadPorts(void) {
     PadPort *port = &g_engine.ports[0];
     PadPort *ports = g_engine.ports;
     s32 count;
@@ -268,7 +271,7 @@ void func_80027448(void) {
     port->motor[1] = 0;
     for (;;) {
         while (cdReadStatusWrapper() == 0) {}
-        func_80027220((s32)ports, port, 0);
+        stepPadPort((s32)ports, port, 0);
         if (port->field1A == 0 || port->field1A == 2) {
             break;
         }
@@ -285,7 +288,7 @@ void func_80027448(void) {
     port->motor[1] = 0;
     for (;;) {
         while (cdReadStatusWrapper() == 0) {}
-        func_80027220((s32)ports, port, 0x10);
+        stepPadPort((s32)ports, port, 0x10);
         if (port->field1A == 0 || port->field1A == 2) {
             break;
         }
@@ -319,7 +322,7 @@ void setBattleAnimClipRect(RECT *rect) {
  * @brief Read field0B from a pad port.
  * @param idx Port index.
  */
-s32 getBattleAnimField0B(s32 idx) {
+s32 getPadField0B(s32 idx) {
     PadPort *port = &g_engine.ports[idx];
     return port->field0B;
 }
@@ -329,14 +332,13 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_800275D4);
 
 
 /**
- * @brief Get an animation frame parameter from a linked entity's frame buffer.
+ * @brief Get the held buttons of a past read on the port linked to port @p idx.
  * @param idx Port index (masked to 0 or 1).
- * @param offset Frame offset subtracted from the current frame counter.
- * @return field02 of the resolved AnimFrame.
- * @note Resolves a secondary port via linkedIdx, then indexes into its
- *       frames[] circular buffer using (frameCounter - offset) & 7.
+ * @param offset How many reads back to look.
+ * @return The held-button word.
+ * @note The reads are a ring of eight, indexed by (frameCounter - offset) & 7.
  */
-u16 getAnimFrameParam(s32 idx, s32 offset) {
+u16 getPadReadButtons(s32 idx, s32 offset) {
     PadPort *ports;
     PadPort *port;
     PadPort *linked;
@@ -351,13 +353,12 @@ u16 getAnimFrameParam(s32 idx, s32 offset) {
 
 
 /**
- * @brief Get combined status flags from a linked entity's animation frame.
+ * @brief Get the auto-repeated buttons of a past read on the port linked to port @p idx.
  * @param idx Port index (masked to 0 or 1).
- * @param offset Frame offset subtracted from the current frame counter.
- * @return Bitwise OR of field08, field0A, field0C, field0E in the resolved AnimFrame.
- * @note Same lookup as getAnimFrameParam but ORs 4 adjacent u16 values.
+ * @param offset How many reads back to look.
+ * @return The four auto-repeat channels' bits (field08-field0E), ORed.
  */
-u16 getAnimFrameStatusFlags(s32 idx, s32 offset) {
+u16 getPadReadRepeat(s32 idx, s32 offset) {
     PadPort *ports;
     PadPort *port;
     PadPort *linked;
@@ -374,16 +375,12 @@ u16 getAnimFrameStatusFlags(s32 idx, s32 offset) {
 
 
 /**
- * @brief Get field10 from a linked entity's animation frame.
- *
- * Same lookup pattern as getAnimFrameParam: resolves via linkedIdx,
- * indexes into frames[] circular buffer, but returns field10.
- *
+ * @brief Get the buttons newly pressed in a past read on the port linked to port @p idx.
  * @param idx Port index (only bit 0 used).
- * @param offset Frame offset subtracted from the current frame counter.
- * @return field10 of the resolved AnimFrame.
+ * @param offset How many reads back to look.
+ * @return field10: the buttons held in that read but not in the one before.
  */
-u16 func_80027A58(s32 idx, s32 offset) {
+u16 getPadReadPressed(s32 idx, s32 offset) {
     PadPort *ports;
     PadPort *port;
     PadPort *linked;
@@ -398,16 +395,12 @@ u16 func_80027A58(s32 idx, s32 offset) {
 
 
 /**
- * @brief Get field12 from a linked entity's animation frame.
- *
- * Same lookup pattern as getAnimFrameParam: resolves via linkedIdx,
- * indexes into frames[] circular buffer, but returns field12.
- *
+ * @brief Get the buttons newly released in a past read on the port linked to port @p idx.
  * @param idx Port index (only bit 0 used).
- * @param offset Frame offset subtracted from the current frame counter.
- * @return field12 of the resolved AnimFrame.
+ * @param offset How many reads back to look.
+ * @return field12: the buttons held in the read before but not in that one.
  */
-u16 func_80027AC8(s32 idx, s32 offset) {
+static u16 getPadReadReleased(s32 idx, s32 offset) {
     PadPort *ports;
     PadPort *port;
     PadPort *linked;
@@ -472,16 +465,12 @@ s32 func_80027B7C(s32 a0) {
 }
 
 /**
- * @brief Look up a battle animation byte through a two-level table.
- *
- * Uses the low bit of a0 as an index into g_engine.ports (stride 196).
- * Reads the byte at offset 0xC2 of that entry as a second index,
- * then returns bits [6:0] of offset 0xC3 of the second entry, shifted left 8.
- *
- * @param a0 Slot selector (only bit 0 used).
- * @return (g_engine.ports[slot].fieldC3 & 0x7F) << 8.
+ * @brief Get the analog stick dead zone of the port linked to port @p a0.
+ * @param a0 Port index (only bit 0 used).
+ * @return (fieldC3 & 0x7F) << 8. func_80027CF8 reports no direction while the
+ * stick's squared distance from the centre is below it.
  */
-s32 getBattleAnimLinkedValue(s32 a0) {
+s32 getPadDeadZone(s32 a0) {
     s32 slot;
     a0 &= 1;
     slot = g_engine.ports[a0].linkedIdx;
@@ -490,17 +479,15 @@ s32 getBattleAnimLinkedValue(s32 a0) {
 
 
 /**
- * @brief Set the low 7 bits of a linked entity's fieldC3 from a squared level.
+ * @brief Set the analog stick dead zone of the port linked to port @p a0.
  *
- * Clamps @p a1 to [0, 0x7F], squares it, and divides by 256, giving a
- * quadratic response curve. The result replaces bits [6:0] of the linked
- * entity's fieldC3 while preserving the high bit
- * (see setBattleAnimLinkedHighBit).
+ * Clamps @p a1 to [0, 0x7F], squares it and divides by 256 into bits 0-6 of
+ * fieldC3, keeping bit 7 (see setPadAnalogFlag).
  *
  * @param a0 Port index (only bit 0 used).
- * @param a1 Input level, clamped to [0, 0x7F].
+ * @param a1 Dead-zone level, clamped to [0, 0x7F].
  */
-void func_80027C00(s32 a0, s32 a1) {
+void setPadDeadZone(s32 a0, s32 a1) {
     s32 slot;
     PadPort *linked;
     s32 sq;
@@ -517,16 +504,11 @@ void func_80027C00(s32 a0, s32 a1) {
 
 
 /**
- * @brief Set or clear the high bit (0x80) of a linked entity's fieldC3.
- *
- * Looks up g_engine.ports[a0 & 1], follows its linkedIdx to a
- * second entity, then sets bit 7 of fieldC3 if a1 is nonzero, or clears
- * it if a1 is zero.
- *
+ * @brief Set or clear bit 7 of fieldC3, the CONFIG_ANALOG option, on the port linked to port @p a0.
  * @param a0 Port index (only bit 0 used).
- * @param a1 If nonzero, set bit 7; if zero, clear bit 7.
+ * @param a1 Nonzero to set the bit, zero to clear it.
  */
-void setBattleAnimLinkedHighBit(s32 a0, s32 a1) {
+void setPadAnalogFlag(s32 a0, s32 a1) {
     s32 slot;
     PadPort *linked;
     a0 &= 1;

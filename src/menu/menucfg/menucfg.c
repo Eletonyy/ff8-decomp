@@ -103,7 +103,7 @@ static void func_801E587C(CfgContext *cfg) {
     if (func_80027DB4(0, PAD_AXIS_X2, 0) < 0) {
         cfg->flag_2E = 0;
     }
-    if (isAnimActive() == 0 || getBattleAnimField0B(0) == 0) {
+    if (isPadConnected() == 0 || getPadField0B(0) == 0) {
         cfg->flag_2D = 0;
     }
 }

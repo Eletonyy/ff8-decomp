@@ -586,7 +586,7 @@ void ff8main(void) {
         while (g_fieldEntity.mode != 4);
         sndStopAll();
         setAnimGlobalState(0);
-        func_80027448();
+        settlePadPorts();
         ResetGraph(3);
     }
 

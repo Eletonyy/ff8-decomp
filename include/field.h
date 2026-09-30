@@ -147,7 +147,7 @@ typedef struct {
                                                each tick; their 14-byte layouts pack back to back
                                                (0x122 and 0x130) and mirror field for field. */
     /* 0x13E */ u8 pad13E[0x02];
-    /* 0x140 */ s32 padHeld;        /**< Held input for pad slot 0: @c getAnimFrameParam plus analog-stick direction bits (0x8000 = X-low, 0x2000 = X-high, 0x1000 = Y-low, 0x4000 = Y-high). Built each tick by @c func_80099180. */
+    /* 0x140 */ s32 padHeld;        /**< Held input for pad slot 0: @c getPadReadButtons plus analog-stick direction bits (0x8000 = X-low, 0x2000 = X-high, 0x1000 = Y-low, 0x4000 = Y-high). Built each tick by @c func_80099180. */
     /* 0x144 */ s32 padHeldPrev;    /**< Previous tick's @c padHeld, used by @c func_80099180 for direction edge-detection. */
     /* 0x148 */ s32 padPressed;     /**< Newly-pressed input for pad slot 0 (direction bit set only when not held last tick). */
     /* 0x14C */ u8 pad14C[0x04];
@@ -155,9 +155,9 @@ typedef struct {
     /* 0x154 */ s32 unk154;         /**< Bit-6/7 mask gating @c func_8009A7E8 's write (inverse of @c unk150); previous tick's @c unk150. */
     /* 0x158 */ s32 ambientFlags; /**< Ambient SFX/state flags; bits 6-7 gate the fade-out path in @c func_800BD9C4; set to @c applyButtonRemapTranslation(padPressed). */
     /* 0x15C */ u8 pad15C[0x04];
-    /* 0x160 */ s32 field_0x160;    /**< Held input for pad slot 1 (@c getAnimFrameParam(1, 0)). */
+    /* 0x160 */ s32 field_0x160;    /**< Held input for pad slot 1 (@c getPadReadButtons(1, 0)). */
     /* 0x164 */ u8 pad164[0x04];
-    /* 0x168 */ s32 field_0x168;    /**< Pressed input for pad slot 1 (@c func_80027A58(1, 0)). */
+    /* 0x168 */ s32 field_0x168;    /**< Pressed input for pad slot 1 (@c getPadReadPressed(1, 0)). */
     /* 0x16C */ u8 pad16C[0x14];
     /* 0x180 */ u8 unkActive180[16]; /**< 16-byte active-marker region, cleared on @c func_800BF718 mode 1 init. */
     /* 0x190 */ u8 slotActive[16];

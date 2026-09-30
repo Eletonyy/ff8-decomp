@@ -241,7 +241,7 @@ s32 func_800987D8(void)
     func_800A246C();
     SetGeomScreen(D_800C9730);
     setHudBrightness(0x1000);
-    activateBattleAnim(0);
+    requestPadSetup(0);
     VSync(0);
     SetDispMask(1);
 
@@ -464,7 +464,7 @@ s32 func_800987D8(void)
     flushCdAndWait();
     func_800A6358();
     stopVibration(-1);
-    func_80027448();
+    settlePadPorts();
     DrawSync(0);
     ResetGraph(3);
     func_8009AD3C();

@@ -450,7 +450,7 @@ s32 func_8003646C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     saveAndClearFramebuffer(arg0);
     loadOverlayWithTimCallback(9, 0x801CD000);
     loadOverlayWithTimCallback(0xA, 0x801D5000);
-    activateBattleAnim(0);
+    requestPadSetup(0);
     func_801F04E8(arg0 & 0x7FFFFFFF, arg1, arg2, arg3);
 
     while (pollCdReadStatus() != 0) {

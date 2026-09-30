@@ -21,10 +21,13 @@ void initBattleSubsystems(void);
 s32 func_80047384(void);
 void func_800472E4(void);
 void func_800472F4(void);
-s32 getAnimFrameParam(s32, s32);
-s32 getAnimFrameStatusFlags(s32, s32);
+s32 getPadReadButtons(s32, s32);
+s32 getPadReadRepeat(s32, s32);
 s32 GetActiveFlag(s32);
 void dispatchBattleEntity(s32, s32, s32);
+static s32 getPadReadByte(s32 idx, s32 param, s32 frameOffset);
+static s32 getPadReadType(s32 idx, s32 frameOffset);
+static void resetPadInput(s32 idx, s32 buttons);
 
 extern u8 g_animInitialized;
 extern u8 g_animFlag;
@@ -56,22 +59,21 @@ void setPadVibration(s32 idx, s32 val) {
 
 
 /**
- * @brief Set animation parameters on a pad port.
+ * @brief Set a pad port's motor levels.
  *
- * Conditionally updates motor[1] and motor[0] (skipped if < 0),
- * then marks the port active by setting field0A to 1.
+ * Updates motor[1] and motor[0] (skipped if < 0), then sets field0A to 1.
  *
  * @param idx Port index (masked to 0 or 1).
- * @param param7 Value for motor[1] (-1 to skip).
- * @param param6 Value for motor[0] (-1 to skip).
+ * @param motor1 Level for motor[1] (-1 to skip).
+ * @param motor0 Level for motor[0] (-1 to skip).
  */
-void setAnimEntityParams(s32 idx, s32 param7, s32 param6) {
+void setPadMotors(s32 idx, s32 motor1, s32 motor0) {
     PadPort *port = &g_engine.ports[idx & 1];
-    if (param7 >= 0) {
-        port->motor[1] = param7;
+    if (motor1 >= 0) {
+        port->motor[1] = motor1;
     }
-    if (param6 >= 0) {
-        port->motor[0] = param6;
+    if (motor0 >= 0) {
+        port->motor[0] = motor0;
     }
     port->field0A = 1;
 }
@@ -114,13 +116,13 @@ void setAnimGlobalCoords(s32 idx, s16 x, s16 y) {
 
 
 /**
- * @brief Read a parameter from an animation frame slot.
+ * @brief Read a data byte after the buttons in a past read on the port linked to port @p idx.
  * @param idx Port index (masked to 0 or 1).
- * @param param Parameter index (clamped to [0,3]).
- * @param frameOffset Frame counter offset to subtract.
- * @return Parameter value (u8), or -1 if slot is inactive or wrong type.
+ * @param param Byte index (clamped to [0,3]).
+ * @param frameOffset How many reads back to look.
+ * @return The byte, or -1 if that read failed or its controller type is not 1.
  */
-s32 getAnimFrameSlotParam(s32 idx, s32 param, s32 frameOffset) {
+static s32 getPadReadByte(s32 idx, s32 param, s32 frameOffset) {
     PadPort *port;
     AnimFrame *frame;
     s32 frameSlot;
@@ -144,21 +146,21 @@ s32 getAnimFrameSlotParam(s32 idx, s32 param, s32 frameOffset) {
 
 
 /**
- * @brief Check if pad port 0 has an active frame.
- * @return 1 if port 0 has an active frame, 0 otherwise.
+ * @brief Check whether port 0's latest read succeeded.
+ * @return 1 if it did, 0 otherwise.
  */
-s32 isAnimActive(void) {
-    return getAnimFrameType(0, 0) >= 0;
+s32 isPadConnected(void) {
+    return getPadReadType(0, 0) >= 0;
 }
 
 
 /**
- * @brief Get the type of an animation frame slot, with optional sync.
+ * @brief Get the controller type of a past read on the port linked to port @p idx.
  * @param idx Port index (bit 0 selects the port).
- * @param frameOffset Frame counter offset to subtract.
- * @return Frame type (field01 >> 4), or -1 if slot is inactive.
+ * @param frameOffset How many reads back to look.
+ * @return The ID byte's high nibble, or -1 if that read failed.
  */
-s32 getAnimFrameType(s32 idx, s32 frameOffset) {
+static s32 getPadReadType(s32 idx, s32 frameOffset) {
     s32 syncFlag;
     s32 slot;
     PadPort *port;
@@ -187,28 +189,28 @@ s32 getAnimFrameType(s32 idx, s32 frameOffset) {
 
 
 /**
- * @brief Set a value in the unk10 array of both pad ports.
- *
- * Writes @p value to both ports' unk10[index].
- *
+ * @brief Set the button mask of one auto-repeat channel on both pad ports.
  * @param unused Unused parameter.
- * @param index Index into the unk10 array (0-3).
- * @param value Value to store.
+ * @param channel Auto-repeat channel (0-3).
+ * @param mask Buttons the channel repeats.
  */
-void setAnimUnk10Both(s32 unused, s32 index, s32 value) {
+void setPadRepeatMask(s32 unused, s32 channel, s32 mask) {
     int new_var;
     new_var = 1;
-    g_engine.ports[0].unk10[index] = value;
-    g_engine.ports[new_var].unk10[index] = value;
+    g_engine.ports[0].unk10[channel] = mask;
+    g_engine.ports[new_var].unk10[channel] = mask;
 }
 
 
 /**
- * @brief Initialize a linked pad port.
+ * @brief Reset the input state of the port linked to port @p idx.
+ *
+ * Restarts its read ring and auto-repeat countdowns, and clears all eight reads.
+ *
  * @param idx Port index (selects via linkedIdx).
- * @param frameId Frame ID to set in each frame's field02.
+ * @param buttons Held buttons to store in each read.
  */
-void resetAnimEntity(s32 idx, s32 frameId) {
+static void resetPadInput(s32 idx, s32 buttons) {
     AnimFrame *fp;
     s32 fid;
     PadPort *port;
@@ -222,7 +224,7 @@ void resetAnimEntity(s32 idx, s32 frameId) {
     port->field0E = g_engine.repeatDelays.b.lo;
     port->field0F = g_engine.repeatDelays.b.lo;
 
-    fid = frameId;
+    fid = buttons;
     for (i = 0; 8 > i; i++) {
         AnimFrame *frame = &port->frames[i];
         frame->field00 = 0;
@@ -244,28 +246,28 @@ void resetAnimEntity(s32 idx, s32 frameId) {
 
 
 /**
- * @brief Reset a pad port's auto-repeat countdowns and frames.
+ * @brief Reset a pad port's auto-repeat countdowns and reads.
  *
  * Sets field0C-0F, the per-channel pad auto-repeat countdowns (func_80027038
  * ticks them), to the restart delay g_engine.repeatDelays.b.lo, then
- * calls resetAnimEntity to reset frame state.
+ * calls resetPadInput to clear its reads.
  *
  * @param idx Port index (0 or 1).
  */
-void initAnimEntityColor(s32 idx) {
+void initPadInput(s32 idx) {
     PadPort *port = &g_engine.ports[idx];
     port->field0C = g_engine.repeatDelays.b.lo;
     port->field0D = g_engine.repeatDelays.b.lo;
     port->field0E = g_engine.repeatDelays.b.lo;
     port->field0F = g_engine.repeatDelays.b.lo;
-    resetAnimEntity(idx, 0);
+    resetPadInput(idx, 0);
 }
 
 
 /**
  * @brief Initialize battle animation state and wait for completion.
  *
- * Sets g_animInitialized to 1, initializes both pad ports via resetAnimEntity,
+ * Sets g_animInitialized to 1, initializes both pad ports via resetPadInput,
  * triggers a fade via func_80039764(3), then polls func_80027360 up to 24
  * frames. Finishes with VSync(2).
  */
@@ -274,7 +276,7 @@ void initAnimStateAndWait(void) {
 
     g_animInitialized = 1;
     for (i = 0; i < 2; i++) {
-        resetAnimEntity(i, 0);
+        resetPadInput(i, 0);
     }
     func_80039764(3);
     for (i = 0; i < 24; i++) {
@@ -287,13 +289,13 @@ void initAnimStateAndWait(void) {
 }
 
 
-/** @brief Initializes g_animInitialized to 0, calls func_80039764(0), then loops twice calling resetAnimEntity(i, 0). */
+/** @brief Initializes g_animInitialized to 0, calls func_80039764(0), then loops twice calling resetPadInput(i, 0). */
 void resetAnimState(void) {
     s32 i;
     g_animInitialized = 0;
     func_80039764(0);
     for (i = 0; i < 2; i++) {
-        resetAnimEntity(i, 0);
+        resetPadInput(i, 0);
     }
 }
 
@@ -1793,9 +1795,9 @@ void shutdownCardSubsystem(void) {
 }
 
 
-/** @brief Calls func_80027448 and cdDisableInterruptWrapper in sequence. */
+/** @brief Calls settlePadPorts and cdDisableInterruptWrapper in sequence. */
 void initBattleSubsystems(void) {
-    func_80027448();
+    settlePadPorts();
     cdDisableInterruptWrapper();
 }
 
@@ -2115,23 +2117,23 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
     if (mode == 1) {
         func_800472E4();
         for (i = count; i >= 0; i--) {
-            param = applyButtonRemapTranslation(getAnimFrameParam(0, i) & 0xFFFF) & 0xFFFF;
+            param = applyButtonRemapTranslation(getPadReadButtons(0, i) & 0xFFFF) & 0xFFFF;
             if ((param & 0xF000) == 0) {
                 val = func_80027DB4(0, PAD_AXIS_X, i);
                 if (val >= 0) {
                     param |= func_80027CF8(0, val - 128, func_80027DB4(0, PAD_AXIS_Y, i) - 128);
                 }
             }
-            param |= applyButtonRemapTranslation(func_80027A58(0, i) & 0xFFFF) << 16;
+            param |= applyButtonRemapTranslation(getPadReadPressed(0, i) & 0xFFFF) << 16;
             j = i;
             frameData[j] = param;
-            statusData[j] = applyButtonRemapTranslation(getAnimFrameStatusFlags(0, j) & 0xFFFF) & 0xFFFF;
+            statusData[j] = applyButtonRemapTranslation(getPadReadRepeat(0, j) & 0xFFFF) & 0xFFFF;
         }
         func_800472F4();
     } else {
         func_800472E4();
-        param = applyButtonRemapTranslation(getAnimFrameParam(0, 0) & 0xFFFF) & 0xFFFF;
-        upperBits = applyButtonRemapTranslation(func_80027A58(0, 0) & 0xFFFF) << 16;
+        param = applyButtonRemapTranslation(getPadReadButtons(0, 0) & 0xFFFF) & 0xFFFF;
+        upperBits = applyButtonRemapTranslation(getPadReadPressed(0, 0) & 0xFFFF) << 16;
         val = func_80027DB4((0, 0), PAD_AXIS_X, 0);
         if (((param & 0xF000) == 0) && (val >= 0)) {
             param |= func_80027CF8(0, val - 128, func_80027DB4(0, PAD_AXIS_Y, 0) - 128);

@@ -18,9 +18,9 @@ extern void copyDisplayRect(RECT *dst); /**< Copy the active draw environment's 
 
 extern s32 getAnimGlobalState(void);
 extern s32 setAnimGlobalState(s32 value);
-extern void setAnimEntityParams(s32 idx, s32 param7, s32 param6);
+extern void setPadMotors(s32 idx, s32 motor1, s32 motor0);
 extern void setPadVibration(s32 idx, s32 val);
-extern void setAnimUnk10Both(s32 unused, s32 index, s32 value);
+extern void setPadRepeatMask(s32 unused, s32 channel, s32 mask);
 
 /* Public data */
 extern u8 g_animCurveFadeOut[]; /**< Easing curve: 65 entries that rise exponentially to 64. */

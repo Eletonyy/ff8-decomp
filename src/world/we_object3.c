@@ -235,11 +235,11 @@ extern s32              D_800C9ED4;   /**< Pad 1's raw frame parameter, packed i
 extern s32              D_800D2470;   /**< Repeat delay accumulator. */
 extern s32              D_800D2474;   /**< Repeat step counter. */
 
-/* getAnimFrameParam returns u16 in thread.c, but every caller uses the result as
+/* getPadReadButtons returns u16 in thread.c, but every caller uses the result as
    s32 with no widening mask; thread.h documents that those callers keep their own
    declaration. applyButtonRemapTranslation is u16 (u16) in input/button_remap.h; this caller
    needs the s32 view, which the u16 prototype would mask. */
-extern s32              getAnimFrameParam(s32 slot, s32 sub);
+extern s32              getPadReadButtons(s32 slot, s32 sub);
 // TODO: Drop this and include the prototype from the owner.
 extern s32 applyButtonRemapTranslation(s32 arg);
 extern s16              D_800C9772;   /**< Receives the low half of the camera-follow
@@ -374,8 +374,8 @@ static void func_800A0388(void) {
 
     D_800C4D04 = D_800C4D04 == 0;
     func_800275D4();
-    D_800C9ED0 = getAnimFrameParam(0, 0);
-    D_800C9ED4 = getAnimFrameParam(1, 0);
+    D_800C9ED0 = getPadReadButtons(0, 0);
+    D_800C9ED4 = getPadReadButtons(1, 0);
     D_800D2278[D_800C4D04] = applyButtonRemapTranslation(D_800C9ED0) | (D_800C9ED4 << 16);
 
     D_800D2240[0] = D_800C96D8[0];

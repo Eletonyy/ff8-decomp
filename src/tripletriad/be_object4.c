@@ -720,7 +720,7 @@ void readPads(void)
 
     func_800275D4();
 
-    padRaw = applyButtonRemapTranslation(getAnimFrameParam(0, 0));
+    padRaw = applyButtonRemapTranslation(getPadReadButtons(0, 0));
     oldPad = D_801D4B20[0];
     held = func_80027DB4(0, PAD_AXIS_X, 0);
     if (!(padRaw & 0xF000) && held >= 0) {
@@ -731,7 +731,7 @@ void readPads(void)
     repeat = func_800A2A8C(0, padRaw & 0xFFFF) & 0xFFFF;
     D_801D4B28[0] = repeat;
 
-    padRaw = applyButtonRemapTranslation(getAnimFrameParam(1, 0));
+    padRaw = applyButtonRemapTranslation(getPadReadButtons(1, 0));
     oldPad = D_801D4B20[1];
     held = func_80027DB4(1, PAD_AXIS_X, 0);
     if (!(padRaw & 0xF000) && held >= 0) {
@@ -749,7 +749,7 @@ void readPads(void)
  * Clears the per-(port, side) bookkeeping tables — previous edge flags
  * (@c D_801D4AF8), edge countdown timers (@c D_801D4B08), and the three
  * @c D_801D4B20 / @c D_801D4B28 / @c D_801D4B30 word tables — for both
- * ports, then seeds @c setAnimUnk10Both with the fixed per-side
+ * ports, then seeds @c setPadRepeatMask with the fixed per-side
  * parameters (one set per side 0..3) for each port.
  */
 void func_800A2D34(void)
@@ -770,14 +770,14 @@ void func_800A2D34(void)
         D_801D4B30[i] = 0;
     }
 
-    setAnimUnk10Both(0, 0, 0xFFF);
-    setAnimUnk10Both(0, 1, 0x5000);
-    setAnimUnk10Both(0, 2, 0xA000);
-    setAnimUnk10Both(0, 3, 0x900);
-    setAnimUnk10Both(1, 0, 0xFFF);
-    setAnimUnk10Both(1, 1, 0x5000);
-    setAnimUnk10Both(1, 2, 0xA000);
-    setAnimUnk10Both(1, 3, 0x900);
+    setPadRepeatMask(0, 0, 0xFFF);
+    setPadRepeatMask(0, 1, 0x5000);
+    setPadRepeatMask(0, 2, 0xA000);
+    setPadRepeatMask(0, 3, 0x900);
+    setPadRepeatMask(1, 0, 0xFFF);
+    setPadRepeatMask(1, 1, 0x5000);
+    setPadRepeatMask(1, 2, 0xA000);
+    setPadRepeatMask(1, 3, 0x900);
 }
 
 /**

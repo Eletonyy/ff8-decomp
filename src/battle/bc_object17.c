@@ -12,30 +12,30 @@ void intToDecStringShort(s32, u8 *, s32);
 void replaceLeadingZeros(u8 *, s32, s32, s32);
 
 /**
- * @brief Call getAnimFrameParam with a1=0, pass result to func_80030F10.
+ * @brief Call getPadReadButtons with a1=0, pass result to func_80030F10.
  *
- * @param a0 First argument passed through to getAnimFrameParam.
+ * @param a0 First argument passed through to getPadReadButtons.
  */
 void func_800CFF2C(s32 a0) {
-    func_80030F10(getAnimFrameParam(a0, 0));
+    func_80030F10(getPadReadButtons(a0, 0));
 }
 
 /**
- * @brief Call getAnimFrameStatusFlags with a1=0, pass result to func_80030F10.
+ * @brief Call getPadReadRepeat with a1=0, pass result to func_80030F10.
  *
- * @param a0 First argument passed through to getAnimFrameStatusFlags.
+ * @param a0 First argument passed through to getPadReadRepeat.
  */
 void func_800CFF54(s32 a0) {
-    func_80030F10(getAnimFrameStatusFlags(a0, 0));
+    func_80030F10(getPadReadRepeat(a0, 0));
 }
 
 /**
- * @brief Call func_80027A58 with a1=0, pass result to func_80030F10.
+ * @brief Call getPadReadPressed with a1=0, pass result to func_80030F10.
  *
- * @param a0 First argument passed through to func_80027A58.
+ * @param a0 First argument passed through to getPadReadPressed.
  */
 void func_800CFF7C(s32 a0) {
-    func_80030F10(func_80027A58(a0, 0));
+    func_80030F10(getPadReadPressed(a0, 0));
 }
 
 /**

@@ -204,7 +204,7 @@ void func_800983B8(void) {
     port = engine->ports;
     i = 0;
     do {
-        initAnimEntityColor(i);
+        initPadInput(i);
         port->field19 = 1;
         port->unk10[0] = 0xFFF;
         port->unk10[1] = 0x5000;

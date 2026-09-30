@@ -29,12 +29,12 @@ typedef struct {
 /** @brief The state of one controller port. */
 typedef struct {
     u8 field00;
-    u8 field01; /**< motor[0] masked by vibrationMask, shifted right by field08 (func_80027220). */
-    u8 field02; /**< motor[1] masked by vibrationMask, shifted right by field09 (func_80027220). */
+    u8 field01; /**< motor[0] masked by vibrationMask, shifted right by field08 (stepPadPort). */
+    u8 field02; /**< motor[1] masked by vibrationMask, shifted right by field09 (stepPadPort). */
     u8 pad03[3];
     u8 motor[2]; /**< Vibration motor levels, 0-255. */
-    u8 field08; /**< Shift amount applied to motor[0] in func_80027220. */
-    u8 field09; /**< Shift amount applied to motor[1] in func_80027220. */
+    u8 field08; /**< Shift amount applied to motor[0] in stepPadPort. */
+    u8 field09; /**< Shift amount applied to motor[1] in stepPadPort. */
     u8 field0A;
     u8 field0B;
     u8 field0C;
@@ -43,7 +43,7 @@ typedef struct {
     u8 field0F;
     u16 unk10[4]; /**< Pad-button mask of each of the four auto-repeat channels. */
     u8 frameCounter;
-    s8 field19;   /**< Read back as a signed byte in func_80027220. */
+    s8 field19;   /**< Read back as a signed byte in stepPadPort. */
     s8 field1A;
     u8 vibrationMask; /**< 0xFF with vibration on, 0 with it off. */
     AnimFrame frames[8];

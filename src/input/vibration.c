@@ -140,7 +140,7 @@ s32 isVibrationPlaying(s32 cmd) {
  * @brief Stop one vibration, or all of them.
  *
  * If @p id is -1, clears all 4 slots' priority and zeroes the pad's
- * motor values (setAnimEntityParams). Otherwise, if @p id is still playing
+ * motor values (setPadMotors). Otherwise, if @p id is still playing
  * (isVibrationPlaying), clears just that slot's priority.
  *
  * @param id Vibration id from startVibration, or -1 to stop all.
@@ -153,7 +153,7 @@ void stopVibration(s32 id) {
         for (i = 0; i < 4; i++, ptr++) {
             ptr->priority = 0;
         }
-        setAnimEntityParams(0, 0, 0);
+        setPadMotors(0, 0, 0);
     } else {
         if (isVibrationPlaying(id)) {
             ptr += id & 3;
@@ -343,7 +343,7 @@ clamp:
  * (stepMotorStream); one whose streams have both ended is stopped.
  * The largest positive values of stream 0 and stream 1 over the playing
  * vibrations are kept in g_motorPeak0 and g_motorPeak1, then clamped to 0-255
- * and passed to setAnimEntityParams for pad port 0 (0 and 0 when none is playing).
+ * and passed to setPadMotors for pad port 0 (0 and 0 when none is playing).
  */
 void stepVibrations(void) {
     VibrationSlot *entry;
@@ -386,7 +386,7 @@ void stepVibrations(void) {
     }
     peak0 = peak0 < 0 ? 0 : (peak0 > 255 ? 255 : peak0);
     peak1 = peak1 < 0 ? 0 : (peak1 > 255 ? 255 : peak1);
-    setAnimEntityParams(0, peak0, peak1);
+    setPadMotors(0, peak0, peak1);
 }
 
 

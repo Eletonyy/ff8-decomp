@@ -29,7 +29,7 @@ extern u8 D_8009800C[];
 extern u8 D_80098018[];
 extern s32 D_800ABA08;
 extern void func_800275D4(s32 a0);
-extern s32 getAnimFrameParam(s32 idx, s32 offset);
+extern s32 getPadReadButtons(s32 idx, s32 offset);
 extern void func_8009AF64(void *cmd, ...);
 extern s16 D_800D3C70;
 extern u8 D_8009801C[];
@@ -117,7 +117,7 @@ void func_80098790(void) {
 /**
  * @brief Update animation frame state with timer-based debounce.
  *
- * Calls func_800275D4 then samples getAnimFrameParam for slot @p a0.
+ * Calls func_800275D4 then samples getPadReadButtons for slot @p a0.
  * If the frame param is unchanged from the previous tick, decrements
  * D_800AB9F8 (timer1) or D_800ABA00 (timer2) until both expire, at
  * which point the new state is committed (D_800ABA00 = 0 if bit 0x40
@@ -134,7 +134,7 @@ s32 func_80098798(s32 a0) {
     s32 v;
 
     func_800275D4(a0);
-    v = getAnimFrameParam(a0, 0);
+    v = getPadReadButtons(a0, 0);
     currArr[a0] = v;
     prevVal = D_8009B54C[a0];
 

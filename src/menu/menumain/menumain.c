@@ -285,7 +285,7 @@ void func_801F0224(void) {
     base = (s32)D_801FA280;
     *(s32 *)(base + 0x98) = (s32)0x801B2000;
     *(s32 *)(base + 0x138) = (s32)0x801B8800;
-    setAnimEntityParams(0, 0, 0);
+    setPadMotors(0, 0, 0);
 }
 
 /* ======================================================================== */
@@ -2309,11 +2309,11 @@ void func_801F7954(void) {
 /**
  * @brief Push the analog-volume and controller-mode config to the sound layer.
  *
- * Sends (analogVolume + 5) * 12 as the volume argument of func_80027C00,
- * then tells func_80027C90 whether the analog flag is active — only
+ * Sends (analogVolume + 5) * 12 as the volume argument of setPadDeadZone,
+ * then tells setPadAnalogFlag whether the analog flag is active — only
  * honored when the controller is in customize mode (CONFIG_CONTROLLER).
  *
- * @note func_80027C00/func_80027C90 are main-executable sound-layer
+ * @note setPadDeadZone/setPadAnalogFlag are main-executable sound-layer
  *       routines that are not decompiled yet.
  */
 void func_801F798C(void) {
@@ -2321,13 +2321,13 @@ void func_801F798C(void) {
 
     v = g_gameState.config.analogVolume;
     v += 5;
-    func_80027C00(0, v * 12);
+    setPadDeadZone(0, v * 12);
     v = g_gameState.config.flags & CONFIG_ANALOG;
     v = v != 0;
     if (!(g_gameState.config.flags & CONFIG_CONTROLLER)) {
         v = 0;
     }
-    func_80027C90(0, v);
+    setPadAnalogFlag(0, v);
 }
 
 /** @brief Test sealed-features bits (@c GameConfig.sealedFeatures & @p a0). */

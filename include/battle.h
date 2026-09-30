@@ -803,7 +803,7 @@ u8 *func_800B04A0(s32 a0, u8 *buf);
 u8 *func_800B02AC(u8 *buf);
 
 /* --- Battle animation lifecycle --- */
-void activateBattleAnim(s32 idx);
+void requestPadSetup(s32 idx);
 
 /* --- Spatial / matrix helpers (defined in field overlay) --- */
 void func_800406A4(u8 *p);
