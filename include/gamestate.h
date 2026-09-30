@@ -336,7 +336,7 @@ typedef struct {
     /* 0x30 */ u8            battleOrder[32];              /**< Battle item menu ordering. */
     /* 0x50 */ ItemSlot      itemSlots[198];  /**< Item inventory (198 slots). */
     /* 0x1DC */ volatile s32  playTimeSeconds;             /**< @c 0xCD0: play time in seconds; @ref VsyncHandler steps it every ~59.8 vsyncs (a second on NTSC). */
-    /* 0x1E0 */ volatile s32  countdownTimer;                  /**< @c 0xCD4: countdown in seconds. Set/get by field event opcodes, decremented by @ref VsyncHandler at the play time's rate while nonzero; battle & color code read it as active / camera-shake state. */
+    /* 0x1E0 */ volatile s32 countdownTimer; /**< @c 0xCD4: countdown in seconds. Set/get by field event opcodes, decremented by @ref VsyncHandler at the play time's rate while nonzero; drawn as MM:SS through @c g_battleAnims.countdown. */
     /* 0x1E4 */ u8           pad1E4[0x04];
     /* 0x1E8 */ s32          fieldCDC;                     /**< Snapshotted by @c func_800BFBBC into @c FieldVars.field14. */
     /* 0x1EC */ u16          fieldCE0;                     /**< Snapshotted by @c func_800BFBBC into @c FieldVars.field18. */

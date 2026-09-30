@@ -13,8 +13,9 @@
  *
  * Boot-time setup for the intro sequence (Square publisher attribution / opening movie
  * preface) before the main menu. Steps:
- *  - Ring the sound side (@c sndCmdF0/F1) and wait for the sound CPU to
- *    drain its pending command queue (@c func_8004D174 / @c func_8004D208).
+ *  - Ring the sound side (@c sndCmdF0/F1), stop any GPU drawing in progress
+ *    (@c BreakDraw, retried every VSync while it cannot) and, if a list was
+ *    being drawn, wait for the GPU to go idle (@c IsIdleGPU).
  *  - Disable the display, sync the CD module to a known idle state, and
  *    issue @c CdControlB(0xE, ...) — CD command 0xE is @c CdlSetmode with
  *    param @c 0x80 (auto-pause + double-speed reporting).
@@ -27,17 +28,17 @@
  */
 void initIntroOverlay(void) {
     RECT clearRect;
-    s32 status;
+    u32 *status;
     s32 i;
 
     sndCmdF0();
     sndCmdF1();
 
-    while ((status = func_8004D174()) == -1) {
+    while ((status = BreakDraw()) == (u32 *)-1) {
         VSync(0);
     }
-    if (status != 0) {
-        while (func_8004D208(1) != 0) {}
+    if (status != NULL) {
+        while (IsIdleGPU(1) != 0) {}
     }
 
     SetDispMask(0);

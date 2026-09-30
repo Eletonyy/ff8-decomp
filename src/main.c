@@ -466,7 +466,7 @@ void ff8main(void) {
                 }
                 if (g_battleConfig.result == 3) {
                     if (g_fieldVars->fieldB6 & 0x100) {
-                        g_fieldVars->stateFlags &= ~FIELD_STATE_CAMERA_SHAKE;
+                        g_fieldVars->stateFlags &= ~FIELD_STATE_COUNTDOWN;
                     } else {
                         g_curFieldId = FIELD_ID_GOVER;
                         D_8005F14C = 0;
@@ -544,7 +544,7 @@ void ff8main(void) {
                 }
                 if (g_battleConfig.result == 3) {
                     if (g_fieldVars->fieldB6 & 0x100) {
-                        g_fieldVars->stateFlags &= ~FIELD_STATE_CAMERA_SHAKE;
+                        g_fieldVars->stateFlags &= ~FIELD_STATE_COUNTDOWN;
                     } else {
                         g_curFieldId = FIELD_ID_GOVER;
                         D_8005F14C = 0;

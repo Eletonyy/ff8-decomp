@@ -5,6 +5,12 @@
 #include "battle.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
+#include "ui/icon.h"
+#include "ui/countdown.h"
+#include "input/vibration.h"
+#include "ui/gauge.h"
+#include "ui/seed_rank.h"
+#include "input/button_remap.h"
 #include "dialog.h"
 #include "thread.h"
 
@@ -16,13 +22,9 @@ s32 func_80047384(void);
 void func_800472E4(void);
 void func_800472F4(void);
 s32 getAnimFrameParam(s32, s32);
-u16 remapControllerInput(s32);
 s32 getAnimFrameStatusFlags(s32, s32);
 s32 GetActiveFlag(s32);
 void dispatchBattleEntity(s32, s32, s32);
-void updateCameraVibrate(void);
-void updatePaletteTransition(void);
-void stepAnimEntries(void);
 
 extern u8 g_animInitialized;
 extern u8 g_animFlag;
@@ -33,7 +35,6 @@ extern u8 g_cardFilename[];  /* encoded save filename (max 8 chars + null) */
 extern s16 g_cardFileSlot;   /* save slot index */
 extern u8 g_cardFileType;    /* card/save type */
 extern u8 g_cardFileActive;
-extern u8 g_animCurveFadeOut[];
 extern u8 g_animCurveFadeIn[];
 extern DRAWENV *g_activeDrawEnv;
 extern BattleDisplayEntity g_battleEntities[];
@@ -1872,10 +1873,10 @@ done:
  * @param pkt  Current GPU packet pointer.
  * @return Updated packet pointer, or original if inactive.
  */
-s32 transformValueIfActive(s32 ot, s32 pkt) {
+void *transformValueIfActive(void *ot, void *pkt) {
     if (g_cardFileActive != 0) {
-        s32 result = drawDecodedText(ot, pkt, g_cardFileSlot, g_cardFileType, (u8 *)g_cardFilename, 7);
-        pkt = (s32)emitDrawEnvPackets((P_TAG *)ot, (u8 *)result);
+        s32 result = drawDecodedText(ot, pkt, g_cardFileSlot, g_cardFileType, g_cardFilename, 7);
+        pkt = emitDrawEnvPackets(ot, (u8 *)result);
     }
     return pkt;
 }
@@ -2114,23 +2115,23 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
     if (mode == 1) {
         func_800472E4();
         for (i = count; i >= 0; i--) {
-            param = remapControllerInput(getAnimFrameParam(0, i) & 0xFFFF) & 0xFFFF;
+            param = applyButtonRemapTranslation(getAnimFrameParam(0, i) & 0xFFFF) & 0xFFFF;
             if ((param & 0xF000) == 0) {
                 val = func_80027DB4(0, PAD_AXIS_X, i);
                 if (val >= 0) {
                     param |= func_80027CF8(0, val - 128, func_80027DB4(0, PAD_AXIS_Y, i) - 128);
                 }
             }
-            param |= remapControllerInput(func_80027A58(0, i) & 0xFFFF) << 16;
+            param |= applyButtonRemapTranslation(func_80027A58(0, i) & 0xFFFF) << 16;
             j = i;
             frameData[j] = param;
-            statusData[j] = remapControllerInput(getAnimFrameStatusFlags(0, j) & 0xFFFF) & 0xFFFF;
+            statusData[j] = applyButtonRemapTranslation(getAnimFrameStatusFlags(0, j) & 0xFFFF) & 0xFFFF;
         }
         func_800472F4();
     } else {
         func_800472E4();
-        param = remapControllerInput(getAnimFrameParam(0, 0) & 0xFFFF) & 0xFFFF;
-        upperBits = remapControllerInput(func_80027A58(0, 0) & 0xFFFF) << 16;
+        param = applyButtonRemapTranslation(getAnimFrameParam(0, 0) & 0xFFFF) & 0xFFFF;
+        upperBits = applyButtonRemapTranslation(func_80027A58(0, 0) & 0xFFFF) << 16;
         val = func_80027DB4((0, 0), PAD_AXIS_X, 0);
         if (((param & 0xF000) == 0) && (val >= 0)) {
             param |= func_80027CF8(0, val - 128, func_80027DB4(0, PAD_AXIS_Y, 0) - 128);
@@ -2160,9 +2161,9 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
                 dispatchBattleEntity(j, frameVal, statusVal);
             }
         }
-        updateCameraVibrate();
-        updatePaletteTransition();
-        stepAnimEntries();
+        updateCountdownBlink();
+        updateSeedRankNotification();
+        stepGauges();
         count--;
     }
 }
@@ -2174,7 +2175,7 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
  */
 void renderAndUpdateDisplay(s32 frameCount) {
     processBattleAnimFrames(frameCount, 0);
-    advanceBattleTimer(frameCount);
+    advanceVibrationClock(frameCount);
 }
 
 
@@ -2250,7 +2251,7 @@ s32 getDisplayListOtBase(void) {
 s32 renderBattleDisplayList(s32 *colorTag) {
     DisplayListBuf *buf;
     u32 *ot;
-    s32 head;
+    u8 *head;
     s32 savedGp;
     s32 result;
 
@@ -2258,17 +2259,16 @@ s32 renderBattleDisplayList(s32 *colorTag) {
 
     swapDisplayList();
     buf = g_battleAnims.active;
-    head = getDisplayListHead();
-    head = func_800302DC(&buf->ot[1], (u8 *)head);
-    head = func_80031364((s32)&buf->ot[14], head);
-    head = transformValueIfActive((s32)&buf->ot[13], head);
-    head = renderAnimOverlay(&buf->ot[13], (u8 *)head);
+    head = (u8 *)getDisplayListHead();
+    head = drawCountdown(&buf->ot[1], head);
+    head = drawSeedRankNotification(&buf->ot[14], head);
+    head = transformValueIfActive(&buf->ot[13], head);
+    head = drawGauges(&buf->ot[13], head);
     ot = buf->ot;
-    head = func_8002BF24((s32)ot, head);
-    storeGpuPacket(head + sizeof(buf->ot));
+    storeGpuPacket(func_8002BF24(ot, head) + sizeof(buf->ot));
 
     setaddr(&ot[17], getaddr(colorTag));
-    setaddr(colorTag, (s32)ot);
+    setaddr(colorTag, ot);
 
     GP_RESTORE_RET(savedGp, result);
     return result;
@@ -2294,11 +2294,11 @@ s32 addPrimitive(s32 *prim) {
 
     ot = g_battleAnims.active->ot;
     head = getDisplayListHead();
-    head = func_8002BF24((s32)ot, head);
+    head = func_8002BF24(ot, head);
     storeGpuPacket(head);
 
     setaddr(&ot[17], getaddr(prim));
-    setaddr(prim, (s32)ot);
+    setaddr(prim, ot);
 
     GP_RESTORE_RET(savedGp, result);
     return result;
@@ -2345,7 +2345,7 @@ void buildAnimEasingCurves(void)
  *
  * Sets up display list buffers, computes half-size offsets for double
  * buffering, then initializes all battle subsystems: entities, SFX,
- * GPU colors, camera, command entries, transitions, and animation entries.
+ * GPU colors, camera, command entries, transitions, and the gauges.
  *
  * @param vramBase Display buffer base address in VRAM.
  * @param vramSize Display buffer total size (halved internally for double buffering).
@@ -2368,20 +2368,20 @@ void initBattleAnimSystem(s32 vramBase, s32 vramSize)
     swapDisplayList();
     initAllBattleEntities();
     resetAllDialogs();
-    setDefaultGpuColor();
-    buildGrayscaleGpuColor(0x1000);
+    resetNextPageMarkerBrightness();
+    setNextPageMarkerBrightness(0x1000);
     setMenuBrightness(BRIGHTNESS_NORMAL);
-    btlColorStub0234();
+    iconStub();
     buildAnimEasingCurves();
-    resetBattleCameraState();
-    initBattleCmdEntries();
+    resetCountdownDisplay();
+    initVibration();
     setAnimEntityOpacity(0, 0);
     setAnimEntityOpacity(1, 0);
-    btlColorStub1044();
-    initBattleTransition();
-    clearAnimEntries();
+    initButtonRemap();
+    resetSeedRankNotification();
+    resetGauges();
     setDigitBaseCode(((u8 *)getMenuString(0xB))[1]);
-    g_battleAnims.pad980[6] = 0;
+    g_battleAnims.seedRankNotification.salaryEnabled = 0;
     g_cardFileActive = 0;
 }
 

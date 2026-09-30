@@ -1,6 +1,8 @@
 #include "common.h"
+#include "psxsdk/libetc.h"
 #include "psxsdk/libgpu.h"
 #include "battle.h"
+#include "ui/seed_rank.h"
 #include "cd.h"
 #include "gamestate.h"
 #include "overlay.h"
@@ -326,8 +328,15 @@ void saveAndClearFramebuffer(s32 a0) {
 }
 
 
-extern s32 func_800432D8(void);
-
+/**
+ * @brief Clear the display, reload the image at 0x801BF000 and, if requested, reset the display environment.
+ *
+ * A negative @p a0 also copies the 128x224 block at x 384 to x 768. When
+ * D_8008520C is set, D_80085150 becomes a 320x224 display environment, moved
+ * down 24 lines in PAL, and D_8005F138 points at it.
+ *
+ * @param a0 Negative to copy the block.
+ */
 void func_8003631C(s32 a0) {
     RECT rect;
 
@@ -352,7 +361,7 @@ void func_8003631C(s32 a0) {
 
     if (D_8008520C != 0) {
         SetDefDispEnv(&D_80085150, 0, 0, 0x140, 0xE0);
-        if (func_800432D8() == 1) {
+        if (GetVideoMode() == MODE_PAL) {
             D_80085150.screen.y += 0x18;
         }
         D_8005F138 = (s32)&D_80085150;
@@ -371,10 +380,10 @@ extern void func_801F04E8(s32 a0, s32 a1, s32 a2, s32 a3);
 /**
  * @brief Run a battle/menu transition: snapshot state, swap overlays, restore.
  *
- * Saves the live values of @c g_battleAnims fields 0x250, 0x252, 0x703, 0x9B0,
- * 0x9C0 and dialog 0's brightness / entity type, then zeroes those fields
+ * Saves dialog 0's text position, brightness and entity type, the countdown's
+ * visibility and both gauges' flags, then zeroes the position, visibility, flags
  * and a small block of static state (D_80085210, D_8008520A, D_8008520C, the
- * @c D_8008513C render-flag bitmask). After running @c initBattleTransition
+ * @c D_8008513C render-flag bitmask). After running @c resetSeedRankNotification
  * and forcing dialog 0 into a known idle configuration (type 6, brightness
  * 0x1000, text speed 0, corner icon 0x56), the function blanks the display, drains the
  * CD pipeline, snapshots the framebuffer to @p arg0, brings in the two
@@ -396,9 +405,9 @@ extern void func_801F04E8(s32 a0, s32 a1, s32 a2, s32 a3);
 s32 func_8003646C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     u16 saved250;
     u8 saved252;
-    u8 saved703;
-    u8 saved9B0;
-    u8 saved9C0;
+    u8 savedCountdownVisible;
+    u8 savedGauge0Flags;
+    u8 savedGauge1Flags;
     s32 savedBrightness;
     s32 savedEntityType;
 
@@ -408,18 +417,18 @@ s32 func_8003646C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     D_80085210 = arg0;
     saved252 = g_battleAnims.dialogs.entries[0].textY;
     D_8008520A = 0;
-    saved703 = g_battleAnims.field703;
-    saved9B0 = g_battleAnims.field9B0;
-    saved9C0 = g_battleAnims.field9C0;
+    savedCountdownVisible = g_battleAnims.countdown.visible;
+    savedGauge0Flags = g_battleAnims.gauges[0].flags;
+    savedGauge1Flags = g_battleAnims.gauges[1].flags;
 
     g_battleAnims.dialogs.entries[0].textY = 0;
     D_8008520C = (g_battleAnims.dialogs.entries[0].textX = 0);
-    g_battleAnims.field703 = 0;
-    g_battleAnims.field9B0 = 0;
-    g_battleAnims.field9C0 = 0;
-    D_8008520B = saved703;
+    g_battleAnims.countdown.visible = 0;
+    g_battleAnims.gauges[0].flags = 0;
+    g_battleAnims.gauges[1].flags = 0;
+    D_8008520B = savedCountdownVisible;
 
-    initBattleTransition();
+    resetSeedRankNotification();
 
     savedBrightness = g_battleAnims.dialogs.entries[0].brightness;
     savedEntityType = readDialogEntityType(0);
@@ -453,9 +462,9 @@ s32 func_8003646C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     DrawSync(0);
     VSync(0);
 
-    g_battleAnims.field9B0 = saved9B0;
-    g_battleAnims.field9C0 = saved9C0;
-    g_battleAnims.field703 = D_8008520B;
+    g_battleAnims.gauges[0].flags = savedGauge0Flags;
+    g_battleAnims.gauges[1].flags = savedGauge1Flags;
+    g_battleAnims.countdown.visible = D_8008520B;
     setDialogBrightness(0, savedBrightness);
     setDialogCornerIcon(0, 0);
     setDialogEntityType(0, savedEntityType);

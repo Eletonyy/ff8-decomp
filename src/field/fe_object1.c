@@ -492,12 +492,12 @@ void func_8009895C(void) {
                 func_800ACB10();
             }
             D_8005F14A = 0;
-            deactivateBattleCmd(-1);
+            stopVibration(-1);
             func_80027448();
         }
     }
 
-    deactivateBattleCmd(-1);
+    stopVibration(-1);
     func_80027448();
     VSync(0);
 }
@@ -529,7 +529,8 @@ void func_8009912C(void) {
 
 extern s32  getAnimFrameParam(s32 slot, s32 sub); /* per-pad input-frame param (s32 view) */
 extern s32  func_80027A58(s32 a, s32 b);          /* per-pad newly-pressed input */
-extern s32  remapControllerInput(s32 arg);        /* s32 view: btl_color.h's u16 (u16) masks arg and result, changing codegen */
+// TODO: Drop this and include the prototype from the owner.
+extern s32 applyButtonRemapTranslation(s32 arg); /* s32 view: input/button_remap.h's u16 (u16) masks arg and result, changing codegen */
 
 /**
  * @brief Per-tick controller-input sampling for the field engine's two pad slots.
@@ -544,7 +545,7 @@ extern s32  remapControllerInput(s32 arg);        /* s32 view: btl_color.h's u16
  * Y read (axis 3) sets 0x1000 / 0x4000. Each bit is OR'd into @c padHeld always
  * and into @c padPressed only when it was not held last tick (edge detect).
  *
- * Finally derives the held/pressed button masks (@c remapControllerInput) into
+ * Finally derives the held/pressed button masks (@c applyButtonRemapTranslation) into
  * @c unk150 / @c ambientFlags.
  */
 void func_80099180(void) {
@@ -577,8 +578,8 @@ void func_80099180(void) {
         }
     }
 
-    g_fieldEntity.unk150 = remapControllerInput(g_fieldEntity.padHeld);
-    g_fieldEntity.ambientFlags = remapControllerInput(g_fieldEntity.padPressed);
+    g_fieldEntity.unk150 = applyButtonRemapTranslation(g_fieldEntity.padHeld);
+    g_fieldEntity.ambientFlags = applyButtonRemapTranslation(g_fieldEntity.padPressed);
 }
 
 /* Park the real stack pointer at 0x1F8003FC and run the next call with its
@@ -824,7 +825,7 @@ void func_80099348(void) {
             break;
         }
 
-        if ((g_fieldVars->stateFlags & FIELD_STATE_CAMERA_SHAKE) && g_gameState.mainData.countdownTimer == 0
+        if ((g_fieldVars->stateFlags & FIELD_STATE_COUNTDOWN) && g_gameState.mainData.countdownTimer == 0
             && (g_fieldVars->fieldB6 & 0x100) == 0) {
             g_fieldEntity.counter = 0x4B;
             g_fieldEntity.mode = 1;

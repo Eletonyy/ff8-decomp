@@ -7,13 +7,14 @@
 #include "numstr.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
+#include "ui/icon.h"
+#include "snd_sfx.h"
 #include "dialog.h"
 
 extern AbilityEntry  D_8007CEE0[];
 
 extern s32  getAbilityDesc(s32 id);
 extern u8  *getAbilityName(s32 abilityId);
-extern s32  func_8002FF34(s32 ctx, s32 a1, s32 a2, s32 x, s32 y, s32 color);
 extern void func_801F0A78(s32 ctx, s32 idx, s32 unused, s32 x, s32 y);
 extern void func_801F1AFC(void);
 extern void func_801F1B10(void);
@@ -28,7 +29,6 @@ extern s32  func_801F0D84(void);
 extern void func_801F18FC(s32 *ctx);
 extern s32  func_801F0BB0(void);
 extern void func_801F7BEC(s32 cfg);
-extern void sendSpuCommand(s32 cmd);
 
 /**
  * @brief Render one cell of an ability grid at a per-slot X offset.
@@ -714,7 +714,7 @@ s32 func_801E36AC(s32 ctx, s32 pkt, s32 col, s32 row, s32 scrollOffset) {
     y = y + (row * 13);
     index = (col * 11) + row;
     if (index < D_801E3D9C) {
-        pkt = func_8002FF34(ctx, pkt, 0xDE, x, y - 2, g_menuTint[MENU_TINT_NORMAL]);
+        pkt = (s32)drawIcon((void *)ctx, (void *)pkt, ICON_ABILITY_MENU, x, y - 2, g_menuTint[MENU_TINT_NORMAL]);
         x += 13;
         abilityId = D_801E3D84[index];
         entry = func_801E2920(abilityId);

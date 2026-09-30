@@ -5,7 +5,8 @@
 #include "menushop.h"
 #include "menumain.h"
 #include "game.h"
-#include "btl_color.h"
+#include "ui/icon.h"
+#include "snd_sfx.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
 
@@ -1232,7 +1233,7 @@ static s32 func_801E6FD8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
         itemName = getItemName(itemId);
         itemGlyph = func_801E5904(itemId) + 223;
 
-        arg1 = func_8002FF34(arg0, arg1, itemGlyph, xBase + 11, yBase + 8, g_menuTint[MENU_TINT_NORMAL]);
+        arg1 = drawIcon(arg0, arg1, itemGlyph, xBase + 11, yBase + 8, g_menuTint[MENU_TINT_NORMAL]);
 
         x = xBase + 25;
         y = yBase + 10;
@@ -1333,12 +1334,12 @@ static s32 func_801E7374(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
     g_menuDisplayCfg.dataPtr = (s32)s;
 
     if (s->shopAction == SHOP_BUY) {
-        arg2 = func_8002FF34(arg1, arg2, ICON_PRICE, arg3 + 168, arg4, g_menuTint[MENU_TINT_NORMAL]);
+        arg2 = drawIcon(arg1, arg2, ICON_PRICE, arg3 + 168, arg4, g_menuTint[MENU_TINT_NORMAL]);
         arg2 = func_801F5F30(arg1, arg2, arg3 + 28, arg4, g_menuTint[MENU_TINT_NORMAL], s->pageStart);
     }
     else {
-        arg2 = func_8002FF34(arg1, arg2, ICON_PRICE, arg3 + 128, arg4, g_menuTint[MENU_TINT_NORMAL]);
-        arg2 = func_8002FF34(arg1, arg2, ICON_NUM, arg3 + 214, arg4, g_menuTint[MENU_TINT_NORMAL]);
+        arg2 = drawIcon(arg1, arg2, ICON_PRICE, arg3 + 128, arg4, g_menuTint[MENU_TINT_NORMAL]);
+        arg2 = drawIcon(arg1, arg2, ICON_NUM, arg3 + 214, arg4, g_menuTint[MENU_TINT_NORMAL]);
         arg2 = func_801F5EFC(arg1, arg2, arg3 + 28, arg4, g_menuTint[MENU_TINT_NORMAL], s->pageStart);
     }
     
@@ -1372,7 +1373,7 @@ static s32 func_801E7508(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
 
     x = arg3 + 323;
     y = arg4 + 8;
-    arg2 = func_8002FF34(arg1, arg2, ICON_GIL, x, y, g_menuTint[MENU_TINT_NORMAL]);
+    arg2 = drawIcon(arg1, arg2, ICON_GIL, x, y, g_menuTint[MENU_TINT_NORMAL]);
 
     g_menuDisplayCfg.iconType = ICON_INFO;
     g_menuDisplayCfg.iconSubType = 0;

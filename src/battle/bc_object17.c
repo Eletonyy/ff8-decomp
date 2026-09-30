@@ -1,4 +1,5 @@
 #include "common.h"
+#include "ui/icon.h"
 
 extern u8 D_80102E10[];
 extern u8 D_80102E14[];
@@ -360,9 +361,9 @@ void func_800D18C4(s32 a0, u8 *a1) {
         a0 += 0xFFF;
     }
     a0 >>= 12;
-    intToDecStringShort(a0, buf, 0x60);
+    intToDecStringShort(a0, buf, ICON_THIN_DIGIT_0);
     p = &buf[1];
-    replaceLeadingZeros(p, 3, 0x60, 0x6B);
+    replaceLeadingZeros(p, 3, ICON_THIN_DIGIT_0, ICON_THIN_SLASH);
     b0 = buf[1];
     b1 = p[1];
     a1[0] = b0;

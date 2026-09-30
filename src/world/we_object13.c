@@ -248,7 +248,7 @@ void func_800C4644(void) {
  * @c [100, 3100]), then pays salary into @c gil from the per-rank
  * salary table at @c g_seedSalaryTable[level] (capped at 99,999,999
  * gil). When neither @ref FIELD_STATE_FIELD_READY nor @ref FIELD_STATE_FLAG_1000 is
- * set, fires the level-up notification (@c func_800316D4 + 3 rank-up
+ * set, fires the level-up notification (@c showSeedRankNotification + 3 rank-up
  * SFX). Stores @c totalKills as the new @c prevKillSum.
  */
 void func_800C4688(void) {
@@ -283,7 +283,7 @@ void func_800C4688(void) {
             s32 oldLevel = (s16)g_fieldVars->prevSeedExp / 100;
             s32 newLevel = (s16)g_fieldVars->seedExp / 100;
 
-            func_800316D4(oldLevel, newLevel,
+            showSeedRankNotification(oldLevel, newLevel,
                           g_seedSalaryTable[oldLevel] * 10,
                           g_seedSalaryTable[newLevel] * 10);
 
@@ -409,7 +409,7 @@ void func_800C4A74(void) {
  *   - @c seedExpStepAcc — fires the SeeD level-up tick every @c 0x6000 steps,
  *     then clamps @c seedExp to @c [100, 0xC1C].
  *   - @c levelUpDisplayTimer — counts down each step; fires
- *     @c setTransitionPhase7 the frame it reaches @c 0.
+ *     @c hideSeedRankNotification the frame it reaches @c 0.
  *   - @c angeloLearnStepAcc — fires the Angelo trick learn tick every
  *     @c 0x250 steps.
  *
@@ -445,7 +445,7 @@ void func_800C4A74(void) {
  *         else if ((s16)g_fieldVars->seedExp >= 0xC1C) g_fieldVars->seedExp = 0xC1C;
  *     }
  *     if ((s16)g_fieldVars->levelUpDisplayTimer >= 0) {
- *         if ((s16)g_fieldVars->levelUpDisplayTimer == 0) setTransitionPhase7();
+ *         if ((s16)g_fieldVars->levelUpDisplayTimer == 0) hideSeedRankNotification();
  *         g_fieldVars->levelUpDisplayTimer--;
  *     }
  *     if (g_gameState.mainData.partyLockFlag & 0x10) return;

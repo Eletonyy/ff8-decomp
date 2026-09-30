@@ -32,7 +32,7 @@ extern volatile s32 D_8008514C;
 extern s32 D_80085210;
 /** @brief Currently-loaded overlay dependency ID. */
 extern u8  D_8008520A;
-/** @brief Snapshot of @c g_battleAnims.field703 saved across transition. */
+/** @brief Snapshot of @c g_battleAnims.countdown.visible saved across transition. */
 extern u8  D_8008520B;
 /** @brief Cleared at the start of a transition (purpose unknown). */
 extern u8  D_8008520C;

@@ -40,25 +40,13 @@ typedef enum {
 /** @brief Colors used to draw text in the menu. */
 typedef enum {
     COLOR_GRAY = 1,
-    COLOR_RED = 2,
-    COLOR_YELLOW = 3,
+    COLOR_YELLOW = 2,
+    COLOR_RED = 3,
     COLOR_WHITE = 7,
 } Color;
 
-/** @brief Icon types used in the menu. */
-typedef enum {
-    ICON_NONE = 0,
-    ICON_GIL = 11,
-    ICON_PRICE = 71,
-    ICON_NAME = 73,
-    ICON_ITEM = 76,
-    ICON_NUM = 77,
-    ICON_INFO = 87,
-    ICON_ARROW_UP = 109,
-    ICON_ARROW_DOWN = 110,
-    ICON_STR = 305,
-    ICON_HIT = 311,
-} IconType;
+/** @brief @c iconType value for a window without a header icon. */
+#define ICON_NONE 0
 
 typedef struct {
     u8 pad0[4];

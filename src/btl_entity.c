@@ -1,6 +1,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "battle.h"
+#include "input/button_remap.h"
 #include "dialog.h"
 #include "btl_entity.h"
 #include "drawbar.h"
@@ -10,7 +11,9 @@ extern s32 D_800834CC;
 extern u8 g_digitBaseCode;
 extern DisplayListBuf *D_800834C0;
 extern u16 D_80052974[];
-extern s32 reverseButtonRemap(s32 index);
+
+u8 *func_8002BC6C(u32 *ot, s32 idx, u8 *head);
+u8 *func_8002BE48(u32 *ot, u8 *head);
 
 
 INCLUDE_ASM("asm/nonmatchings/btl_entity", func_8002BAA0);
@@ -63,11 +66,11 @@ s32* getEntityTablePtr(s32 idx) {
  * every set bit @c func_8002BC6C is called to render that entity into the
  * display list at @p head.
  *
- * @param ot   Ordering table base pointer (treated as @c s32*).
+ * @param ot Ordering table.
  * @param head Display-list write head; advanced through nested calls.
  * @return The display-list head after all entity primitives are emitted.
  */
-s32 func_8002BF24(s32 ot, s32 head) {
+u8 *func_8002BF24(u32 *ot, u8 *head) {
     s32 mask = 0;
     s32 hit;
     s32 i;
@@ -87,7 +90,7 @@ s32 func_8002BF24(s32 ot, s32 head) {
         }
     }
 
-    head = func_8002BE48((s32)&((s32 *)ot)[15], head);
+    head = func_8002BE48(&ot[15], head);
     if (mask == 0) {
         return head;
     }

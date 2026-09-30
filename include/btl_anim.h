@@ -21,4 +21,7 @@ extern s32 setAnimGlobalState(s32 value);
 extern void setAnimEntityParams(s32 idx, s32 param7, s32 param6);
 extern void setAnimUnk10Both(s32 unused, s32 index, s32 value);
 
+/* Public data */
+extern u8 g_animCurveFadeOut[]; /**< Easing curve: 65 entries that rise exponentially to 64. */
+
 #endif /* BTL_ANIM_H */

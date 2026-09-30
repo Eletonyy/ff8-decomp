@@ -10,12 +10,12 @@
 #include "dialog.h"
 
 // Intentionally NOT included — these headers would pull in void prototypes
-// for setDialogBrightness, updateAnimEntry, setupAnimEntry and
-// setupAnimEntryFull. We need gcc to implicit-int-declare those at the
+// for setDialogBrightness, setGaugeValue, showGauge and
+// showGaugeFull. We need gcc to implicit-int-declare those at the
 // call sites below to match the original K&R-style scheduling. Without that,
 // four functions mismatch.
 // #include "btl_entity.h"
-// #include "btl_color.h"
+// #include "ui/gauge.h"
 
 /**
  * @brief Snapshot a target entity's grid-cell position into the queued
@@ -984,26 +984,26 @@ s32 opHandler_WINCLOSE(ScriptContext *context) {
 /**
  * @brief Update the @c field4 slot of a @c D_80085398 entry.
  *
- * Pops @c (idx, val) from the Actor stack, calls @c updateAnimEntry
+ * Pops @c (idx, val) from the Actor stack, calls @c setGaugeValue
  * to refresh whatever runtime state the helper tracks, then writes
  * @c val into @c D_80085398[idx].field4 and returns 2.
  */
 s32 opHandler_SETBAR(ScriptContext *context) {
     s32 val = POP(context);
     s32 idx = POP(context);
-    updateAnimEntry(idx, val);
+    setGaugeValue(idx, val);
     D_80085398[idx].field4 = val;
     return 2;
 }
 
 /**
- * @brief Set up a 7-arg animation entry in the @c D_80085398 table.
+ * @brief Show a gauge from 7 script arguments and record them in @c D_80085398.
  *
  * Pops 7 stack values: 6 halfwords (v1..v6) plus an entry index. The
- * low bit of @c idx selects the bank, @c v4 is passed as the second
+ * low bit of @c idx selects the gauge, @c v4 is passed as the second
  * arg, and the two leading halfwords (@c v5/v6) are passed via a
  * 4-byte stack-allocated @c buf. The remaining halfwords spread
- * across the @c setupAnimEntry register args.
+ * across the @c showGauge register args.
  *
  * After the helper returns, all six values plus a @c flag=1 marker
  * are recorded into the per-slot entry at @c D_80085398[idx].
@@ -1020,7 +1020,7 @@ s32 opHandler_DISPBAR(ScriptContext *context) {
 
     buf[0] = v6;
     buf[1] = v5;
-    setupAnimEntry(idx & 1, v4, buf, v3, v2, v1);
+    showGauge(idx & 1, v4, buf, v3, v2, v1);
 
     D_80085398[idx].flag   = 1;
     D_80085398[idx].fieldE = v6;
@@ -1033,10 +1033,10 @@ s32 opHandler_DISPBAR(ScriptContext *context) {
 }
 
 /**
- * @brief Set up an 8-arg animation entry in the @c D_80085398 table.
+ * @brief Show a gauge from 8 script arguments and record them in @c D_80085398.
  *
  * Variant of @c opHandler_DISPBAR: pops 8 stack values (7 halfwords plus
- * an entry index), passes them via @c setupAnimEntryFull (the 7th
+ * an entry index), passes them via @c showGaugeFull (the 7th
  * value lands as the 7th register/stack arg), and records all 8 plus
  * a @c flag=2 marker into the per-slot entry at @c D_80085398[idx].
  */
@@ -1053,7 +1053,7 @@ s32 opHandler_BROKEN(ScriptContext *context) {
 
     buf[0] = v6;
     buf[1] = v5;
-    setupAnimEntryFull(idx & 1, v4, buf, v3, v2, v1, v0);
+    showGaugeFull(idx & 1, v4, buf, v3, v2, v1, v0);
 
     D_80085398[idx].flag   = 2;
     D_80085398[idx].fieldE = v6;
@@ -1070,7 +1070,7 @@ s32 opHandler_BROKEN(ScriptContext *context) {
  * @brief Pop value, clear D_80085398 table entry, call sound handler.
  *
  * Pops the stack to get an index, clears the halfword at D_80085398[idx * 16],
- * then calls clearAnimEntryActive with the popped value.
+ * then calls hideGauge with the popped value.
  *
  * @param actor Script entity context.
  * @return 2.
@@ -1078,6 +1078,6 @@ s32 opHandler_BROKEN(ScriptContext *context) {
 s32 opHandler_KILLBAR(ScriptContext *context) {
     s32 val = POP(context);
     D_80085398[val].flag = 0;
-    clearAnimEntryActive(val);
+    hideGauge(val);
     return 2;
 }

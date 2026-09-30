@@ -1258,8 +1258,8 @@ s32 opHandler_BGCLEAR(Bganime *bganime) {
 }
 
 /**
- * Pop a value and store it into @c g_gameState.mainData.countdownTimer
- * (the battle state word at @c g_gameState+0xCD4 used by camera shake).
+ * Pop a value and store it into @c g_gameState.mainData.countdownTimer, the
+ * countdown in seconds.
  *
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
@@ -1271,7 +1271,7 @@ s32 opHandler_SETTIMER(ScriptContext *context) {
 }
 
 /**
- * @brief Copy the global battle state flag into the script result register.
+ * @brief Copy the countdown (seconds left) into the script result register.
  *
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).
@@ -1283,49 +1283,49 @@ s32 opHandler_GETTIMER(ScriptContext *context) {
 }
 
 /**
- * Trigger camera-shake mode: pop two intensity bytes into
- * @c g_fieldVars->cameraShakeY / @c cameraShakeX, arm the related
- * field flag bits and the battle-config bit, then drive
- * @c setCameraShakeParams + @c setCameraVibrateState(1).
+ * Show the countdown timer: pop its y and then its x into
+ * @c g_fieldVars->countdownY / @c countdownX, set @ref FIELD_STATE_COUNTDOWN
+ * and bit 0x4 of @c fieldB6 and @c g_battleConfig.unk2 (so battles show it
+ * too), then call @c setCountdownPosition and @c setCountdownVisible(1).
  *
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
 s32 opHandler_DISPTIMER(ScriptContext *context) {
-    g_fieldVars->cameraShakeY = POP_BYTE(context);
-    g_fieldVars->cameraShakeX = POP_BYTE(context);
-    g_fieldVars->stateFlags |= FIELD_STATE_CAMERA_SHAKE;
+    g_fieldVars->countdownY = POP_BYTE(context);
+    g_fieldVars->countdownX = POP_BYTE(context);
+    g_fieldVars->stateFlags |= FIELD_STATE_COUNTDOWN;
     g_fieldVars->fieldB6 |= 0x4;
     g_battleConfig.unk2 |= 0x4;
-    setCameraShakeParams(g_fieldVars->cameraShakeX, g_fieldVars->cameraShakeY);
-    setCameraVibrateState(1);
+    setCountdownPosition(g_fieldVars->countdownX, g_fieldVars->countdownY);
+    setCountdownVisible(1);
     return 2;
 }
 
 /**
- * Stop camera-shake mode: clear @ref FIELD_STATE_CAMERA_SHAKE, the
+ * Hide the countdown timer: clear @ref FIELD_STATE_COUNTDOWN, the
  * @c fieldB6 bit 0x4 and the @c g_battleConfig.unk2 bit 0x4, then call
- * @c setCameraVibrateState(0). Inverse of @c opHandler_DISPTIMER.
+ * @c setCountdownVisible(0). Inverse of @c opHandler_DISPTIMER.
  *
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
 s32 opHandler_KILLTIMER(ScriptContext *context) {
-    g_fieldVars->stateFlags &= ~FIELD_STATE_CAMERA_SHAKE;
+    g_fieldVars->stateFlags &= ~FIELD_STATE_COUNTDOWN;
     g_fieldVars->fieldB6 &= ~0x4;
     g_battleConfig.unk2 &= ~0x4;
-    setCameraVibrateState(0);
+    setCountdownVisible(0);
     return 2;
 }
 
 /**
- * Pops a parameter and calls setCameraVibrateIntensity, returns 2.
+ * Pops a brightness (0x1000 = full) and passes it to setHudBrightness, returns 2.
  *
  * @param actor Pointer to the Actor event-script context.
  * @return 2 (continue processing).
  */
 s32 opHandler_SHADETIMER(ScriptContext *context) {
-    setCameraVibrateIntensity(POP(context));
+    setHudBrightness(POP(context));
     return 2;
 }
 

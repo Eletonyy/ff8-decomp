@@ -151,9 +151,9 @@ typedef struct {
     /* 0x144 */ s32 padHeldPrev;    /**< Previous tick's @c padHeld, used by @c func_80099180 for direction edge-detection. */
     /* 0x148 */ s32 padPressed;     /**< Newly-pressed input for pad slot 0 (direction bit set only when not held last tick). */
     /* 0x14C */ u8 pad14C[0x04];
-    /* 0x150 */ s32 unk150;         /**< Bit-6/7 source for @c func_8009A7E8 's per-entity trigger7 write; set to @c remapControllerInput(padHeld) each tick. */
+    /* 0x150 */ s32 unk150; /**< Bit-6/7 source for @c func_8009A7E8 's per-entity trigger7 write; set to @c applyButtonRemapTranslation(padHeld) each tick. */
     /* 0x154 */ s32 unk154;         /**< Bit-6/7 mask gating @c func_8009A7E8 's write (inverse of @c unk150); previous tick's @c unk150. */
-    /* 0x158 */ s32 ambientFlags;   /**< Ambient SFX/state flags; bits 6-7 gate the fade-out path in @c func_800BD9C4; set to @c remapControllerInput(padPressed). */
+    /* 0x158 */ s32 ambientFlags; /**< Ambient SFX/state flags; bits 6-7 gate the fade-out path in @c func_800BD9C4; set to @c applyButtonRemapTranslation(padPressed). */
     /* 0x15C */ u8 pad15C[0x04];
     /* 0x160 */ s32 field_0x160;    /**< Held input for pad slot 1 (@c getAnimFrameParam(1, 0)). */
     /* 0x164 */ u8 pad164[0x04];
@@ -258,8 +258,8 @@ typedef struct {
     /* 0xCA */ s8 audioChannel2State;   /**< Audio channel 2 state byte; -1 = reset/inactive. */
     /* 0xCB */ s8 battleMusicId;        /**< Set by @c opHandler_SETBATTLEMUSIC; read sign-extended by the sound-bank loader. */
     /* 0xCC */ u8 expectedDiscId;       /**< Currently inserted disc (1..4). The intro/disc-swap screen waits for @c getDiscId() to match. */
-    /* 0xCD */ u8 cameraShakeX;         /**< Camera shake X intensity, popped from stack. */
-    /* 0xCE */ u8 cameraShakeY;         /**< Camera shake Y intensity, popped from stack. */
+    /* 0xCD */ u8 countdownX; /**< Countdown timer x, popped by DISPTIMER. */
+    /* 0xCE */ u8 countdownY; /**< Countdown timer y, popped by DISPTIMER. */
     /* 0xCF */ u8 fieldCF;              /**< Blocks random encounters while set (func_800A5D28 guard); also read by fe_object7 dispatch. */
     /* 0xD0 */ u8 padD0;
     /* 0xD1 */ u8 fieldD1;              /**< Bit 0 toggled by fe_object6 helper. */
@@ -291,9 +291,9 @@ typedef struct {
 
 /* FieldVars.stateFlags bits (partial map — bits are named as their usages
  * are identified; several more bits are used as bare hex elsewhere). */
-#define FIELD_STATE_TRANSITION     0x8   /**< Bit 3: transition gate — its inverse is pushed to @c setTransitionFlag at field init. Set on new game. */
+#define FIELD_STATE_TRANSITION 0x8 /**< Bit 3: SeeD salary off (SARALYOFF sets it, SARALYON clears it); its inverse is pushed to @c setSalaryEnabled at field init. Set on new game. */
 #define FIELD_STATE_FIELD_READY    0x10  /**< Bit 4: set on new game; returned (with bit 3) by @c getFieldStateFlags. @note Purpose uncertain. */
-#define FIELD_STATE_CAMERA_SHAKE   0x40  /**< Bit 6: arms the camera shake/vibrate pass in the field tick tail. */
+#define FIELD_STATE_COUNTDOWN 0x40 /**< Bit 6: the countdown timer is shown (DISPTIMER sets it, KILLTIMER clears it); the field tick tail shows it again. */
 #define FIELD_STATE_FLAG_200       0x200 /**< Bit 9: toggled by the fe_object6 music/state helper. @note Purpose unknown. */
 #define FIELD_STATE_FLAG_400       0x400 /**< Bit 10: staged from @c fieldCF by the music-state machine, then cleared. @note Purpose unknown. */
 #define FIELD_STATE_PARTY_OVERRIDE 0x800 /**< Bit 11: while set, @c fieldF3 mirrors into @c g_battleConfig.unk8 / @c GameConfig.sealedFeatures and SETPARTY2 replays at field init. */
@@ -816,11 +816,8 @@ typedef struct {
 /** @brief Update one packed-flag table slot from a step tick. */
 extern void func_800383B8(s32 key, s32 status);
 
-/** @brief Trigger SeeD rank-up notification (palette transition phase 7). */
-extern void setTransitionPhase7(void);
-
 /* ======================================================================== */
-/* Field-overlay dialog / animation entry tables                                */
+/* Field-overlay dialog / gauge tables                                          */
 /* ======================================================================== */
 
 /**
@@ -845,12 +842,12 @@ typedef struct {
 extern FieldDialogSlot D_80085300[];
 
 /**
- * @brief One slot in the field anim-shadow table @ref D_80085398.
+ * @brief One slot in the field's gauge-shadow table @ref D_80085398.
  *
- * Eight halfwords of opcode-supplied animation parameters. @c flag at
+ * Eight halfwords of opcode-supplied gauge parameters. @c flag at
  * @c 0x0 is the slot-active marker (cleared by @c func_800BD1A4),
  * @c field2..fieldE are the per-opcode arg shadow (the same values
- * forwarded to @c setupAnimEntry / @c setupAnimEntryFull / @c updateAnimEntry).
+ * forwarded to @c showGauge / @c showGaugeFull / @c setGaugeValue).
  */
 typedef struct {
     /* 0x0 */ s16 flag;
@@ -863,7 +860,7 @@ typedef struct {
     /* 0xE */ u16 fieldE;
 } FieldAnimSlot;
 
-/** @brief Per-slot anim shadow table populated by field-VM anim opcodes. */
+/** @brief Per-gauge shadow table populated by the field VM's gauge opcodes. */
 extern FieldAnimSlot D_80085398[];
 
 
@@ -911,9 +908,8 @@ extern u8 D_800DE8D5;
  *         value in @c MOVIEREADY / @c SPUREADY. */
 extern s32 D_800DE4EC;
 
-/** @brief Movie subsystem state pointer (or buffer base) — stored to as
- *         a single u32 by the battle-load opcodes. */
-extern u8 D_800DE878[];
+/** @brief Id that startVibration returned for the field script's last SETVIBRATE. */
+extern s32 D_800DE878;
 
 /* ======================================================================== */
 /* Battle encounter params (populated by field-VM opcode 0x14C)             */
@@ -1092,8 +1088,10 @@ extern u8 D_800DE8D2;
 /* fe_object5 movie-load tables and movie-overlay (0x801E0000) entry points */
 /* ======================================================================== */
 
-/** @brief Battle-encounter scratch buffer; fe_object5 hands the pointer to
- *         @c loadBattleCmd as the asset-payload base. */
+/**
+ * @brief The field's vibration patterns: an offset table followed by stream
+ * pairs, the block @c startVibration reads.
+ */
 extern u8 D_800C5FB0[];
 
 /** @brief CD-entry @c {LBA,size} pairs for movie load opcodes (op04F MOVIE). */

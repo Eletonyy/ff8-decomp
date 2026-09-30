@@ -8,76 +8,10 @@
 #include "btl_display.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
-#include "btl_color.h"
+#include "ui/icon.h"
+#include "snd_sfx.h"
 #include "drawbar.h"
 #include "menu_tint.h"
-
-/**
- * @brief One 8-byte sprite cell of a glyph in the @c D_80052A68 font table.
- *
- * A glyph is drawn from one or more of these cells, and both words are baked in
- * the layout the GPU packet wants so the emitters only mask and add.
- *
- * @c texInfo: bits 0-15 are u and v; bits 16-19 and 22-26 are the two pieces of
- * a CLUT offset that is added to the font CLUT (@ref GLYPH_UVCLUT_MASK keeps
- * exactly these and u/v); bit 27 is the semi-transparency flag and bits 30-31
- * the blend rate. Bit 21 is set in every cell of the shipped table, but no
- * emitter reads it.
- *
- * @c metrics packs four bytes: the sprite width, a signed X offset, the sprite
- * height and a signed Y offset, so width + X offset is the cell's right edge
- * and height + Y offset its bottom edge.
- */
-typedef struct {
-    /* 0x00 */ u32 texInfo; /**< u | v<<8 | CLUT offset bits | abe<<27 | abr<<30. */
-    /* 0x04 */ u32 metrics; /**< w | (s8)xOffset<<8 | h<<16 | (s8)yOffset<<24. */
-} GlyphCell;
-
-/**
- * @brief Header view of the @c D_80052A68 font table (baked into executable data).
- *
- * A glyph count followed by one descriptor per glyph. Each descriptor packs the
- * glyph's cell @c count (high 16 bits) and the byte offset from the table base
- * to that glyph's @ref GlyphCell list (low 16 bits). The cell lists themselves
- * live in the trailing area the descriptors point at.
- */
-typedef struct {
-    /* 0x00 */ u32 glyphCount;
-    /* 0x04 */ u32 descriptors[1]; /**< cellCount<<16 | byteOffsetToCells. */
-} GlyphTable;
-
-/** @brief Font glyph table (glyph count + per-glyph descriptors + cell lists). */
-extern GlyphTable D_80052A68;
-
-/** @brief u, v and CLUT-offset bits of @c GlyphCell.texInfo. */
-#define GLYPH_UVCLUT_MASK 0x07CFFFFF
-
-/** @brief Width and height bytes of @c GlyphCell.metrics. */
-#define GLYPH_WH_MASK 0x00FF00FF
-
-/** @brief Shift that brings the blend rate of @c GlyphCell.texInfo (bits 30-31)
- * down to bit 0. */
-#define GLYPH_ABR_SHIFT 30
-
-/** @brief Width of the blend rate once shifted down. getTPage masks again, but
- * dropping this one costs the match. */
-#define GLYPH_ABR_MASK 3
-
-/** @brief Shift that lands the semi-transparency flag of @c GlyphCell.texInfo
- * (bit 27) on @ref SPRT_CODE_ABE. */
-#define GLYPH_ABE_SHIFT 26
-
-/** @brief Semi-transparency option bit of a primitive's code byte. */
-#define SPRT_CODE_ABE 0x02
-
-/** @brief Position of the code byte inside the colour word. */
-#define SPRT_CODE_SHIFT 24
-
-/** @brief r, g, b and the two option bits of the code byte in the colour word. */
-#define SPRT_RGB_MASK 0x03FFFFFF
-
-/** @brief Primitive code 0x64 (SPRT) in the colour word. */
-#define SPRT_CODE 0x64000000
 
 /** @brief r, g and b of a colour word shifted right once, without the bits
  * each channel took from the one above. */
@@ -91,31 +25,8 @@ extern GlyphTable D_80052A68;
 #define DR_OFFSET_COORD_MASK 0x7FF
 #define DR_OFFSET_Y_SHIFT 11
 
-/** @brief VRAM position of the font's CLUT row; a cell's CLUT offset is added to it. */
-#define GLYPH_CLUT_X 256
-#define GLYPH_CLUT_Y 224
-
-/** @brief VRAM position of the font's texture page. */
-#define GLYPH_TPAGE_X 896
-#define GLYPH_TPAGE_Y 256
-
-/** @brief The window marker sits this many pixels in from the bottom-right corner. */
-#define GLYPH_MARKER_INSET 24
-
-/** @brief Glyph drawn in the bottom-right corner of a message window. */
-#define GLYPH_WINDOW_MARKER 6
-
-/** @brief Glyph drawn in front of the selected choice. */
-#define GLYPH_CHOICE_CURSOR 0
-
-/* Whole-word setters for a TSPRT's r0/g0/b0/code, u0/v0/clut and w/h groups: the
- * glyph cells hold those groups ready-made, so they are stored in one piece.
- * The do/while(0) of setGlyphUVClut is load-bearing: the scheduler moves nothing
- * across it, which keeps the u/v/CLUT store ahead of the texture-page code.
- * Wrapping the colour setter the same way breaks drawDialogMarker's match. */
-#define setGlyphRGBC(p, word) (*(u32 *)&(p)->r0 = (word))
-#define setGlyphUVClut(p, word) do { *(u32 *)&(p)->u0 = (word); } while (0)
-#define setGlyphWH(p, word) (*(u32 *)&(p)->w = (word))
+/** @brief The next-page marker sits this many pixels in from the window's bottom-right corner. */
+#define NEXT_PAGE_MARKER_INSET 24
 
 /** @brief Values of @c Dialog.seqState, the text state machine run by updateDialog. */
 enum {
@@ -127,7 +38,7 @@ enum {
     DIALOG_SEQ_SCROLL, /**< Scroll up by one line. */
     DIALOG_SEQ_END, /**< End of the message. */
     DIALOG_SEQ_DONE, /**< Finished; nothing left to run. */
-    DIALOG_SEQ_PAGE, /**< Page break: set up the corner marker. */
+    DIALOG_SEQ_PAGE, /**< Page break: set up the next-page marker. */
     DIALOG_SEQ_PAGE_RELEASE, /**< Wait until only the d-pad is held. */
     DIALOG_SEQ_PAGE_WAIT, /**< Wait for Cross or Square, then start the next page. */
     DIALOG_SEQ_CHOICE_START,
@@ -144,7 +55,7 @@ enum {
     MSG_END = 0x00,
     MSG_NEW_PAGE = 0x01,
     MSG_NEWLINE = 0x02,
-    MSG_NEW_PAGE_MARKED = 0x07 /**< Page break that shows the corner marker (name is a guess). */
+    MSG_NEW_PAGE_MARKED = 0x07 /**< Page break that shows the next-page marker. */
 };
 
 /** @brief Command bytes returned in bits 8-15 by nextDialogChar. */
@@ -205,26 +116,26 @@ enum {
 #define TEXT_TPAGE_PAGE2 0xE100041D
 
 /**
- * @brief Bit of @c Dialog.ctrl.raw: @c ctrl.bits.marker, the window shows its
- * blinking corner marker.
+ * @brief Bit of @c Dialog.ctrl.raw: @c ctrl.bits.nextPageMarker, the window shows its
+ * blinking next-page marker.
  */
-#define DIALOG_CTRL_MARKER 0x00800000
+#define DIALOG_CTRL_NEXT_PAGE_MARKER 0x00800000
 
-/** @brief Position of @c Dialog.ctrl.bits.markerBlink inside @c ctrl.raw. */
-#define DIALOG_CTRL_MARKER_BLINK_SHIFT 16
+/** @brief Position of @c Dialog.ctrl.bits.nextPageMarkerBlink inside @c ctrl.raw. */
+#define DIALOG_CTRL_NEXT_PAGE_MARKER_BLINK_SHIFT 16
 
 /**
- * @brief Bit of the 7-bit blink counter @c Dialog.ctrl.bits.markerBlink.
+ * @brief Bit of the 7-bit blink counter @c Dialog.ctrl.bits.nextPageMarkerBlink.
  *
- * Set for 16 of every 32 ticks; the corner marker is blanked while it is set.
+ * Set for 16 of every 32 ticks; the next-page marker is blanked while it is set.
  */
-#define DIALOG_MARKER_BLINK_OFF 0x10
+#define DIALOG_NEXT_PAGE_MARKER_BLINK_OFF 0x10
 
 extern u32 g_textBlinkTint; // Same as g_dialogs.state.textBlinkTint
 extern u8 D_800834D8[];
 static void updateTextBlinkColors(void);
 static void applyWindowBrightness(s32 index);
-static void drawDialogMarker(P_TAG *ot, Dialog *entry);
+static void drawNextPageMarker(P_TAG *ot, Dialog *entry);
 static TSPRT *drawTextIcon(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y);
 static inline void updateOpenDialogScale(s32 index);
 static void updateDialog(s32 index, u32 input, u32 repeat);
@@ -303,10 +214,10 @@ void setTextBrightness(s32 brightness) {
 
 
 /**
- * @brief Apply a message window's @c brightness (0x1000 = normal) to its text and marker.
+ * @brief Apply a message window's @c brightness (0x1000 = normal) to its text and next-page marker.
  *
- * Sets the text brightness (setTextBrightness) and @c g_gpuColor, the tint of
- * the window's corner marker (buildGrayscaleGpuColor).
+ * Sets the text brightness (setTextBrightness) and the tint of the window's
+ * next-page marker (setNextPageMarkerBrightness).
  *
  * @param index Dialog index.
  */
@@ -314,7 +225,7 @@ static void applyWindowBrightness(s32 index) {
     Dialog *entry = &g_dialogs.entries[index];
     s32 val = entry->brightness;
     setTextBrightness(val);
-    buildGrayscaleGpuColor(val);
+    setNextPageMarkerBrightness(val);
 }
 
 
@@ -400,12 +311,12 @@ s32 getOpenDialogScale(s32 idx) {
 
 
 /**
- * @brief Draw the blinking corner marker of a message window.
+ * @brief Draw the blinking next-page marker of a message window.
  *
  * While the entry's marker bit is set and its blink counter is in the visible
- * half of its cycle, emits glyph @ref GLYPH_WINDOW_MARKER of the @c D_80052A68
- * font table @ref GLYPH_MARKER_INSET pixels in from the window's bottom-right
- * corner, tinted with @c g_gpuColor. Every cell of the glyph becomes one
+ * half of its cycle, emits icon @ref ICON_NEXT_PAGE_MARKER of @c g_iconTable
+ * @ref NEXT_PAGE_MARKER_INSET pixels in from the window's bottom-right
+ * corner, tinted with @c g_nextPageMarkerColor. Every cell of the icon becomes one
  * @c TSPRT taken from the display-list packet buffer and linked into @p ot;
  * the advanced packet cursor is stored back afterwards.
  *
@@ -428,9 +339,9 @@ s32 getOpenDialogScale(s32 idx) {
  * @param ot Ordering-table slot the sprites are linked into.
  * @param entry Dialog the marker belongs to.
  */
-static void drawDialogMarker(P_TAG *ot, Dialog *entry) {
-    GlyphTable *table;
-    GlyphCell *cell;
+static void drawNextPageMarker(P_TAG *ot, Dialog *entry) {
+    IconTable *table;
+    IconCell *cell;
     TSPRT *p;
     s32 head;
     u32 link;
@@ -447,46 +358,46 @@ static void drawDialogMarker(P_TAG *ot, Dialog *entry) {
      * extracts the marker bit with a shift; only the whole word gives the
      * original and/branch pair. */
     flags = entry->ctrl.raw;
-    if (!(flags & DIALOG_CTRL_MARKER) ||
-        ((flags >> DIALOG_CTRL_MARKER_BLINK_SHIFT) & DIALOG_MARKER_BLINK_OFF)) {
+    if (!(flags & DIALOG_CTRL_NEXT_PAGE_MARKER) ||
+        ((flags >> DIALOG_CTRL_NEXT_PAGE_MARKER_BLINK_SHIFT) & DIALOG_NEXT_PAGE_MARKER_BLINK_OFF)) {
         return;
     }
 
-    table = &D_80052A68;
+    table = &g_iconTable;
     head = getDisplayListHead();
-    cell = (GlyphCell *)table; /* seeding the cursor from its own copy keeps the offset add in the delay slot */
+    cell = (IconCell *)table; /* seeding the cursor from its own copy keeps the offset add in the delay slot */
     p = (TSPRT *)head;
-    word = table->descriptors[GLYPH_WINDOW_MARKER];
+    word = table->descriptors[ICON_NEXT_PAGE_MARKER];
     n = word >> 16;
     word &= 0xFFFF;
-    cell = (GlyphCell *)((u8 *)cell + word);
-    x = entry->rect.w - GLYPH_MARKER_INSET;
-    y = entry->rect.h - GLYPH_MARKER_INSET;
-    color = g_gpuColor;
+    cell = (IconCell *)((u8 *)cell + word);
+    x = entry->rect.w - NEXT_PAGE_MARKER_INSET;
+    y = entry->rect.h - NEXT_PAGE_MARKER_INSET;
+    color = g_nextPageMarkerColor;
 
     for (; n > 0; p++, cell++, n--) {
         word = cell->texInfo;
-        val = word & GLYPH_UVCLUT_MASK;
-        val += getClut(GLYPH_CLUT_X, GLYPH_CLUT_Y) << 16;
-        setGlyphUVClut(p, val);
+        val = word & ICON_UVCLUT_MASK;
+        val += getClut(ICON_CLUT_X, ICON_CLUT_Y) << 16;
+        setIconUVClut(p, val);
 
-        val = (word >> GLYPH_ABR_SHIFT) & GLYPH_ABR_MASK;
+        val = (word >> ICON_ABR_SHIFT) & ICON_ABR_MASK;
         val = (u8)getTPage(0, val, 0, 0);
         tpage = val;
-        tpage |= getTPage(0, 0, GLYPH_TPAGE_X, GLYPH_TPAGE_Y);
+        tpage |= getTPage(0, 0, ICON_TPAGE_X, ICON_TPAGE_Y);
 
-        val = word >> GLYPH_ABE_SHIFT;
+        val = word >> ICON_ABE_SHIFT;
         val &= SPRT_CODE_ABE;
         val <<= SPRT_CODE_SHIFT;
         val |= color;
         setTSprt(p, 1, 0, tpage);
         val &= SPRT_RGB_MASK;
         val |= SPRT_CODE;
-        setGlyphRGBC(p, val);
+        setIconRGBC(p, val);
 
         word = cell->metrics;
-        val = word & GLYPH_WH_MASK;
-        setGlyphWH(p, val);
+        val = word & ICON_WH_MASK;
+        setIconWH(p, val);
         val = (s8)(word >> 24); /* signed Y offset, byte 3 */
         word <<= 16;
         word = (s8)(word >> 24); /* signed X offset, byte 1 */
@@ -500,13 +411,13 @@ static void drawDialogMarker(P_TAG *ot, Dialog *entry) {
 
 
 /**
- * @brief Draw a message window's choice cursor, corner marker and text.
+ * @brief Draw a message window's choice cursor, next-page marker and text.
  *
- * Once the whole message has been typed (@c typingDone), glyph
- * @ref GLYPH_CHOICE_CURSOR goes in front of the selected line @c choiceCursor, grey
+ * Once the whole message has been typed (@c typingDone), icon
+ * @ref ICON_CHOICE_CURSOR goes in front of the selected line @c choiceCursor, grey
  * at the window's @c brightness (0x1000 = full), followed by a
- * draw-area packet for the window entity's clipped bound rect. Then the corner
- * marker (drawDialogMarker), the text (drawDialogText) and a draw-mode packet that
+ * draw-area packet for the window entity's clipped bound rect. Then the next-page
+ * marker (drawNextPageMarker), the text (drawDialogText) and a draw-mode packet that
  * resets the texture page. A window without a message draws nothing.
  *
  * @param index Dialog index.
@@ -514,7 +425,7 @@ static void drawDialogMarker(P_TAG *ot, Dialog *entry) {
  */
 static void drawDialogContents(s32 index, P_TAG *ot) {
     Dialog *entry = &g_dialogs.entries[index];
-    GlyphTable *table;
+    IconTable *table;
     DR_AREA *area;
     DR_TPAGE *tpage;
     BattleDisplayEntity *ent;
@@ -529,7 +440,7 @@ static void drawDialogContents(s32 index, P_TAG *ot) {
     if (entry->dataPtr == NULL) {
         return;
     }
-    table = &D_80052A68;
+    table = &g_iconTable;
     brightness = entry->brightness;
     if (entry->firstChoice != DIALOG_NO_CHOICE) {
         if (entry->typingDone == 1) {
@@ -543,14 +454,14 @@ static void drawDialogContents(s32 index, P_TAG *ot) {
             if (table != NULL) { /* the original tests the fixed table address */
                 colour = brightness / 32;
                 colour = SPRT_CODE | (colour << 16) | (colour << 8) | colour;
-                area = func_8002FF34(ot, area, GLYPH_CHOICE_CURSOR, DIALOG_CURSOR_X, y, colour);
+                area = drawIcon(ot, area, ICON_CHOICE_CURSOR, DIALOG_CURSOR_X, y, colour);
             }
             SetDrawArea(area, &ent->clipBound.rect);
             addPrimFastWithTempOperand(ot, area, link);
             storeGpuPacket((u32)(area + 1));
         }
     }
-    drawDialogMarker(ot, entry);
+    drawNextPageMarker(ot, entry);
     drawDialogText(ot, entry);
     tpage = (DR_TPAGE *)getDisplayListHead();
     setlen(tpage, 1);
@@ -910,16 +821,16 @@ static void updateDialog(s32 index, u32 input, u32 repeat) {
 
         case DIALOG_SEQ_PAGE:
             if (ch == MSG_NEW_PAGE_MARKED) {
-                entry->ctrl.bits.marker = 1;
-                entry->ctrl.bits.markerBlink = 0;
+                entry->ctrl.bits.nextPageMarker = 1;
+                entry->ctrl.bits.nextPageMarkerBlink = 0;
             } else {
-                entry->ctrl.bits.marker = 0;
+                entry->ctrl.bits.nextPageMarker = 0;
             }
             *seqState = DIALOG_SEQ_PAGE_RELEASE;
             break;
 
         case DIALOG_SEQ_PAGE_RELEASE:
-            entry->ctrl.bits.markerBlink++;
+            entry->ctrl.bits.nextPageMarkerBlink++;
             pressed &= ~(PADLup | PADLright | PADLdown | PADLleft);
             if (pressed == 0) {
                 *seqState = DIALOG_SEQ_PAGE_WAIT;
@@ -927,9 +838,9 @@ static void updateDialog(s32 index, u32 input, u32 repeat) {
             break;
 
         case DIALOG_SEQ_PAGE_WAIT:
-            entry->ctrl.bits.markerBlink++;
+            entry->ctrl.bits.nextPageMarkerBlink++;
             if (pressed & (PADRdown | PADRleft)) {
-                entry->ctrl.bits.marker = 0;
+                entry->ctrl.bits.nextPageMarker = 0;
                 entry->pageColor = entry->color;
                 decodeMessageDirect(entry, msgBuf);
                 nextDialogChar(entry, msgBuf);
@@ -1243,7 +1154,7 @@ static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 p
         setAddrFast(ot, head);
         n = entry->ctrl.bits.cornerIcon;
         if (n != 0) {
-            p = func_8002FF34(ot, p, n, entry->rect.x, entry->rect.y, colour);
+            p = drawIcon(ot, p, n, entry->rect.x, entry->rect.y, colour);
         }
         p = func_8002B898(ot, p, &entity->boundRect, colour);
         if (ent->entityType & BATTLE_ENTITY_SEMI_TRANS) {
@@ -1487,7 +1398,7 @@ static void initDialog(s32 idx) {
     entry->seqState = DIALOG_SEQ_START;
     entry->textX = 0;
     entry->textY = 0;
-    entry->ctrl.bits.marker = 0;
+    entry->ctrl.bits.nextPageMarker = 0;
 
     setDialogDrawCallback(idx, NULL);
     setDialogUpdateCallback(idx, NULL);
@@ -1610,30 +1521,30 @@ void dispatchDialogAnimSpeed(s32 idx) {
 
 
 /**
- * @brief Draw one glyph of the font table as a run of sprites.
+ * @brief Draw one icon of @c g_iconTable as a run of sprites.
  *
- * Emits every cell of glyph @p idx of the @c D_80052A68 font table as one
+ * Emits every cell of icon @p idx of @c g_iconTable as one
  * @ref TSPRT, tinted with @c state.textTint and linked into @p ot. Per cell:
- * the u/v/CLUT word is the cell's own plus the font CLUT; the texture page is
- * the font page with the cell's blend rate; the colour word gets the cell's
+ * the u/v/CLUT word is the cell's own plus the icons' CLUT; the texture page is
+ * the icons' page with the cell's blend rate; the colour word gets the cell's
  * semi-transparency bit; width/height are copied and the cell's signed offsets
  * are added to (@p x, @p y).
  *
  * @note @c head is handed to @c p and taken back for the return, the way
- * @ref drawDialogMarker threads its packet cursor; returning @c p directly
+ * @ref drawNextPageMarker threads its packet cursor; returning @c p directly
  * moves the cursor copy in the prologue. The @c (u8) narrowing of the
- * blend rate keeps @c _get_mode's mask, see @ref drawDialogMarker.
+ * blend rate keeps @c _get_mode's mask, see @ref drawNextPageMarker.
  *
  * @param ot Ordering-table slot the sprites are linked into.
  * @param head First free packet.
- * @param idx Glyph index into @c D_80052A68.
+ * @param idx Icon index into @c g_iconTable.
  * @param x Left edge of the glyph.
  * @param y Top edge of the glyph.
  * @return The first free packet after the ones written.
  */
 static TSPRT *drawTextIcon(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
-    GlyphTable *table;
-    GlyphCell *cell;
+    IconTable *table;
+    IconCell *cell;
     TSPRT *p;
     u32 link;
     u32 word;
@@ -1643,35 +1554,35 @@ static TSPRT *drawTextIcon(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
     s32 n;
 
     p = head;
-    table = &D_80052A68;
-    cell = (GlyphCell *)table; /* seeded from its own copy, see drawDialogMarker */
+    table = &g_iconTable;
+    cell = (IconCell *)table; /* seeded from its own copy, see drawNextPageMarker */
     word = table->descriptors[idx];
     n = word >> 16;
     word &= 0xFFFF;
-    cell = (GlyphCell *)((u8 *)cell + word);
+    cell = (IconCell *)((u8 *)cell + word);
     color = g_dialogs.state.textTint;
 
     for (; n > 0; p++, cell++, n--) {
         word = cell->texInfo;
-        val = word & GLYPH_UVCLUT_MASK;
-        val += getClut(GLYPH_CLUT_X, GLYPH_CLUT_Y) << 16;
-        setGlyphUVClut(p, val);
+        val = word & ICON_UVCLUT_MASK;
+        val += getClut(ICON_CLUT_X, ICON_CLUT_Y) << 16;
+        setIconUVClut(p, val);
 
-        val = (word >> GLYPH_ABR_SHIFT) & GLYPH_ABR_MASK;
+        val = (word >> ICON_ABR_SHIFT) & ICON_ABR_MASK;
         val = (u8)getTPage(0, val, 0, 0);
         tpage = val;
-        tpage |= getTPage(0, 0, GLYPH_TPAGE_X, GLYPH_TPAGE_Y);
+        tpage |= getTPage(0, 0, ICON_TPAGE_X, ICON_TPAGE_Y);
 
-        val = word >> GLYPH_ABE_SHIFT;
+        val = word >> ICON_ABE_SHIFT;
         val &= SPRT_CODE_ABE;
         val <<= SPRT_CODE_SHIFT;
         val |= color;
         setTSprt(p, 1, 0, tpage);
-        setGlyphRGBC(p, val);
+        setIconRGBC(p, val);
 
         word = cell->metrics;
-        val = word & GLYPH_WH_MASK;
-        setGlyphWH(p, val);
+        val = word & ICON_WH_MASK;
+        setIconWH(p, val);
         val = (s8)(word >> 24); /* signed Y offset, byte 3 */
         word <<= 16;
         word = (s8)(word >> 24); /* signed X offset, byte 1 */
@@ -1695,18 +1606,18 @@ static TSPRT *drawTextIcon(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
  * presumably only needs the advance width. Purpose inferred from the
  * neighbouring glyph-metric routines.
  *
- * @param idx Glyph index into @c D_80052A68.
- * @return Bounding width of the glyph, masked to 8 bits.
+ * @param idx Icon index into @c g_iconTable.
+ * @return Bounding width of the icon, masked to 8 bits.
  */
 s32 getIconWidth(s32 idx) {
-    GlyphCell *cell = (GlyphCell *)&D_80052A68;
-    u32 word = D_80052A68.descriptors[idx];
+    IconCell *cell = (IconCell *)&g_iconTable;
+    u32 word = g_iconTable.descriptors[idx];
     s32 cellCount = word >> 16;
     s32 maxWidth = 0;
     s32 maxHeight = 0;
 
     word &= 0xFFFF;
-    cell = (GlyphCell *)((u8 *)cell + word);
+    cell = (IconCell *)((u8 *)cell + word);
     while (cellCount != 0) {
         s32 width, height;
         word = cell->metrics;
@@ -2006,8 +1917,8 @@ inline u32 emitTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy) {
     } else {
         tpage = TEXT_TPAGE_PAGE1;
     }
-    setGlyphWH(p, (TEXT_GLYPH_SIZE << 16) | TEXT_GLYPH_SIZE);
-    setGlyphRGBC(p, colour);
+    setIconWH(p, (TEXT_GLYPH_SIZE << 16) | TEXT_GLYPH_SIZE);
+    setIconRGBC(p, colour);
     *(u32 *)&p->x0 = xy;
     p->drawMode = tpage;
     *(u16 *)&p->u0 = (glyph % TEXT_GLYPHS_PER_ROW | (glyph / TEXT_GLYPHS_PER_ROW) << 8) * TEXT_GLYPH_SIZE;
@@ -2117,8 +2028,8 @@ static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy
     } else {
         tpage = TEXT_TPAGE_PAGE1;
     }
-    setGlyphWH(p, (TEXT_GLYPH_SIZE << 16) | TEXT_GLYPH_SIZE);
-    setGlyphRGBC(p, colour);
+    setIconWH(p, (TEXT_GLYPH_SIZE << 16) | TEXT_GLYPH_SIZE);
+    setIconRGBC(p, colour);
     *(u32 *)&p->x0 = xy;
     p->drawMode = tpage;
     *(u16 *)&p->u0 = (glyph % TEXT_GLYPHS_PER_ROW | (glyph / TEXT_GLYPHS_PER_ROW) << 8) * TEXT_GLYPH_SIZE;

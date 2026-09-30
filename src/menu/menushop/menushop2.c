@@ -5,7 +5,8 @@
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
 #include "menushop2.h"
-#include "btl_color.h"
+#include "ui/icon.h"
+#include "snd_sfx.h"
 #include "dialog.h"
 #include "game.h"
 
@@ -611,11 +612,11 @@ static s32 func_801E8D84(JunkShopMenuState *s, s32 a1, s32 a2, s32 a3, s32 a4) {
     return a2;
 }
 
-/** @brief Return color code: white (equal), yellow (a0 > a1), red (a0 < a1). */
+/** @brief Return color code: white (equal), red (a0 > a1, the new value is lower), yellow (a0 < a1). */
 static s32 func_801E8FF8(s32 a0, s32 a1) {
     s32 color = COLOR_WHITE;
-    if (a0 > a1) color = COLOR_YELLOW;
-    if (a0 < a1) color = COLOR_RED;
+    if (a0 > a1) color = COLOR_RED;
+    if (a0 < a1) color = COLOR_YELLOW;
     return color;
 }
 
@@ -705,11 +706,11 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
 
     x = arg3 + 323;
     y = arg4 + 23;
-    arg2 = func_8002FF34(arg1, arg2, ICON_GIL, x, y, g_menuTint[MENU_TINT_NORMAL]);
+    arg2 = drawIcon(arg1, arg2, ICON_GIL, x, y, g_menuTint[MENU_TINT_NORMAL]);
 
     x = arg3 + 128;
     y = arg4 + 5;
-    arg2 = func_800300F8(arg1, arg2, ICON_STR, x, y, g_menuTint[MENU_TINT_NORMAL], 0x80);
+    arg2 = (s32)drawIconClut((void *)arg1, (TSPRT *)arg2, ICON_STAT_STR_YELLOW, x, y, g_menuTint[MENU_TINT_NORMAL], 0x80);
 
     x = arg3 + 184;
     y = arg4 + 7;
@@ -722,16 +723,16 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
 
     x = arg3 + 128;
     y = arg4 + 19;
-    arg2 = func_800300F8(arg1, arg2, ICON_HIT, x, y, g_menuTint[MENU_TINT_NORMAL], 0x80);
+    arg2 = (s32)drawIconClut((void *)arg1, (TSPRT *)arg2, ICON_STAT_HIT_YELLOW, x, y, g_menuTint[MENU_TINT_NORMAL], 0x80);
 
     x = arg3 + 184;
     y = arg4 + 21;
     arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), func_801F7BE4(oldWeaponHit), color);
 
     // Dead code added to match with the original game binary.
-    if (color == COLOR_YELLOW) {
+    if (color == COLOR_RED) {
         color++; color--;
-    } else if (color == COLOR_RED) {
+    } else if (color == COLOR_YELLOW) {
         color++; color--;
     }
 
@@ -765,14 +766,14 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
         y = arg4 + 9;
 
         tmp = 0;
-        if (color == COLOR_YELLOW) {
-            tmp = ICON_ARROW_UP;
-        }
         if (color == COLOR_RED) {
             tmp = ICON_ARROW_DOWN;
         }
+        if (color == COLOR_YELLOW) {
+            tmp = ICON_ARROW_UP;
+        }
         if (tmp != 0) {
-            arg2 = func_800300F8(arg1, arg2, tmp, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
+            arg2 = (s32)drawIconClut((void *)arg1, (TSPRT *)arg2, tmp, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
 
         color = func_801E8FF8(oldWeaponHit, newWeaponHit);
@@ -789,14 +790,14 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
         y = y2;
         
         tmp = 0;
-        if (color == COLOR_YELLOW) {
-            tmp = ICON_ARROW_UP;
-        }
         if (color == COLOR_RED) {
             tmp = ICON_ARROW_DOWN;
         }
+        if (color == COLOR_YELLOW) {
+            tmp = ICON_ARROW_UP;
+        }
         if (tmp != 0) {
-            arg2 = func_800300F8(arg1, arg2, tmp, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
+            arg2 = (s32)drawIconClut((void *)arg1, (TSPRT *)arg2, tmp, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
     }
     

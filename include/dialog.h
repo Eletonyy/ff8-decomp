@@ -40,14 +40,14 @@ typedef struct Dialog {
     u8 firstChoice; /**< First choice line; 0xFF (DIALOG_NO_CHOICE) when the message offers none. */
     u8 lastChoice; /**< Last choice line; the cursor stays between the two. */
     u8 choiceCursor; /**< Choice line the cursor is on. */
-    /** The control word: its fields, or the whole word for the corner-marker test. */
+    /** The control word: its fields, or the whole word for the next-page marker test. */
     union {
         u32 raw;
         struct {
             u32 cancelChoice : 8; /**< Line Triangle moves the cursor to; none when negative as an s8. */
             u32 mode : 8;
-            u32 markerBlink : 7; /**< Blink counter of the corner marker. */
-            u32 marker : 1; /**< The window shows its blinking corner marker. */
+            u32 nextPageMarkerBlink : 7; /**< Blink counter of the next-page marker. */
+            u32 nextPageMarker : 1; /**< The window shows its blinking next-page marker. */
             u32 cornerIcon : 8; /**< Icon drawn at the window's top-left corner, 0 for none. */
         } bits;
     } ctrl;

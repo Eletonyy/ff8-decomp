@@ -106,6 +106,12 @@ typedef struct {
 /* Initialise a gouraud-shaded 4-vertex polygon (len=8 words, code=0x38). */
 #define setPolyG4(p)     setlen(p, 8),  setcode(p, 0x38)
 
+/* Initialise a tile primitive (len=3 words, code=0x60). */
+#define setTile(p) setlen(p, 3), setcode(p, 0x60)
+
+/* Initialise a flat line primitive (len=3 words, code=0x40). */
+#define setLineF2(p) setlen(p, 3), setcode(p, 0x40)
+
 /* Initialise a 1x1 tile primitive (len=2 words, code=0x68). */
 #define setTile1(p)      setlen(p, 2),  setcode(p, 0x68)
 
@@ -477,6 +483,13 @@ void SetDrawOffset(DR_OFFSET *p, RECT *rect);
 s32 MoveImage(RECT *rect, s32 x, s32 y);
 s32 OpenTIM(u32 *addr);
 void *ReadTIM(void *timimg);
+/* Stop the GPU's list DMA: returns the next packet's address, 0 if nothing is being
+ * drawn, or -1 if the transfer in progress is not a list. */
+u32 *BreakDraw(void);
+/* Draw the list at @p insaddr, then resume the list BreakDraw stopped at @p contaddr. */
+void ContinueDraw(u32 *insaddr, u32 *contaddr);
+/* Poll the GPU up to @p max_count times: 0 once it is ready for commands, else -1. */
+s32 IsIdleGPU(s32 max_count);
 s32 GetODE(void);
 void SetSemiTrans(void *p, s32 abe);
 void SetShadeTex(void *p, s32 tge);

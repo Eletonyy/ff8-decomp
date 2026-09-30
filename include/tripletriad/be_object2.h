@@ -264,9 +264,4 @@ extern void handleCursorSubstate1(SubstateSlot *slot, s32 idx);
 extern void handleCursorSubstate2(SubstateSlot *slot, s32 idx);
 extern void handleCursorSubstate3(SubstateSlot *slot, s32 idx);
 
-/* Private prototypes — imported from sibling TUs.
-   (showCardDetail / openTriadMenu prototypes live in tripletriad.h; the GTE /
-   GPU primitives — RotTransPers4, NormalClip, AddPrim — in the psxsdk headers.) */
-extern void *func_8002FF34(void *otBase, void *pkt, s32 ch, s32 yPos, s32 w, s32 col);
-
 #endif /* TRIPLETRIAD_BE_OBJECT2_H */

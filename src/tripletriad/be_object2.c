@@ -2,6 +2,7 @@
 #include "item.h"
 #include "tripletriad.h"
 #include "psxsdk/libetc.h"
+#include "ui/icon.h"
 #include "tripletriad/be_object1.h"
 #include "tripletriad/be_object1b.h"
 #include "tripletriad/be_object2.h"
@@ -438,28 +439,28 @@ void resetTriadMenuState(void) {
 void drawMenuPrim(s32 mode, SubstateSlot *slot) {
     switch (mode) {
     case TT_SUBSTATE_HAND_P0:
-        g_primCursor = func_8002FF34(&g_otBase[4], g_primCursor,
-                                    1, 0x58,
+        g_primCursor = drawIcon(&g_otBase[4], g_primCursor,
+                                    ICON_CHOICE_CURSOR_LEFT, 0x58,
                                     (slot->field2 << 5) + 0x30, 0x808080);
         break;
     case TT_SUBSTATE_HAND_P1:
-        g_primCursor = func_8002FF34(&g_otBase[4], g_primCursor,
-                                    0, 0x110,
+        g_primCursor = drawIcon(&g_otBase[4], g_primCursor,
+                                    ICON_CHOICE_CURSOR, 0x110,
                                     (slot->field2 << 5) + 0x30, 0x808080);
         break;
     case TT_SUBSTATE_BOARD:
-        g_primCursor = func_8002FF34(&g_otBase[4], g_primCursor,
-                                    0, (slot->field0 << 6) + 0x68,
+        g_primCursor = drawIcon(&g_otBase[4], g_primCursor,
+                                    ICON_CHOICE_CURSOR, (slot->field0 << 6) + 0x68,
                                     (slot->field2 << 6) | 0x30, 0x808080);
         break;
     case TT_SUBSTATE_CONFIG_A:
-        g_primCursor = func_8002FF34(&g_otBase[4], g_primCursor,
-                                    0, (slot->field0 << 6) + 0x28,
+        g_primCursor = drawIcon(&g_otBase[4], g_primCursor,
+                                    ICON_CHOICE_CURSOR, (slot->field0 << 6) + 0x28,
                                     0x4C, 0x808080);
         break;
     case TT_SUBSTATE_CONFIG_B:
-        g_primCursor = func_8002FF34(&g_otBase[4], g_primCursor,
-                                    0, (slot->field0 << 6) + 0x28,
+        g_primCursor = drawIcon(&g_otBase[4], g_primCursor,
+                                    ICON_CHOICE_CURSOR, (slot->field0 << 6) + 0x28,
                                     0x94, 0x808080);
         break;
     }

@@ -1,6 +1,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "battle.h"
+#include "ui/countdown.h"
 #include "gf.h"
 #include "gamestate.h"
 #include "ability.h"
@@ -19,7 +20,6 @@ void dispatchScratchpadThread(void);
 s32 getRenderCompleteFlag(void);
 void cdReadSync(s32, s32, s32, s32);
 void func_8001F5C8(void);
-void setCameraVibrateIntensity(s32);
 s32 func_80021300(void);
 void func_80023D60(s32);
 void cdReadAsyncSync(s32, s32, s32, s32);
@@ -662,8 +662,8 @@ case4:
     goto top;
 
 case3:
-    setCameraVibrateIntensity(0);
-    setCameraVibrateState(0);
+    setHudBrightness(0);
+    setCountdownVisible(0);
     func_80023D60(func_80021300());
     memzero16((s32 *)0x80098000, 0xA400);
     cdReadSync(D_800974C8[0], D_800974C8[1], 0x80098000, 0);

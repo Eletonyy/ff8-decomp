@@ -294,11 +294,11 @@ INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", TMD_OBJ_1854);
 
 INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", TMD_OBJ_186C);
 
-INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", func_8004D174);
+INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", BreakDraw);
 
-INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", func_8004D208);
+INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", IsIdleGPU);
 
-INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", func_8004D268);
+INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", ContinueDraw);
 
 INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", func_8004D3E4);
 

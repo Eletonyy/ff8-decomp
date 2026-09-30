@@ -153,10 +153,10 @@ typedef struct {
 
 /** @brief Render context for @c func_800A4250 (fields named by offset — role inferred). */
 typedef struct {
-    /* 0x00 */ s16 unk00;     /**< Forwarded (−0x13) as @c func_8002FF34's @c yPos. */
+    /* 0x00 */ s16 unk00;     /**< Forwarded (−0x13) as @c drawIcon's @c x. */
     /* 0x02 */ s16 unk02;     /**< Base for the @c w arg (+0xB, then +column*13). */
     /* 0x04 */ u8  pad04[0xC];
-    /* 0x10 */ s32 unk10;     /**< Forwarded as @c func_8002FF34's @c col. */
+    /* 0x10 */ s32 unk10;     /**< Forwarded as @c drawIcon's @c color. */
 } func_800A4250_arg2;
 
 /* ───────────────────── be_object4-internal externs ───────────────────── */
@@ -164,13 +164,8 @@ typedef struct {
 /* Imported functions kept as externs here, each for a concrete reason (numstr, controller-
    input, battle-display and colour-bar GPU helpers were migrated to numstr.h / thread.h /
    btl_anim.h / drawbar.h):
-     - sendSpuCommand, func_800300F8 — owned by btl_color.c, whose btl_color.h pulls in battle.h
-       (for BattleCmdEntry); tripletriad is decoupled from battle.h, and this header does not
-       include battle.h.
      - getAnimFrameParam — returns u16 (thread.c) but this caller needs the s32 view with no
        widening mask; adopting the true u16 measurably breaks the match (see thread.h). */
-extern void sendSpuCommand(s32 idx);
-extern void *func_800300F8(void *renderCtx, void *prim, s32 glyph, s32 x, s32 y, s32 color, s32 blink);
 extern s32  getAnimFrameParam(s32 slot, s32 sub);     /**< Per-controller input-frame param. Defined u16 in thread.c, but the original caller uses it as s32 (no widening mask) — match-load-bearing, so kept here rather than via thread.h. */
 
 /* File-scope data: a few globals owned elsewhere (battle config / menu palette) plus

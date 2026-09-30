@@ -4,6 +4,8 @@
 #include "gamestate.h"
 #include "character.h"
 #include "battle.h"
+#include "ui/gauge.h"
+#include "ui/seed_rank.h"
 #include "sound.h"
 #include "cd.h"
 #include "btl_entity.h"
@@ -109,9 +111,9 @@ s32 opHandler_OP168(Actor *actor) {
  *      500..599 = lvl 5, 2500..2599 = lvl 25, capping at 31 (exp = 3100).
  *   4. Pays salary: @c gil += @c g_seedSalaryTable[level] * 10 (capped at
  *      99,999,999).
- *   5. If state isn't muted (flags 0x10 and 0x1000 both clear), triggers the
- *      level-up notification: palette transition (@c func_800316D4 with old/new
- *      rank and old/new salary) plus three rank-up sound effects.
+ *   5. If state isn't muted (flags 0x10 and 0x1000 both clear), shows the SeeD
+ *      rank notification (@c showSeedRankNotification with old/new rank and
+ *      old/new salary) plus three rank-up sound effects.
  *   6. Stores @c totalKills as the new @c prevKillSum baseline.
  */
 void updateSeedLevel(void) {
@@ -146,7 +148,7 @@ void updateSeedLevel(void) {
             s32 oldLevel = (s16)g_fieldVars->prevSeedExp / 100;
             s32 newLevel = (s16)g_fieldVars->seedExp / 100;
 
-            func_800316D4(oldLevel, newLevel,
+            showSeedRankNotification(oldLevel, newLevel,
                           g_seedSalaryTable[oldLevel] * 10,
                           g_seedSalaryTable[newLevel] * 10);
 
@@ -256,7 +258,7 @@ void func_800BD794(void) { s32 i = 0; do { s32 status = getPackedField2Bit(i) - 
  *   - @c seedExpStepAcc — fires the SeeD level-up tick every @c 0x6000 steps,
  *     then clamps @c seedExp to @c [100, 0xC1C].
  *   - @c levelUpDisplayTimer — counts down each step; fires
- *     @c setTransitionPhase7 the frame it reaches @c 0.
+ *     @c hideSeedRankNotification the frame it reaches @c 0.
  *   - @c angeloLearnStepAcc — fires the Angelo trick learn tick every
  *     @c 0x250 steps.
  *
@@ -289,7 +291,7 @@ void func_800BD804(s32 stepDelta) {
         else if ((s16)g_fieldVars->seedExp >= 0xC1C) g_fieldVars->seedExp = 0xC1C;
     }
     if ((s16)g_fieldVars->levelUpDisplayTimer >= 0) {
-        if ((s16)g_fieldVars->levelUpDisplayTimer == 0) setTransitionPhase7();
+        if ((s16)g_fieldVars->levelUpDisplayTimer == 0) hideSeedRankNotification();
         g_fieldVars->levelUpDisplayTimer--;
     }
     if (g_gameState.mainData.partyLockFlag & 0x10) return;
@@ -1188,12 +1190,12 @@ void func_800BF28C(s32 a0) {
 
 
 /**
- * @brief Restore the dialogs and anim channels after a load.
+ * @brief Restore the dialogs and gauges after a load.
  *
  * Calls @c func_800BF28C(1) to do early setup, then iterates active
  * dialog slots, reopening any with their @c dialogStartMask
- * bit set, then iterates anim slots dispatching to @c setupAnimEntry
- * or @c setupAnimEntryFull based on the @c flag field. Finally
+ * bit set, then iterates the gauge slots, dispatching to @c showGauge
+ * or @c showGaugeFull based on the @c flag field. Finally
  * restores the dialog state from @c g_fieldVars and clears the
  * g_fieldEntity mode-slot[0] to a default state mirroring the active
  * entity index.
@@ -1224,12 +1226,12 @@ void func_800BF4A4(void) {
         buf[1] = D_80085398[i].fieldC;
         switch (D_80085398[i].flag) {
         case 1:
-            setupAnimEntry(i, D_80085398[i].fieldA, (s32)buf,
+            showGauge(i, D_80085398[i].fieldA, buf,
                            D_80085398[i].field8, D_80085398[i].field6,
                            D_80085398[i].field4);
             break;
         case 2:
-            setupAnimEntryFull(i, D_80085398[i].fieldA, (s32)buf,
+            showGaugeFull(i, D_80085398[i].fieldA, buf,
                                D_80085398[i].field8, D_80085398[i].field6,
                                D_80085398[i].field4, D_80085398[i].field2);
             break;

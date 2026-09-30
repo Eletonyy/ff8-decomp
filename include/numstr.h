@@ -30,6 +30,7 @@ extern void advanceAndDecodeMessage(struct Dialog *dialog, u8 *output);
 extern void decodeMessageDirect(struct Dialog *dialog, u8 *output);
 /** Returns the next character of @p dialog's line in bits 0-7 and its command byte in bits 8-15. */
 extern s32 nextDialogChar(struct Dialog *dialog, u8 *output);
+extern void resetDialogTyping(struct Dialog *entry);
 
 u8 *nextMessageLine(u8 *src);
 

@@ -1,7 +1,7 @@
 g_curFieldInfo = 0x8005F0F8;
 g_movieView = 0x8005F108;
 g_curFieldMessages = 0x800704C0;
-loadBattleCmd = 0x8003093C; // type:func
+startVibration = 0x8003093C; // type:func
 func_80037D40 = 0x80037D40; // type:func
 func_80098314 = 0x80098314; // type:func
 func_8009895C = 0x8009895C; // type:func
