@@ -120,78 +120,78 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_800270B0);
 
 
 /**
- * @brief Poll the CD stream state and update an animation entity accordingly.
+ * @brief Poll the CD stream state and update a pad port accordingly.
  *
  * Queries the current stream status via func_8003AC10 and stores it in
  * @c field1A, then dispatches on it:
- * - 1: flag the entity active (field0A) and pending (field19).
- * - 2: same, but also clear opacity.
+ * - 1: flag the port active (field0A) and pending (field19).
+ * - 2: same, but also clear vibrationMask.
  * - 4, 5: no-op.
  * - 6: on the first tick after a pending flag (field19 == 1), start the
  *      stream (func_800270B0, func_8003AF50, func_8003AFD0); on later
- *      ticks refresh field01/field02 from field06/field07 masked by the
- *      current opacity.
- * - other (0, 3, out of range): reset to active/pending with zero opacity.
+ *      ticks refresh field01/field02 from motor[0]/motor[1] masked by
+ *      vibrationMask.
+ * - other (0, 3, out of range): reset to active/pending with a zero vibrationMask.
  *
  * @param a0 Base context passed through to func_800270B0.
- * @param ent Entity to update.
+ * @param port Port to update.
  * @param a2 Stream channel selector passed to the CD helpers.
  */
-void func_80027220(s32 a0, BattleAnimEntity *ent, s32 a2) {
+void func_80027220(s32 a0, PadPort *port, s32 a2) {
     s32 status;
     func_80047384();
     status = func_8003AC10(a2);
-    ent->field1A = status;
+    port->field1A = status;
     switch (status) {
     case 1:
-        ent->field0B = 0;
-        ent->field0A = 1;
-        ent->field19 = 1;
+        port->field0B = 0;
+        port->field0A = 1;
+        port->field19 = 1;
         break;
     case 2:
-        ent->field0B = 0;
-        ent->field19 = 1;
-        ent->field0A = 1;
-        ent->opacity = 0;
+        port->field0B = 0;
+        port->field19 = 1;
+        port->field0A = 1;
+        port->vibrationMask = 0;
         break;
     case 4:
     case 5:
         break;
     case 6: {
-        u8 mask = ent->opacity;
-        if (ent->field19 == 1) {
-            func_800270B0(a0, ent, a2);
-            ent->field0A = 1;
-            ent->field19 = 0;
-            ent->field01 = 0;
-            ent->field02 = 0;
-            func_8003AF50(a2, ent->padBC);
-            func_8003AFD0(a2, ent, 6);
+        u8 mask = port->vibrationMask;
+        if (port->field19 == 1) {
+            func_800270B0(a0, port, a2);
+            port->field0A = 1;
+            port->field19 = 0;
+            port->field01 = 0;
+            port->field02 = 0;
+            func_8003AF50(a2, port->fieldBC);
+            func_8003AFD0(a2, port, 6);
         } else {
-            u8 f6 = ent->field06;
-            u8 f7 = ent->field07;
-            u8 sh7 = ent->field09;
+            u8 f6 = port->motor[0];
+            u8 f7 = port->motor[1];
+            u8 sh7 = port->field09;
             u8 sh6;
             s32 v6;
             s32 v7;
             /* The do-while(0) wrapper is load-bearing for the byte-match: it
                keeps the scheduler from tearing the statement pair apart,
                and likely mirrors a macro in the original source. */
-            do { ent->field0A = 1; v6 = f6 & mask; } while (0);
+            do { port->field0A = 1; v6 = f6 & mask; } while (0);
             v7 = f7 & mask;
-            sh6 = ent->field08;
-            ent->field02 = v7 >> sh7;
-            ent->field01 = v6 >> sh6;
+            sh6 = port->field08;
+            port->field02 = v7 >> sh7;
+            port->field01 = v6 >> sh6;
         }
         break;
     }
     case 0:
     case 3:
     default:
-        ent->field0B = 0;
-        ent->field0A = 1;
-        ent->opacity = 0;
-        ent->field19 = 1;
+        port->field0B = 0;
+        port->field0A = 1;
+        port->vibrationMask = 0;
+        port->field19 = 1;
         break;
     }
 }
@@ -228,69 +228,68 @@ s32 func_80027360(s32 a0) {
 
 
 /**
- * @brief Mark a battle animation entity as active.
- * @param idx Index into g_battleAnims array.
+ * @brief Mark a pad port as active.
+ * @param idx Index into g_engine.ports.
  */
 void activateBattleAnim(s32 idx) {
-    BattleAnimEntity *entry = &g_battleAnims.entities[idx];
-    entry->field19 = 1;
-    entry->field0A = 1;
+    PadPort *port = &g_engine.ports[idx];
+    port->field19 = 1;
+    port->field0A = 1;
 }
 
 
 /**
- * @brief Initialize two consecutive BattleAnimEntity entries via func_80027220.
+ * @brief Initialize two consecutive PadPort entries via func_80027220.
  * @param a0 Base address of the first entry.
  * @note Initializes the first entry with mode 0, and the second (at +0xC4) with mode 0x10.
  */
 void initBattleAnimPair(s32 a0) {
-    func_80027220(a0, (BattleAnimEntity *)a0, 0);
-    func_80027220(a0, (BattleAnimEntity *)(a0 + 0xC4), 0x10);
+    func_80027220(a0, (PadPort *)a0, 0);
+    func_80027220(a0, (PadPort *)(a0 + 0xC4), 0x10);
 }
 
 
 /**
- * @brief Drive both animation entities' CD streams until they settle.
+ * @brief Step both pad ports until they settle.
  *
- * For each of the two entities: clears field06/field07, then repeatedly
- * waits for the CD to become ready (cdReadStatusWrapper) and polls the
- * stream via func_80027220 until the status is 0 or 2 (settled), or
- * status 6 (playing) has been observed twice.
+ * For each port: clears both motor levels, then repeatedly waits on
+ * cdReadStatusWrapper and steps the port via func_80027220 until its state
+ * (field1A) is 0 or 2, or has read 6 twice.
  */
 void func_80027448(void) {
-    BattleAnimEntity *ent = &g_battleAnims.entities[0];
-    BattleAnimEntity *base = g_battleAnims.entities;
+    PadPort *port = &g_engine.ports[0];
+    PadPort *ports = g_engine.ports;
     s32 count;
     /* Without this barrier the register allocator gives s0 to count
-       instead of ent. */
-    REGALLOC_BARRIER(ent);
+       instead of port. */
+    REGALLOC_BARRIER(port);
     count = 0;
-    ent->field06 = 0;
-    ent->field07 = 0;
+    port->motor[0] = 0;
+    port->motor[1] = 0;
     for (;;) {
         while (cdReadStatusWrapper() == 0) {}
-        func_80027220((s32)base, ent, 0);
-        if (ent->field1A == 0 || ent->field1A == 2) {
+        func_80027220((s32)ports, port, 0);
+        if (port->field1A == 0 || port->field1A == 2) {
             break;
         }
-        if (ent->field1A == 6) {
+        if (port->field1A == 6) {
             count++;
             if (count >= 2) {
                 break;
             }
         }
     }
-    ent = &base[1];
+    port = &ports[1];
     count = 0;
-    ent->field06 = 0;
-    ent->field07 = 0;
+    port->motor[0] = 0;
+    port->motor[1] = 0;
     for (;;) {
         while (cdReadStatusWrapper() == 0) {}
-        func_80027220((s32)base, ent, 0x10);
-        if (ent->field1A == 0 || ent->field1A == 2) {
+        func_80027220((s32)ports, port, 0x10);
+        if (port->field1A == 0 || port->field1A == 2) {
             break;
         }
-        if (ent->field1A == 6) {
+        if (port->field1A == 6) {
             count++;
             if (count >= 2) {
                 break;
@@ -301,7 +300,7 @@ void func_80027448(void) {
 
 
 /**
- * @brief Copy a rectangle's bounds to g_battleAnims clip region.
+ * @brief Copy a rectangle's bounds to g_engine clip region.
  *
  * Copies x, y from @p rect to clipLeft/clipTop, and computes
  * x+w-1, y+h-1 for clipRight/clipBottom.
@@ -309,20 +308,20 @@ void func_80027448(void) {
  * @param rect Source clip rectangle.
  */
 void setBattleAnimClipRect(RECT *rect) {
-    g_battleAnims.clipLeft = rect->x;
-    g_battleAnims.clipTop = rect->y;
-    g_battleAnims.clipRight = rect->x + rect->w - 1;
-    g_battleAnims.clipBottom = rect->y + rect->h - 1;
+    g_engine.clipLeft = rect->x;
+    g_engine.clipTop = rect->y;
+    g_engine.clipRight = rect->x + rect->w - 1;
+    g_engine.clipBottom = rect->y + rect->h - 1;
 }
 
 
 /**
- * @brief Read field0B from a battle animation entity.
- * @param idx Entity index.
+ * @brief Read field0B from a pad port.
+ * @param idx Port index.
  */
 s32 getBattleAnimField0B(s32 idx) {
-    BattleAnimEntity *entry = &g_battleAnims.entities[idx];
-    return entry->field0B;
+    PadPort *port = &g_engine.ports[idx];
+    return port->field0B;
 }
 
 
@@ -331,21 +330,21 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_800275D4);
 
 /**
  * @brief Get an animation frame parameter from a linked entity's frame buffer.
- * @param idx Entity index (masked to 0 or 1).
+ * @param idx Port index (masked to 0 or 1).
  * @param offset Frame offset subtracted from the current frame counter.
  * @return field02 of the resolved AnimFrame.
- * @note Resolves a secondary entry via linkedIdx, then indexes into its
+ * @note Resolves a secondary port via linkedIdx, then indexes into its
  *       frames[] circular buffer using (frameCounter - offset) & 7.
  */
 u16 getAnimFrameParam(s32 idx, s32 offset) {
-    BattleAnimEntity *base;
-    BattleAnimEntity *entry;
-    BattleAnimEntity *linked;
+    PadPort *ports;
+    PadPort *port;
+    PadPort *linked;
     s32 sub_idx;
     idx &= 1;
-    base = g_battleAnims.entities;
-    entry = base + idx;
-    linked = base + entry->linkedIdx;
+    ports = g_engine.ports;
+    port = ports + idx;
+    linked = ports + port->linkedIdx;
     sub_idx = (linked->frameCounter - offset) & 7;
     return ((AnimFrame *)((u8 *)linked + 0x1C))[sub_idx].field02;
 }
@@ -353,21 +352,21 @@ u16 getAnimFrameParam(s32 idx, s32 offset) {
 
 /**
  * @brief Get combined status flags from a linked entity's animation frame.
- * @param idx Entity index (masked to 0 or 1).
+ * @param idx Port index (masked to 0 or 1).
  * @param offset Frame offset subtracted from the current frame counter.
  * @return Bitwise OR of field08, field0A, field0C, field0E in the resolved AnimFrame.
  * @note Same lookup as getAnimFrameParam but ORs 4 adjacent u16 values.
  */
 u16 getAnimFrameStatusFlags(s32 idx, s32 offset) {
-    BattleAnimEntity *base;
-    BattleAnimEntity *entry;
-    BattleAnimEntity *linked;
+    PadPort *ports;
+    PadPort *port;
+    PadPort *linked;
     s32 sub_idx;
     AnimFrame *frame;
     idx &= 1;
-    base = g_battleAnims.entities;
-    entry = base + idx;
-    linked = base + entry->linkedIdx;
+    ports = g_engine.ports;
+    port = ports + idx;
+    linked = ports + port->linkedIdx;
     sub_idx = (linked->frameCounter - offset) & 7;
     frame = &linked->frames[sub_idx];
     return frame->field08 | frame->field0A | frame->field0C | frame->field0E;
@@ -380,19 +379,19 @@ u16 getAnimFrameStatusFlags(s32 idx, s32 offset) {
  * Same lookup pattern as getAnimFrameParam: resolves via linkedIdx,
  * indexes into frames[] circular buffer, but returns field10.
  *
- * @param idx Entity index (only bit 0 used).
+ * @param idx Port index (only bit 0 used).
  * @param offset Frame offset subtracted from the current frame counter.
  * @return field10 of the resolved AnimFrame.
  */
 u16 func_80027A58(s32 idx, s32 offset) {
-    BattleAnimEntity *base;
-    BattleAnimEntity *entry;
-    BattleAnimEntity *linked;
+    PadPort *ports;
+    PadPort *port;
+    PadPort *linked;
     s32 sub_idx;
     idx &= 1;
-    base = g_battleAnims.entities;
-    entry = base + idx;
-    linked = base + entry->linkedIdx;
+    ports = g_engine.ports;
+    port = ports + idx;
+    linked = ports + port->linkedIdx;
     sub_idx = (linked->frameCounter - offset) & 7;
     return ((AnimFrame *)((u8 *)linked + 0x1C))[sub_idx].field10;
 }
@@ -404,19 +403,19 @@ u16 func_80027A58(s32 idx, s32 offset) {
  * Same lookup pattern as getAnimFrameParam: resolves via linkedIdx,
  * indexes into frames[] circular buffer, but returns field12.
  *
- * @param idx Entity index (only bit 0 used).
+ * @param idx Port index (only bit 0 used).
  * @param offset Frame offset subtracted from the current frame counter.
  * @return field12 of the resolved AnimFrame.
  */
 u16 func_80027AC8(s32 idx, s32 offset) {
-    BattleAnimEntity *base;
-    BattleAnimEntity *entry;
-    BattleAnimEntity *linked;
+    PadPort *ports;
+    PadPort *port;
+    PadPort *linked;
     s32 sub_idx;
     idx &= 1;
-    base = g_battleAnims.entities;
-    entry = base + idx;
-    linked = base + entry->linkedIdx;
+    ports = g_engine.ports;
+    port = ports + idx;
+    linked = ports + port->linkedIdx;
     sub_idx = (linked->frameCounter - offset) & 7;
     return ((AnimFrame *)((u8 *)linked + 0x1C))[sub_idx].field12;
 }
@@ -475,18 +474,18 @@ s32 func_80027B7C(s32 a0) {
 /**
  * @brief Look up a battle animation byte through a two-level table.
  *
- * Uses the low bit of a0 as an index into g_battleAnims (stride 196).
+ * Uses the low bit of a0 as an index into g_engine.ports (stride 196).
  * Reads the byte at offset 0xC2 of that entry as a second index,
  * then returns bits [6:0] of offset 0xC3 of the second entry, shifted left 8.
  *
  * @param a0 Slot selector (only bit 0 used).
- * @return (g_battleAnims[slot].byte_C3 & 0x7F) << 8.
+ * @return (g_engine.ports[slot].fieldC3 & 0x7F) << 8.
  */
 s32 getBattleAnimLinkedValue(s32 a0) {
     s32 slot;
     a0 &= 1;
-    slot = g_battleAnims.entities[a0].linkedIdx;
-    return (g_battleAnims.entities[slot].fieldC3 & 0x7F) << 8;
+    slot = g_engine.ports[a0].linkedIdx;
+    return (g_engine.ports[slot].fieldC3 & 0x7F) << 8;
 }
 
 
@@ -498,18 +497,18 @@ s32 getBattleAnimLinkedValue(s32 a0) {
  * entity's fieldC3 while preserving the high bit
  * (see setBattleAnimLinkedHighBit).
  *
- * @param a0 Entity index (only bit 0 used).
+ * @param a0 Port index (only bit 0 used).
  * @param a1 Input level, clamped to [0, 0x7F].
  */
 void func_80027C00(s32 a0, s32 a1) {
     s32 slot;
-    BattleAnimEntity *linked;
+    PadPort *linked;
     s32 sq;
     s32 clamped;
     sq = a1;
     a0 &= 1;
-    slot = g_battleAnims.entities[a0].linkedIdx;
-    linked = &g_battleAnims.entities[slot];
+    slot = g_engine.ports[a0].linkedIdx;
+    linked = &g_engine.ports[slot];
     clamped = (sq < 0) ? 0 : (sq > 0x7F) ? 0x7F : a1;
     sq = clamped * clamped;
     sq = sq / 0x100;
@@ -520,19 +519,19 @@ void func_80027C00(s32 a0, s32 a1) {
 /**
  * @brief Set or clear the high bit (0x80) of a linked entity's fieldC3.
  *
- * Looks up g_battleAnims.entities[a0 & 1], follows its linkedIdx to a
+ * Looks up g_engine.ports[a0 & 1], follows its linkedIdx to a
  * second entity, then sets bit 7 of fieldC3 if a1 is nonzero, or clears
  * it if a1 is zero.
  *
- * @param a0 Entity index (only bit 0 used).
+ * @param a0 Port index (only bit 0 used).
  * @param a1 If nonzero, set bit 7; if zero, clear bit 7.
  */
 void setBattleAnimLinkedHighBit(s32 a0, s32 a1) {
     s32 slot;
-    BattleAnimEntity *linked;
+    PadPort *linked;
     a0 &= 1;
-    slot = g_battleAnims.entities[a0].linkedIdx;
-    linked = &g_battleAnims.entities[slot];
+    slot = g_engine.ports[a0].linkedIdx;
+    linked = &g_engine.ports[slot];
     if (a1) {
         linked->fieldC3 |= 0x80;
     } else {
@@ -548,13 +547,13 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_80027DB4);
 
 
 /**
- * @brief Get opacity of a battle animation entity.
- * @param idx Entity index (masked to 0 or 1).
- * @return Opacity value (0xFF = visible, 0 = hidden).
+ * @brief Get a pad port's vibration mask.
+ * @param idx Port index (masked to 0 or 1).
+ * @return 0xFF with vibration on, 0 with it off.
  */
-s32 getBattleAnimOpacity(s32 idx) {
-    BattleAnimEntity *entry = &g_battleAnims.entities[idx & 1];
-    return entry->opacity;
+s32 getPadVibration(s32 idx) {
+    PadPort *port = &g_engine.ports[idx & 1];
+    return port->vibrationMask;
 }
 
 

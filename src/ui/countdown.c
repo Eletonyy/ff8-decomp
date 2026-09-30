@@ -14,7 +14,7 @@
  * @param brightness 0x1000 is full brightness.
  */
 void setHudBrightness(s32 brightness) {
-    g_battleAnims.countdown.brightness = brightness;
+    g_engine.countdown.brightness = brightness;
 }
 
 
@@ -26,7 +26,7 @@ void setHudBrightness(s32 brightness) {
  * @param visible Nonzero to show the countdown.
  */
 void setCountdownVisible(unsigned int visible) {
-    CountdownDisplay *disp = &g_battleAnims.countdown;
+    CountdownDisplay *disp = &g_engine.countdown;
 
     disp->visible = visible;
     if (visible != 0) {
@@ -42,7 +42,7 @@ void setCountdownVisible(unsigned int visible) {
  * @param y Top edge.
  */
 void setCountdownPosition(s32 x, s32 y) {
-    CountdownDisplay *disp = &g_battleAnims.countdown;
+    CountdownDisplay *disp = &g_engine.countdown;
 
     disp->x = x;
     disp->y = y;
@@ -57,7 +57,7 @@ void setCountdownPosition(s32 x, s32 y) {
  * while the count is under half a second, blinks once per second.
  */
 void updateCountdownBlink(void) {
-    CountdownDisplay *disp = &g_battleAnims.countdown;
+    CountdownDisplay *disp = &g_engine.countdown;
     s32 counter;
     s32 clamped;
     s32 gsVal;
@@ -86,14 +86,12 @@ void updateCountdownBlink(void) {
  *
  * Draws nothing while the countdown is hidden. Otherwise it shows the countdown
  * less one second, clamped to 0x1797 seconds, at the position and brightness in
- * @c g_battleAnims.countdown. A blank leading minutes digit is skipped, and the colon
+ * @c g_engine.countdown. A blank leading minutes digit is skipped, and the colon
  * shows for the first half second of each second (30 frames on NTSC, 25 on PAL).
  *
  * @param ot Ordering-table slot the glyphs are linked into.
  * @param pkt First free packet.
  * @return The first free packet after everything drawn.
- *
- * @see https://decomp.me/scratch/CEsOX
  */
 u8 *drawCountdown(void *ot, u8 *pkt) {
     u8 buf[24];
@@ -116,7 +114,7 @@ u8 *drawCountdown(void *ot, u8 *pkt) {
         threshold = 25;
     }
 
-    disp = &g_battleAnims.countdown;
+    disp = &g_engine.countdown;
     if (disp->visible == 0) {
         return out;
     }
@@ -175,7 +173,7 @@ u8 *drawCountdown(void *ot, u8 *pkt) {
  *
  * The same display as drawCountdown, read from the same state: the countdown
  * (clamped to 0x1797 seconds) is drawn at the position, brightness and blink phase kept
- * in @c g_battleAnims.countdown, the leading minutes digit is skipped when blank and the
+ * in @c g_engine.countdown, the leading minutes digit is skipped when blank and the
  * colon shows while the blink counter is below 30. Unlike drawCountdown it shows
  * the countdown as is, uses the NTSC blink threshold whatever the video mode and
  * leaves the draw-environment packets to the caller.
@@ -196,7 +194,7 @@ u8 *drawBattleCountdown(P_TAG *ot, u8 *pkt) {
     s32 c;
 
     out = pkt;
-    disp = &g_battleAnims.countdown;
+    disp = &g_engine.countdown;
     if (disp->visible == 0) {
         return out;
     }
@@ -253,7 +251,7 @@ u8 *drawBattleCountdown(P_TAG *ot, u8 *pkt) {
  * @brief Hide the countdown timer and reset its position and blink, with full brightness (0x1000).
  */
 void resetCountdownDisplay(void) {
-    CountdownDisplay *disp = &g_battleAnims.countdown;
+    CountdownDisplay *disp = &g_engine.countdown;
 
     disp->visible = 0;
     disp->brightness = 0x1000;

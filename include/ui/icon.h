@@ -352,10 +352,6 @@ enum {
 #define setIconUVClut(p, word) do { *(u32 *)&(p)->u0 = (word); } while (0)
 #define setIconWH(p, word) (*(u32 *)&(p)->w = (word))
 
-/* --- Data externs (sorted by address) --- */
-
-extern s32 g_nextPageMarkerColor; /* 0x800834C8 */
-
 extern void setNextPageMarkerBrightness(s32 intensity);
 extern void resetNextPageMarkerBrightness(void);
 extern void iconStub(void);

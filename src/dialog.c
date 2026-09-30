@@ -142,7 +142,7 @@ static void updateDialog(s32 index, u32 input, u32 repeat);
 static inline u32 addTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy);
 static void drawDialogText(P_TAG *ot, Dialog *entry);
 static void drawDialogContents(s32 index, P_TAG *ot);
-static s32 autoRepeatPadChannel(BattleAnimState *anims, BattleAnimEntity *entity, DialogSystem *sys, u16 newVal, s32 channel);
+static s32 autoRepeatPadChannel(EngineState *engine, PadPort *port, DialogSystem *sys, u16 newVal, s32 channel);
 static void drawDialog(P_TAG *ot, s32 index);
 static inline u32 linkPacket(u32 head, void *p);
 static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt);
@@ -316,7 +316,7 @@ s32 getOpenDialogScale(s32 idx) {
  * While the entry's marker bit is set and its blink counter is in the visible
  * half of its cycle, emits icon @ref ICON_NEXT_PAGE_MARKER of @c g_iconTable
  * @ref NEXT_PAGE_MARKER_INSET pixels in from the window's bottom-right
- * corner, tinted with @c g_nextPageMarkerColor. Every cell of the icon becomes one
+ * corner, tinted with @c g_engine.nextPageMarkerColor. Every cell of the icon becomes one
  * @c TSPRT taken from the display-list packet buffer and linked into @p ot;
  * the advanced packet cursor is stored back afterwards.
  *
@@ -373,7 +373,7 @@ static void drawNextPageMarker(P_TAG *ot, Dialog *entry) {
     cell = (IconCell *)((u8 *)cell + word);
     x = entry->rect.w - NEXT_PAGE_MARKER_INSET;
     y = entry->rect.h - NEXT_PAGE_MARKER_INSET;
-    color = g_nextPageMarkerColor;
+    color = g_engine.nextPageMarkerColor;
 
     for (; n > 0; p++, cell++, n--) {
         word = cell->texInfo;
@@ -577,14 +577,14 @@ s32 getDialogChoice(s32 idx) {
  * fires. When the bits do not overlap the countdown resets to the restart delay and
  * fires. Mirrors @c func_800A29D4 (the Triple Triad edge auto-repeat).
  *
- * @param anims Battle-anim state; @c repeatDelays packs the two delays.
- * @param entity Battle-anim entity; @c unk10[channel] is the channel's edge mask.
- * @param sys Dialog system (@c &anims->dialogs); holds the stored bits and counters.
+ * @param engine Engine state; @c repeatDelays packs the two delays.
+ * @param port Pad port; @c unk10[channel] is the channel's button mask.
+ * @param sys Dialog system (@c &engine->dialogs); holds the stored bits and counters.
  * @param newVal Raw new edge bitmask for this frame.
  * @param channel Pad channel index, 0..3.
  * @return The masked edge bits that should fire this frame, or 0 while suppressed.
  */
-static s32 autoRepeatPadChannel(BattleAnimState *anims, BattleAnimEntity *entity, DialogSystem *sys, u16 newVal, s32 channel) {
+static s32 autoRepeatPadChannel(EngineState *engine, PadPort *port, DialogSystem *sys, u16 newVal, s32 channel) {
     s32 counter;
     s32 restartDelay;
     s32 repeatInterval;
@@ -593,9 +593,9 @@ static s32 autoRepeatPadChannel(BattleAnimState *anims, BattleAnimEntity *entity
 
     prevMasked = sys->state.repeatLatched[channel];
     sys->state.repeatLatched[channel] = newVal;
-    restartDelay = anims->repeatDelays.hword;
+    restartDelay = engine->repeatDelays.hword;
     counter = sys->state.repeatCounters[channel];
-    mask = entity->unk10[channel];
+    mask = port->unk10[channel];
 
     repeatInterval = restartDelay >> 8;
     restartDelay &= 0xFF;
@@ -622,24 +622,24 @@ static s32 autoRepeatPadChannel(BattleAnimState *anims, BattleAnimEntity *entity
 /**
  * @brief Auto-repeat the four channels of this frame's pad bits.
  *
- * Runs autoRepeatPadChannel on @p input for channels 0-3 against the entity linked
- * to battle-anim entity 0, and ORs the bits that fire.
+ * Runs autoRepeatPadChannel on @p input for channels 0-3 against the port linked
+ * to port 0, and ORs the bits that fire.
  *
  * @param input Pad bits of this frame.
  * @return The bits that fire this frame.
  */
 s32 autoRepeatPad(s32 input) {
-    DialogSystem *sys = &g_battleAnims.dialogs;
-    BattleAnimState *anims = &g_battleAnims;
+    DialogSystem *sys = &g_engine.dialogs;
+    EngineState *engine = &g_engine;
     u16 bits = input;
-    BattleAnimEntity *entity = &anims->entities[anims->entities[0].linkedIdx];
+    PadPort *port = &engine->ports[engine->ports[0].linkedIdx];
     u16 result;
 
     result = 0;
-    result |= autoRepeatPadChannel(anims, entity, sys, bits, 0);
-    result |= autoRepeatPadChannel(anims, entity, sys, bits, 1);
-    result |= autoRepeatPadChannel(anims, entity, sys, bits, 2);
-    result |= autoRepeatPadChannel(anims, entity, sys, bits, 3);
+    result |= autoRepeatPadChannel(engine, port, sys, bits, 0);
+    result |= autoRepeatPadChannel(engine, port, sys, bits, 1);
+    result |= autoRepeatPadChannel(engine, port, sys, bits, 2);
+    result |= autoRepeatPadChannel(engine, port, sys, bits, 3);
     return result;
 }
 

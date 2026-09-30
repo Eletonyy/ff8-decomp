@@ -1,4 +1,5 @@
 #include "common.h"
+#include "battle_anim.h"
 #include "btl_anim.h"
 #include "input/vibration.h"
 
@@ -31,7 +32,6 @@ typedef struct {
 
 /* --- Externs (sorted by address) --- */
 
-extern s32 g_vibrationClock; /* 0x80083750 — paces the vibration steps */
 extern s32 g_motorPeak0; /* 0x80083870 — largest stream 0 value of the playing vibrations */
 extern s32 g_motorPeak1; /* 0x80083874 — largest stream 1 value of the playing vibrations */
 extern VibrationSlot g_vibrationTable[]; /* 0x80083878 — the four vibration slots */
@@ -393,13 +393,13 @@ void stepVibrations(void) {
 /**
  * @brief Advance the vibration clock and step the vibrations.
  *
- * Accumulates @p delta into g_vibrationClock. For every 4 units accumulated,
+ * Accumulates @p delta into g_engine.vibrationClock. For every 4 units accumulated,
  * calls stepVibrations() once. The remainder is stored back.
  *
  * @param delta Amount to add to the clock.
  */
 void advanceVibrationClock(s32 delta) {
-    s32 counter = g_vibrationClock;
+    s32 counter = g_engine.vibrationClock;
     counter += delta;
 top:
     if (counter >= 4) {
@@ -407,7 +407,7 @@ top:
         counter -= 4;
         goto top;
     }
-    g_vibrationClock = counter;
+    g_engine.vibrationClock = counter;
 }
 
 
@@ -415,7 +415,7 @@ top:
  * @brief Reset the 4 vibration slots and the clock that paces them.
  *
  * Sets each slot's index to its number, clears its priority, and sets its
- * serial to 1. Zeroes g_vibrationClock.
+ * serial to 1. Zeroes g_engine.vibrationClock.
  */
 void initVibration(void) {
     VibrationSlot* ptr = getVibrationTable();
@@ -427,5 +427,5 @@ void initVibration(void) {
         ptr->serial = 1;
     }
 
-    g_vibrationClock = 0;
+    g_engine.vibrationClock = 0;
 }

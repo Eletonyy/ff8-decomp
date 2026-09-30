@@ -179,8 +179,8 @@ extern s16 D_801D49E2;
 extern s16 D_801D49F8[];
 extern u16 D_801D4B18;
 extern u16 D_801D4B1A;
-extern u16 D_801D4AF8[2][4]; /**< Per-(entity,side) previous edge flags (see func_800A29D4). */
-extern s16 D_801D4B08[2][4]; /**< Per-(entity,side) edge countdown timer (see func_800A29D4). */
+extern u16 D_801D4AF8[2][4]; /**< Per-(port,side) previous edge flags (see func_800A29D4). */
+extern s16 D_801D4B08[2][4]; /**< Per-(port,side) edge countdown timer (see func_800A29D4). */
 extern s32 D_801D4B20[]; /**< Per-controller current held-button mask. */
 extern s32 D_801D4B28[]; /**< Per-controller auto-repeat mask. */
 extern s32 D_801D4B30[]; /**< Per-controller newly-pressed mask. */
@@ -204,7 +204,7 @@ extern void *func_800A3EE0(void *a0, void *a1, s32 a2, s32 a3, s32 a4, s32 a5); 
 extern void *func_800A3D2C(void *otBase, void *pkt, s32 x, s32 y, s32 cardImg, s32 col); /**< Card-image primitive. */
 extern void *func_800A3528(void *otBase, void *pkt, void *(*drawCell)(void *, void *, s32, s32, s32)); /**< Per-cell slide-render iterator. */
 extern s32 func_800A238C();
-extern s32 func_800A29D4(BattleAnimState *base, BattleAnimEntity *elem, u16 arg1, s32 side, s32 entryIndex);
+extern s32 func_800A29D4(EngineState *base, PadPort *port, u16 arg1, s32 side, s32 entryIndex);
 extern s32 func_800A390C(s32 flags0, s32 flags1); /**< Cursor/timer state machine. */
 extern s32 func_800A443C(s32 a0);                 /**< VSync-locked display-list apply. */
 extern void func_800A4504(s32 a0, s32 a1); /**< SFX (60, 32) init. */

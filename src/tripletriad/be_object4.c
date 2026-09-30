@@ -594,14 +594,14 @@ u8 *initTripleTriadRenderList(void) {
 
 /**
  * @brief Per-(slot, side) input-edge debounce with keyboard-style auto-repeat,
- *        for one of the four edges of a Triple Triad battle-anim entity.
+ * for one of the four channels of a pad port.
  *
  * Maintains, per card slot @p entry and side @p side (0..3), a small auto-repeat
  * state machine over a bitmask of edge events:
  *  - Reads last frame's masked bits from @ref D_801D4AF8 [entry][side] and stores
  *    @p newVal there.
  *  - Masks both new and previous bitmasks by the side's relevance mask
- *    (`elem->unk10[side]`): @c result = new active bits, @c prevMasked = old.
+ *    (`port->unk10[side]`): @c result = new active bits, @c prevMasked = old.
  *  - @c base->repeatDelays packs the timing: low byte = initial/restart delay,
  *    high byte = repeat interval.
  *  - If the masked new and old bits overlap (a sustained event), ticks the
@@ -613,8 +613,8 @@ u8 *initTripleTriadRenderList(void) {
  * Drives keyboard-style auto-repeat for whatever per-side cue the bits represent.
  * Called four times (once per side) by @ref func_800A2A8C, which ORs the results.
  *
- * @param base Battle-anim state; base->repeatDelays packs the two delays.
- * @param elem Battle-anim entity; elem->unk10[side] is the per-side mask.
+ * @param base Engine state; base->repeatDelays packs the two delays.
+ * @param port Pad port; port->unk10[side] is the per-side mask.
  * @param newVal Raw new edge bitmask for this frame.
  * @param side Card side index, 0..3.
  * @param entry Card slot index.
@@ -622,7 +622,7 @@ u8 *initTripleTriadRenderList(void) {
  *
  * @note Purpose inferred. Decomp scratch: https://decomp.me/scratch/7L33D
  */
-s32 func_800A29D4(BattleAnimState *base, BattleAnimEntity *elem, u16 newVal, s32 side, s32 entry)
+s32 func_800A29D4(EngineState *base, PadPort *port, u16 newVal, s32 side, s32 entry)
 {
     s32 repeatTimer;
     s32 restartDelay;
@@ -634,7 +634,7 @@ s32 func_800A29D4(BattleAnimState *base, BattleAnimEntity *elem, u16 newVal, s32
     D_801D4AF8[entry][side] = newVal;
     restartDelay = base->repeatDelays.hword;
     repeatTimer = D_801D4B08[entry][side];
-    mask = elem->unk10[side];
+    mask = port->unk10[side];
 
     repeatInterval = restartDelay >> 8;
     restartDelay &= 0xFF;
@@ -658,28 +658,25 @@ s32 func_800A29D4(BattleAnimState *base, BattleAnimEntity *elem, u16 newVal, s32
 }
 
 /**
- * @brief Evaluate all four edges of battle-anim entity @p entryIndex against its neighbour.
+ * @brief Auto-repeat the four channels of pad @p entryIndex's bits.
  *
- * Follows the entity's @c linkedIdx to its linked neighbour, then evaluates each
- * of the four edges (0..3) via @c func_800A29D4, OR-ing the per-edge results into
- * a single 16-bit mask. The Triple Triad board reuses the battle-animation
- * entities (@c g_battleAnims) to drive its card animations.
+ * Triple Triad's copy of autoRepeatPad: runs func_800A29D4 on @p arg1 for channels
+ * 0-3 against the port linked to port @p entryIndex, and ORs the bits that fire.
  *
- * @param entryIndex Index of the entity in @c g_battleAnims to evaluate.
- * @param arg1       Per-edge value forwarded to @c func_800A29D4.
- * @return Combined 16-bit result mask from the four edge evaluations. Typed @c s32
- *         (not @c u16) because @c readPads re-masks the value, which requires the
- *         caller to not assume it is already 16-bit-clean.
+ * @param entryIndex Pad index, 0 or 1.
+ * @param arg1 Pad bits of this frame.
+ * @return The bits that fire this frame. Typed @c s32 (not @c u16) because @c readPads
+ * re-masks the value, which requires the caller to not assume it is already 16-bit-clean.
  */
 s32 func_800A2A8C(s32 entryIndex, u16 arg1)
 {
-    BattleAnimEntity *link = &g_battleAnims.entities[g_battleAnims.entities[entryIndex].linkedIdx];
+    PadPort *port = &g_engine.ports[g_engine.ports[entryIndex].linkedIdx];
     u16 result = 0;
 
-    result |= func_800A29D4(&g_battleAnims, link, arg1, 0, entryIndex);
-    result |= func_800A29D4(&g_battleAnims, link, arg1, 1, entryIndex);
-    result |= func_800A29D4(&g_battleAnims, link, arg1, 2, entryIndex);
-    result |= func_800A29D4(&g_battleAnims, link, arg1, 3, entryIndex);
+    result |= func_800A29D4(&g_engine, port, arg1, 0, entryIndex);
+    result |= func_800A29D4(&g_engine, port, arg1, 1, entryIndex);
+    result |= func_800A29D4(&g_engine, port, arg1, 2, entryIndex);
+    result |= func_800A29D4(&g_engine, port, arg1, 3, entryIndex);
 
     return result & 0xFFFF;
 }
@@ -747,13 +744,13 @@ void readPads(void)
 }
 
 /**
- * @brief Reset the Triple Triad per-edge animation state for both entities.
+ * @brief Reset the Triple Triad pad state for both ports.
  *
- * Clears the per-(entity, side) bookkeeping tables — previous edge flags
+ * Clears the per-(port, side) bookkeeping tables — previous edge flags
  * (@c D_801D4AF8), edge countdown timers (@c D_801D4B08), and the three
  * @c D_801D4B20 / @c D_801D4B28 / @c D_801D4B30 word tables — for both
- * animation entities, then seeds @c setAnimUnk10Both with the fixed per-side
- * parameters (one set per side 0..3) for each entity.
+ * ports, then seeds @c setAnimUnk10Both with the fixed per-side
+ * parameters (one set per side 0..3) for each port.
  */
 void func_800A2D34(void)
 {

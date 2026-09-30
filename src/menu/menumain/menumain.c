@@ -10,6 +10,7 @@
 #include "btl_anim_packet.h"
 #include "ui/icon.h"
 #include "snd_sfx.h"
+#include "thread.h"
 #include "dialog.h"
 #include "numstr.h"
 #include "psxsdk/libgpu.h"
@@ -2037,7 +2038,7 @@ void func_801F6934(void) {
 
 /** @brief Advance pseudo-random number generator (LCG: val*125+14 mod 32768). */
 s32 func_801F6A5C(void) {
-    s32 base = (s32)&g_battleAnims;
+    s32 base = (s32)&g_engine;
     s32 val = *(u16 *)(base + 0x9C2);
     val = (val * 125 + 14) % 32768;
     *(u16 *)(base + 0x9C2) = val;
@@ -2296,13 +2297,13 @@ void func_801F7928(void) {
     sndSelectMode(val != 0);
 }
 
-/** @brief Apply ATB/screen brightness setting from g_configFlags bit 6. */
+/** @brief Apply the Vibration option to pad port 0. */
 void func_801F7954(void) {
     s32 a1 = 0;
-    if (g_configFlags & 0x40) {
+    if (g_configFlags & CONFIG_VIBRATION) {
         a1 = 0xFF;
     }
-    setAnimEntityOpacity(0, a1);
+    setPadVibration(0, a1);
 }
 
 /**
@@ -2334,9 +2335,9 @@ s32 func_801F79F8(s32 a0) {
     return g_gameState.config.sealedFeatures & a0;
 }
 
-/** @brief Update config vibration flag based on slot 0 status. */
+/** @brief Copy pad port 0's vibration setting back into the Vibration option. */
 void func_801F7A08(void) {
-    if (getBattleAnimOpacity(0) == 0xFF) {
+    if (getPadVibration(0) == 0xFF) {
         g_gameState.config.flags |= CONFIG_VIBRATION;
     } else {
         g_gameState.config.flags &= ~CONFIG_VIBRATION;

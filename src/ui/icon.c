@@ -1,5 +1,6 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
+#include "battle_anim.h"
 #include "ui/icon.h"
 
 /* --- Private functions --- */
@@ -86,18 +87,18 @@ void *drawIcon(void *ot, void *head, s32 idx, s32 x, s32 y, s32 color) {
 
 
 /**
- * @brief Build a packed grayscale GPU color and store to g_nextPageMarkerColor.
+ * @brief Build a packed grayscale GPU color and store to g_engine.nextPageMarkerColor.
  * @param intensity Scalar intensity value (divided by 32, masked to 8 bits).
  */
 void setNextPageMarkerBrightness(s32 intensity) {
     intensity /= 32;
     intensity &= 0xFF;
-    g_nextPageMarkerColor = intensity | (intensity << 8) | (intensity << 16) | SPRT_CODE;
+    g_engine.nextPageMarkerColor = intensity | (intensity << 8) | (intensity << 16) | SPRT_CODE;
 }
 
 
 /**
- * @brief Build a packed RGB GPU color and store to g_nextPageMarkerColor.
+ * @brief Build a packed RGB GPU color and store to g_engine.nextPageMarkerColor.
  * @param r Red intensity (divided by 32, masked to 8 bits).
  * @param g Green intensity.
  * @param b Blue intensity.
@@ -109,7 +110,7 @@ static void setNextPageMarkerColor(s32 r, s32 g, s32 b) {
     r &= 0xFF;
     g &= 0xFF;
     b &= 0xFF;
-    g_nextPageMarkerColor = r | (g << 8) | (b << 16) | SPRT_CODE;
+    g_engine.nextPageMarkerColor = r | (g << 8) | (b << 16) | SPRT_CODE;
 }
 
 

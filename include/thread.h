@@ -28,4 +28,5 @@ extern s32  func_80027CF8(s32 a, s32 b, s32 c); /**< Fold a recentred analog sti
 
 extern void func_80026D8C(void); /* per-frame battle VSync handler (RENDER_BATTLE) */
 extern void func_80027448(void);
+extern s32 getPadVibration(s32 idx);
 #endif /* THREAD_H */

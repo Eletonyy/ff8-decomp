@@ -4,13 +4,14 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "dialog.h"
+#include "ui/countdown.h"
 #include "ui/seed_rank.h"
 
-/* Battle animation state shared across the battle, field, menu, and Triple Triad
- * code. g_battleAnims is a main-RAM global (0x80082DD0); the Triple Triad minigame
- * reuses the battle animation entity system to drive the on-board card animations,
- * so its overlay accesses these same structures. Kept here (rather than battle.h)
- * so non-battle translation units can use them without depending on battle.h. */
+/* Engine state shared across the battle, field, menu, and Triple Triad
+ * code. g_engine is a main-RAM global (0x80082DD0); the Triple Triad overlay has
+ * its own copy of the pad auto-repeat code, so it accesses these same structures.
+ * Kept here (rather than battle.h) so non-battle translation units can use them
+ * without depending on battle.h. */
 
 typedef struct {
     u8 field00;
@@ -25,31 +26,31 @@ typedef struct {
     u16 field12;
 } AnimFrame; /* 0x14 = 20 bytes */
 
+/** @brief The state of one controller port. */
 typedef struct {
     u8 field00;
-    u8 field01;   /**< field06 masked by opacity, shifted right by field08 (func_80027220). */
-    u8 field02;   /**< field07 masked by opacity, shifted right by field09 (func_80027220). */
+    u8 field01; /**< motor[0] masked by vibrationMask, shifted right by field08 (func_80027220). */
+    u8 field02; /**< motor[1] masked by vibrationMask, shifted right by field09 (func_80027220). */
     u8 pad03[3];
-    u8 field06;
-    u8 field07;
-    u8 field08;   /**< Shift amount applied to field06 in func_80027220. */
-    u8 field09;   /**< Shift amount applied to field07 in func_80027220. */
+    u8 motor[2]; /**< Vibration motor levels, 0-255. */
+    u8 field08; /**< Shift amount applied to motor[0] in func_80027220. */
+    u8 field09; /**< Shift amount applied to motor[1] in func_80027220. */
     u8 field0A;
     u8 field0B;
     u8 field0C;
     u8 field0D;
     u8 field0E;
     u8 field0F;
-    s16 unk10[4];
+    u16 unk10[4]; /**< Pad-button mask of each of the four auto-repeat channels. */
     u8 frameCounter;
     s8 field19;   /**< Read back as a signed byte in func_80027220. */
     s8 field1A;
-    u8 opacity;
+    u8 vibrationMask; /**< 0xFF with vibration on, 0 with it off. */
     AnimFrame frames[8];
-    u8 padBC[6];
+    u8 fieldBC[6];
     u8 linkedIdx;
     u8 fieldC3;
-} BattleAnimEntity;
+} PadPort;
 
 #define OT_SIZE 18
 
@@ -62,19 +63,8 @@ typedef struct {
     u32 pktBase;
 } DisplayListBuf;
 
-/**
- * @brief The on-screen countdown timer, drawn as MM:SS from
- * @c g_gameState.mainData.countdownTimer.
- */
-typedef struct {
-    u16 x; /* 0x00 */
-    u8 y; /* 0x02 */
-    u8 visible; /* 0x03 */
-    u16 brightness; /* 0x04: 0x1000 = full; also the SeeD rank notification's and the gauges' grey level */
-    u8 blinkFrames; /* 0x06: frames since lastSeconds changed, capped at 0x40 */
-    u8 lastSeconds; /* 0x07: low byte of the countdown when it last changed */
-} CountdownDisplay;
-
+/* Gauge lives here rather than in ui/gauge.h: fe_object9.c includes this header, and its
+ * gauge opcode handlers only match while the gauge functions have no prototype. */
 /** @brief A HUD gauge: a bar showing @c value between @c minValue and @c maxValue. */
 typedef struct {
     s16 x; /* 0x00 */
@@ -96,9 +86,9 @@ typedef struct {
 
 #define GAUGE_COUNT 2
 
-/** @brief Complete battle animation state (entities + global coords). */
+/** @brief Engine state every module shares: display lists, message windows, the HUD and more. */
 typedef struct {
-    /* 0x000 */ BattleAnimEntity entities[2]; /**< Two animation entities. */
+    /* 0x000 */ PadPort ports[2]; /**< The two controller ports. */
     /* 0x188 */ u8 cdBufA[0x24];             /**< CD audio buffer A. */
     /* 0x1AC */ u8 cdBufB[0x24];             /**< CD audio buffer B. */
     /* 0x1D0 */ s16 globalCoords[2][2];      /**< Per-slot coords [slot][axis]. */
@@ -107,18 +97,20 @@ typedef struct {
     /* 0x1DC */ u16 clipRight;              /**< Clip region right edge. */
     /* 0x1DE */ u16 clipBottom;             /**< Clip region bottom edge. */
     /* 0x1E0 */ U16Split repeatDelays;       /**< Pad auto-repeat timing (autoRepeatPadChannel): restart delay in @c b.lo, repeat interval in @c b.hi. */
-    /* 0x1E2 */ u8 pad1E2[0x3E];             /**< Unknown. */
+    /* 0x1E2 */ u8 pad1E2; /**< Unknown. */
+    /* 0x1E3 */ u8 animFlag; /**< Also addressed directly as @c g_animFlag. */
+    /* 0x1E4 */ u8 pad1E4[0x3C]; /**< Unknown. */
     /* 0x220 */ DialogSystem dialogs;               /**< Message windows; also addressed directly as @c g_dialogs. */
     /* 0x440 */ u8 pad440[0x200];            /**< Unknown. */
     /* 0x640 */ DisplayListBuf bufs[2];         /**< Double-buffered GPU display lists (2 × 0x58). */
     /* 0x6F0 */ DisplayListBuf *active;      /**< Pointer to active display list buffer. */
     /* 0x6F4 */ s32 halfSize;                /**< Half of total VRAM size. */
-    /* 0x6F8 */ u8 pad6F8[4];                /**< Unknown. */
+    /* 0x6F8 */ s32 nextPageMarkerColor; /**< Tint of a message window's next-page marker. */
     /* 0x6FC */ s32 field6FC;                /**< Cleared during GPU init. */
     /* 0x700 */ CountdownDisplay countdown; /**< The countdown timer; its brightness is the HUD's grey level. */
     /* 0x708 */ u8 pad708[0x26C]; /**< Unknown. */
     /* 0x974 */ s32 palette[3];              /**< RGB888 palette (0x40BBGGRR). */
-    /* 0x980 */ s32 vibrationClock; /**< Also addressed directly as @c g_vibrationClock. */
+    /* 0x980 */ s32 vibrationClock; /**< Paces the vibration steps. */
     /* 0x984 */ SeedRankNotification seedRankNotification; /**< The SeeD rank notification. */
     /* 0x9A2 */ Gauge gauges[GAUGE_COUNT]; /**< The two HUD gauges. */
     /* 0x9C2 */ s16 field9C2;               /**< Set to 0x4611 during GPU init. */
@@ -126,8 +118,8 @@ typedef struct {
     /* 0x9C6 */ u8 pad9C6[2];                /**< Unknown. */
     /* 0x9C8 */ s32 field9C8;                /**< Cleared during GPU init. */
     /* 0x9CC */ s32 field9CC;                /**< Cleared during GPU init. */
-} BattleAnimState;
+} EngineState;
 
-extern BattleAnimState g_battleAnims;
+extern EngineState g_engine;
 
 #endif /* BATTLE_ANIM_H */

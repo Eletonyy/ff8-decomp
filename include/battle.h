@@ -29,13 +29,6 @@ typedef struct {
     u8  unk9;            /**< Bit 0 toggles the @c FieldVars.soundBankSelector at field-VM init. */
 } BattleConfig;
 
-/* AnimFrame, BattleAnimEntity, DisplayListBuf, BattleAnimState, OT_SIZE and
- * g_battleAnims now live in battle_anim.h (included above) so non-battle code
- * can use them without depending on battle.h. */
-
-/* Tim / TimSection are the canonical PS1 TIM file structs — now in tim.h
- * (included above), shared with the world and tripletriad overlays. */
-
 /** @brief Clipped rectangle result: the clipped rect + saved pre-clip position. */
 typedef struct {
     RECT rect; /* 0x00: clipped rectangle */

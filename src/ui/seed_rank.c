@@ -26,8 +26,8 @@ static void *drawSeedRankNotificationUnderlines(P_TAG *ot, LINE_F2 *line, s32 le
  * until hideSeedRankNotification, then slides out. @c slide and @c roll run from 0 to ONE.
  */
 void updateSeedRankNotification(void) {
-    u16 *state = &g_battleAnims.seedRankNotification.state;
-    SeedRankNotification *p = &g_battleAnims.seedRankNotification;
+    u16 *state = &g_engine.seedRankNotification.state;
+    SeedRankNotification *p = &g_engine.seedRankNotification;
 
     switch (*state) {
     case SEED_RANK_NOTIFICATION_SHOW:
@@ -149,7 +149,7 @@ static void *drawSeedRankNotificationUnderlines(P_TAG *ot, LINE_F2 *line, s32 le
     u32 link3;
     u32 link4;
 
-    x = g_battleAnims.countdown.brightness;
+    x = g_engine.countdown.brightness;
     c = x / 32;
     bright = LINE_F2_CODE | (c << 16) | (c << 8) | c;
     c = x / 128;
@@ -201,7 +201,7 @@ static void *drawSeedRankNotificationUnderlines(P_TAG *ot, LINE_F2 *line, s32 le
  * is clipped to a 12-pixel strip at y 196, where the old and new values roll
  * vertically while @c roll is between 0 and ONE;
  * drawSeedRankNotificationUnderlines then underlines the notification.
- * The grey level is the HUD brightness. Reading it through g_battleAnims, like
+ * The grey level is the HUD brightness. Reading it through g_engine, like
  * the notification, lets gcc reach it at -0x280 from the notification's base register, as
  * the retail code does.
  *
@@ -229,7 +229,7 @@ u8 *drawSeedRankNotification(void *ot, u8 *pkt) {
     s32 leftShift;
 
     out = pkt;
-    p = &g_battleAnims.seedRankNotification;
+    p = &g_engine.seedRankNotification;
 
     if (p->slide <= 0) {
         return out;
@@ -237,7 +237,7 @@ u8 *drawSeedRankNotification(void *ot, u8 *pkt) {
 
     copyDisplayRect(&rect);
 
-    color = g_battleAnims.countdown.brightness;
+    color = g_engine.countdown.brightness;
     color >>= 5;
     color &= 0xFF;
     color = (color | (color << 8)) | (color << 16);
@@ -305,7 +305,7 @@ u8 *drawSeedRankNotification(void *ot, u8 *pkt) {
 
 /** @brief Start sliding the SeeD rank notification out. */
 void hideSeedRankNotification(void) {
-    g_battleAnims.seedRankNotification.state = SEED_RANK_NOTIFICATION_HIDE;
+    g_engine.seedRankNotification.state = SEED_RANK_NOTIFICATION_HIDE;
 }
 
 
@@ -332,7 +332,7 @@ void showSeedRankNotification(s32 oldRank, s32 newRank, s32 oldSalary, s32 newSa
     s32 blank;
     s32 i;
 
-    d = &g_battleAnims.seedRankNotification;
+    d = &g_engine.seedRankNotification;
     d->state = SEED_RANK_NOTIFICATION_SHOW;
     d->roll = 0;
     d->slide = 0;
@@ -404,7 +404,7 @@ void showSeedRankNotification(s32 oldRank, s32 newRank, s32 oldSalary, s32 newSa
 
 /** @brief Set whether the SeeD salary is enabled. */
 void setSalaryEnabled(s32 enabled) {
-    g_battleAnims.seedRankNotification.salaryEnabled = enabled;
+    g_engine.seedRankNotification.salaryEnabled = enabled;
 }
 
 
@@ -414,7 +414,7 @@ void setSalaryEnabled(s32 enabled) {
  * Sets @ref SEED_RANK_NOTIFICATION_HIDDEN and clears @c roll, @c slide and both ranks.
  */
 void resetSeedRankNotification(void) {
-    SeedRankNotification *p = &g_battleAnims.seedRankNotification;
+    SeedRankNotification *p = &g_engine.seedRankNotification;
 
     p->state = SEED_RANK_NOTIFICATION_HIDDEN;
     p->roll = 0;

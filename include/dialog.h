@@ -77,7 +77,7 @@ typedef struct {
     u32 msgValues[8]; /* numeric values formatted by decodeMessage */
 } DialogSystem;
 
-/** @brief The message windows: @c g_battleAnims.dialogs under a symbol of its own. */
+/** @brief The message windows: @c g_engine.dialogs under a symbol of its own. */
 extern DialogSystem g_dialogs;
 
 extern void tickTextBlink(void);

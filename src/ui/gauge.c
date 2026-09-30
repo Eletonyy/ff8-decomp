@@ -77,7 +77,7 @@ static s32 lerpRange(s32 rangeStart, s32 rangeEnd, s32 input, s32 maxOut) {
  */
 void stepGauges(void) {
     s32 i;
-    Gauge *gauge = g_battleAnims.gauges;
+    Gauge *gauge = g_engine.gauges;
     s32 fill;
     s32 target;
 
@@ -141,7 +141,7 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
     s32 w;
 
     p = pkt;
-    gauge = g_battleAnims.gauges;
+    gauge = g_engine.gauges;
     gauge = &gauge[idx];
     flags = gauge->flags;
     originX = gauge->x;
@@ -225,7 +225,7 @@ u8 *drawGauges(void *ot, u8 *pkt)
 {
     u8 *ret = pkt;
     s32 i;
-    u32 packed = g_battleAnims.countdown.brightness;
+    u32 packed = g_engine.countdown.brightness;
 
     u32 t = packed >> 5;
     u32 hi = t << 16;
@@ -246,7 +246,7 @@ u8 *drawGauges(void *ot, u8 *pkt)
  * @param idx Gauge index (0 or 1).
  */
 void hideGauge(s32 idx) {
-    Gauge *gauge = g_battleAnims.gauges;
+    Gauge *gauge = g_engine.gauges;
     gauge = &gauge[idx];
     gauge->flags &= ~GAUGE_ACTIVE;
 }
@@ -262,7 +262,7 @@ void hideGauge(s32 idx) {
  * @param value The new value.
  */
 void setGaugeValue(s32 idx, s32 value) {
-    Gauge *gauge = g_battleAnims.gauges;
+    Gauge *gauge = g_engine.gauges;
     s32 result;
 
     gauge = &gauge[idx];
@@ -281,7 +281,7 @@ void setGaugeValue(s32 idx, s32 value) {
  * @param pos The x and y to copy.
  */
 static void setGaugePosition(s32 idx, u16 *pos) {
-    Gauge *gauge = g_battleAnims.gauges;
+    Gauge *gauge = g_engine.gauges;
     gauge = &gauge[idx];
     memcpy(&gauge->x, pos, 4);
 }
@@ -299,7 +299,7 @@ static void setGaugePosition(s32 idx, u16 *pos) {
  * @param width The bar's length in pixels.
  */
 static void initGauge(s32 idx, s32 flags, u16 *pos, s32 minValue, s32 maxValue, s32 value, s32 width) {
-    Gauge *gauge = g_battleAnims.gauges;
+    Gauge *gauge = g_engine.gauges;
     s32 activeFlags = flags | GAUGE_ACTIVE;
 
     gauge = &gauge[idx];
@@ -334,7 +334,7 @@ void showGaugeFull(s32 idx, s32 flags, u16 *pos, s32 minValue, s32 maxValue, s32
  * @brief Hide both gauges.
  */
 void resetGauges(void) {
-    Gauge *gauge = g_battleAnims.gauges;
+    Gauge *gauge = g_engine.gauges;
     s32 i;
 
     for (i = 0; i < GAUGE_COUNT; i++, gauge++) {

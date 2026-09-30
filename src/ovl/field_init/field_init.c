@@ -20,46 +20,6 @@ typedef struct {
     EventEntry *entries; /* 0x10 */
 } EventState;
 
-/** @brief Entity identity at tail of AnimEntity. */
-typedef struct {
-    u8 entityId;
-    u8 entityType;
-} AnimEntityTail;
-
-/** @brief Single animation entity (0xC4 bytes). */
-typedef struct {
-    u8 flags;            /* 0x00 */
-    u8 pad01[5];         /* 0x01-0x05 */
-    u8 field_06[2];      /* 0x06-0x07 */
-    u8 pad08[3];         /* 0x08-0x0A */
-    u8 field_0B;         /* 0x0B */
-    u8 field_0C;         /* 0x0C */
-    u8 field_0D;         /* 0x0D */
-    u8 field_0E;         /* 0x0E */
-    u8 field_0F;         /* 0x0F */
-    s16 field_10;        /* 0x10 */
-    s16 field_12;        /* 0x12 */
-    u16 field_14;        /* 0x14 */
-    s16 field_16;        /* 0x16 */
-    u8 pad18;            /* 0x18 */
-    u8 field_19;         /* 0x19 */
-    u8 pad1A;            /* 0x1A */
-    u8 field_1B;         /* 0x1B */
-    AnimFrame frames[8]; /* 0x1C-0xBB */
-    u8 colors[6];        /* 0xBC-0xC1 */
-    AnimEntityTail tail;  /* 0xC2-0xC3 */
-} AnimEntity;
-
-/** @brief Top-level animation data block (g_battleAnims). */
-typedef struct {
-    AnimEntity entities[2];
-    u8 pad188[0x58];
-    u8 field_1E0;
-    u8 field_1E1;
-    u8 pad1E2;
-    u8 field_1E3;
-} AnimData;
-
 /* --- Externs (sorted by address) --- */
 
 extern BattleConfig g_battleConfig;
@@ -222,23 +182,18 @@ void func_80098390(void) {
 }
 
 /**
- * @brief Initialize the two animation entities to default state.
- *
- * Sets global display parameters (color intensity=16, blend mode=5),
- * configures the screen clip rect to 320x224, then initializes each
- * entity with default rendering params, full-brightness colors, and
- * zeroed animation state.
+ * @brief Reset g_engine's two entities, the pad auto-repeat delays and the clip rect.
  */
 void func_800983B8(void) {
     s16 clipRect[4];
     s32 i;
-    AnimEntity *entity;
+    PadPort *port;
     s32 j;
-    AnimData *anim = (AnimData *)&g_battleAnims;
+    EngineState *engine = &g_engine;
 
-    anim->field_1E0 = 16;
-    anim->field_1E1 = 5;
-    anim->field_1E3 = 0;
+    engine->repeatDelays.b.lo = 16;
+    engine->repeatDelays.b.hi = 5;
+    engine->animFlag = 0;
 
     clipRect[0] = 0;
     clipRect[1] = 0;
@@ -246,42 +201,43 @@ void func_800983B8(void) {
     clipRect[3] = 224;
     setBattleAnimClipRect(clipRect);
 
-    entity = anim->entities;
+    port = engine->ports;
     i = 0;
     do {
-        do { entity++; entity--; } while (0);
         initAnimEntityColor(i);
-        entity->field_19 = 1;
-        entity->field_10 = 0xFFF;
-        entity->field_12 = 0x5000;
-        entity->field_14 = 0xA000;
-        entity->field_16 = 0x900;
+        port->field19 = 1;
+        port->unk10[0] = 0xFFF;
+        port->unk10[1] = 0x5000;
+        port->unk10[2] = 0xA000;
+        port->unk10[3] = 0x900;
 
         for (j = 0; j < 2; j++) {
-            entity->field_06[j] = 0;
+            port->motor[j] = 0;
         }
 
-        entity->flags = 0x40;
+        port->field00 = 0x40;
 
+        /* The retail code has this loop, with an empty body. */
         for (j = 0; j < 6; j++) {
             ;
         }
 
-        *(volatile u8 *)&entity->field_06[0] = 0;
+        /* volatile keeps this store on port's register, not the loop's port + 0xC2 one. */
+        *(volatile u8 *)&port->motor[0] = 0;
 
         for (j = 0; j < 6; j++) {
-            entity->colors[j] = 0xFF;
+            port->fieldBC[j] = 0xFF;
         }
 
-        entity->field_1B = 0;
-        entity->field_0B = 0;
-        entity->tail.entityType = 0x31;
+        port->vibrationMask = 0;
+        port->field0B = 0;
+        port->fieldC3 = 0x31;
         setAnimGlobalCoords(i, 0, 0);
-        entity->field_0C = 0;
-        entity->field_0D = 0;
-        entity->field_0E = 0;
-        entity->field_0F = 0;
-        entity->tail.entityId = i++;
-        entity++;
+        port->field0C = 0;
+        port->field0D = 0;
+        port->field0E = 0;
+        port->field0F = 0;
+        port->linkedIdx = i++;
+        port++;
     } while (i < 2);
 }

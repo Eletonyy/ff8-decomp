@@ -413,24 +413,24 @@ s32 func_8003646C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 
     setMcBusy();
 
-    saved250 = g_battleAnims.dialogs.entries[0].textX;
+    saved250 = g_engine.dialogs.entries[0].textX;
     D_80085210 = arg0;
-    saved252 = g_battleAnims.dialogs.entries[0].textY;
+    saved252 = g_engine.dialogs.entries[0].textY;
     D_8008520A = 0;
-    savedCountdownVisible = g_battleAnims.countdown.visible;
-    savedGauge0Flags = g_battleAnims.gauges[0].flags;
-    savedGauge1Flags = g_battleAnims.gauges[1].flags;
+    savedCountdownVisible = g_engine.countdown.visible;
+    savedGauge0Flags = g_engine.gauges[0].flags;
+    savedGauge1Flags = g_engine.gauges[1].flags;
 
-    g_battleAnims.dialogs.entries[0].textY = 0;
-    D_8008520C = (g_battleAnims.dialogs.entries[0].textX = 0);
-    g_battleAnims.countdown.visible = 0;
-    g_battleAnims.gauges[0].flags = 0;
-    g_battleAnims.gauges[1].flags = 0;
+    g_engine.dialogs.entries[0].textY = 0;
+    D_8008520C = (g_engine.dialogs.entries[0].textX = 0);
+    g_engine.countdown.visible = 0;
+    g_engine.gauges[0].flags = 0;
+    g_engine.gauges[1].flags = 0;
     D_8008520B = savedCountdownVisible;
 
     resetSeedRankNotification();
 
-    savedBrightness = g_battleAnims.dialogs.entries[0].brightness;
+    savedBrightness = g_engine.dialogs.entries[0].brightness;
     savedEntityType = readDialogEntityType(0);
     setDialogEntityType(0, 6);
     setDialogBrightness(0, 0x1000);
@@ -462,14 +462,14 @@ s32 func_8003646C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     DrawSync(0);
     VSync(0);
 
-    g_battleAnims.gauges[0].flags = savedGauge0Flags;
-    g_battleAnims.gauges[1].flags = savedGauge1Flags;
-    g_battleAnims.countdown.visible = D_8008520B;
+    g_engine.gauges[0].flags = savedGauge0Flags;
+    g_engine.gauges[1].flags = savedGauge1Flags;
+    g_engine.countdown.visible = D_8008520B;
     setDialogBrightness(0, savedBrightness);
     setDialogCornerIcon(0, 0);
     setDialogEntityType(0, savedEntityType);
-    g_battleAnims.dialogs.entries[0].textX = saved250;
-    g_battleAnims.dialogs.entries[0].textY = saved252;
+    g_engine.dialogs.entries[0].textX = saved250;
+    g_engine.dialogs.entries[0].textY = saved252;
     return D_8008513C;
 }
 
