@@ -58,9 +58,6 @@ VECTOR *ApplyMatrixLV(MATRIX *m, VECTOR *v0, VECTOR *v1);
 VECTOR *ApplyTransposeMatrixLV(MATRIX *m, VECTOR *v0, VECTOR *v1);
 SVECTOR *ApplyMatrixSV(MATRIX *m, SVECTOR *v0, SVECTOR *v1);
 s32 RotTransPers(SVECTOR *v0, s32 *sxy, s32 *p, s32 *flag);
-/** @brief The main binary's own @c RotTransPers copy; overlays link it by address, so it
- *         keeps its @c func_ name. */
-s32 func_80040DE4(SVECTOR *v0, s32 *sxy, s32 *p, s32 *flag);
 void LoadAverageShort12(SVECTOR *v0, SVECTOR *v1, s32 p0, s32 p1, SVECTOR *v2);
 void LoadAverageCol(u8 *v0, u8 *v1, s32 p0, s32 p1, u8 *v2);
 MATRIX *RotMatrixX(s32 r, MATRIX *m);

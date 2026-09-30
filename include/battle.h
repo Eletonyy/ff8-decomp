@@ -733,8 +733,6 @@ extern s16             D_8005F11C;
 extern u8              D_8005F170;   /**< Cleared once at boot by loadKernel and set only by
                                             battle_render's entry, which only gameStateLoop state 4
                                             reaches; gates the magic menu's refill-all shortcut. */
-extern s16             D_8005F146;
-extern s16             D_8005F158;
 extern BattleCharState g_battleChars; // 0x80078720
 //D_80078DF8 = g_battleChars.levelEntries[15].abilityFlags
 extern BattleConfig    g_battleConfig; // 0x80082C08
@@ -804,11 +802,6 @@ u8 *func_800B02AC(u8 *buf);
 
 /* --- Battle animation lifecycle --- */
 void requestPadSetup(s32 idx);
-
-/* --- Spatial / matrix helpers (defined in field overlay) --- */
-void func_800406A4(u8 *p);
-void func_80040734(u8 *p);
-/* func_80040DE4 (the main binary's RotTransPers) is declared in psxsdk/libgte.h. */
 
 void func_800D0608(void); /* bc_object17: overlay VSync handler (RENDER_OVERLAY) */
 

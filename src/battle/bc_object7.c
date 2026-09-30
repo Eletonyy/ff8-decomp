@@ -2,6 +2,7 @@
 #include "battle.h"
 #include "gamestate.h"
 #include "kernel.h"
+#include "psxsdk/libetc.h"
 #include "battle/bc_object7.h"
 
 extern u8 D_800EE490[];
@@ -18,17 +19,17 @@ void func_800AF254(void) {
     switch (g_battleConfig.result) {
         case 2:
             g_gameState.mainData.fieldCE2++;
-            D_8005F158 = 5;
+            g_vsyncRate = 5;
             break;
             
         case 4:
             g_gameState.mainData.fieldCDC++;
             if (D_800ED148.unkCDD & 0x10) {
-                D_8005F158 = 100;
+                g_vsyncRate = 100;
             }
                 
             else {
-                D_8005F158 = 5;
+                g_vsyncRate = 5;
             }
             
             break;
@@ -36,18 +37,18 @@ void func_800AF254(void) {
         case 1:
         case 3:
             g_gameState.mainData.fieldCE0++;
-            D_8005F158 = 100;
+            g_vsyncRate = 100;
             break;
             
         case 5:
-            D_8005F158 = 100;
+            g_vsyncRate = 100;
             break;
     }
     
     sndCmdF1();
-    D_8005F146 = 0;
-    func_80042634(2);
-    func_80048C50(0);
+    g_renderMode = 0;
+    VSync(2);
+    DrawSync(0);
     func_800D0B24();
 }
 

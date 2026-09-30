@@ -558,8 +558,8 @@ void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u
 /**
  * @brief Check battle status flags and optionally store adjusted value.
  *
- * Reads D_800786D8[0] and tests bit flags. If bit 0 is clear, returns 0.
- * If bit 1 is set, returns 1. Otherwise, stores D_800786D8[0x2D] + 2
+ * Reads g_chocoboWorld[0] and tests bit flags. If bit 0 is clear, returns 0.
+ * If bit 1 is set, returns 1. Otherwise, stores g_chocoboWorld[0x2D] + 2
  * into *a0 as a halfword and returns 2.
  *
  * @param a0 Pointer to halfword destination (written only if returning 2).

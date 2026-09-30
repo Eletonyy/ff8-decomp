@@ -10,6 +10,7 @@
 #include "kernel.h"
 #include "gamestate.h"
 #include "game.h"
+#include "psxsdk/libetc.h"
 #include "battle/bc_object2.h"
 #include "battle/bc_object6.h"
 #include "battle/bc_object7.h"
@@ -1289,7 +1290,7 @@ s32 func_8009E7B0(void) {
     u8 temp_v1_2;
     s32 temp_v1_3;
     
-    temp_v1_2 = func_80042634(-1);
+    temp_v1_2 = VSync(-1);
 
     if (temp_v1_2 < 128) {
         var_v0_2 = func_8009B15C();

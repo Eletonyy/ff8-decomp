@@ -166,7 +166,7 @@ def overlay_names():
     ovls = set()
     for p in glob.glob(os.path.join(CFG_DIR, 'symbols.*.txt')):
         ovls.add(os.path.basename(p)[len('symbols.'):-len('.txt')])
-    return sorted(ovls - {'main', 'shared'})
+    return sorted(ovls - {'main'})
 
 
 def check_name_consistency():
@@ -179,7 +179,6 @@ def check_name_consistency():
     for ovl in overlay_names():
         files = [
             os.path.join(CFG_DIR, f'symbols.{ovl}.txt'),
-            os.path.join(CFG_DIR, f'symbols.shared.txt'),
             os.path.join(CFG_DIR, f'undefined_syms.{ovl}.txt'),
             os.path.join(GEN_DIR, f'undefined_syms_auto.{ovl}.txt'),
         ]

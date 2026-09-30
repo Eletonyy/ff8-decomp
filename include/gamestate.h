@@ -439,7 +439,7 @@ extern void stopAllSounds(void);
 extern void func_80037D40();
 
 /* Render dispatch mode + fade bytes (main-binary state shared across units). */
-extern volatile s16 g_renderMode;
+extern volatile s16 g_renderMode; /**< Also the scene-transition handshake the field, world and battle engines spin on, each with its own value. */
 extern u8 D_8005F150;
 extern u8 D_8005F151;
 

@@ -1136,7 +1136,7 @@ void func_800AED9C(void) {
  * resetCdDrive for cleanup.
  */
 void func_800AEE64(void) {
-    func_80048BB8(0);
+    SetDispMask(0);
     g_battleConfig.result = 5;
     D_800ED148.header.timer = 0;
     sndStopAll();
