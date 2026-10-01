@@ -31,6 +31,9 @@ s32 evalEntityXpCurve(s32 entityIdx, s32 a1);
 /** @brief Invert the character XP curve: the level for a given XP total. */
 s32 findCharXpLevel(s32 a0, s32 a1);
 
+/** @brief Add @p exp to party member @p idx's EXP; returns the new level. */
+s32 func_8002257C(s32 idx, u16 exp);
+
 /** @brief XP remaining until the next level. */
 s32 getXpToNextLevel(s32 a0, s32 a1);
 

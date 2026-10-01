@@ -7,7 +7,7 @@
 #include "btl_entity.h"
 #include "game.h"
 #include "numstr.h"
-#include "color.h"
+#include "battle_results/number.h"
 #include "gf.h"
 #include "ability_list.h"
 

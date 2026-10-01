@@ -1,9 +1,12 @@
 #include "common.h"
-#include "color.h"
+#include "battle_results/draw.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"
 #include "battle.h"
 #include "battle_results/display.h"
+#include "battle_results/number.h"
+#include "battle_results/result.h"
+#include "battle_results/update.h"
 #include "btl_entity.h"
 #include "btl_anim.h"
 #include "dialog.h"
@@ -20,75 +23,11 @@
 #define MAGIC_WINDOW_SPELL 1 /**< The spell's one-line window (func_800348C4). */
 #define MAGIC_WINDOW_ABILITY 2 /**< The spell, label and ability window (func_800349F4). */
 
-
-/** One item reward: an item, or a card when @c id has 0x100 set (see func_8003228C). */
-typedef struct {
-    u16 id;
-    u8 count;
-    u8 pad;
-} ItemReward;
-
-/**
- * @brief Scene render context staged in PS1 scratchpad each frame.
- *
- * Populated by @c func_80034DBC during scene setup. Holds packed GPU
- * GP0 command words that @c func_8003334C emits as a DR_AREA primitive
- * once per frame, and the VRAM origin @c func_8003346C offsets its draw
- * areas by. The window drawers take their rects from here.
- */
-typedef struct {
-    RECT rect; /**< 0x00: window rect the drawers take. */
-    RECT animRect; /**< 0x08: @c rect scaled by the open/close animation. */
-    u32 drawAreaTL;  /**< 0x10: GP0(0xE3) "Drawing Area Top Left" command. */
-    u32 drawAreaBR;  /**< 0x14: GP0(0xE4) "Drawing Area Bottom Right" command. */
-    s16 originX; /**< 0x18: VRAM x of the buffer being drawn. */
-    s16 originY; /**< 0x1A: VRAM y of the buffer being drawn. */
-    s32 thread; /**< 0x1C: thread to close when the display shuts down, or 0. */
-    u16 state; /**< 0x20: step of the display shutdown (func_80035158). */
-    u8 pad22[0x4];
-    s16 unk26; /**< 0x26: progress of the popup and description windows; negative fades. */
-    s16 unk28; /**< 0x28: slide progress of the two-pane divider (see func_800337FC). */
-    s16 unk2A; /**< 0x2A: progress of the item reward window; negative fades. */
-    s16 unk2C; /**< 0x2C: progress of the message window (see func_8003406C). */
-    s16 unk2E; /**< 0x2E: progress of the title and button prompt windows; negative fades. */
-    u8 *title; /**< 0x30: message for the title window, or NULL. */
-    u8 *prompt; /**< 0x34: message for the button prompt window, or NULL. */
-    u8 unk38; /**< 0x38: which window group func_80034DBC adds, 0..3. */
-    u8 pad39[0x3];
-    u16 unk3C; /**< 0x3C: argument formatted into @c unk48. */
-    u8 pad3E;
-    u8 unk3F; /**< 0x3F: nonzero while the item reward line is shown. */
-    u8 pad40;
-    s8 timer; /**< 0x41: frames left in the shutdown's wait step. */
-    u8 unk42; /**< 0x42: value formatted into the message box (see func_80034C74). */
-    u8 pad43;
-    u16 unk44; /**< 0x44: nonzero while the message window is shown. */
-    u8 pad46[0x2];
-    u8 *unk48; /**< 0x48: message for the message window. */
-    u8 pad4C[0x4];
-    ItemReward *reward; /**< 0x50: the item reward on display; [-1] is the previous one. */
-    u8 *names[3]; /**< 0x54: name on each results row, or NULL for an empty row. */
-    u8 pad60[0x80];
-    u8 text[4][0x18]; /**< 0xE0: string buffers for the drawers. */
-    u8 pad140[0xE8];
-    u32 unk228[3]; /**< 0x228: third number on each results row. */
-    u32 unk234[3]; /**< 0x234: second number on each results row. */
-    u32 unk240[3]; /**< 0x240: first number on each results row. */
-    u8 pad24C[0x23];
-    u8 unk26F; /**< 0x26F: ability id for func_800349F4's window. */
-    u8 unk270; /**< 0x270: magic id for the magic windows. */
-    u8 unk271; /**< 0x271: MAGIC_WINDOW_* bits, the windows to draw. */
-    u8 unk272[3]; /**< 0x272: number after icon 0xE on each results row. */
-    u8 unk275[3]; /**< 0x275: progress of each row's menu string 0x30 popup; 0 hides it. */
-    u8 nameColor[3]; /**< 0x278: text colour of each row's name. */
-    u8 unk27B; /**< 0x27B: width of the menu string 0x30 popup. */
-    u8 unk27C[3]; /**< 0x27C: progress of each row's centred menu string 0x31 popup, 1..0x40. */
-    u8 unk27F; /**< 0x27F: text width of the menu string 0x31 popup. */
-} ColorRenderScratch;
-
 /* --- Private functions --- */
 
+static DR_AREA *func_8003334C(P_TAG *ot, DR_AREA *prim);
 static DR_AREA *func_8003346C(P_TAG *ot, DR_AREA *prim, RECT *rect);
+static DR_AREA *drawInsetRect(P_TAG *ot, DR_AREA *prim, RECT *rect);
 static DR_AREA *func_800335AC(P_TAG *ot, DR_AREA *prim, s32 t, s32 color);
 static DR_AREA *func_80033688(P_TAG *ot, DR_AREA *prim, s32 t, s32 color);
 static s32 func_80033768(s32 x, s32 w, s32 dir, s32 t);
@@ -104,147 +43,6 @@ static DR_AREA *func_80034830(P_TAG *ot, DR_AREA *prim, s32 color);
 static DR_AREA *func_800348C4(P_TAG *ot, TSPRT *prim, s32 y, s32 t, s32 color, s32 magic);
 static DR_AREA *func_800349F4(P_TAG *ot, TSPRT *prim, s32 y, s32 t, s32 color, s32 magic, s32 ability);
 static DR_AREA *func_80034C74(P_TAG *ot, DR_AREA *prim, s32 t, s32 color, s32 value);
-static void func_80034DBC(void);
-
-/**
- * @brief Draw @p value as a right-aligned row of 12x12 digit sprites.
- *
- * Formats @p value into the digit buffer @c D_80083908 with @c intToDecString
- * (digit base 1, so digit d is stored as d + 1), skips up to nine leading zeros
- * so at least one digit is left, and sums the glyph advances from the font
- * metrics table @c D_8008371C to right-align the number at x. Each digit becomes
- * one SPRT linked into @p ot, then a DR_TPAGE selects the font's texture page.
- *
- * @param ot OT slot the primitives are linked into.
- * @param sprt Packet cursor for the sprites.
- * @param x Packed position: the right edge x in the low half, y in the high half.
- * @param value Number to draw.
- * @param color Word stored into each sprite's r, g, b and GPU code bytes.
- * @param clut CLUT row, counted down from (288, 224).
- * @return Packet cursor past the DR_TPAGE.
- */
-void *func_800330F4(P_TAG *ot, SPRT *sprt, s32 x, u32 value, u32 color, s32 clut) {
-    FontGlyph *table;
-    u8 *digits;
-    u8 *p;
-    s32 y;
-    s32 i;
-    s32 width;
-    u32 link1;
-    u32 link2;
-
-    table = D_8008371C;
-    table--;
-    /* Dead, since digits is set again after the call, but the binary needs it:
-       gcc drops the branch only in its last jump pass, after it has shaped
-       register allocation and scheduling. */
-    if (value == 0) {
-        digits = &D_80083908[9];
-    }
-    y = x >> 16;
-    x <<= 16;
-    x >>= 16;
-    intToDecString(value, D_80083908, 1);
-    digits = D_80083908;
-    for (i = 0; i < 9; i++) {
-        if (*digits != 1) {
-            break;
-        }
-        digits++;
-    }
-
-    width = 0;
-    p = digits;
-    while (1) {
-        s32 c = *p++;
-        if (c == 0) {
-            break;
-        }
-        width += table[c].width & 0xF;
-    }
-    x -= width;
-
-    p = digits;
-    while (1) {
-        s32 c = *p++;
-        FontGlyph *g;
-        u16 uv;
-        if (c == 0) {
-            break;
-        }
-        g = &table[c];
-        uv = g->uv;
-        *(u32 *)&sprt->r0 = color;
-        setlen(sprt, 4);
-        sprt->x0 = x;
-        sprt->y0 = y;
-        sprt->clut = getClut(288, 224) + (clut << 6);
-        *(u16 *)&sprt->u0 = uv;
-        *(u32 *)&sprt->w = 0xC000C;
-        addPrimFastWithTempOperand(ot, sprt, link1);
-        sprt++;
-        x += g->width & 0xF;
-    }
-
-    setlen(sprt, 1);
-    ((DR_TPAGE *)sprt)->code[0] = _get_mode(1, 0, getTPage(0, 0, 960, 256));
-    addPrimFastWithTempOperand(ot, sprt, link2);
-    return (DR_TPAGE *)sprt + 1;
-}
-
-
-/**
- * @brief Draw a right-aligned number with func_800330F4 on CLUT row 7.
- *
- * @param ot OT slot the primitives are linked into.
- * @param sprt Packet cursor for the sprites.
- * @param x Packed position: the right edge x in the low half, y in the high half.
- * @param value Number to draw.
- * @param color Word stored into each sprite's r, g, b and GPU code bytes.
- * @return Packet cursor past the primitives.
- */
-void *drawColorDefault(P_TAG *ot, SPRT *sprt, s32 x, u32 value, u32 color) {
-    return func_800330F4(ot, sprt, x, value, color, 7);
-}
-
-
-/**
- * @brief Call func_800330F4 with a color from g_menuTint selected by arg4.
- *
- * If arg4 >= 8, subtracts 8 and uses g_menuTint[MENU_TINT_BLINK]; otherwise uses
- * g_menuTint[MENU_TINT_NORMAL]. Passes the selected color as the 5th arg and the
- * modified arg4 as the 6th.
- *
- * @param a0 First argument passed through.
- * @param a1 Second argument passed through.
- * @param a2 Third argument passed through.
- * @param a3 Fourth argument passed through.
- * @param arg4 Mode index; values >= 8 select the alternate color table.
- */
-s32 drawColorByMenuPalette(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
-    s32 idx;
-    if (arg4 >= 8) {
-        arg4 -= 8;
-        idx = MENU_TINT_BLINK;
-    } else {
-        idx = MENU_TINT_NORMAL;
-    }
-    func_800330F4((P_TAG *)a0, (SPRT *)a1, a2, a3, g_menuTint[idx], arg4);
-}
-
-
-/**
- * Calls func_800330F4 with g_menuTint[MENU_TINT_NORMAL] as the 5th arg and 7 as the 6th (mode).
- *
- * @param a0 First argument passed through
- * @param a1 Second argument passed through
- * @param a2 Third argument passed through
- * @param a3 Fourth argument passed through
- */
-void drawMenuColorDefault(s32 a0, s32 a1, s32 a2, s32 a3) {
-    func_800330F4((P_TAG *)a0, (SPRT *)a1, a2, a3, g_menuTint[MENU_TINT_NORMAL], 7);
-}
-
 
 /**
  * @brief Emit a @c DR_AREA primitive into the OT and advance the packet.
@@ -258,7 +56,7 @@ void drawMenuColorDefault(s32 a0, s32 a1, s32 a2, s32 a3) {
  * @param prim Storage for the new primitive (must have space for one DR_AREA).
  * @return Cursor for the next primitive (@c prim @c + @c 1).
  */
-DR_AREA *func_8003334C(P_TAG *ot, DR_AREA *prim) {
+static DR_AREA *func_8003334C(P_TAG *ot, DR_AREA *prim) {
     ColorRenderScratch *ctx = (ColorRenderScratch *)getScratchAddr(0);
     u32 c0 = ctx->drawAreaTL;
     u32 c1 = ctx->drawAreaBR;
@@ -359,7 +157,7 @@ static DR_AREA *func_8003346C(P_TAG *ot, DR_AREA *prim, RECT *rect) {
  * @param rect Rectangle to inset (modified temporarily).
  * @return Cursor for the next primitive.
  */
-DR_AREA *drawInsetRect(P_TAG *ot, DR_AREA *prim, RECT *rect) {
+static DR_AREA *drawInsetRect(P_TAG *ot, DR_AREA *prim, RECT *rect) {
     s32 save0 = *(s32 *)&rect->x;
     s32 save1 = *(s32 *)&rect->w;
     rect->x += 1;
@@ -684,13 +482,13 @@ static DR_AREA *func_80033D5C(P_TAG *ot, DR_AREA *prim, s32 t, s32 color) {
             ctx->rect.y = y;
             ctx->rect.w = 0x160;
             ctx->rect.h = 0x1A;
-            from = (u8 *)guardedEntityLookup(ctx->reward[-1].id);
-            to = (u8 *)guardedEntityLookup(ctx->reward[0].id);
+            from = guardedEntityLookup(ctx->reward[-1].id);
+            to = guardedEntityLookup(ctx->reward[0].id);
             if (from != to || from != NULL) {
                 prim = func_800337FC(ot, prim, from, to, color);
             }
         } else {
-            msg = (u8 *)guardedEntityLookup(ctx->reward[0].id);
+            msg = guardedEntityLookup(ctx->reward[0].id);
             if (msg != NULL) {
                 area = gpArea;
                 GP_SAVE_SET(tempGp, area);
@@ -1181,7 +979,7 @@ static DR_AREA *func_80034C74(P_TAG *ot, DR_AREA *prim, s32 t, s32 color, s32 va
  * and are restored after each group. Stores the packet cursor back and
  * submits the frame.
  */
-static void func_80034DBC(void) {
+void func_80034DBC(void) {
     ColorRenderScratch *ctx = (ColorRenderScratch *)getScratchAddr(0);
     ResultsDisplay *disp;
     P_TAG *ot;
@@ -1256,88 +1054,3 @@ static void func_80034DBC(void) {
     g_resultsDisplay->pktAlloc = prim;
     submitResultsDisplay();
 }
-
-
-/**
- * @brief Enable the display and execute a full rendering pass.
- *
- * Calls SetDispMask(1) to make the framebuffer visible, then calls
- * func_80034DBC (main rendering) followed by func_8003283C (scene submission).
- */
-void enableDisplayAndRender(void) {
-    SetDispMask(1);
-    func_80034DBC();
-    func_8003283C();
-}
-
-
-extern u8 D_80083928;
-extern u8 D_80083929;
-/**
- * @brief Get the current value of the global flag D_80083928.
- * @return The flag value as an unsigned byte.
- */
-u8 getRenderCompleteFlag(void) {
-    return D_80083928;
-}
-
-
-/**
- * @brief Step the display shutdown, one step per call.
- *
- * Steps through @c state: blank the display, clear the results display
- * twice (the second time with func_8003283C), render until @c D_80083929
- * reads 1, wait two frames on @c timer, close @c thread if there is one
- * (setting @c D_80083928), then keep the display blanked.
- */
-void func_80035158(void) {
-    ColorRenderScratch *ctx = (ColorRenderScratch *)getScratchAddr(0);
-    u16 *state = &ctx->state;
-    s32 thread;
-
-    switch (*state) {
-    case 0:
-        SetDispMask(0);
-        *state = 1;
-        break;
-    case 1:
-        clearResultsDisplay();
-        *state = 2;
-        break;
-    case 2:
-        clearResultsDisplay();
-        func_8003283C();
-        *state = 3;
-        break;
-    case 3:
-        enableDisplayAndRender();
-        if (D_80083929 == 1) {
-            *state = 4;
-        }
-        break;
-    case 4:
-        ctx->timer = 2;
-        *state = 5;
-        break;
-    case 5:
-        if (--ctx->timer <= 0) {
-            *state = 6;
-        }
-        break;
-    case 6:
-        thread = ctx->thread;
-        if (thread != 0) {
-            ctx->thread = 0;
-            closeThreadSafe(thread);
-            D_80083928 = 1;
-            SetDispMask(0);
-        }
-        *state = 7;
-        break;
-    case 7:
-        SetDispMask(0);
-        break;
-    }
-}
-
-
