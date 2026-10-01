@@ -31,7 +31,7 @@ extern u8 D_80083908[];
  * @param clut CLUT row, counted down from (288, 224).
  * @return Packet cursor past the DR_TPAGE.
  */
-void *func_800330F4(P_TAG *ot, SPRT *sprt, s32 x, u32 value, u32 color, s32 clut) {
+void *drawNumber(P_TAG *ot, SPRT *sprt, s32 x, u32 value, u32 color, s32 clut) {
     FontGlyph *table;
     u8 *digits;
     u8 *p;
@@ -82,6 +82,8 @@ void *func_800330F4(P_TAG *ot, SPRT *sprt, s32 x, u32 value, u32 color, s32 clut
         }
         g = &table[c];
         uv = g->uv;
+        /* r, g, b and code, then u and v, then w and h are each stored as one
+           word, as in the binary. */
         *(u32 *)&sprt->r0 = color;
         setlen(sprt, 4);
         sprt->x0 = x;
@@ -102,7 +104,7 @@ void *func_800330F4(P_TAG *ot, SPRT *sprt, s32 x, u32 value, u32 color, s32 clut
 
 
 /**
- * @brief Draw a right-aligned number with func_800330F4 on CLUT row 7.
+ * @brief Draw a right-aligned number with drawNumber on CLUT row 7.
  *
  * @param ot OT slot the primitives are linked into.
  * @param sprt Packet cursor for the sprites.
@@ -111,44 +113,45 @@ void *func_800330F4(P_TAG *ot, SPRT *sprt, s32 x, u32 value, u32 color, s32 clut
  * @param color Word stored into each sprite's r, g, b and GPU code bytes.
  * @return Packet cursor past the primitives.
  */
-void *drawColorDefault(P_TAG *ot, SPRT *sprt, s32 x, u32 value, u32 color) {
-    return func_800330F4(ot, sprt, x, value, color, 7);
+void *drawNumberDefault(P_TAG *ot, SPRT *sprt, s32 x, u32 value, u32 color) {
+    return drawNumber(ot, sprt, x, value, color, 7);
 }
 
 
 /**
- * @brief Call func_800330F4 with a color from g_menuTint selected by arg4.
+ * @brief Draw a number (drawNumber) in the menu tint.
  *
- * If arg4 >= 8, subtracts 8 and uses g_menuTint[MENU_TINT_BLINK]; otherwise uses
- * g_menuTint[MENU_TINT_NORMAL]. Passes the selected color as the 5th arg and the
- * modified arg4 as the 6th.
+ * A @p clut of 8 or more draws in the blinking tint (g_menuTint[MENU_TINT_BLINK])
+ * on CLUT row @p clut - 8; otherwise in g_menuTint[MENU_TINT_NORMAL] on row
+ * @p clut.
  *
- * @param a0 First argument passed through.
- * @param a1 Second argument passed through.
- * @param a2 Third argument passed through.
- * @param a3 Fourth argument passed through.
- * @param arg4 Mode index; values >= 8 select the alternate color table.
+ * @param ot OT slot the primitives are linked into.
+ * @param sprt Packet cursor for the sprites.
+ * @param x Packed position: the right edge x in the low half, y in the high half.
+ * @param value Number to draw.
+ * @param clut CLUT row; 8 added selects the blinking tint.
+ * @return Packet cursor past the primitives.
  */
-s32 drawColorByMenuPalette(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
+s32 drawNumberMenuTint(s32 ot, s32 sprt, s32 x, s32 value, s32 clut) {
     s32 idx;
-    if (arg4 >= 8) {
-        arg4 -= 8;
+    if (clut >= 8) {
+        clut -= 8;
         idx = MENU_TINT_BLINK;
     } else {
         idx = MENU_TINT_NORMAL;
     }
-    func_800330F4((P_TAG *)a0, (SPRT *)a1, a2, a3, g_menuTint[idx], arg4);
+    drawNumber((P_TAG *)ot, (SPRT *)sprt, x, value, g_menuTint[idx], clut);
 }
 
 
 /**
- * Calls func_800330F4 with g_menuTint[MENU_TINT_NORMAL] as the 5th arg and 7 as the 6th (mode).
+ * @brief Draw a number (drawNumber) in the normal menu tint on CLUT row 7.
  *
- * @param a0 First argument passed through
- * @param a1 Second argument passed through
- * @param a2 Third argument passed through
- * @param a3 Fourth argument passed through
+ * @param ot OT slot the primitives are linked into.
+ * @param sprt Packet cursor for the sprites.
+ * @param x Packed position: the right edge x in the low half, y in the high half.
+ * @param value Number to draw.
  */
-void drawMenuColorDefault(s32 a0, s32 a1, s32 a2, s32 a3) {
-    func_800330F4((P_TAG *)a0, (SPRT *)a1, a2, a3, g_menuTint[MENU_TINT_NORMAL], 7);
+void drawNumberMenuTintDefault(s32 ot, s32 sprt, s32 x, s32 value) {
+    drawNumber((P_TAG *)ot, (SPRT *)sprt, x, value, g_menuTint[MENU_TINT_NORMAL], 7);
 }

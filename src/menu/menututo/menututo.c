@@ -1,4 +1,5 @@
 #include "common.h"
+#include "battle_results/number.h"
 #include "gamestate.h"
 #include "overlay.h"
 #include "menumain.h"
@@ -1003,7 +1004,7 @@ u32 func_801E4080(void *state, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
  * Computes the global entry index (index * 10 + startY) and returns
  * cursorY unchanged if it's beyond the total tutorial entry count.
  * Otherwise, renders the entry's label text at a per-slot Y offset
- * and draws the 1-indexed entry number via drawColorByMenuPalette
+ * and draws the 1-indexed entry number via drawNumberMenuTint
  * (with packed X/Y coordinate).
  *
  * @param renderCtx Render context handle.
@@ -1036,7 +1037,7 @@ s32 func_801E4214(s32 renderCtx, s32 cursorY, s32 index, s32 startY, s32 x) {
 
     panelX = g_menuDisplayCfg.x;
     xCoord = panelX + (x + 0xC0);
-    return drawColorByMenuPalette(renderCtx, cursorY, ((yPos << 15) << 1) | xCoord, endPos, 7);
+    return drawNumberMenuTint(renderCtx, cursorY, ((yPos << 15) << 1) | xCoord, endPos, 7);
 }
 
 /**

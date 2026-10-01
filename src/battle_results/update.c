@@ -10,24 +10,30 @@
 #include "snd_init.h"
 #include "snd_sfx.h"
 
+/* --- Private functions --- */
+
+static void stepExpRows(void);
+static void finishExpRows(void);
+static s32 addRewardCard(s32 id, s32 count);
+
 /**
- * @brief Write a reward's name into @p arg1.
+ * @brief Write a reward's name into @p buf.
  *
- * An item's name, or for a card (@p arg0 has REWARD_CARD set) menu string 0x6E with
- * its 0x0A code replaced by the card's name (func_80023A54).
+ * An item's name, or for a card (@p id has REWARD_CARD set) menu string 0x6E
+ * with its 0x0A code replaced by the card's name (func_80023A54).
  *
- * @param arg0 Reward id: an item, or a card when REWARD_CARD is set.
- * @param arg1 Buffer that receives the name.
+ * @param id Reward id: an item, or a card when REWARD_CARD is set.
+ * @param buf Buffer that receives the name.
  */
-void func_8003228C(s32 arg0, u8 *arg1)
+void formatRewardName(s32 id, u8 *buf)
 {
     u8 *src;
     u8 *dst;
     s32 cond;
     u8 c;
 
-    dst = arg1;
-    cond = arg0 & REWARD_CARD;
+    dst = buf;
+    cond = id & REWARD_CARD;
 
     if (cond) {
         src = getMenuString(0x6E);
@@ -39,7 +45,7 @@ void func_8003228C(s32 arg0, u8 *arg1)
             if (c == 0xA) {
                 src++;
                 {
-                    u8 *src2 = func_80023A54(arg0 & 0xFF);
+                    u8 *src2 = func_80023A54(id & 0xFF);
                     u8 c2;
 
                     while (1) {
@@ -58,7 +64,7 @@ void func_8003228C(s32 arg0, u8 *arg1)
             if (c == 0) break;
         }
     } else {
-        copyString(dst, getItemName(arg0));
+        copyString(dst, getItemName(id));
     }
 }
 
@@ -68,7 +74,7 @@ void func_8003228C(s32 arg0, u8 *arg1)
  *
  * Each 0x0A byte is followed by a code byte naming what to insert: 0x25 the
  * name of ability @p ability, 0x26 the name of magic @p magic, 0x23 the name
- * of reward @p reward (func_8003228C), 0x20 @p number in decimal without
+ * of reward @p reward (formatRewardName), 0x20 @p number in decimal without
  * leading zeros. Other codes insert nothing.
  *
  * @param msg Message with 0x0A codes.
@@ -79,7 +85,7 @@ void func_8003228C(s32 arg0, u8 *arg1)
  * @param number Number for code 0x20.
  * @param magic Magic id for code 0x26; from 0x40 on, a GF's name.
  */
-void func_80032350(u8 *msg, u8 *dst, s32 reward, s32 arg3, s32 ability, s32 number, s32 magic) {
+void formatMessage(u8 *msg, u8 *dst, s32 reward, s32 arg3, s32 ability, s32 number, s32 magic) {
     u8 buf[0x40];
     u8 *p;
     u8 *q;
@@ -105,7 +111,7 @@ void func_80032350(u8 *msg, u8 *dst, s32 reward, s32 arg3, s32 ability, s32 numb
             copyString(p, getMagicNamePtr(magic));
             break;
         case 0x23:
-            func_8003228C(reward, p);
+            formatRewardName(reward, p);
             break;
         case 0x20:
             intToDecStringShort(number, p, 1);
@@ -127,18 +133,18 @@ void func_80032350(u8 *msg, u8 *dst, s32 reward, s32 arg3, s32 ability, s32 numb
 
 
 /**
- * @brief Count each results row's EXP up by one step.
+ * @brief Count each EXP row up by one step.
  *
- * For each row with a name, moves @c unk24C of the EXP still to add
- * (@c unk240) into the current EXP (@c unk234); when no more than a step is
- * left, moves all of it and clears the step. A row whose current EXP reaches
- * evalEntityXpCurve for its level (@c unk272) levels up, with the LEVEL UP!
- * popup (@c unk275 = 0x20), up to level 100. @c unk228 is then the EXP still
- * needed for the next level; at level 100 the current EXP is held at level 99's
- * curve value and nothing is left to add. Plays sound 9 if any row levelled up.
+ * For each row with a name, moves @c expStep of @c expAcquired into
+ * @c currentExp; when no more than a step is left, moves all of it and clears
+ * the step. A row whose current EXP reaches evalEntityXpCurve for its
+ * @c level levels up, with the "LEVEL UP!" popup (@c levelUpTimer = 0x20), up
+ * to level 100. @c nextLevelExp is then the EXP still needed for the next
+ * level; at level 100 the current EXP is held at level 99's curve value and
+ * nothing is left to add. Plays sound 9 if any row levelled up.
  */
-void func_80032534(void) {
-    ColorRenderScratch *ctx = (ColorRenderScratch *)getScratchAddr(0);
+static void stepExpRows(void) {
+    ResultsScreen *ctx = (ResultsScreen *)getScratchAddr(0);
     s32 levelUp;
     s32 i;
     u32 exp;
@@ -147,29 +153,29 @@ void func_80032534(void) {
     levelUp = 0;
     for (i = 0; i < 3; i++) {
         if (ctx->names[i] != NULL) {
-            exp = ctx->unk240[i];
-            if (ctx->unk24C[i] < exp) {
-                exp = ctx->unk24C[i];
+            exp = ctx->expAcquired[i];
+            if (ctx->expStep[i] < exp) {
+                exp = ctx->expStep[i];
             } else {
-                ctx->unk24C[i] = 0;
+                ctx->expStep[i] = 0;
             }
-            ctx->unk234[i] += exp;
-            ctx->unk240[i] -= exp;
-            next = evalEntityXpCurve(i, ctx->unk272[i]);
-            if (ctx->unk234[i] >= next) {
-                if (ctx->unk272[i] < 100) {
+            ctx->currentExp[i] += exp;
+            ctx->expAcquired[i] -= exp;
+            next = evalEntityXpCurve(i, ctx->level[i]);
+            if (ctx->currentExp[i] >= next) {
+                if (ctx->level[i] < 100) {
                     levelUp = 1;
-                    ctx->unk272[i]++;
-                    ctx->unk275[i] = 0x20;
-                    next = evalEntityXpCurve(i, ctx->unk272[i]);
+                    ctx->level[i]++;
+                    ctx->levelUpTimer[i] = 0x20;
+                    next = evalEntityXpCurve(i, ctx->level[i]);
                 }
             }
-            if (ctx->unk272[i] < 100) {
-                ctx->unk228[i] = next - ctx->unk234[i];
+            if (ctx->level[i] < 100) {
+                ctx->nextLevelExp[i] = next - ctx->currentExp[i];
             } else {
-                ctx->unk234[i] = evalEntityXpCurve(i, 99);
-                ctx->unk228[i] = 0;
-                ctx->unk240[i] = 0;
+                ctx->currentExp[i] = evalEntityXpCurve(i, 99);
+                ctx->nextLevelExp[i] = 0;
+                ctx->expAcquired[i] = 0;
             }
         }
     }
@@ -182,18 +188,18 @@ void func_80032534(void) {
 /**
  * @brief Finish the EXP count-up at once and give the party the battle's EXP.
  *
- * Sets each named row's step (@c unk24C) to all the EXP still to add and runs
- * one count-up step (func_80032534), so level-ups and their popups come out as
+ * Sets each named row's step (@c expStep) to all the EXP still to add and runs
+ * one count-up step (stepExpRows), so level-ups and their popups come out as
  * if counted. Then adds the row's battle EXP (@c unk574 + @c unk57A of
  * g_battleChars) to the party member (func_8002257C) and takes the row's level,
  * current EXP and EXP to the next level from the result, capped at level 100
- * as in func_80032534.
+ * as in stepExpRows.
  * @note @c ch starts as NULL although every use sets it first: with a value
  *       from before the loop, &g_battleChars stays in its own register when
  *       the loop sets up its pointers, as in the binary.
  */
-void func_80032688(void) {
-    ColorRenderScratch *ctx = (ColorRenderScratch *)getScratchAddr(0);
+static void finishExpRows(void) {
+    ResultsScreen *ctx = (ResultsScreen *)getScratchAddr(0);
     s32 i;
     s32 level;
     u32 next;
@@ -202,26 +208,26 @@ void func_80032688(void) {
 
     for (i = 0; i < 3; i++) {
         if (ctx->names[i] != NULL) {
-            ctx->unk24C[i] = ctx->unk240[i];
+            ctx->expStep[i] = ctx->expAcquired[i];
         }
     }
-    func_80032534();
+    stepExpRows();
     for (i = 0; i < 3; i++) {
         if (ctx->names[i] != NULL) {
             ch = &g_battleChars.chars[i];
             level = func_8002257C(i, g_battleChars.unk574[i] + g_battleChars.unk57A[i]);
             next = evalEntityXpCurve(i, level);
-            ctx->unk272[i] = level;
+            ctx->level[i] = level;
             exp = ch->exp;
-            ctx->unk240[i] = 0;
-            ctx->unk24C[i] = 0;
-            ctx->unk228[i] = next - exp;
-            ctx->unk234[i] = exp;
+            ctx->expAcquired[i] = 0;
+            ctx->expStep[i] = 0;
+            ctx->nextLevelExp[i] = next - exp;
+            ctx->currentExp[i] = exp;
             if (level == 100) {
-                ctx->unk234[i] = evalEntityXpCurve(i, 99);
-                ctx->unk228[i] = 0;
-                ctx->unk240[i] = 0;
-                ctx->unk24C[i] = 0;
+                ctx->currentExp[i] = evalEntityXpCurve(i, 99);
+                ctx->nextLevelExp[i] = 0;
+                ctx->expAcquired[i] = 0;
+                ctx->expStep[i] = 0;
             }
         }
     }
@@ -229,25 +235,25 @@ void func_80032688(void) {
 
 
 /**
- * @brief Poll markItemPresent with retries until it returns a non-zero result.
+ * @brief Add @p count copies of a card reward to the player's cards.
  *
- * Masks the input to 8 bits and repeatedly calls markItemPresent up to the
- * specified number of attempts. Returns the first non-zero result, or 0
- * if all attempts fail.
+ * Adds them one at a time (markItemPresent) and stops at the first that does
+ * not fit.
  *
- * @param a0 Entity or resource identifier (low 8 bits used).
- * @param retries Maximum number of poll attempts.
- * @return Non-zero result from markItemPresent, or 0 on timeout.
+ * @param id Reward id of the card; only the low byte, the card id, is used.
+ * @param count Copies to add.
+ * @return 0 when all were added, else markItemPresent's nonzero result
+ *         (updateResults then shows "over 100 was discarded").
  */
-s32 pollItemPresent(s32 a0, s32 retries) {
+static s32 addRewardCard(s32 id, s32 count) {
     s32 result = 0;
-    a0 &= 0xFF;
-    while (retries > 0) {
-        result = markItemPresent(a0);
+    id &= 0xFF;
+    while (count > 0) {
+        result = markItemPresent(id);
         if (result != 0) {
             break;
         }
-        retries--;
+        count--;
     }
     return result;
 }
@@ -255,14 +261,14 @@ s32 pollItemPresent(s32 a0, s32 retries) {
 
 /**
  * @brief Return a reward's description: the item's (getItemDesc), or NULL for
- * a card (@p a0 has REWARD_CARD set).
+ * a card (@p id has REWARD_CARD set).
  *
- * @param a0 Reward id: an item, or a card when REWARD_CARD is set.
+ * @param id Reward id: an item, or a card when REWARD_CARD is set.
  * @return The item's description, or NULL for a card.
  */
-u8 *guardedEntityLookup(s32 a0) {
-    if (a0 & REWARD_CARD) return NULL;
-    return getItemDesc(a0);
+u8 *getRewardDesc(s32 id) {
+    if (id & REWARD_CARD) return NULL;
+    return getItemDesc(id);
 }
 
 
@@ -292,15 +298,15 @@ static inline s32 findSetBit(s32 mask, s32 n) {
  * @brief Run one frame of the results screen: read the pad and advance @c step.
  *
  * Counts the LEVEL UP! popups down, then works through the steps: open the EXP
- * page and count the EXP up (func_80032534), or finish it on the confirm button
- * (func_80032688); close it and open the item page, then hand out each reward
+ * page and count the EXP up (stepExpRows), or finish it on the confirm button
+ * (finishExpRows); close it and open the item page, then hand out each reward
  * in turn, items into the inventory and cards into the card list, with
  * "Couldn't find any items!" when there are none; show "GF received N AP!";
  * show each GF's level-up and learned-ability windows in turn; finally set
  * D_80083929.
  */
-void func_8003283C(void) {
-    ColorRenderScratch *ctx = (ColorRenderScratch *)getScratchAddr(0);
+void updateResults(void) {
+    ResultsScreen *ctx = (ResultsScreen *)getScratchAddr(0);
     u16 *step;
     ItemReward *reward;
     s32 count;
@@ -319,20 +325,20 @@ void func_8003283C(void) {
     func_800275D4();
     pressed = applyButtonRemapTranslation(getPadReadPressed(0, 0));
     applyButtonRemapTranslation(getPadReadRepeat(0, 0));
-    if (ctx->unk2C != 0) {
-        ctx->unk2C += 0x200;
-        if (ctx->unk2C > 0x1000) {
-            ctx->unk2C = 0x1000;
+    if (ctx->messageProgress != 0) {
+        ctx->messageProgress += 0x200;
+        if (ctx->messageProgress > 0x1000) {
+            ctx->messageProgress = 0x1000;
         }
     }
     for (i = 0; i < 3; i++) {
-        if (ctx->unk275[i] != 0) {
-            ctx->unk275[i]--;
+        if (ctx->levelUpTimer[i] != 0) {
+            ctx->levelUpTimer[i]--;
         }
     }
     step = &ctx->step;
     reward = ctx->reward;
-    count = ctx->unk3E;
+    count = ctx->rewardsLeft;
     state = *step;
     /* Some steps go straight on to another step in the same frame. They jump back to
        the switch: a loop around it (92.50%) lets gcc keep the constants the cases share
@@ -345,17 +351,17 @@ dispatch:
     case 1:
         ctx->title = getMenuString(0x17);
         ctx->prompt = getMenuString(0x16);
-        ctx->unk38 = 0;
+        ctx->page = 0;
         *step = 2;
         break;
     case 2:
-        ctx->unk2A += 0x100;
-        ctx->unk2E += 0x100;
-        if (ctx->unk2E >= 0x1000) {
-            ctx->unk2E = 0x1000;
+        ctx->pageProgress += 0x100;
+        ctx->titleProgress += 0x100;
+        if (ctx->titleProgress >= 0x1000) {
+            ctx->titleProgress = 0x1000;
         }
-        if (ctx->unk2A >= 0x1000) {
-            ctx->unk2A = 0x1000;
+        if (ctx->pageProgress >= 0x1000) {
+            ctx->pageProgress = 0x1000;
             *step = 3;
         }
         break;
@@ -363,8 +369,8 @@ dispatch:
         if (pressed & PADRdown) {
             found = 0;
             for (j = 0; j < 3; j++) {
-                if (ctx->unk27C[j] != 0) {
-                    ctx->unk27C[j] = 0x40;
+                if (ctx->noExpPopup[j] != 0) {
+                    ctx->noExpPopup[j] = 0x40;
                     found = 1;
                 }
             }
@@ -378,9 +384,9 @@ dispatch:
     case 4:
         sum = 0;
         for (k = 0; k < 3; k++) {
-            sum += ctx->unk24C[k];
+            sum += ctx->expStep[k];
         }
-        func_80032534();
+        stepExpRows();
         if (pressed & PADRdown) {
             sendSpuCommand(2);
             *step = 5;
@@ -391,11 +397,11 @@ dispatch:
         break;
     case 5:
         sndCmd21(0x23, 0);
-        func_80032688();
+        finishExpRows();
         *step = 6;
         break;
     case 6:
-        if (ctx->unk280 != 7) {
+        if (ctx->noExpRows != 7) {
             sndCmdF1();
         }
         if (pressed & PADRdown) {
@@ -407,68 +413,68 @@ dispatch:
         *step = 8;
         break;
     case 8:
-        ctx->unk2A -= 0x100;
+        ctx->pageProgress -= 0x100;
         for (m = 0; m < 3; m++) {
-            if (ctx->unk27C[m] != 0) {
-                ctx->unk27C[m] -= 8;
+            if (ctx->noExpPopup[m] != 0) {
+                ctx->noExpPopup[m] -= 8;
             }
         }
-        if (ctx->unk2A <= 0) {
-            ctx->unk2A = 0;
+        if (ctx->pageProgress <= 0) {
+            ctx->pageProgress = 0;
             *step = 9;
         }
         break;
     case 9:
-        ctx->unk38 = 1;
+        ctx->page = 1;
         ctx->unk39 = 0;
-        ctx->unk26 += 0x100;
-        if (ctx->unk3F != 0 || ctx->unk26C == 0) {
+        ctx->descProgress += 0x100;
+        if (ctx->rewardCount != 0 || ctx->gfWindowCount == 0) {
             ctx->title = getMenuString(0x15);
             ctx->prompt = getMenuString(0x16);
         } else {
             ctx->title = NULL;
             ctx->prompt = getMenuString(0x16);
         }
-        if (ctx->unk26 >= 0x1000) {
-            ctx->unk26 = 0x1000;
+        if (ctx->descProgress >= 0x1000) {
+            ctx->descProgress = 0x1000;
             state = *step = 0xA;
             goto dispatch;
         }
-        ctx->unk2A = 0x1000;
+        ctx->pageProgress = 0x1000;
         break;
     case 0xA:
-        ctx->unk2A += 0x100;
-        if (ctx->unk2A > 0x800) {
-            if (ctx->unk39 == 0 && ctx->unk3F == 0) {
-                ctx->unk2C = 0x200;
+        ctx->pageProgress += 0x100;
+        if (ctx->pageProgress > 0x800) {
+            if (ctx->unk39 == 0 && ctx->rewardCount == 0) {
+                ctx->messageProgress = 0x200;
                 ctx->unk44 = -1;
-                ctx->unk48 = getMenuString(0x1C);
+                ctx->message = getMenuString(0x1C);
                 ctx->unk4C = 0;
             }
             ctx->unk39 = 1;
         }
-        if (ctx->unk2A >= 0x1000) {
-            ctx->unk2A = 0x1000;
-            if (ctx->unk3F != 0) {
+        if (ctx->pageProgress >= 0x1000) {
+            ctx->pageProgress = 0x1000;
+            if (ctx->rewardCount != 0) {
                 *step = 0xB;
                 state = 0xB;
                 goto dispatch;
             }
-            ctx->unk2C = 0x1000;
+            ctx->messageProgress = 0x1000;
             *step = 0x10;
         }
         break;
     case 0xB:
         if (pressed & PADRdown) {
-            if (reward->id >= 0x100) {
-                full = pollItemPresent(reward->id, reward->count);
+            if (reward->id >= REWARD_CARD) {
+                full = addRewardCard(reward->id, reward->count);
             } else {
                 full = addItemToInventory(reward->id, reward->count);
                 func_800370AC(reward->id);
             }
-            ctx->unk48 = getMenuString(full != 0 ? 0x18 : 6);
+            ctx->message = getMenuString(full != 0 ? 0x18 : 6);
             ctx->unk44 = 0x258;
-            ctx->unk3C = reward->id;
+            ctx->messageReward = reward->id;
             sendSpuCommand(8);
             state = 0xC;
             goto dispatch;
@@ -479,7 +485,7 @@ dispatch:
         goto dispatch;
     case 0xD:
         if (count < 2) {
-            ctx->unk2C = 0x200;
+            ctx->messageProgress = 0x200;
             state = 0x11;
             goto dispatch;
         }
@@ -488,23 +494,23 @@ dispatch:
         state = 0xE;
         goto dispatch;
     case 0xE:
-        ctx->unk28 = 0x100;
-        ctx->unk2C = 0x200;
+        ctx->wipeProgress = 0x100;
+        ctx->messageProgress = 0x200;
         *step = 0xF;
         break;
     case 0xF:
-        slide = ctx->unk28;
+        slide = ctx->wipeProgress;
         slide += 0x100;
         if (slide >= 0x1000) {
             slide = 0;
             *step = 0xB;
         }
         if (pressed & PADRdown) {
-            ctx->unk28 = 0;
+            ctx->wipeProgress = 0;
             state = 0xB;
             goto dispatch;
         }
-        ctx->unk28 = slide;
+        ctx->wipeProgress = slide;
         break;
     case 0x10:
         if (pressed & PADRdown) {
@@ -515,45 +521,46 @@ dispatch:
         }
         break;
     case 0x11:
-        ctx->unk46 = 0x20;
+        ctx->closeDelay = 0x20;
         *step = 0x12;
+        /* fall through */
     case 0x12:
-        ctx->unk46--;
-        if (ctx->unk46 > 0) {
+        ctx->closeDelay--;
+        if (ctx->closeDelay > 0) {
             break;
         }
         state = 0x13;
         goto dispatch;
     case 0x13:
-        ctx->unk2A = -0x1000;
+        ctx->pageProgress = -0x1000;
         *step = 0x14;
         break;
     case 0x14:
-        ctx->unk2A += 0x100;
-        if (ctx->unk2A >= 0) {
-            ctx->unk2A = 0;
+        ctx->pageProgress += 0x100;
+        if (ctx->pageProgress >= 0) {
+            ctx->pageProgress = 0;
             *step = 0x15;
         }
         break;
     case 0x15:
-        ctx->unk26 = -0x1000;
+        ctx->descProgress = -0x1000;
         *step = 0x16;
         break;
     case 0x16:
-        ctx->unk26 += 0x100;
-        if (ctx->unk26 >= 0) {
-            ctx->unk26 = 0;
+        ctx->descProgress += 0x100;
+        if (ctx->descProgress >= 0) {
+            ctx->descProgress = 0;
             *step = 0x17;
         }
-        if (ctx->unk26C == 0 && ctx->unk42 == 0) {
-            ctx->unk2E = ctx->unk26;
+        if (ctx->gfWindowCount == 0 && ctx->ap == 0) {
+            ctx->titleProgress = ctx->descProgress;
         }
         break;
     case 0x17:
         *step = 0x18;
         break;
     case 0x18:
-        if (ctx->unk26C == 0 && ctx->unk42 == 0) {
+        if (ctx->gfWindowCount == 0 && ctx->ap == 0) {
             D_80083929 = 1;
             break;
         }
@@ -562,13 +569,14 @@ dispatch:
     case 0x19:
         sendSpuCommand(8);
         ctx->title = getMenuString(0x6F);
-        ctx->unk38 = 2;
-        if (ctx->unk42 == 0) {
+        ctx->page = 2;
+        if (ctx->ap == 0) {
             state = 0x1C;
             goto dispatch;
         }
-        ctx->unk2A = -0x1000;
+        ctx->pageProgress = -0x1000;
         *step = 0x1A;
+        /* fall through */
     case 0x1A:
         if (pressed & PADRdown) {
             sendSpuCommand(2);
@@ -576,38 +584,38 @@ dispatch:
         }
         break;
     case 0x1B:
-        ctx->unk2A += 0x100;
-        if (ctx->unk26C == 0) {
-            ctx->unk2E = ctx->unk2A;
-            if (ctx->unk2E == 0) {
+        ctx->pageProgress += 0x100;
+        if (ctx->gfWindowCount == 0) {
+            ctx->titleProgress = ctx->pageProgress;
+            if (ctx->titleProgress == 0) {
                 D_80083929 = 1;
             }
         }
-        if (ctx->unk2A < 0) {
+        if (ctx->pageProgress < 0) {
             break;
         }
         state = 0x1C;
         goto dispatch;
     case 0x1C:
         ctx->prompt = getMenuString(0x16);
-        ctx->unk38 = 3;
-        ctx->unk26D = 0;
+        ctx->page = 3;
+        ctx->gfWindowsShown = 0;
         *step = 0x1D;
         break;
     case 0x1D:
-        ctx->unk2A = -0x1000;
-        gf = findSetBit(ctx->unk25A, ctx->unk26D);
-        ctx->unk271 = 0;
-        if ((ctx->unk258 >> gf) & 1) {
-            ctx->unk271 = GF_WINDOW_LEVEL_UP;
+        ctx->pageProgress = -0x1000;
+        gf = findSetBit(ctx->gfWindows, ctx->gfWindowsShown);
+        ctx->gfWindowFlags = 0;
+        if ((ctx->gfLevelUp >> gf) & 1) {
+            ctx->gfWindowFlags = GF_WINDOW_LEVEL_UP;
         }
-        if (ctx->unk25C[gf] != 0xFF) {
-            ctx->unk26F = ctx->unk25C[gf];
-            ctx->unk271 |= GF_WINDOW_LEARNED;
+        if (ctx->gfLearned[gf] != 0xFF) {
+            ctx->learnedAbility = ctx->gfLearned[gf];
+            ctx->gfWindowFlags |= GF_WINDOW_LEARNED;
         }
         sendSpuCommand(9);
-        ctx->unk270 = gf;
-        ctx->unk26D++;
+        ctx->windowGf = gf;
+        ctx->gfWindowsShown++;
         *step = 0x1E;
         playSoundEffect(0x10);
         break;
@@ -618,24 +626,25 @@ dispatch:
         }
         break;
     case 0x1F:
-        ctx->unk2A += 0x100;
-        if (ctx->unk2A >= 0) {
-            ctx->unk2A = 0;
+        ctx->pageProgress += 0x100;
+        if (ctx->pageProgress >= 0) {
+            ctx->pageProgress = 0;
             *step = 0x1D;
         }
-        if (ctx->unk26D >= ctx->unk26C) {
-            ctx->unk2E = ctx->unk2A;
-            if (ctx->unk2E == 0) {
+        if (ctx->gfWindowsShown >= ctx->gfWindowCount) {
+            ctx->titleProgress = ctx->pageProgress;
+            if (ctx->titleProgress == 0) {
                 D_80083929 = 1;
             }
         }
         break;
     case 0x20:
     case 0x21:
+        /* Unused steps; they give the jump table its 34 entries, as in the binary. */
         break;
     }
     ctx->reward = reward;
-    ctx->unk3E = count;
+    ctx->rewardsLeft = count;
 }
 
 

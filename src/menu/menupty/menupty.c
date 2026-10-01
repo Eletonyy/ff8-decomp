@@ -95,10 +95,10 @@ INCLUDE_ASM("asm/ovl/menupty/nonmatchings/menupty", func_801E6B6C);
 INCLUDE_ASM("asm/ovl/menupty/nonmatchings/menupty", func_801E6C68);
 
 /**
- * @brief Render a text label with color and position using drawColorByMenuPalette.
+ * @brief Render a text label with color and position using drawNumberMenuTint.
  *
  * Calls func_801F6AFC(0x12) for font, func_801F0FEC to render text,
- * then drawColorByMenuPalette to combine color/position.
+ * then drawNumberMenuTint to combine color/position.
  *
  * @param a0 Color/attribute value.
  * @param a1 Render context pointer.

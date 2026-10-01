@@ -23,41 +23,42 @@ extern u8 D_80083928;
 
 /* --- Private functions --- */
 
-static void enableDisplayAndRender(void);
-static void func_80035158(void);
+static void runResultsFrame(void);
+static void stepResultsThread(void);
+static void resultsThreadMain(void);
+static void clearFramebuffers(void);
 
 /**
- * @brief Enable the display and execute a full rendering pass.
- *
- * Calls SetDispMask(1) to make the framebuffer visible, then calls
- * func_80034DBC (main rendering) followed by func_8003283C (scene submission).
+ * @brief Run one frame of the results screen: make the display visible, draw
+ * the frame (drawResultsFrame) and advance the screen (updateResults).
  */
-static void enableDisplayAndRender(void) {
+static void runResultsFrame(void) {
     SetDispMask(1);
-    func_80034DBC();
-    func_8003283C();
+    drawResultsFrame();
+    updateResults();
 }
 
 
 /**
- * @brief Get the current value of the global flag D_80083928.
- * @return The flag value as an unsigned byte.
+ * @brief Return nonzero once the results thread has finished and been closed
+ * (stepResultsThread sets @c D_80083928).
  */
-u8 getRenderCompleteFlag(void) {
+s32 isResultsThreadDone(void) {
     return D_80083928;
 }
 
 
 /**
- * @brief Step the display shutdown, one step per call.
+ * @brief Run one step of the results thread; it runs once per frame.
  *
- * Steps through @c state: blank the display, clear the results display
- * twice (the second time with func_8003283C), render until @c D_80083929
- * reads 1, wait two frames on @c timer, close @c thread if there is one
- * (setting @c D_80083928), then keep the display blanked.
+ * Steps through @c state: blank the display, clear the results display twice
+ * (the second time also running updateResults once), run frames
+ * (runResultsFrame) until @c D_80083929 reads 1, wait two frames on @c timer,
+ * close @c thread if there is one (setting @c D_80083928), then keep the
+ * display blanked.
  */
-static void func_80035158(void) {
-    ColorRenderScratch *ctx = (ColorRenderScratch *)getScratchAddr(0);
+static void stepResultsThread(void) {
+    ResultsScreen *ctx = (ResultsScreen *)getScratchAddr(0);
     u16 *state = &ctx->state;
     s32 thread;
 
@@ -72,11 +73,11 @@ static void func_80035158(void) {
         break;
     case 2:
         clearResultsDisplay();
-        func_8003283C();
+        updateResults();
         *state = 3;
         break;
     case 3:
-        enableDisplayAndRender();
+        runResultsFrame();
         if (D_80083929 == 1) {
             *state = 4;
         }
@@ -107,24 +108,21 @@ static void func_80035158(void) {
 }
 
 
-/**
- * @brief Call switchThread with a value loaded from scratchpad memory.
- * @note Reads a 32-bit value from PS1 scratchpad address 0x1F80001C.
- */
-void dispatchScratchpadThread(void) {
-    switchThread(*(s32 *)0x1F80001C);
+/** @brief Switch to the results thread, ResultsScreen::thread. */
+void switchToResultsThread(void) {
+    ResultsScreen *ctx = (ResultsScreen *)getScratchAddr(0);
+
+    switchThread(ctx->thread);
 }
 
 
 /**
- * @brief Main game loop — runs forever calling render and VSync handlers.
- *
- * Alternates between func_80035158 (render frame) and switchThread(0)
- * (VSync/update) indefinitely. Never returns.
+ * @brief The results thread's body: run one step (stepResultsThread), switch
+ * back to the main thread, repeat. Never returns.
  */
-void mainGameLoop(void) {
+static void resultsThreadMain(void) {
     for (;;) {
-        func_80035158();
+        stepResultsThread();
         switchThread(0);
     }
 }
@@ -137,7 +135,7 @@ void mainGameLoop(void) {
  * and the second at (0x200,0). Each clear is followed by DrawSync(0) to
  * wait for completion.
  */
-void clearFramebuffers(void) {
+static void clearFramebuffers(void) {
     RECT rect;
     rect.x = 0;
     rect.y = 0;
@@ -157,12 +155,12 @@ void clearFramebuffers(void) {
  *
  * Sets up the results display and the scratchpad state, merges the item and
  * card drops into @c rewards, fills the three EXP rows and starts the results
- * thread (mainGameLoop). Then, for each GF it works out whether it levels up,
+ * thread (resultsThreadMain). Then, for each GF it works out whether it levels up,
  * gives the battle's AP to the ability it is learning and, once that ability
  * is learned, picks the next one to learn.
  */
-void func_80035360(void) {
-    ColorRenderScratch *ctx = (ColorRenderScratch *)getScratchAddr(0);
+void startBattleResults(void) {
+    ResultsScreen *ctx = (ResultsScreen *)getScratchAddr(0);
     AbilityListEntry list[22];
     u8 *stack;
     s32 i;
@@ -200,9 +198,9 @@ void func_80035360(void) {
     D_80083928 = 0;
     ctx->step = 0;
     D_80083929 = 0;
-    ctx->unk28 = 0;
-    ctx->unk26 = 0;
-    ctx->unk2A = 0;
+    ctx->wipeProgress = 0;
+    ctx->descProgress = 0;
+    ctx->pageProgress = 0;
     for (i = 0; i < 32; i++) {
         ctx->rewards[i].id = 0;
         ctx->rewards[i].count = 0;
@@ -251,21 +249,21 @@ void func_80035360(void) {
     }
     ctx->reward = ctx->rewards;
     ctx->unk40 = 1;
-    ctx->unk3E = count;
-    ctx->unk3F = count;
+    ctx->rewardsLeft = count;
+    ctx->rewardCount = count;
     ctx->unk44 = 0;
-    ctx->unk48 = NULL;
+    ctx->message = NULL;
     ctx->unk4C = 0;
-    ctx->unk46 = 0x20;
-    ctx->unk2C = 0;
-    ctx->unk2E = 0;
-    ctx->unk38 = 0;
+    ctx->closeDelay = 0x20;
+    ctx->messageProgress = 0;
+    ctx->titleProgress = 0;
+    ctx->page = 0;
     for (i = 0; i < 3; i++) {
-        ctx->unk275[i] = 0;
+        ctx->levelUpTimer[i] = 0;
     }
     stack = getThreadStackTop();
     for (i = 0; i < 3; i++) {
-        ctx->unk27C[i] = 0;
+        ctx->noExpPopup[i] = 0;
         if (g_battleChars.chars[i].characterId != 0xFF) {
             level = g_battleChars.chars[i].level;
             status = g_battleChars.chars[i].displayStatus;
@@ -277,51 +275,51 @@ void func_80035360(void) {
                 ctx->nameColor[i] = 1;
             }
             if (level == 100) {
-                ctx->unk240[i] = 0;
-                ctx->unk228[i] = 0;
-                ctx->unk24C[i] = 0;
-                ctx->unk234[i] = evalEntityXpCurve(i, level);
+                ctx->expAcquired[i] = 0;
+                ctx->nextLevelExp[i] = 0;
+                ctx->expStep[i] = 0;
+                ctx->currentExp[i] = evalEntityXpCurve(i, level);
             } else {
                 prev = evalEntityXpCurve(i, level - 1);
                 next = evalEntityXpCurve(i, level);
-                ctx->unk240[i] = g_battleChars.unk574[i] + g_battleChars.unk57A[i];
-                ctx->unk228[i] = g_battleChars.chars[i].xpToNext;
-                if (ctx->unk240[i] == 0) {
-                    ctx->unk27C[i] = 0x41;
-                    ctx->unk280 |= 1 << i;
+                ctx->expAcquired[i] = g_battleChars.unk574[i] + g_battleChars.unk57A[i];
+                ctx->nextLevelExp[i] = g_battleChars.chars[i].xpToNext;
+                if (ctx->expAcquired[i] == 0) {
+                    ctx->noExpPopup[i] = 0x41;
+                    ctx->noExpRows |= 1 << i;
                 }
                 next = (next - prev) >> 7;
                 if (next == 0) {
                     next = 1;
                 }
-                ctx->unk24C[i] = next;
+                ctx->expStep[i] = next;
             }
             ctx->names[i] = getBattleCharName(i);
-            ctx->unk234[i] = g_battleChars.chars[i].exp;
-            ctx->unk272[i] = g_battleChars.chars[i].level;
+            ctx->currentExp[i] = g_battleChars.chars[i].exp;
+            ctx->level[i] = g_battleChars.chars[i].level;
         } else {
             ctx->names[i] = NULL;
-            ctx->unk24C[i] = 0;
-            ctx->unk280 |= 1 << i;
+            ctx->expStep[i] = 0;
+            ctx->noExpRows |= 1 << i;
         }
     }
-    ctx->thread = openThreadSafe(mainGameLoop, stack);
+    ctx->thread = openThreadSafe(resultsThreadMain, stack);
     ctx->timer = 6;
     ctx->title = NULL;
     ctx->prompt = NULL;
     ctx->unk26E = 0;
     setTextBrightness(0x1000);
-    ctx->unk27B = getFirstLineWidth(getMenuString(0x30)) + 0x14;
-    ctx->unk258 = 0;
-    ctx->unk25A = 0;
-    ctx->unk42 = 0;
+    ctx->levelUpWidth = getFirstLineWidth(getMenuString(0x30)) + 0x14;
+    ctx->gfLevelUp = 0;
+    ctx->gfWindows = 0;
+    ctx->ap = 0;
     for (i = 0; i < GF_COUNT; i++) {
-        ctx->unk25C[i] = 0xFF;
+        ctx->gfLearned[i] = 0xFF;
         if (g_gameState.gfs[i].exists & GF_EXISTS) {
             exp = g_battleChars.unk580[i] + g_battleChars.unk5A0[i];
             if (func_8002274C(i, 0) != func_8002274C(i, exp)) {
-                ctx->unk258 |= 1 << i;
-                ctx->unk25A |= 1 << i;
+                ctx->gfLevelUp |= 1 << i;
+                ctx->gfWindows |= 1 << i;
             }
             learning = g_gameState.gfs[i].learning;
             n = func_800369CC(i, list, 1);
@@ -329,7 +327,7 @@ void func_80035360(void) {
             if (g_battleChars.unk5C0[i] != 0) {
                 for (m = 0; m < n; m++) {
                     if (learning == list[m].slotIndex && list[m].type == 1) {
-                        ctx->unk42 = g_battleChars.unk5C0[i];
+                        ctx->ap = g_battleChars.unk5C0[i];
                         found = 1;
                     }
                 }
@@ -349,8 +347,8 @@ void func_80035360(void) {
                         if (learning == list[j].slotIndex && list[j].type == 1) {
                             bits = g_gameState.gfs[i].completeAbilities;
                             bits[learning / 32] |= 1 << (learning & 31);
-                            ctx->unk25C[i] = learning;
-                            ctx->unk25A |= 1 << i;
+                            ctx->gfLearned[i] = learning;
+                            ctx->gfWindows |= 1 << i;
                             learned = 1;
                         }
                     }
@@ -376,11 +374,11 @@ void func_80035360(void) {
             }
         }
     }
-    ctx->unk27F = getFirstLineWidth(getMenuString(0x31));
-    ctx->unk26C = 0;
+    ctx->noExpWidth = getFirstLineWidth(getMenuString(0x31));
+    ctx->gfWindowCount = 0;
     for (i = 0; i < GF_COUNT; i++) {
-        if ((ctx->unk25A >> i) & 1) {
-            ctx->unk26C++;
+        if ((ctx->gfWindows >> i) & 1) {
+            ctx->gfWindowCount++;
         }
     }
     recalcPartyStats();
