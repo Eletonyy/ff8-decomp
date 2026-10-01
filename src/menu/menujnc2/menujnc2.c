@@ -3834,7 +3834,7 @@ s32 renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBas
             }
 
             namePtr = getMagicNamePtr(i + 0x40);
-            cursorY = drawDecodedText(renderCtx, cursorY, x, y - 3, namePtr, color);
+            cursorY = (s32)drawDecodedText((P_TAG *)renderCtx, (TSPRT *)cursorY, x, y - 3, namePtr, color);
         }
     } while (++i < numGfs);
 

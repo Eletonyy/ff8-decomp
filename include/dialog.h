@@ -117,6 +117,7 @@ extern void dispatchDialogAnimSpeed(s32 idx);
 extern s32 getNibbleValue(s32 idx);
 extern u32 emitTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy);
 extern u8 *drawMessageText(P_TAG *ot, s32 x, s32 y, u8 *str);
+extern TSPRT *drawDecodedText(P_TAG *ot, TSPRT *p, s32 x, s32 y, u8 *str, s32 colour);
 extern s32 getTextSize(u8 *str);
 extern s32 getTextSizeB(u8 *str);
 extern s32 getTextWidth(u8 *str);

@@ -38,7 +38,6 @@ extern u8 g_cardFilename[];  /* encoded save filename (max 8 chars + null) */
 extern s16 g_cardFileSlot;   /* save slot index */
 extern u8 g_cardFileType;    /* card/save type */
 extern u8 g_cardFileActive;
-extern u8 g_animCurveFadeIn[];
 extern DRAWENV *g_activeDrawEnv;
 extern BattleDisplayEntity g_battleEntities[];
 extern u8 g_paletteIndices[];
@@ -1877,7 +1876,7 @@ done:
  */
 void *transformValueIfActive(void *ot, void *pkt) {
     if (g_cardFileActive != 0) {
-        s32 result = drawDecodedText(ot, pkt, g_cardFileSlot, g_cardFileType, g_cardFilename, 7);
+        TSPRT *result = drawDecodedText(ot, pkt, g_cardFileSlot, g_cardFileType, g_cardFilename, 7);
         pkt = emitDrawEnvPackets(ot, (u8 *)result);
     }
     return pkt;
