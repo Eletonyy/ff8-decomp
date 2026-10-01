@@ -19,10 +19,6 @@
 
 #define MAX(a, b) ((a) < (b) ? (b) : (a))
 
-/** Bits of @c ColorRenderScratch::unk271: the windows of window group 3. */
-#define MAGIC_WINDOW_SPELL 1 /**< The spell's one-line window (func_800348C4). */
-#define MAGIC_WINDOW_ABILITY 2 /**< The spell, label and ability window (func_800349F4). */
-
 /* --- Private functions --- */
 
 static DR_AREA *func_8003334C(P_TAG *ot, DR_AREA *prim);
@@ -974,7 +970,7 @@ static DR_AREA *func_80034C74(P_TAG *ot, DR_AREA *prim, s32 t, s32 color, s32 va
  * prompt windows at progress @c unk2E, and by @c unk38 one more group:
  * 0 func_80034830's rows at @c unk2A, 1 the popup, description and item
  * reward windows (func_800341BC), 2 the message box with @c unk42
- * (func_80034C74) at |@c unk2A|, 3 the magic windows @c unk271 selects at
+ * (func_80034C74) at |@c unk2A|, 3 the GF windows @c unk271 selects at
  * |@c unk2A|. The menu brightness and the windows' grey follow the progress
  * and are restored after each group. Stores the packet cursor back and
  * submits the frame.
@@ -1040,11 +1036,11 @@ void func_80034DBC(void) {
             c = (u32)b3 >> 5;
             c = c | (((c << 16) | 0x64000000) | (c << 8));
             flags = ctx->unk271;
-            if (flags & MAGIC_WINDOW_ABILITY) {
+            if (flags & GF_WINDOW_LEARNED) {
                 prim = func_800349F4(ot, (TSPRT *)prim, 0x58, ctx->unk2A, c, ctx->unk270, ctx->unk26F);
             }
-            if (flags & MAGIC_WINDOW_SPELL) {
-                prim = func_800348C4(ot, (TSPRT *)prim, (flags & MAGIC_WINDOW_ABILITY) ? 0x2D : 0x63, ctx->unk2A, c, ctx->unk270);
+            if (flags & GF_WINDOW_LEVEL_UP) {
+                prim = func_800348C4(ot, (TSPRT *)prim, (flags & GF_WINDOW_LEARNED) ? 0x2D : 0x63, ctx->unk2A, c, ctx->unk270);
             }
         }
         setMenuBrightness(saved3);

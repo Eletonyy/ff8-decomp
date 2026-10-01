@@ -587,7 +587,7 @@ typedef struct {
 
 typedef struct{
     u8 unk0;
-    u8 unk1;
+    s8 unk1;
 } splitStruct;
 
 /** @brief Complete battle character/GF state block. */

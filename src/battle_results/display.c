@@ -10,7 +10,6 @@
 
 /* --- Externs (sorted by address) --- */
 
-extern ResultsDisplay *g_resultsDisplays[]; /* 0x80083920: the pair */
 extern u8 g_threadStack[THREAD_STACK_SIZE]; /* 0x80083938 */
 
 /* --- Private functions --- */

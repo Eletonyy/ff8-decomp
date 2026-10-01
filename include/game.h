@@ -14,6 +14,9 @@ u8 *getBattleCommandName(s32 id);
 /** @brief Look up entry @p stringId of the kernel's misc text table. */
 u8 *getMenuString(s32 stringId);
 
+/** @brief Name of battle party member @p entityIdx (Squall's and Rinoa's are the player's). */
+u8 *getBattleCharName(s32 entityIdx);
+
 /** @brief Look up the description of magic spell @p spellId. */
 u8 *getSpellDesc(s32 spellId);
 

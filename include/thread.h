@@ -31,4 +31,6 @@ extern void settlePadPorts(void);
 extern s32 getPadVibration(s32 idx);
 extern void setPadDeadZone(s32 a0, s32 a1);
 extern void setPadAnalogFlag(s32 a0, s32 a1);
+extern s32 openThreadSafe(void (*entry)(void), u8 *stack);
+extern void closeThreadSafe(s32 thread);
 #endif /* THREAD_H */

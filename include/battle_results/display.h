@@ -17,6 +17,7 @@ typedef struct {
 } ResultsDisplay;
 
 extern ResultsDisplay *g_resultsDisplay; /* 0x80083918: the buffer being drawn */
+extern ResultsDisplay *g_resultsDisplays[]; /* 0x80083920: the pair */
 
 extern u8 *getThreadStackTop(void);
 extern void waitGpuIdle(void);

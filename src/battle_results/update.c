@@ -7,15 +7,16 @@
 #include "game.h"
 #include "gf_curve.h"
 #include "numstr.h"
+#include "snd_init.h"
 #include "snd_sfx.h"
 
 /**
  * @brief Write a reward's name into @p arg1.
  *
- * An item's name, or for a card (@p arg0 has 0x100 set) menu string 0x6E with
+ * An item's name, or for a card (@p arg0 has REWARD_CARD set) menu string 0x6E with
  * its 0x0A code replaced by the card's name (func_80023A54).
  *
- * @param arg0 Reward id: an item, or a card when 0x100 is set.
+ * @param arg0 Reward id: an item, or a card when REWARD_CARD is set.
  * @param arg1 Buffer that receives the name.
  */
 void func_8003228C(s32 arg0, u8 *arg1)
@@ -26,7 +27,7 @@ void func_8003228C(s32 arg0, u8 *arg1)
     u8 c;
 
     dst = arg1;
-    cond = arg0 & 0x100;
+    cond = arg0 & REWARD_CARD;
 
     if (cond) {
         src = getMenuString(0x6E);
@@ -72,7 +73,7 @@ void func_8003228C(s32 arg0, u8 *arg1)
  *
  * @param msg Message with 0x0A codes.
  * @param dst Buffer that receives the expanded message.
- * @param reward Reward id for code 0x23: an item, or a card when 0x100 is set.
+ * @param reward Reward id for code 0x23: an item, or a card when REWARD_CARD is set.
  * @param arg3 Not used.
  * @param ability Ability id for code 0x25.
  * @param number Number for code 0x20.
@@ -254,17 +255,387 @@ s32 pollItemPresent(s32 a0, s32 retries) {
 
 /**
  * @brief Return a reward's description: the item's (getItemDesc), or NULL for
- * a card (@p a0 has 0x100 set).
+ * a card (@p a0 has REWARD_CARD set).
  *
- * @param a0 Reward id: an item, or a card when 0x100 is set.
+ * @param a0 Reward id: an item, or a card when REWARD_CARD is set.
  * @return The item's description, or NULL for a card.
  */
 u8 *guardedEntityLookup(s32 a0) {
-    if (a0 & 0x100) return NULL;
+    if (a0 & REWARD_CARD) return NULL;
     return getItemDesc(a0);
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/battle_results/update", func_8003283C);
+/**
+ * @brief Return the bit number of the (@p n + 1)th set bit of @p mask, or 0 if
+ * @p mask has fewer set bits.
+ * @note Inline, like the binary: the result is set separately on each exit.
+ */
+static inline s32 findSetBit(s32 mask, s32 n) {
+    s32 i = 0;
+    s32 bit = 1;
+
+    do {
+        if (mask & (bit << i)) {
+            if (n == 0) {
+                return i;
+            }
+            n--;
+        }
+        i++;
+    } while (i < 32);
+    return 0;
+}
+
+
+/**
+ * @brief Run one frame of the results screen: read the pad and advance @c step.
+ *
+ * Counts the LEVEL UP! popups down, then works through the steps: open the EXP
+ * page and count the EXP up (func_80032534), or finish it on the confirm button
+ * (func_80032688); close it and open the item page, then hand out each reward
+ * in turn, items into the inventory and cards into the card list, with
+ * "Couldn't find any items!" when there are none; show "GF received N AP!";
+ * show each GF's level-up and learned-ability windows in turn; finally set
+ * D_80083929.
+ */
+void func_8003283C(void) {
+    ColorRenderScratch *ctx = (ColorRenderScratch *)getScratchAddr(0);
+    u16 *step;
+    ItemReward *reward;
+    s32 count;
+    s32 pressed;
+    s32 found;
+    s32 sum;
+    s32 full;
+    s32 gf;
+    s32 slide;
+    s32 i;
+    s32 j;
+    s32 k;
+    s32 m;
+    u16 state;
+
+    func_800275D4();
+    pressed = applyButtonRemapTranslation(getPadReadPressed(0, 0));
+    applyButtonRemapTranslation(getPadReadRepeat(0, 0));
+    if (ctx->unk2C != 0) {
+        ctx->unk2C += 0x200;
+        if (ctx->unk2C > 0x1000) {
+            ctx->unk2C = 0x1000;
+        }
+    }
+    for (i = 0; i < 3; i++) {
+        if (ctx->unk275[i] != 0) {
+            ctx->unk275[i]--;
+        }
+    }
+    step = &ctx->step;
+    reward = ctx->reward;
+    count = ctx->unk3E;
+    state = *step;
+    /* Some steps go straight on to another step in the same frame. They jump back to
+       the switch: a loop around it (92.50%) lets gcc keep the constants the cases share
+       in saved registers, where the binary loads them in each case. */
+dispatch:
+    switch (state) {
+    case 0:
+        *step = 1;
+        break;
+    case 1:
+        ctx->title = getMenuString(0x17);
+        ctx->prompt = getMenuString(0x16);
+        ctx->unk38 = 0;
+        *step = 2;
+        break;
+    case 2:
+        ctx->unk2A += 0x100;
+        ctx->unk2E += 0x100;
+        if (ctx->unk2E >= 0x1000) {
+            ctx->unk2E = 0x1000;
+        }
+        if (ctx->unk2A >= 0x1000) {
+            ctx->unk2A = 0x1000;
+            *step = 3;
+        }
+        break;
+    case 3:
+        if (pressed & PADRdown) {
+            found = 0;
+            for (j = 0; j < 3; j++) {
+                if (ctx->unk27C[j] != 0) {
+                    ctx->unk27C[j] = 0x40;
+                    found = 1;
+                }
+            }
+            sndPlaySfx(0x23, 0, 0x80, 0x7F);
+            if (found) {
+                sendSpuCommand(0x10);
+            }
+            *step = 4;
+        }
+        break;
+    case 4:
+        sum = 0;
+        for (k = 0; k < 3; k++) {
+            sum += ctx->unk24C[k];
+        }
+        func_80032534();
+        if (pressed & PADRdown) {
+            sendSpuCommand(2);
+            *step = 5;
+        }
+        if (sum == 0) {
+            *step = 5;
+        }
+        break;
+    case 5:
+        sndCmd21(0x23, 0);
+        func_80032688();
+        *step = 6;
+        break;
+    case 6:
+        if (ctx->unk280 != 7) {
+            sndCmdF1();
+        }
+        if (pressed & PADRdown) {
+            sendSpuCommand(2);
+            *step = 7;
+        }
+        break;
+    case 7:
+        *step = 8;
+        break;
+    case 8:
+        ctx->unk2A -= 0x100;
+        for (m = 0; m < 3; m++) {
+            if (ctx->unk27C[m] != 0) {
+                ctx->unk27C[m] -= 8;
+            }
+        }
+        if (ctx->unk2A <= 0) {
+            ctx->unk2A = 0;
+            *step = 9;
+        }
+        break;
+    case 9:
+        ctx->unk38 = 1;
+        ctx->unk39 = 0;
+        ctx->unk26 += 0x100;
+        if (ctx->unk3F != 0 || ctx->unk26C == 0) {
+            ctx->title = getMenuString(0x15);
+            ctx->prompt = getMenuString(0x16);
+        } else {
+            ctx->title = NULL;
+            ctx->prompt = getMenuString(0x16);
+        }
+        if (ctx->unk26 >= 0x1000) {
+            ctx->unk26 = 0x1000;
+            state = *step = 0xA;
+            goto dispatch;
+        }
+        ctx->unk2A = 0x1000;
+        break;
+    case 0xA:
+        ctx->unk2A += 0x100;
+        if (ctx->unk2A > 0x800) {
+            if (ctx->unk39 == 0 && ctx->unk3F == 0) {
+                ctx->unk2C = 0x200;
+                ctx->unk44 = -1;
+                ctx->unk48 = getMenuString(0x1C);
+                ctx->unk4C = 0;
+            }
+            ctx->unk39 = 1;
+        }
+        if (ctx->unk2A >= 0x1000) {
+            ctx->unk2A = 0x1000;
+            if (ctx->unk3F != 0) {
+                *step = 0xB;
+                state = 0xB;
+                goto dispatch;
+            }
+            ctx->unk2C = 0x1000;
+            *step = 0x10;
+        }
+        break;
+    case 0xB:
+        if (pressed & PADRdown) {
+            if (reward->id >= 0x100) {
+                full = pollItemPresent(reward->id, reward->count);
+            } else {
+                full = addItemToInventory(reward->id, reward->count);
+                func_800370AC(reward->id);
+            }
+            ctx->unk48 = getMenuString(full != 0 ? 0x18 : 6);
+            ctx->unk44 = 0x258;
+            ctx->unk3C = reward->id;
+            sendSpuCommand(8);
+            state = 0xC;
+            goto dispatch;
+        }
+        break;
+    case 0xC:
+        state = 0xD;
+        goto dispatch;
+    case 0xD:
+        if (count < 2) {
+            ctx->unk2C = 0x200;
+            state = 0x11;
+            goto dispatch;
+        }
+        reward++;
+        count--;
+        state = 0xE;
+        goto dispatch;
+    case 0xE:
+        ctx->unk28 = 0x100;
+        ctx->unk2C = 0x200;
+        *step = 0xF;
+        break;
+    case 0xF:
+        slide = ctx->unk28;
+        slide += 0x100;
+        if (slide >= 0x1000) {
+            slide = 0;
+            *step = 0xB;
+        }
+        if (pressed & PADRdown) {
+            ctx->unk28 = 0;
+            state = 0xB;
+            goto dispatch;
+        }
+        ctx->unk28 = slide;
+        break;
+    case 0x10:
+        if (pressed & PADRdown) {
+            ctx->unk44 = 0;
+            sendSpuCommand(2);
+            state = 0x11;
+            goto dispatch;
+        }
+        break;
+    case 0x11:
+        ctx->unk46 = 0x20;
+        *step = 0x12;
+    case 0x12:
+        ctx->unk46--;
+        if (ctx->unk46 > 0) {
+            break;
+        }
+        state = 0x13;
+        goto dispatch;
+    case 0x13:
+        ctx->unk2A = -0x1000;
+        *step = 0x14;
+        break;
+    case 0x14:
+        ctx->unk2A += 0x100;
+        if (ctx->unk2A >= 0) {
+            ctx->unk2A = 0;
+            *step = 0x15;
+        }
+        break;
+    case 0x15:
+        ctx->unk26 = -0x1000;
+        *step = 0x16;
+        break;
+    case 0x16:
+        ctx->unk26 += 0x100;
+        if (ctx->unk26 >= 0) {
+            ctx->unk26 = 0;
+            *step = 0x17;
+        }
+        if (ctx->unk26C == 0 && ctx->unk42 == 0) {
+            ctx->unk2E = ctx->unk26;
+        }
+        break;
+    case 0x17:
+        *step = 0x18;
+        break;
+    case 0x18:
+        if (ctx->unk26C == 0 && ctx->unk42 == 0) {
+            D_80083929 = 1;
+            break;
+        }
+        state = 0x19;
+        goto dispatch;
+    case 0x19:
+        sendSpuCommand(8);
+        ctx->title = getMenuString(0x6F);
+        ctx->unk38 = 2;
+        if (ctx->unk42 == 0) {
+            state = 0x1C;
+            goto dispatch;
+        }
+        ctx->unk2A = -0x1000;
+        *step = 0x1A;
+    case 0x1A:
+        if (pressed & PADRdown) {
+            sendSpuCommand(2);
+            *step = 0x1B;
+        }
+        break;
+    case 0x1B:
+        ctx->unk2A += 0x100;
+        if (ctx->unk26C == 0) {
+            ctx->unk2E = ctx->unk2A;
+            if (ctx->unk2E == 0) {
+                D_80083929 = 1;
+            }
+        }
+        if (ctx->unk2A < 0) {
+            break;
+        }
+        state = 0x1C;
+        goto dispatch;
+    case 0x1C:
+        ctx->prompt = getMenuString(0x16);
+        ctx->unk38 = 3;
+        ctx->unk26D = 0;
+        *step = 0x1D;
+        break;
+    case 0x1D:
+        ctx->unk2A = -0x1000;
+        gf = findSetBit(ctx->unk25A, ctx->unk26D);
+        ctx->unk271 = 0;
+        if ((ctx->unk258 >> gf) & 1) {
+            ctx->unk271 = GF_WINDOW_LEVEL_UP;
+        }
+        if (ctx->unk25C[gf] != 0xFF) {
+            ctx->unk26F = ctx->unk25C[gf];
+            ctx->unk271 |= GF_WINDOW_LEARNED;
+        }
+        sendSpuCommand(9);
+        ctx->unk270 = gf;
+        ctx->unk26D++;
+        *step = 0x1E;
+        playSoundEffect(0x10);
+        break;
+    case 0x1E:
+        if (pressed & PADRdown) {
+            sendSpuCommand(2);
+            *step = 0x1F;
+        }
+        break;
+    case 0x1F:
+        ctx->unk2A += 0x100;
+        if (ctx->unk2A >= 0) {
+            ctx->unk2A = 0;
+            *step = 0x1D;
+        }
+        if (ctx->unk26D >= ctx->unk26C) {
+            ctx->unk2E = ctx->unk2A;
+            if (ctx->unk2E == 0) {
+                D_80083929 = 1;
+            }
+        }
+        break;
+    case 0x20:
+    case 0x21:
+        break;
+    }
+    ctx->reward = reward;
+    ctx->unk3E = count;
+}
 
 

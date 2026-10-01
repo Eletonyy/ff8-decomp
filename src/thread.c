@@ -31,15 +31,15 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_80026E70);
 
 /**
  * @brief Open a thread with interrupt protection.
- * @param a0 Thread program counter / entry point address.
- * @param a1 Thread stack pointer.
+ * @param entry Function the thread starts in.
+ * @param stack Top of the thread's stack.
  * @return Thread handle from OpenTh.
  * @note Wraps PsyQ OpenTh with func_800472E4/func_800472F4 (likely interrupt disable/enable).
  */
-s32 openThreadSafe(s32 a0, s32 a1) {
+s32 openThreadSafe(void (*entry)(void), u8 *stack) {
     s32 result;
-    func_800472E4(a0);
-    result = OpenTh(a0, a1, 0);
+    func_800472E4(entry);
+    result = OpenTh(entry, stack, 0);
     func_800472F4();
     return result;
 }

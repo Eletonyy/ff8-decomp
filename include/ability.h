@@ -1,6 +1,8 @@
 #ifndef ABILITY_H
 #define ABILITY_H
 
+#include "common.h"
+
 /**
  * @file ability.h
  * @brief GF ability IDs and types.
@@ -165,5 +167,8 @@ enum AbilityId {
 #define ABILITY_TYPE_PARTY     3  /**< IDs 78–82: passive party abilities. */
 #define ABILITY_TYPE_GF        4  /**< IDs 83–91: GF enhancement abilities. */
 #define ABILITY_TYPE_MENU      5  /**< IDs 92–120: refinement/shop abilities. */
+
+/** @brief Give @p amount AP to GF @p gfIdx's learning ability; returns it once its AP is full, else 0. */
+s32 AddAbilityExp(s32 gfIdx, s32 amount);
 
 #endif /* ABILITY_H */
