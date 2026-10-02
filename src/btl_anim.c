@@ -2007,8 +2007,8 @@ void copyDisplayRect(RECT *dst) {
  */
 void copyDisplayCoords(u16 *ofs) {
     DRAWENV *env = g_activeDrawEnv;
-    ofs[0] = env->dispX;
-    ofs[1] = env->dispY;
+    ofs[0] = env->ofs[0];
+    ofs[1] = env->ofs[1];
 }
 
 

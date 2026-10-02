@@ -201,19 +201,19 @@ void func_800A15C0(FieldFrameBuf *buf, DRAWENV *env, s16 slotIdx) {
     SetGeomOffset(0, 0);
     if (func_800BE274() == 0) {
         if (buf == D_800C7218) {
-            env[0].dispX = (D_800C7210 - g_fieldEntity.slots[slotIdx].q1) + g_fieldEntity.oscillators[0].output + g_curFieldView->viewOfsX;
-            env[0].dispY = (D_800C7214 - g_fieldEntity.slots[slotIdx].q2) + g_fieldEntity.oscillators[1].output + g_curFieldView->viewOfsY;
+            env[0].ofs[0] = (D_800C7210 - g_fieldEntity.slots[slotIdx].q1) + g_fieldEntity.oscillators[0].output + g_curFieldView->viewOfsX;
+            env[0].ofs[1] = (D_800C7214 - g_fieldEntity.slots[slotIdx].q2) + g_fieldEntity.oscillators[1].output + g_curFieldView->viewOfsY;
         } else {
-            env[1].dispX = (D_800C7210 - g_fieldEntity.slots[slotIdx].q1) + g_fieldEntity.oscillators[0].output + g_curFieldView->viewOfsX + 0x200;
-            env[1].dispY = (D_800C7214 - g_fieldEntity.slots[slotIdx].q2) + g_fieldEntity.oscillators[1].output + g_curFieldView->viewOfsY;
+            env[1].ofs[0] = (D_800C7210 - g_fieldEntity.slots[slotIdx].q1) + g_fieldEntity.oscillators[0].output + g_curFieldView->viewOfsX + 0x200;
+            env[1].ofs[1] = (D_800C7214 - g_fieldEntity.slots[slotIdx].q2) + g_fieldEntity.oscillators[1].output + g_curFieldView->viewOfsY;
         }
     } else {
         if (buf == D_800C7218) {
-            env[0].dispX = D_800C7210 - g_curFieldView->viewOfsX;
-            env[0].dispY = D_800C7214 + g_curFieldView->viewOfsY;
+            env[0].ofs[0] = D_800C7210 - g_curFieldView->viewOfsX;
+            env[0].ofs[1] = D_800C7214 + g_curFieldView->viewOfsY;
         } else {
-            env[1].dispX = (D_800C7210 - g_curFieldView->viewOfsX) + 0x200;
-            env[1].dispY = D_800C7214 + g_curFieldView->viewOfsY;
+            env[1].ofs[0] = (D_800C7210 - g_curFieldView->viewOfsX) + 0x200;
+            env[1].ofs[1] = D_800C7214 + g_curFieldView->viewOfsY;
         }
     }
 }

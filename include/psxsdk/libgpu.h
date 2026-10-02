@@ -220,8 +220,7 @@ typedef struct {
  */
 typedef struct {
     RECT clip;
-    s16 dispX;
-    s16 dispY;
+    s16 ofs[2];
     RECT tw;
     u16 tpage;
     u8 dtd;
