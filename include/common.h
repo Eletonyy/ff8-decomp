@@ -187,6 +187,29 @@ typedef union {
 #define addOtFast(p, head) { u32 _tmp; __asm__ __volatile__("sll %1, %2, 8\n\tswl %0, 2(%2)\n\taddu %0, %1, $0" : "+r"(head) : "r"(_tmp), "r"(p) : "memory"); }
 #define addOtTagFast(p, head, tag) __asm__ __volatile__("sll %0, %2, 8\n\tswl %1, 2(%2)" : "+r"(tag) : "r"(head), "r"(p) : "memory")
 
+/** @brief Prepend packet @p p to an OT chain; returns the new chain head. */
+static inline u32 linkPacket(u32 head, void *p) {
+    u32 tag;
+
+    addOtTagFast(p, head, tag);
+    return tag;
+}
+
+/** @brief GP0(E2h) word that turns the texture window off. */
+#define TEXWINDOW_OFF 0xE2000000
+
+/** @brief A sprite that carries its own draw mode and texture window (tag length 7). */
+typedef struct {
+    u32 tag;
+    u32 drawMode; /* GP0(E1h) */
+    u32 texWindow[2]; /* GP0(E2h), then a zero word */
+    u8 r0, g0, b0, code;
+    s16 x0, y0;
+    u8 u0, v0;
+    u16 clut;
+    u16 w, h;
+} ModeSprt;
+
 /* Mark an uninitialised variable as deliberately carrying whatever garbage
  * its register holds. The empty volatile asm is a definition the optimiser
  * can neither delete nor propagate, and it emits no instructions — so the

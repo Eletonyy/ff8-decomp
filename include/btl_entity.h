@@ -3,8 +3,12 @@
 
 #include "common.h"
 #include "battle.h"
+#include "tim.h"
 
+extern ModeSprt *func_8002BAA0(u32 *ot, ModeSprt *p, RECT *rect, u32 color);
 extern s32 *getEntityTablePtr(s32 idx);
+extern void func_8002C130(void);
+extern void func_8002C3AC(NameFont *font, s32 useTimPosition);
 extern u8 *func_8002BF24(u32 *ot, u8 *head);
 extern s32  func_8002C734(s32 c);
 extern void dispatchBattleEntity(s32 idx);

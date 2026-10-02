@@ -7,6 +7,21 @@
 /** @brief Brightness 1.0 on the 0x1000 scale: graphics are drawn at their own colour. */
 #define BRIGHTNESS_NORMAL 0x1000
 
+/** @brief Where the font's glyph sheet is loaded in VRAM: the texture page of TEXT_TPAGE_PAGE1. */
+#define TEXT_FONT_X 960
+#define TEXT_FONT_Y 256
+
+/** @brief Text glyphs are this many pixels square, and a font texture row holds this many. */
+#define TEXT_GLYPH_SIZE 12
+#define TEXT_GLYPHS_PER_ROW 21
+
+/** @brief CLUT of text colour 0; colour n uses the CLUT n rows below it. */
+#define TEXT_CLUT_X 288
+#define TEXT_CLUT_Y 224
+
+/** @brief Text colours: the font CLUT rows that are loaded. */
+#define TEXT_CLUT_ROWS 16
+
 struct Dialog;
 
 /** @brief Per-frame hook of a dialog window, run with the frame's pad input. */
@@ -79,6 +94,9 @@ typedef struct {
 
 /** @brief The message windows: @c g_engine.dialogs under a symbol of its own. */
 extern DialogSystem g_dialogs;
+
+/** @brief The font's width table: one nibble per character, the even one in the low nibble. */
+extern u8 D_800834D8[0x1C4];
 
 extern void tickTextBlink(void);
 extern void setTextBrightness(s32 brightness);

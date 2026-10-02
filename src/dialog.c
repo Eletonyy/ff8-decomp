@@ -97,14 +97,6 @@ enum {
 #define DIALOG_CURSOR_X 4
 #define DIALOG_CURSOR_Y 5
 
-/** @brief Text glyphs are this many pixels square, and a font texture row holds this many. */
-#define TEXT_GLYPH_SIZE 12
-#define TEXT_GLYPHS_PER_ROW 21
-
-/** @brief CLUT of text colour 0; colour n uses the CLUT n rows below it. */
-#define TEXT_CLUT_X 288
-#define TEXT_CLUT_Y 224
-
 /** @brief Bit of a text glyph number that selects the font's second texture page. */
 #define TEXT_GLYPH_PAGE2 0x400
 
@@ -132,7 +124,6 @@ enum {
 #define DIALOG_NEXT_PAGE_MARKER_BLINK_OFF 0x10
 
 extern u32 g_textBlinkTint; // Same as g_dialogs.state.textBlinkTint
-extern u8 D_800834D8[];
 static void updateTextBlinkColors(void);
 static void applyWindowBrightness(s32 index);
 static void drawNextPageMarker(P_TAG *ot, Dialog *entry);
@@ -144,8 +135,7 @@ static void drawDialogText(P_TAG *ot, Dialog *entry);
 static void drawDialogContents(s32 index, P_TAG *ot);
 static s32 autoRepeatPadChannel(EngineState *engine, PadPort *port, DialogSystem *sys, u16 newVal, s32 channel);
 static void drawDialog(P_TAG *ot, s32 index);
-static inline u32 linkPacket(u32 head, void *p);
-static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt);
+static void *renderDialogEntity(void *ot, BattleDisplayEntity *entity, void *pkt);
 static u8 *updateDialogEntity(BattleDisplayEntity *entity, u32 input, u32 repeat);
 static void scaleDialogRect(RECT *rect, s32 scale, s32 arg2);
 static void initDialog(s32 idx);
@@ -1078,15 +1068,6 @@ static void drawDialog(P_TAG *ot, s32 index) {
 }
 
 
-/** @brief Prepend packet @p p to an OT chain; returns the new chain head. */
-static inline u32 linkPacket(u32 head, void *p) {
-    u32 tag;
-
-    addOtTagFast(p, head, tag);
-    return tag;
-}
-
-
 /**
  * @brief Render callback of a message window's battle entity.
  *
@@ -1106,7 +1087,7 @@ static inline u32 linkPacket(u32 head, void *p) {
  * @param pkt Packet cursor, stored back before drawing.
  * @return The packet cursor after the last packet.
  */
-static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 pkt) {
+static void *renderDialogEntity(void *ot, BattleDisplayEntity *entity, void *pkt) {
     Dialog *entry;
     RECT *winRect;
     BattleDisplayEntity *ent;
@@ -1121,7 +1102,7 @@ static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 p
     s32 y;
 
     index = entity->subFields[0];
-    storeGpuPacket(pkt);
+    storeGpuPacket((u32)pkt); /* storeGpuPacket takes the cursor as an address value */
     if (entity->clipClamp.rect.w >= TEXT_GLYPH_SIZE && entity->clipClamp.rect.h >= TEXT_GLYPH_SIZE) {
         drawDialog(ot, index);
     }
@@ -1141,7 +1122,7 @@ static DR_AREA *renderDialogEntity(P_TAG *ot, BattleDisplayEntity *entity, u32 p
     r.y += entry->rect.y;
     r.x += DIALOG_CLAMP_INSET;
     r.y += DIALOG_CLAMP_INSET;
-    SetDrawOffset(offset, &r);
+    SetDrawOffset(offset, (u16 *)&r); /* r's x and y are the offset */
     head = linkPacket(head, offset);
     ent = getBattleEntity(entry->entityIdx);
     p = (DR_AREA *)(offset + 1);
@@ -1389,7 +1370,7 @@ static void initDialog(s32 idx) {
 
     setBattleEntityActive(idx, 1);
     entry->entityIdx = idx;
-    setBattleEntityField04(idx, (s32)renderDialogEntity);
+    setBattleEntityField04(idx, renderDialogEntity);
     setBattleEntityField00(idx, (s32)updateDialogEntity);
     setBattleEntityField35(idx, 0);
     setBattleEntitySubField(idx, 0, idx);

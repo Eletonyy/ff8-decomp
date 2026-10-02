@@ -16,7 +16,6 @@ extern u8 *getCharNameWrapper2(s32 charId);
 extern u8 getDigitBaseCode(void);
 extern void copyString(u8 *dst, u8 *src);
 extern s32 btlStrlen(u8 *str);
-extern void func_8002F4B0(u8 *buf, s32 separator);
 extern u32 D_800529F4[];
 extern u32 D_80052A08[];
 extern s32 D_800834CC;
@@ -33,6 +32,7 @@ static inline u8 *getNameString(s32 code, u8 *buf);
 static inline u8 *getNumberString(s32 code, u8 *buf);
 static inline u8 *insertArgString(u8 *dst, s32 code, u8 *buf);
 static u8 *nextMessagePage(u8 *str);
+static void func_8002F4B0(u8 *buf, s32 separator);
 
 /**
  * @brief Convert an unsigned integer to a decimal digit string using divisor table D_800529F4.
@@ -221,7 +221,38 @@ void u32ToHexTiles(u32 val, u8 *dst, s32 base_char) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/numstr", func_8002F4B0);
+/**
+ * @brief Put a separator between every three digits of a number string.
+ *
+ * Works in place from the end: the terminator moves to the new end, then each
+ * group of three digits after the first moves right with @p separator in
+ * front of it.
+ *
+ * @param buf Digit string, with room for the separators.
+ * @param separator Character put between the groups.
+ */
+static void func_8002F4B0(u8 *buf, s32 separator) {
+    u8 *src;
+    u8 *dst;
+    s32 len;
+    s32 n;
+
+    len = btlStrlen(buf);
+    n = (len - 1) / 3;
+    src = buf + len;
+    dst = src + n;
+    *dst = 0;
+    /* Load-bearing: n counts down (an ascending index does not match), and dst
+     * steps before src (gcc sets the two pointers up in the reverse order). */
+    for (; n > 0; n--) {
+        dst[-1] = src[-1];
+        dst[-2] = src[-2];
+        dst[-3] = src[-3];
+        dst[-4] = separator;
+        dst -= 4;
+        src -= 3;
+    }
+}
 
 
 /**
@@ -632,18 +663,50 @@ void decodeMessageDirect(Dialog *dialog, u8 *output) {
  * @brief Take the next character of the line a dialog is typing.
  *
  * Reads the decoded line at @c typedChars and moves it on: one byte for codes
- * 0x10-0x18 and 0x20 up, two for a command and its argument (0x03-0x0F) or a
- * two-byte glyph (0x19-0x1F). A newline (0x02) decodes the next line
- * (@c typedChars back to 0, @c typingLine and @c typingRow up by one); a page
- * break (0x01 or 0x07) decodes the next page and resets those counters and
- * @c scrollY. The end of the message (0x00) is not stepped past.
+ * 0x10-0x18 and 0x20 up, two for a command and its argument (0x03-0x06 and
+ * 0x08-0x0F) or a two-byte glyph (0x19-0x1F). A newline (0x02) decodes the
+ * next line (@c typedChars back to 0, @c typingLine and @c typingRow up by
+ * one); a page break (0x01 or 0x07) decodes the next page and resets those
+ * counters and @c scrollY. The end of the message (0x00) is not stepped past.
  *
  * @param dialog The dialog.
  * @param output Its decoded-line buffer.
  * @return The byte read; for a two-byte code, the first byte in bits 8-15 and
  * the second in bits 0-7.
  */
-INCLUDE_ASM("asm/nonmatchings/numstr", nextDialogChar);
+s32 nextDialogChar(Dialog *dialog, u8 *output) {
+    u8 *p;
+    s32 c;
+
+    p = output + dialog->typedChars;
+    c = *p++;
+    if (c < 0x20) {
+        if (c >= 0x19) {
+            c <<= 8;
+            c |= *p++;
+        } else if (c == 2) {
+            p = output;
+            dialog->typingRow++;
+            dialog->typingLine++;
+            advanceAndDecodeMessage(dialog, output);
+        } else if (c == 0) {
+            p--;
+        } else if (c == 1 || c == 7) {
+            dialog->typingRow = 0;
+            dialog->scrollY = 0;
+            dialog->typingLine = 0;
+            dialog->dataPtr = nextMessagePage(dialog->dataPtr);
+            dialog->linePtr = dialog->dataPtr;
+            p = output;
+            decodeMessage(dialog->dataPtr, output, -1);
+        } else if (c < 0x10) {
+            c <<= 8;
+            c |= *p++;
+        }
+    }
+    dialog->typedChars = p - output;
+    return c;
+}
 
 
 /**

@@ -145,6 +145,11 @@ typedef struct {
     ((0xe1000000) | ((dtd) ? 0x0200 : 0) | \
      ((dfe) ? 0x0400 : 0) | ((tpage) & 0x9ff))
 
+/* Fill in a DR_TPAGE: one word, the draw-mode command for tpage. */
+#define setDrawTPage(p, dfe, dtd, tpage) \
+    setlen(p, 1), \
+    ((u32 *)(p))[1] = _get_mode(dfe, dtd, tpage)
+
 /* Store a tpage / clut into a primitive's tpage / clut field. */
 #define setTPage(p, tp, abr, x, y) \
     ((p)->tpage = getTPage((tp), (abr), (x), (y)))
@@ -215,8 +220,7 @@ typedef struct {
  */
 typedef struct {
     RECT clip;
-    s16 dispX;
-    s16 dispY;
+    s16 ofs[2];
     RECT tw;
     u16 tpage;
     u8 dtd;
@@ -479,7 +483,7 @@ void SetDrawStp(u32 *p, s32 dfe);
 void AddPrim(void *ot, void *p);
 void AddPrims(s32 *ot, void *p0, void *p1);
 void SetDrawArea(DR_AREA *p, RECT *rect);
-void SetDrawOffset(DR_OFFSET *p, RECT *rect);
+void SetDrawOffset(DR_OFFSET *p, u16 *ofs);
 s32 MoveImage(RECT *rect, s32 x, s32 y);
 s32 OpenTIM(u32 *addr);
 void *ReadTIM(void *timimg);

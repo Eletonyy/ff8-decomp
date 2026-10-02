@@ -11,7 +11,7 @@
 
 extern void setBattleEntityType(s32 idx, s32 val);
 extern void setBattleEntityField00(s32 idx, s32 val);
-extern void setBattleEntityField04(s32 idx, s32 val);
+extern void setBattleEntityField04(s32 idx, EntityRenderCallback val);
 extern void setBattleEntityField36(s32 idx, s32 val);
 extern u32  getBattleEntityField36(s32 idx);
 extern void setBattleEntityField35(s32 idx, s32 val);

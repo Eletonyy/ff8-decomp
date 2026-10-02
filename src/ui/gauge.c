@@ -15,10 +15,9 @@
 #define GAUGE_SPRITE_WIDTH 64
 
 /**
- * @brief GP0(E2h) texture-window words: none, the fill's 8x8 tile at (0, 16) and the
- * track's 8x16 tile at (184, 240).
+ * @brief GP0(E2h) texture-window words: the fill's 8x8 tile at (0, 16) and the track's
+ * 8x16 tile at (184, 240).
  */
-#define TEXWINDOW_OFF 0xE2000000
 #define GAUGE_FILL_TEXWINDOW 0xE20103FF
 #define GAUGE_TRACK_TEXWINDOW 0xE20F5FDF
 
@@ -28,17 +27,6 @@
 
 /** @brief r, g and b at full: the white the fill blinks to. */
 #define GAUGE_BLINK_WHITE 0xFFFFFF
-
-/** @brief A sprite that carries its own draw mode and texture window (tag length 7). */
-typedef struct {
-    u32 tag;
-    u32 drawMode; /* GP0(E1h) */
-    u32 texWindow[2]; /* GP0(E2h), then a zero word */
-    u8 r0, g0, b0, code;
-    s16 x0, y0;
-    u32 uvClut; /* u, v and CLUT */
-    u16 w, h;
-} GaugeSprt;
 
 /* --- Private functions --- */
 
@@ -127,7 +115,7 @@ void stepGauges(void) {
 static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
     Gauge *gauge;
     DR_TWIN *tw;
-    GaugeSprt *p;
+    ModeSprt *p;
     u32 barColor;
     s32 flags;
     s32 originX;
@@ -166,7 +154,7 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
         tw->code[0] = TEXWINDOW_OFF;
         tw->code[1] = 0;
         addPrimFastWithTempOperand(ot, tw, link);
-        p = (GaugeSprt *)(tw + 1);
+        p = (ModeSprt *)(tw + 1);
 
         x += 8;
         y += 3;
@@ -183,7 +171,7 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
             p->code = SPRT_CODE >> SPRT_CODE_SHIFT;
             setXY0(p, x, y);
             setWH(p, w, 8);
-            p->uvClut = getClut(ICON_CLUT_X, GAUGE_FILL_CLUT_Y) << 16;
+            *(u32 *)&p->u0 = getClut(ICON_CLUT_X, GAUGE_FILL_CLUT_Y) << 16;
             addPrimFastWithTempOperand(ot, p, link2);
             p++;
             x += GAUGE_SPRITE_WIDTH;
@@ -204,7 +192,7 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
             p->code = SPRT_CODE >> SPRT_CODE_SHIFT;
             setXY0(p, x, y);
             setWH(p, w, 16);
-            p->uvClut = getClut(ICON_CLUT_X, GAUGE_TRACK_CLUT_Y) << 16;
+            *(u32 *)&p->u0 = getClut(ICON_CLUT_X, GAUGE_TRACK_CLUT_Y) << 16;
             addPrimFastWithTempOperand(ot, p, link3);
             p++;
             x += GAUGE_SPRITE_WIDTH;

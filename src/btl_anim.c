@@ -421,7 +421,7 @@ void loadBattleTimImage(Tim *data) {
     rect = clut->rect;
     rect.x = 0x100;
     rect.y = 0xE0;
-    convertClutPalette(clut->data);
+    convertClutPalette((u16 *)clut->data); /* the CLUT's 16-bit colours */
     LoadImage(&rect, clut->data);
     DrawSync(0);
 
@@ -2003,12 +2003,12 @@ void copyDisplayRect(RECT *dst) {
 
 /**
  * @brief Copy the draw offset from the active draw environment.
- * @param dst Destination vector for the display coordinates.
+ * @param ofs Receives the offset's x and y, as SetDrawOffset takes them.
  */
-void copyDisplayCoords(DVECTOR *dst) {
+void copyDisplayCoords(u16 *ofs) {
     DRAWENV *env = g_activeDrawEnv;
-    dst->vx = env->dispX;
-    dst->vy = env->dispY;
+    ofs[0] = env->ofs[0];
+    ofs[1] = env->ofs[1];
 }
 
 
@@ -2035,7 +2035,7 @@ u8 *emitDrawEnvPackets(P_TAG *ot, u8 *pkt) {
     pkt += 0xC;
 
     offset = (DR_OFFSET *)pkt;
-    SetDrawOffset(offset, &rect);
+    SetDrawOffset(offset, (u16 *)&rect); /* the clip rect's x and y are the offset */
     addPrim(ot, offset);
     pkt += 0xC;
 
