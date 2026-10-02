@@ -3597,7 +3597,7 @@ s32 func_800A610C(WorldObject *head) {
  * Uses @c D_800D32F0 as a scratch @c RECT for each upload.
  */
 static void func_800A6188(Tim *tim, u8 tableIdx) {
-    u32 *img1 = (u32 *)tim->clut.data;
+    u32 *img1 = tim->clut.data;
     /* The tim/img1 ++/-- pairs pin img1 into a callee-saved register so it
        survives the LoadImage/DrawSync calls and is reused for the second
        image; without them the register allocation doesn't match. */

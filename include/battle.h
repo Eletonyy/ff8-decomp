@@ -44,9 +44,12 @@ typedef struct {
 struct BattleDisplayEntity;
 typedef void (*EntityCallback)(struct BattleDisplayEntity *);
 
+/** @brief Render hook of a battle entity: draws it at @p pkt, returns the next free packet. */
+typedef void *(*EntityRenderCallback)(void *ot, struct BattleDisplayEntity *entity, void *pkt);
+
 typedef struct BattleDisplayEntity {
     EntityCallback callback; /* update function pointer */
-    s32 unk4;
+    EntityRenderCallback render; /**< Draws the entity's contents; NULL for none. */
     RECT boundRect;
     RECT dispRect;
     ClipResult clipBound; /**< @c boundRect clipped by @ref clipBlitRects. */

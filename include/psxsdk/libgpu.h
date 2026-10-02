@@ -479,7 +479,7 @@ void SetDrawStp(u32 *p, s32 dfe);
 void AddPrim(void *ot, void *p);
 void AddPrims(s32 *ot, void *p0, void *p1);
 void SetDrawArea(DR_AREA *p, RECT *rect);
-void SetDrawOffset(DR_OFFSET *p, RECT *rect);
+void SetDrawOffset(DR_OFFSET *p, u16 *ofs);
 s32 MoveImage(RECT *rect, s32 x, s32 y);
 s32 OpenTIM(u32 *addr);
 void *ReadTIM(void *timimg);

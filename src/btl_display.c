@@ -36,13 +36,13 @@ void setBattleEntityField00(s32 idx, s32 val) {
 
 
 /**
- * @brief Set a battle entity's field04.
+ * @brief Set a battle entity's render hook.
  * @param idx Entity index.
- * @param val Value to store.
+ * @param val Hook to run, or NULL for none.
  */
-void setBattleEntityField04(s32 idx, s32 val) {
+void setBattleEntityField04(s32 idx, EntityRenderCallback val) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
-    entity->unk4 = val;
+    entity->render = val;
 }
 
 
@@ -93,7 +93,7 @@ u32 getBattleEntityField35(s32 idx) {
 /**
  * @brief Set a battle entity's active flag; if 0, fully deactivate the entity.
  * @param idx Entity index.
- * @param value Active flag; if 0, also clears field36, field04, and field00.
+ * @param value Active flag; if 0, also clears field36, the render hook and field00.
  */
 void setBattleEntityActive(s32 idx, s32 value) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
@@ -101,7 +101,7 @@ void setBattleEntityActive(s32 idx, s32 value) {
     entity->activeFlag = value;
     if (value == 0) {
         setBattleEntityField36(idx, 0);
-        setBattleEntityField04(idx, 0);
+        setBattleEntityField04(idx, NULL);
         setBattleEntityField00(idx, 0);
     }
 }
@@ -158,7 +158,7 @@ void initBattleEntity(s32 idx) {
     setBattleEntityBoundRect(idx, &rect);
     setBattleEntityRectClamp(idx, &rect);
     setBattleEntityType(idx, 6);
-    setBattleEntityField04(idx, 0);
+    setBattleEntityField04(idx, NULL);
     setBattleEntityField00(idx, 0);
     setBattleEntityActive(idx, 0);
     setBattleEntityAnimSpeed(idx, 3);

@@ -22,7 +22,7 @@ INCLUDE_ASM("asm/nonmatchings/drawbar", func_8002B3A0);
  * @param color Fill colour.
  * @return The advanced primitive cursor.
  */
-DR_AREA *func_8002B898(P_TAG *ot, DR_AREA *prim, RECT *rect, s32 color) {
+DR_AREA *func_8002B898(void *ot, DR_AREA *prim, RECT *rect, s32 color) {
     return func_8002B3A0(ot, prim, rect, color, 3);
 }
 
@@ -39,6 +39,6 @@ INCLUDE_ASM("asm/nonmatchings/drawbar", func_8002B8BC);
  * @param color Colour word.
  * @return The primitive cursor after the packets.
  */
-DR_AREA *drawWindowBackground(P_TAG *ot, DR_AREA *prim, RECT *rect, s32 color) {
+DR_AREA *drawWindowBackground(void *ot, DR_AREA *prim, RECT *rect, s32 color) {
     return func_8002B8BC(ot, prim, rect, color, 0);
 }
