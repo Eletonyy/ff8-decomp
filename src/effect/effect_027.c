@@ -14,7 +14,6 @@
 #include "effect/lib/bankclear.h"
 #include "effect/lib/common.h"
 #include "battle.h"
-#include "btl_entity.h"
 #include "effect_params.h"
 
 /** @brief Where in the scratchpad the effect keeps its view matrix. */

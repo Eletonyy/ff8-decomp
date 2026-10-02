@@ -42,7 +42,7 @@ typedef struct {
 } ClipWork;
 
 struct BattleDisplayEntity;
-typedef void (*EntityCallback)(struct BattleDisplayEntity *);
+typedef void (*EntityCallback)(struct BattleDisplayEntity *entity, u32 input, u32 repeat);
 
 /** @brief Render hook of a battle entity: draws it at @p pkt, returns the next free packet. */
 typedef void *(*EntityRenderCallback)(void *ot, struct BattleDisplayEntity *entity, void *pkt);

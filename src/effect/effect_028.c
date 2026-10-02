@@ -19,7 +19,6 @@
 #include "effect/lib/rotz.h"
 #include "effect/lib/heading.h"
 #include "effect/lib/entity.h"
-#include "btl_entity.h"
 #include "battle/bc_object11.h"
 #include "battle/bc_object15.h"
 #include "battle/bc_object13.h"

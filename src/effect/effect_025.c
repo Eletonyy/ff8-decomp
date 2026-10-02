@@ -22,7 +22,6 @@
 #include "effect/lib/interpolate.h"
 #include "effect/lib/scatter.h"
 #include "effect/lib/emit_mode.h"
-#include "btl_entity.h"
 
 /**
  * @name Per-part draw flags -- @ref EffectDrawRequest::colours

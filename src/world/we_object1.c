@@ -12,7 +12,8 @@
 #include "psxsdk/libgte.h"
 #include "psxsdk/libetc.h"
 #include "psxsdk/libc.h"
-#include "dialog.h"
+#include "ui/dialog.h"
+#include "ui/text.h"
 #include "btl_anim.h"
 #include "world/we_object9.h"
 //#include "world/we_object6.h" // Deliberately not included for matching reasons, original code likely forgot to include this

@@ -6,7 +6,7 @@
 #include "menututo.h"
 #include "numstr.h"
 #include "psxsdk/libetc.h"
-#include "dialog.h"
+#include "ui/text.h"
 
 /**
  * @brief Read tutorial column index 1.
@@ -1464,9 +1464,7 @@ void func_801E48C0(TutoState *self) {
  *       instructions vs target's 4). The original source likely had hand-
  *       written inline asm for @c addPrim, or relied on a PsyQ SDK variant
  *       whose codegen our toolchain doesn't reproduce. Project policy bans
- *       inline asm, so the function stays @c INCLUDE_ASM. Several similar
- * functions in @c dialog.c (the "swl-based setaddr" comment there
- *       refers to the same pattern) are likewise still @c INCLUDE_ASM.
+ *       inline asm, so the function stays @c INCLUDE_ASM.
  *       The cleanest matching-aware C reaches 63% — preserved below for
  *       reference. Other near-misses come from gcc not keeping the unused
  *       @c tpY anchor variable in a register without a use site for it.

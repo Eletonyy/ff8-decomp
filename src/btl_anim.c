@@ -11,7 +11,9 @@
 #include "ui/gauge.h"
 #include "ui/seed_rank.h"
 #include "input/button_remap.h"
-#include "dialog.h"
+#include "ui/window.h"
+#include "ui/dialog.h"
+#include "ui/text.h"
 #include "thread.h"
 
 
@@ -23,8 +25,6 @@ void func_800472E4(void);
 void func_800472F4(void);
 s32 getPadReadButtons(s32, s32);
 s32 getPadReadRepeat(s32, s32);
-s32 GetActiveFlag(s32);
-void dispatchBattleEntity(s32, s32, s32);
 static s32 getPadReadByte(s32 idx, s32 param, s32 frameOffset);
 static s32 getPadReadType(s32 idx, s32 frameOffset);
 static void resetPadInput(s32 idx, s32 buttons);
@@ -39,7 +39,6 @@ extern s16 g_cardFileSlot;   /* save slot index */
 extern u8 g_cardFileType;    /* card/save type */
 extern u8 g_cardFileActive;
 extern DRAWENV *g_activeDrawEnv;
-extern BattleDisplayEntity g_battleEntities[];
 extern u8 g_paletteIndices[];
 
 /**
@@ -2266,7 +2265,7 @@ s32 renderBattleDisplayList(s32 *colorTag) {
     head = transformValueIfActive(&buf->ot[13], head);
     head = drawGauges(&buf->ot[13], head);
     ot = buf->ot;
-    storeGpuPacket(func_8002BF24(ot, head) + sizeof(buf->ot));
+    storeGpuPacket((u32)(func_8002BF24(ot, head) + sizeof(buf->ot)));
 
     setaddr(&ot[17], getaddr(colorTag));
     setaddr(colorTag, ot);
@@ -2287,16 +2286,16 @@ s32 renderBattleDisplayList(s32 *colorTag) {
  */
 s32 addPrimitive(s32 *prim) {
     u32 *ot;
-    s32 head;
+    u8 *head;
     s32 savedGp;
     s32 result;
 
     GP_SAVE_SCRATCH(savedGp);
 
     ot = g_engine.active->ot;
-    head = getDisplayListHead();
+    head = (u8 *)getDisplayListHead();
     head = func_8002BF24(ot, head);
-    storeGpuPacket(head);
+    storeGpuPacket((u32)head);
 
     setaddr(&ot[17], getaddr(prim));
     setaddr(prim, ot);
@@ -2384,152 +2383,4 @@ void initBattleAnimSystem(s32 vramBase, s32 vramSize)
     setDigitBaseCode(((u8 *)getMenuString(0xB))[1]);
     g_engine.seedRankNotification.salaryEnabled = 0;
     g_cardFileActive = 0;
-}
-
-
-
-/**
- * @brief Get a pointer to a battle entity by index.
- * @param idx Entity index.
- * @return Pointer to the entity.
- */
-BattleDisplayEntity *getBattleEntity(s32 idx) {
-    return &g_battleEntities[idx];
-}
-
-/**
- * @brief Set a battle entity's animation speed, clamped to [3, 11].
- * @param idx Entity index.
- * @param val Value to set; clamped to minimum 3 and maximum 11.
- */
-void setBattleEntityAnimSpeed(s32 idx, s32 val) {
-    BattleDisplayEntity *entity = &g_battleEntities[idx];
-    s32 v;
-    if (val >= 3) {
-        if (val < 12) {
-            v = val;
-        } else {
-            v = 11;
-        }
-    } else {
-        v = 3;
-    }
-    entity->animSpeed = v;
-}
-
-
-/**
- * @brief Get a battle entity's animation speed.
- * @param idx Entity index.
- * @return Animation speed value for the entity.
- */
-s32 getBattleEntityAnimSpeed(s32 idx) {
-    BattleDisplayEntity *entity = &g_battleEntities[idx];
-    return entity->animSpeed;
-}
-
-
-/**
- * @brief Store a byte value into a battle entity's subFields array.
- * @param idx Entity index.
- * @param offset Index into the subFields array (0 or 1).
- * @param val Byte value to store.
- */
-void setBattleEntitySubField(s32 idx, s32 offset, s32 val) {
-    BattleDisplayEntity *entity = &g_battleEntities[idx];
-    entity->subFields[offset] = val;
-}
-
-
-/**
- * @brief Get a byte from a battle entity's subFields array.
- *
- * Dead code — never called anywhere in the binary. The compiler shared the
- * g_battleEntities base address (v0) from the preceding setBattleEntitySubField
- * via cross-function register reuse, producing only 4 instructions. This
- * optimization cannot be reproduced from natural struct access, so pointer
- * math with `register` redeclaration is used to match.
- *
- * Original code:
- * @code
- * u8 getBattleEntitySubField(s32 idx, s32 offset) {
- *     BattleDisplayEntity *entity = &g_battleEntities[idx];
- *     return entity->subFields[offset];
- * }
- * @endcode
- *
- * @param idx Entity index (arrives pre-computed as entity pointer in v0).
- * @param offset Index into the subFields array.
- * @return Byte value at the given subField offset.
- */
-u8 getBattleEntitySubField(s32 idx, s32 offset) {
-    register idx;
-    return *((u8 *)idx + offset + 0x3A);
-}
-
-
-/**
- * @brief Set a battle entity's bounding rectangle.
- * @param idx Entity index.
- * @param src Source RECT to copy.
- */
-void setBattleEntityBoundRect(s32 idx, RECT *src) {
-    BattleDisplayEntity *entity = &g_battleEntities[idx];
-    entity->boundRect = *src;
-}
-
-
-/**
- * @brief Set a battle entity's display rectangle with minimum size clamping.
- *
- * Copies src RECT into the entity's dispRect, then ensures the height
- * is at least 1 and the width is at least 2.
- *
- * @param idx Entity index.
- * @param src Source RECT to copy.
- */
-void setBattleEntityRectClamp(s32 idx, RECT *src) {
-    BattleDisplayEntity *entity = &g_battleEntities[idx];
-    BattleDisplayEntity *ent2;
-    ent2 = entity;
-    ent2->dispRect = *src;
-    if (ent2->dispRect.h <= 0) {
-        entity->dispRect.h = 1;
-    }
-    if (entity->dispRect.w < 2) {
-        ent2->dispRect.w = 2;
-    }
-}
-
-
-/**
- * @brief Get a battle entity's bounding rectangle.
- * @param idx Entity index.
- * @param dst Destination RECT to copy into.
- */
-void getBattleEntityBoundRect(s32 idx, RECT *dst) {
-    BattleDisplayEntity *entity = &g_battleEntities[idx];
-    *dst = entity->boundRect;
-}
-
-
-/**
- * @brief Get a battle entity's display rectangle.
- * @param idx Entity index.
- * @param dst Destination RECT to copy into.
- */
-void getBattleEntityDispRect(s32 idx, RECT *dst) {
-    BattleDisplayEntity *entity = &g_battleEntities[idx];
-    *dst = entity->dispRect;
-}
-
-
-/**
- * @brief Get a battle entity's entity type.
- * @param idx Entity index.
- * @return Entity type value.
- */
-s32 getBattleEntityType(s32 idx) {
-    BattleDisplayEntity *entity = &g_battleEntities[idx];
-    return entity->entityType;
 }

@@ -18,7 +18,7 @@ static void setNextPageMarkerColor(s32 r, s32 g, s32 b);
  * forced to a SPRT code; width/height are copied and the cell's signed offsets
  * are added to (@p x, @p y).
  *
- * @note The emitter of drawTextIcon (dialog.c) with drawNextPageMarker's colour
+ * @note The emitter of drawTextIcon (text.c) with drawNextPageMarker's colour
  * masking and the same @c (u8) narrowing of the blend rate. @c p is taken from
  * @p head only after the icon-count check: set before it, the table address
  * gets a register of its own instead of the cell cursor's.
@@ -117,7 +117,7 @@ static void setNextPageMarkerColor(s32 r, s32 g, s32 b) {
 /**
  * @brief Draw one icon of @c g_iconTable as a run of sprites, with a CLUT offset.
  *
- * The emitter of drawTextIcon (dialog.c), tinted with @p color, with @p clut
+ * The emitter of drawTextIcon (text.c), tinted with @p color, with @p clut
  * added to every cell's CLUT: the menus pass CLUT ids such as @c (row << 6) + 2
  * to draw an icon through another palette row. There is no icon-count check.
  *

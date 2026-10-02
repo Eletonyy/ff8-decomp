@@ -828,7 +828,7 @@ extern void func_800383B8(s32 key, s32 status);
  * box), @c payload typically holds the message pointer cast to s32,
  * and @c brightness / @c type mirror the values previously set via
  * @c setDialogBrightness / @c setDialogEntityType for the slot. Distinct
- * from the runtime @c Dialog in @c dialog.h, which is the active
+ * from the runtime @c Dialog in @c ui/dialog.h, which is the active
  * playback state — this is just the script-VM's last-set shadow.
  */
 typedef struct {

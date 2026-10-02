@@ -8,7 +8,8 @@
 #include "ui/seed_rank.h"
 #include "sound.h"
 #include "cd.h"
-#include "btl_entity.h"
+#include "ui/window.h"
+#include "ui/dialog.h"
 #include "field/fe_object10.h"
 
 /**

@@ -2,7 +2,7 @@
 #include "menu.h"
 #include "menucrd.h"
 #include "overlay.h"
-#include "dialog.h"
+#include "ui/text.h"
 
 /**
  * @brief Card menu task state, allocated by func_801F179C.

@@ -7,7 +7,8 @@
 #include "menushop2.h"
 #include "ui/icon.h"
 #include "snd_sfx.h"
-#include "dialog.h"
+#include "ui/dialog.h"
+#include "ui/text.h"
 #include "game.h"
 
 #define SYMBOL_PERCENT 20 // Passed as argument to func_801F6AFC

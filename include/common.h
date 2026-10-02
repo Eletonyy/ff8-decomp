@@ -67,7 +67,7 @@ typedef union {
  * GP stack allocation — allocates `size` bytes from the GP-relative area,
  * returning the current GP in `ptr`. Used for temporary scratchpad structs.
  * One asm statement: when `ptr` lives on the stack, its store lands after
- * both instructions (dialog/drawDialogText).
+ * both instructions (text/drawDialogText).
  */
 #define GP_ALLOC(ptr, size) \
     asm volatile("addu %0, $gp, $zero\n\taddi $gp, $gp, %1" : "=r"(ptr) : "i"(size))
@@ -87,7 +87,7 @@ typedef union {
 /*
  * Combined GP get return + restore macro — captures $gp (scratchpad pointer)
  * into ret, then restores original $gp from `saved`. Two asm statements: when
- * `saved` lives on the stack, its reload lands between them (dialog/drawMessageText).
+ * `saved` lives on the stack, its reload lands between them (text/drawMessageText).
  */
 #define GP_RESTORE_RET(saved, ret) \
     asm volatile("addu %0, $gp, $zero" : "=r"(ret)); \
@@ -175,10 +175,10 @@ typedef union {
  * input's register carries the image (clobbered by the template, in the
  * addPrimFast style).
  * getAddrNewFast has no "memory" clobber: reorg must be able to see that a
- * reload of `ot` made before it is still valid after it (dialog/drawMessageText).
+ * reload of `ot` made before it is still valid after it (text/drawMessageText).
  * getAddrNewFast writes the result back into its scratch. That is dead code
  * where the macro runs once, but inside a loop the scratch becomes
- * loop-carried: dialog.c's text renderers reload it from its stack slot into
+ * loop-carried: text.c's text renderers reload it from its stack slot into
  * the head register and store it back around the lwl.
  * addOtTagFast is addOtFast without the final copy: it leaves p's tag image in
  * the allocated temp `tag` ("+r", so an uninitialised temp is live from

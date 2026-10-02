@@ -1,5 +1,5 @@
-#ifndef DIALOG_H
-#define DIALOG_H
+#ifndef UI_DIALOG_H
+#define UI_DIALOG_H
 
 #include "common.h"
 #include "psxsdk/libgpu.h"
@@ -21,6 +21,12 @@
 
 /** @brief Text colours: the font CLUT rows that are loaded. */
 #define TEXT_CLUT_ROWS 16
+
+/** @brief Size of the $gp scratch buffer a message is decoded into. */
+#define DIALOG_MSG_BUF_SIZE 128
+
+/** @brief Height of one text line in pixels; a scroll steps @c scrollY once per frame until a line has passed. */
+#define DIALOG_LINE_HEIGHT 16
 
 struct Dialog;
 
@@ -98,6 +104,13 @@ extern DialogSystem g_dialogs;
 /** @brief The font's width table: one nibble per character, the even one in the low nibble. */
 extern u8 D_800834D8[0x1C4];
 
+extern void setDialogTextOrigin(s32 idx, s32 x, s32 y);
+extern void setDialogChoices(s32 idx, s32 first, s32 last, s32 cancel);
+extern void setDialogChoiceCursor(s32 idx, s32 val);
+extern void setDialogDrawCallback(s32 idx, DialogDrawCallback val);
+extern void setDialogUpdateCallback(s32 idx, DialogCallback val);
+extern s32 setDialogBrightness(s32 idx, s32 val);
+extern void updateTextBlinkColors(void);
 extern void tickTextBlink(void);
 extern void setTextBrightness(s32 brightness);
 extern void setDialogEntityIndex(s32 idx, s32 val);
@@ -132,19 +145,5 @@ extern void setDialogRect(s32 index, RECT *srcRect);
 extern void setMessageValue(s32 index, s32 value);
 extern void resetAllDialogs(void);
 extern void dispatchDialogAnimSpeed(s32 idx);
-extern s32 getNibbleValue(s32 idx);
-extern u32 emitTextGlyph(u32 head, TSPRT *p, s32 glyph, u32 colour, u32 xy);
-extern u8 *drawMessageText(P_TAG *ot, s32 x, s32 y, u8 *str);
-extern TSPRT *drawDecodedText(P_TAG *ot, TSPRT *p, s32 x, s32 y, u8 *str, s32 colour);
-extern s32 getTextSize(u8 *str);
-extern s32 getTextSizeB(u8 *str);
-extern s32 getTextWidth(u8 *str);
-extern s32 getFirstLineWidth(u8 *str);
-extern s32 getIconWidth(s32 idx);
-extern s32 measureMessage(u8 *str);
-extern void setMenuBrightness(s32 brightness);
-
-/** @brief Brightness last passed to setMenuBrightness; menus read it back to restore it. */
-extern s32 g_menuBrightness;
 
 #endif

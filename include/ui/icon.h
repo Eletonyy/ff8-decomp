@@ -332,6 +332,9 @@ enum {
 /** @brief r, g, b and the two option bits of the code byte in the colour word. */
 #define SPRT_RGB_MASK 0x03FFFFFF
 
+/** @brief The code byte of a colour word: the primitive code and its option bits. */
+#define COLOUR_WORD_CODE 0xFF000000
+
 /** @brief Primitive code 0x64 (SPRT) in the colour word. */
 #define SPRT_CODE 0x64000000
 

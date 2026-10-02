@@ -1,5 +1,6 @@
 #include "common.h"
 #include "gamestate.h"
+#include "field.h"
 #include "item.h"
 #include "numstr.h"
 #include "sound.h"
@@ -8,7 +9,8 @@
 #include "thread.h"
 #include "psxsdk/libc.h"
 #include "psxsdk/libgpu.h"
-#include "drawbar.h"
+#include "battle.h"
+#include "ui/window.h"
 #include "battle_anim.h"
 #include "menu_tint.h"
 #include "btl_anim.h"
@@ -338,7 +340,7 @@ void playTriadSfxParam(s32 sfxId, s32 param) {
  *       @c sndCmd11(0) and advance to state 1.
  *  - 1: copy the Triple Triad sound region @c [D_801A1B88, g_tripleTriadActiveList)
  *       into the inactive bank buffer (@c D_8005F388 / @c D_80063388, chosen by
- *       @c D_80082C11), flip the bank selector @c g_battleConfig[9], then play the
+ *       @c D_80082C11), flip the bank selector @c g_battleConfig.unk9, then play the
  *       uploaded bank via @c sndCmd10 / @c sndCmdC0.
  *
  * @param node Task node.
@@ -362,7 +364,7 @@ s32 func_800A238C(SndTaskNode *node) {
         } else {
             buf = D_80063388;
         }
-        g_battleConfig[9] ^= 1;
+        g_battleConfig.unk9 ^= 1;
         memmove(buf, D_801A1B88, (s32)&g_tripleTriadActiveList - (s32)D_801A1B88);
         sample = sndCmd10((s32)buf);
         D_8005F11C = sample;

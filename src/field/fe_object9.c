@@ -7,14 +7,13 @@
 #include "field/fe_object1b.h"
 #include "field/fe_object9.h"
 
-#include "dialog.h"
+#include "ui/dialog.h"
+#include "ui/text.h"
 
-// Intentionally NOT included — these headers would pull in void prototypes
-// for setDialogBrightness, setGaugeValue, showGauge and
-// showGaugeFull. We need gcc to implicit-int-declare those at the
-// call sites below to match the original K&R-style scheduling. Without that,
-// four functions mismatch.
-// #include "btl_entity.h"
+// Intentionally NOT included — this header would pull in void prototypes
+// for setGaugeValue, showGauge and showGaugeFull. We need gcc to
+// implicit-int-declare those at the call sites below to match the original
+// K&R-style scheduling. Without that, three functions mismatch.
 // #include "ui/gauge.h"
 
 /**

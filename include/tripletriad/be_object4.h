@@ -163,7 +163,7 @@ typedef struct {
 
 /* Imported functions kept as externs here, each for a concrete reason (numstr, controller-
    input, battle-display and colour-bar GPU helpers were migrated to numstr.h / thread.h /
-   btl_anim.h / drawbar.h):
+   btl_anim.h / ui/window.h):
      - getPadReadButtons — returns u16 (thread.c) but this caller needs the s32 view with no
        widening mask; adopting the true u16 measurably breaks the match (see thread.h). */
 extern s32  getPadReadButtons(s32 slot, s32 sub);     /**< Per-controller held buttons. Defined u16 in thread.c, but the original caller uses it as s32 (no widening mask) — match-load-bearing, so kept here rather than via thread.h. */
@@ -171,8 +171,6 @@ extern s32  getPadReadButtons(s32 slot, s32 sub);     /**< Per-controller held b
 /* File-scope data: a few globals owned elsewhere (battle config / menu palette) plus
    be_object4-private board / SFX / input state — the D_801D4xxx / D_801C2Exx / D_80182Exx
    symbols are not referenced by any other translation unit. */
-extern u8  g_battleConfig[];   /**< Shared battle config; [9] bit 0 = sound-bank selector. */
-extern u8  D_80082C11;         /**< Sound-bank selector flag (same byte as g_battleConfig[9]). */
 extern s16 D_8005F11C;
 extern u8  D_801A1B88[];       /**< Start of the Triple Triad sound region uploaded to a bank. */
 extern s16 D_801D49E2;

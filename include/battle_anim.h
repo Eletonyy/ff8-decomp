@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "psxsdk/libgpu.h"
-#include "dialog.h"
+#include "ui/dialog.h"
 #include "ui/countdown.h"
 #include "ui/seed_rank.h"
 

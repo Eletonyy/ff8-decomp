@@ -9,7 +9,8 @@
 #include "btl_anim_packet.h"
 #include "ui/icon.h"
 #include "snd_sfx.h"
-#include "dialog.h"
+#include "ui/dialog.h"
+#include "ui/text.h"
 
 extern AbilityEntry  D_8007CEE0[];
 

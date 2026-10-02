@@ -16,7 +16,6 @@
 #include "effect/lib/drawscript.h"
 #include "effect/lib/common.h"
 #include "effect_params.h"
-#include "btl_entity.h"
 
 /** @brief Where in the scratchpad the effect keeps its view matrix. */
 #define EFFECT_SCRATCHPAD ((MATRIX *)0x1F8002E0)

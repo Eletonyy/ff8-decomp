@@ -11,7 +11,8 @@
 #include "field/fe_object1_2.h"
 #include "field/fe_object1b.h"
 #include "field/fe_object7.h"
-#include "dialog.h"
+#include "ui/dialog.h"
+#include "ui/text.h"
 
 /**
  * @brief Pop a key item ID and store its value.

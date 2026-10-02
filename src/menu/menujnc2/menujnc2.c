@@ -4,7 +4,9 @@
 #include "battle.h"
 #include "ui/icon.h"
 #include "snd_sfx.h"
-#include "btl_entity.h"
+#include "ui/font.h"
+#include "ui/dialog.h"
+#include "ui/text.h"
 #include "game.h"
 #include "numstr.h"
 #include "battle_results/number.h"
@@ -12,7 +14,6 @@
 #include "ability_list.h"
 
 #include "menujnc2.h"
-#include "dialog.h"
 #include "card.h"
 #include "psxsdk/libetc.h"
 

@@ -7,7 +7,7 @@
 #include "world/we_object6.h"
 #include "world/we_object10.h"
 #include "world/we_object3.h"
-#include "dialog.h"
+#include "ui/dialog.h"
 #include "btl_anim.h"
 #include "world/we_object1.h"
 #include "world/we_object9.h"

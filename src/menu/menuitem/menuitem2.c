@@ -1,7 +1,7 @@
 #include "common.h"
 #include "menu.h"
 #include "menuitem2.h"
-#include "dialog.h"
+#include "ui/text.h"
 
 /* Second translation unit of the item menu. splat's jumptable-alignment
  * heuristic placed the file boundary at 0x801E9F94, and the jump tables from

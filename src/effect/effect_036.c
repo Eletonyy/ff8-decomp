@@ -16,7 +16,6 @@
 #include "effect/lib/tint.h"
 #include "battle.h"
 #include "battle/bc_object13.h"
-#include "btl_entity.h"
 #include "effect_params.h"
 
 /** @brief Where in the scratchpad the effect keeps its view matrix. */

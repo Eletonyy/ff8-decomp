@@ -2,7 +2,9 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libc.h"
 #include "battle.h"
-#include "dialog.h"
+#include "ui/window.h"
+#include "ui/font.h"
+#include "ui/dialog.h"
 #include "game.h"
 #include "gamestate.h"
 #include "numstr.h"
@@ -13,12 +15,10 @@ extern u8 *getMagicNamePtr(s32 magicId);
 extern u8 *getBattleCharNameWrapper(s32 entityIdx);
 extern u8 *getCharNameWrapper(s32 charId);
 extern u8 *getCharNameWrapper2(s32 charId);
-extern u8 getDigitBaseCode(void);
 extern void copyString(u8 *dst, u8 *src);
 extern s32 btlStrlen(u8 *str);
 extern u32 D_800529F4[];
 extern u32 D_80052A08[];
-extern s32 D_800834CC;
 
 /** @brief Reference kinds carried in bits 8 and up of an insertArgString code. */
 enum {

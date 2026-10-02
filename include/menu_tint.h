@@ -3,8 +3,8 @@
  * @brief The menu tint pair: the colour everything the menus draw is modulated by,
  * and its blink copy.
  *
- * dialog.c writes it, but it has a header of its own so the menu overlays can use it
- * without dialog.h, whose prototypes clash with the menus' s32-typed display lists.
+ * ui/dialog.c and ui/text.c write it, but it has a header of its own so the menu overlays
+ * can use it without ui/text.h, whose prototypes clash with the menus' s32-typed display lists.
  */
 #ifndef MENU_TINT_H
 #define MENU_TINT_H

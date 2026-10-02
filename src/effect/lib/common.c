@@ -8,7 +8,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/inline_c.h"
 #include "effect/lib/common.h"
-#include "btl_entity.h"
+#include "ui/font.h"
 
 /**
  * @brief Cache the sixteen hex digit glyphs and reset the debug text cursor.

@@ -15,7 +15,6 @@
 #include "effect/lib/sprite.h"
 #include "effect/lib/step.h"
 #include "effect/lib/render.h"
-#include "btl_entity.h"
 
 static s32 func_801A2E48(EffectSpark *spark);
 static void func_801A351C(EffectEntity *entity);

@@ -6,7 +6,7 @@
 #include "numstr.h"
 #include "gamestate.h"
 #include "ui/icon.h"
-#include "btl_entity.h"
+#include "ui/font.h"
 #include "game.h"
 
 /** @brief Look up value from D_801FA3C8 table by dividing input by 64. */
