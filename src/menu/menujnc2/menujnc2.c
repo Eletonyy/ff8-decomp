@@ -7,7 +7,7 @@
 #include "btl_entity.h"
 #include "game.h"
 #include "numstr.h"
-#include "color.h"
+#include "battle_results/number.h"
 #include "gf.h"
 #include "ability_list.h"
 
@@ -3834,7 +3834,7 @@ s32 renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBas
             }
 
             namePtr = getMagicNamePtr(i + 0x40);
-            cursorY = drawDecodedText(renderCtx, cursorY, x, y - 3, namePtr, color);
+            cursorY = (s32)drawDecodedText((P_TAG *)renderCtx, (TSPRT *)cursorY, x, y - 3, namePtr, color);
         }
     } while (++i < numGfs);
 
@@ -3859,7 +3859,7 @@ s32 renderGfMagicGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 xBas
  * renders the GF magic name (id + 0x40) colored 7 when not junctioned,
  * 1 when junctioned to the displayed character (g_menuDisplayCfg.itemAttr),
  * or 0 when junctioned to another character. Junctioned GFs also get the
- * 0xC0 marker icon. Finally draws the GF level via drawColorByMenuPalette
+ * 0xC0 marker icon. Finally draws the GF level via drawNumberMenuTint
  * at a packed (y << 16 | x) position.
  *
  * @param renderCtx Render context.
@@ -3893,7 +3893,7 @@ s32 renderGfMagicEntry(s32 renderCtx, s32 cursorY, s32 col, s32 row, s32 xOff) {
         }
         ysum = 7 + g_menuDisplayCfg.y + row * 13;
         xsum = 0x90 + g_menuDisplayCfg.x + xOff;
-        cursorY = drawColorByMenuPalette(renderCtx, cursorY, (ysum << 16) | (xsum & 0xFFFF), gf->level, color);
+        cursorY = drawNumberMenuTint(renderCtx, cursorY, (ysum << 16) | (xsum & 0xFFFF), gf->level, color);
     }
     return cursorY;
 }
@@ -4083,7 +4083,7 @@ s32 renderJunctionSlotDetail(s32 renderCtx, s32 cursorY, s32 x, s32 y, s32 wideM
     if (flags & 0x20) {
         val = func_801F7BE4(val);
     }
-    cursorY = drawColorByMenuPalette(renderCtx, cursorY, xPos, val, available);
+    cursorY = drawNumberMenuTint(renderCtx, cursorY, xPos, val, available);
 
     if (flags & 0x80) {
         if (entry->flags & 1) {
@@ -4571,7 +4571,7 @@ s32 renderJunctionComposite(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s3
  * currently junctioned (func_801F1CE8, which also earns the 0xC0
  * junction marker icon), or 0 when unavailable per the availability
  * bitmask in g_menuDisplayCfg.dataPtr. The stocked quantity is drawn
- * via drawColorByMenuPalette at a packed (y << 16 | x) position.
+ * via drawNumberMenuTint at a packed (y << 16 | x) position.
  *
  * @param renderCtx Render context.
  * @param cursorY Current draw cursor position (chained through each call).
@@ -4614,7 +4614,7 @@ s32 renderMagicJunctionEntry(s32 renderCtx, s32 cursorY, s32 col, s32 row, s32 x
         cursorY = func_801F0FEC(renderCtx, cursorY, 0xC + g_menuDisplayCfg.x + xOff, 7 + g_menuDisplayCfg.y + row * 13, namePtr, color);
         ysum = 7 + g_menuDisplayCfg.y + row * 13;
         xsum = 0x6C + g_menuDisplayCfg.x + xOff;
-        cursorY = drawColorByMenuPalette(renderCtx, cursorY, (ysum << 16) | (xsum & 0xFFFF), qty, color);
+        cursorY = drawNumberMenuTint(renderCtx, cursorY, (ysum << 16) | (xsum & 0xFFFF), qty, color);
     }
     return cursorY;
 }

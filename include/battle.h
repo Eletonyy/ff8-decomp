@@ -541,7 +541,8 @@ typedef struct {
     /* 0x122 */ BattleItemSlot itemSlots[16];
     /* 0x172 */ s16 unk172;          /**< Mirrored HP cap (set with hpRegenCap when battle HP is reduced). */
     /* 0x174 */ s16 hpRegenCap;        /**< HP regen cap (field-walk tick stops when currentHp reaches this). */
-    /* 0x176 */ u8 pad176[0x17C - 0x176];
+    /* 0x176 */ u8 pad176[0x178 - 0x176];
+    /* 0x178 */ u32 exp; /**< Total EXP. */
     /* 0x17C */ s32 xpToNext;          /**< XP needed to reach next level. */
     /* 0x180 */ u32 unk180;
     /* 0x184 */ u32 unk184;
@@ -586,7 +587,7 @@ typedef struct {
 
 typedef struct{
     u8 unk0;
-    u8 unk1;
+    s8 unk1;
 } splitStruct;
 
 /** @brief Complete battle character/GF state block. */

@@ -24,5 +24,6 @@ extern void setPadRepeatMask(s32 unused, s32 channel, s32 mask);
 
 /* Public data */
 extern u8 g_animCurveFadeOut[]; /**< Easing curve: 65 entries that rise exponentially to 64. */
+extern u8 g_animCurveFadeIn[]; /**< g_animCurveFadeOut reversed: falls exponentially from 64. */
 
 #endif /* BTL_ANIM_H */

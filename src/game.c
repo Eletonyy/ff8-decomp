@@ -6,6 +6,7 @@
 #include "gamestate.h"
 #include "ability.h"
 #include "battle_render.h"
+#include "battle_results/result.h"
 
 u8 *resolveKernelPtr(u16 a0, s32 a1);
 
@@ -16,8 +17,6 @@ extern s32 D_800974B8[2];
 extern u8 D_800762C8[];
 extern u8 D_80052898[];
 
-void dispatchScratchpadThread(void);
-s32 getRenderCompleteFlag(void);
 void cdReadSync(s32, s32, s32, s32);
 void func_8001F5C8(void);
 s32 func_80021300(void);
@@ -25,7 +24,6 @@ void func_80023D60(s32);
 void cdReadAsyncSync(s32, s32, s32, s32);
 void func_80099D30(void);
 void tripleTriadMainLoop(void);
-void func_80035360(void);
 
 /**
  * @brief Empty stub at the start of game.c (no-op return).
@@ -34,15 +32,15 @@ void func_800205C8(void) {
 }
 
 /**
- * @brief Game code VSync handler. Clears render mode if getRenderCompleteFlag signals completion.
+ * @brief Game code VSync handler. Clears render mode if isResultsThreadDone signals completion.
  *
- * Called from the VSync dispatch (g_renderMode == 4). Invokes dispatchScratchpadThread
- * for per-frame processing, then checks getRenderCompleteFlag's return. If non-zero,
+ * Called from the VSync dispatch (g_renderMode == 4). Invokes switchToResultsThread
+ * for per-frame processing, then checks isResultsThreadDone's return. If non-zero,
  * sets g_renderMode to 0 (RENDER_IDLE) to signal the main loop.
  */
 void vsyncGameHandler(void) {
-    dispatchScratchpadThread();
-    if (getRenderCompleteFlag() != 0) {
+    switchToResultsThread();
+    if (isResultsThreadDone() != 0) {
         g_renderMode = 0;
     }
 }
@@ -679,7 +677,7 @@ case8:
     goto top;
 
 case5:
-    func_80035360();
+    startBattleResults();
     g_renderMode = mode;
     func_8001F5C8();
     g_vsyncRate = 100;

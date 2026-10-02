@@ -1241,14 +1241,14 @@ static s32 func_801E6FD8(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
 
         if (s->shopAction == SHOP_BUY) {
             x = xBase + 240;
-            arg1 = drawColorByMenuPalette(arg0, arg1, (y << 0x10) | (x & 0xFFFF), price, color);
+            arg1 = drawNumberMenuTint(arg0, arg1, (y << 0x10) | (x & 0xFFFF), price, color);
         }
 
         else {
             x = xBase + 200;
-            arg1 = drawColorByMenuPalette(arg0, arg1, (y << 0x10) | (x & 0xFFFF), price, color);
+            arg1 = drawNumberMenuTint(arg0, arg1, (y << 0x10) | (x & 0xFFFF), price, color);
             x = xBase + 240;
-            arg1 = drawColorByMenuPalette(arg0, arg1, (y << 0x10) | (x & 0xFFFF), count, color);
+            arg1 = drawNumberMenuTint(arg0, arg1, (y << 0x10) | (x & 0xFFFF), count, color);
         }
     }
 
@@ -1292,7 +1292,7 @@ static s32 func_801E722C(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
         x = arg3 + 66;
         y = arg4 + 22;
         index = func_801E5800(s, s->shopAction, s->listIndex[s->shopAction]);
-        arg2 = drawColorByMenuPalette(arg1, result, (y << 0x10) | (x & 0xFFFF), D_801EB088[index], color);
+        arg2 = drawNumberMenuTint(arg1, result, (y << 0x10) | (x & 0xFFFF), D_801EB088[index], color);
     }
 
     cfg->iconType = ICON_INFO;
@@ -1369,7 +1369,7 @@ static s32 func_801E7508(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
     arg2 = func_801F0FEC(arg1, arg2, x, y, func_801F6AA4(STRING_MONEY), COLOR_WHITE);
 
     x = arg3 + 322;
-    arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), s->gil, COLOR_WHITE);
+    arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), s->gil, COLOR_WHITE);
 
     x = arg3 + 323;
     y = arg4 + 8;
@@ -1423,7 +1423,7 @@ static s32 func_801E7628(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
 
     x = arg3 + 96;
     y = arg4 + 24;
-    arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), s->selectedQuantity, color);
+    arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), s->selectedQuantity, color);
 
     y = arg4 + 50;
 
@@ -1434,7 +1434,7 @@ static s32 func_801E7628(ShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32 arg
         price = D_801EAA48[index];
     }
 
-    arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), price * s->selectedQuantity, color);
+    arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), price * s->selectedQuantity, color);
 
     cfg->iconType = ICON_PRICE;
     cfg->w = 104;

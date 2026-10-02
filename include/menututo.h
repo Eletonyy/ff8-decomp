@@ -119,7 +119,6 @@ extern u8 D_801FABC7;
 /* ======================================================================== */
 
 extern s32 func_801F7A54(void);
-extern s32 drawColorByMenuPalette(s32, s32, s32, s32, s32);
 
 /* ======================================================================== */
 /* Forward declarations (defined within menututo.c)                         */

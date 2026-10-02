@@ -29,7 +29,7 @@ DR_AREA *func_8002B898(P_TAG *ot, DR_AREA *prim, RECT *rect, s32 color) {
 INCLUDE_ASM("asm/nonmatchings/drawbar", func_8002B8BC);
 
 /**
- * @brief Draw a window's background: func_8002B8BC with @p a4 = 0.
+ * @brief Draw a window's background: func_8002B8BC with a bgOffset of 0.
  *
  * A semi-transparent colour word draws a see-through box.
  *

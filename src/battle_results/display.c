@@ -8,22 +8,8 @@
 /** @brief The size of the stack a second thread runs on. */
 #define THREAD_STACK_SIZE 0x1800
 
-/**
- * @brief One buffer of the battle results screen's display: its display and draw
- * environments, a 2-entry ordering table and its packet space.
- */
-typedef struct {
-    DISPENV disp; /* 0x00 */
-    DRAWENV draw; /* 0x14 */
-    u32 ot[2]; /* 0x70: 2-entry ordering table */
-    void *pktAlloc; /* 0x78: current packet allocation pointer */
-    u32 pktBase; /* 0x7C: packet buffer start */
-} ResultsDisplay;
-
 /* --- Externs (sorted by address) --- */
 
-extern ResultsDisplay *g_resultsDisplay; /* 0x80083918: the buffer being drawn */
-extern ResultsDisplay *g_resultsDisplays[]; /* 0x80083920: the pair */
 extern u8 g_threadStack[THREAD_STACK_SIZE]; /* 0x80083938 */
 
 /* --- Private functions --- */

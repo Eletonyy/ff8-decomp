@@ -515,7 +515,7 @@ static s32 func_801E8BD8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
                 arg2 = func_801F0FEC(arg1, arg2, x, y, getWeaponName(weaponId & 0x3F), color);
                 x = arg3 + 189;
                 price = func_801E7E1C(weaponId & 0x3F) * s->priceMultiplier / 1000;
-                arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), price, color);
+                arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), price, color);
                 y += 13;
             }
         }
@@ -702,7 +702,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
 
     x = arg3 + 322;
     y = arg4 + 21;
-    arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), s->gil, color);
+    arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), s->gil, color);
 
     x = arg3 + 323;
     y = arg4 + 23;
@@ -714,7 +714,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
 
     x = arg3 + 184;
     y = arg4 + 7;
-    arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), oldWeaponStrength, color);
+    arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), oldWeaponStrength, color);
 
     // Dead code added to match with the original game binary.
     while (0);
@@ -727,7 +727,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
 
     x = arg3 + 184;
     y = arg4 + 21;
-    arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), func_801F7BE4(oldWeaponHit), color);
+    arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), func_801F7BE4(oldWeaponHit), color);
 
     // Dead code added to match with the original game binary.
     if (color == COLOR_RED) {
@@ -760,7 +760,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
         color = func_801E8FF8(oldWeaponStrength, newWeaponStrength);
     
         x = arg3 + 232;
-        arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), newWeaponStrength, color);
+        arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), newWeaponStrength, color);
         
         x = arg3 + 195;
         y = arg4 + 9;
@@ -781,7 +781,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
         y = arg4 + 21;
         x = arg3 + 232;
         tmp = func_801F7BE4(newWeaponHit);
-        arg2 = drawColorByMenuPalette(arg1, arg2, (y << 0x10) | (x & 0xFFFF), tmp, color);
+        arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), tmp, color);
 
         tmp = func_801F6AFC(SYMBOL_PERCENT);
         arg2 = func_8002C56C(arg1, arg2, x, y2, tmp, color);

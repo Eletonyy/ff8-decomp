@@ -3,54 +3,6 @@
 #include "battle.h"
 
 /**
- * @brief Call switchThread with a value loaded from scratchpad memory.
- * @note Reads a 32-bit value from PS1 scratchpad address 0x1F80001C.
- */
-void dispatchScratchpadThread(void) {
-    switchThread(*(s32 *)0x1F80001C);
-}
-
-
-/**
- * @brief Main game loop — runs forever calling render and VSync handlers.
- *
- * Alternates between func_80035158 (render frame) and switchThread(0)
- * (VSync/update) indefinitely. Never returns.
- */
-void mainGameLoop(void) {
-    for (;;) {
-        func_80035158();
-        switchThread(0);
-    }
-}
-
-
-/**
- * @brief Clear both VRAM framebuffers to black.
- *
- * Clears two 384x224 (0x180 x 0xE0) regions in VRAM: the first at (0,0)
- * and the second at (0x200,0). Each clear is followed by DrawSync(0) to
- * wait for completion.
- */
-void clearFramebuffers(void) {
-    RECT rect;
-    rect.x = 0;
-    rect.y = 0;
-    rect.w = 0x180;
-    rect.h = 0xE0;
-    ClearImage(&rect, 0, 0, 0);
-    DrawSync(0);
-    rect.x = 0x200;
-    rect.y = 0;
-    ClearImage(&rect, 0, 0, 0);
-    DrawSync(0);
-}
-
-
-INCLUDE_ASM("asm/nonmatchings/render", func_80035360);
-
-
-/**
  * @brief Counts the number of set bits in a 32-bit bitmask.
  * @param a0 Bitmask to count.
  * @return Number of set bits (0-32).

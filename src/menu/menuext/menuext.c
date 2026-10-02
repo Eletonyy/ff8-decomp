@@ -1,4 +1,5 @@
 #include "common.h"
+#include "battle_results/number.h"
 #include "menu.h"
 #include "menumain.h"
 #include "character.h"
@@ -453,7 +454,6 @@ extern CharRecord g_characters[];
 
 extern u8 *getCharName(s32 charId);
 extern u8 *getMagicNamePtr(s32 magicId);
-extern s32 drawColorByMenuPalette(s32 renderCtx, s32 cursorY, s32 packedYX, s32 byteVal, s32 attr);
 
 /**
  * @brief Render a character/magic equipment row + selection highlight.
@@ -499,7 +499,7 @@ s32 func_801E7EB4(ExtMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
         if (byteVal == 0xFF) {
             byteVal = 0;
         }
-        cursorY = drawColorByMenuPalette(renderCtx, cursorY,
+        cursorY = drawNumberMenuTint(renderCtx, cursorY,
                                          ((textY << 15) << 1) | (textX & 0xFFFF),
                                          byteVal, textAttr);
     }
