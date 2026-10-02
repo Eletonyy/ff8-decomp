@@ -171,7 +171,7 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
             p->code = SPRT_CODE >> SPRT_CODE_SHIFT;
             setXY0(p, x, y);
             setWH(p, w, 8);
-            p->uvClut = getClut(ICON_CLUT_X, GAUGE_FILL_CLUT_Y) << 16;
+            *(u32 *)&p->u0 = getClut(ICON_CLUT_X, GAUGE_FILL_CLUT_Y) << 16;
             addPrimFastWithTempOperand(ot, p, link2);
             p++;
             x += GAUGE_SPRITE_WIDTH;
@@ -192,7 +192,7 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
             p->code = SPRT_CODE >> SPRT_CODE_SHIFT;
             setXY0(p, x, y);
             setWH(p, w, 16);
-            p->uvClut = getClut(ICON_CLUT_X, GAUGE_TRACK_CLUT_Y) << 16;
+            *(u32 *)&p->u0 = getClut(ICON_CLUT_X, GAUGE_TRACK_CLUT_Y) << 16;
             addPrimFastWithTempOperand(ot, p, link3);
             p++;
             x += GAUGE_SPRITE_WIDTH;

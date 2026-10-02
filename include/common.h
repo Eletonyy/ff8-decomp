@@ -205,7 +205,8 @@ typedef struct {
     u32 texWindow[2]; /* GP0(E2h), then a zero word */
     u8 r0, g0, b0, code;
     s16 x0, y0;
-    u32 uvClut; /* u, v and CLUT */
+    u8 u0, v0;
+    u16 clut;
     u16 w, h;
 } ModeSprt;
 

@@ -85,7 +85,7 @@ ModeSprt *func_8002BAA0(u32 *ot, ModeSprt *p, RECT *rect, u32 color) {
         *(u32 *)&p->r0 = color; /* r, g, b and code in one store, over the code just set */
         setXY0(p, x, y);
         setWH(p, w, h);
-        p->uvClut = uv;
+        *(u32 *)&p->u0 = uv; /* u, v and CLUT in one store */
         link = linkPacket(link, p);
         p++;
         mode++;
@@ -97,8 +97,8 @@ ModeSprt *func_8002BAA0(u32 *ot, ModeSprt *p, RECT *rect, u32 color) {
 
 
 /**
- * @brief Draw a window box: its frame (func_8002B3A0, fill mode 3), then its
- * background (drawWindowBackground).
+ * @brief Draw a window box: its whole frame (func_8002B3A0 with both sides),
+ * then its background (drawWindowBackground).
  * @param ot Ordering table.
  * @param prim Primitive buffer cursor.
  * @param rect The window rect.
@@ -109,7 +109,7 @@ DR_AREA *func_8002BC10(P_TAG *ot, DR_AREA *prim, RECT *rect, s32 color)
 {
     DR_AREA *p;
 
-    p = func_8002B3A0(ot, prim, rect, color, 3);
+    p = func_8002B3A0(ot, prim, rect, color, WINDOW_FRAME_LEFT | WINDOW_FRAME_RIGHT);
 
     return drawWindowBackground(ot, p, rect, color);
 }
@@ -176,7 +176,7 @@ static void *func_8002BC6C(u32 *ot, s32 idx, void *head) {
         r.h = e->boundRect.h;
         rect = &r; /* the original keeps &r in a register across both calls */
         colour |= e->drawMode & COLOUR_WORD_CODE;
-        p = func_8002B3A0(ot, p, rect, colour, 3);
+        p = func_8002B3A0(ot, p, rect, colour, WINDOW_FRAME_LEFT | WINDOW_FRAME_RIGHT);
         p = drawWindowBackground(ot, p, rect, colour);
         getAddrNewFast(ot, link);
         SetDrawArea(p, &e->clipBound.rect);
