@@ -30,6 +30,9 @@ NO_G0_SRCS="src/main.c"
 # Sources compiled with -G4 (must match Makefile G4_SRCS)
 G4_SRCS="src/game.c"
 
+# Sources compiled with -O0 (must match Makefile O0_SRCS)
+O0_SRCS="src/btl_transition.c src/render3d.c src/mesh3d.c"
+
 # Sources compiled with PsyQ 4.3 (must match Makefile PSYQ43_SRCS)
 PSYQ43_SRCS="src/snd_init.c src/snd_dma.c src/snd_voice.c src/snd_bank.c src/snd_param.c src/snd_note.c src/snd_track.c"
 
@@ -157,6 +160,14 @@ done
 for g4 in ${G4_SRCS}; do
     if [[ "${SRC_FILE}" == "${g4}" ]]; then
         COMPILE_FLAGS="-O2 -G4"
+        break
+    fi
+done
+
+for o0 in ${O0_SRCS}; do
+    if [[ "${SRC_FILE}" == "${o0}" ]]; then
+        COMPILE_FLAGS="-O0 -G0"
+        ASPSX_VER="2.56"
         break
     fi
 done

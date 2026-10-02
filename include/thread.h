@@ -27,6 +27,10 @@ extern s32  func_80027CF8(s32 a, s32 b, s32 c); /**< Fold a recentred analog sti
    so those callers keep their own `extern s32 getPadReadButtons(...)`. */
 
 extern void func_80026D8C(void); /* per-frame battle VSync handler (RENDER_BATTLE) */
+extern void func_80026ADC(void); /**< Draw the saved picture; arguments and result go through the transition's scratch block. */
+extern void func_80026E20(void); /**< Close the battle transition's thread. */
+extern s32 getInterruptStatus(void);
+extern void func_80026FD4(s32 status); /**< Write the CPU's status register. */
 extern void settlePadPorts(void);
 extern s32 getPadVibration(s32 idx);
 extern void setPadDeadZone(s32 a0, s32 a1);

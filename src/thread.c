@@ -93,8 +93,11 @@ s32 getThreadControlBlock(s32 a0) {
 }
 
 
-/** @brief Wrapper that calls func_80047384 (returns interrupt/thread status). */
-void getInterruptStatus(void) { func_80047384(); }
+/**
+ * @brief Read the CPU's status register.
+ * @return The register's value.
+ */
+s32 getInterruptStatus(void) { return func_80047384(); }
 
 
 INCLUDE_ASM("asm/nonmatchings/thread", func_80026FD4);

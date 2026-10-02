@@ -7,6 +7,7 @@
 #include "ability.h"
 #include "battle_render.h"
 #include "battle_results/result.h"
+#include "btl_transition.h"
 
 u8 *resolveKernelPtr(u16 a0, s32 a1);
 
@@ -20,7 +21,6 @@ extern u8 D_80052898[];
 void cdReadSync(s32, s32, s32, s32);
 void func_8001F5C8(void);
 s32 func_80021300(void);
-void func_80023D60(s32);
 void cdReadAsyncSync(s32, s32, s32, s32);
 void func_80099D30(void);
 void tripleTriadMainLoop(void);

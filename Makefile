@@ -101,7 +101,7 @@ NO_G0_SRCS := src/main.c src/snd_cmd.c
 G4_SRCS := src/game.c
 
 # Source files compiled with -O0 (unoptimized, uses frame pointer)
-O0_SRCS := src/render3d.c src/mesh3d.c
+O0_SRCS := src/btl_transition.c src/render3d.c src/mesh3d.c
 
 # O0 files that need expand_li ON (no --aspsx-version flag) to match ori encoding
 O0_EXPAND_LI_SRCS := src/render3d.c
