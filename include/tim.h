@@ -32,4 +32,10 @@ typedef struct {
     TimSection clut;    /**< 0x08: CLUT section; pixel section follows. */
 } Tim;
 
+/** @brief Variable-width font file: width table + TIM glyph sheet. */
+typedef struct {
+    s32 widthTableOffset; /**< 0x00: offset of the width table, one nibble per character. */
+    s32 timOffset; /**< 0x04: offset of the glyph sheet's TIM, 0 for none. */
+} NameFont;
+
 #endif /* TIM_H */

@@ -145,6 +145,11 @@ typedef struct {
     ((0xe1000000) | ((dtd) ? 0x0200 : 0) | \
      ((dfe) ? 0x0400 : 0) | ((tpage) & 0x9ff))
 
+/* Fill in a DR_TPAGE: one word, the draw-mode command for tpage. */
+#define setDrawTPage(p, dfe, dtd, tpage) \
+    setlen(p, 1), \
+    ((u32 *)(p))[1] = _get_mode(dfe, dtd, tpage)
+
 /* Store a tpage / clut into a primitive's tpage / clut field. */
 #define setTPage(p, tp, abr, x, y) \
     ((p)->tpage = getTPage((tp), (abr), (x), (y)))

@@ -152,12 +152,6 @@ void enableChocoboWorld(void) {
 extern u8 *getCharName(CharacterId charId);
 extern CharacterData g_characters[];
 
-/** @brief Variable-width name font: width table + TIM glyph sheet. */
-typedef struct {
-    s32 widthTableOffset;    /* +0x00 */
-    s32 timOffset;           /* +0x04 */
-} NameFont;
-
 #define STRIP_STRIDE   0x300
 #define STRIP_ROWS     12
 #define STRIP_PITCH    0x30

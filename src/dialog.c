@@ -97,14 +97,6 @@ enum {
 #define DIALOG_CURSOR_X 4
 #define DIALOG_CURSOR_Y 5
 
-/** @brief Text glyphs are this many pixels square, and a font texture row holds this many. */
-#define TEXT_GLYPH_SIZE 12
-#define TEXT_GLYPHS_PER_ROW 21
-
-/** @brief CLUT of text colour 0; colour n uses the CLUT n rows below it. */
-#define TEXT_CLUT_X 288
-#define TEXT_CLUT_Y 224
-
 /** @brief Bit of a text glyph number that selects the font's second texture page. */
 #define TEXT_GLYPH_PAGE2 0x400
 
@@ -132,7 +124,6 @@ enum {
 #define DIALOG_NEXT_PAGE_MARKER_BLINK_OFF 0x10
 
 extern u32 g_textBlinkTint; // Same as g_dialogs.state.textBlinkTint
-extern u8 D_800834D8[];
 static void updateTextBlinkColors(void);
 static void applyWindowBrightness(s32 index);
 static void drawNextPageMarker(P_TAG *ot, Dialog *entry);
@@ -144,7 +135,6 @@ static void drawDialogText(P_TAG *ot, Dialog *entry);
 static void drawDialogContents(s32 index, P_TAG *ot);
 static s32 autoRepeatPadChannel(EngineState *engine, PadPort *port, DialogSystem *sys, u16 newVal, s32 channel);
 static void drawDialog(P_TAG *ot, s32 index);
-static inline u32 linkPacket(u32 head, void *p);
 static void *renderDialogEntity(void *ot, BattleDisplayEntity *entity, void *pkt);
 static u8 *updateDialogEntity(BattleDisplayEntity *entity, u32 input, u32 repeat);
 static void scaleDialogRect(RECT *rect, s32 scale, s32 arg2);
@@ -1075,15 +1065,6 @@ static void drawDialog(P_TAG *ot, s32 index) {
         drawDialogContents(index, ot);
         GP_RESTORE_RET(saved, ret);
     }
-}
-
-
-/** @brief Prepend packet @p p to an OT chain; returns the new chain head. */
-static inline u32 linkPacket(u32 head, void *p) {
-    u32 tag;
-
-    addOtTagFast(p, head, tag);
-    return tag;
 }
 
 
