@@ -48,6 +48,9 @@ extern DisplayListBuf *D_800834C0;
 
 static void *func_8002BC6C(u32 *ot, s32 idx, void *head);
 static u8 *func_8002BE48(u32 *ot, u8 *head);
+static u8 getBattleEntitySubField(s32 idx, s32 offset);
+static void getBattleEntityBoundRect(s32 idx, RECT *dst);
+static void getBattleEntityDispRect(s32 idx, RECT *dst);
 
 
 /**
@@ -124,7 +127,7 @@ void setBattleEntitySubField(s32 idx, s32 offset, s32 val) {
  * @param offset Index into the subFields array.
  * @return Byte value at the given subField offset.
  */
-u8 getBattleEntitySubField(s32 idx, s32 offset) {
+static u8 getBattleEntitySubField(s32 idx, s32 offset) {
     register idx;
     return *((u8 *)idx + offset + 0x3A);
 }
@@ -169,7 +172,7 @@ void setBattleEntityRectClamp(s32 idx, RECT *src) {
  * @param idx Entity index.
  * @param dst Destination RECT to copy into.
  */
-void getBattleEntityBoundRect(s32 idx, RECT *dst) {
+static void getBattleEntityBoundRect(s32 idx, RECT *dst) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
     *dst = entity->boundRect;
 }
@@ -180,7 +183,7 @@ void getBattleEntityBoundRect(s32 idx, RECT *dst) {
  * @param idx Entity index.
  * @param dst Destination RECT to copy into.
  */
-void getBattleEntityDispRect(s32 idx, RECT *dst) {
+static void getBattleEntityDispRect(s32 idx, RECT *dst) {
     BattleDisplayEntity *entity = &g_battleEntities[idx];
     *dst = entity->dispRect;
 }
