@@ -1,16 +1,23 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
+#include "psxsdk/libetc.h"
 #include "gamestate.h"
+#include "main.h"
 #include "thread.h"
+#include "mesh3d.h"
 #include "btl_transition.h"
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 224
 
-/** The strips are a 128-pixel band of the saved picture, starting 32 pixels in. */
+/** 128 quads cover the picture's left 160 pixels: the first is the 32-pixel margin, the other 127 are one pixel wide. */
 #define STRIP_COUNT 128
 #define STRIP_LEFT 32
+
+/** Strip and bar records in the tables: more than the draw step uses (STRIP_COUNT strips, one bar per line). */
+#define STRIP_TABLE_SIZE 168
+#define BAR_TABLE_SIZE 232
 
 /** Step at which the strips stop and the wipe to black starts. */
 #define WIPE_START 48
@@ -23,6 +30,15 @@
 
 /** Sets the bit of the status register that lets a thread use the GTE. */
 #define STATUS_GTE_ENABLE 0x40000000
+
+/** Distance of the projection plane. The strips start on it, so they first project at their own size. */
+#define SCREEN_DISTANCE 512
+/** Half a turn, in the GTE's 4096-per-revolution angle units. */
+#define HALF_TURN (ONE / 2)
+/** Colour word the saved picture is drawn with: its own brightness. */
+#define SNAPSHOT_COLOR 0x808080
+/** Step at which the wipe's strength starts to grow. */
+#define WIPE_RAMP_START 64
 
 /** Primitive codes with the semi-transparency bit set, as they sit in the top byte of the colour word. */
 #define CODE_FT4_BLENDED (0x2E << 24)
@@ -48,7 +64,8 @@ enum {
     __asm__ volatile ("ori $2, $0, " #n "; sb $2, 3(%0)" : : "r"(p) : "$2")
 
 /** One ordering table per display buffer. */
-typedef u32 TransitionOt[8];
+#define TRANSITION_OT_SIZE 8
+typedef u32 TransitionOt[TRANSITION_OT_SIZE];
 /** One primitive buffer per display buffer. */
 typedef u8 TransitionPrims[0x8000];
 
@@ -65,7 +82,8 @@ typedef struct {
     /* 0x20 */ s32 az;
     /* 0x24 */ s16 brightness; /**< Added to the step count to give the strip's brightness. */
     /* 0x26 */ s16 unk26;
-    /* 0x28 */ s32 unk28;
+    /* 0x28 */ s16 unk28;
+    /* 0x2A */ s16 unk2A;
     /* 0x2C */ s32 unk2C;
 } TransitionStrip;
 
@@ -74,7 +92,7 @@ typedef struct {
     /* 0x00 */ s32 length; /**< 16.16 fixed point. */
     /* 0x04 */ s32 speed;
     /* 0x08 */ s32 unk08;
-    /* 0x0C */ s16 r; /**< How much of each colour the bar takes away, per unit of strength. */
+    /* 0x0C */ s16 r; /**< How much of each colour the bar's leading edge takes away, per unit of strength; its root takes away everything. */
     /* 0x0E */ s16 g;
     /* 0x10 */ s16 b;
     /* 0x12 */ s16 unk12;
@@ -83,11 +101,13 @@ typedef struct {
     /* 0x1C */ s32 unk1C;
 } TransitionBar;
 
-/** @brief State of the normal battle transition. */
+/** @brief State of the normal battle transition. The strip table starts right after it. */
 typedef struct {
     /* 0x00 */ s16 step;
+    /* 0x02 */ s16 unk02; /**< Set to the display buffer in use when the transition starts; both set-ups clear it again. */
     /* 0x04 */ TransitionStrip *strips;
     /* 0x08 */ TransitionBar *bars;
+    /* 0x0C */ s32 unk0C;
 } TransitionState;
 
 /** @brief Scratch block the transition code shares. */
@@ -109,25 +129,185 @@ typedef struct {
     /* 0xFC */ s32 result;
 } TransitionWork;
 
+/* The transition's working memory sits at fixed addresses, as in the original:
+ * the target loads them as literals (lui/ori, no relocation), so a symbol would
+ * not match. The mesh transition shares this region, see render.h. */
 #define TRANSITION_STATE ((TransitionState *)0x801F0000)
+/** Bytes cleared at TRANSITION_STATE: the state and both tables. */
+#define TRANSITION_STATE_SIZE 0x4000
 #define TRANSITION_WORK ((TransitionWork *)0x801F5000)
 #define TRANSITION_OTS ((TransitionOt *)0x801F6000)
 #define TRANSITION_PRIMS ((TransitionPrims *)0x801DE000)
+/** One-entry ordering table for copying the picture on screen; the packets start 16 bytes in. */
+#define SNAPSHOT_COPY_OT ((u32 *)0x801DC000)
 
 extern s8 D_8005F17D;
 extern u8 D_8005F17C;
+extern u8 D_8005F17F;
 extern u8 D_8005F180;
 extern s32 D_80052914[];
 extern DR_MOVE D_80082CA0[];
 extern DRAWENV D_80082CD0[];
 extern DISPENV D_80082D90[];
+extern RECT D_8005EC24;
 extern RECT D_8005EC2C;
 extern RECT D_8005EC34;
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80023D60);
+static void func_80024064(void);
+
+/**
+ * @brief Start the screen transition that plays while a battle loads.
+ *
+ * Sets up two drawing buffers side by side and a third display area for the
+ * saved picture, copies the picture on screen into that area, shows it and
+ * copies it into both buffers. Then sets up the chosen transition, opens the
+ * thread that draws it and hands the VSync callback over to it.
+ *
+ * @param special Non-zero for the battle scenes that get the mesh transition
+ *                instead of the normal one.
+ */
+void func_80023D60(register s32 special) {
+    /* The caller passes an int it does not mask, so the parameter is s32. The
+     * original keeps it in a register and copies it to a byte on the stack: a
+     * plain s32 parameter would be stored to its argument slot instead. */
+    u8 type = special;
+    /* Never read: the original reserves 0x30 bytes of frame it does not touch. */
+    u8 unused[0x30];
+    register u32 *ot;
+    register TransitionState *state;
+    register DR_MOVE *move;
+    register DR_STP *stp;
+
+    g_renderMode = RENDER_IDLE;
+    state = TRANSITION_STATE;
+    state->unk02 = g_bufferIndex & 1;
+    VSync(0);
+
+    SetDefDrawEnv(&D_80082CD0[0], 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SetDefDrawEnv(&D_80082CD0[1], SCREEN_WIDTH, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SetDefDispEnv(&D_80082D90[0], SCREEN_WIDTH, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SetDefDispEnv(&D_80082D90[1], 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SetDefDispEnv(&D_80082D90[2], SNAPSHOT_X, SNAPSHOT_Y, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SetGeomOffset(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    SetGeomScreen(SCREEN_DISTANCE);
+    /* Show 224 of the 240 lines, centred. */
+    D_80082D90[0].screen.y = D_80082D90[1].screen.y = D_80082D90[2].screen.y = 8;
+    D_80082D90[0].screen.h = D_80082D90[1].screen.h = D_80082D90[2].screen.h = SCREEN_HEIGHT;
+    D_8005F17F = type;
+
+    /* Copy the picture on screen to the snapshot area. */
+    ot = SNAPSHOT_COPY_OT;
+    ClearOTag(ot, 1);
+    stp = (DR_STP *)(ot + 4);
+    /* libgpu.h declares SetDrawStp with a u32 pointer where the SDK's takes a DR_STP. */
+    SetDrawStp((u32 *)stp, 0);
+    AddPrim(ot, stp);
+    stp++;
+    move = (DR_MOVE *)stp;
+    SetDrawMove(move, &((DISPENV *)D_8005F138)->disp, SNAPSHOT_X, SNAPSHOT_Y);
+    AddPrim(ot, move);
+    move++;
+    stp = (DR_STP *)move;
+    SetDrawStp((u32 *)stp, 1);
+    AddPrim(ot, stp);
+    stp++;
+    DrawOTag(ot);
+    DrawSync(0);
+    VSync(0);
+
+    /* Show the snapshot, and start both buffers from it. */
+    PutDispEnv(&D_80082D90[2]);
+    MoveImage(&D_8005EC24, 0, 0);
+    MoveImage(&D_8005EC24, SCREEN_WIDTH, 0);
+    if (D_8005F17F == 0) {
+        func_80024064();
+    } else {
+        initMeshRenderer();
+    }
+    DrawSync(0);
+    D_8005F17C = 0;
+    D_8005F17D = 0;
+    func_80026E70();
+    g_renderMode = RENDER_BATTLE;
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80024064);
+/**
+ * @brief Set up the normal battle transition.
+ *
+ * Picks at random which side the transition runs from, clears the state
+ * block and both ordering tables, and fills in the strip and bar tables that
+ * func_800242C8 animates: the strips start spread out by their index, and
+ * each bar of the wipe gets a random start, speed and strength.
+ */
+static void func_80024064(void) {
+    /* Never read: the original reserves 0x18 bytes of frame it does not touch. */
+    u8 unused[0x18];
+    register u32 *p;
+    register s32 i;
+    register TransitionStrip *strip;
+    register TransitionState *state;
+    register TransitionBar *bar;
+    register TransitionWork *work;
+    register TransitionOt *ot;
+
+    work = TRANSITION_WORK;
+    work->arg0 = 256;
+    func_80026CA0();
+    D_8005F180 = work->result & 1;
+
+    /* Clear the state block, which holds the strip and bar tables too. */
+    p = (u32 *)TRANSITION_STATE;
+    for (i = 0; i < TRANSITION_STATE_SIZE / 4; i++) {
+        *p++ = 0;
+    }
+
+    state = TRANSITION_STATE;
+    ot = TRANSITION_OTS;
+    ClearOTag(ot[0], TRANSITION_OT_SIZE);
+    ClearOTag(ot[1], TRANSITION_OT_SIZE);
+
+    strip = (TransitionStrip *)(state + 1);
+    state->strips = strip;
+    for (i = 0; i < STRIP_TABLE_SIZE; i++) {
+        /* Multiplies, not shifts: the target copies i before shifting it. */
+        strip->x = i * 0x8000;
+        strip->vx = i * 0x2000;
+        strip->ax = i * 0x100;
+        if (D_8005F180 == 0) {
+            strip->vz = -0x10000;
+            strip->az = -(i * 64);
+        } else {
+            strip->vz = 0x10000;
+            strip->az = i * 64;
+        }
+        /* Not 64 - i: the target negates first. */
+        strip->brightness = -i + 64;
+        strip->unk26 = 0;
+        strip->unk28 = i * 16;
+        strip->unk2A = i * 8;
+        strip++;
+    }
+
+    /* The bars follow the strips. */
+    bar = (TransitionBar *)strip;
+    state->bars = bar;
+    for (i = 0; i < BAR_TABLE_SIZE; i++) {
+        work->arg0 = 48;
+        func_80026CA0();
+        bar->length = work->result << 16;
+        work->arg0 = 48;
+        func_80026CA0();
+        bar->speed = (work->result << 16) + (20 << 16);
+        bar->unk08 = 0;
+        work->arg0 = 16;
+        func_80026CA0();
+        bar->r = work->result + 16;
+        bar->g = 16;
+        bar->b = 16;
+        bar++;
+    }
+}
 
 
 /**
@@ -135,17 +315,21 @@ INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80024064);
  *
  * The transition runs in its own thread while the battle loads, one step every
  * second VSync. The step count goes up before it is used, so it runs from 1 to 80:
- * - Steps 1 to 47 redraw a band of the saved picture as 128 one-pixel strips
- *   that fly apart and brighten, between four glowing quads.
+ * - Every step's list starts with the saved picture. Steps 1 to 47 add four
+ *   glowing quads over it and, on top of those, 128 quarter-strength strips of
+ *   the picture's left 160 pixels that fly apart and brighten; from step 2 the
+ *   result is also copied back over the saved picture, so the next step builds
+ *   on it.
  * - Steps 48 to 80 take the picture away to black with 224 bars that grow in
  *   from one side.
- * - Step 80 also clears @c g_renderMode, closes the thread and blanks the display.
+ * - From step 78 the list is no longer drawn and the display is blanked.
+ * - Step 80 also clears @c g_renderMode and closes the thread.
  *
  * @c D_8005F180 mirrors the whole thing left to right.
  *
- * @note The first strip's left edge gets its texture coordinates twice: once
- *       under the mirror test and then again unconditionally. The original is
- *       missing an @c else there.
+ * @note The first quad (the 32-pixel margin) gets its left edge's texture
+ *       coordinates twice: once under the mirror test and then again
+ *       unconditionally. The original is missing an @c else there.
  */
 void func_800242C8(void) {
     /* Never used. They and unused below only hold their places in the stack frame. */
@@ -191,7 +375,7 @@ void func_800242C8(void) {
     }
 
     ot = TRANSITION_OTS[(state->step + 1) & 1];
-    ClearOTag(ot, 8);
+    ClearOTag(ot, TRANSITION_OT_SIZE);
 
     r = getInterruptStatus();
     r |= STATUS_GTE_ENABLE;
@@ -202,7 +386,7 @@ void func_800242C8(void) {
         ((SVECTOR *)scratch)->vy = state->step * 4;
         work->trans.vx = -(SCREEN_WIDTH / 2);
     } else {
-        ((SVECTOR *)scratch)->vy = 0x800 - state->step * 4;
+        ((SVECTOR *)scratch)->vy = HALF_TURN - state->step * 4;
         work->trans.vx = SCREEN_WIDTH / 2;
     }
     ((SVECTOR *)scratch)->vx = 0;
@@ -210,11 +394,12 @@ void func_800242C8(void) {
     RotMatrix(&work->angle, &work->rot);
     SetRotMatrix(&work->rot);
     work->trans.vy = -(SCREEN_HEIGHT / 2);
-    work->trans.vz = 512;
+    work->trans.vz = SCREEN_DISTANCE;
     gte_SetTransVector(&work->trans);
 
-    /* Copy the buffer that was just drawn back over the saved picture. The
-     * label is not jumped to: it is what puts a nop here, as in the original. */
+    /* Last in the list: once it has been drawn, copy its frame back over the
+     * saved picture, so the next step builds on this one. The label is not
+     * jumped to: it is what puts a nop here, as in the original. */
     if (state->step < 2) {
     } else {
         if (state->step < WIPE_START) {
@@ -234,7 +419,7 @@ void func_800242C8(void) {
     work->primPtr = TRANSITION_PRIMS[state->step & 1];
     work->arg0 = (s32)ot;
     work->arg1 = work->primPtr;
-    work->arg2 = 0x808080;
+    work->arg2 = SNAPSHOT_COLOR;
     func_80026ADC();
     work->primPtr = (void *)work->result;
 
@@ -261,9 +446,9 @@ void func_800242C8(void) {
             next = prim + 1;
             setPrimLen(prim, 9);
             if (D_8005F180 == 0) {
-                prim->tpage = getTPage(2, 3, SNAPSHOT_X, SNAPSHOT_Y);
+                setTPage(prim, 2, 3, SNAPSHOT_X, SNAPSHOT_Y);
             } else {
-                prim->tpage = getTPage(2, 3, SNAPSHOT_X + 128, SNAPSHOT_Y);
+                setTPage(prim, 2, 3, SNAPSHOT_X + 128, SNAPSHOT_Y);
             }
             r = state->step + strip->brightness;
             if (r >= 0xFF) r = 0xFF;
@@ -290,8 +475,7 @@ void func_800242C8(void) {
             if (D_8005F180 == 0) {
                 prim->u1 = prim->u3 = next->u0 = next->u2 = i + STRIP_LEFT;
             } else {
-                /* 160 - i, written as the byte it becomes. */
-                prim->u1 = prim->u3 = next->u0 = next->u2 = -96 - i;
+                prim->u1 = prim->u3 = next->u0 = next->u2 = STRIP_LEFT + STRIP_COUNT - i;
             }
             prim->v0 = prim->v1 = 0;
             prim->v2 = prim->v3 = SCREEN_HEIGHT;
@@ -401,9 +585,9 @@ wipe_start:
     } else {
         bar = state->bars;
         wipe = work->primPtr;
-        /* The strength of the wipe, kept in the translation's unused x. */
-        if (state->step >= 64) {
-            work->trans.vx = state->step - 63;
+        /* The strength of the wipe, kept in the translation's x, which is free once the GTE has loaded it. */
+        if (state->step >= WIPE_RAMP_START) {
+            work->trans.vx = state->step - (WIPE_RAMP_START - 1);
         } else {
             work->trans.vx = 1;
         }
@@ -460,7 +644,7 @@ wipe_start:
         }
         work->primPtr = wipe;
         if (state->step >= TRANSITION_END) {
-            g_renderMode = 0;
+            g_renderMode = RENDER_IDLE;
             func_80026E20();
             SetDispMask(0);
         }

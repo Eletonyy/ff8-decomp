@@ -33,6 +33,9 @@ G4_SRCS="src/game.c"
 # Sources compiled with -O0 (must match Makefile O0_SRCS)
 O0_SRCS="src/btl_transition.c src/render3d.c src/mesh3d.c"
 
+# O0 files assembled with no --aspsx-version flag, so maspsx expands li to ori (must match Makefile O0_EXPAND_LI_SRCS)
+O0_EXPAND_LI_SRCS="src/render3d.c"
+
 # Sources compiled with PsyQ 4.3 (must match Makefile PSYQ43_SRCS)
 PSYQ43_SRCS="src/snd_init.c src/snd_dma.c src/snd_voice.c src/snd_bank.c src/snd_param.c src/snd_note.c src/snd_track.c"
 
@@ -172,6 +175,14 @@ for o0 in ${O0_SRCS}; do
     fi
 done
 
+ASPSX_FLAGS="--aspsx-version=${ASPSX_VER}"
+for eli in ${O0_EXPAND_LI_SRCS}; do
+    if [[ "${SRC_FILE}" == "${eli}" ]]; then
+        ASPSX_FLAGS=""
+        break
+    fi
+done
+
 echo "Setting up permuter for ${FUNC_NAME} (PsyQ ${PSYQ_VER}, flags: ${COMPILE_FLAGS})..."
 echo "  Source:  ${SRC_FILE}"
 echo "  Asm dir: ${ASM_SUBDIR}"
@@ -217,7 +228,7 @@ DIR="${SCRIPT_DIR}"
 CPP="/usr/bin/cpp"
 CC1="${CC1}"
 MASPSX="python3 ${SCRIPT_DIR}/tools/maspsx/maspsx.py"
-ASPSX_VER="${ASPSX_VER}"
+ASPSX_FLAGS="${ASPSX_FLAGS}"
 COMPILE_FLAGS="${COMPILE_FLAGS}"
 AS="mipsel-linux-gnu-as"
 ASFLAGS="-march=r3000 -mabi=32 -EL -no-pad-sections -O0 -I${SCRIPT_DIR}/include"
@@ -236,7 +247,7 @@ cd "${TMPDIR}"
 # Compile with cpp → cc1 → maspsx → GAS → .o (matches build system)
 ${CPP} -E -lang-c -nostdinc -I"${DIR}/include" -DPERMUTER "${INPUT_ABS}" -o "out.i"
 ${CC1} -quiet ${COMPILE_FLAGS} "out.i" -o "out.s"
-cat out.s | ${MASPSX} --aspsx-version=${ASPSX_VER} --run-assembler \
+cat out.s | ${MASPSX} ${ASPSX_FLAGS} --run-assembler \
     ${ASFLAGS} -o "${OUTPUT_ABS}"
 COMPILE_EOF
 

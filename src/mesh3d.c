@@ -2,6 +2,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 #include "render.h"
+#include "mesh3d.h"
 
 extern MATRIX g_meshBaseMatrix;
 extern MeshRenderCtx g_meshRenderCtx;  /**< Global mesh render context (overlay area). */
