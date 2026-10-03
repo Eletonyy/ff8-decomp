@@ -42,6 +42,7 @@
 /** Primitive codes with the semi-transparency bit set, as they sit in the top byte of the colour word. */
 #define CODE_FT4_BLENDED (0x2E << 24)
 #define CODE_G4_BLENDED (0x3A << 24)
+#define CODE_GT4_BLENDED (0x3E << 24)
 
 /** Ordering table entries, in the order they are drawn. */
 enum {
@@ -161,7 +162,7 @@ typedef struct {
     /* 0x00 */ s32 pad00;
     /* 0x04 */ PolyGT4 *primPtr; /**< Current primitive write pointer. */
     /* 0x08 */ ScreenVert *vertices; /**< Vertex position array. */
-    /* 0x0C */ s32 *normals; /**< Vertex normal array. */
+    /* 0x0C */ SVECTOR *points; /**< The grid's points, before projection. */
     /* 0x10 */ s32 *otBase; /**< Ordering table base pointer. */
 } MeshRenderCtx;
 
@@ -180,9 +181,8 @@ typedef struct {
 /** One-entry ordering table for copying the picture on screen; the packets start 16 bytes in. */
 #define SNAPSHOT_COPY_OT ((u32 *)0x801DC000)
 #define MESH_RENDER_CTX ((MeshRenderCtx *)0x801F0000)
-#define MESH_INPUT_VERTS ((ScreenVert *)0x801F0400)
+#define MESH_INPUT_VERTS ((SVECTOR *)0x801F0400)
 #define MESH_SCREEN_VERTS ((ScreenVert *)0x801F1000)
-#define MESH_OT_BASE ((u32 *)0x801F6000)
 
 extern s8 D_8005F17D;
 extern u8 D_8005F17C;
@@ -719,21 +719,21 @@ wipe_start:
 
 
 /**
- * @brief Transform 81 vertex/normal pairs through the GTE.
- * @param mesh Mesh data containing vertex and normal array pointers.
+ * @brief Project the 81 grid points through the GTE into screen positions.
+ * @param mesh Mesh state holding the grid's points and where their screen positions go.
  */
 static void transformMeshVertices(MeshRenderCtx *mesh) {
-    register s32 *normals = mesh->normals;
-    register s32 *vertices = mesh->vertices;
+    register SVECTOR *points = mesh->points;
+    register ScreenVert *vertices = mesh->vertices;
     register s32 i = 0;
     s32 screenXY;
     s32 flag;
     s32 interpZ;
 
-    while (i < 81) {
-        RotTransPers(normals, vertices, &screenXY, &screenXY);
-        normals += 2;
-        vertices += 2;
+    while (i < GRID_VERTS * GRID_VERTS) {
+        RotTransPers(points, &vertices->xy, &screenXY, &screenXY);
+        points++;
+        vertices++;
         i++;
     }
 }
@@ -771,7 +771,7 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, s32 *ot,
         col = 0;
         while (col < GRID_SIZE) {
             setPrimLen(prim, 12);
-            prim->tpage = g_meshTpage[col] | 0x120;
+            prim->tpage = g_meshTpage[col] | getTPage(2, 1, 0, 0);
 
             if (perVertex) {
                 /* Vertex 0: min(tableA[col], tableA[row]) * intensity */
@@ -781,7 +781,7 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, s32 *ot,
                 r = (r * intensity) / 256;
                 r &= 0xFF;
                 r = (r | (r << 8)) | (r << 16);
-                prim->color0 = r | (0x3E << 24);
+                prim->color0 = r | CODE_GT4_BLENDED;
 
                 /* Vertex 1: min(tableB[col], tableA[row]) * intensity */
                 r = g_meshIntensityB[col];
@@ -811,7 +811,7 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, s32 *ot,
                 /* Uniform gray */
                 r = (intensity / 2) & 0xFF;
                 r = (r | (r << 8)) | (r << 16);
-                r = r | (0x3E << 24);
+                r = r | CODE_GT4_BLENDED;
                 prim->color0 = prim->color1 = prim->color2 = prim->color3 = r;
             }
 
@@ -868,7 +868,7 @@ static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity,
     SetRotMatrix(matrix);
     SetTransMatrix(matrix);
     transformMeshVertices(mesh);
-    otPtr = (s32 *)mesh->otBase;
+    otPtr = mesh->otBase;
     otPtr += 4;
     mesh->primPtr = renderMeshGrid(mesh->vertices, mesh->primPtr, otPtr, intensity, 1);
 }
@@ -888,23 +888,25 @@ static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity,
  */
 static void renderScaledMesh(MeshRenderCtx *mesh, s32 *ot, s32 scale, s32 intensity) {
     register s32 i;
-    register s32 *dst;
-    register s32 *src;
+    register MATRIX *dst;
+    register MATRIX *src;
     s32 scaleVec[3];
     MATRIX localMatrix;
     s32 unused1;
     s32 unused2;
 
-    src = (s32 *)&g_meshBaseMatrix;
-    dst = (s32 *)&localMatrix;
+    src = &g_meshBaseMatrix;
+    dst = &localMatrix;
     i = 0;
+    /* The MATRIX's 32 bytes; sizeof would make the compare unsigned. */
     while (i < 32) {
-        *(s32 *)((s32)dst + i) = *(s32 *)((s32)src + i);
+        *(s32 *)((u8 *)dst + i) = *(s32 *)((u8 *)src + i);
         i += 4;
     }
 
     scaleVec[0] = scaleVec[1] = scaleVec[2] = scale;
-    ScaleMatrix(dst, scaleVec);
+    /* A VECTOR without its pad word: the frame needs the 12-byte array, and ScaleMatrix never reads the pad. */
+    ScaleMatrix(dst, (VECTOR *)scaleVec);
     SetRotMatrix(dst);
     SetTransMatrix(dst);
     transformMeshVertices(mesh);
@@ -919,15 +921,15 @@ INCLUDE_ASM("asm/nonmatchings/btl_transition", renderFlatMesh);
  * @brief Initialize 9x9 vertex grid and ordering tables for mesh rendering.
  *
  * Sets up the mesh render context at MESH_RENDER_CTX with buffer pointers,
- * clears two 8-entry ordering tables at 0x801F6000, and fills a 9x9 grid
- * of screen-space vertex positions with uniform spacing (40px h, 27px v).
+ * clears both ordering tables, and fills in the 9x9 grid of points the mesh
+ * is projected from: 40 apart across and 27 down, centred on the origin.
  */
 static void initMeshRenderer(void) {
     register MeshRenderCtx *ctx;
-    register s32 *ot;
+    register TransitionOt *ot;
     register s32 col;
     register s32 row;
-    register ScreenVert *verts;
+    register SVECTOR *point;
     s32 unused1;
     s32 unused2;
     s32 unused3;
@@ -935,20 +937,21 @@ static void initMeshRenderer(void) {
 
     ctx = MESH_RENDER_CTX;
     ctx->pad00 = 0;
-    ctx->normals = (s32 *)MESH_INPUT_VERTS;
+    ctx->points = MESH_INPUT_VERTS;
     ctx->vertices = MESH_SCREEN_VERTS;
-    ot = (s32 *)MESH_OT_BASE;
-    ClearOTag((u32 *)ot, 8);
-    ClearOTag((u32 *)(ot + 8), 8);
-    verts = (ScreenVert *)ctx->normals;
+    ot = TRANSITION_OTS;
+    ClearOTag(ot[0], TRANSITION_OT_SIZE);
+    ClearOTag(ot[1], TRANSITION_OT_SIZE);
+    point = ctx->points;
     row = 0;
-    while (row < 9) {
+    while (row < GRID_VERTS) {
         col = 0;
-        while (col < 9) {
-            *(s16 *)&verts->xy = col * 40 - 160; /* x */
-            *((s16 *)&verts->xy + 1) = row * 27 - 108; /* y */
-            verts->pad = 0;
-            verts++;
+        while (col < GRID_VERTS) {
+            point->vx = col * 40 - 160;
+            point->vy = row * 27 - 108;
+            /* vz and the pad cleared with one word store, as the target does. */
+            *(s32 *)&point->vz = 0;
+            point++;
             col++;
         }
         row++;
