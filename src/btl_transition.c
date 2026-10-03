@@ -5,7 +5,6 @@
 #include "gamestate.h"
 #include "main.h"
 #include "thread.h"
-#include "mesh3d.h"
 #include "btl_transition.h"
 
 #define SCREEN_WIDTH 320
@@ -129,9 +128,49 @@ typedef struct {
     /* 0xFC */ s32 result;
 } TransitionWork;
 
-/* The transition's working memory sits at fixed addresses, as in the original:
+/** @brief Screen vertex (8 bytes). Packed x,y screen coordinates from GTE. */
+typedef struct {
+    s32 xy; /**< Packed x:16, y:16 screen coordinates. */
+    s32 pad;
+} ScreenVert;
+
+/** @brief POLY_GT4: gouraud-textured 4-point polygon (52 bytes). */
+typedef struct {
+    /* 0x00 */ u8 tag[3]; /**< P_TAG address (24 bits). */
+    /* 0x03 */ u8 len; /**< P_TAG word count. */
+    /* 0x04 */ s32 color0; /**< Vertex 0 color (R,G,B,code). */
+    /* 0x08 */ s32 vert0; /**< Vertex 0 screen XY. */
+    /* 0x0C */ u16 uv0; /**< Vertex 0 UV coordinates. */
+    /* 0x0E */ u16 clut; /**< CLUT id. */
+    /* 0x10 */ s32 color1; /**< Vertex 1 color. */
+    /* 0x14 */ s32 vert1; /**< Vertex 1 screen XY. */
+    /* 0x18 */ u16 uv1; /**< Vertex 1 UV coordinates. */
+    /* 0x1A */ u16 tpage; /**< Texture page id. */
+    /* 0x1C */ s32 color2; /**< Vertex 2 color. */
+    /* 0x20 */ s32 vert2; /**< Vertex 2 screen XY. */
+    /* 0x24 */ u16 uv2; /**< Vertex 2 UV coordinates. */
+    /* 0x26 */ u16 pad26;
+    /* 0x28 */ s32 color3; /**< Vertex 3 color. */
+    /* 0x2C */ s32 vert3; /**< Vertex 3 screen XY. */
+    /* 0x30 */ u16 uv3; /**< Vertex 3 UV coordinates. */
+    /* 0x32 */ u16 pad32;
+} PolyGT4; /* 0x34 = 52 bytes */
+
+/** @brief Mesh render context for GTE transformation and GPU primitive generation. */
+typedef struct {
+    /* 0x00 */ s32 pad00;
+    /* 0x04 */ PolyGT4 *primPtr; /**< Current primitive write pointer. */
+    /* 0x08 */ ScreenVert *vertices; /**< Vertex position array. */
+    /* 0x0C */ s32 *normals; /**< Vertex normal array. */
+    /* 0x10 */ s32 *otBase; /**< Ordering table base pointer. */
+} MeshRenderCtx;
+
+#define GRID_SIZE 8 /**< Quads per row/column in the mesh grid. */
+#define GRID_VERTS 9 /**< Vertices per row (GRID_SIZE + 1). */
+
+/* The transitions' working memory sits at fixed addresses, as in the original:
  * the target loads them as literals (lui/ori, no relocation), so a symbol would
- * not match. The mesh transition shares this region, see render.h. */
+ * not match. The two transitions share the region. */
 #define TRANSITION_STATE ((TransitionState *)0x801F0000)
 /** Bytes cleared at TRANSITION_STATE: the state and both tables. */
 #define TRANSITION_STATE_SIZE 0x4000
@@ -140,6 +179,10 @@ typedef struct {
 #define TRANSITION_PRIMS ((TransitionPrims *)0x801DE000)
 /** One-entry ordering table for copying the picture on screen; the packets start 16 bytes in. */
 #define SNAPSHOT_COPY_OT ((u32 *)0x801DC000)
+#define MESH_RENDER_CTX ((MeshRenderCtx *)0x801F0000)
+#define MESH_INPUT_VERTS ((ScreenVert *)0x801F0400)
+#define MESH_SCREEN_VERTS ((ScreenVert *)0x801F1000)
+#define MESH_OT_BASE ((u32 *)0x801F6000)
 
 extern s8 D_8005F17D;
 extern u8 D_8005F17C;
@@ -152,8 +195,26 @@ extern DISPENV D_80082D90[];
 extern RECT D_8005EC24;
 extern RECT D_8005EC2C;
 extern RECT D_8005EC34;
+extern u8 g_meshIntensityA[]; /**< Intensity table A (indexed by col, then row). */
+extern u8 g_meshIntensityB[]; /**< Intensity table B (indexed by col, then row). */
+extern u8 g_meshUCoord[]; /**< U coord per column. */
+extern u8 g_meshVCoord[]; /**< V coord per column. */
+extern u8 g_meshUPage[]; /**< U page offset per row (shifted <<8). */
+extern u8 g_meshVPage[]; /**< V page offset per row (shifted <<8). */
+extern u8 g_meshTpage[]; /**< Texture page ID per column. */
+extern MATRIX g_meshBaseMatrix;
 
 static void func_80024064(void);
+static void func_800242C8(void);
+static void transformMeshVertices(MeshRenderCtx *mesh);
+static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, s32 *ot, s32 intensity, s32 perVertex);
+static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity, s32 tx, s32 ty);
+static void renderScaledMesh(MeshRenderCtx *mesh, s32 *ot, s32 scale, s32 intensity);
+static void initMeshRenderer(void);
+void func_80026ADC(void); /**< Draw the saved picture; arguments and result go through the transition's scratch block. */
+void func_80026CA0(void); /**< Random number below the transition scratch block's first argument, returned in its result word. */
+void func_80026E20(void); /**< Close the battle transition's thread. */
+void func_80026E70(void); /**< Open the battle transition's thread. */
 
 /**
  * @brief Start the screen transition that plays while a battle loads.
@@ -164,7 +225,7 @@ static void func_80024064(void);
  * thread that draws it and hands the VSync callback over to it.
  *
  * @param special Non-zero for the battle scenes that get the mesh transition
- *                instead of the normal one.
+ * instead of the normal one.
  */
 void func_80023D60(register s32 special) {
     /* The caller passes an int it does not mask, so the parameter is s32. The
@@ -316,22 +377,22 @@ static void func_80024064(void) {
  * The transition runs in its own thread while the battle loads, one step every
  * second VSync. The step count goes up before it is used, so it runs from 1 to 80:
  * - Every step's list starts with the saved picture. Steps 1 to 47 add four
- *   glowing quads over it and, on top of those, 128 quarter-strength strips of
- *   the picture's left 160 pixels that fly apart and brighten; from step 2 the
- *   result is also copied back over the saved picture, so the next step builds
- *   on it.
+ * glowing quads over it and, on top of those, 128 quarter-strength strips of
+ * the picture's left 160 pixels that fly apart and brighten; from step 2 the
+ * result is also copied back over the saved picture, so the next step builds
+ * on it.
  * - Steps 48 to 80 take the picture away to black with 224 bars that grow in
- *   from one side.
+ * from one side.
  * - From step 78 the list is no longer drawn and the display is blanked.
  * - Step 80 also clears @c g_renderMode and closes the thread.
  *
  * @c D_8005F180 mirrors the whole thing left to right.
  *
  * @note The first quad (the 32-pixel margin) gets its left edge's texture
- *       coordinates twice: once under the mirror test and then again
- *       unconditionally. The original is missing an @c else there.
+ * coordinates twice: once under the mirror test and then again
+ * unconditionally. The original is missing an @c else there.
  */
-void func_800242C8(void) {
+static void func_800242C8(void) {
     /* Never used. They and unused below only hold their places in the stack frame. */
     s32 sxy, depth, flag;
     /* The order of these is the order of the registers and stack slots: the
@@ -655,3 +716,265 @@ wipe_start:
     DrawSync(0);
     D_8005F17D = 0;
 }
+
+
+/**
+ * @brief Transform 81 vertex/normal pairs through the GTE.
+ * @param mesh Mesh data containing vertex and normal array pointers.
+ */
+static void transformMeshVertices(MeshRenderCtx *mesh) {
+    register s32 *normals = mesh->normals;
+    register s32 *vertices = mesh->vertices;
+    register s32 i = 0;
+    s32 screenXY;
+    s32 flag;
+    s32 interpZ;
+
+    while (i < 81) {
+        RotTransPers(normals, vertices, &screenXY, &screenXY);
+        normals += 2;
+        vertices += 2;
+        i++;
+    }
+}
+
+
+/**
+ * @brief Render an 8x8 grid of gouraud-textured quads.
+ *
+ * Generates 64 POLY_GT4 GPU primitives from a 9x9 vertex grid,
+ * applying per-vertex or uniform lighting from intensity tables.
+ *
+ * @param vertices 9x9 vertex position grid (stride 8 bytes per vertex).
+ * @param primBuf Output primitive buffer.
+ * @param ot GPU ordering table to insert primitives into.
+ * @param intensity Brightness scale factor (8.8 fixed point).
+ * @param perVertex If nonzero, use per-vertex shading; else uniform gray.
+ * @return Pointer past the last written primitive.
+ */
+static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, s32 *ot,
+                               s32 intensity, s32 perVertex) {
+    register PolyGT4 *prim = primBuf;
+    register s32 r;
+    register s32 minVal;
+    register s32 uvHiU;
+    register s32 uvHiV;
+    register s32 col;
+    register s32 row;
+    register ScreenVert *mesh;
+    char pad;
+
+    mesh = vertices;
+    row = 0;
+
+    while (row < GRID_SIZE) {
+        col = 0;
+        while (col < GRID_SIZE) {
+            setPrimLen(prim, 12);
+            prim->tpage = g_meshTpage[col] | 0x120;
+
+            if (perVertex) {
+                /* Vertex 0: min(tableA[col], tableA[row]) * intensity */
+                r = g_meshIntensityA[col];
+                minVal = g_meshIntensityA[row];
+                if (minVal < r) r = minVal;
+                r = (r * intensity) / 256;
+                r &= 0xFF;
+                r = (r | (r << 8)) | (r << 16);
+                prim->color0 = r | (0x3E << 24);
+
+                /* Vertex 1: min(tableB[col], tableA[row]) * intensity */
+                r = g_meshIntensityB[col];
+                if (minVal < r) r = minVal;
+                r = (r * intensity) / 256;
+                r &= 0xFF;
+                r = (r | (r << 8)) | (r << 16);
+                prim->color1 = r;
+
+                /* Vertex 2: min(tableA[col], tableB[row]) * intensity */
+                r = g_meshIntensityA[col];
+                minVal = g_meshIntensityB[row];
+                if (minVal < r) r = minVal;
+                r = (r * intensity) / 256;
+                r &= 0xFF;
+                r = (r | (r << 8)) | (r << 16);
+                prim->color2 = r;
+
+                /* Vertex 3: min(tableB[col], tableB[row]) * intensity */
+                r = g_meshIntensityB[col];
+                if (minVal < r) r = minVal;
+                r = (r * intensity) / 256;
+                r &= 0xFF;
+                r = (r | (r << 8)) | (r << 16);
+                prim->color3 = r;
+            } else {
+                /* Uniform gray */
+                r = (intensity / 2) & 0xFF;
+                r = (r | (r << 8)) | (r << 16);
+                r = r | (0x3E << 24);
+                prim->color0 = prim->color1 = prim->color2 = prim->color3 = r;
+            }
+
+            /* Copy vertex positions from the 9-wide grid */
+            prim->vert0 = mesh[0].xy;
+            prim->vert1 = mesh[1].xy;
+            prim->vert2 = mesh[GRID_VERTS].xy;
+            prim->vert3 = mesh[GRID_VERTS + 1].xy;
+
+            /* UV coordinates from lookup tables */
+            r = g_meshUCoord[col];
+            minVal = g_meshVCoord[col];
+            uvHiU = g_meshUPage[row] << 8;
+            uvHiV = g_meshVPage[row] << 8;
+
+            prim->uv0 = r | uvHiU;
+            prim->uv1 = minVal | uvHiU;
+            prim->uv2 = r | uvHiV;
+            prim->uv3 = minVal | uvHiV;
+
+            AddPrim(ot, prim);
+            prim++;
+            mesh++;
+            col++;
+        }
+        mesh++;
+        row++;
+    }
+    return prim;
+}
+
+
+/**
+ * @brief Set up GTE matrices and render a mesh grid.
+ *
+ * Applies rotation/translation matrix, transforms vertices through
+ * the GTE, then renders an 8x8 textured quad grid via renderMeshGrid.
+ *
+ * @param mesh Mesh render context with vertices, primitives, and OT.
+ * @param matrix Rotation matrix to apply (translation set from tx/ty params).
+ * @param intensity Brightness scale factor.
+ * @param tx Translation X (stored to matrix->t[0]).
+ * @param ty Translation Y (stored to matrix->t[1], from stack).
+ */
+static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity,
+                            s32 tx, s32 ty) {
+    register s32 *otPtr;
+    s32 unused1;
+    s32 unused2;
+    s32 unused3;
+
+    matrix->t[0] = tx;
+    matrix->t[1] = ty;
+    SetRotMatrix(matrix);
+    SetTransMatrix(matrix);
+    transformMeshVertices(mesh);
+    otPtr = (s32 *)mesh->otBase;
+    otPtr += 4;
+    mesh->primPtr = renderMeshGrid(mesh->vertices, mesh->primPtr, otPtr, intensity, 1);
+}
+
+
+/**
+ * @brief Copy global rotation matrix, apply uniform scale, and render mesh.
+ *
+ * Copies the 32-byte global rotation matrix g_meshBaseMatrix into a local copy,
+ * applies a uniform scale factor, sets the GTE matrices, transforms vertices,
+ * and renders the mesh grid with no per-vertex shading.
+ *
+ * @param mesh Mesh render context.
+ * @param ot GPU ordering table.
+ * @param scale Uniform scale factor (applied to all 3 axes).
+ * @param intensity Brightness scale factor.
+ */
+static void renderScaledMesh(MeshRenderCtx *mesh, s32 *ot, s32 scale, s32 intensity) {
+    register s32 i;
+    register s32 *dst;
+    register s32 *src;
+    s32 scaleVec[3];
+    MATRIX localMatrix;
+    s32 unused1;
+    s32 unused2;
+
+    src = (s32 *)&g_meshBaseMatrix;
+    dst = (s32 *)&localMatrix;
+    i = 0;
+    while (i < 32) {
+        *(s32 *)((s32)dst + i) = *(s32 *)((s32)src + i);
+        i += 4;
+    }
+
+    scaleVec[0] = scaleVec[1] = scaleVec[2] = scale;
+    ScaleMatrix(dst, scaleVec);
+    SetRotMatrix(dst);
+    SetTransMatrix(dst);
+    transformMeshVertices(mesh);
+    mesh->primPtr = renderMeshGrid(mesh->vertices, mesh->primPtr, ot, intensity, 0);
+}
+
+
+INCLUDE_ASM("asm/nonmatchings/btl_transition", renderFlatMesh);
+
+
+/**
+ * @brief Initialize 9x9 vertex grid and ordering tables for mesh rendering.
+ *
+ * Sets up the mesh render context at MESH_RENDER_CTX with buffer pointers,
+ * clears two 8-entry ordering tables at 0x801F6000, and fills a 9x9 grid
+ * of screen-space vertex positions with uniform spacing (40px h, 27px v).
+ */
+static void initMeshRenderer(void) {
+    register MeshRenderCtx *ctx;
+    register s32 *ot;
+    register s32 col;
+    register s32 row;
+    register ScreenVert *verts;
+    s32 unused1;
+    s32 unused2;
+    s32 unused3;
+    s32 unused4;
+
+    ctx = MESH_RENDER_CTX;
+    ctx->pad00 = 0;
+    ctx->normals = (s32 *)MESH_INPUT_VERTS;
+    ctx->vertices = MESH_SCREEN_VERTS;
+    ot = (s32 *)MESH_OT_BASE;
+    ClearOTag((u32 *)ot, 8);
+    ClearOTag((u32 *)(ot + 8), 8);
+    verts = (ScreenVert *)ctx->normals;
+    row = 0;
+    while (row < 9) {
+        col = 0;
+        while (col < 9) {
+            *(s16 *)&verts->xy = col * 40 - 160; /* x */
+            *((s16 *)&verts->xy + 1) = row * 27 - 108; /* y */
+            verts->pad = 0;
+            verts++;
+            col++;
+        }
+        row++;
+    }
+}
+
+
+INCLUDE_ASM("asm/nonmatchings/btl_transition", meshRenderTick);
+
+
+INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026ADC);
+
+
+INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026CA0);
+
+
+INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026CF0);
+
+
+INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026D10);
+
+
+INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026D8C);
+
+
+INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026E20);
+
+
+INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026E70);

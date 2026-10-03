@@ -8,27 +8,6 @@ static void stepPadPort(s32 a0, PadPort *port, s32 a2);
 static void stepPadPorts(s32 a0);
 static u16 getPadReadReleased(s32 idx, s32 offset);
 
-INCLUDE_ASM("asm/nonmatchings/thread", func_80026ADC);
-
-
-INCLUDE_ASM("asm/nonmatchings/thread", func_80026CA0);
-
-
-INCLUDE_ASM("asm/nonmatchings/thread", func_80026CF0);
-
-
-INCLUDE_ASM("asm/nonmatchings/thread", func_80026D10);
-
-
-INCLUDE_ASM("asm/nonmatchings/thread", func_80026D8C);
-
-
-INCLUDE_ASM("asm/nonmatchings/thread", func_80026E20);
-
-
-INCLUDE_ASM("asm/nonmatchings/thread", func_80026E70);
-
-
 /**
  * @brief Open a thread with interrupt protection.
  * @param entry Function the thread starts in.

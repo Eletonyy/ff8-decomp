@@ -20,6 +20,7 @@
 #include "psxsdk/libgte.h"
 #include "psxsdk/libetc.h"
 #include "main.h"
+#include "btl_transition.h"
 
 /** @brief Global field ids of the maps a new game and a game over go to. */
 #define FIELD_ID_START0 74 /**< start0, the first map of a new game. */
