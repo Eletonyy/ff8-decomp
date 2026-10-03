@@ -2,6 +2,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
 #include "psxsdk/libetc.h"
+#include "psxsdk/libc.h"
 #include "gamestate.h"
 #include "main.h"
 #include "thread.h"
@@ -40,17 +41,34 @@
 #define WIPE_RAMP_START 64
 
 /** Primitive codes with the semi-transparency bit set, as they sit in the top byte of the colour word. */
+#define CODE_FT4 (0x2C << 24)
 #define CODE_FT4_BLENDED (0x2E << 24)
 #define CODE_G4_BLENDED (0x3A << 24)
 #define CODE_GT4_BLENDED (0x3E << 24)
+#define CODE_F4_BLENDED (0x2A << 24)
 
 /** Ordering table entries, in the order they are drawn. */
 enum {
+    LAYER_SNAPSHOT = 2,
     LAYER_GLOW = 3,
     LAYER_STRIPS = 4,
     LAYER_WIPE = 5,
-    LAYER_COPY = 6
+    LAYER_COPY = 6,
+    /* The boss transition's layers share entries with the normal one's. */
+    LAYER_MESH = 4,
+    LAYER_FLAT_MESH = 5,
+    LAYER_FLASH = 6
 };
+
+/** Boss transition: the growing mesh runs until this step, the panels until BOSS_PANELS_END. */
+#define BOSS_ZOOM_END 40
+#define BOSS_PANELS_END 64
+/** Boss transition: the flash starts after this step and peaks BOSS_FLASH_RISE steps later. */
+#define BOSS_FLASH_START 48
+#define BOSS_FLASH_RISE 16
+
+/** The saved picture is drawn as tiles this many pixels square, two to a texture page. */
+#define SNAPSHOT_TILE 32
 
 /**
  * @brief Write a primitive's length byte.
@@ -159,12 +177,41 @@ typedef struct {
 
 /** @brief Mesh render context for GTE transformation and GPU primitive generation. */
 typedef struct {
-    /* 0x00 */ s32 pad00;
-    /* 0x04 */ PolyGT4 *primPtr; /**< Current primitive write pointer. */
+    /* 0x00 */ u32 frame; /**< Steps drawn so far. */
+    /* 0x04 */ void *primPtr; /**< Current primitive write pointer. */
     /* 0x08 */ ScreenVert *vertices; /**< Vertex position array. */
     /* 0x0C */ SVECTOR *points; /**< The grid's points, before projection. */
-    /* 0x10 */ s32 *otBase; /**< Ordering table base pointer. */
+    /* 0x10 */ u32 *otBase; /**< Ordering table base pointer. */
 } MeshRenderCtx;
+
+/** @brief The boss transition's use of the scratch block TransitionWork describes for the normal one. */
+typedef struct {
+    /* 0x00 */ u8 pad00[0x60];
+    /* 0x60 */ MATRIX matrix; /**< The panels' rotation and scale. */
+    /* 0x80 */ VECTOR scale;
+} MeshWork;
+
+/** @brief A blended flat quad between two draw-mode words: the boss transition's flash. */
+typedef struct {
+    /* 0x00 */ u32 tag;
+    /* 0x04 */ u32 mode;
+    /* 0x08 */ u32 color; /**< Colour and primitive code. */
+    /* 0x0C */ u32 xy0;
+    /* 0x10 */ u32 xy1;
+    /* 0x14 */ u32 xy2;
+    /* 0x18 */ u32 xy3;
+    /* 0x1C */ u32 modeAfter;
+} FadeQuad;
+
+/**
+ * @brief Write a fade quad's length and its closing draw mode.
+ *
+ * Inline assembly in the original too: it loads the two halves of the mode
+ * word around the length, an order no compiled statement produces.
+ */
+#define setFadeQuadTail(p) \
+    __asm__ volatile ("lui $3, 0xE100; ori $2, $0, 7; ori $3, $3, 0x220; sb $2, 3(%0); sw $3, 0x1C(%0)" \
+                      : : "r"(p) : "$2", "$3")
 
 #define GRID_SIZE 8 /**< Quads per row/column in the mesh grid. */
 #define GRID_VERTS 9 /**< Vertices per row (GRID_SIZE + 1). */
@@ -178,11 +225,14 @@ typedef struct {
 #define TRANSITION_WORK ((TransitionWork *)0x801F5000)
 #define TRANSITION_OTS ((TransitionOt *)0x801F6000)
 #define TRANSITION_PRIMS ((TransitionPrims *)0x801DE000)
+/** Top of the transition thread's stack. */
+#define TRANSITION_THREAD_STACK ((u8 *)0x801EFFFC)
 /** One-entry ordering table for copying the picture on screen; the packets start 16 bytes in. */
 #define SNAPSHOT_COPY_OT ((u32 *)0x801DC000)
 #define MESH_RENDER_CTX ((MeshRenderCtx *)0x801F0000)
 #define MESH_INPUT_VERTS ((SVECTOR *)0x801F0400)
 #define MESH_SCREEN_VERTS ((ScreenVert *)0x801F1000)
+#define MESH_WORK ((MeshWork *)0x801F5000)
 
 extern s8 D_8005F17D;
 extern u8 D_8005F17C;
@@ -195,6 +245,7 @@ extern DISPENV D_80082D90[];
 extern RECT D_8005EC24;
 extern RECT D_8005EC2C;
 extern RECT D_8005EC34;
+extern s32 D_8005F178; /**< The transition thread's handle. */
 extern u8 g_meshIntensityA[]; /**< Intensity table A (indexed by col, then row). */
 extern u8 g_meshIntensityB[]; /**< Intensity table B (indexed by col, then row). */
 extern u8 g_meshUCoord[]; /**< U coord per column. */
@@ -207,14 +258,19 @@ extern MATRIX g_meshBaseMatrix;
 static void func_80024064(void);
 static void normalTransitionTick(void);
 static void transformMeshVertices(MeshRenderCtx *mesh);
-static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, s32 *ot, s32 intensity, s32 perVertex);
+static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot, s32 intensity, s32 perVertex);
 static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity, s32 tx, s32 ty);
-static void renderScaledMesh(MeshRenderCtx *mesh, s32 *ot, s32 scale, s32 intensity);
+static void renderScaledMesh(MeshRenderCtx *mesh, u32 *ot, s32 scale, s32 intensity);
 static void initMeshRenderer(void);
-void func_80026ADC(void); /**< Draw the saved picture; arguments and result go through the transition's scratch block. */
-void func_80026CA0(void); /**< Random number below the transition scratch block's first argument, returned in its result word. */
-void func_80026E20(void); /**< Close the battle transition's thread. */
-void func_80026E70(void); /**< Open the battle transition's thread. */
+static void bossTransitionTick(void);
+static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 scale);
+static void func_80026ADC(void);
+static void func_80026CA0(void);
+static void func_80026D10(void);
+static void func_80026E20(void);
+static void func_80026E70(void);
+s32 func_800472E4(void); /**< EnterCriticalSection in the SDK. */
+void func_800472F4(void); /**< ExitCriticalSection in the SDK. */
 
 /**
  * @brief Start the screen transition that plays while a battle loads.
@@ -752,7 +808,7 @@ static void transformMeshVertices(MeshRenderCtx *mesh) {
  * @param perVertex If nonzero, use per-vertex shading; else uniform gray.
  * @return Pointer past the last written primitive.
  */
-static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, s32 *ot,
+static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot,
                                s32 intensity, s32 perVertex) {
     register PolyGT4 *prim = primBuf;
     register s32 r;
@@ -858,7 +914,7 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, s32 *ot,
  */
 static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity,
                             s32 tx, s32 ty) {
-    register s32 *otPtr;
+    register u32 *otPtr;
     s32 unused1;
     s32 unused2;
     s32 unused3;
@@ -869,7 +925,7 @@ static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity,
     SetTransMatrix(matrix);
     transformMeshVertices(mesh);
     otPtr = mesh->otBase;
-    otPtr += 4;
+    otPtr += LAYER_MESH;
     mesh->primPtr = renderMeshGrid(mesh->vertices, mesh->primPtr, otPtr, intensity, 1);
 }
 
@@ -886,7 +942,7 @@ static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity,
  * @param scale Uniform scale factor (applied to all 3 axes).
  * @param intensity Brightness scale factor.
  */
-static void renderScaledMesh(MeshRenderCtx *mesh, s32 *ot, s32 scale, s32 intensity) {
+static void renderScaledMesh(MeshRenderCtx *mesh, u32 *ot, s32 scale, s32 intensity) {
     register s32 i;
     register MATRIX *dst;
     register MATRIX *src;
@@ -914,7 +970,106 @@ static void renderScaledMesh(MeshRenderCtx *mesh, s32 *ot, s32 scale, s32 intens
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", renderFlatMesh);
+/**
+ * @brief Draw the boss transition's flat mesh: five quads across the screen.
+ *
+ * Builds the matrix in the vertex buffer (the base matrix scaled by
+ * @p scale), projects a 6x2 grid of points 64 apart and 224 tall into that
+ * same buffer, and adds five blended quads between them, textured from the
+ * display buffer on screen.
+ *
+ * @param mesh Mesh state: the vertex buffer and the primitive cursor.
+ * @param ot Ordering table entry to add the quads to.
+ * @param brightness Brightness, 8.8 fixed point.
+ * @param scale Scale of the matrix, 4.12 fixed point.
+ */
+static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 scale) {
+    register s32 r;
+    register s32 color;
+    register s32 tpage;
+    register s32 i;
+    register s32 j;
+    register ScreenVert *vert;
+    register MATRIX *src;
+    register DISPENV *disp;
+    register POLY_FT4 *prim;
+    /* RotTransPers's depth and flag outputs, both written here and never read. */
+    s32 discard;
+    /* A VECTOR without its pad word, as in renderScaledMesh. */
+    s32 scaleVec[3];
+    SVECTOR point;
+    /* Never read: it only holds its place in the stack frame. */
+    s32 unused;
+
+    /* The matrix is built in the vertex buffer, which the projection then overwrites. */
+    vert = mesh->vertices;
+    src = &g_meshBaseMatrix;
+    i = 0;
+    /* The MATRIX's 32 bytes; sizeof would make the compare unsigned. */
+    while (i < 32) {
+        *(s32 *)((u8 *)vert + i) = *(s32 *)((u8 *)src + i);
+        i += 4;
+    }
+
+    scaleVec[0] = scaleVec[1] = scaleVec[2] = scale;
+    ScaleMatrix((MATRIX *)vert, (VECTOR *)scaleVec);
+    SetRotMatrix((MATRIX *)vert);
+    SetTransMatrix((MATRIX *)vert);
+
+    vert = mesh->vertices;
+    point.vy = -(SCREEN_HEIGHT / 2);
+    point.vz = 0;
+    j = 0;
+    while (j < 2) {
+        point.vx = -(SCREEN_WIDTH / 2);
+        i = 0;
+        while (i < 6) {
+            RotTransPers(&point, &vert->xy, &discard, &discard);
+            point.vx += 64;
+            vert++;
+            i++;
+        }
+        point.vy += SCREEN_HEIGHT;
+        j++;
+    }
+
+    color = brightness / 2;
+    color &= 0xFF;
+    color = color | (color << 8) | (color << 16);
+    color |= CODE_FT4_BLENDED;
+
+    /* The texture page of the buffer on screen: getTPage(2, 0, x, y), by hand. */
+    r = (mesh->frame + 1) & 1;
+    disp = &D_80082D90[r];
+    i = disp->disp.x;
+    j = disp->disp.y;
+    tpage = (i & 0x3C0) >> 6;
+    tpage |= (j & 0x100) >> 4;
+    tpage |= 0x100;
+
+    vert = mesh->vertices;
+    prim = mesh->primPtr;
+    i = 0;
+    while (i < 5) {
+        setPrimLen(prim, 9);
+        *(u32 *)&prim->r0 = color;
+        prim->tpage = tpage + i;
+        /* u and v together, as one halfword */
+        *(s16 *)&prim->u0 = 0;
+        *(s16 *)&prim->u1 = 64;
+        *(s16 *)&prim->u2 = 208 << 8;
+        *(s16 *)&prim->u3 = (208 << 8) | 64;
+        *(s32 *)&prim->x0 = vert[0].xy;
+        *(s32 *)&prim->x1 = vert[1].xy;
+        *(s32 *)&prim->x2 = vert[6].xy;
+        *(s32 *)&prim->x3 = vert[7].xy;
+        AddPrim(ot, prim);
+        prim++;
+        vert++;
+        i++;
+    }
+    mesh->primPtr = prim;
+}
 
 
 /**
@@ -936,7 +1091,7 @@ static void initMeshRenderer(void) {
     s32 unused4;
 
     ctx = MESH_RENDER_CTX;
-    ctx->pad00 = 0;
+    ctx->frame = 0;
     ctx->points = MESH_INPUT_VERTS;
     ctx->vertices = MESH_SCREEN_VERTS;
     ot = TRANSITION_OTS;
@@ -959,25 +1114,288 @@ static void initMeshRenderer(void) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", bossTransitionTick);
+/**
+ * @brief Draw one step of the boss battle transition.
+ *
+ * Runs in the transition thread like normalTransitionTick, one step every
+ * third VSync:
+ * - Steps 1 to 39 draw the saved picture as a mesh that grows and fades out.
+ * - Steps 1 to 63 draw it as four mirrored panels that grow and brighten,
+ *   with a flat mesh over them.
+ * - From step 49 a full-screen white flash rises until step 64, then fades.
+ * - From step 78 the list is no longer drawn and the display is blanked, and
+ *   step 80 also clears @c g_renderMode and closes the thread.
+ */
+static void bossTransitionTick(void) {
+    /* Never used. They and unused below only hold their places in the stack frame. */
+    s32 sxy, depth, flag;
+    /* The order of these is the order of the registers and stack slots: the
+     * first eight get $s0 to $s7 and the rest live on the stack. */
+    register s32 r;
+    register u32 *otPtr;
+    register s32 scale;
+    register s32 i;
+    register s32 intensity;
+    register s32 size;
+    register MATRIX *matrix;
+    register MATRIX *src;
+    register FadeQuad *quad;
+    register MeshWork *work;
+    register u32 *ot;
+    register s32 unused;
+    register MeshRenderCtx *ctx;
+
+    if (D_8005F17D != 0) {
+        return;
+    }
+    D_8005F17D = -1;
+    D_8005F17C = 0;
+
+    work = MESH_WORK;
+    ctx = MESH_RENDER_CTX;
+
+    ctx->frame++;
+    ot = TRANSITION_OTS[ctx->frame & 1];
+    ctx->primPtr = TRANSITION_PRIMS[ctx->frame & 1];
+
+    r = (ctx->frame + 1) & 1;
+    PutDispEnv(&D_80082D90[r]);
+    PutDrawEnv(&D_80082CD0[r]);
+
+    if (ctx->frame < TRANSITION_END - 2) {
+        DrawOTag(ot);
+    } else {
+        SetDispMask(0);
+    }
+    D_80082CD0[0].isbg = D_80082CD0[1].isbg = 1;
+
+    ot = TRANSITION_OTS[(ctx->frame + 1) & 1];
+    ClearOTag(ot, TRANSITION_OT_SIZE);
+    ctx->otBase = ot;
+
+    r = getInterruptStatus();
+    r |= STATUS_GTE_ENABLE;
+    func_80026FD4(r);
+
+    /* The skip is a goto in the original: the target has the jump and, after
+     * it, the dead jump over the else that only a goto in the then-branch
+     * leaves. A plain if gives 98.97%, an empty then-branch 99.55%. */
+    if (ctx->frame >= BOSS_ZOOM_END) {
+        goto panels;
+    } else {
+        /* BOSS_ZOOM_END - 1 - frame, as the target computes it. */
+        r = ~(ctx->frame - BOSS_ZOOM_END) * 8;
+    }
+    /* The first load is dead, but it is in the target. */
+    otPtr = ctx->otBase;
+    otPtr = ot + LAYER_MESH;
+    scale = ctx->frame * 32 + ONE;
+    renderScaledMesh(ctx, otPtr, scale, r);
+panels:
+
+    r = ctx->frame;
+    if (r >= BOSS_PANELS_END) {
+    } else {
+        matrix = &work->matrix;
+        if (r >= 32) {
+            intensity = 256;
+        } else {
+            intensity = r * 8;
+        }
+        src = &g_meshBaseMatrix;
+        i = 0;
+        /* The MATRIX's 32 bytes; sizeof would make the compare unsigned. */
+        while (i < 32) {
+            *(s32 *)((u8 *)matrix + i) = *(s32 *)((u8 *)src + i);
+            i += 4;
+        }
+        size = ctx->frame * 64 + 0x600;
+        r = ctx->frame - 32;
+        r = r * (r + 1) / 2 * 8;
+        size += r;
+        work->scale.vx = work->scale.vy = work->scale.vz = size;
+        ScaleMatrix(matrix, &work->scale);
+        /* Each panel mirrors the last: m[0][0] and m[0][1], or m[1][1] and
+         * m[1][2], flipped as one word. */
+        renderMeshPanel(ctx, matrix, intensity, -80, -56);
+        ((s32 *)matrix)[0] = ~((s32 *)matrix)[0];
+        renderMeshPanel(ctx, matrix, intensity, 80, -56);
+        ((s32 *)matrix)[2] = ~((s32 *)matrix)[2];
+        renderMeshPanel(ctx, matrix, intensity, 80, 56);
+        ((s32 *)matrix)[0] = ~((s32 *)matrix)[0];
+        renderMeshPanel(ctx, matrix, intensity, -80, 56);
+        r = ctx->frame;
+        if (r >= BOSS_PANELS_END) {
+            r = BOSS_PANELS_END;
+        }
+        r = r * 4 + ONE;
+        otPtr = ctx->otBase;
+        otPtr = ot + LAYER_FLAT_MESH;
+        renderFlatMesh(ctx, otPtr, 256, r);
+    }
+
+    r = ctx->frame - BOSS_FLASH_START;
+    if (r <= 0) {
+    } else {
+        if (r <= BOSS_FLASH_RISE) {
+            r = r * 16;
+        } else {
+            r = (BOSS_FLASH_RISE - r) * 16;
+            r += 256;
+        }
+        if (r >= 256) {
+            r = 255;
+        }
+        if (r < 0) {
+            r = 0;
+        }
+        quad = ctx->primPtr;
+        setFadeQuadTail(quad);
+        r = r | (r << 8) | (r << 16);
+        r |= CODE_F4_BLENDED;
+        quad->color = r;
+        quad->mode = _get_mode(0, 1, getTPage(0, 1, 0, 0));
+        quad->xy0 = 0;
+        quad->xy1 = SCREEN_WIDTH;
+        quad->xy2 = SCREEN_HEIGHT << 16;
+        quad->xy3 = (SCREEN_HEIGHT << 16) | SCREEN_WIDTH;
+        AddPrim(ot + LAYER_FLASH, quad);
+        quad++;
+        ctx->primPtr = quad;
+    }
+
+    if (ctx->frame >= TRANSITION_END) {
+        g_renderMode = RENDER_IDLE;
+        func_80026E20();
+        SetDispMask(0);
+    }
+/* Not jumped to; it accounts for the nop before DrawSync. */
+done:
+    DrawSync(0);
+    D_8005F17D = 0;
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026ADC);
+/**
+ * @brief Draw the saved picture as a 10x7 grid of 32x32 textured quads.
+ *
+ * Takes its arguments from the scratch block: the ordering table in arg0
+ * (the quads go into its entry 2), the primitive cursor in arg1 and the
+ * colour in arg2. The advanced cursor comes back in result.
+ */
+static void func_80026ADC(void) {
+    register s32 color;
+    register u32 *ot;
+    register s32 col;
+    register s32 row;
+    register TransitionWork *work;
+    register POLY_FT4 *prim;
+
+    work = TRANSITION_WORK;
+    ot = (u32 *)work->arg0;
+    prim = work->arg1;
+    color = work->arg2 & 0xFFFFFF;
+    color |= CODE_FT4;
+    row = 0;
+    while (row < SCREEN_HEIGHT / SNAPSHOT_TILE) {
+        col = 0;
+        while (col < SCREEN_WIDTH / SNAPSHOT_TILE) {
+            setPrimLen(prim, 9);
+            *(u32 *)&prim->r0 = color;
+            prim->tpage = col / 2 + getTPage(2, 0, SNAPSHOT_X, SNAPSHOT_Y);
+            prim->x0 = prim->x2 = col * SNAPSHOT_TILE;
+            prim->x1 = prim->x3 = col * SNAPSHOT_TILE + SNAPSHOT_TILE;
+            prim->y0 = prim->y1 = prim->v0 = prim->v1 = row * SNAPSHOT_TILE;
+            prim->y2 = prim->y3 = prim->v2 = prim->v3 = row * SNAPSHOT_TILE + SNAPSHOT_TILE;
+            prim->u0 = prim->u2 = (col & 1) * SNAPSHOT_TILE;
+            prim->u1 = prim->u3 = (col & 1) * SNAPSHOT_TILE + SNAPSHOT_TILE;
+            AddPrim(ot + LAYER_SNAPSHOT, prim);
+            prim++;
+            col++;
+        }
+        row++;
+    }
+    work->result = (s32)prim;
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026CA0);
+/**
+ * @brief Random number below the range in the scratch block's arg0, returned in result.
+ *
+ * The body after the call is assembly in the original too: it keeps the
+ * pointer in $a3 and the arithmetic in $a0, registers the compiler does not
+ * choose here (no C spelling tried gets them), and it multiplies rand()'s
+ * result straight out of $v0.
+ */
+static void func_80026CA0(void) {
+    /* Never read: they only hold their places in the stack frame. */
+    s32 x, y;
+
+    rand();
+    __asm__ volatile ("li $7, 0x801F5000\n"
+                      "lhu $4, 0xF0($7)\n"
+                      "mult $2, $4\n"
+                      "mflo $4\n"
+                      "srl $4, $4, 15\n"
+                      "sw $4, 0xFC($7)"
+                      : : : "$4", "$7", "memory");
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026CF0);
+/** @brief Does nothing. The battle effect overlays call it. */
+void func_80026CF0(void) {
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026D10);
+/**
+ * @brief The transition thread: draw one step of the chosen transition, then
+ * hand control back to the main thread until func_80026D8C switches back in.
+ */
+static void func_80026D10(void) {
+    while (1) {
+        if (D_8005F17F == 0) {
+            normalTransitionTick();
+        } else {
+            bossTransitionTick();
+        }
+        switchThread(0);
+    }
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026D8C);
+/**
+ * @brief Count VSyncs while the battle transition runs, and switch to its
+ * thread every second (normal) or third (boss) one.
+ */
+void func_80026D8C(void) {
+    register s32 steps;
+
+    D_8005F17C++;
+    if (D_8005F17F == 0) {
+        steps = 2;
+    } else {
+        steps = 3;
+    }
+    /* Read signed here and unsigned above, as the target does. */
+    if ((s8)D_8005F17C >= steps) {
+        switchThread(D_8005F178);
+    }
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026E20);
+/** @brief Close the battle transition's thread. */
+static void func_80026E20(void) {
+    func_800472E4();
+    closeThreadSafe(D_8005F178);
+    D_8005F178 = 0;
+    func_800472F4();
+}
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026E70);
+/** @brief Open the battle transition's thread on its own stack. */
+static void func_80026E70(void) {
+    register u8 *stack;
+
+    stack = TRANSITION_THREAD_STACK;
+    D_8005F178 = openThreadSafe(func_80026D10, stack);
+}
