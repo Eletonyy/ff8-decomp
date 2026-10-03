@@ -205,7 +205,7 @@ extern u8 g_meshTpage[]; /**< Texture page ID per column. */
 extern MATRIX g_meshBaseMatrix;
 
 static void func_80024064(void);
-static void func_800242C8(void);
+static void normalTransitionTick(void);
 static void transformMeshVertices(MeshRenderCtx *mesh);
 static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, s32 *ot, s32 intensity, s32 perVertex);
 static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity, s32 tx, s32 ty);
@@ -224,14 +224,14 @@ void func_80026E70(void); /**< Open the battle transition's thread. */
  * copies it into both buffers. Then sets up the chosen transition, opens the
  * thread that draws it and hands the VSync callback over to it.
  *
- * @param special Non-zero for the battle scenes that get the mesh transition
+ * @param boss Non-zero for a boss battle, which gets the boss transition
  * instead of the normal one.
  */
-void func_80023D60(register s32 special) {
+void func_80023D60(register s32 boss) {
     /* The caller passes an int it does not mask, so the parameter is s32. The
      * original keeps it in a register and copies it to a byte on the stack: a
      * plain s32 parameter would be stored to its argument slot instead. */
-    u8 type = special;
+    u8 type = boss;
     /* Never read: the original reserves 0x30 bytes of frame it does not touch. */
     u8 unused[0x30];
     register u32 *ot;
@@ -298,7 +298,7 @@ void func_80023D60(register s32 special) {
  *
  * Picks at random which side the transition runs from, clears the state
  * block and both ordering tables, and fills in the strip and bar tables that
- * func_800242C8 animates: the strips start spread out by their index, and
+ * normalTransitionTick animates: the strips start spread out by their index, and
  * each bar of the wipe gets a random start, speed and strength.
  */
 static void func_80024064(void) {
@@ -392,7 +392,7 @@ static void func_80024064(void) {
  * coordinates twice: once under the mirror test and then again
  * unconditionally. The original is missing an @c else there.
  */
-static void func_800242C8(void) {
+static void normalTransitionTick(void) {
     /* Never used. They and unused below only hold their places in the stack frame. */
     s32 sxy, depth, flag;
     /* The order of these is the order of the registers and stack slots: the
@@ -959,7 +959,7 @@ static void initMeshRenderer(void) {
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/btl_transition", meshRenderTick);
+INCLUDE_ASM("asm/nonmatchings/btl_transition", bossTransitionTick);
 
 
 INCLUDE_ASM("asm/nonmatchings/btl_transition", func_80026ADC);
