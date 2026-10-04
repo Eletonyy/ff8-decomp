@@ -42,9 +42,9 @@ INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", HookEntryInt);
 
 INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", UnDeliverEvent);
 
-INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", func_800472E4);
+INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", EnterCriticalSection);
 
-INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", func_800472F4);
+INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", ExitCriticalSection);
 
 INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", open);
 
@@ -62,7 +62,7 @@ INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", erase);
 
 INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", ChangeClearPAD);
 
-INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", func_80047384);
+INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", GetSr);
 
 INCLUDE_ASM("asm/nonmatchings/psxsdk/libapi", SysEnqIntRP);
 

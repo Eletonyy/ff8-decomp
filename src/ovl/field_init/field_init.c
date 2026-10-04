@@ -88,7 +88,7 @@ void func_800980D0(void) {
     func_8004D930();
     _bu_init();
     _card_auto(0);
-    func_800472E4();
+    EnterCriticalSection();
 
     g_cardData.events[0] = OpenEvent(0xF4000001, 4, 0x2000, 0);
     g_cardData.events[1] = OpenEvent(0xF4000001, 0x8000, 0x2000, 0);
@@ -108,7 +108,7 @@ void func_800980D0(void) {
     EnableEvent(g_cardData.events[6]);
     EnableEvent(g_cardData.events[7]);
 
-    func_800472F4();
+    ExitCriticalSection();
 
     for (j = 0; j < 4; j++) {
         for (i = 0; i < 2; i++) {
@@ -137,14 +137,14 @@ void func_800982D8(void) {
     s32 i;
     EventState *state = getEventState();
 
-    func_800472E4();
+    EnterCriticalSection();
 
     for (i = 0; i < 4; i++) {
         EventEntry *entry = &state->entries[i];
         entry->status = 0x404;
     }
 
-    func_800472F4();
+    ExitCriticalSection();
 }
 
 /**

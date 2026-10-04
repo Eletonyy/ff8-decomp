@@ -1,6 +1,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/kernel.h"
+#include "psxsdk/libapi.h"
 #include "battle.h"
 #include "thread.h"
 
@@ -13,13 +14,13 @@ static u16 getPadReadReleased(s32 idx, s32 offset);
  * @param entry Function the thread starts in.
  * @param stack Top of the thread's stack.
  * @return Thread handle from OpenTh.
- * @note Wraps PsyQ OpenTh with func_800472E4/func_800472F4 (likely interrupt disable/enable).
+ * @note Wraps PsyQ OpenTh in EnterCriticalSection and ExitCriticalSection.
  */
 s32 openThreadSafe(void (*entry)(void), u8 *stack) {
     s32 result;
-    func_800472E4(entry);
+    EnterCriticalSection();
     result = OpenTh(entry, stack, 0);
-    func_800472F4();
+    ExitCriticalSection();
     return result;
 }
 
@@ -27,12 +28,12 @@ s32 openThreadSafe(void (*entry)(void), u8 *stack) {
 /**
  * @brief Close a thread with interrupt protection.
  * @param a0 Thread handle to close.
- * @note Wraps PsyQ CloseTh with func_800472E4/func_800472F4 (likely interrupt disable/enable).
+ * @note Wraps PsyQ CloseTh in EnterCriticalSection and ExitCriticalSection.
  */
 void closeThreadSafe(s32 a0) {
-    func_800472E4(a0);
+    EnterCriticalSection();
     CloseTh(a0);
-    func_800472F4();
+    ExitCriticalSection();
 }
 
 
@@ -76,7 +77,7 @@ s32 getThreadControlBlock(s32 a0) {
  * @brief Read the CPU's status register.
  * @return The register's value.
  */
-s32 getInterruptStatus(void) { return func_80047384(); }
+s32 getInterruptStatus(void) { return GetSr(); }
 
 
 INCLUDE_ASM("asm/nonmatchings/thread", func_80026FD4);
@@ -85,13 +86,13 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_80026FD4);
 /**
  * @brief Switch to a thread, using a fallback address if a0 is 0.
  * @param a0 Thread handle to switch to; 0 defaults to 0xFF000000.
- * @note If func_80047384 returns bit 2 set, uses func_80026F4C instead of PsyQ ChangeTh.
+ * @note If GetSr returns bit 2 set, uses func_80026F4C instead of PsyQ ChangeTh.
  */
 void switchThread(s32 a0) {
     if (a0 == 0) {
         a0 = (s32)0xFF000000;
     }
-    if (func_80047384() & 4) {
+    if (GetSr() & 4) {
         func_80026F4C(a0);
     } else {
         ChangeTh(a0);
@@ -125,7 +126,7 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_800270B0);
  */
 static void stepPadPort(s32 a0, PadPort *port, s32 a2) {
     s32 status;
-    func_80047384();
+    GetSr();
     status = func_8003AC10(a2);
     port->field1A = status;
     switch (status) {

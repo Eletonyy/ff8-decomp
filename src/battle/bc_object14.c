@@ -4,6 +4,7 @@
 #include "battle/bc_object8.h"
 #include "battle/bc_object14.h"
 #include "battle/bc_object9.h"
+#include "psxsdk/libapi.h"
 
 
 extern u8 D_800FA4FC[];
@@ -17,8 +18,6 @@ extern u8 D_800F02F4[];
 s32 func_800C5B1C(u8 *a0);
 s32 func_800C5A94(s32, s32);
 void func_800C5338(s32);
-void func_800472E4(void);
-void func_800472F4(void);
 void sndEnableReverb(s32);
 void sndDisableReverb(s32);
 void func_8009B6B0(void);
@@ -93,17 +92,17 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5338);
  */
 s32 func_800C53F0(void) {
     if (*(s32 *)D_800F1B90 < 0) {
-        func_800472E4();
+        EnterCriticalSection();
         sndEnableReverb(2);
         sndEnableReverb(3);
-        func_800472F4();
+        ExitCriticalSection();
         while (*(s32 *)D_800F1B90 < 0) {
             func_8009B6B0();
         }
-        func_800472E4();
+        EnterCriticalSection();
         sndDisableReverb(2);
         sndDisableReverb(3);
-        func_800472F4();
+        ExitCriticalSection();
     }
     return *(s32 *)D_800F1B90;
 }

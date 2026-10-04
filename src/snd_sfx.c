@@ -1,5 +1,6 @@
 #include "common.h"
 #include "snd_sfx.h"
+#include "psxsdk/libapi.h"
 
 /* --- Externs (sorted by address) --- */
 
@@ -38,17 +39,17 @@ void playSoundEffect(s32 idx) {
 /**
  * @brief Configure sound reverb channels based on a bitmask.
  *
- * Reads hardware state via func_80047384, optionally pauses/resumes audio
+ * Reads hardware state via GetSr, optionally pauses/resumes audio
  * hardware. Mutes master volume, then enables reverb on channels indicated
  * by bits 0-2 of @p mask. If @p mask is 7, enables reverb on channel 0 (all).
  *
  * @param mask Bitmask of reverb channels to enable (bits 0, 1, 2).
  */
 void enableSoundReverb(s32 mask) {
-    s32 hwState = func_80047384();
+    s32 hwState = GetSr();
 
     if (!(hwState & 4)) {
-        func_800472E4();
+        EnterCriticalSection();
     }
     sndSetMasterVolume(0);
     if (mask == 7) {
@@ -65,7 +66,7 @@ void enableSoundReverb(s32 mask) {
         }
     }
     if (!(hwState & 4)) {
-        func_800472F4();
+        ExitCriticalSection();
     }
 }
 
@@ -73,17 +74,17 @@ void enableSoundReverb(s32 mask) {
 /**
  * @brief Disable sound reverb channels based on a bitmask and restore volume.
  *
- * Reads hardware state via func_80047384, optionally pauses/resumes audio
+ * Reads hardware state via GetSr, optionally pauses/resumes audio
  * hardware. Disables reverb on channels indicated by bits 0-2 of @p mask
  * (all of them via channel 0 when it is 7), then restores master volume to 0x7F.
  *
  * @param mask Bitmask of reverb channels to disable (bits 0, 1, 2).
  */
 static void disableSoundReverb(s32 mask) {
-    s32 hwState = func_80047384();
+    s32 hwState = GetSr();
 
     if (!(hwState & 4)) {
-        func_800472E4();
+        EnterCriticalSection();
     }
     if (mask == 7) {
         sndDisableReverb(0);
@@ -100,6 +101,6 @@ static void disableSoundReverb(s32 mask) {
     }
     sndSetMasterVolume(0x7F);
     if (!(hwState & 4)) {
-        func_800472F4();
+        ExitCriticalSection();
     }
 }

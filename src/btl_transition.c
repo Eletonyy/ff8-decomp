@@ -3,6 +3,7 @@
 #include "psxsdk/libgte.h"
 #include "psxsdk/libetc.h"
 #include "psxsdk/libc.h"
+#include "psxsdk/libapi.h"
 #include "gamestate.h"
 #include "main.h"
 #include "thread.h"
@@ -269,8 +270,6 @@ static void func_80026CA0(void);
 static void func_80026D10(void);
 static void func_80026E20(void);
 static void func_80026E70(void);
-s32 func_800472E4(void); /**< EnterCriticalSection in the SDK. */
-void func_800472F4(void); /**< ExitCriticalSection in the SDK. */
 
 /**
  * @brief Start the screen transition that plays while a battle loads.
@@ -1385,10 +1384,10 @@ void func_80026D8C(void) {
 
 /** @brief Close the battle transition's thread. */
 static void func_80026E20(void) {
-    func_800472E4();
+    EnterCriticalSection();
     closeThreadSafe(D_8005F178);
     D_8005F178 = 0;
-    func_800472F4();
+    ExitCriticalSection();
 }
 
 
