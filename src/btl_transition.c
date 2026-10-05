@@ -489,9 +489,9 @@ static void normalTransitionTick(void) {
     ot = TRANSITION_OTS[(state->step + 1) & 1];
     ClearOTag(ot, TRANSITION_OT_SIZE);
 
-    r = getInterruptStatus();
+    r = getStatusRegister();
     r |= SR_CU2;
-    func_80026FD4(r);
+    setStatusRegister(r);
 
     scratch = (DR_MODE *)&work->angle;
     if (g_transitionMirrored == 0) {
@@ -1135,9 +1135,9 @@ static void bossTransitionTick(void) {
     ClearOTag(ot, TRANSITION_OT_SIZE);
     ctx->otBase = ot;
 
-    r = getInterruptStatus();
+    r = getStatusRegister();
     r |= SR_CU2;
-    func_80026FD4(r);
+    setStatusRegister(r);
 
     /* The skip is a goto in the original: the target has the jump and, after
      * it, the dead jump over the else that only a goto in the then-branch

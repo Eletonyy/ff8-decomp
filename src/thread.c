@@ -78,10 +78,11 @@ s32 getThreadControlBlock(s32 a0) {
  * @brief Read the CPU's status register.
  * @return The register's value.
  */
-s32 getInterruptStatus(void) { return GetSr(); }
+u32 getStatusRegister(void) { return GetSr(); }
 
 
-INCLUDE_ASM("asm/nonmatchings/thread", func_80026FD4);
+/** @brief Write @p status to the CPU's status register. */
+INCLUDE_ASM("asm/nonmatchings/thread", setStatusRegister);
 
 
 /**

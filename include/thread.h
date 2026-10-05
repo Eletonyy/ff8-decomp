@@ -24,8 +24,8 @@ extern s32  func_80027CF8(s32 a, s32 b, s32 c); /**< Fold a recentred analog sti
    result as s32 with no widening mask — an inconsistent caller view that can't share a decl here,
    so those callers keep their own `extern s32 getPadReadButtons(...)`. */
 
-extern s32 getInterruptStatus(void);
-extern void func_80026FD4(s32 status); /**< Write the CPU's status register. */
+extern u32 getStatusRegister(void);
+extern void setStatusRegister(u32 status);
 extern void settlePadPorts(void);
 extern s32 getPadVibration(s32 idx);
 extern void setPadDeadZone(s32 a0, s32 a1);
