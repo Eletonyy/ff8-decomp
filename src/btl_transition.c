@@ -152,28 +152,6 @@ typedef struct {
     s32 pad;
 } ScreenVert;
 
-/** @brief POLY_GT4: gouraud-textured 4-point polygon (52 bytes). */
-typedef struct {
-    /* 0x00 */ u8 tag[3]; /**< P_TAG address (24 bits). */
-    /* 0x03 */ u8 len; /**< P_TAG word count. */
-    /* 0x04 */ s32 color0; /**< Vertex 0 color (R,G,B,code). */
-    /* 0x08 */ s32 vert0; /**< Vertex 0 screen XY. */
-    /* 0x0C */ u16 uv0; /**< Vertex 0 UV coordinates. */
-    /* 0x0E */ u16 clut; /**< CLUT id. */
-    /* 0x10 */ s32 color1; /**< Vertex 1 color. */
-    /* 0x14 */ s32 vert1; /**< Vertex 1 screen XY. */
-    /* 0x18 */ u16 uv1; /**< Vertex 1 UV coordinates. */
-    /* 0x1A */ u16 tpage; /**< Texture page id. */
-    /* 0x1C */ s32 color2; /**< Vertex 2 color. */
-    /* 0x20 */ s32 vert2; /**< Vertex 2 screen XY. */
-    /* 0x24 */ u16 uv2; /**< Vertex 2 UV coordinates. */
-    /* 0x26 */ u16 pad26;
-    /* 0x28 */ s32 color3; /**< Vertex 3 color. */
-    /* 0x2C */ s32 vert3; /**< Vertex 3 screen XY. */
-    /* 0x30 */ u16 uv3; /**< Vertex 3 UV coordinates. */
-    /* 0x32 */ u16 pad32;
-} PolyGT4; /* 0x34 = 52 bytes */
-
 /** @brief Mesh render context for GTE transformation and GPU primitive generation. */
 typedef struct {
     /* 0x00 */ u32 frame; /**< Steps drawn so far. */
@@ -214,6 +192,19 @@ typedef struct {
 
 /** A screen position packed into one word, as primitives hold it. */
 #define PACK_XY(x, y) (((y) << 16) | (x))
+
+/** Mirror a quad's four x coordinates across the screen. */
+#define MIRROR_X4(p) \
+    ((p)->x0 = SCREEN_WIDTH - (p)->x0, (p)->x1 = SCREEN_WIDTH - (p)->x1, \
+     (p)->x2 = SCREEN_WIDTH - (p)->x2, (p)->x3 = SCREEN_WIDTH - (p)->x3)
+
+/**
+ * Fill in a DR_MODE that sends only its draw-mode word. The tag is written
+ * whole (length 1), where the SDK's setDrawTPage stores only the length byte,
+ * and the texture window word is cleared though not sent.
+ */
+#define setDrawModeWord(p, mode) \
+    ((p)->tag = 0x01000000, (p)->code[0] = (mode), (p)->code[1] = 0)
 
 #define GRID_SIZE 8 /**< Quads per row/column in the mesh grid. */
 #define GRID_VERTS 9 /**< Vertices per row (GRID_SIZE + 1). */
@@ -266,7 +257,7 @@ extern MATRIX g_meshBaseMatrix;
 static void initNormalTransition(void);
 static void normalTransitionTick(void);
 static void transformMeshVertices(MeshRenderCtx *mesh);
-static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot, s32 intensity, s32 perVertex);
+static POLY_GT4 *renderMeshGrid(ScreenVert *vertices, POLY_GT4 *primBuf, u32 *ot, s32 intensity, s32 perVertex);
 static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity, s32 tx, s32 ty);
 static void renderScaledMesh(MeshRenderCtx *mesh, u32 *ot, s32 scale, s32 intensity);
 static void initBossTransition(void);
@@ -294,7 +285,6 @@ void startBattleTransition(register s32 boss) {
      * original keeps it in a register and copies it to a byte on the stack: a
      * plain s32 parameter would be stored to its argument slot instead. */
     u8 type = boss;
-    /* Never read: the original reserves 0x30 bytes of frame it does not touch. */
     u8 unused[0x30];
     register u32 *ot;
     register TransitionState *state;
@@ -363,7 +353,6 @@ void startBattleTransition(register s32 boss) {
  * each bar of the wipe gets a random start, speed and strength.
  */
 static void initNormalTransition(void) {
-    /* Never read: the original reserves 0x18 bytes of frame it does not touch. */
     u8 unused[0x18];
     register u32 *p;
     register s32 i;
@@ -454,8 +443,9 @@ static void initNormalTransition(void) {
  * unconditionally. The original is missing an @c else there.
  */
 static void normalTransitionTick(void) {
-    /* Never used. They and unused below only hold their places in the stack frame. */
-    s32 sxy, p, flag;
+    s32 unused1;
+    s32 unused2;
+    s32 unused3;
     /* The order of these is the order of the registers and stack slots: the
      * first eight get $s0 to $s7 and the rest live on the stack. */
     register s32 r;
@@ -669,34 +659,20 @@ static void normalTransitionTick(void) {
         glow[3].x1 = glow[3].x3 = q + STRIP_LEFT;
 
         if (g_transitionMirrored != 0) {
-            glow[0].x0 = SCREEN_WIDTH - glow[0].x0;
-            glow[0].x1 = SCREEN_WIDTH - glow[0].x1;
-            glow[0].x2 = SCREEN_WIDTH - glow[0].x2;
-            glow[0].x3 = SCREEN_WIDTH - glow[0].x3;
-            glow[1].x0 = SCREEN_WIDTH - glow[1].x0;
-            glow[1].x1 = SCREEN_WIDTH - glow[1].x1;
-            glow[1].x2 = SCREEN_WIDTH - glow[1].x2;
-            glow[1].x3 = SCREEN_WIDTH - glow[1].x3;
-            glow[2].x0 = SCREEN_WIDTH - glow[2].x0;
-            glow[2].x1 = SCREEN_WIDTH - glow[2].x1;
-            glow[2].x2 = SCREEN_WIDTH - glow[2].x2;
-            glow[2].x3 = SCREEN_WIDTH - glow[2].x3;
-            glow[3].x0 = SCREEN_WIDTH - glow[3].x0;
-            glow[3].x1 = SCREEN_WIDTH - glow[3].x1;
-            glow[3].x2 = SCREEN_WIDTH - glow[3].x2;
-            glow[3].x3 = SCREEN_WIDTH - glow[3].x3;
+            MIRROR_X4(&glow[0]);
+            MIRROR_X4(&glow[1]);
+            MIRROR_X4(&glow[2]);
+            MIRROR_X4(&glow[3]);
         }
         AddPrim(ot + LAYER_GLOW, &glow[0]);
         AddPrim(ot + LAYER_GLOW, &glow[1]);
         AddPrim(ot + LAYER_GLOW, &glow[2]);
         AddPrim(ot + LAYER_GLOW, &glow[3]);
 
-        /* The glow is added to the picture. The tag is stored as one word, length 1. */
+        /* The glow is added to the picture. */
         glow += 4;
         scratch = (DR_MODE *)glow;
-        scratch->tag = 0x01000000;
-        scratch->code[0] = _get_mode(0, 0, getTPage(0, 1, 0, 0));
-        scratch->code[1] = 0;
+        setDrawModeWord(scratch, _get_mode(0, 0, getTPage(0, 1, 0, 0)));
         AddPrim(ot + LAYER_GLOW, scratch);
         work->primPtr = scratch + 1;
     }
@@ -758,9 +734,7 @@ wipe_start:
             bar++;
             /* Each bar is taken away from the picture. */
             scratch = (DR_MODE *)wipe;
-            scratch->tag = 0x01000000;
-            scratch->code[0] = _get_mode(0, 0, getTPage(0, 2, 0, 0));
-            scratch->code[1] = 0;
+            setDrawModeWord(scratch, _get_mode(0, 0, getTPage(0, 2, 0, 0)));
             AddPrim(ot + LAYER_WIPE, scratch);
             scratch++;
             wipe = (POLY_G4 *)scratch;
@@ -789,12 +763,13 @@ static void transformMeshVertices(MeshRenderCtx *mesh) {
     register SVECTOR *points = mesh->points;
     register ScreenVert *vertices = mesh->vertices;
     register s32 i;
-    s32 screenXY;
-    s32 flag;
-    s32 interpZ;
+    /* RotTransPers's depth-cue and flag outputs, both written here and never read. */
+    s32 discard;
+    s32 unused1;
+    s32 unused2;
 
     for (i = 0; i < GRID_VERTS * GRID_VERTS; i++) {
-        RotTransPers(points, &vertices->xy, &screenXY, &screenXY);
+        RotTransPers(points, &vertices->xy, &discard, &discard);
         points++;
         vertices++;
     }
@@ -814,9 +789,8 @@ static void transformMeshVertices(MeshRenderCtx *mesh) {
  * @param perVertex If nonzero, use per-vertex shading; else uniform gray.
  * @return Pointer past the last written primitive.
  */
-static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot,
-                               s32 intensity, s32 perVertex) {
-    register PolyGT4 *prim = primBuf;
+static POLY_GT4 *renderMeshGrid(ScreenVert *vertices, POLY_GT4 *primBuf, u32 *ot, s32 intensity, s32 perVertex) {
+    register POLY_GT4 *prim = primBuf;
     register s32 r;
     register s32 minVal;
     register s32 vTop;
@@ -824,7 +798,7 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot,
     register s32 col;
     register s32 row;
     register ScreenVert *mesh;
-    char pad;
+    s32 unused;
 
     mesh = vertices;
     for (row = 0; row < GRID_SIZE; row++) {
@@ -841,14 +815,14 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot,
                 r = (r * intensity) / 256;
                 r &= 0xFF;
                 r = (r | (r << 8)) | (r << 16);
-                prim->color0 = r | CODE_GT4_BLENDED;
+                *(u32 *)&prim->r0 = r | CODE_GT4_BLENDED;
 
                 r = g_meshEdgeIntensity[col + 1];
                 if (minVal < r) r = minVal;
                 r = (r * intensity) / 256;
                 r &= 0xFF;
                 r = (r | (r << 8)) | (r << 16);
-                prim->color1 = r;
+                *(u32 *)&prim->r1 = r;
 
                 r = g_meshEdgeIntensity[col];
                 minVal = g_meshEdgeIntensity[row + 1];
@@ -856,27 +830,27 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot,
                 r = (r * intensity) / 256;
                 r &= 0xFF;
                 r = (r | (r << 8)) | (r << 16);
-                prim->color2 = r;
+                *(u32 *)&prim->r2 = r;
 
                 r = g_meshEdgeIntensity[col + 1];
                 if (minVal < r) r = minVal;
                 r = (r * intensity) / 256;
                 r &= 0xFF;
                 r = (r | (r << 8)) | (r << 16);
-                prim->color3 = r;
+                *(u32 *)&prim->r3 = r;
             } else {
                 /* Uniform gray */
                 r = (intensity / 2) & 0xFF;
                 r = (r | (r << 8)) | (r << 16);
                 r = r | CODE_GT4_BLENDED;
-                prim->color0 = prim->color1 = prim->color2 = prim->color3 = r;
+                *(u32 *)&prim->r0 = *(u32 *)&prim->r1 = *(u32 *)&prim->r2 = *(u32 *)&prim->r3 = r;
             }
 
             /* Copy vertex positions from the 9-wide grid */
-            prim->vert0 = mesh[0].xy;
-            prim->vert1 = mesh[1].xy;
-            prim->vert2 = mesh[GRID_VERTS].xy;
-            prim->vert3 = mesh[GRID_VERTS + 1].xy;
+            *(s32 *)&prim->x0 = mesh[0].xy;
+            *(s32 *)&prim->x1 = mesh[1].xy;
+            *(s32 *)&prim->x2 = mesh[GRID_VERTS].xy;
+            *(s32 *)&prim->x3 = mesh[GRID_VERTS + 1].xy;
 
             /* Texture coordinates. minVal is reused for the right edge's U: a
              * separate variable would be a ninth and live on the stack. */
@@ -885,10 +859,10 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot,
             vTop = g_meshRowV[row] << 8;
             vBottom = g_meshRowV[row + 1] << 8;
 
-            prim->uv0 = r | vTop;
-            prim->uv1 = minVal | vTop;
-            prim->uv2 = r | vBottom;
-            prim->uv3 = minVal | vBottom;
+            *(u16 *)&prim->u0 = r | vTop;
+            *(u16 *)&prim->u1 = minVal | vTop;
+            *(u16 *)&prim->u2 = r | vBottom;
+            *(u16 *)&prim->u3 = minVal | vBottom;
 
             AddPrim(ot, prim);
             prim++;
@@ -996,7 +970,6 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
     s32 discard;
     VECTOR scaleVec;
     SVECTOR point;
-    /* Never read: it only holds its place in the stack frame. */
     s32 unused;
 
     /* The matrix is built in the vertex buffer, which the projection then reuses. */
@@ -1115,8 +1088,9 @@ static void initBossTransition(void) {
  *   step 80 also clears @c g_renderMode and closes the thread.
  */
 static void bossTransitionTick(void) {
-    /* Never used. They and unused below only hold their places in the stack frame. */
-    s32 sxy, p, flag;
+    s32 unused1;
+    s32 unused2;
+    s32 unused3;
     /* The order of these is the order of the registers and stack slots: the
      * first eight get $s0 to $s7 and the rest live on the stack. */
     register s32 r;
@@ -1309,8 +1283,8 @@ static void addSnapshotTiles(void) {
  * choose here, and it multiplies rand()'s result straight out of $v0.
  */
 static void transitionRandom(void) {
-    /* Never read: they only hold their places in the stack frame. */
-    s32 x, y;
+    s32 unused1;
+    s32 unused2;
 
     rand();
     __asm__ volatile ("li $7, 0x801F5000\n"
