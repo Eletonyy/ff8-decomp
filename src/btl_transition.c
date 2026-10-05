@@ -315,8 +315,7 @@ void func_80023D60(register s32 boss) {
     ot = SNAPSHOT_COPY_OT;
     ClearOTag(ot, 1);
     stp = (DR_STP *)(ot + 4);
-    /* libgpu.h declares SetDrawStp with a u32 pointer where the SDK's takes a DR_STP. */
-    SetDrawStp((u32 *)stp, 0);
+    SetDrawStp(stp, 0);
     AddPrim(ot, stp);
     stp++;
     move = (DR_MOVE *)stp;
@@ -324,7 +323,7 @@ void func_80023D60(register s32 boss) {
     AddPrim(ot, move);
     move++;
     stp = (DR_STP *)move;
-    SetDrawStp((u32 *)stp, 1);
+    SetDrawStp(stp, 1);
     AddPrim(ot, stp);
     stp++;
     DrawOTag(ot);
