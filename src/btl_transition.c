@@ -214,8 +214,20 @@ typedef struct {
     __asm__ volatile ("lui $3, 0xE100; ori $2, $0, 7; ori $3, $3, 0x220; sb $2, 3(%0); sw $3, 0x1C(%0)" \
                       : : "r"(p) : "$2", "$3")
 
+/** A screen position packed into one word, as primitives hold it. */
+#define PACK_XY(x, y) (((y) << 16) | (x))
+
 #define GRID_SIZE 8 /**< Quads per row/column in the mesh grid. */
 #define GRID_VERTS 9 /**< Vertices per row (GRID_SIZE + 1). */
+/** A grid cell's size on screen: the 8 cells span the full width and 216 of the 224 lines. */
+#define GRID_CELL_W (SCREEN_WIDTH / GRID_SIZE)
+#define GRID_CELL_H 27
+
+/** The flat mesh: five quads across the screen, each 64 wide on screen and in the texture. */
+#define FLAT_QUADS 5
+#define FLAT_QUAD_W (SCREEN_WIDTH / FLAT_QUADS)
+/** Texture lines each flat mesh quad samples; the quads themselves are 224 tall before scaling. */
+#define FLAT_TEX_H 208
 
 /* The transitions' working memory sits at fixed addresses, as in the original:
  * the target loads them as literals (lui/ori, no relocation), so a symbol would
@@ -305,7 +317,7 @@ void func_80023D60(register s32 boss) {
     SetGeomOffset(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
     SetGeomScreen(SCREEN_DISTANCE);
     /* Show 224 of the 240 lines, centred. */
-    D_80082D90[0].screen.y = D_80082D90[1].screen.y = D_80082D90[2].screen.y = 8;
+    D_80082D90[0].screen.y = D_80082D90[1].screen.y = D_80082D90[2].screen.y = (240 - SCREEN_HEIGHT) / 2;
     D_80082D90[0].screen.h = D_80082D90[1].screen.h = D_80082D90[2].screen.h = SCREEN_HEIGHT;
     D_8005F17F = type;
 
@@ -1008,9 +1020,9 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
     point.vz = 0;
     for (j = 0; j < 2; j++) {
         point.vx = -(SCREEN_WIDTH / 2);
-        for (i = 0; i < 6; i++) {
+        for (i = 0; i < FLAT_QUADS + 1; i++) {
             RotTransPers(&point, &vert->xy, &discard, &discard);
-            point.vx += 64;
+            point.vx += FLAT_QUAD_W;
             vert++;
         }
         point.vy += SCREEN_HEIGHT;
@@ -1029,23 +1041,23 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
     j = disp->disp.y;
     tpage = (i & 0x3C0) >> 6;
     tpage |= (j & 0x100) >> 4;
-    tpage |= 0x100;
+    tpage |= getTPage(2, 0, 0, 0);
 
     vert = mesh->vertices;
     prim = mesh->primPtr;
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < FLAT_QUADS; i++) {
         setPrimLen(prim, 9);
         *(u32 *)&prim->r0 = color;
         prim->tpage = tpage + i;
         /* u and v together, as one halfword */
         *(s16 *)&prim->u0 = 0;
-        *(s16 *)&prim->u1 = 64;
-        *(s16 *)&prim->u2 = 208 << 8;
-        *(s16 *)&prim->u3 = (208 << 8) | 64;
+        *(s16 *)&prim->u1 = FLAT_QUAD_W;
+        *(s16 *)&prim->u2 = FLAT_TEX_H << 8;
+        *(s16 *)&prim->u3 = (FLAT_TEX_H << 8) | FLAT_QUAD_W;
         *(s32 *)&prim->x0 = vert[0].xy;
         *(s32 *)&prim->x1 = vert[1].xy;
-        *(s32 *)&prim->x2 = vert[6].xy;
-        *(s32 *)&prim->x3 = vert[7].xy;
+        *(s32 *)&prim->x2 = vert[FLAT_QUADS + 1].xy;
+        *(s32 *)&prim->x3 = vert[FLAT_QUADS + 2].xy;
         AddPrim(ot, prim);
         prim++;
         vert++;
@@ -1082,8 +1094,8 @@ static void initMeshRenderer(void) {
     point = ctx->points;
     for (row = 0; row < GRID_VERTS; row++) {
         for (col = 0; col < GRID_VERTS; col++) {
-            point->vx = col * 40 - 160;
-            point->vy = row * 27 - 108;
+            point->vx = col * GRID_CELL_W - GRID_SIZE * GRID_CELL_W / 2;
+            point->vy = row * GRID_CELL_H - GRID_SIZE * GRID_CELL_H / 2;
             /* vz and the pad cleared with one word store, as the target does. */
             *(s32 *)&point->vz = 0;
             point++;
@@ -1186,21 +1198,21 @@ panels:
         for (i = 0; i < 32; i += 4) {
             *(s32 *)((u8 *)matrix + i) = *(s32 *)((u8 *)src + i);
         }
-        size = ctx->frame * 64 + 0x600;
+        size = ctx->frame * 64 + ONE * 3 / 8;
         r = ctx->frame - 32;
         r = r * (r + 1) / 2 * 8;
         size += r;
         work->scale.vx = work->scale.vy = work->scale.vz = size;
         ScaleMatrix(matrix, &work->scale);
-        /* Each panel mirrors the last: m[0][0] and m[0][1], or m[1][1] and
-         * m[1][2], flipped as one word. */
-        renderMeshPanel(ctx, matrix, intensity, -80, -56);
-        ((s32 *)matrix)[0] = ~((s32 *)matrix)[0];
-        renderMeshPanel(ctx, matrix, intensity, 80, -56);
-        ((s32 *)matrix)[2] = ~((s32 *)matrix)[2];
-        renderMeshPanel(ctx, matrix, intensity, 80, 56);
-        ((s32 *)matrix)[0] = ~((s32 *)matrix)[0];
-        renderMeshPanel(ctx, matrix, intensity, -80, 56);
+        /* Four panels, centred on the four quarters of the screen, each mirroring
+         * the last: m[0][0] or m[1][1] is flipped as one word with its neighbour. */
+        renderMeshPanel(ctx, matrix, intensity, -(SCREEN_WIDTH / 4), -(SCREEN_HEIGHT / 4));
+        *(s32 *)&matrix->m[0][0] = ~*(s32 *)&matrix->m[0][0];
+        renderMeshPanel(ctx, matrix, intensity, SCREEN_WIDTH / 4, -(SCREEN_HEIGHT / 4));
+        *(s32 *)&matrix->m[1][1] = ~*(s32 *)&matrix->m[1][1];
+        renderMeshPanel(ctx, matrix, intensity, SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4);
+        *(s32 *)&matrix->m[0][0] = ~*(s32 *)&matrix->m[0][0];
+        renderMeshPanel(ctx, matrix, intensity, -(SCREEN_WIDTH / 4), SCREEN_HEIGHT / 4);
         r = ctx->frame;
         if (r >= BOSS_PANELS_END) {
             r = BOSS_PANELS_END;
@@ -1232,10 +1244,10 @@ panels:
         r |= CODE_F4_BLENDED;
         quad->color = r;
         quad->mode = _get_mode(0, 1, getTPage(0, 1, 0, 0));
-        quad->xy0 = 0;
-        quad->xy1 = SCREEN_WIDTH;
-        quad->xy2 = SCREEN_HEIGHT << 16;
-        quad->xy3 = (SCREEN_HEIGHT << 16) | SCREEN_WIDTH;
+        quad->xy0 = PACK_XY(0, 0);
+        quad->xy1 = PACK_XY(SCREEN_WIDTH, 0);
+        quad->xy2 = PACK_XY(0, SCREEN_HEIGHT);
+        quad->xy3 = PACK_XY(SCREEN_WIDTH, SCREEN_HEIGHT);
         AddPrim(ot + LAYER_FLASH, quad);
         quad++;
         ctx->primPtr = quad;
