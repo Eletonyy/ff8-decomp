@@ -4,6 +4,7 @@
 #include "psxsdk/libetc.h"
 #include "psxsdk/libc.h"
 #include "psxsdk/libapi.h"
+#include "psxsdk/r3000.h"
 #include "gamestate.h"
 #include "main.h"
 #include "thread.h"
@@ -28,9 +29,6 @@
 /** Where in VRAM the picture on screen when the battle started is kept. */
 #define SNAPSHOT_X 384
 #define SNAPSHOT_Y 256
-
-/** Sets the bit of the status register that lets a thread use the GTE. */
-#define STATUS_GTE_ENABLE 0x40000000
 
 /** Distance of the projection plane. The strips start on it, so they first project at their own size. */
 #define SCREEN_DISTANCE 512
@@ -503,7 +501,7 @@ static void normalTransitionTick(void) {
     ClearOTag(ot, TRANSITION_OT_SIZE);
 
     r = getInterruptStatus();
-    r |= STATUS_GTE_ENABLE;
+    r |= SR_CU2;
     func_80026FD4(r);
 
     scratch = (DR_MODE *)&work->angle;
@@ -1165,7 +1163,7 @@ static void bossTransitionTick(void) {
     ctx->otBase = ot;
 
     r = getInterruptStatus();
-    r |= STATUS_GTE_ENABLE;
+    r |= SR_CU2;
     func_80026FD4(r);
 
     /* The skip is a goto in the original: the target has the jump and, after

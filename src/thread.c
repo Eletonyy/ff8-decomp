@@ -2,6 +2,7 @@
 #include "psxsdk/libgpu.h"
 #include "psxsdk/kernel.h"
 #include "psxsdk/libapi.h"
+#include "psxsdk/r3000.h"
 #include "battle.h"
 #include "thread.h"
 
@@ -92,7 +93,7 @@ void switchThread(s32 a0) {
     if (a0 == 0) {
         a0 = (s32)0xFF000000;
     }
-    if (GetSr() & 4) {
+    if (GetSr() & SR_IEP) {
         func_80026F4C(a0);
     } else {
         ChangeTh(a0);

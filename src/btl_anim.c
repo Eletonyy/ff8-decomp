@@ -16,6 +16,7 @@
 #include "ui/text.h"
 #include "thread.h"
 #include "psxsdk/libapi.h"
+#include "psxsdk/r3000.h"
 
 
 void callCdTick(void);
@@ -163,7 +164,7 @@ static s32 getPadReadType(s32 idx, s32 frameOffset) {
     AnimFrame *frame;
     s32 frameSlot;
 
-    syncFlag = GetSr() & 4;
+    syncFlag = GetSr() & SR_IEP;
     if (syncFlag == 0) {
         EnterCriticalSection();
     }
