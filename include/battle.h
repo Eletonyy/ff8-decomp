@@ -680,7 +680,7 @@ typedef struct {
     /* 0x20 */ u16 unk20;
     /* 0x22 */ u8 pad22[6];
     /* 0x28 */ TempNameStruct something[1];
-} BattleCmdBuf;  /*(real size undefined)*/
+} BattleCmdBuf;  /* 0x78 (real size undefined) */
 
 /** @brief Animated 3D particle/effect entry processed by @c bc_object16.c. */
 typedef struct {
