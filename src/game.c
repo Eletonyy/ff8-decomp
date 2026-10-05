@@ -1,5 +1,6 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
+#include "game.h"
 #include "battle.h"
 #include "ui/countdown.h"
 #include "gf.h"
