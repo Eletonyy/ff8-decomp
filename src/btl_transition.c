@@ -36,7 +36,7 @@
 #define HALF_TURN (ONE / 2)
 /** Colour word the saved picture is drawn with: its own brightness. */
 #define SNAPSHOT_COLOR 0x808080
-/** Step at which the wipe's strength starts to grow. */
+/** The wipe's strength is 1 up to this step, then grows by one each step. */
 #define WIPE_RAMP_START 64
 
 /** Primitive codes as they sit in the top byte of the colour word; the _BLENDED ones have the semi-transparency bit set. */
@@ -140,7 +140,7 @@ typedef struct {
     /* 0x84 */ u8 pad84[0x1C];
     /* 0xA0 */ SVECTOR vertex;
     /* 0xA8 */ u8 padA8[0x48];
-    /* 0xF0 */ s32 arg0; /**< Arguments and result of addSnapshotTiles; also where RotTransPers puts its outputs. */
+    /* 0xF0 */ s32 arg0; /**< Arguments and result of addSnapshotTiles and transitionRandom; also where RotTransPers puts its outputs. */
     /* 0xF4 */ void *arg1;
     /* 0xF8 */ s32 arg2;
     /* 0xFC */ s32 result;
@@ -154,7 +154,7 @@ typedef struct {
 
 /** @brief Mesh render context for GTE transformation and GPU primitive generation. */
 typedef struct {
-    /* 0x00 */ u32 frame; /**< Steps drawn so far. */
+    /* 0x00 */ u32 frame; /**< The current step, from 1 to 80. */
     /* 0x04 */ void *primPtr; /**< Current primitive write pointer. */
     /* 0x08 */ ScreenVert *vertices; /**< Vertex position array. */
     /* 0x0C */ SVECTOR *points; /**< The grid's points, before projection. */
@@ -183,8 +183,9 @@ typedef struct {
 /**
  * @brief Write a fade quad's length and its closing draw mode.
  *
- * Inline assembly in the original too: it loads the two halves of the mode
- * word around the length, an order no compiled statement produces.
+ * Inline assembly in the original too: as with setPrimLen, the target loads
+ * the length with @c ori where the compiler would use @c addiu, and here it
+ * also loads the two halves of the mode word around it.
  */
 #define setFadeQuadTail(p) \
     __asm__ volatile ("lui $3, 0xE100; ori $2, $0, 7; ori $3, $3, 0x220; sb $2, 3(%0); sw $3, 0x1C(%0)" \
@@ -839,14 +840,12 @@ static POLY_GT4 *renderMeshGrid(ScreenVert *vertices, POLY_GT4 *primBuf, u32 *ot
                 r = (r | (r << 8)) | (r << 16);
                 *(u32 *)&prim->r3 = r;
             } else {
-                /* Uniform gray */
                 r = (intensity / 2) & 0xFF;
                 r = (r | (r << 8)) | (r << 16);
                 r = r | CODE_GT4_BLENDED;
                 *(u32 *)&prim->r0 = *(u32 *)&prim->r1 = *(u32 *)&prim->r2 = *(u32 *)&prim->r3 = r;
             }
 
-            /* Copy vertex positions from the 9-wide grid */
             *(s32 *)&prim->x0 = mesh[0].xy;
             *(s32 *)&prim->x1 = mesh[1].xy;
             *(s32 *)&prim->x2 = mesh[GRID_VERTS].xy;
@@ -883,8 +882,8 @@ static POLY_GT4 *renderMeshGrid(ScreenVert *vertices, POLY_GT4 *primBuf, u32 *ot
  * @param mesh Mesh render context with vertices, primitives, and OT.
  * @param matrix Rotation matrix to apply (translation set from tx/ty params).
  * @param intensity Brightness scale factor.
- * @param tx Translation X (stored to matrix->t[0]).
- * @param ty Translation Y (stored to matrix->t[1], from stack).
+ * @param tx The panel centre's x offset from the screen centre.
+ * @param ty The panel centre's y offset from the screen centre.
  */
 static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity,
                             s32 tx, s32 ty) {
