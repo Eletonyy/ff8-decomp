@@ -8,10 +8,10 @@
  * @param boss Non-zero for a boss battle, which gets the boss transition
  * instead of the normal one.
  */
-extern void func_80023D60(s32 boss);
+extern void startBattleTransition(s32 boss);
 
 /** @brief Count VSyncs while the battle transition runs, and switch to its thread every second (normal) or third (boss) one. */
-extern void func_80026D8C(void);
+extern void paceBattleTransition(void);
 
 /** @brief Does nothing. The battle effect overlays call it. */
 extern void func_80026CF0(void);

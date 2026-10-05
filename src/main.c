@@ -67,7 +67,7 @@ void VsyncHandler(void) {
         ProcessFade();
         break;
     case 2:
-        func_80026D8C();
+        paceBattleTransition();
         break;
     case 3:
         func_800D0608();

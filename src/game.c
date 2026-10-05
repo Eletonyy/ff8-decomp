@@ -660,7 +660,7 @@ case4:
 case3:
     setHudBrightness(0);
     setCountdownVisible(0);
-    func_80023D60(isBossBattle());
+    startBattleTransition(isBossBattle());
     memzero16((s32 *)0x80098000, 0xA400);
     cdReadSync(D_800974C8[0], D_800974C8[1], 0x80098000, 0);
     func_8001F5C8();

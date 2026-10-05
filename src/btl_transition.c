@@ -140,7 +140,7 @@ typedef struct {
     /* 0x84 */ u8 pad84[0x1C];
     /* 0xA0 */ SVECTOR vertex;
     /* 0xA8 */ u8 padA8[0x48];
-    /* 0xF0 */ s32 arg0; /**< Arguments and result of func_80026ADC; also where RotTransPers puts its outputs. */
+    /* 0xF0 */ s32 arg0; /**< Arguments and result of addSnapshotTiles; also where RotTransPers puts its outputs. */
     /* 0xF4 */ void *arg1;
     /* 0xF8 */ s32 arg2;
     /* 0xFC */ s32 result;
@@ -245,18 +245,17 @@ typedef struct {
 #define MESH_SCREEN_VERTS ((ScreenVert *)0x801F1000)
 #define MESH_WORK ((MeshWork *)0x801F5000)
 
-extern s8 D_8005F17D;
-extern u8 D_8005F17C;
-extern u8 D_8005F17F;
-extern u8 D_8005F180;
-extern s32 D_80052914[];
-extern DR_MOVE D_80082CA0[];
-extern DRAWENV D_80082CD0[];
-extern DISPENV D_80082D90[];
-extern RECT D_8005EC24;
-extern RECT D_8005EC2C;
-extern RECT D_8005EC34;
-extern s32 D_8005F178; /**< The transition thread's handle. */
+extern s8 g_transitionBusy; /**< Set while a step is drawn; a step that finds it set returns at once. */
+extern u8 g_transitionVsyncs; /**< VSyncs since the last step. */
+extern u8 g_transitionIsBoss; /**< Which transition runs: 0 for the normal one, else the boss one. */
+extern u8 g_transitionMirrored; /**< Mirrors the normal transition left to right; picked at random. */
+extern s32 g_glowTints[3]; /**< Added to the glow's colour, one per step in turn: a little blue, green, then red. */
+extern DR_MOVE g_snapshotCopyMoves[2]; /**< Packets that copy a step's frame back over the saved picture, one per ordering table. */
+extern DRAWENV g_transitionDrawEnvs[2]; /**< Drawing into the buffer at x 0, then the one at x 320. */
+extern DISPENV g_transitionDispEnvs[3]; /**< Showing the buffer at x 320, the one at x 0, then the saved picture. */
+extern RECT g_snapshotRect; /**< Where the saved picture is kept in VRAM. */
+extern RECT g_bufferRects[2]; /**< The two buffers' areas in VRAM. */
+extern s32 g_transitionThread; /**< The transition thread's handle. */
 extern u8 g_meshEdgeIntensity[GRID_VERTS]; /**< Brightness of each grid line, across and down: 0 at the border, 128 in the middle. */
 extern u8 g_meshLeftU[GRID_SIZE]; /**< Each column's left texture U, within its page in g_meshTpage. */
 extern u8 g_meshRightU[GRID_SIZE]; /**< Each column's right texture U. */
@@ -264,20 +263,20 @@ extern u8 g_meshRowV[GRID_VERTS]; /**< Texture V of each grid line down. */
 extern u8 g_meshTpage[GRID_SIZE]; /**< Texture page ID per column. */
 extern MATRIX g_meshBaseMatrix;
 
-static void func_80024064(void);
+static void initNormalTransition(void);
 static void normalTransitionTick(void);
 static void transformMeshVertices(MeshRenderCtx *mesh);
 static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot, s32 intensity, s32 perVertex);
 static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity, s32 tx, s32 ty);
 static void renderScaledMesh(MeshRenderCtx *mesh, u32 *ot, s32 scale, s32 intensity);
-static void initMeshRenderer(void);
+static void initBossTransition(void);
 static void bossTransitionTick(void);
 static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 scale);
-static void func_80026ADC(void);
-static void func_80026CA0(void);
-static void func_80026D10(void);
-static void func_80026E20(void);
-static void func_80026E70(void);
+static void addSnapshotTiles(void);
+static void transitionRandom(void);
+static void transitionThreadEntry(void);
+static void closeTransitionThread(void);
+static void openTransitionThread(void);
 
 /**
  * @brief Start the screen transition that plays while a battle loads.
@@ -290,7 +289,7 @@ static void func_80026E70(void);
  * @param boss Non-zero for a boss battle, which gets the boss transition
  * instead of the normal one.
  */
-void func_80023D60(register s32 boss) {
+void startBattleTransition(register s32 boss) {
     /* The caller passes an int it does not mask, so the parameter is s32. The
      * original keeps it in a register and copies it to a byte on the stack: a
      * plain s32 parameter would be stored to its argument slot instead. */
@@ -307,17 +306,17 @@ void func_80023D60(register s32 boss) {
     state->unk02 = g_bufferIndex & 1;
     VSync(0);
 
-    SetDefDrawEnv(&D_80082CD0[0], 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    SetDefDrawEnv(&D_80082CD0[1], SCREEN_WIDTH, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    SetDefDispEnv(&D_80082D90[0], SCREEN_WIDTH, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    SetDefDispEnv(&D_80082D90[1], 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    SetDefDispEnv(&D_80082D90[2], SNAPSHOT_X, SNAPSHOT_Y, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SetDefDrawEnv(&g_transitionDrawEnvs[0], 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SetDefDrawEnv(&g_transitionDrawEnvs[1], SCREEN_WIDTH, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SetDefDispEnv(&g_transitionDispEnvs[0], SCREEN_WIDTH, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SetDefDispEnv(&g_transitionDispEnvs[1], 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SetDefDispEnv(&g_transitionDispEnvs[2], SNAPSHOT_X, SNAPSHOT_Y, SCREEN_WIDTH, SCREEN_HEIGHT);
     SetGeomOffset(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
     SetGeomScreen(SCREEN_DISTANCE);
     /* Show 224 of the 240 lines, centred. */
-    D_80082D90[0].screen.y = D_80082D90[1].screen.y = D_80082D90[2].screen.y = (240 - SCREEN_HEIGHT) / 2;
-    D_80082D90[0].screen.h = D_80082D90[1].screen.h = D_80082D90[2].screen.h = SCREEN_HEIGHT;
-    D_8005F17F = type;
+    g_transitionDispEnvs[0].screen.y = g_transitionDispEnvs[1].screen.y = g_transitionDispEnvs[2].screen.y = (240 - SCREEN_HEIGHT) / 2;
+    g_transitionDispEnvs[0].screen.h = g_transitionDispEnvs[1].screen.h = g_transitionDispEnvs[2].screen.h = SCREEN_HEIGHT;
+    g_transitionIsBoss = type;
 
     /* Copy the picture on screen to the snapshot area. */
     ot = SNAPSHOT_COPY_OT;
@@ -339,18 +338,18 @@ void func_80023D60(register s32 boss) {
     VSync(0);
 
     /* Show the snapshot, and start both buffers from it. */
-    PutDispEnv(&D_80082D90[2]);
-    MoveImage(&D_8005EC24, 0, 0);
-    MoveImage(&D_8005EC24, SCREEN_WIDTH, 0);
-    if (D_8005F17F == 0) {
-        func_80024064();
+    PutDispEnv(&g_transitionDispEnvs[2]);
+    MoveImage(&g_snapshotRect, 0, 0);
+    MoveImage(&g_snapshotRect, SCREEN_WIDTH, 0);
+    if (g_transitionIsBoss == 0) {
+        initNormalTransition();
     } else {
-        initMeshRenderer();
+        initBossTransition();
     }
     DrawSync(0);
-    D_8005F17C = 0;
-    D_8005F17D = 0;
-    func_80026E70();
+    g_transitionVsyncs = 0;
+    g_transitionBusy = 0;
+    openTransitionThread();
     g_renderMode = RENDER_BATTLE;
 }
 
@@ -363,7 +362,7 @@ void func_80023D60(register s32 boss) {
  * normalTransitionTick animates: the strips start spread out by their index, and
  * each bar of the wipe gets a random start, speed and strength.
  */
-static void func_80024064(void) {
+static void initNormalTransition(void) {
     /* Never read: the original reserves 0x18 bytes of frame it does not touch. */
     u8 unused[0x18];
     register u32 *p;
@@ -376,8 +375,8 @@ static void func_80024064(void) {
 
     work = TRANSITION_WORK;
     work->arg0 = 256;
-    func_80026CA0();
-    D_8005F180 = work->result & 1;
+    transitionRandom();
+    g_transitionMirrored = work->result & 1;
 
     /* Clear the state block, which holds the strip and bar tables too. */
     p = (u32 *)TRANSITION_STATE;
@@ -397,7 +396,7 @@ static void func_80024064(void) {
         strip->x = i * 0x8000;
         strip->vx = i * 0x2000;
         strip->ax = i * 0x100;
-        if (D_8005F180 == 0) {
+        if (g_transitionMirrored == 0) {
             strip->vz = -0x10000;
             strip->az = -(i * 64);
         } else {
@@ -417,14 +416,14 @@ static void func_80024064(void) {
     state->bars = bar;
     for (i = 0; i < BAR_TABLE_SIZE; i++) {
         work->arg0 = 48;
-        func_80026CA0();
+        transitionRandom();
         bar->length = work->result << 16;
         work->arg0 = 48;
-        func_80026CA0();
+        transitionRandom();
         bar->speed = (work->result << 16) + (20 << 16);
         bar->unk08 = 0;
         work->arg0 = 16;
-        func_80026CA0();
+        transitionRandom();
         bar->r = work->result + 16;
         bar->g = 16;
         bar->b = 16;
@@ -448,7 +447,7 @@ static void func_80024064(void) {
  * - From step 78 the list is no longer drawn and the display is blanked.
  * - Step 80 also clears @c g_renderMode and closes the thread.
  *
- * @c D_8005F180 mirrors the whole thing left to right.
+ * @c g_transitionMirrored mirrors the whole thing left to right.
  *
  * @note The first quad (the 32-pixel margin) gets its left edge's texture
  * coordinates twice: once under the mirror test and then again
@@ -475,11 +474,11 @@ static void normalTransitionTick(void) {
     register TransitionWork *work;
     register u32 *ot;
 
-    if (D_8005F17D != 0) {
+    if (g_transitionBusy != 0) {
         return;
     }
-    D_8005F17D = -1;
-    D_8005F17C = 0;
+    g_transitionBusy = -1;
+    g_transitionVsyncs = 0;
 
     work = TRANSITION_WORK;
     state = TRANSITION_STATE;
@@ -488,8 +487,8 @@ static void normalTransitionTick(void) {
     ot = TRANSITION_OTS[state->step & 1];
 
     r = (state->step + 1) & 1;
-    PutDispEnv(&D_80082D90[r]);
-    PutDrawEnv(&D_80082CD0[r]);
+    PutDispEnv(&g_transitionDispEnvs[r]);
+    PutDrawEnv(&g_transitionDrawEnvs[r]);
 
     if (state->step < TRANSITION_END - 2) {
         DrawOTag(ot);
@@ -505,7 +504,7 @@ static void normalTransitionTick(void) {
     func_80026FD4(r);
 
     scratch = (DR_MODE *)&work->angle;
-    if (D_8005F180 == 0) {
+    if (g_transitionMirrored == 0) {
         ((SVECTOR *)scratch)->vy = state->step * 4;
         work->trans.vx = -(SCREEN_WIDTH / 2);
     } else {
@@ -529,12 +528,12 @@ static void normalTransitionTick(void) {
             r = state->step;
             r &= 1;
             if (r == 0) {
-                scratch = (DR_MODE *)&D_8005EC2C;
+                scratch = (DR_MODE *)&g_bufferRects[0];
             } else {
-                scratch = (DR_MODE *)&D_8005EC34;
+                scratch = (DR_MODE *)&g_bufferRects[1];
             }
-            SetDrawMove(&D_80082CA0[state->step & 1], (RECT *)scratch, SNAPSHOT_X, SNAPSHOT_Y);
-            AddPrim(ot + LAYER_COPY, &D_80082CA0[state->step & 1]);
+            SetDrawMove(&g_snapshotCopyMoves[state->step & 1], (RECT *)scratch, SNAPSHOT_X, SNAPSHOT_Y);
+            AddPrim(ot + LAYER_COPY, &g_snapshotCopyMoves[state->step & 1]);
         }
     copy_done:;
     }
@@ -543,7 +542,7 @@ static void normalTransitionTick(void) {
     work->arg0 = (s32)ot;
     work->arg1 = work->primPtr;
     work->arg2 = SNAPSHOT_COLOR;
-    func_80026ADC();
+    addSnapshotTiles();
     work->primPtr = (void *)work->result;
 
     if (state->step < WIPE_START) {
@@ -558,7 +557,7 @@ static void normalTransitionTick(void) {
         work->vertex.vy += SCREEN_HEIGHT;
         RotTransPers(&work->vertex, &work->arg0, &work->result, &work->result);
         *(s32 *)&prim->x2 = work->arg0;
-        if (D_8005F180 == 0) {
+        if (g_transitionMirrored == 0) {
             *(s16 *)&prim->u0 = 0;
             *(s16 *)&prim->u2 = SCREEN_HEIGHT << 8;
         }
@@ -568,7 +567,7 @@ static void normalTransitionTick(void) {
         for (i = 0; i < STRIP_COUNT; i++) {
             next = prim + 1;
             setPrimLen(prim, 9);
-            if (D_8005F180 == 0) {
+            if (g_transitionMirrored == 0) {
                 setTPage(prim, 2, 3, SNAPSHOT_X, SNAPSHOT_Y);
             } else {
                 setTPage(prim, 2, 3, SNAPSHOT_X + 128, SNAPSHOT_Y);
@@ -595,7 +594,7 @@ static void normalTransitionTick(void) {
             RotTransPers(&work->vertex, &work->arg0, &work->result, &work->result);
             *(s32 *)&prim->x3 = *(s32 *)&next->x2 = work->arg0;
 
-            if (D_8005F180 == 0) {
+            if (g_transitionMirrored == 0) {
                 prim->u1 = prim->u3 = next->u0 = next->u2 = i + STRIP_LEFT;
             } else {
                 prim->u1 = prim->u3 = next->u0 = next->u2 = STRIP_LEFT + STRIP_COUNT - i;
@@ -619,7 +618,7 @@ static void normalTransitionTick(void) {
         if (q < 4) q = 4;
         q |= (q << 16) | (q << 8);
         m = state->step % 3;
-        m = D_80052914[m];
+        m = g_glowTints[m];
         *(u32 *)&glow[0].r0 = *(u32 *)&glow[1].r0 = (q + m) | CODE_G4_BLENDED;
         *(u32 *)&glow[0].r2 = *(u32 *)&glow[1].r2 = q + m;
         *(u32 *)&glow[0].r1 = *(u32 *)&glow[1].r1 = m;
@@ -648,7 +647,7 @@ static void normalTransitionTick(void) {
         if (q < 4) q = 4;
         q |= (q << 16) | (q << 8);
         m = state->step % 3;
-        m = D_80052914[m];
+        m = g_glowTints[m];
         *(u32 *)&glow[2].r0 = *(u32 *)&glow[3].r0 = (q + m) | CODE_G4_BLENDED;
         *(u32 *)&glow[2].r2 = *(u32 *)&glow[3].r2 = q + m;
         *(u32 *)&glow[2].r1 = *(u32 *)&glow[3].r1 = m;
@@ -669,7 +668,7 @@ static void normalTransitionTick(void) {
         glow[3].x0 = glow[3].x2 = STRIP_LEFT - i;
         glow[3].x1 = glow[3].x3 = q + STRIP_LEFT;
 
-        if (D_8005F180 != 0) {
+        if (g_transitionMirrored != 0) {
             glow[0].x0 = SCREEN_WIDTH - glow[0].x0;
             glow[0].x1 = SCREEN_WIDTH - glow[0].x1;
             glow[0].x2 = SCREEN_WIDTH - glow[0].x2;
@@ -728,7 +727,7 @@ wipe_start:
                 bar->unk08 = 0;
                 r = SCREEN_WIDTH * 2;
             }
-            if (D_8005F180 == 0) {
+            if (g_transitionMirrored == 0) {
                 wipe->x0 = 0;
                 wipe->x1 = r;
             } else {
@@ -770,7 +769,7 @@ wipe_start:
         work->primPtr = wipe;
         if (state->step >= TRANSITION_END) {
             g_renderMode = RENDER_IDLE;
-            func_80026E20();
+            closeTransitionThread();
             SetDispMask(0);
         }
     /* Another label nothing jumps to, kept for its nop. */
@@ -778,7 +777,7 @@ wipe_start:
     }
 
     DrawSync(0);
-    D_8005F17D = 0;
+    g_transitionBusy = 0;
 }
 
 
@@ -1034,7 +1033,7 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
     /* The texture page of the buffer on screen now, which is the one this
      * list is drawn into: getTPage(2, 0, x, y), by hand. */
     r = (mesh->frame + 1) & 1;
-    disp = &D_80082D90[r];
+    disp = &g_transitionDispEnvs[r];
     i = disp->disp.x;
     j = disp->disp.y;
     tpage = (i & 0x3C0) >> 6;
@@ -1071,7 +1070,7 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
  * clears both ordering tables, and fills in the 9x9 grid of points the mesh
  * is projected from: 40 apart across and 27 down, centred on the origin.
  */
-static void initMeshRenderer(void) {
+static void initBossTransition(void) {
     register MeshRenderCtx *ctx;
     register TransitionOt *ot;
     register s32 col;
@@ -1134,11 +1133,11 @@ static void bossTransitionTick(void) {
     register s32 unused;
     register MeshRenderCtx *ctx;
 
-    if (D_8005F17D != 0) {
+    if (g_transitionBusy != 0) {
         return;
     }
-    D_8005F17D = -1;
-    D_8005F17C = 0;
+    g_transitionBusy = -1;
+    g_transitionVsyncs = 0;
 
     work = MESH_WORK;
     ctx = MESH_RENDER_CTX;
@@ -1148,15 +1147,15 @@ static void bossTransitionTick(void) {
     ctx->primPtr = TRANSITION_PRIMS[ctx->frame & 1];
 
     r = (ctx->frame + 1) & 1;
-    PutDispEnv(&D_80082D90[r]);
-    PutDrawEnv(&D_80082CD0[r]);
+    PutDispEnv(&g_transitionDispEnvs[r]);
+    PutDrawEnv(&g_transitionDrawEnvs[r]);
 
     if (ctx->frame < TRANSITION_END - 2) {
         DrawOTag(ot);
     } else {
         SetDispMask(0);
     }
-    D_80082CD0[0].isbg = D_80082CD0[1].isbg = 1;
+    g_transitionDrawEnvs[0].isbg = g_transitionDrawEnvs[1].isbg = 1;
 
     ot = TRANSITION_OTS[(ctx->frame + 1) & 1];
     ClearOTag(ot, TRANSITION_OT_SIZE);
@@ -1253,13 +1252,13 @@ panels:
 
     if (ctx->frame >= TRANSITION_END) {
         g_renderMode = RENDER_IDLE;
-        func_80026E20();
+        closeTransitionThread();
         SetDispMask(0);
     }
 /* Not jumped to; it accounts for the nop before DrawSync. */
 done:
     DrawSync(0);
-    D_8005F17D = 0;
+    g_transitionBusy = 0;
 }
 
 
@@ -1270,7 +1269,7 @@ done:
  * (the quads go into its entry 2), the primitive cursor in arg1 and the
  * colour in arg2. The advanced cursor comes back in result.
  */
-static void func_80026ADC(void) {
+static void addSnapshotTiles(void) {
     register s32 color;
     register u32 *ot;
     register s32 col;
@@ -1309,7 +1308,7 @@ static void func_80026ADC(void) {
  * pointer in $a3 and the arithmetic in $a0, registers the compiler does not
  * choose here, and it multiplies rand()'s result straight out of $v0.
  */
-static void func_80026CA0(void) {
+static void transitionRandom(void) {
     /* Never read: they only hold their places in the stack frame. */
     s32 x, y;
 
@@ -1331,11 +1330,11 @@ void func_80026CF0(void) {
 
 /**
  * @brief The transition thread: draw one step of the chosen transition, then
- * hand control back to the main thread until func_80026D8C switches back in.
+ * hand control back to the main thread until paceBattleTransition switches back in.
  */
-static void func_80026D10(void) {
+static void transitionThreadEntry(void) {
     while (1) {
-        if (D_8005F17F == 0) {
+        if (g_transitionIsBoss == 0) {
             normalTransitionTick();
         } else {
             bossTransitionTick();
@@ -1349,35 +1348,35 @@ static void func_80026D10(void) {
  * @brief Count VSyncs while the battle transition runs, and switch to its
  * thread every second (normal) or third (boss) one.
  */
-void func_80026D8C(void) {
+void paceBattleTransition(void) {
     register s32 steps;
 
-    D_8005F17C++;
-    if (D_8005F17F == 0) {
+    g_transitionVsyncs++;
+    if (g_transitionIsBoss == 0) {
         steps = 2;
     } else {
         steps = 3;
     }
     /* Read signed here and unsigned above, as the target does. */
-    if ((s8)D_8005F17C >= steps) {
-        switchThread(D_8005F178);
+    if ((s8)g_transitionVsyncs >= steps) {
+        switchThread(g_transitionThread);
     }
 }
 
 
 /** @brief Close the battle transition's thread. */
-static void func_80026E20(void) {
+static void closeTransitionThread(void) {
     EnterCriticalSection();
-    closeThreadSafe(D_8005F178);
-    D_8005F178 = 0;
+    closeThreadSafe(g_transitionThread);
+    g_transitionThread = 0;
     ExitCriticalSection();
 }
 
 
 /** @brief Open the battle transition's thread on its own stack. */
-static void func_80026E70(void) {
+static void openTransitionThread(void) {
     register u8 *stack;
 
     stack = TRANSITION_THREAD_STACK;
-    D_8005F178 = openThreadSafe(func_80026D10, stack);
+    g_transitionThread = openThreadSafe(transitionThreadEntry, stack);
 }
