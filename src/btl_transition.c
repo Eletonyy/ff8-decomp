@@ -929,11 +929,12 @@ static void renderMeshPanel(MeshRenderCtx *mesh, MATRIX *matrix, s32 intensity,
 
 
 /**
- * @brief Copy global rotation matrix, apply uniform scale, and render mesh.
+ * @brief Copy the base matrix, apply a uniform scale, and render the mesh.
  *
- * Copies the 32-byte global rotation matrix g_meshBaseMatrix into a local copy,
- * applies a uniform scale factor, sets the GTE matrices, transforms vertices,
- * and renders the mesh grid with no per-vertex shading.
+ * Copies the 32-byte base matrix g_meshBaseMatrix (no rotation; it puts the
+ * grid on the projection plane) into a local copy, applies a uniform scale
+ * factor, sets the GTE matrices, transforms vertices, and renders the mesh
+ * grid with no per-vertex shading.
  *
  * @param mesh Mesh render context.
  * @param ot GPU ordering table.
@@ -944,7 +945,7 @@ static void renderScaledMesh(MeshRenderCtx *mesh, u32 *ot, s32 scale, s32 intens
     register s32 i;
     register MATRIX *dst;
     register MATRIX *src;
-    s32 scaleVec[3];
+    VECTOR scaleVec;
     MATRIX localMatrix;
     s32 unused1;
     s32 unused2;
@@ -958,9 +959,8 @@ static void renderScaledMesh(MeshRenderCtx *mesh, u32 *ot, s32 scale, s32 intens
         i += 4;
     }
 
-    scaleVec[0] = scaleVec[1] = scaleVec[2] = scale;
-    /* A VECTOR without its pad word: the frame needs the 12-byte array, and ScaleMatrix never reads the pad. */
-    ScaleMatrix(dst, (VECTOR *)scaleVec);
+    scaleVec.vx = scaleVec.vy = scaleVec.vz = scale;
+    ScaleMatrix(dst, &scaleVec);
     SetRotMatrix(dst);
     SetTransMatrix(dst);
     transformMeshVertices(mesh);
@@ -973,8 +973,9 @@ static void renderScaledMesh(MeshRenderCtx *mesh, u32 *ot, s32 scale, s32 intens
  *
  * Builds the matrix in the vertex buffer (the base matrix scaled by
  * @p scale), projects a 6x2 grid of points 64 apart and 224 tall into that
- * same buffer, and adds five blended quads between them, textured from the
- * display buffer on screen.
+ * same buffer, and adds five blended quads between them. They are textured
+ * from the buffer the list is drawn into, so they blend a slightly enlarged
+ * copy of what is drawn there before them back over it.
  *
  * @param mesh Mesh state: the vertex buffer and the primitive cursor.
  * @param ot Ordering table entry to add the quads to.
@@ -991,15 +992,14 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
     register MATRIX *src;
     register DISPENV *disp;
     register POLY_FT4 *prim;
-    /* RotTransPers's depth and flag outputs, both written here and never read. */
+    /* RotTransPers's depth-cue and flag outputs, both written here and never read. */
     s32 discard;
-    /* A VECTOR without its pad word, as in renderScaledMesh. */
-    s32 scaleVec[3];
+    VECTOR scaleVec;
     SVECTOR point;
     /* Never read: it only holds its place in the stack frame. */
     s32 unused;
 
-    /* The matrix is built in the vertex buffer, which the projection then overwrites. */
+    /* The matrix is built in the vertex buffer, which the projection then reuses. */
     vert = mesh->vertices;
     src = &g_meshBaseMatrix;
     i = 0;
@@ -1009,8 +1009,8 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
         i += 4;
     }
 
-    scaleVec[0] = scaleVec[1] = scaleVec[2] = scale;
-    ScaleMatrix((MATRIX *)vert, (VECTOR *)scaleVec);
+    scaleVec.vx = scaleVec.vy = scaleVec.vz = scale;
+    ScaleMatrix((MATRIX *)vert, &scaleVec);
     SetRotMatrix((MATRIX *)vert);
     SetTransMatrix((MATRIX *)vert);
 
@@ -1036,7 +1036,8 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
     color = color | (color << 8) | (color << 16);
     color |= CODE_FT4_BLENDED;
 
-    /* The texture page of the buffer on screen: getTPage(2, 0, x, y), by hand. */
+    /* The texture page of the buffer on screen now, which is the one this
+     * list is drawn into: getTPage(2, 0, x, y), by hand. */
     r = (mesh->frame + 1) & 1;
     disp = &D_80082D90[r];
     i = disp->disp.x;
