@@ -247,13 +247,11 @@ extern RECT D_8005EC24;
 extern RECT D_8005EC2C;
 extern RECT D_8005EC34;
 extern s32 D_8005F178; /**< The transition thread's handle. */
-extern u8 g_meshIntensityA[]; /**< Intensity table A (indexed by col, then row). */
-extern u8 g_meshIntensityB[]; /**< Intensity table B (indexed by col, then row). */
-extern u8 g_meshUCoord[]; /**< U coord per column. */
-extern u8 g_meshVCoord[]; /**< V coord per column. */
-extern u8 g_meshUPage[]; /**< U page offset per row (shifted <<8). */
-extern u8 g_meshVPage[]; /**< V page offset per row (shifted <<8). */
-extern u8 g_meshTpage[]; /**< Texture page ID per column. */
+extern u8 g_meshEdgeIntensity[GRID_VERTS]; /**< Brightness of each grid line, across and down: 0 at the border, 128 in the middle. */
+extern u8 g_meshLeftU[GRID_SIZE]; /**< Each column's left texture U, within its page in g_meshTpage. */
+extern u8 g_meshRightU[GRID_SIZE]; /**< Each column's right texture U. */
+extern u8 g_meshRowV[GRID_VERTS]; /**< Texture V of each grid line down. */
+extern u8 g_meshTpage[GRID_SIZE]; /**< Texture page ID per column. */
 extern MATRIX g_meshBaseMatrix;
 
 static void func_80024064(void);
@@ -796,8 +794,8 @@ static void transformMeshVertices(MeshRenderCtx *mesh) {
 /**
  * @brief Render an 8x8 grid of gouraud-textured quads.
  *
- * Generates 64 POLY_GT4 GPU primitives from a 9x9 vertex grid,
- * applying per-vertex or uniform lighting from intensity tables.
+ * Generates 64 POLY_GT4 GPU primitives from a 9x9 vertex grid, lit per
+ * corner from g_meshEdgeIntensity or with one uniform brightness.
  *
  * @param vertices 9x9 vertex position grid (stride 8 bytes per vertex).
  * @param primBuf Output primitive buffer.
@@ -811,8 +809,8 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot,
     register PolyGT4 *prim = primBuf;
     register s32 r;
     register s32 minVal;
-    register s32 uvHiU;
-    register s32 uvHiV;
+    register s32 vTop;
+    register s32 vBottom;
     register s32 col;
     register s32 row;
     register ScreenVert *mesh;
@@ -828,34 +826,32 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot,
             prim->tpage = g_meshTpage[col] | getTPage(2, 1, 0, 0);
 
             if (perVertex) {
-                /* Vertex 0: min(tableA[col], tableA[row]) * intensity */
-                r = g_meshIntensityA[col];
-                minVal = g_meshIntensityA[row];
+                /* Each corner takes the dimmer of the two grid lines it sits on, so
+                 * the grid fades out toward its border. */
+                r = g_meshEdgeIntensity[col];
+                minVal = g_meshEdgeIntensity[row];
                 if (minVal < r) r = minVal;
                 r = (r * intensity) / 256;
                 r &= 0xFF;
                 r = (r | (r << 8)) | (r << 16);
                 prim->color0 = r | CODE_GT4_BLENDED;
 
-                /* Vertex 1: min(tableB[col], tableA[row]) * intensity */
-                r = g_meshIntensityB[col];
+                r = g_meshEdgeIntensity[col + 1];
                 if (minVal < r) r = minVal;
                 r = (r * intensity) / 256;
                 r &= 0xFF;
                 r = (r | (r << 8)) | (r << 16);
                 prim->color1 = r;
 
-                /* Vertex 2: min(tableA[col], tableB[row]) * intensity */
-                r = g_meshIntensityA[col];
-                minVal = g_meshIntensityB[row];
+                r = g_meshEdgeIntensity[col];
+                minVal = g_meshEdgeIntensity[row + 1];
                 if (minVal < r) r = minVal;
                 r = (r * intensity) / 256;
                 r &= 0xFF;
                 r = (r | (r << 8)) | (r << 16);
                 prim->color2 = r;
 
-                /* Vertex 3: min(tableB[col], tableB[row]) * intensity */
-                r = g_meshIntensityB[col];
+                r = g_meshEdgeIntensity[col + 1];
                 if (minVal < r) r = minVal;
                 r = (r * intensity) / 256;
                 r &= 0xFF;
@@ -875,16 +871,17 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot,
             prim->vert2 = mesh[GRID_VERTS].xy;
             prim->vert3 = mesh[GRID_VERTS + 1].xy;
 
-            /* UV coordinates from lookup tables */
-            r = g_meshUCoord[col];
-            minVal = g_meshVCoord[col];
-            uvHiU = g_meshUPage[row] << 8;
-            uvHiV = g_meshVPage[row] << 8;
+            /* Texture coordinates. minVal is reused for the right edge's U: a
+             * separate variable would be a ninth and live on the stack. */
+            r = g_meshLeftU[col];
+            minVal = g_meshRightU[col];
+            vTop = g_meshRowV[row] << 8;
+            vBottom = g_meshRowV[row + 1] << 8;
 
-            prim->uv0 = r | uvHiU;
-            prim->uv1 = minVal | uvHiU;
-            prim->uv2 = r | uvHiV;
-            prim->uv3 = minVal | uvHiV;
+            prim->uv0 = r | vTop;
+            prim->uv1 = minVal | vTop;
+            prim->uv2 = r | vBottom;
+            prim->uv3 = minVal | vBottom;
 
             AddPrim(ot, prim);
             prim++;
