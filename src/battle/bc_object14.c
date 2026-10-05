@@ -71,24 +71,14 @@ void func_800C5304(s32 a0, s32 a1) {
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object14", func_800C5338);
 
 /**
- * @brief Wait for a sound request to complete, disabling/re-enabling channels.
+ * @brief Wait for the pending CD read to finish, with reverb on for channels 2 and 3 meanwhile.
  *
- * If D_800F1B90 is negative (request pending), disables sound channels 2 and 3
- * via sndEnableReverb (within a critical section), then polls func_8009B6B0 in a
- * loop until D_800F1B90 becomes non-negative. Finally re-enables channels 2
- * and 3 via sndDisableReverb (also within a critical section).
+ * If D_800F1B90 is negative (a read that func_800C52D0 or func_800C5304
+ * started is still running), turns reverb on for channels 2 and 3 inside a
+ * critical section, yields through func_8009B6B0 until D_800F1B90 becomes
+ * non-negative, then turns their reverb off again inside a critical section.
  *
  * @return Current value of D_800F1B90 after completion.
- */
-/**
- * @brief Wait for CD load completion and manage audio channel state.
- *
- * If D_800F1B90 is negative, disables audio channels 2 and 3 in a
- * critical section, then polls func_8009B6B0 until D_800F1B90 becomes
- * non-negative. Once ready, re-enables channels 2 and 3. Returns the
- * final value of D_800F1B90.
- *
- * @return Current value of D_800F1B90.
  */
 s32 func_800C53F0(void) {
     if (*(s32 *)D_800F1B90 < 0) {

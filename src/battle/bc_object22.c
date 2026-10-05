@@ -112,12 +112,7 @@ void func_800E17F4(s32 a0) {
     func_800E1640(a0, a0, val2, *(u8 *)D_800EEBD0);
 }
 
-/**
- * @brief Disable display, set flag, re-enable display.
- *
- * Calls EnterCriticalSection to disable display, sets D_8010334C to 1,
- * then calls ExitCriticalSection to re-enable display.
- */
+/** @brief Set the D_8010334C flag to 1 inside a critical section. */
 void func_800E1850(void) {
     EnterCriticalSection();
     *(u8 *)D_8010334C = 1;

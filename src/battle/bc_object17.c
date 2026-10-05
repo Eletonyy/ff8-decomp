@@ -52,7 +52,7 @@ void func_800CFFA4(s32 a0, s32 a1) {
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800CFFC4);
 
 /**
- * @brief Disable display, set bit 10 of scratchpad control register, enable display.
+ * @brief Set bit 10 of scratchpad control register inside a critical section.
  *
  * Sets bit 0x400 in the halfword at scratchpad address 0x1F8003AE.
  */
@@ -159,7 +159,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800D0D54);
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800D0EF8);
 
 /**
- * @brief Disable display, set bit 3 of scratchpad control register, enable display.
+ * @brief Set bit 3 of scratchpad control register inside a critical section.
  *
  * Sets bit 0x8 in the halfword at scratchpad address 0x1F8003AE.
  */
@@ -174,11 +174,9 @@ void func_800D0F74(void) {
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800D0FB0);
 
 /**
- * @brief Disable display, check condition, optionally call handler, re-enable display.
+ * @brief Check a condition and optionally call the handler, inside a critical section.
  *
- * Calls EnterCriticalSection to disable display, then checks func_800CEDA4.
- * If it returns 0, calls sendSpuCommand with a0. Finally re-enables display
- * via ExitCriticalSection.
+ * If func_800CEDA4 returns 0, calls sendSpuCommand with a0.
  *
  * @param a0 Parameter passed to sendSpuCommand if condition met.
  */

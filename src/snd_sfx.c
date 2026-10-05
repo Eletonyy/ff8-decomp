@@ -39,16 +39,17 @@ void playSoundEffect(s32 idx) {
 /**
  * @brief Configure sound reverb channels based on a bitmask.
  *
- * Reads hardware state via GetSr, optionally pauses/resumes audio
- * hardware. Mutes master volume, then enables reverb on channels indicated
- * by bits 0-2 of @p mask. If @p mask is 7, enables reverb on channel 0 (all).
+ * Mutes master volume, then enables reverb on channels indicated by bits 0-2
+ * of @p mask. If @p mask is 7, enables reverb on channel 0 (all). Unless bit 2
+ * of the status register (the SDK's SR_IEP) is set, it does this inside a
+ * critical section.
  *
  * @param mask Bitmask of reverb channels to enable (bits 0, 1, 2).
  */
 void enableSoundReverb(s32 mask) {
-    s32 hwState = GetSr();
+    s32 sr = GetSr();
 
-    if (!(hwState & 4)) {
+    if (!(sr & 4)) {
         EnterCriticalSection();
     }
     sndSetMasterVolume(0);
@@ -65,7 +66,7 @@ void enableSoundReverb(s32 mask) {
             sndEnableReverb(3);
         }
     }
-    if (!(hwState & 4)) {
+    if (!(sr & 4)) {
         ExitCriticalSection();
     }
 }
@@ -74,16 +75,17 @@ void enableSoundReverb(s32 mask) {
 /**
  * @brief Disable sound reverb channels based on a bitmask and restore volume.
  *
- * Reads hardware state via GetSr, optionally pauses/resumes audio
- * hardware. Disables reverb on channels indicated by bits 0-2 of @p mask
- * (all of them via channel 0 when it is 7), then restores master volume to 0x7F.
+ * Disables reverb on channels indicated by bits 0-2 of @p mask (all of them
+ * via channel 0 when it is 7), then restores master volume to 0x7F. Unless
+ * bit 2 of the status register (the SDK's SR_IEP) is set, it does this inside
+ * a critical section.
  *
  * @param mask Bitmask of reverb channels to disable (bits 0, 1, 2).
  */
 static void disableSoundReverb(s32 mask) {
-    s32 hwState = GetSr();
+    s32 sr = GetSr();
 
-    if (!(hwState & 4)) {
+    if (!(sr & 4)) {
         EnterCriticalSection();
     }
     if (mask == 7) {
@@ -100,7 +102,7 @@ static void disableSoundReverb(s32 mask) {
         }
     }
     sndSetMasterVolume(0x7F);
-    if (!(hwState & 4)) {
+    if (!(sr & 4)) {
         ExitCriticalSection();
     }
 }
