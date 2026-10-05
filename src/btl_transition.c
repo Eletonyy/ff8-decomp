@@ -12,7 +12,7 @@
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 224
 
-/** 128 quads cover the picture's left 160 pixels: the first is the 32-pixel margin, the other 127 are one pixel wide. */
+/** 128 quads cover the picture's left 159 pixels: the first is the 32-pixel margin, the other 127 are one pixel wide. */
 #define STRIP_COUNT 128
 #define STRIP_LEFT 32
 
@@ -41,7 +41,7 @@
 /** Step at which the wipe's strength starts to grow. */
 #define WIPE_RAMP_START 64
 
-/** Primitive codes with the semi-transparency bit set, as they sit in the top byte of the colour word. */
+/** Primitive codes as they sit in the top byte of the colour word; the _BLENDED ones have the semi-transparency bit set. */
 #define CODE_FT4 (0x2C << 24)
 #define CODE_FT4_BLENDED (0x2E << 24)
 #define CODE_G4_BLENDED (0x3A << 24)
@@ -76,8 +76,8 @@ enum {
  *
  * This is inline assembly because the original was: the target loads the
  * length with @c ori where every constant the compiler loads itself is an
- * @c addiu, and it reloads a spilled pointer before loading the constant,
- * which the compiler only does when both belong to one statement.
+ * @c addiu, and it reloads a spilled pointer before loading the length,
+ * where compiled C loads the constant first.
  */
 #define setPrimLen(p, n) \
     __asm__ volatile ("ori $2, $0, " #n "; sb $2, 3(%0)" : : "r"(p) : "$2")
@@ -430,7 +430,7 @@ static void func_80024064(void) {
  * second VSync. The step count goes up before it is used, so it runs from 1 to 80:
  * - Every step's list starts with the saved picture. Steps 1 to 47 add four
  * glowing quads over it and, on top of those, 128 quarter-strength strips of
- * the picture's left 160 pixels that fly apart and brighten; from step 2 the
+ * the picture's left 159 pixels that fly apart and brighten; from step 2 the
  * result is also copied back over the saved picture, so the next step builds
  * on it.
  * - Steps 48 to 80 take the picture away to black with 224 bars that grow in
@@ -446,7 +446,7 @@ static void func_80024064(void) {
  */
 static void normalTransitionTick(void) {
     /* Never used. They and unused below only hold their places in the stack frame. */
-    s32 sxy, depth, flag;
+    s32 sxy, p, flag;
     /* The order of these is the order of the registers and stack slots: the
      * first eight get $s0 to $s7 and the rest live on the stack. */
     register s32 r;
@@ -1116,15 +1116,16 @@ static void initMeshRenderer(void) {
  * Runs in the transition thread like normalTransitionTick, one step every
  * third VSync:
  * - Steps 1 to 39 draw the saved picture as a mesh that grows and fades out.
- * - Steps 1 to 63 draw it as four mirrored panels that grow and brighten,
- *   with a flat mesh over them.
+ * - Steps 1 to 63 draw it as four mirrored panels, with a flat mesh over
+ *   them. The panels brighten until step 32; their scale falls from 1.3 to
+ *   0.8 by step 24, then rises to 2.3.
  * - From step 49 a full-screen white flash rises until step 64, then fades.
  * - From step 78 the list is no longer drawn and the display is blanked, and
  *   step 80 also clears @c g_renderMode and closes the thread.
  */
 static void bossTransitionTick(void) {
     /* Never used. They and unused below only hold their places in the stack frame. */
-    s32 sxy, depth, flag;
+    s32 sxy, p, flag;
     /* The order of these is the order of the registers and stack slots: the
      * first eight get $s0 to $s7 and the rest live on the stack. */
     register s32 r;
@@ -1175,7 +1176,7 @@ static void bossTransitionTick(void) {
 
     /* The skip is a goto in the original: the target has the jump and, after
      * it, the dead jump over the else that only a goto in the then-branch
-     * leaves. A plain if gives 98.97%, an empty then-branch 99.55%. */
+     * leaves. */
     if (ctx->frame >= BOSS_ZOOM_END) {
         goto panels;
     } else {
@@ -1320,8 +1321,7 @@ static void func_80026ADC(void) {
  *
  * The body after the call is assembly in the original too: it keeps the
  * pointer in $a3 and the arithmetic in $a0, registers the compiler does not
- * choose here (no C spelling tried gets them), and it multiplies rand()'s
- * result straight out of $v0.
+ * choose here, and it multiplies rand()'s result straight out of $v0.
  */
 static void func_80026CA0(void) {
     /* Never read: they only hold their places in the stack frame. */
