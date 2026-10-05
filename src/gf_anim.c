@@ -5,7 +5,6 @@
 #include "gf.h"
 #include "gf_anim.h"
 
-extern u8 D_80082C10;
 extern CharacterData g_characters[];
 
 extern s32 getXpToNextLevel(u32 exp, s32 charIdx);
@@ -97,14 +96,14 @@ s32 hasCommandType6(BattleCharData *charData) {
  * @brief Determine a character's magic availability flags based on status and command slots.
  * @param a0 Pointer to a character data structure.
  * @return Flags: bit 0 set if status bit 0x20000 is active; bit 1 set if magic commands present
- *         (unless D_80082C10 bit 3 is set, which suppresses the magic flag).
+ *         (unless g_battleConfig.unk8 bit 3 is set, which suppresses the magic flag).
  */
 s32 getMagicAvailFlags(BattleCharData *charData) {
     s32 val = charData->statusFlags;
     s32 masked = val & 0x20000;
     s32 flag = masked != 0;
     if (hasCommandType6(charData)) {
-        if (D_80082C10 & 8) {
+        if (g_battleConfig.unk8 & 8) {
             return flag;
         }
         flag |= 2;
@@ -125,7 +124,7 @@ void applyPartyAbilityFlags(s32 charIdx) {
     for (i = 0; i < 4; i++) {
         u8 ability = g_gameState.chars[charIdx].abilities[i];
         if ((u32)(ability - 0x4E) < 5) {
-            g_battleChars.levelEntries[15].abilityFlags |= g_kernel.partyAbilities[ability - 0x4E].typeField;
+            g_battleChars.abilityFlags |= g_kernel.partyAbilities[ability - 0x4E].typeField;
         }
     }
 }
@@ -322,7 +321,7 @@ void recalcAllGfStats(void) {
 void recalcPartyStats(void) {
     s32 i;
 
-    g_battleChars.levelEntries[15].abilityFlags = 0;
+    g_battleChars.abilityFlags = 0;
 
     for (i = 0; i < 3; i++) {
         func_80022E08(g_gameState.mainData.party.party[i], i);

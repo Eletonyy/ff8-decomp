@@ -539,7 +539,7 @@ void func_8009A990(s32 arg0) {
 /**
  * @brief Process all pending deferred damage triggers.
  *
- * If D_80082C0F is zero, checks animation state and processes each
+ * If g_battleConfig.result is zero, checks animation state and processes each
  * pending trigger type via func_8009A990.
  */
 void func_8009AA2C(void) {

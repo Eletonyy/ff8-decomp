@@ -9,6 +9,7 @@
 #include "snd_sfx.h"
 #include "btl_anim.h"
 #include "btl_anim_packet.h"
+#include "kernel.h"
 
 #define SHOP_ITEM_COUNT 16
 #define ITEM_SLOT_COUNT 198
@@ -1838,7 +1839,7 @@ s32 func_801E7F4C(s32 characterId, u32 gil) {
     s32 i;
     u8* weaponIdPtr1;
     u8* weaponIdPtr2;
-    WeaponInfo *weapons;
+    WeaponEntry *weapons;
     u8 value;
 
     count = 0;
@@ -1854,7 +1855,7 @@ s32 func_801E7F4C(s32 characterId, u32 gil) {
     }
 
     weaponIdPtr2 = D_801EB150;
-    weapons = D_8007C3B8;
+    weapons = g_kernel.weapons;
 
     if ((0x3F >> characterId) & 1) {
         for (i = 0; i < WEAPON_INFO_COUNT; i++) {
@@ -1889,7 +1890,7 @@ s32 func_801E7F4C(s32 characterId, u32 gil) {
  * @return Bitmask of character IDs with an unlocked or available weapon.
  */
 s32 func_801E8058(u32 gil) {
-    WeaponInfo *weapons;
+    WeaponEntry *weapons;
     s32 availableChars;
     s32 charBit;
     s32 ret;
@@ -1899,7 +1900,7 @@ s32 func_801E8058(u32 gil) {
         return 0;
     }
 
-    weapons = D_8007C3B8;
+    weapons = g_kernel.weapons;
     availableChars = func_80036EC0() & 0x3F;
     ret = 0;
 

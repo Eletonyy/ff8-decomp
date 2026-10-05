@@ -25,7 +25,6 @@ extern u8 D_80077E6C[];
 extern u16 D_800780E8;
 extern u8 D_80056290[];
 extern u8 D_800562A4;
-extern u8 D_80078D38[];
 extern s32 D_8005F138;
 
 /** @brief The persistent statuses the menu draws as icons: all but KO. */
@@ -1041,24 +1040,26 @@ s32 func_801F2238(s32 a0) {
 }
 
 /**
- * @brief Get entity health condition from D_80078D38 table.
+ * @brief Get entity health condition from g_battleChars.levelEntries table.
  *
  * Returns 1 if dead (HP <= 0), 0x100 if critical (HP < 25% max),
  * or 0 for normal health.
  */
-s32 func_801F2240(s32 a0) {
-    u8 *entry = D_80078D38 + a0 * 12;
-    s16 val = *(s16 *)(entry);
-    s32 result = 0;
-    if (val <= 0) {
-        result = 1;
-    } else {
-        s32 limit = (s16)(*(u16 *)(entry + 2)) >> 2;
-        if (val < limit) {
-            result = 0x100;
-        }
+s32 func_801F2240(s32 arg0) {
+    BattleLevelEntry* temp_v1;
+    s32 var;
+
+    temp_v1 = &g_battleChars.levelEntries[arg0];
+
+    var = 0;
+    if (temp_v1->maxHp < 1) {
+        var = 1;
     }
-    return result;
+        
+    else if (temp_v1->maxHp < (temp_v1->hp >> 2)) {
+        var = 256;
+    }
+    return var;
 }
 
 /** @brief Get party presence bitmask. */

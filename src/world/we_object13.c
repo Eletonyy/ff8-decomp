@@ -302,7 +302,7 @@ void func_800C4688(void) {
  *
  * Iterates the 16 GF save entries. For each unlocked GF (@c exists bit 0)
  * with non-zero HP, if the current HP is below the GF's battle max (at
- * @c g_battleChars.gfEntries[i].hp), it's incremented by 1. Likely runs
+ * @c g_battleChars.levelEntries[i].hp), it's incremented by 1. Likely runs
  * once per field step to slowly regenerate GF HP while walking.
  *
  * @note Match requires reading @c g_gameState.gfs[i].hp directly at the
@@ -315,8 +315,8 @@ void func_800C48C0(void) {
         if (g_gameState.gfs[i].exists & 1) {
             u16 hp = g_gameState.gfs[i].hp;
             if (hp != 0) {
-                if (g_gameState.gfs[i].hp < (s16)g_battleChars.gfEntries[i].hp) {
-                    g_gameState.gfs[i].hp = g_gameState.gfs[i].hp + 1;
+                if (g_gameState.gfs[i].hp < g_battleChars.levelEntries[i].hp) {
+                    g_gameState.gfs[i].hp++;
                 }
             }
         }

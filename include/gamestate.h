@@ -467,7 +467,5 @@ extern void enableChocoboWorld(void);
 extern s32 func_80037C6C(s32 charId);
 
 extern CharacterData g_characters[];
-extern u8 D_800788E4;
-extern u8 D_800788E5;
 
 #endif /* GAMESTATE_H */

@@ -702,7 +702,7 @@ void func_80038030(s32 arg0) {
         sndCmdC0(0, 0x7F);
     }
 
-    D_80082C11 = (u8)ptr->soundBankSelector ^ 1;
+    g_battleConfig.unk9 = (u8)ptr->soundBankSelector ^ 1;
     sndStopPlayback();
     sndCmdF1();
     sndSetMasterVolume(0x7F);

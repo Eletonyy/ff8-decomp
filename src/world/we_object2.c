@@ -105,7 +105,7 @@ s32 lookupScrollBounds(s8 cmd, s32 *outBase, s32 *outLimit, s32 *outSpan, s32 *o
  *        the matching data table, distributing the results to out-params.
  *
  * Derives a bank-selector flag (@c outBankSel) from the scene: for scene mode
- * @c 2 it's @c D_80082C11, otherwise it's @c (g_fieldVars->soundBankSelector
+ * @c 2 it's @c g_battleConfig.unk9, otherwise it's @c (g_fieldVars->soundBankSelector
  * == 0). It then runs @ref lookupScrollBounds for the (base, limit, span, set)
  * tuple; on a hit it selects a data table (@c D_80063388 when the bank flag is
  * set, else @c D_8005F388). Each non-NULL out-param receives its value and the
@@ -131,7 +131,7 @@ s32 getScrollState(s8 cmd, s32 *outBankSel, s32 *outReady, s32 *outLimit,
     set = 0;
 
     if (D_80082C8C.mode == 2) {
-        bankSel = D_80082C11;
+        bankSel = g_battleConfig.unk9;
     } else {
         bankSel = (g_fieldVars->soundBankSelector == 0);
     }

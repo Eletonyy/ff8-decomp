@@ -284,7 +284,7 @@ typedef struct {
     /* 0xF0 */ u8 fieldF0;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0xF1 */ u8 fieldF1;              /**< Used by fe_object7 dispatch (purpose TBD). */
     /* 0xF2 */ u8 fieldF2;              /**< Set to popped field index by fe_object7 dispatch handler. */
-    /* 0xF3 */ u8 fieldF3;              /**< Mirrored to D_80082C10 when @ref FIELD_STATE_PARTY_OVERRIDE is set. */
+    /* 0xF3 */ u8 fieldF3;              /**< Mirrored to g_battleConfig.unk9 when @ref FIELD_STATE_PARTY_OVERRIDE is set. */
     /* 0xF4 */ s32 angeloLearnStepAcc;  /**< Step accumulator: fires the Angelo trick learn tick at @c 0x250. */
 } FieldVars; /* 0xF8 = 248 bytes */
 
@@ -917,12 +917,6 @@ extern s32 D_800DE878;
 
 /* EncounterParams / D_80082C90 moved to common.h (resident, shared with the
  * Triple Triad overlay's AI setup). */
-
-/** @brief Mirrored from @ref FieldVars.fieldF3 when @c stateFlags & 0x800 is set. */
-extern u8 D_80082C10;
-
-/** @brief Stashed sound-bank selector across the battle transition. */
-extern u8 D_80082C11;
 
 /* ======================================================================== */
 /* Field-side scalars consumed by fe_object7 / fe_object8 / fe_object9       */

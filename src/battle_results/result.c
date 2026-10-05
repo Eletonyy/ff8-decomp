@@ -16,6 +16,7 @@
 #include "gf_anim.h"
 #include "gf_curve.h"
 #include "thread.h"
+#include "kernel.h"
 
 extern u8 D_80083928;
 
@@ -182,7 +183,7 @@ void startBattleResults(void) {
     s32 nextAbility;
     s32 status;
     u8 *card;
-    GfLearnData *learnData;
+    JunctionableGfEntry *learnData;
     s32 *bits;
     splitStruct *drop;
 
@@ -228,7 +229,7 @@ void startBattleResults(void) {
             }
         }
     }
-    card = g_battleChars.gfEntries[0].unk0;
+    card = g_battleChars.unk610;
     for (i = 0; i < 8; i++) {
         id = *card++;
         if (id == 0xFF) {
@@ -356,9 +357,9 @@ void startBattleResults(void) {
                     if (learned) {
                         nextAbility = 0;
                         n = func_800369CC(i, list, 1);
-                        learnData = &D_80079D78[i];
+                        learnData = &g_kernel.junctionableGfs[i];
                         for (k = 0; k < 21; k++) {
-                            ability = learnData->abilities[k].slot;
+                            ability = learnData->abilities[k].abilityId;
                             for (j = 0; j < n; j++) {
                                 if (list[j].slotIndex == ability && list[j].type == 1) {
                                     nextAbility = ability;

@@ -155,7 +155,7 @@ void func_800BF718(s32 mode) {
     for (i = 0; i < getMaxBattleEntities(); i++) {
         setDialogTextSpeed(i, g_textSpeeds[g_gameState.config.fieldMsgSpeed]);
     }
-    g_fieldVars->field58 = (g_battleChars.levelEntries[15].abilityFlags & 0x10) >> 4;
+    g_fieldVars->field58 = (g_battleChars.abilityFlags & 0x10) >> 4;
     if (g_fieldVars->fieldF0 != 0) {
         func_800A4550(g_fieldVars->fieldF1 | g_fieldVars->field58);
     }

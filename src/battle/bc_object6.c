@@ -1157,7 +1157,7 @@ s32 func_800AEEAC(void) {
     s32 result;
     
     result = func_8009B15C();
-    if (g_battleChars.levelEntries[15].abilityFlags & 2) {
+    if (g_battleChars.abilityFlags & 2) {
         if (result < 128) return 0;
         if (result < 242) return 1;
         if (result < 261) return 2;
@@ -1202,7 +1202,7 @@ void func_800AF068(s32 arg0) {
     
     if (var_s0 >= func_8009B15C()) {
         if ((D_800ED148.unk1316 < 8) && (temp_s1->unkF8 != 255)) {
-            g_battleChars.gfEntries[0].unk0[D_800ED148.unk1316++] = temp_s1->unkF8;
+            g_battleChars.unk610[D_800ED148.unk1316++] = temp_s1->unkF8;
         }
     }
 }

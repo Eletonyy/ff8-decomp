@@ -27,21 +27,6 @@
 /* Types                                                                    */
 /* ======================================================================== */
 
-/** @brief GF ability learn requirement (4 bytes). */
-typedef struct {
-    u8 levelReq;        /**< Level required, or index for chained abilities (101+). */
-    u8 prereq;          /**< Prerequisite ability index (0xFF = none). */
-    u8 slot;            /**< Ability slot index. */
-    u8 pad03;
-} GfAbilityEntry;
-
-/** @brief GF learnable ability table (stride 0x84). */
-typedef struct {
-    u8 pad00[0x1C];
-    GfAbilityEntry abilities[21];
-    u8 pad70[0x14];
-} GfLearnData;
-
 /** @brief Ability slot entry in the 128-slot working buffer (2 bytes). */
 typedef struct {
     u8 type;           /**< Slot state: 0=empty, 1=chained, 2=learned, 3=level-eligible. */
@@ -63,9 +48,6 @@ typedef struct {
 /* ======================================================================== */
 /* Data symbols                                                             */
 /* ======================================================================== */
-
-/** @brief GF learn tables (@c g_kernel + 0xF78). */
-extern GfLearnData D_80079D78[];
 
 /** @brief Ability category lookup table, indexed by category 0-6. */
 extern AbilityCategoryInfo D_80053C3C[];

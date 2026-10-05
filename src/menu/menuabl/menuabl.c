@@ -12,8 +12,6 @@
 #include "ui/dialog.h"
 #include "ui/text.h"
 
-extern AbilityEntry  D_8007CEE0[];
-
 extern s32  getAbilityDesc(s32 id);
 extern u8  *getAbilityName(s32 abilityId);
 extern void func_801F18FC(s32 *ctx);
@@ -65,7 +63,7 @@ void func_801E28B4(s32 a0, s32 a1, s32 a2) {
  * @brief Address of the ability entry at index @p idx.
  */
 AbilityEntry *func_801E2920(s32 idx) {
-    return &D_8007CEE0[idx];
+    return &g_kernel.junctionAbilities[idx];
 }
 
 /**
@@ -706,9 +704,9 @@ s32 func_801E36AC(s32 ctx, s32 pkt, s32 col, s32 row, s32 scrollOffset) {
         x += 13;
         abilityId = D_801E3D84[index];
         entry = func_801E2920(abilityId);
-        if (entry->status == 0xFF
-            || (entry->status == 0x80 && func_801E2934() == 0)
-            || (entry->status == 0x81 && (g_gameState.mainData.partyLockFlag & 1))) {
+        if (entry->typeField == 0xFF
+            || (entry->typeField == 0x80 && func_801E2934() == 0)
+            || (entry->typeField == 0x81 && (g_gameState.mainData.partyLockFlag & 1))) {
             color = 1;
         } else {
             color = 7;

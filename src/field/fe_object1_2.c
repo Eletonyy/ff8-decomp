@@ -2416,11 +2416,11 @@ void func_800A5D28(void) {
     if (g_fadeMode == 1) {
         return;
     }
-    if (g_battleChars.levelEntries[15].abilityFlags & 8) {
+    if (g_battleChars.abilityFlags & 8) {
         return;
     }
     rate = *g_fieldEncounterRate;
-    if (g_battleChars.levelEntries[15].abilityFlags & 4) {
+    if (g_battleChars.abilityFlags & 4) {
         D_8005F164 += rate->stepRate >> 1;
     } else {
         D_8005F164 += rate->stepRate;

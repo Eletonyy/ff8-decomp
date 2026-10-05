@@ -84,7 +84,7 @@ s32 opHandler_CARDGAME(ScriptContext *context) {
                 func_800393C8();
             }
 
-            D_80082C11 = g_fieldVars->soundBankSelector;
+            g_battleConfig.unk9 = g_fieldVars->soundBankSelector;
             D_8005F11C = sndCmd10(toggleSoundBank());
             sndCmdC0(0, 0x7F);
             sndStopPlayback();
@@ -213,7 +213,7 @@ u8 *func_800B57E8(s32 maxCount, s32 abilityId) {
 /**
  * @brief Recalculate party stats and check if any member has fieldStatusByte bit 1 set.
  *
- * Sets D_80082C10 from WorldContext field_0xF3 (if flag 0x800 is active),
+ * Sets g_battleConfig.unk8 from WorldContext field_0xF3 (if flag 0x800 is active),
  * calls recalcPartyStats(), then checks each party slot.
  *
  * @return 1 if any active party member has fieldStatusByte bit 1 set, 0 otherwise.
@@ -222,9 +222,9 @@ s32 func_800B5990(void) {
     s32 i;
 
     if (g_fieldVars->stateFlags & FIELD_STATE_PARTY_OVERRIDE) {
-        D_80082C10 = g_fieldVars->fieldF3;
+        g_battleConfig.unk8 = g_fieldVars->fieldF3;
     } else {
-        D_80082C10 = 0;
+        g_battleConfig.unk8 = 0;
     }
 
     recalcPartyStats();
@@ -594,7 +594,7 @@ s32 opHandler_BATTLE(ScriptContext *context) {
 }
 
 /**
- * @brief Store D_80082C0F into the actor result field.
+ * @brief Store g_battleConfig.result into the actor result field.
  *
  * @param actor Pointer to the actor (script context).
  * @return 2 (continue processing).

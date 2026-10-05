@@ -6,7 +6,7 @@
 #include "cd.h"
 #include "field/fe_object3.h"
 #include "field/fe_object4.h"
-
+#include "battle.h"
 /**
  * @brief Drain the @c D_800DE7B0 CD-load command queue.
  *
@@ -1716,7 +1716,7 @@ s32 opHandler_SWAP(ScriptContext *context) {
 
 /**
  * @brief Set @ref FIELD_STATE_PARTY_OVERRIDE, then if popped value is nonzero
- *        force fieldF3 to 0xFF; mirror fieldF3 into @c D_80082C10 and
+ *        force fieldF3 to 0xFF; mirror fieldF3 into @c g_battleConfig.unk8 and
  *        @c GameConfig.sealedFeatures, then tail into @c opHandler_SETPARTY2.
  *
  * @return 2 (VM continue).
@@ -1726,7 +1726,7 @@ s32 opHandler_LASTIN(Actor *actor, s32 a1) {
     if (POP(&actor->context) != 0) {
         g_fieldVars->fieldF3 = 0xFF;
     }
-    D_80082C10 = g_fieldVars->fieldF3;
+    g_battleConfig.unk8 = g_fieldVars->fieldF3;
     g_gameState.config.sealedFeatures = g_fieldVars->fieldF3;
     opHandler_SETPARTY2(&actor->context, a1);
     return 2;
@@ -1734,7 +1734,7 @@ s32 opHandler_LASTIN(Actor *actor, s32 a1) {
 
 /**
  * Clears bit 0x800 in entity flags at g_fieldVars+0x68, clears
- * D_80082C10 and @c GameConfig.sealedFeatures, then calls recalcPartyStats.
+ * g_battleConfig.unk8 and @c GameConfig.sealedFeatures, then calls recalcPartyStats.
  *
  * @param actor Unused.
  * @return 2 (continue processing).
@@ -1742,10 +1742,10 @@ s32 opHandler_LASTIN(Actor *actor, s32 a1) {
 s32 opHandler_LASTOUT(ScriptContext *context) {
     /* Take the address of stateFlags so gcc materializes the read & write
      * through one register — keeps the seedState updates together
-     * (before D_80082C10/sealedFeatures + recalcPartyStats() in the schedule). */
+     * (before g_battleConfig.unk8/sealedFeatures + recalcPartyStats() in the schedule). */
     s32 *p = &g_fieldVars->stateFlags;
     *p = *p & ~0x800;
-    D_80082C10 = 0;
+    g_battleConfig.unk8 = 0;
     g_gameState.config.sealedFeatures = 0;
     recalcPartyStats();
     return 2;

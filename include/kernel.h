@@ -98,7 +98,8 @@ typedef struct {
 
 /** @brief One of a junctionable GF's learnable-ability slots (4 bytes). */
 typedef struct {
-    u8 pad00[2];           /**< +0x00..+0x01: Unknown. */
+    u8 levelReq;        /**< Level required, or index for chained abilities (101+). */
+    u8 prereq;          /**< Prerequisite ability index (0xFF = none). */
     u8 abilityId;          /**< +0x02: Ability ID (0 = empty). */
     u8 pad03;              /**< +0x03: Unknown. */
 } GfAbilitySlot; /* 4 bytes */

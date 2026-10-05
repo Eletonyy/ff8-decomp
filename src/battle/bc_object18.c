@@ -1,5 +1,6 @@
 #include "common.h"
 #include "gamestate.h"
+#include "battle.h"
 
 extern u8 D_80102E40[];
 extern u8 D_80102E70[];
@@ -7,7 +8,6 @@ extern u8 D_80102E78[];
 extern u8 D_80103240[];
 extern u8 D_80103308[];
 extern u8 D_80103420[];
-extern u8 D_80078842[];
 extern u8 D_8007873E[];
 void func_800D18B0(void);
 void func_800D3044(s32, s32);
@@ -603,13 +603,13 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object18", func_800D69BC);
 /**
  * @brief Get pointer to entity data at given index.
  *
- * Computes D_80078842 + index * 464 (0x1D0 stride per entity).
+ * returns a pointer to g_battleChars.chars[index].itemSlots.
  *
  * @param index Entity index.
  * @return Pointer to entity data.
  */
-u8 *func_800D6AC8(s32 index) {
-    return D_80078842 + index * 464;
+BattleItemSlot* func_800D6AC8(s32 index) {
+    return g_battleChars.chars[index].itemSlots;
 }
 
 /**

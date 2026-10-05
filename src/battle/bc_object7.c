@@ -10,7 +10,6 @@ extern u8 D_800EEBE8[];
 s32 func_800B0204(u8*, s32, s32, s32);
 void func_800A4C84(s32);
 void func_800AE524(s32);
-extern u8 D_800E3CF0[];
 extern u8 D_800EE4E8[];
 
 void func_800AF254(void) {
@@ -512,7 +511,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0D8C);
  */
 s32 func_800B0DDC(s32 a0) {
     s32 val;
-    if (D_80082C10 & SEALED_FLAG_02) {
+    if (g_battleConfig.unk8 & SEALED_FLAG_02) {
         val = 0xFF;
     } else {
         val = func_800B0D8C(a0, 2);
@@ -523,7 +522,7 @@ s32 func_800B0DDC(s32 a0) {
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0E30);
 
 /**
- * @brief Dispatch call based on @ref SEALED_FLAG_01 in D_80082C10.
+ * @brief Dispatch call based on @ref SEALED_FLAG_01 in g_battleConfig.unk8.
  *
  * If @ref SEALED_FLAG_01 is set, passes 0xFF to func_800B0E30.
  * Otherwise calls func_800B0D8C with a0 and mode 4, then passes
@@ -533,7 +532,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0E30);
  */
 s32 func_800B0F3C(s32 a0) {
     s32 val;
-    if (D_80082C10 & SEALED_FLAG_01) {
+    if (g_battleConfig.unk8 & SEALED_FLAG_01) {
         val = 0xFF;
     } else {
         val = func_800B0D8C(a0, 4);
