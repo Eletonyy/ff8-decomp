@@ -18,6 +18,7 @@ extern s32 D_800974C8[2];
 extern s32 D_800974B8[2];
 extern u8 D_800762C8[];
 extern u8 D_80052898[];
+extern u16 g_bossBattleScenes[]; /**< Battle scene IDs of the boss battles, ended by 0xFFFF. */
 
 void cdReadSync(s32, s32, s32, s32);
 void func_8001F5C8(void);
@@ -605,9 +606,6 @@ s32 hasJunctionedAbility(s32 partySlot, s32 abilityId) {
     return 0;
 }
 
-
-/** @brief Battle scene IDs of the boss battles, ended by 0xFFFF. */
-extern u16 g_bossBattleScenes[];
 
 /**
  * @brief Test whether the upcoming battle is a boss battle.
