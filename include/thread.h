@@ -3,8 +3,6 @@
 
 #include "common.h"
 
-/* Raw controller-input helpers (thread.c). */
-
 /* Public prototypes */
 extern void func_800275D4(void);                /**< Refresh the raw controller buffers. */
 /* Which axis func_80027DB4 reads. These are mutually exclusive selectors, not
@@ -26,11 +24,13 @@ extern s32  func_80027CF8(s32 a, s32 b, s32 c); /**< Fold a recentred analog sti
    result as s32 with no widening mask — an inconsistent caller view that can't share a decl here,
    so those callers keep their own `extern s32 getPadReadButtons(...)`. */
 
-extern void func_80026D8C(void); /* per-frame battle VSync handler (RENDER_BATTLE) */
+extern u32 getStatusRegister(void);
+extern void setStatusRegister(u32 status);
 extern void settlePadPorts(void);
 extern s32 getPadVibration(s32 idx);
 extern void setPadDeadZone(s32 a0, s32 a1);
 extern void setPadAnalogFlag(s32 a0, s32 a1);
 extern s32 openThreadSafe(void (*entry)(void), u8 *stack);
 extern void closeThreadSafe(s32 thread);
+extern void switchThread(s32 thread);
 #endif /* THREAD_H */

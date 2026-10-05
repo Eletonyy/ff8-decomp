@@ -1,4 +1,5 @@
 #include "common.h"
+#include "psxsdk/libapi.h"
 
 extern u8 D_8010334C[];
 extern u8 D_80103340[];
@@ -111,16 +112,11 @@ void func_800E17F4(s32 a0) {
     func_800E1640(a0, a0, val2, *(u8 *)D_800EEBD0);
 }
 
-/**
- * @brief Disable display, set flag, re-enable display.
- *
- * Calls func_800472E4 to disable display, sets D_8010334C to 1,
- * then calls func_800472F4 to re-enable display.
- */
+/** @brief Set the D_8010334C flag to 1 inside a critical section. */
 void func_800E1850(void) {
-    func_800472E4();
+    EnterCriticalSection();
     *(u8 *)D_8010334C = 1;
-    func_800472F4();
+    ExitCriticalSection();
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object22", func_800E1880);

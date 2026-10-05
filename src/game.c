@@ -1,5 +1,6 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
+#include "game.h"
 #include "battle.h"
 #include "ui/countdown.h"
 #include "gf.h"
@@ -7,6 +8,7 @@
 #include "ability.h"
 #include "battle_render.h"
 #include "battle_results/result.h"
+#include "btl_transition.h"
 
 u8 *resolveKernelPtr(u16 a0, s32 a1);
 
@@ -16,11 +18,10 @@ extern s32 D_800974C8[2];
 extern s32 D_800974B8[2];
 extern u8 D_800762C8[];
 extern u8 D_80052898[];
+extern u16 g_bossBattleScenes[]; /**< Battle scene IDs of the boss battles, ended by 0xFFFF. */
 
 void cdReadSync(s32, s32, s32, s32);
 void func_8001F5C8(void);
-s32 func_80021300(void);
-void func_80023D60(s32);
 void cdReadAsyncSync(s32, s32, s32, s32);
 void func_80099D30(void);
 void tripleTriadMainLoop(void);
@@ -606,25 +607,20 @@ s32 hasJunctionedAbility(s32 partySlot, s32 abilityId) {
 }
 
 
-/** @brief 0xFFFF-terminated table of battle scene IDs that need special
- *         load/render handling (consulted via @ref func_80021300). */
-extern u16 D_8005289C[];
-
 /**
- * @brief Test whether the upcoming battle's scene is in the special-scene table.
+ * @brief Test whether the upcoming battle is a boss battle.
  *
- * Scans the @c 0xFFFF-terminated @ref D_8005289C table for an entry equal to
- * @c g_battleConfig.battleSceneId.
+ * Looks @c g_battleConfig.battleSceneId up in @ref g_bossBattleScenes. Boss
+ * battles get their own encounter sound and screen transition.
  *
- * @return 1 if the current scene ID is listed, 0 otherwise (also 0 if the
- *         table is empty).
+ * @return 1 for a boss battle, 0 otherwise.
  */
-s32 func_80021300(void) {
+s32 isBossBattle(void) {
     s32 found = 0;
     s32 i;
 
-    for (i = 0; D_8005289C[i] != 0xFFFF; i++) {
-        if (g_battleConfig.battleSceneId == D_8005289C[i]) {
+    for (i = 0; g_bossBattleScenes[i] != 0xFFFF; i++) {
+        if (g_battleConfig.battleSceneId == g_bossBattleScenes[i]) {
             found = 1;
             break;
         }
@@ -662,7 +658,7 @@ case4:
 case3:
     setHudBrightness(0);
     setCountdownVisible(0);
-    func_80023D60(func_80021300());
+    startBattleTransition(isBossBattle());
     memzero16((s32 *)0x80098000, 0xA400);
     cdReadSync(D_800974C8[0], D_800974C8[1], 0x80098000, 0);
     func_8001F5C8();

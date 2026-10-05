@@ -1,5 +1,6 @@
 #include "common.h"
 #include "ui/icon.h"
+#include "psxsdk/libapi.h"
 
 extern u8 D_80102E10[];
 extern u8 D_80102E14[];
@@ -51,31 +52,31 @@ void func_800CFFA4(s32 a0, s32 a1) {
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800CFFC4);
 
 /**
- * @brief Disable display, set bit 10 of scratchpad control register, enable display.
+ * @brief Set bit 10 of scratchpad control register inside a critical section.
  *
  * Sets bit 0x400 in the halfword at scratchpad address 0x1F8003AE.
  */
 void func_800D0530(void) {
     s32 base;
-    func_800472E4();
+    EnterCriticalSection();
     base = 0x1F800390;
     *(u16 *)(base + 0x1E) |= 0x400;
-    func_800472F4();
+    ExitCriticalSection();
 }
 
 /**
  * @brief Toggle render mode bits based on parameter.
  *
- * Calls func_800472E4 for setup. If a0 is non-zero, sets bit 8 and
+ * Calls EnterCriticalSection for setup. If a0 is non-zero, sets bit 8 and
  * clears bit 9 in scratchpad halfword at 0x1F8003AE. Otherwise sets
- * bit 9 and clears bit 8. Stores the result and calls func_800472F4.
+ * bit 9 and clears bit 8. Stores the result and calls ExitCriticalSection.
  *
  * @param a0 Mode selector (0 = mode B, non-zero = mode A).
  */
 void func_800D056C(s32 a0) {
     u16 val;
     s32 base;
-    func_800472E4();
+    EnterCriticalSection();
     if (a0 != 0) {
         base = 0x1F800390;
         val = *(u16 *)(base + 0x1E);
@@ -88,7 +89,7 @@ void func_800D056C(s32 a0) {
         val &= 0xFEFF;
     }
     *(u16 *)(base + 0x1E) = val;
-    func_800472F4();
+    ExitCriticalSection();
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800D05D0);
@@ -158,35 +159,33 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800D0D54);
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800D0EF8);
 
 /**
- * @brief Disable display, set bit 3 of scratchpad control register, enable display.
+ * @brief Set bit 3 of scratchpad control register inside a critical section.
  *
  * Sets bit 0x8 in the halfword at scratchpad address 0x1F8003AE.
  */
 void func_800D0F74(void) {
     s32 base;
-    func_800472E4();
+    EnterCriticalSection();
     base = 0x1F800390;
     *(u16 *)(base + 0x1E) |= 0x8;
-    func_800472F4();
+    ExitCriticalSection();
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800D0FB0);
 
 /**
- * @brief Disable display, check condition, optionally call handler, re-enable display.
+ * @brief Check a condition and optionally call the handler, inside a critical section.
  *
- * Calls func_800472E4 to disable display, then checks func_800CEDA4.
- * If it returns 0, calls sendSpuCommand with a0. Finally re-enables display
- * via func_800472F4.
+ * If func_800CEDA4 returns 0, calls sendSpuCommand with a0.
  *
  * @param a0 Parameter passed to sendSpuCommand if condition met.
  */
 void func_800D11D4(s32 a0) {
-    func_800472E4();
+    EnterCriticalSection();
     if (func_800CEDA4() == 0) {
         sendSpuCommand(a0);
     }
-    func_800472F4();
+    ExitCriticalSection();
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object17", func_800D121C);

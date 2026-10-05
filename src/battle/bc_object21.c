@@ -1,5 +1,6 @@
 #include "common.h"
 #include "battle/bc_object21.h"
+#include "psxsdk/libapi.h"
 
 extern u8 D_80103180[];
 extern u8 D_80103182[];
@@ -17,30 +18,25 @@ void func_800DF4E4(void);
 void func_800DF718(void);
 
 /**
- * @brief Disable display, store a0 into indexed array, increment index, enable display.
+ * @brief Store a0 into indexed array and increment the index, inside a critical section.
  *
  * Stores the parameter as a byte into D_80103184 at the index given by
- * D_80103188, increments the index, then re-enables display.
+ * D_80103188, then increments the index.
  *
  * @param a0 Byte value to store in the array.
  */
 void func_800DD1B0(s32 a0) {
-    func_800472E4();
+    EnterCriticalSection();
     *(u8 *)(D_80103184 + *(volatile u8 *)D_80103188) = (u8)a0;
     *(volatile u8 *)D_80103188 = *(volatile u8 *)D_80103188 + 1;
-    func_800472F4();
+    ExitCriticalSection();
 }
 
-/**
- * @brief Disable display, clear D_80103188, then enable display.
- *
- * Calls func_800472E4 (display off), zeros D_80103188,
- * then calls func_800472F4 (display on).
- */
+/** @brief Clear D_80103188 inside a critical section. */
 void func_800DD208(void) {
-    func_800472E4();
+    EnterCriticalSection();
     *(volatile u8 *)D_80103188 = 0;
-    func_800472F4();
+    ExitCriticalSection();
 }
 
 /**
@@ -131,18 +127,17 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object21", func_800DE6FC);
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object21", func_800DE8EC);
 
 /**
- * @brief Lock rendering, process entity data, then unlock.
+ * @brief Process entity data inside a critical section.
  *
- * Calls func_800472E4 to lock, then func_800DE8EC with D_80103340
- * and the entity parameter, then func_800472F4 to unlock.
+ * Calls func_800DE8EC with D_80103340 and the entity parameter.
  *
  * @param a0 Entity parameter passed to func_800DE8EC.
  */
 void func_800DEA58(s32 a0) {
     u8 *base = D_80103340;
-    func_800472E4();
+    EnterCriticalSection();
     func_800DE8EC(base, a0);
-    func_800472F4();
+    ExitCriticalSection();
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object21", func_800DEAA4);

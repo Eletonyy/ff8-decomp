@@ -101,10 +101,8 @@ NO_G0_SRCS := src/main.c src/snd_cmd.c
 G4_SRCS := src/game.c
 
 # Source files compiled with -O0 (unoptimized, uses frame pointer)
-O0_SRCS := src/render3d.c src/mesh3d.c
+O0_SRCS := src/btl_transition.c
 
-# O0 files that need expand_li ON (no --aspsx-version flag) to match ori encoding
-O0_EXPAND_LI_SRCS := src/render3d.c
 
 ### Assembler flags ###
 # -march=r3000  : MIPS I (the PS1 CPU)
@@ -172,7 +170,7 @@ $(BUILD_DIR)/%.o: %.c
 		$(PSYQ43_CC1) -quiet $(if $(filter $<,$(G4_SRCS)),-O2 -G4,$(if $(filter $<,$(NO_G0_SRCS)),-O2,$(CC_FLAGS))) $(BUILD_DIR)/$(*F).i -o $(BUILD_DIR)/$(*F).s && \
 		cat $(BUILD_DIR)/$(*F).s | $(MASPSX) $(PSYQ43_MASPSXFLAGS) --run-assembler $(ASFLAGS) -o $@, \
 		$(PSYQ41_CC1) -quiet $(if $(filter $<,$(O0_SRCS)),-O0 -G0,$(if $(filter $<,$(G4_SRCS)),-O2 -G4,$(if $(filter $<,$(NO_G0_SRCS)),-O2,$(CC_FLAGS)))) $(BUILD_DIR)/$(*F).i -o $(BUILD_DIR)/$(*F).s && \
-		cat $(BUILD_DIR)/$(*F).s | $(MASPSX) $(if $(filter $<,$(O0_EXPAND_LI_SRCS)),,$(if $(filter $<,$(O0_SRCS)),$(PSYQ40_MASPSXFLAGS),$(PSYQ41_MASPSXFLAGS))) --run-assembler $(ASFLAGS) -o $@)
+		cat $(BUILD_DIR)/$(*F).s | $(MASPSX) $(if $(filter $<,$(O0_SRCS)),$(PSYQ40_MASPSXFLAGS),$(PSYQ41_MASPSXFLAGS)) --run-assembler $(ASFLAGS) -o $@)
 
 # Link: all .o files -> ELF
 $(ELF): $(LD_SCRIPT)

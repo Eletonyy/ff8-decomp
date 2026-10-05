@@ -9,6 +9,8 @@ void vsyncGameHandler(void);
 /** @brief Main game state-machine loop, driven by g_vsyncRate. */
 void gameStateLoop(void);
 
+s32 isBossBattle(void);
+
 u8 *getBattleCommandName(s32 id);
 
 /** @brief Look up entry @p stringId of the kernel's misc text table. */
