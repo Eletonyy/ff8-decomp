@@ -86,7 +86,7 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_80026FD4);
 
 /**
  * @brief Switch to a thread, using a fallback address if a0 is 0.
- * @param a0 Thread handle to switch to; 0 defaults to 0xFF000000.
+ * @param a0 Thread handle to switch to; 0 means the main thread (0xFF000000).
  * @note If GetSr returns bit 2 set, uses func_80026F4C instead of PsyQ ChangeTh.
  */
 void switchThread(s32 a0) {

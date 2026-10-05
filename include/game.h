@@ -9,7 +9,6 @@ void vsyncGameHandler(void);
 /** @brief Main game state-machine loop, driven by g_vsyncRate. */
 void gameStateLoop(void);
 
-/** @brief 1 if the upcoming battle is a boss battle, 0 otherwise. */
 s32 isBossBattle(void);
 
 u8 *getBattleCommandName(s32 id);

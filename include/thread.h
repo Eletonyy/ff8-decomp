@@ -3,8 +3,6 @@
 
 #include "common.h"
 
-/* Raw controller-input helpers (thread.c). */
-
 /* Public prototypes */
 extern void func_800275D4(void);                /**< Refresh the raw controller buffers. */
 /* Which axis func_80027DB4 reads. These are mutually exclusive selectors, not
@@ -34,6 +32,5 @@ extern void setPadDeadZone(s32 a0, s32 a1);
 extern void setPadAnalogFlag(s32 a0, s32 a1);
 extern s32 openThreadSafe(void (*entry)(void), u8 *stack);
 extern void closeThreadSafe(s32 thread);
-/** @brief Switch to @p thread; 0 means the main thread. */
 extern void switchThread(s32 thread);
 #endif /* THREAD_H */
