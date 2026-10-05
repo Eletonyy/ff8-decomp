@@ -705,6 +705,8 @@ wipe_start:
             work->trans.vx = 1;
         }
 
+        /* A while, not a for: a for right after the if/else above makes the
+         * compiler put a nop at their join, which the original does not have. */
         i = 0;
         while (i < SCREEN_HEIGHT) {
             setPrimLen(wipe, 8);
@@ -777,16 +779,15 @@ wipe_start:
 static void transformMeshVertices(MeshRenderCtx *mesh) {
     register SVECTOR *points = mesh->points;
     register ScreenVert *vertices = mesh->vertices;
-    register s32 i = 0;
+    register s32 i;
     s32 screenXY;
     s32 flag;
     s32 interpZ;
 
-    while (i < GRID_VERTS * GRID_VERTS) {
+    for (i = 0; i < GRID_VERTS * GRID_VERTS; i++) {
         RotTransPers(points, &vertices->xy, &screenXY, &screenXY);
         points++;
         vertices++;
-        i++;
     }
 }
 
@@ -817,11 +818,8 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot,
     char pad;
 
     mesh = vertices;
-    row = 0;
-
-    while (row < GRID_SIZE) {
-        col = 0;
-        while (col < GRID_SIZE) {
+    for (row = 0; row < GRID_SIZE; row++) {
+        for (col = 0; col < GRID_SIZE; col++) {
             setPrimLen(prim, 12);
             prim->tpage = g_meshTpage[col] | getTPage(2, 1, 0, 0);
 
@@ -886,10 +884,8 @@ static PolyGT4 *renderMeshGrid(ScreenVert *vertices, PolyGT4 *primBuf, u32 *ot,
             AddPrim(ot, prim);
             prim++;
             mesh++;
-            col++;
         }
         mesh++;
-        row++;
     }
     return prim;
 }
@@ -949,11 +945,9 @@ static void renderScaledMesh(MeshRenderCtx *mesh, u32 *ot, s32 scale, s32 intens
 
     src = &g_meshBaseMatrix;
     dst = &localMatrix;
-    i = 0;
     /* The MATRIX's 32 bytes; sizeof would make the compare unsigned. */
-    while (i < 32) {
+    for (i = 0; i < 32; i += 4) {
         *(s32 *)((u8 *)dst + i) = *(s32 *)((u8 *)src + i);
-        i += 4;
     }
 
     scaleVec.vx = scaleVec.vy = scaleVec.vz = scale;
@@ -999,11 +993,9 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
     /* The matrix is built in the vertex buffer, which the projection then reuses. */
     vert = mesh->vertices;
     src = &g_meshBaseMatrix;
-    i = 0;
     /* The MATRIX's 32 bytes; sizeof would make the compare unsigned. */
-    while (i < 32) {
+    for (i = 0; i < 32; i += 4) {
         *(s32 *)((u8 *)vert + i) = *(s32 *)((u8 *)src + i);
-        i += 4;
     }
 
     scaleVec.vx = scaleVec.vy = scaleVec.vz = scale;
@@ -1014,18 +1006,14 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
     vert = mesh->vertices;
     point.vy = -(SCREEN_HEIGHT / 2);
     point.vz = 0;
-    j = 0;
-    while (j < 2) {
+    for (j = 0; j < 2; j++) {
         point.vx = -(SCREEN_WIDTH / 2);
-        i = 0;
-        while (i < 6) {
+        for (i = 0; i < 6; i++) {
             RotTransPers(&point, &vert->xy, &discard, &discard);
             point.vx += 64;
             vert++;
-            i++;
         }
         point.vy += SCREEN_HEIGHT;
-        j++;
     }
 
     color = brightness / 2;
@@ -1045,8 +1033,7 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
 
     vert = mesh->vertices;
     prim = mesh->primPtr;
-    i = 0;
-    while (i < 5) {
+    for (i = 0; i < 5; i++) {
         setPrimLen(prim, 9);
         *(u32 *)&prim->r0 = color;
         prim->tpage = tpage + i;
@@ -1062,7 +1049,6 @@ static void renderFlatMesh(MeshRenderCtx *mesh, u32 *ot, s32 brightness, s32 sca
         AddPrim(ot, prim);
         prim++;
         vert++;
-        i++;
     }
     mesh->primPtr = prim;
 }
@@ -1094,18 +1080,14 @@ static void initMeshRenderer(void) {
     ClearOTag(ot[0], TRANSITION_OT_SIZE);
     ClearOTag(ot[1], TRANSITION_OT_SIZE);
     point = ctx->points;
-    row = 0;
-    while (row < GRID_VERTS) {
-        col = 0;
-        while (col < GRID_VERTS) {
+    for (row = 0; row < GRID_VERTS; row++) {
+        for (col = 0; col < GRID_VERTS; col++) {
             point->vx = col * 40 - 160;
             point->vy = row * 27 - 108;
             /* vz and the pad cleared with one word store, as the target does. */
             *(s32 *)&point->vz = 0;
             point++;
-            col++;
         }
-        row++;
     }
 }
 
@@ -1200,11 +1182,9 @@ panels:
             intensity = r * 8;
         }
         src = &g_meshBaseMatrix;
-        i = 0;
         /* The MATRIX's 32 bytes; sizeof would make the compare unsigned. */
-        while (i < 32) {
+        for (i = 0; i < 32; i += 4) {
             *(s32 *)((u8 *)matrix + i) = *(s32 *)((u8 *)src + i);
-            i += 4;
         }
         size = ctx->frame * 64 + 0x600;
         r = ctx->frame - 32;
@@ -1293,10 +1273,8 @@ static void func_80026ADC(void) {
     prim = work->arg1;
     color = work->arg2 & 0xFFFFFF;
     color |= CODE_FT4;
-    row = 0;
-    while (row < SCREEN_HEIGHT / SNAPSHOT_TILE) {
-        col = 0;
-        while (col < SCREEN_WIDTH / SNAPSHOT_TILE) {
+    for (row = 0; row < SCREEN_HEIGHT / SNAPSHOT_TILE; row++) {
+        for (col = 0; col < SCREEN_WIDTH / SNAPSHOT_TILE; col++) {
             setPrimLen(prim, 9);
             *(u32 *)&prim->r0 = color;
             prim->tpage = col / 2 + getTPage(2, 0, SNAPSHOT_X, SNAPSHOT_Y);
@@ -1308,9 +1286,7 @@ static void func_80026ADC(void) {
             prim->u1 = prim->u3 = (col & 1) * SNAPSHOT_TILE + SNAPSHOT_TILE;
             AddPrim(ot + LAYER_SNAPSHOT, prim);
             prim++;
-            col++;
         }
-        row++;
     }
     work->result = (s32)prim;
 }
