@@ -573,7 +573,7 @@ void func_801E8180(u8 *a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
 
 INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem", func_801E820C);
 
-INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem", func_801E82CC);
+INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem", menuitem_drawGfPanel);
 
 INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem", func_801E83B4);
 
