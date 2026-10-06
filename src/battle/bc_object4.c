@@ -901,7 +901,7 @@ void func_800A77E8(void) {
     u8 idx;
     
     for (i = 0; i < 3; i++) {
-        idx = g_gameState.mainData.party.partyMembers[i]; // uses party.partyMembers as the index for chars
+        idx = g_gameState.mainData.party.partyMembers[i];
         if (idx != 255) { // not party member 3
             for (j = 0; j < 32; j++) {
                 func_800A779C(g_gameState.chars[idx].magic[j].magicId);
