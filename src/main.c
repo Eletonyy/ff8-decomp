@@ -20,6 +20,7 @@
 #include "psxsdk/libgte.h"
 #include "psxsdk/libetc.h"
 #include "main.h"
+#include "btl_transition.h"
 
 /** @brief Global field ids of the maps a new game and a game over go to. */
 #define FIELD_ID_START0 74 /**< start0, the first map of a new game. */
@@ -39,17 +40,14 @@ typedef struct {
 #define WORLD_ENTRANCES ((WorldEntrance *)0x80097940)
 
 
-/** @brief Clears the GPU ordering tables and flushes the GPU pipeline, used
- *         to blank the display during transitions (e.g. while a fade finishes).
- */
-
+/** @brief Turn the GPU's mask-bit setting off with one packet, and wait until the GPU is idle. */
 void flushGpuOt(void) {
-    u32 prim[4];
+    DR_STP prim;
     u32 ot[2];
 
     ClearOTag(ot, 2);
-    SetDrawStp(prim, 0);
-    addPrim(ot, prim);
+    SetDrawStp(&prim, 0);
+    addPrim(ot, &prim);
     DrawOTag(ot);
 
     do {
@@ -69,7 +67,7 @@ void VsyncHandler(void) {
         ProcessFade();
         break;
     case 2:
-        func_80026D8C();
+        paceBattleTransition();
         break;
     case 3:
         func_800D0608();

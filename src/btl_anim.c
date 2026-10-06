@@ -15,14 +15,13 @@
 #include "ui/dialog.h"
 #include "ui/text.h"
 #include "thread.h"
+#include "psxsdk/libapi.h"
+#include "psxsdk/r3000.h"
 
 
 void callCdTick(void);
 void shutdownCardSubsystem(void);
 void initBattleSubsystems(void);
-s32 func_80047384(void);
-void func_800472E4(void);
-void func_800472F4(void);
 s32 getPadReadButtons(s32, s32);
 s32 getPadReadRepeat(s32, s32);
 static s32 getPadReadByte(s32 idx, s32 param, s32 frameOffset);
@@ -165,9 +164,9 @@ static s32 getPadReadType(s32 idx, s32 frameOffset) {
     AnimFrame *frame;
     s32 frameSlot;
 
-    syncFlag = func_80047384() & 4;
+    syncFlag = GetSr() & SR_IEP;
     if (syncFlag == 0) {
-        func_800472E4();
+        EnterCriticalSection();
     }
 
     slot = idx & 1;
@@ -176,7 +175,7 @@ static s32 getPadReadType(s32 idx, s32 frameOffset) {
     frame = &port->frames[frameSlot];
 
     if (syncFlag == 0) {
-        func_800472F4();
+        ExitCriticalSection();
     }
 
     if (frame->field00 != 0) {
@@ -1775,11 +1774,11 @@ s32 writeCardBlocks(s32 cardId, s32 buf, s32 startSector, s32 endSector) {
 
 /**
  * @brief Shut down the memory card subsystem by closing all 8 card events.
- * @note Disables interrupts via func_800472E4, closes all events in g_cardData[0..7],
+ * @note Disables interrupts via EnterCriticalSection, closes all events in g_cardData[0..7],
  *       re-enables interrupts, then calls func_8004D968 for final cleanup.
  */
 void shutdownCardSubsystem(void) {
-    func_800472E4();
+    EnterCriticalSection();
     CloseEvent(g_cardData.events[0]);
     CloseEvent(g_cardData.events[1]);
     CloseEvent(g_cardData.events[2]);
@@ -1788,7 +1787,7 @@ void shutdownCardSubsystem(void) {
     CloseEvent(g_cardData.events[5]);
     CloseEvent(g_cardData.events[6]);
     CloseEvent(g_cardData.events[7]);
-    func_800472F4();
+    ExitCriticalSection();
     func_8004D968();
 }
 
@@ -2113,7 +2112,7 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
     s32 upperBits;
 
     if (mode == 1) {
-        func_800472E4();
+        EnterCriticalSection();
         for (i = count; i >= 0; i--) {
             param = applyButtonRemapTranslation(getPadReadButtons(0, i) & 0xFFFF) & 0xFFFF;
             if ((param & 0xF000) == 0) {
@@ -2127,16 +2126,16 @@ void processBattleAnimFrames(s32 frameCount, s32 mode) {
             frameData[j] = param;
             statusData[j] = applyButtonRemapTranslation(getPadReadRepeat(0, j) & 0xFFFF) & 0xFFFF;
         }
-        func_800472F4();
+        ExitCriticalSection();
     } else {
-        func_800472E4();
+        EnterCriticalSection();
         param = applyButtonRemapTranslation(getPadReadButtons(0, 0) & 0xFFFF) & 0xFFFF;
         upperBits = applyButtonRemapTranslation(getPadReadPressed(0, 0) & 0xFFFF) << 16;
         val = func_80027DB4((0, 0), PAD_AXIS_X, 0);
         if (((param & 0xF000) == 0) && (val >= 0)) {
             param |= func_80027CF8(0, val - 128, func_80027DB4(0, PAD_AXIS_Y, 0) - 128);
         }
-        func_800472F4();
+        ExitCriticalSection();
         i = count;
         for (; i >= 0; i--) {
             if (1) {

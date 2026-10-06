@@ -7,6 +7,7 @@
 #include "gamestate.h"
 #include "overlay.h"
 #include "render.h"
+#include "psxsdk/libapi.h"
 
 
 /** @brief Empty stub (no-op). */
@@ -210,11 +211,11 @@ void enqueueOverlayCmd(s32 cmd, s32 overlay_id, s32 param, s32 load_addr, s32 ca
     slot->callback1 = callback1;
     slot->callback2 = callback2;
     slot->ovlId = overlay_id;
-    func_800472E4();
+    EnterCriticalSection();
     was_equal = D_80085140;
     D_80085140 = (was_equal + 1) & 7;
     was_equal = was_equal == D_80085144;
-    func_800472F4();
+    ExitCriticalSection();
     if (was_equal == 1) {
         func_80035D30(cmd, overlay_id, param, load_addr);
     }

@@ -8,6 +8,7 @@
 #include "card.h"
 #include "cdread.h"
 #include "battle.h"
+#include "game.h"
 
 extern u8 D_80085218;
 extern FieldVars *g_fieldVars;
@@ -17,7 +18,6 @@ extern s32 D_80085220;
 extern u8 D_8005644B[];
 extern s32 D_800562D4;
 extern s32 findNthSetBit(s32, s32);
-extern s32 func_80021300(void);
 
 /** @brief 0x20-byte free-id table immediately before the D_80077EBC pair list. */
 typedef struct {
@@ -704,7 +704,7 @@ void func_80038030(s32 arg0) {
     sndCmdF1();
     sndSetMasterVolume(0x7F);
 
-    if (func_80021300() == 0) {
+    if (isBossBattle() == 0) {
         sndPlaySfx(0xA, 0, 0x80, 0x7F);
         sndPlaySfx(0xB, 0, 0x80, 0x7F);
         sndPlaySfx(0xC, 0, 0x80, 0x7F);
