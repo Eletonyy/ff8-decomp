@@ -1408,6 +1408,7 @@ AddPrim = 0x8004D584;
 AddPrims = 0x8004D5C4;
 SetSemiTrans = 0x8004D604;
 SetShadeTex = 0x8004D634;
+SetSprt = 0x8004D6E4;
 SetTile = 0x8004D704;
 SetDrawTPage = 0x8004D724;
 SetDrawMove = 0x8004D754;

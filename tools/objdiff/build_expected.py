@@ -41,7 +41,6 @@ EXPECTED = ROOT / "expected"
 AS = ["mipsel-linux-gnu-as", "-march=r3000", "-mabi=32", "-EL", "-no-pad-sections", "-O0", "-Iinclude", "-W"]
 OBJCOPY = "mipsel-linux-gnu-objcopy"
 LD = "mipsel-linux-gnu-ld"
-MAIN = "SLUS_008.92"
 DATA_SECTIONS = ("rodata", "data", "sdata", "bss", "sbss")
 
 ADDR_RE = re.compile(r"/\* [0-9A-Fa-f]+ ([0-9A-Fa-f]{8})(?: [0-9A-Fa-f]{8})? \*/")
@@ -215,8 +214,6 @@ def check_link(config, expected_objects):
 
     cmd = [LD, "-T", str(ld_copy),
            "-T", opts["undefined_funcs_auto_path"], "-T", opts["undefined_syms_auto_path"]]
-    if name != MAIN:
-        cmd += ["-T", "config/linker_syms.txt"]
     elf = link_dir / f"{name}.elf"
     binary = link_dir / f"{name}.bin"
     subprocess.run(cmd + ["--no-check-sections", "-o", str(elf)] + objects, cwd=ROOT, check=True)
