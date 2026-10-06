@@ -254,7 +254,6 @@ $(1)_DEP := $$(basename $$($(1)_LD)).d
 $(1)_LDFLAGS  := -T $$($(1)_LD) \
                  -T $$(SPLAT_GEN)/undefined_funcs_auto.$(1).txt \
                  -T $$(SPLAT_GEN)/undefined_syms_auto.$(1).txt \
-                 -T config/linker_syms.txt \
                  --no-check-sections \
                  -Map $$($(1)_DIR)/$(1).map
 

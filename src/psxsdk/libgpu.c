@@ -330,7 +330,7 @@ INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", func_8004D6A4);
 
 INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", func_8004D6C4);
 
-INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", func_8004D6E4);
+INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", SetSprt);
 
 INCLUDE_ASM("asm/nonmatchings/psxsdk/libgpu", SetTile);
 
