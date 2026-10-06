@@ -13,6 +13,7 @@
 
 SetSprt = 0x8004D6E4;
 g_gameState = 0x80077378;
+g_battleChars = 0x80078720;
 
 func_80600000 = 0x80600000;
 func_84000000 = 0x84000000;
