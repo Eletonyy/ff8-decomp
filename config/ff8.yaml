@@ -534,6 +534,12 @@ binaries:
     - [0x95C8, c, be_object3b]
     - [0x9BE0, c, be_object4]
     - [0xC58C, asm, be_data]
+    - [0x1F638, textbin, be_card_faces]
+    - [0x96658, textbin, be_board_bg_a]
+    - [0xC066C, textbin, be_board_bg_b]
+    - [0xEA680, data, be_tables]
+    - [0xEAEC8, databin, be_akao]
+    - [0x109B88, databin, be_sound_bank]
     - [0x10AC40, bss, tripletriad_bss]
   - [0x10AC40]
 - name: world
