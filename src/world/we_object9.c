@@ -993,7 +993,7 @@ s32 func_800BCF84(s32 id, s32 param) {
 
 /** Checks if a counter has reached threshold 0xBB8. */
 s32 func_800BD040(void) {
-    return D_80077E84 >= 0xBB8;
+    return g_gameState.mainData.party.gil >= 0xBB8;
 }
 
 /**

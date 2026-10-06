@@ -502,37 +502,37 @@ s32 opHandler_PSHM_B(ScriptContext *context, s32 a1) {
     return 2;
 }
 
-/** @brief Load halfword from D_800780D8+a1, call func_800AE3A4 with mode 6, push result. Returns 2. */
+/** @brief Load halfword from g_gameState.fieldVars.initTag[a1], call func_800AE3A4 with mode 6, push result. Returns 2. */
 s32 opHandler_PSHM_W(ScriptContext *context, s32 a1) {
-    s32 result = func_800AE3A4(*(u16 *)&D_800780D8[a1], 6);
+    s32 result = func_800AE3A4(*(u16 *)&g_gameState.fieldVars.initTag[a1], 6);
     PUSH(context, result);
     return 2;
 }
 
-/** @brief Load word from D_800780D8+a1, call func_800AE3A4 with mode 7, push result. Returns 2. */
+/** @brief Load word from g_gameState.fieldVars.initTag[a1], call func_800AE3A4 with mode 7, push result. Returns 2. */
 s32 opHandler_PSHM_L(ScriptContext *context, s32 a1) {
-    s32 result = func_800AE3A4(*(s32 *)&D_800780D8[a1], 7);
+    s32 result = func_800AE3A4(*(s32 *)&g_gameState.fieldVars.initTag[a1], 7);
     PUSH(context, result);
     return 2;
 }
 
-/** @brief Load signed byte from D_800780D8+a1, call func_800AE3A4 with mode 2, push result. Returns 2. */
+/** @brief Load signed byte from g_gameState.fieldVars.initTag[a1], call func_800AE3A4 with mode 2, push result. Returns 2. */
 s32 opHandler_PSHSM_B(ScriptContext *context, s32 a1) {
-    s32 result = func_800AE3A4(*(s8 *)&D_800780D8[a1], 2);
+    s32 result = func_800AE3A4(*(s8 *)&g_gameState.fieldVars.initTag[a1], 2);
     PUSH(context, result);
     return 2;
 }
 
-/** @brief Load signed halfword from D_800780D8+a1, call func_800AE3A4 with mode 3, push result. Returns 2. */
+/** @brief Load signed halfword from g_gameState.fieldVars.initTag[a1], call func_800AE3A4 with mode 3, push result. Returns 2. */
 s32 opHandler_PSHSM_W(ScriptContext *context, s32 a1) {
-    s32 result = func_800AE3A4(*(s16 *)&D_800780D8[a1], 3);
+    s32 result = func_800AE3A4(*(s16 *)&g_gameState.fieldVars.initTag[a1], 3);
     PUSH(context, result);
     return 2;
 }
 
-/** @brief Load word from D_800780D8+a1, call func_800AE3A4 with mode 4, push result. Returns 2. */
+/** @brief Load word from g_gameState.fieldVars.initTag[a1], call func_800AE3A4 with mode 4, push result. Returns 2. */
 s32 opHandler_PSHSM_L(ScriptContext *context, s32 a1) {
-    s32 result = func_800AE3A4(*(s32 *)&D_800780D8[a1], 4);
+    s32 result = func_800AE3A4(*(s32 *)&g_gameState.fieldVars.initTag[a1], 4);
     PUSH(context, result);
     return 2;
 }
@@ -564,15 +564,15 @@ s32 opHandler_POPM_B(ScriptContext *context, s32 a1) {
     return 2;
 }
 
-/** @brief Pop halfword from stack and store to D_800780D8[a1]. Returns 2. */
+/** @brief Pop halfword from stack and store to g_gameState.fieldVars.initTag[a1]. Returns 2. */
 s32 opHandler_POPM_W(ScriptContext *context, s32 a1) {
-    *(u16 *)&D_800780D8[a1] = POP(context);
+    *(u16 *)&g_gameState.fieldVars.initTag[a1] = POP(context);
     return 2;
 }
 
-/** @brief Pop word from stack and store to D_800780D8[a1]. Returns 2. */
+/** @brief Pop word from stack and store to g_gameState.fieldVars.initTag[a1]. Returns 2. */
 s32 opHandler_POPM_L(ScriptContext *context, s32 a1) {
-    *(s32 *)&D_800780D8[a1] = POP(context);
+    *(s32 *)&g_gameState.fieldVars.initTag[a1] = POP(context);
     return 2;
 }
 

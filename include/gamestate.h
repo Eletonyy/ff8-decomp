@@ -347,9 +347,9 @@ typedef struct {
     /* 0x21C */ u8           pad21C[0x10];                 /**< Battle vars / misc (continued). */  
     /* 0x22C */ u16          fieldD20;                    /**< Unknown (zeroed on save init). */
     /* 0x22E */ u8           partyLockFlag;               /**< Party/menu lock bits (see PARTY_LOCK_*). */
-    /* 0x22F */ u8           pad2F[0x10];                 /**< Battle vars / misc (continued). */
+    /* 0x22F */ u8           unk2F[16];                 /**< Battle vars / misc (continued). (SIZE NOT CONFIRMED) */
     /* 0x23F */ u8           tutoEntryCount;              /**< Current tutorial section entry count.
-                                                               Read/written as D_800780AB in menututo.
+                                                               Read/written as g_gameState.mainData.tutoEntryCount in menututo.
                                                                0 greys out the section in the list;
                                                                divided by 10 gives the page count. */
     /* 0x240 */ u8           pad40[4];                    /**< Battle vars / misc (continued). */
@@ -383,12 +383,15 @@ typedef struct {
  * use (s32)&g_gameState to prevent CC1PSX symbol+constant folding.
  */
 typedef struct {
-    /* 0x000 */ u8            pad000[0x18];               /**< Save header prefix. */
+    /* 0x000 */ u8            pad000[4];                   /**< Save header prefix. */
+    /* 0x004 */ u16           unk004;
+    /* 0x006 */ u8            pad006[0x018 - 0x006];
     /* 0x018 */ u8            squallName[12];              /**< Squall's name (null-terminated). */
     /* 0x024 */ u8            rinoaName[12];               /**< Rinoa's name (null-terminated). */
     /* 0x030 */ u8            angeloName[12];              /**< Angelo's name (null-terminated). */
     /* 0x03C */ u8            bokoName[12];                /**< Boko's name (null-terminated). */
-    /* 0x048 */ u8            pad048[8];                   /**< Save header suffix. */
+    /* 0x048 */ u8            unk048;
+    /* 0x049 */ u8            pad049[7];
     /* 0x050 */ GfSaveData    gfs[GF_COUNT];               /**< GF save data (16 × 68 bytes). */
     /* 0x490 */ CharacterData chars[CHARACTER_COUNT];      /**< Character data (8 × 152 bytes). */
     /* 0x950 */ ShopData      shops[SHOP_COUNT];           /**< Shop inventory (20 × 20 bytes). */
@@ -415,7 +418,6 @@ typedef struct {
 
 /** @brief Main game state (BSS at 0x80077378). */
 extern GameState g_gameState;
-extern TripleTriadData g_tripleTriad;
 
 /** @brief Pointer to the SeeD/world sub-region of @c g_gameState (@c &g_gameState.fieldVars). */
 extern FieldVars *g_fieldVars;
@@ -465,7 +467,5 @@ extern void enableChocoboWorld(void);
 
 /** @brief Resolve a character ID (e.g. party slot) to its global character code. */
 extern s32 func_80037C6C(s32 charId);
-
-extern CharacterData g_characters[];
 
 #endif /* GAMESTATE_H */

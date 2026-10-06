@@ -682,7 +682,7 @@ s32 runHandBuildSequencer(ScriptCtx *node) {
  * @brief Build a player's Triple Triad hand by drawing cards.
  *
  * If @p arg1 is non-zero it first deals up to 5 cards of that rarity/type from the
- * @c g_tripleTriad table (cards 0x4D+), each gated by an RNG roll against the deal
+ * @c g_gameState.cards.cards table (cards 0x4D+), each gated by an RNG roll against the deal
  * threshold @c D_80082C90.field_09 (halved after the first hit). It then fills the
  * remaining slots by drawing from random tiers: @c D_80082C90.field_08 is a 7-bit
  * tier mask whose set bits build @c tierList (tier bases 0, 0xB, 0x16, ...), and each
@@ -712,7 +712,7 @@ void dealRarityHand(s32 player, s32 arg1) {
     u8 *rarity;
 
     count = 0;
-    rarity = g_tripleTriad.cards;
+    rarity = g_gameState.cards.cards;
     threshold = D_80082C90.field_09;
     if (arg1 != 0) {
         for (i = 0; i < 0x21; i++) {

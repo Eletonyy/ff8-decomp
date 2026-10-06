@@ -75,7 +75,6 @@ typedef struct {
     u8 dstData2[12];
 } BlitParams;
 
-
 typedef enum {
     CTRL_ACTIVE     = 0x01,
     CTRL_FLAG_02    = 0x02,

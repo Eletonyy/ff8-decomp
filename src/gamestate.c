@@ -9,8 +9,6 @@
 #include "cdread.h"
 #include "battle.h"
 
-extern u8 D_8007809B[];
-extern u8 g_chocoboWorld;
 extern u8 D_80085218;
 extern FieldVars *g_fieldVars;
 extern u8 D_8005F388[];
@@ -72,34 +70,34 @@ void func_800370AC(s32 itemId) {
 
 
 /**
- * @brief Set a bit in the global bitfield array D_8007809B.
+ * @brief Set a bit in the global bitfield array g_gameState.mainData.unk2F.
  * @param a0 Bit index to set.
  */
 void setFieldFlag(s32 bitIdx) {
-    u8 *base = D_8007809B;
+    u8 *base = g_gameState.mainData.unk2F;
     s32 byteIdx = bitIdx / 8;
     base[byteIdx] |= (1 << (bitIdx & 7));
 }
 
 
 /**
- * @brief Clear a bit in the global bitfield array D_8007809B.
+ * @brief Clear a bit in the global bitfield array g_gameState.mainData.unk2F.
  * @param a0 Bit index to clear.
  */
 void clearFieldFlag(s32 bitIdx) {
-    u8 *base = D_8007809B;
+    u8 *base = g_gameState.mainData.unk2F;
     s32 byteIdx = bitIdx / 8;
     base[byteIdx] &= ~(1 << (bitIdx & 7));
 }
 
 
 /**
- * @brief Test a bit in the global bitfield array D_8007809B.
+ * @brief Test a bit in the global bitfield array g_gameState.mainData.unk2F.
  * @param a0 Bit index to test.
  * @return Non-zero if bit is set, zero otherwise.
  */
 s32 testFieldFlag(s32 bitIdx) {
-    u8 *base = D_8007809B;
+    u8 *base = g_gameState.mainData.unk2F;
     s32 byteIdx = bitIdx / 8;
     return base[byteIdx] & (1 << (bitIdx & 7));
 }
@@ -136,13 +134,13 @@ void func_80037240(void) {
 }
 
 
-/** @brief Returns a pointer to global g_chocoboWorld. */
+/** @brief Returns a pointer to global g_gameState.chocobo. */
 u8 *getChocoboWorldPtr(void) {
-    return &g_chocoboWorld;
+    return &g_gameState.chocobo;
 }
 
 
-/** @brief Sets bit 0x1 in the byte at g_chocoboWorld. */
+/** @brief Sets bit 0x1 in the byte at g_gameState.chocobo. */
 void enableChocoboWorld(void) {
     u8 *p = getChocoboWorldPtr();
     *p |= 0x1;
@@ -150,7 +148,6 @@ void enableChocoboWorld(void) {
 
 
 extern u8 *getCharName(CharacterId charId);
-extern CharacterData g_characters[];
 
 #define STRIP_STRIDE   0x300
 #define STRIP_ROWS     12
@@ -225,7 +222,7 @@ void func_80037308(NameFont *font, u8 *out)
                 *scratchPtr++ = 0;
             }
 
-            ch = g_characters;
+            ch = g_gameState.chars;
             ch += charId;
             name = getCharName(ch->characterId);
 
@@ -663,7 +660,7 @@ void loadSoundBankB(void) {
     result = func_80039728(D_80085220, 1, &size);
     sndProcessAudio(result, 1);
     result = func_80039728(D_80085220, 0, &size);
-    if ((s8)g_fieldVars->soundBankSelector == 0) {
+    if (g_fieldVars->soundBankSelector == 0) {
         table = D_8005F388;
     } else {
         table = D_80063388;
@@ -677,7 +674,7 @@ INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037FB0);
 
 
 void func_80038030(s32 arg0) {
-    FieldVars *ptr = (FieldVars *)D_800780D8;
+    FieldVars *ptr = &g_gameState.fieldVars;
 
     if (!(g_battleConfig.unk2 & 0x10)) {
         while (sndGetStatus() == 2) {

@@ -6,15 +6,10 @@
  * @brief Character save data structure (stride 152 bytes).
  *
  * The character data array lives within g_gameState at offset 0x490
- * (absolute address g_characters = 0x80077808). Each of the 8 playable
+ * (absolute address g_gameState.chars = 0x80077808). Each of the 8 playable
  * characters (Squall=0 through Edea=7) has a 152-byte entry containing
  * HP, experience, stats, magic inventory, junction config, and status.
  *
- * Several sub-symbols reference offsets within this array:
- *   g_characters       = g_gameState + 0x490  (base, offset 0x00: HP)
- *   g_characterMagic   = g_gameState + 0x4A0  (offset 0x10: magic slots)
- *   g_characterGFs     = g_gameState + 0x4E4  (offset 0x54: GF bitfield)
- *   g_characterAbilities = g_gameState + 0x4EC  (offset 0x5C: junction abilities)
  *
  * Field layout verified against the Hyne save editor (PERSONNAGES struct):
  *   https://github.com/myst6re/hyne  (src/SaveData.h)
@@ -216,7 +211,7 @@ typedef struct {
 /**
  * @brief Per-character save data (stride 152 = 0x98 bytes).
  *
- * Array of 8 entries at g_gameState + 0x490 (g_characters).
+ * Array of 8 entries at g_gameState + 0x490 (g_gameState.chars).
  * Indexed by character ID (see CharacterId enum).
  */
 typedef struct {
@@ -249,11 +244,5 @@ typedef struct {
 #define CHARACTER_COUNT 8
 #define PARTY_SLOT_COUNT 3
 #define PARTY_SLOT_EMPTY 0xFF
-
-/* Sub-symbols into the character array, as described in the file comment above.
- * Left unsized so the compiler self-expands their addresses rather than going
- * GP-relative, which is what the original codegen does. */
-extern u8 g_characterMagic[];     /**< g_gameState + 0x4A0: magic slots (offset 0x10). */
-extern u8 g_characterAbilities[]; /**< g_gameState + 0x4EC: junction abilities (offset 0x5C). */
 
 #endif /* CHARACTER_H */

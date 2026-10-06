@@ -210,7 +210,7 @@ typedef struct {
     /* 0x00 */ u8 initTag[4];           /**< ASCII @c "FF-8" stamped here by @ref SmInitEventAll on a full reset.
                                              Write-only: no code anywhere in the executable or its overlays reads
                                              these bytes back — verified across all four ways the block is reached
-                                             (the @c D_800780D8 symbol, @c g_gameState+0xD60, offset 0 through the
+                                             (the @c g_gameState.fieldVars symbol, offset 0 through the
                                              @c g_fieldVars pointer, and the computed @c (u8*)g_fieldVars+n
                                              accesses, which only ever touch @c 0xC5). Not called "magic" for that
                                              reason — contrast @c SoundBank.magic, which @c sndValidateBank
@@ -927,12 +927,6 @@ extern s32 D_800DE878;
  *         Meaning inferred from those opcode names; no reader decompiled yet. */
 extern u8 D_8007064C;
 
-/** @brief Misc menu/field share scalar. */
-extern u16 D_8007737C;
-
-/** @brief Field-side post-battle flag byte. */
-extern u8 D_800773C0;
-
 /** @brief Resident table of text strings read by the field-VM string opcodes. */
 extern OffsetTable D_8005630C;
 
@@ -967,17 +961,6 @@ extern u8  D_80082C8D;
 extern s32 D_800705E8;
 extern s32 D_800705F0;
 extern s32 D_800705F8;
-
-/** @brief @c &g_gameState.fieldVars exposed as a byte array for fe_object4's
- *         script-VM M-memory load/store opcodes (offsets are popped from the
- *         actor stack). */
-/** @brief The field script-VM's M-memory block — the same storage as
- *         @c *g_fieldVars, addressed by byte offset by the @c PSHM_ / @c POPM_
- *         opcodes (M-offset @c N is @c FieldVars + @c N).
- *  @note A second view of memory that @ref FieldVars already describes; the
- *        opcode handlers use this byte-array form because the offset is a
- *        runtime script argument, not a named field. */
-extern u8  D_800780D8[];
 
 /** @brief Field-side status flag byte; bitfield (0x1, 0x2, 0x4, 0x8, 0x10, 0x20). */
 extern u8  D_8007809A;

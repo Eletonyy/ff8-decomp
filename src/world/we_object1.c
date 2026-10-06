@@ -746,9 +746,11 @@ void func_8009C294(s32 cmd) {
         ((cmd & 0xFFFF) == 0x2C || (cmd & 0xFFFF) == 0x41 || (cmd & 0xFFFF) == 0x11)) {
         if (func_800A2D50(0, (s16)func_800BEC1C(D_800C4D38), D_800C9778, 0, 0, 0) &&
             func_800A2D50(D_800C4D38, 0, D_800C9778, 0, 0, 0)) {
+            u8 *D_800780D8 = (u8*)&g_gameState.fieldVars;
             D_800780D8[0x108] &= ~0x20;
             D_800D23D8[0x66] &= ~0x20;
         } else {
+            u8 *D_800780D8 = (u8*)&g_gameState.fieldVars;
             D_800780D8[0x108] |= 0x20;
             D_800D23D8[0x66] |= 0x20;
         }
@@ -975,12 +977,14 @@ void func_8009C780(s32 idx, s32 arg, s32 pan) {
 
 /** Sets bit 0x20 on two related flag bytes. */
 void func_8009C7DC(void) {
+    u8 *D_800780D8 = (u8*)&g_gameState.fieldVars;
     D_800780D8[0x108] |= 0x20;
     D_800D23D8[0x66] |= 0x20;
 }
 
 /** Clears bit 0x20 on two related flag bytes. */
 void func_8009C808(void) {
+    u8 *D_800780D8 = (u8*)&g_gameState.fieldVars;
     D_800780D8[0x108] &= ~0x20;
     D_800D23D8[0x66] &= ~0x20;
 }

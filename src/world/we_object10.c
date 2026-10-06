@@ -133,7 +133,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BD82C);
  * @param dst Destination buffer pointer.
  */
 void func_800BD918(u8 *dst) {
-    u8 *src = D_800780D8;
+    u8 *src = (u8*)&g_gameState.fieldVars;
 
     dst[0x66] = src[0x108];
     dst[0x67] = src[0x109];
@@ -1056,12 +1056,14 @@ s32 func_800BEF6C(void) {
 
 /** Checks two flag bits and returns status. */
 s32 func_800BEFC4(void) {
-    u8 val = g_chocoboWorld;
+    u8 flag = g_gameState.chocobo.flags;
     s32 result = 0;
-    if (val & 1) {
-        s32 bit = val & 2;
-        result = (u32)bit < 1;
+    
+    if (flag & 1) {
+        u32 bit = flag & 2;
+        result = bit == 0? 1 : 0;
     }
+    
     return result;
 }
 

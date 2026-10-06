@@ -5,8 +5,6 @@
 #include "gf.h"
 #include "gf_anim.h"
 
-extern CharacterData g_characters[];
-
 extern s32 getXpToNextLevel(u32 exp, s32 charIdx);
 extern s32 findCharXpLevel(u32 exp, s32 charIdx);
 extern s32 calcHpFromLevel(s32 level, s32 charIdx);
@@ -222,17 +220,17 @@ s32 clampToMaxHp(s32 a0) {
  * @brief Refresh battle render data for one party slot from save data.
  *
  * Copies a character's magic inventory, level/XP, derived stats, element
- * resistances, and status data from g_characters[charIdx] into the battle
+ * resistances, and status data from g_gameState.chars[charIdx] into the battle
  * character render block at g_battleChars.chars[battleSlot]. Returns
  * immediately if charIdx is 0xFF (empty slot). Finally toggles bit 4 of a
  * matching command slot's status byte based on bit 0x60000 of field188.
  *
- * @param charIdx    Character ID (0-7) into g_characters[], or 0xFF if empty.
+ * @param charIdx    Character ID (0-7) into g_gameState.chars[], or 0xFF if empty.
  * @param battleSlot Party slot (0-2) into g_battleChars.chars[].
  */
 void func_800231E0(s32 charIdx, s32 battleSlot)
 {
-    CharacterData *cd = &g_characters[charIdx];
+    CharacterData *cd = &g_gameState.chars[charIdx];
     BattleCharData *bc = &g_battleChars.chars[battleSlot];
     s32 i;
     s32 hp;

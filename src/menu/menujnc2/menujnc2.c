@@ -5007,14 +5007,14 @@ s32 renderCharSwitchPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 
             x2 += 0x180;
         }
         chr = ctx->prevCharIdx;
-        rec = &g_characters[chr];
+        rec = &g_gameState.chars[chr];
         info = &g_charMenuInfo[chr];
         cursorY = func_801F65F0(renderCtx, cursorY, x2, y2, rec, info);
         x2 = x + scale;
         y2 = y;
     }
     chr = ctx->charIdx;
-    rec = &g_characters[chr];
+    rec = &g_gameState.chars[chr];
     info = &g_charMenuInfo[chr];
     return func_801F65F0(renderCtx, cursorY, x2, y2, rec, info);
 }

@@ -12,9 +12,9 @@ extern void func_800DF794(void);
 extern void func_800DF7C8(s32 a0, s32 a1);
 
 /*
- * Wrappers of dialog functions, defined without parameters: each forwards
- * whatever $a0-$a3 hold, and callers pass the arguments of the function it wraps.
- */
+ * Wrappers of dialog functions
+*/
+
 extern void func_800DF804(s32, s32, s32);
 extern void func_800DF824(s32, u8*);
 extern void func_800DF844(s32);

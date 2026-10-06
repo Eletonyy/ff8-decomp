@@ -8,9 +8,6 @@
 #include "card.h"
 #include "kernel.h"
 
-extern CharacterData g_characters[];
-extern u8 D_800780B0[];
-
 /**
  * @brief Initialize 128 ability slots to empty.
  *
@@ -270,7 +267,7 @@ clamp_zero:
     clamped = 0;
 clamped_done:
     charIndex = clamped;
-    chr = &g_characters[charIndex];
+    chr = &g_gameState.chars[charIndex];
     chr->junctedGfs = 0;
 
     for (i = 0; i < 4; i++) {
@@ -345,7 +342,7 @@ void func_80036C74(void) {
  * Clears and rebuilds the party slot assignments. For each non-empty,
  * non-Squall party member, checks if they have the required flag (bit 3
  * of exists). Eligible members whose bit is set in @p mask stay;
- * others are removed. Copies the result to D_800780B0 and recalculates.
+ * others are removed. Copies the result to g_gameState.battleParty and recalculates.
  *
  * @param mask Bitmask of characters allowed to remain in the party.
  */
@@ -399,14 +396,14 @@ void func_80036D44(s32 mask) {
     }
 
     {
-        u8 *p = D_800780B0;
+        u8 *p = g_gameState.battleParty;
         u8 val = new_var2;
         for (i = 2; i >= 0; i--) {
             *(p++) = val;
         }
     }
     {
-        u8 *dst = D_800780B0;
+        u8 *dst = g_gameState.battleParty;
         u8 *src = (u8 *)((u32)newSlots + (u32)dst - (u32)dst);
         for (i = 0; i < 3; i++) {
             *dst++ = *src++;

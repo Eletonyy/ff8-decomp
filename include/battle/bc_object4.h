@@ -232,6 +232,6 @@ s32 func_800AA4F8(s32);
 
 s32 func_800AA530(s32);
 
-// func_800AA57C
+BattleEntity* func_800AA57C(s32, s32);
 
 #endif /* BC_OBJECT4_H */
