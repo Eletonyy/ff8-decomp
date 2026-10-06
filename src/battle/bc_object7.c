@@ -86,7 +86,7 @@ void func_800AF6BC(s32 arg0) {
     BattleEntity* entity;
 
     entity = &D_800ED148.entities[arg0];
-    partyMember = &g_gameState.chars[g_gameState.mainData.party.party[arg0]];
+    partyMember = &g_gameState.chars[g_gameState.mainData.party.partyMembers[arg0]];
     
     partyMember->currentHp = entity->currentHp;
     partyMember->statusFlags = entity->status &= ~STATUS_BERSERK;
