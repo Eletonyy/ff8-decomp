@@ -1228,8 +1228,8 @@ void func_801E46DC(void) {
 
     if (ctx != NULL) {
         func_801E3140(ctx);
-        *(volatile s16 *)&ctx->scrollPos = 0x1000;
-        *(volatile s16 *)&ctx->fadePos = 0;
+        ctx->scrollPos = 0x1000;
+        ctx->fadePos = 0;
         ctx->pageCount = ((s8)g_gameState.mainData.tutoEntryCount + 9) / 10;
         ctx->fadeAlpha = 0x1B;
         ctx->pageIndex.b.hi = 3;
