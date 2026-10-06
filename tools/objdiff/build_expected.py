@@ -216,7 +216,7 @@ def check_link(config, expected_objects):
     cmd = [LD, "-T", str(ld_copy),
            "-T", opts["undefined_funcs_auto_path"], "-T", opts["undefined_syms_auto_path"]]
     if name != MAIN:
-        cmd += ["-T", "config/symbols.extern.txt"]
+        cmd += ["-T", "config/linker_syms.txt"]
     elf = link_dir / f"{name}.elf"
     binary = link_dir / f"{name}.bin"
     subprocess.run(cmd + ["--no-check-sections", "-o", str(elf)] + objects, cwd=ROOT, check=True)
