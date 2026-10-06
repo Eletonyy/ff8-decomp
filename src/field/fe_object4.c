@@ -37,10 +37,10 @@ void func_800ADB68(u8 *buf, s32 arg) {
 void func_800ADC04(void) {
     s32 i;
     for (i = 0; i < PARTY_SLOT_COUNT; i++) {
-        if (g_gameState.mainData.party.party[i] != PARTY_SLOT_EMPTY
-            && g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp == 0) {
-            g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp = 1;
-            g_gameState.chars[g_gameState.mainData.party.party[i]].statusFlags &= ~1u;
+        if (g_gameState.mainData.party.partyMembers[i] != PARTY_SLOT_EMPTY
+            && g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp == 0) {
+            g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp = 1;
+            g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].statusFlags &= ~1u;
         }
     }
 }
@@ -1376,7 +1376,7 @@ s32 opHandler_ADDPARTY(ScriptContext *context) {
     if (newSlot != first) {
         g_gameState.battleParty[newSlot] = popped;
         partySlot = (newSlot = findPartySlot(0xFF));
-        g_gameState.mainData.party.party[partySlot] = findCharacterSlot(popped);
+        g_gameState.mainData.party.partyMembers[partySlot] = findCharacterSlot(popped);
     }
 
     if (popped >= 8) {
@@ -1412,9 +1412,9 @@ s32 opHandler_SUBPARTY(ScriptContext *context) {
     slot = func_80037C6C(charId);
     if (slot != PARTY_SLOT_EMPTY) {
         if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
-            func_80036B90(g_gameState.mainData.party.party[slot]);
+            func_80036B90(g_gameState.mainData.party.partyMembers[slot]);
         }
-        g_gameState.mainData.party.party[slot] = PARTY_SLOT_EMPTY;
+        g_gameState.mainData.party.partyMembers[slot] = PARTY_SLOT_EMPTY;
     }
     recalcPartyStats();
     func_800ADC04();
@@ -1460,7 +1460,7 @@ s32 opHandler_CHANGEPARTY(ScriptContext *context) {
         }
     }
 
-    g_gameState.mainData.party.party[slot] = findCharacterSlot(popped1);
+    g_gameState.mainData.party.partyMembers[slot] = findCharacterSlot(popped1);
     g_gameState.battleParty[popped2] = popped1;
     recalcPartyStats();
     return 2;
@@ -1502,17 +1502,17 @@ s32 opHandler_SETPARTY(ScriptContext *context) {
         g_gameState.battleParty[0] = slot0;
         g_gameState.battleParty[1] = slot1;
 
-        g_gameState.mainData.party.party[2] = findCharacterSlot(g_gameState.battleParty[2]);
-        g_gameState.mainData.party.party[1] = findCharacterSlot(g_gameState.battleParty[0]);
-        g_gameState.mainData.party.party[0] = findCharacterSlot(g_gameState.battleParty[1]);
+        g_gameState.mainData.party.partyMembers[2] = findCharacterSlot(g_gameState.battleParty[2]);
+        g_gameState.mainData.party.partyMembers[1] = findCharacterSlot(g_gameState.battleParty[0]);
+        g_gameState.mainData.party.partyMembers[0] = findCharacterSlot(g_gameState.battleParty[1]);
     } else {
         g_gameState.battleParty[0] = slot0;
         g_gameState.battleParty[1] = slot1;
         g_gameState.battleParty[2] = slot2;
 
-        g_gameState.mainData.party.party[2] = slot2;
-        g_gameState.mainData.party.party[1] = slot0;
-        g_gameState.mainData.party.party[0] = slot1;
+        g_gameState.mainData.party.partyMembers[2] = slot2;
+        g_gameState.mainData.party.partyMembers[1] = slot0;
+        g_gameState.mainData.party.partyMembers[0] = slot1;
     }
 
     recalcPartyStats();
@@ -1704,9 +1704,9 @@ s32 opHandler_SWAP(ScriptContext *context) {
     s32 i;
     for (i = 0; i < 3; i++) {
         savedBattle[i]                = g_gameState.battleParty[i];
-        savedParty[i]                 = g_gameState.mainData.party.party[i];
+        savedParty[i]                 = g_gameState.mainData.party.partyMembers[i];
         g_gameState.battleParty[i]    = g_fieldVars->partyOrderA[i];
-        g_gameState.mainData.party.party[i] = g_fieldVars->partyOrderB[i];
+        g_gameState.mainData.party.partyMembers[i] = g_fieldVars->partyOrderB[i];
         g_fieldVars->partyOrderA[i]   = savedBattle[i];
         g_fieldVars->partyOrderB[i]   = savedParty[i];
     }

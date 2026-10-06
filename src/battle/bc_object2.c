@@ -692,7 +692,7 @@ s32 func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, u32 type) {
 
             case 16:
                 if (targetIdx < 3) {
-                    dmg = g_gameState.chars[g_gameState.mainData.party.party[targetIdx]].kills * power;
+                    dmg = g_gameState.chars[g_gameState.mainData.party.partyMembers[targetIdx]].kills * power;
                 } 
                 
                 else {
@@ -2598,7 +2598,7 @@ void func_800A09D0(s32 arg0) {
             break;
 
         case 251:       
-            var_s3 = g_kernel.characters[g_gameState.chars[g_gameState.mainData.party.party[temp_s4]].characterId].limitBreakParam;
+            var_s3 = g_kernel.characters[g_gameState.chars[g_gameState.mainData.party.partyMembers[temp_s4]].characterId].limitBreakParam;
             goto wait_oh_god_make_it_stop;
 
         case 243:       

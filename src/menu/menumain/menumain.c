@@ -947,7 +947,7 @@ void func_801F1DBC(s32 a0) {
 
 /** @brief Save the 3 active party slot IDs from g_gameState.mainData into @c ctx->party. */
 static void func_801F1E20(MainMenuCtx *ctx) {
-    u8 *src = g_gameState.mainData.party.party;
+    u8 *src = g_gameState.mainData.party.partyMembers;
     u8 *dst = ctx->party;
     s32 i;
     for (i = 0; i < 3; i++) {
@@ -957,7 +957,7 @@ static void func_801F1E20(MainMenuCtx *ctx) {
 
 /** @brief Restore the 3 active party slot IDs from @c ctx->party to g_gameState.mainData. */
 static void func_801F1E54(MainMenuCtx *ctx) {
-    u8 *dst = g_gameState.mainData.party.party;
+    u8 *dst = g_gameState.mainData.party.partyMembers;
     u8 *src = ctx->party;
     s32 i;
     for (i = 0; i < 3; i++) {
@@ -1077,7 +1077,7 @@ void func_801F22A8(void) {
     i = 0;
 
     for (; i < 3; i++) {
-        u8 val = g_gameState.mainData.party.party[i];
+        u8 val = g_gameState.mainData.party.partyMembers[i];
         if (val != PARTY_SLOT_EMPTY) {
             result |= (1 << val);
         }
@@ -1415,8 +1415,8 @@ void func_801F5300(void) {
     s32 i = 0;
 
     for (; i < 3; i++) {
-        D_801FABC4[i] = g_gameState.mainData.party.party[i];
-        g_gameState.mainData.party.party[i] = PARTY_SLOT_EMPTY;
+        D_801FABC4[i] = g_gameState.mainData.party.partyMembers[i];
+        g_gameState.mainData.party.partyMembers[i] = PARTY_SLOT_EMPTY;
     }
 }
 
@@ -1425,7 +1425,7 @@ void func_801F5340(void) {
     s32 i = 0;
 
     for (; i < 3; i++) {
-        g_gameState.mainData.party.party[i] = D_801FABC4[i];
+        g_gameState.mainData.party.partyMembers[i] = D_801FABC4[i];
     }
 }
 

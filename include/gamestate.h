@@ -180,10 +180,10 @@ typedef struct {
  * @brief Miscellaneous save data block 1 (32 bytes).
  *
  * At g_gameState + 0xAF4 (0x80077E6C).
- * Contains active party, gil, unlocked weapons, and the Griever name.
+ * Contains active party members, gil, unlocked weapons, and the Griever name.
  */
 typedef struct {
-    /* 0x00 */ u8 party[4];            /**< Active party member IDs (slot 3 always 0xFF). */
+    /* 0x00 */ u8 partyMembers[4];     /**< Active party member IDs (slot 3 always 0xFF). */
     /* 0x04 */ u32 unlockedWeapons;    /**< Bitfield of unlocked weapon upgrades. */
     /* 0x08 */ u8 grieverName[12];     /**< Player-chosen name for Griever. */
     /* 0x14 */ u8 gfIndex0;            /**< GF index for character slot 0 (party locked mode). */
@@ -335,7 +335,7 @@ typedef struct {
     /* 0x20 */ LimitBreakData limitBreaks;                /**< Limit break progress (16 bytes). */
     /* 0x30 */ u8            battleOrder[32];              /**< Battle item menu ordering. */
     /* 0x50 */ ItemSlot      itemSlots[198];  /**< Item inventory (198 slots). */
-    /* 0x1DC */ volatile s32  playTimeSeconds;             /**< @c 0xCD0: play time in seconds; @ref VsyncHandler steps it every ~59.8 vsyncs (a second on NTSC). */
+    /* 0x1DC */ volatile s32 playTimeSeconds;             /**< @c 0xCD0: play time in seconds; @ref VsyncHandler steps it every ~59.8 vsyncs (a second on NTSC). */
     /* 0x1E0 */ volatile s32 countdownTimer; /**< @c 0xCD4: countdown in seconds. Set/get by field event opcodes, decremented by @ref VsyncHandler at the play time's rate while nonzero; drawn as MM:SS through @c g_engine.countdown. */
     /* 0x1E4 */ u8           pad1E4[0x04];
     /* 0x1E8 */ s32          fieldCDC;                     /**< Snapshotted by @c func_800BFBBC into @c FieldVars.field14. */
@@ -383,29 +383,29 @@ typedef struct {
  * use (s32)&g_gameState to prevent CC1PSX symbol+constant folding.
  */
 typedef struct {
-    /* 0x000 */ u8            pad000[4];                   /**< Save header prefix. */
-    /* 0x004 */ u16           unk004;
-    /* 0x006 */ u8            pad006[0x018 - 0x006];
-    /* 0x018 */ u8            squallName[12];              /**< Squall's name (null-terminated). */
-    /* 0x024 */ u8            rinoaName[12];               /**< Rinoa's name (null-terminated). */
-    /* 0x030 */ u8            angeloName[12];              /**< Angelo's name (null-terminated). */
-    /* 0x03C */ u8            bokoName[12];                /**< Boko's name (null-terminated). */
-    /* 0x048 */ u8            unk048;
-    /* 0x049 */ u8            pad049[7];
-    /* 0x050 */ GfSaveData    gfs[GF_COUNT];               /**< GF save data (16 × 68 bytes). */
-    /* 0x490 */ CharacterData chars[CHARACTER_COUNT];      /**< Character data (8 × 152 bytes). */
-    /* 0x950 */ ShopData      shops[SHOP_COUNT];           /**< Shop inventory (20 × 20 bytes). */
-    /* 0xAE0 */ GameConfig    config;                      /**< Game config (20 bytes). */
-    /* 0xAF4 */ SaveMainData  mainData;                     /**< Party/items/battle state (580 bytes). */
-    /* 0xD38 */ u8            battleParty[4];              /**< Battle party member IDs (mirrors party.party). */
-    /* 0xD3C */ u8             padD3C[4];        /**< Battle vars / misc. */
-    /* 0xD40 */ CameraSnapshot cameraSnapshot;   /**< Camera/field snapshot (saved across battle). */
-    /* 0xD5E */ u8             padD5D[2];        /**< Battle vars / misc (continued). */
-    /* 0xD60 */ FieldVars     fieldVars;                   /**< Steps, SeeD rank, counters (@c &g_gameState.fieldVars == @c g_fieldVars). */
-    /* 0xE58 */ u8            padE58[0x08];                /**< Trailing 8 bytes of the 0xD60 region; not part of @ref FieldVars (the field-reset wipe stops at 0xE58) and read by nothing so far. */
-    /* 0xE60 */ u8            padE60[0x400];               /**< Field script vars, TT rules. */
-    /* 0x1260 */ u8           pad1260[0x80];               /**< World map position/vehicles. */
-    /* 0x12E0 */ TripleTriadData cards;                    /**< Triple Triad data (128 bytes). */
+    /* 0x000 */ u8                pad000[4];                   /**< Save header prefix. */
+    /* 0x004 */ u16               unk004;
+    /* 0x006 */ u8                pad006[0x018 - 0x006];
+    /* 0x018 */ u8                squallName[12];              /**< Squall's name (null-terminated). */
+    /* 0x024 */ u8                rinoaName[12];               /**< Rinoa's name (null-terminated). */
+    /* 0x030 */ u8                angeloName[12];              /**< Angelo's name (null-terminated). */
+    /* 0x03C */ u8                bokoName[12];                /**< Boko's name (null-terminated). */
+    /* 0x048 */ u8                unk048;
+    /* 0x049 */ u8                pad049[7];
+    /* 0x050 */ GfSaveData        gfs[GF_COUNT];               /**< GF save data (16 × 68 bytes). */
+    /* 0x490 */ CharacterData     chars[CHARACTER_COUNT];      /**< Character data (8 × 152 bytes). */
+    /* 0x950 */ ShopData          shops[SHOP_COUNT];           /**< Shop inventory (20 × 20 bytes). */
+    /* 0xAE0 */ GameConfig        config;                      /**< Game config (20 bytes). */
+    /* 0xAF4 */ SaveMainData      mainData;                     /**< Party/items/battle state (580 bytes). */
+    /* 0xD38 */ u8                battleParty[4];              /**< Battle party member IDs (mirrors party.partyMembers). */
+    /* 0xD3C */ u8                padD3C[4];        /**< Battle vars / misc. */
+    /* 0xD40 */ CameraSnapshot    cameraSnapshot;   /**< Camera/field snapshot (saved across battle). */
+    /* 0xD5E */ u8                padD5D[2];        /**< Battle vars / misc (continued). */
+    /* 0xD60 */ FieldVars         fieldVars;                   /**< Steps, SeeD rank, counters (@c &g_gameState.fieldVars == @c g_fieldVars). */
+    /* 0xE58 */ u8                padE58[0x08];                /**< Trailing 8 bytes of the 0xD60 region; not part of @ref FieldVars (the field-reset wipe stops at 0xE58) and read by nothing so far. */
+    /* 0xE60 */ u8                padE60[0x400];               /**< Field script vars, TT rules. */
+    /* 0x1260 */ u8               pad1260[0x80];               /**< World map position/vehicles. */
+    /* 0x12E0 */ TripleTriadData  cards;                    /**< Triple Triad data (128 bytes). */
     /* 0x1360 */ ChocoboWorldData chocobo;                 /* D_800786D8 *< Chocobo World data (64 bytes). */
 } GameState; /* 0x13A0 = 5024 bytes */
 

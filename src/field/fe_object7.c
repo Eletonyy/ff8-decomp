@@ -230,7 +230,7 @@ s32 func_800B5990(void) {
     recalcPartyStats();
 
     for (i = 0; i < 3; i++) {
-        if (g_gameState.mainData.party.party[i] != 0xFF) {
+        if (g_gameState.mainData.party.partyMembers[i] != 0xFF) {
             if (g_battleChars.chars[i].fieldStatusByte & 2) {
                 return 1;
             }
@@ -398,7 +398,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
     case 6:
         if (g_battleChars.chars[D_800DE4D3].fieldStatusByte & 2) {
             for (i = 0; i < D_800DE4D0; i++) {
-                if (func_800211B4(g_gameState.mainData.party.party[D_800DE4D3], tableResult & 0x3F)) {
+                if (func_800211B4(g_gameState.mainData.party.partyMembers[D_800DE4D3], tableResult & 0x3F)) {
                     break;
                 }
             }

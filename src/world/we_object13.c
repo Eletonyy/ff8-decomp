@@ -331,7 +331,7 @@ void func_800C48C0(void) {
  * stays below the slot's @c hpRegenCap (stored in the BattleCharData at
  * offset 0x174). Paired with @c func_800C48C0 which does the same for GF HP.
  *
- * @note Match requires reading @c g_gameState.mainData.party.party[i] and
+ * @note Match requires reading @c g_gameState.mainData.party.partyMembers[i] and
  *       @c g_gameState.chars[charIdx].currentHp directly at each use site
  *       (not through cached locals) — identical pattern to func_800C48C0.
  */
@@ -339,15 +339,15 @@ void func_800C492C(void) {
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        u8 charIdx = g_gameState.mainData.party.party[i];
+        u8 charIdx = g_gameState.mainData.party.partyMembers[i];
         if (charIdx != 0xFF) {
             if (g_battleChars.chars[i].fieldStatusByte & 1) {
-                u16 hp = g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp;
+                u16 hp = g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp;
                 if (hp != 0) {
-                    if ((s32)g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp <
+                    if ((s32)g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp <
                         (s32)g_battleChars.chars[i].hpRegenCap) {
-                        g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp =
-                            g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp + 1;
+                        g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp =
+                            g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp + 1;
                     }
                 }
             }

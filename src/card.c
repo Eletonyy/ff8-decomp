@@ -283,8 +283,8 @@ clamped_done:
         }
     }
 
-    savedSlot = g_gameState.mainData.party.party[0];
-    g_gameState.mainData.party.party[0] = charIndex;
+    savedSlot = g_gameState.mainData.party.partyMembers[0];
+    g_gameState.mainData.party.partyMembers[0] = charIndex;
     recalcPartyStats();
 
     do {
@@ -293,7 +293,7 @@ clamped_done:
 
     chr->currentHp = g_battleChars.chars[0].hpRegenCap;
 
-    g_gameState.mainData.party.party[0] = savedSlot;
+    g_gameState.mainData.party.partyMembers[0] = savedSlot;
     recalcPartyStats();
 }
 
@@ -311,28 +311,28 @@ void func_80036C74(void) {
     u8 tmp;
 
     for (i = 0; i < 3; i++) {
-        if (g_gameState.mainData.party.party[i] == 0xFF) {
+        if (g_gameState.mainData.party.partyMembers[i] == 0xFF) {
             return;
         }
     }
 
     for (i = 0; i < 3; i++) {
-        if (g_gameState.mainData.party.party[i] != 0) {
+        if (g_gameState.mainData.party.partyMembers[i] != 0) {
             first = i;
             break;
         }
     }
 
     for (i = 0; i < 3; i++) {
-        if ((g_gameState.mainData.party.party[i] != 0) && (first != i)) {
+        if ((g_gameState.mainData.party.partyMembers[i] != 0) && (first != i)) {
             second = i;
             break;
         }
     }
 
-    tmp = g_gameState.mainData.party.party[second];
-    g_gameState.mainData.party.party[second] = g_gameState.mainData.party.party[first];
-    g_gameState.mainData.party.party[first] = tmp;
+    tmp = g_gameState.mainData.party.partyMembers[second];
+    g_gameState.mainData.party.partyMembers[second] = g_gameState.mainData.party.partyMembers[first];
+    g_gameState.mainData.party.partyMembers[first] = tmp;
 }
 
 
@@ -372,7 +372,7 @@ void func_80036D44(s32 mask) {
     g_gameState.chars[0].characterId = 8;
     newSlots[0] = 8;
     for (i = 0; i < 3; i++) {
-        u8 slot = g_gameState.mainData.party.party[i];
+        u8 slot = g_gameState.mainData.party.partyMembers[i];
         if (slot == 0xFF) {
             continue;
         }
@@ -387,11 +387,11 @@ void func_80036D44(s32 mask) {
                 newSlots[slotCount] = abilityId;
                 slotCount++;
             } else {
-                g_gameState.mainData.party.party[i] = 0xFF;
+                g_gameState.mainData.party.partyMembers[i] = 0xFF;
             }
             abilityId++;
         } else {
-            g_gameState.mainData.party.party[i] = 0xFF;
+            g_gameState.mainData.party.partyMembers[i] = 0xFF;
         }
     }
 
@@ -423,9 +423,9 @@ void func_80036D44(s32 mask) {
  * @param charId Character ID for the party leader.
  */
 void setPartyLeader(s32 charId) {
-    g_gameState.mainData.party.party[0] = charId;
-    g_gameState.mainData.party.party[1] = 0xFF;
-    g_gameState.mainData.party.party[2] = 0xFF;
+    g_gameState.mainData.party.partyMembers[0] = charId;
+    g_gameState.mainData.party.partyMembers[1] = 0xFF;
+    g_gameState.mainData.party.partyMembers[2] = 0xFF;
     recalcPartyStats();
 }
 
@@ -447,7 +447,7 @@ s32 func_80036EC0(void) {
     if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
         partyMask = 0;
         for (i = 0; i < 3; i++) {
-            u8 slot = g_gameState.mainData.party.party[i];
+            u8 slot = g_gameState.mainData.party.partyMembers[i];
             if (slot != 0xFF) {
                 partyMask |= (1 << slot);
             }
@@ -513,8 +513,8 @@ void func_80036FE0(s32 charIdx) {
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        saved[i] = g_gameState.mainData.party.party[i];
-        g_gameState.mainData.party.party[i] = 0xFF;
+        saved[i] = g_gameState.mainData.party.partyMembers[i];
+        g_gameState.mainData.party.partyMembers[i] = 0xFF;
     }
 
     setPartyLeader(charIdx);
@@ -523,7 +523,7 @@ void func_80036FE0(s32 charIdx) {
     g_gameState.chars[charIdx].statusFlags &= 0x80;
 
     for (i = 0; i < 3; i++) {
-        g_gameState.mainData.party.party[i] = saved[i];
+        g_gameState.mainData.party.partyMembers[i] = saved[i];
     }
 
     recalcPartyStats();

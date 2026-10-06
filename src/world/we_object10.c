@@ -102,7 +102,7 @@ s32 func_800BD7A4(s32 unused, s32 amount) {
  * @brief Locate the active-party slot whose character matches battleParty[charIdx].
  *
  * Looks up the character id stored in @c g_gameState.battleParty[charIdx]
- * and scans @c g_gameState.mainData.party.party[0..2] for the first slot
+ * and scans @c g_gameState.mainData.party.partyMembers[0..2] for the first slot
  * whose id matches. Returns that slot index (0-2), or 0 if no match.
  *
  * @note A zero return is ambiguous — it's also returned on no-match.
@@ -115,7 +115,7 @@ s32 func_800BD7E4(s32 charIdx) {
     u8 target = gs->battleParty[charIdx];
     s32 i;
     for (i = 0; i < 3; i++) {
-        if (gs->mainData.party.party[i] == target) {
+        if (gs->mainData.party.partyMembers[i] == target) {
             return i;
         }
     }

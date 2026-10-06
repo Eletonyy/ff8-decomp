@@ -360,7 +360,7 @@ void func_800B21B4(void) {
     s32 i;
     
     for (i = 0; i < 3; i++) {
-        D_800EE9E8.subEntries[i].array0[0].unk3 = g_gameState.mainData.party.party[i];
+        D_800EE9E8.subEntries[i].array0[0].unk3 = g_gameState.mainData.party.partyMembers[i];
     }
 }
 

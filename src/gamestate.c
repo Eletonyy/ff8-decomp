@@ -203,7 +203,7 @@ void func_80037308(NameFont *font, u8 *out)
             scratchPtr = scratch;
             pen = scratch + SCRATCH_MARGIN;
 
-            charId = g_gameState.mainData.party.party[slot];
+            charId = g_gameState.mainData.party.partyMembers[slot];
 
             if (charId == PARTY_SLOT_EMPTY) {
                 continue;
@@ -544,7 +544,7 @@ u8 findPartySlot(u8 characterId) {
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        if (g_gameState.mainData.party.party[i] == characterId) {
+        if (g_gameState.mainData.party.partyMembers[i] == characterId) {
             return i;
         }
     }

@@ -278,17 +278,17 @@ void func_800AD5D4(s32 partySlot, u8* arg1) {
     if ((arg1 != 0) && (partySlot < 3)) {
         for (i = 0; i < 16; i++) {
             if (g_gameState.gfs[i].exists & 1) {
-                g_gameState.chars[g_gameState.mainData.party.party[partySlot]].gfCompatibility[i] = 
-                    g_gameState.chars[g_gameState.mainData.party.party[partySlot]].gfCompatibility[i] + arg1[i] - 100;
+                g_gameState.chars[g_gameState.mainData.party.partyMembers[partySlot]].gfCompatibility[i] = 
+                    g_gameState.chars[g_gameState.mainData.party.partyMembers[partySlot]].gfCompatibility[i] + arg1[i] - 100;
     
                 
-                if (g_gameState.chars[g_gameState.mainData.party.party[partySlot]].gfCompatibility[i] > 6000) {
-                    g_gameState.chars[g_gameState.mainData.party.party[partySlot]].gfCompatibility[i] = 6000;
+                if (g_gameState.chars[g_gameState.mainData.party.partyMembers[partySlot]].gfCompatibility[i] > 6000) {
+                    g_gameState.chars[g_gameState.mainData.party.partyMembers[partySlot]].gfCompatibility[i] = 6000;
                 }
                 
                 
-                if (g_gameState.chars[g_gameState.mainData.party.party[partySlot]].gfCompatibility[i] < 1000) {
-                    g_gameState.chars[g_gameState.mainData.party.party[partySlot]].gfCompatibility[i] = 1000;
+                if (g_gameState.chars[g_gameState.mainData.party.partyMembers[partySlot]].gfCompatibility[i] < 1000) {
+                    g_gameState.chars[g_gameState.mainData.party.partyMembers[partySlot]].gfCompatibility[i] = 1000;
                 }
             }
         }

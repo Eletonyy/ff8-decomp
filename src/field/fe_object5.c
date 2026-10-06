@@ -340,7 +340,7 @@ s32 opHandler_JUNCTION(ScriptContext *context) {
     if (saveMode != 0) {
         for (i = 0; i < 3; i++) {
             g_fieldVars->partyOrderA[i] = g_gameState.battleParty[i];
-            g_fieldVars->partyOrderB[i] = g_gameState.mainData.party.party[i];
+            g_fieldVars->partyOrderB[i] = g_gameState.mainData.party.partyMembers[i];
         }
 
         if (popped & 2) {
@@ -361,7 +361,7 @@ s32 opHandler_JUNCTION(ScriptContext *context) {
 
     for (i = 0; i < 3; i++) {
         g_gameState.battleParty[i] = g_fieldVars->partyOrderA[i];
-        g_gameState.mainData.party.party[i] = g_fieldVars->partyOrderB[i];
+        g_gameState.mainData.party.partyMembers[i] = g_fieldVars->partyOrderB[i];
     }
     return 3;
 }

@@ -188,9 +188,9 @@ void func_801E2ABC(TutoState *output) {
         nameOff += 0x44;
     }
 
-    g_gameState.mainData.party.party[0] = 0;
-    g_gameState.mainData.party.party[1] = 1;
-    g_gameState.mainData.party.party[2] = 4;
+    g_gameState.mainData.party.partyMembers[0] = 0;
+    g_gameState.mainData.party.partyMembers[1] = 1;
+    g_gameState.mainData.party.partyMembers[2] = 4;
     g_gameState.battleParty[0] = 0;
     g_gameState.battleParty[1] = 1;
     g_gameState.battleParty[2] = 4;
@@ -210,9 +210,9 @@ void func_801E2ABC(TutoState *output) {
 
         output->fadeAlpha = mask;
         output->pageIndex.b.hi = count;
-        g_gameState.mainData.party.party[0] = 1;
-        g_gameState.mainData.party.party[1] = 0;
-        g_gameState.mainData.party.party[2] = 5;
+        g_gameState.mainData.party.partyMembers[0] = 1;
+        g_gameState.mainData.party.partyMembers[1] = 0;
+        g_gameState.mainData.party.partyMembers[2] = 5;
         g_gameState.battleParty[0] = 0;
         g_gameState.battleParty[1] = 1;
         g_gameState.battleParty[2] = 5;

@@ -211,12 +211,12 @@ void func_800A1F74(SubEntry* arg0) {
 void func_800A2008(s32 attackerId, s32 targetId, s32 arg2) {
     if (attackerId < 3 && targetId > 2) { // if the attacker is a party member and the target is an enemy
         if (arg2 != 254) {
-            g_gameState.chars[g_gameState.mainData.party.party[attackerId]].kills++;
+            g_gameState.chars[g_gameState.mainData.party.partyMembers[attackerId]].kills++;
         }
     }
 
     if (targetId < 3) { // if the target is a party member
-        g_gameState.chars[g_gameState.mainData.party.party[targetId]].kos++;
+        g_gameState.chars[g_gameState.mainData.party.partyMembers[targetId]].kos++;
     }
 }
 
@@ -1026,7 +1026,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
             var_s2 = 0;
             if (!(D_800ED148.entities[arg0].status & 0x10)) {
                 func_800A4618(
-                    ((g_gameState.chars[g_gameState.mainData.party.party[arg0]].gfCompatibility[arg2 - 64] * (g_gameState.config.battleSpeed + 1)) / 35),
+                    ((g_gameState.chars[g_gameState.mainData.party.partyMembers[arg0]].gfCompatibility[arg2 - 64] * (g_gameState.config.battleSpeed + 1)) / 35),
                     arg0,
                     254,
                     arg2,

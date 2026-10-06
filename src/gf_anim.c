@@ -313,7 +313,7 @@ void recalcAllGfStats(void) {
 /**
  * @brief Recalculate stats for all 3 party members and their GFs.
  * @note Resets D_80078DF8, then for each of the 3 party slots reads the
- *       character ID from g_gameState.mainData.party.party[i] and calls
+ *       character ID from g_gameState.mainData.party.partyMembers[i] and calls
  *       func_80022E08 and func_800231E0. Finally calls recalcAllGfStats for GFs.
  */
 void recalcPartyStats(void) {
@@ -322,8 +322,8 @@ void recalcPartyStats(void) {
     g_battleChars.abilityFlags = 0;
 
     for (i = 0; i < 3; i++) {
-        func_80022E08(g_gameState.mainData.party.party[i], i);
-        func_800231E0(g_gameState.mainData.party.party[i], i);
+        func_80022E08(g_gameState.mainData.party.partyMembers[i], i);
+        func_800231E0(g_gameState.mainData.party.partyMembers[i], i);
     }
 
     recalcAllGfStats();

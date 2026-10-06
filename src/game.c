@@ -595,7 +595,7 @@ s32 hasJunctionedAbility(s32 partySlot, s32 abilityId) {
 
     if (abilityId == 0) return 0;
 
-    slot_id = g_gameState.mainData.party.party[partySlot];
+    slot_id = g_gameState.mainData.party.partyMembers[partySlot];
     i = 0;
     while (i < 20) {
         if (g_gameState.chars[slot_id].junctions[i] == abilityId) {
@@ -691,7 +691,7 @@ default_case:
  * @note The stat at ptr+2 (likely HP or experience) is read as u16, added to a1, then clamped by clampToMaxHp.
  */
 void addCharMaxHp(s32 partyIdx, s32 amount) {
-    u8 idx = g_gameState.mainData.party.party[partyIdx];
+    u8 idx = g_gameState.mainData.party.partyMembers[partyIdx];
     CharacterData *ch = &g_gameState.chars[idx];
     ch->maxHp = clampToMaxHp(ch->maxHp + amount);
 }
