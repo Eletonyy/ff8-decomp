@@ -175,13 +175,12 @@ s32 func_801E5F48(s32 a0, s32 a1) {
     s32 i;
 
     for (i = 0; i < 32; i++, slot++) {
-        s32 id = *slot;
-        slot++;
+        s32 id = *slot++;
         
         if (a1 == id) {
-            s32 val = *slot;
-            if (val != 0) {
-                return val;
+            s32 quantity = *slot; 
+            if (quantity != 0) {
+                return quantity;
             }
         }
     }

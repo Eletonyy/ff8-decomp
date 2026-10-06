@@ -184,20 +184,18 @@ void func_801E5A28(s32 arg0, s32 arg1) {
 void func_801E5B00(s32 arg0, s32 arg1) {
     s32 i;
     u8 *src;
-    u8 *slot = g_gameState.chars[arg0].junctions;
+    u8 *dst = g_gameState.chars[arg0].junctions;
 
     src = D_801ECF60[arg1].unk00;
     for (i = 0; i < 0x13; i++) {
-        *slot = *src;
-        src++;
-        slot++;
+        *dst++ = *src++;
     }
 
     g_gameState.chars[arg0].currentHp = D_801ED010[arg1];
-    slot = &g_gameState.chars[arg0].magic[0].magicId;
+    dst = &g_gameState.chars[arg0].magic[0].magicId;
     src = D_801ECF90[arg1].unk00;
     for (i = 0; i < 0x40; i++) {
-        *slot++ = *src++;
+        *dst++ = *src++;
     }
 
     func_801F1B4C(arg0);
@@ -266,25 +264,23 @@ s32 func_801E5C50(s32 charIdx, s32 spellId) {
  * @return Quantity of the spell, or 0 if not found.
  */
 s32 func_801E5CAC(s32 charIdx, s32 spellId) {
-    u8 *slot = &g_gameState.chars[charIdx].magic[0].magicId;
     s32 i;
     s32 result;
+    u8 *slot = &g_gameState.chars[charIdx].magic[0].magicId;
 
-    if (spellId == 0) { result = 0; goto end; }
-    i = 0;
-    do {
-        u8 magicId = *slot;
-        slot++;
+    if (spellId == 0) { 
+        return 0;     
+    }
+
+    for (i = 0; i < MAGIC_SLOT_COUNT; i++, slot++) {
+        u8 magicId = *slot++;
+
         if (spellId == magicId) {
-            result = *slot;
-            goto end;
+            return *slot;
         }
-        i++;
-        slot++;
-    } while (i < MAGIC_SLOT_COUNT);
-    result = 0;
-end:
-    return result;
+    }
+    
+    return 0;
 }
 
 /**

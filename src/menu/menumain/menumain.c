@@ -2248,9 +2248,11 @@ s32 func_801F77F8(s32 a0, s32 a1, s32 a2) {
     u8 *junctionSlot = g_gameState.chars[a0].junctions;
     s32 i;
     for (i = 0; i < 19; i++) {
-        if (*junctionSlot++ != a1) continue;
-        return i;
+        if (*junctionSlot++ == a1) {
+            return i;
+        }  
     }
+
     return a2;
 }
 
@@ -2283,8 +2285,8 @@ void func_801F78D8(s32 a0, s32 a1) {
 
 /** @brief Apply vibration config setting from g_gameState.config.flags bit 1. */
 void func_801F7928(void) {
-    s32 val = g_gameState.config.flags & 2;
-    sndSelectMode(val != 0);
+    s32 flags = g_gameState.config.flags & 2;
+    sndSelectMode(flags != 0);
 }
 
 /** @brief Apply the Vibration option to pad port 0. */

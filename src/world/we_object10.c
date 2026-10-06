@@ -1056,11 +1056,11 @@ s32 func_800BEF6C(void) {
 
 /** Checks two flag bits and returns status. */
 s32 func_800BEFC4(void) {
-    u8 flag = g_gameState.chocobo.flags;
+    s32 flags = g_gameState.chocobo.flags;
     s32 result = 0;
     
-    if (flag & 1) {
-        u32 bit = flag & 2;
+    if (flags & 1) {
+        u32 bit = flags & 2;
         result = bit == 0? 1 : 0;
     }
     
