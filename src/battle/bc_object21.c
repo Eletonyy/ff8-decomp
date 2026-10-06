@@ -1,4 +1,5 @@
 #include "common.h"
+#include "battle.h"
 #include "battle/bc_object21.h"
 #include "psxsdk/libapi.h"
 
@@ -6,7 +7,6 @@ extern u8 D_80103180[];
 extern u8 D_80103182[];
 extern u8 D_80103184[];
 extern u8 D_80103188[];
-extern u8 D_80078752[];
 extern u8 D_80103230[];
 extern u8 D_80103340[];
 extern u8 D_801031A0[];
@@ -196,43 +196,43 @@ void func_800DF7C8(s32 a0, s32 a1) {
 }
 
 /** @brief Wrapper for setDialogTextOrigin. */
-void func_800DF804(void) {
-    setDialogTextOrigin();
+void func_800DF804(s32 arg0, s32 arg1, s32 arg2) {
+    setDialogTextOrigin(arg0, arg1, arg2);
 }
 
 /** @brief Wrapper for setDialogMessage. */
-void func_800DF824(void) {
-    setDialogMessage();
+void func_800DF824(s32 arg0, u8* arg1) {
+    setDialogMessage(arg0, arg1);
 }
 
 /** @brief Wrapper for closeDialogInstant. */
-void func_800DF844(void) {
-    closeDialogInstant();
+void func_800DF844(s32 arg0) {
+    closeDialogInstant(arg0);
 }
 
 /** @brief Wrapper for openDialogInstant. */
-void func_800DF864(void) {
-    openDialogInstant();
+void func_800DF864(s32 arg0) {
+    openDialogInstant(arg0);
 }
 
 /** @brief Wrapper for setDialogRect. */
-void func_800DF884(void) {
-    setDialogRect();
+void func_800DF884(s32 arg0, RECT* arg1) {
+    setDialogRect(arg0, arg1);
 }
 
 /** @brief Wrapper for setDialogTextSpeed. */
-void func_800DF8A4(void) {
-    setDialogTextSpeed();
+void func_800DF8A4(s32 arg0, s32 arg1) {
+    setDialogTextSpeed(arg0, arg1);
 }
 
 /** @brief Wrapper for setDialogAnimSpeed. */
-void func_800DF8C4(void) {
-    setDialogAnimSpeed();
+void func_800DF8C4(s32 arg0, s32 arg1) {
+    setDialogAnimSpeed(arg0, arg1);
 }
 
 /** @brief Wrapper for setDialogCornerIcon. */
-void func_800DF8E4(void) {
-    setDialogCornerIcon();
+void func_800DF8E4(s32 arg0, s32 arg1) {
+    setDialogCornerIcon(arg0, arg1);
 }
 
 /** @brief Wrapper for resetAllDialogs. */
@@ -261,13 +261,13 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object21", func_800E0214);
 /**
  * @brief Get pointer to entity data at given index.
  *
- * Computes D_80078752 + index * 464 (0x1D0 stride per entity).
+ * returns a pointer to g_battleChars.chars[index].testSlots.
  *
  * @param index Entity index.
  * @return Pointer to entity data.
  */
-u8 *func_800E034C(s32 index) {
-    return D_80078752 + index * 464;
+BattleTestSlot* func_800E034C(s32 index) {
+    return g_battleChars.chars[index].testSlots;
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object21", func_800E0370);

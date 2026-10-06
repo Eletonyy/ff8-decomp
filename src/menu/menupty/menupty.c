@@ -1,10 +1,10 @@
 #include "common.h"
 #include "menupty.h"
+#include "gamestate.h"
 
 static const s16 D_801E9528[4];
 static const s16 D_801E9530[4];
 extern u8 D_801E9540;
-extern u8 g_characters[];
 
 INCLUDE_ASM("asm/ovl/menupty/nonmatchings/menupty", func_801E5800);
 
@@ -139,27 +139,30 @@ INCLUDE_ASM("asm/ovl/menupty/nonmatchings/menupty", func_801E7318);
  * @brief Build bitmask of characters with specific status flag.
  *
  * For each of 8 character slots, checks if the input bitmask has the
- * character's bit set AND the character's status halfword at g_characters+0x94
+ * character's bit set AND the character's status halfword at g_gameState.chars
  * (stride 152) has bit 2 set. Returns a combined bitmask.
  *
  * @param a0 Input character bitmask.
  * @return Filtered bitmask of characters matching the criteria.
  */
-s32 func_801E74DC(s32 a0) {
-    u8 *ptr = g_characters;
-    s32 result = 0;
-    s32 i = 0;
-    s32 one = 1;
-    do {
-        s32 mask = one << i;
-        if ((a0 & mask) != 0) {
-            if (*(u16 *)(ptr + 0x94) & 4) {
-                result |= mask;
-            }
+s32 func_801E74DC(s32 arg0) {
+    s32 i;
+    s32 bit;
+    s32 result;
+    CharacterData* charData;
+    
+    charData = g_gameState.chars;
+    result = 0;
+    
+    for (i = 0; i < 8; i++) {
+        bit = 1 << i;
+        if ((arg0 & bit) && (charData->exists & 4)) {
+            result |= bit;
         }
-        i++;
-        ptr += 0x98;
-    } while (i < 8);
+        
+        charData++;
+    } 
+    
     return result;
 }
 
@@ -172,21 +175,24 @@ s32 func_801E74DC(s32 a0) {
  * @param a0 Input character bitmask.
  * @return Filtered bitmask of characters matching the criteria.
  */
-s32 func_801E7530(s32 a0) {
-    u8 *ptr = g_characters;
-    s32 result = 0;
-    s32 i = 0;
-    s32 one = 1;
-    do {
-        s32 mask = one << i;
-        if ((a0 & mask) != 0) {
-            if (*(u16 *)(ptr + 0x94) & 2) {
-                result |= mask;
-            }
+s32 func_801E7530(s32 arg0) {
+    s32 i;
+    s32 bit;
+    s32 result;
+    CharacterData* charData;
+    
+    charData = g_gameState.chars;
+    result = 0;
+    
+    for (i = 0; i < 8; i++) {
+        bit = 1 << i;
+        if ((arg0 & bit) && (charData->exists & 2)) {
+            result |= bit;
         }
-        i++;
-        ptr += 0x98;
-    } while (i < 8);
+        
+        charData++;
+    } 
+    
     return result;
 }
 

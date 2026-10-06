@@ -22,9 +22,9 @@
 /** @brief Battle command config (g_battleConfig). */
 typedef struct {
     u16 battleSceneId;
-    u16 unk2;            // Flags?, when first bit is set, escape it not possible (D_80082C0A)
+    u16 unk2;            // Flags?, when first bit is set, escape it not possible
     u8  unk4[3];         // Post battle command queue?
-    u8  result;          /**< Battle result (BATTLE_RESULT_*). (D_80082C0F) */
+    u8  result;          /**< Battle result (BATTLE_RESULT_*). */
     u8  unk8;
     u8  unk9;            /**< Bit 0 toggles the @c FieldVars.soundBankSelector at field-VM init. */
 } BattleConfig;
@@ -74,7 +74,6 @@ typedef struct {
     u8 dstData1[12];
     u8 dstData2[12];
 } BlitParams;
-
 
 typedef enum {
     CTRL_ACTIVE     = 0x01,
@@ -126,7 +125,8 @@ typedef struct {
     u8 unkFD;
     u8 unkFE;
     u8 unkFF;
-    u8 pad100[4];
+    u16 unk100;
+    u16 unk102;
     Struct_func_800A8794 unk104[3][3];
     u8 unk14C;
     u8 unk14D;
@@ -424,7 +424,7 @@ typedef struct {
     /* 0x132F */ u8 pad132F;
     /* 0x1330 */ u16 unk1330[3];
     /* 0x1338 */ s32 unk1338[1];
-} BattleSystem; /* 0x133C */
+} BattleSystem; /* 0x133C (real size undefined) */
 
 /** @brief 5-byte slot in @c BattleAnimTable.animSlots. */
 typedef struct {
@@ -569,23 +569,18 @@ typedef struct {
     /* 0x1C7 */ u8 statCoefs[9];       /**< Stat coefficient table (HP, str, vit, mag, spr, spd, ?, eva, hit). */
 } BattleCharData;    /* 0x1D0: 464 bytes */
 
-/** @brief GF battle entry (12 bytes, used for GF HP in battle). */
-typedef struct {
-    u8 unk0[8];
-    u16 maxHp;          /* max HP cap (used to restore hp on revive) */
-    s16 hp;             /* current HP */
-} BattleGfEntry;
-
 /** @brief GF battle level entry (12 bytes). */
 typedef struct {
-    u8 level;
-    u8 unk1;
-    u8 pad2;
-    u8 unk3;
-    u8 abilityFlags;    /* party ability flags (used in entry 15). */
+    s16 maxHp;
+    s16 hp;
+    u8 pad4;
     u8 pad5;
-    u8 unk6;
-    u8 pad7[5];
+    u8 pad6;
+    u8 pad7;
+    u8 level;
+    u8 unk9;
+    u8 padA;
+    u8 unkB;
 } BattleLevelEntry;
 
 typedef struct{
@@ -604,9 +599,10 @@ typedef struct {
     /* 0x5A0 */ u16 unk5A0[16];
     /* 0x5C0 */ u16 unk5C0[16];
     /* 0x5E0 */ splitStruct unk5E0[24];
-    /* 0x610 */ BattleGfEntry gfEntries[1];       /* hp sub-array (stride 12, 16 entries) */
-    /* 0x61C */ u8 pad61C[0x620 - 0x61C];
-    /* 0x620 */ BattleLevelEntry levelEntries[16]; /* 16 × 12 bytes */
+    /* 0x610 */ u8 unk610[8];
+    /* 0x618 */ BattleLevelEntry levelEntries[16]; /* 16 × 12 bytes */
+    /* 0x6D8 */ u8 abilityFlags;
+    /* 0x6D9 */ u8 pad6D9[7];
 } BattleCharState; /* 0x6E0 */
 
 
@@ -654,15 +650,12 @@ typedef struct {
     u16 z;
 } BattlePosXZ;
 
+typedef struct {
+    u8 pad[0x50];
+} TempNameStruct;
+
 /**
  * @brief Battle command queue / scratch buffer at @c 0x800EE4C0.
- *
- * Used by the bc_object2 / bc_object4 / bc_object8 paths to stage
- * incoming command bytes (@c unk00 / @c unk01) plus flag state (the
- * @c flags5 / @c flags6 byte pair) and a couple of derived values
- * (@c unk0C, @c statusCode). Fields with @c unkXX names have known
- * offsets but unconfirmed semantics; @c padNN regions cover bytes
- * that haven't been mapped yet.
  */
 typedef struct {
     /* 0x00 */ u8 unk0;         /**< Command byte 0 (copied from status[0] during init). */
@@ -684,8 +677,9 @@ typedef struct {
     /* 0x1C */ u16 statusCode;   /**< Status/command code; compared against 0x49 in func_8009D68C. */
     /* 0x1E */ u16 unk1E;
     /* 0x20 */ u16 unk20;
-    /* 0x22 */ u8 pad22[30];
-} BattleCmdBuf;   /* 64 bytes */
+    /* 0x22 */ u8 pad22[6];
+    /* 0x28 */ TempNameStruct something[1];
+} BattleCmdBuf;  /* 0x78 (real size undefined) */
 
 /** @brief Animated 3D particle/effect entry processed by @c bc_object16.c. */
 typedef struct {
@@ -737,8 +731,7 @@ extern s16             D_8005F11C;
 extern u8              D_8005F170;   /**< Cleared once at boot by loadKernel and set only by
                                             battle_render's entry, which only gameStateLoop state 4
                                             reaches; gates the magic menu's refill-all shortcut. */
-extern BattleCharState g_battleChars; // 0x80078720
-//D_80078DF8 = g_battleChars.levelEntries[15].abilityFlags
+extern BattleCharState g_battleChars;  // 0x80078720
 extern BattleConfig    g_battleConfig; // 0x80082C08
 extern u8              D_80098030[];
 extern BattleSceneCtx* D_800D244C;
@@ -752,6 +745,7 @@ extern u8              D_800E3CC5;
 extern u8              D_800E3CC6;
 extern u8              D_800E3CE8;
 extern u8              D_800E3CEC[];
+extern u8              D_800E3CF0;
 extern BattleSystem    D_800ED148;
 extern BattleCmdBuf    D_800EE4C0;
 extern BattleAnimTable D_800EE9E8; // (D_800EE9B3 = D_800EE9E8-3)
@@ -797,7 +791,7 @@ void func_800A1760(s32 arg0, BattleCharData* arg1);
 /** @brief Apply a stat-effect probe; outputs (a1=stat, a2=count). */
 
 /** @brief Format helper that writes into a caller-provided buffer. */
-u8 *func_800B04A0(s32 a0, u8 *buf);
+u8 *func_800B04A0(u32 a0, u8 *buf);
 
 /** @brief Concatenate two parts into the @c D_800EEBE8 message buffer. */
 

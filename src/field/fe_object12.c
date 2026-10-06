@@ -14,8 +14,6 @@
 #include "field/fe_object4.h"
 #include "field/fe_object12.h"
 
-extern u8 D_80077BA8[];
-
 /**
  * @brief Field-engine state initializer (new game / field reset).
  *
@@ -36,7 +34,7 @@ extern u8 D_80077BA8[];
  *    @ref FIELD_STATE_PARTY_OVERRIDE is set, also mirrors @c fieldF3 into @c g_battleConfig.unk8
  *    and @c GameConfig.sealedFeatures and replays @c opHandler_SETPARTY2.
  *  - Publishes @c field56 to @c D_80082C8D, pushes the expected disc to
- *    the CD layer (@c setDiscNumber, @c D_800773C0 = disc - 1), derives
+ *    the CD layer (@c setDiscNumber, @c g_gameState.unk048 = disc - 1), derives
  *    the salary-enabled flag from @ref FIELD_STATE_TRANSITION, and installs the
  *    @c stopAllSounds VSync callback and @c func_80037D40 draw callback.
  *
@@ -111,7 +109,7 @@ void SmInitEventAll(s32 fullReset)
     setDiscNumber(g_fieldVars->expectedDiscId);
     vfv = g_fieldVars; /* volatile view: forces the tail's reloads of disc/stateFlags */
     disc = vfv->expectedDiscId;
-    do { D_800773C0 = disc - 1; } while (0);
+    do { g_gameState.unk048 = disc - 1; } while (0);
     setSalaryEnabled((((u32)vfv->stateFlags >> 3) ^ 1) & 1);
     setVsyncCallback((s32)stopAllSounds);
     setDrawCallback((s32)func_80037D40);
@@ -163,12 +161,12 @@ s32 func_800C0410(s32 itemId) {
 }
 
 /**
- * Copies 0x40 bytes from D_80077BA8 - 0x98 to D_80077BA8 using memcopy,
- * then calls memzero16 with D_80077BA8 and mode 4.
+ * Copies 0x40 bytes from g_gameState.chars[5].magic to g_gameState.chars[6].magic using memcopy,
+ * then calls memzero16 with g_gameState.chars[6].magic and mode 4.
  */
 void func_800C0448(void) {
-    memcopy(D_80077BA8, D_80077BA8 - 0x98, 0x40);
-    memzero16((s32 *)D_80077BA8, 4);
+    memcopy(g_gameState.chars[6].magic, g_gameState.chars[5].magic, 0x40);
+    memzero16(g_gameState.chars[6].magic, 4);
 }
 
 /**
@@ -247,7 +245,7 @@ next_char:
  *
  * Walks all 32 magic slots of @c g_gameState.chars[7]; each stocked spell
  * (@c magicId @c != @c 0) is applied via @c func_800C048C, then the whole
- * magic list is zeroed. @c D_80077C40 aliases @c &g_gameState.chars[7].magic
+ * magic list is zeroed. @c g_gameState.chars[7].magic aliases @c &g_gameState.chars[7].magic
  * (same address, 64 bytes); @c memzero16 clears it in 16-byte units.
  */
 void func_800C0634(void) {
@@ -260,5 +258,5 @@ void func_800C0634(void) {
             func_800C048C(magicId, quantity);
         }
     }
-    memzero16((s32 *)D_80077C40, 4);
+    memzero16(g_gameState.chars[7].magic, 4);
 }

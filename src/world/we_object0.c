@@ -108,8 +108,6 @@ extern u8      D_800D23DC;   /**< Same byte as @c D_800D23D8[4]. */
 extern SVECTOR D_800D2450;
 extern s32    *D_800D245C;
 
-extern Slot   D_800785D8;   /**< Slot-state record the loop publishes at D_800D226C. */
-
 s32 func_800987D8(void)
 {
     s32 trigger;
@@ -143,7 +141,7 @@ s32 func_800987D8(void)
     sndResetState();
     D_800C97EA = WORLD_SCREEN_W;
     D_800C97E8 = WORLD_SCREEN_H;
-    D_800D226C = &D_800785D8;
+    D_800D226C = (Slot*)&g_gameState.pad1260;
     if (D_80082C8C.mode != 0) {
         D_80082C8C.cmd = D_800D226C->scene.cmd;
     } else {

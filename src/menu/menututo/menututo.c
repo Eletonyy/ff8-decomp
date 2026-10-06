@@ -188,9 +188,9 @@ void func_801E2ABC(TutoState *output) {
         nameOff += 0x44;
     }
 
-    g_gameState.mainData.party.party[0] = 0;
-    g_gameState.mainData.party.party[1] = 1;
-    g_gameState.mainData.party.party[2] = 4;
+    g_gameState.mainData.party.partyMembers[0] = 0;
+    g_gameState.mainData.party.partyMembers[1] = 1;
+    g_gameState.mainData.party.partyMembers[2] = 4;
     g_gameState.battleParty[0] = 0;
     g_gameState.battleParty[1] = 1;
     g_gameState.battleParty[2] = 4;
@@ -210,9 +210,9 @@ void func_801E2ABC(TutoState *output) {
 
         output->fadeAlpha = mask;
         output->pageIndex.b.hi = count;
-        g_gameState.mainData.party.party[0] = 1;
-        g_gameState.mainData.party.party[1] = 0;
-        g_gameState.mainData.party.party[2] = 5;
+        g_gameState.mainData.party.partyMembers[0] = 1;
+        g_gameState.mainData.party.partyMembers[1] = 0;
+        g_gameState.mainData.party.partyMembers[2] = 5;
         g_gameState.battleParty[0] = 0;
         g_gameState.battleParty[1] = 1;
         g_gameState.battleParty[2] = 5;
@@ -393,7 +393,7 @@ top:
             }
 
             if ((&D_801E4E18[ctx->sectionIndex])->panelId == 0x3E) {
-                if (D_800780AB == 0) {
+                if (g_gameState.mainData.tutoEntryCount == 0) {
                     sendSpuCommand(5);
                     break;
                 }
@@ -444,7 +444,7 @@ top:
         func_801E293C(0, ctx->sectionIndex);
         func_801E29F8(1, ctx);
 
-        if (D_800780AB >= 0xB) {
+        if (g_gameState.mainData.tutoEntryCount >= 0xB) {
             if (inputRepeat & PADLright) {
                 *statePtr = 0xA;
             }
@@ -459,7 +459,7 @@ top:
         }
 
         if (inputNew & PADRdown) {
-            if (ctx->entryIndex < D_800780AB) {
+            if (ctx->entryIndex < g_gameState.mainData.tutoEntryCount) {
                 s32 index = ctx->entryIndex;
                 sendSpuCommand(2);
                 D_801E4EC0 = ctx->entryIndex;
@@ -674,7 +674,7 @@ top:
         ctx->scrollPos = 0x1000;
         func_801F12F0();
 
-        ctx->pageCount = D_800780AB;
+        ctx->pageCount = g_gameState.mainData.tutoEntryCount;
         ctx->pageCount = (ctx->pageCount + 9) / 10;
 
         if ((&D_801E4E18[ctx->sectionIndex])->hasFlag != 0) {
@@ -943,7 +943,7 @@ u32 func_801E3F8C(TutoState *state, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
  * each section name with an appropriate color. Entries with loadCmd==0,
  * Chocobo World unavailable (panelId 0x3D, checked via func_801F7A54), or
  * PocketStation absent (panelId 0x3E, checked via g_gameState + 0xD33 /
- * D_800780AB) are rendered in grey (color 1); normal entries use color 7.
+ * g_gameState.mainData.tutoEntryCount) are rendered in grey (color 1); normal entries use color 7.
  * Also configures the display panel and draws the border.
  *
  * @param state Unused tutorial state pointer.
@@ -1023,7 +1023,7 @@ s32 func_801E4214(s32 renderCtx, s32 cursorY, s32 index, s32 startY, s32 x) {
     s32 xPos;
 
     endPos = (index * 10) + startY;
-    if (endPos >= D_800780AB) {
+    if (endPos >= g_gameState.mainData.tutoEntryCount) {
         return cursorY;
     }
 
@@ -1069,7 +1069,7 @@ u32 func_801E431C(TutoState *state, s32 renderCtx, s32 cursorY, s16 x, s16 y) {
     cfg->pageEnd = state->prevPage;
     cfg->scrollOffset = state->scrollAnim;
 
-    if (D_800780AB >= 0xB) {
+    if (g_gameState.mainData.tutoEntryCount >= 0xB) {
         cursorY = func_801F5F60(renderCtx, cursorY, g_menuTint[MENU_TINT_NORMAL], 3);
     }
 
@@ -1200,7 +1200,7 @@ s32 func_801E4598(TutoState *state, s32 renderCtx, s32 cursorY) {
  *
  * If registration succeeded, dispatches the main callback and primes
  * runtime state: scrollPos=0x1000, fadePos=0, pageCount based on
- * D_800780AB (10-page sections), fadeAlpha=0x1B, pageIndex.b.hi=3.
+ * g_gameState.mainData.tutoEntryCount (10-page sections), fadeAlpha=0x1B, pageIndex.b.hi=3.
  *
  * Finally, zeroes the two memory regions bracketing menututo's load
  * area: [0x801E5800..0x801EF800) (sibling menu overlay area above) and
@@ -1228,9 +1228,9 @@ void func_801E46DC(void) {
 
     if (ctx != NULL) {
         func_801E3140(ctx);
-        *(volatile s16 *)&ctx->scrollPos = 0x1000;
-        *(volatile s16 *)&ctx->fadePos = 0;
-        ctx->pageCount = ((s8)D_800780AB + 9) / 10;
+        ctx->scrollPos = 0x1000;
+        ctx->fadePos = 0;
+        ctx->pageCount = ((s8)g_gameState.mainData.tutoEntryCount + 9) / 10;
         ctx->fadeAlpha = 0x1B;
         ctx->pageIndex.b.hi = 3;
     }

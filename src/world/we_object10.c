@@ -102,7 +102,7 @@ s32 func_800BD7A4(s32 unused, s32 amount) {
  * @brief Locate the active-party slot whose character matches battleParty[charIdx].
  *
  * Looks up the character id stored in @c g_gameState.battleParty[charIdx]
- * and scans @c g_gameState.mainData.party.party[0..2] for the first slot
+ * and scans @c g_gameState.mainData.party.partyMembers[0..2] for the first slot
  * whose id matches. Returns that slot index (0-2), or 0 if no match.
  *
  * @note A zero return is ambiguous — it's also returned on no-match.
@@ -115,7 +115,7 @@ s32 func_800BD7E4(s32 charIdx) {
     u8 target = gs->battleParty[charIdx];
     s32 i;
     for (i = 0; i < 3; i++) {
-        if (gs->mainData.party.party[i] == target) {
+        if (gs->mainData.party.partyMembers[i] == target) {
             return i;
         }
     }
@@ -133,7 +133,7 @@ INCLUDE_ASM("asm/ovl/world/nonmatchings/we_object10", func_800BD82C);
  * @param dst Destination buffer pointer.
  */
 void func_800BD918(u8 *dst) {
-    u8 *src = D_800780D8;
+    u8 *src = (u8*)&g_gameState.fieldVars;
 
     dst[0x66] = src[0x108];
     dst[0x67] = src[0x109];
@@ -1056,12 +1056,14 @@ s32 func_800BEF6C(void) {
 
 /** Checks two flag bits and returns status. */
 s32 func_800BEFC4(void) {
-    u8 val = g_chocoboWorld;
+    s32 flags = g_gameState.chocobo.flags;
     s32 result = 0;
-    if (val & 1) {
-        s32 bit = val & 2;
-        result = (u32)bit < 1;
+    
+    if (flags & 1) {
+        u32 bit = flags & 2;
+        result = bit == 0? 1 : 0;
     }
+    
     return result;
 }
 

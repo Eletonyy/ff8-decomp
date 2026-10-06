@@ -165,12 +165,10 @@ void func_801E5A28(s32 arg0, s32 arg1) {
         dst++;
     }
 
-    src = &g_characterMagic[arg0 * sizeof(CharacterData)];
+    src = &g_gameState.chars[arg0].magic[0].magicId;
     dst = D_801ECF90[arg1].unk00;
     for (i = 0; i < 0x40; i++) {
-        *dst = *src;
-        src++;
-        dst++;
+        *dst++ = *src++;
     }
 }
 
@@ -186,23 +184,18 @@ void func_801E5A28(s32 arg0, s32 arg1) {
 void func_801E5B00(s32 arg0, s32 arg1) {
     s32 i;
     u8 *src;
-    u8 *dst;
+    u8 *dst = g_gameState.chars[arg0].junctions;
 
-    dst = &g_characterAbilities[arg0 * sizeof(CharacterData)];
     src = D_801ECF60[arg1].unk00;
     for (i = 0; i < 0x13; i++) {
-        *dst = *src;
-        src++;
-        dst++;
+        *dst++ = *src++;
     }
 
     g_gameState.chars[arg0].currentHp = D_801ED010[arg1];
-    dst = (u8 *)g_gameState.chars[arg0].magic;
+    dst = &g_gameState.chars[arg0].magic[0].magicId;
     src = D_801ECF90[arg1].unk00;
     for (i = 0; i < 0x40; i++) {
-        *dst = *src;
-        src++;
-        dst++;
+        *dst++ = *src++;
     }
 
     func_801F1B4C(arg0);
@@ -212,7 +205,7 @@ void func_801E5B00(s32 arg0, s32 arg1) {
 /**
  * @brief Search for a magic spell by ID in a character's spell table.
  *
- * Iterates through 32 MagicSlot entries (g_characterMagic + charIdx * 152)
+ * Iterates through 32 MagicSlot entries (g_gameState.chars[charIdx].magic)
  * looking for a matching magicId. Returns the slot index if found, 0 if not.
  *
  * @param charIdx Character index (0-7).
@@ -220,14 +213,15 @@ void func_801E5B00(s32 arg0, s32 arg1) {
  * @return Slot index (1-31) if found, 0 if not found.
  */
 s32 func_801E5C00(s32 charIdx, s32 spellId) {
-    u8 *ptr = &g_characterMagic[charIdx * sizeof(CharacterData)];
-    s32 i = 0;
+    MagicSlot *slot;
+    s32 i;
 
-    do {
-        if (spellId == *ptr) return i;
-        i++;
-        ptr += 2;
-    } while (i < MAGIC_SLOT_COUNT);
+    slot = g_gameState.chars[charIdx].magic;
+    for (i = 0; i < MAGIC_SLOT_COUNT; i++, slot++) {
+        if (spellId == slot->magicId) {
+            return i;
+        } 
+    }
 
     return 0;
 }
@@ -236,36 +230,33 @@ s32 func_801E5C00(s32 charIdx, s32 spellId) {
  * @brief Search a character's junction slots for a specific spell ID.
  *
  * Searches through the 19 junction stat slots (HP through DefStatus)
- * in g_characterAbilities for the given spell ID.
+ * in MagicSlot *slot = &g_gameState.chars[charIdx].magic; for the given spell ID.
  *
  * @param charIdx Character index (0-7).
  * @param spellId Spell ID to search for (returns -1 if 0).
  * @return Junction slot index (0-18) if found, -1 if not found or spellId is 0.
  */
 s32 func_801E5C50(s32 charIdx, s32 spellId) {
-    u8 *ptr = &g_characterAbilities[charIdx * sizeof(CharacterData)];
+    u8* slot = g_gameState.chars[charIdx].junctions;
     s32 i;
-    s32 result;
 
     if (spellId == 0) {
-        result = -1;
-        goto end;
+        return -1;
     }
-    i = 0;
-    do {
-        if (*ptr == spellId) { result = i; goto end; }
-        i++;
-        ptr++;
-    } while (i < 0x13);
-    result = -1;
-end:
-    return result;
+
+    for (i = 0; i < 0x13; i++, slot++) {
+        if (*slot == spellId) {
+            return i;
+        }
+    }
+
+    return -1;
 }
 
 /**
  * @brief Search a character's magic inventory for a spell and return its quantity.
  *
- * Searches through 32 magic slots in g_characterMagic for the given spell ID.
+ * Searches through 32 magic slots in g_gameState.chars[charIdx].magic for the given spell ID.
  * Returns the quantity if found, 0 if not found or spellId is 0.
  *
  * @param charIdx Character index (0-7).
@@ -273,25 +264,23 @@ end:
  * @return Quantity of the spell, or 0 if not found.
  */
 s32 func_801E5CAC(s32 charIdx, s32 spellId) {
-    u8 *ptr = &g_characterMagic[charIdx * sizeof(CharacterData)];
     s32 i;
     s32 result;
+    u8 *slot = &g_gameState.chars[charIdx].magic[0].magicId;
 
-    if (spellId == 0) { result = 0; goto end; }
-    i = 0;
-    do {
-        u8 magicId = *ptr;
-        ptr++;
+    if (spellId == 0) { 
+        return 0;     
+    }
+
+    for (i = 0; i < MAGIC_SLOT_COUNT; i++, slot++) {
+        u8 magicId = *slot++;
+
         if (spellId == magicId) {
-            result = *ptr;
-            goto end;
+            return *slot;
         }
-        i++;
-        ptr++;
-    } while (i < MAGIC_SLOT_COUNT);
-    result = 0;
-end:
-    return result;
+    }
+    
+    return 0;
 }
 
 /**

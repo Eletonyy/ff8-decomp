@@ -18,7 +18,7 @@
  *        Ultimecia's-Castle features.
  *
  * Clears the popped bits from @c g_fieldVars->fieldF3 (the "sealed
- * status" byte), mirrors the result into @c D_80082C10 / @c GameConfig.sealedFeatures,
+ * status" byte), mirrors the result into @c g_battleConfig.unk8 / @c GameConfig.sealedFeatures,
  * and recalculates party stats so menus reflect the newly-available
  * features. Counterpart to @c opHandler_LASTIN (which sets the same
  * byte to all-sealed = @c 0xFF on entry).
@@ -28,7 +28,7 @@
 s32 opHandler_SEALEDOFF(ScriptContext *context) {
     s32 popped = POP(context);
     g_fieldVars->fieldF3 &= ~popped;
-    D_80082C10 = g_fieldVars->fieldF3;
+    g_battleConfig.unk8 = g_fieldVars->fieldF3;
     g_gameState.config.sealedFeatures = g_fieldVars->fieldF3;
     recalcPartyStats();
     return 2;
@@ -340,7 +340,7 @@ s32 opHandler_JUNCTION(ScriptContext *context) {
     if (saveMode != 0) {
         for (i = 0; i < 3; i++) {
             g_fieldVars->partyOrderA[i] = g_gameState.battleParty[i];
-            g_fieldVars->partyOrderB[i] = g_gameState.mainData.party.party[i];
+            g_fieldVars->partyOrderB[i] = g_gameState.mainData.party.partyMembers[i];
         }
 
         if (popped & 2) {
@@ -361,7 +361,7 @@ s32 opHandler_JUNCTION(ScriptContext *context) {
 
     for (i = 0; i < 3; i++) {
         g_gameState.battleParty[i] = g_fieldVars->partyOrderA[i];
-        g_gameState.mainData.party.party[i] = g_fieldVars->partyOrderB[i];
+        g_gameState.mainData.party.partyMembers[i] = g_fieldVars->partyOrderB[i];
     }
     return 3;
 }

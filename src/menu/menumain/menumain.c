@@ -20,12 +20,8 @@
 #include "main.h"
 
 /* Main-executable symbols without an owner header yet. */
-extern u16 g_configFlags;
-extern u8 D_80077E6C[];
-extern u16 D_800780E8;
 extern u8 D_80056290[];
 extern u8 D_800562A4;
-extern u8 D_80078D38[];
 extern s32 D_8005F138;
 
 /** @brief The persistent statuses the menu draws as icons: all but KO. */
@@ -51,7 +47,7 @@ typedef struct {
     /* 0x2E */ u8 pad2E[0x4];
     /* 0x32 */ u16 field32;     /**< func_801F22F4() at start. */
     /* 0x34 */ u8 pad34;
-    /* 0x35 */ u8 party[3];     /**< The active party's slot ids, saved from D_80077E6C. */
+    /* 0x35 */ u8 party[3];     /**< The active party's slot ids, saved from g_gameState.mainData */
     /* 0x38 */ u8 reserve[8];   /**< The other characters' slot ids, 0xFF for none. */
     /* 0x40 */ u8 field40;
     /* 0x41 */ u8 field41;      /**< D_801FAB30 at start. */
@@ -949,9 +945,9 @@ void func_801F1DBC(s32 a0) {
 /* Party Member Switch                                                      */
 /* ======================================================================== */
 
-/** @brief Save the 3 active party slot IDs from D_80077E6C into @c ctx->party. */
+/** @brief Save the 3 active party slot IDs from g_gameState.mainData into @c ctx->party. */
 static void func_801F1E20(MainMenuCtx *ctx) {
-    u8 *src = D_80077E6C;
+    u8 *src = g_gameState.mainData.party.partyMembers;
     u8 *dst = ctx->party;
     s32 i;
     for (i = 0; i < 3; i++) {
@@ -959,9 +955,9 @@ static void func_801F1E20(MainMenuCtx *ctx) {
     }
 }
 
-/** @brief Restore the 3 active party slot IDs from @c ctx->party to D_80077E6C. */
+/** @brief Restore the 3 active party slot IDs from @c ctx->party to g_gameState.mainData. */
 static void func_801F1E54(MainMenuCtx *ctx) {
-    u8 *dst = D_80077E6C;
+    u8 *dst = g_gameState.mainData.party.partyMembers;
     u8 *src = ctx->party;
     s32 i;
     for (i = 0; i < 3; i++) {
@@ -1041,24 +1037,26 @@ s32 func_801F2238(s32 a0) {
 }
 
 /**
- * @brief Get entity health condition from D_80078D38 table.
+ * @brief Get entity health condition from g_battleChars.levelEntries table.
  *
  * Returns 1 if dead (HP <= 0), 0x100 if critical (HP < 25% max),
  * or 0 for normal health.
  */
-s32 func_801F2240(s32 a0) {
-    u8 *entry = D_80078D38 + a0 * 12;
-    s16 val = *(s16 *)(entry);
-    s32 result = 0;
-    if (val <= 0) {
-        result = 1;
-    } else {
-        s32 limit = (s16)(*(u16 *)(entry + 2)) >> 2;
-        if (val < limit) {
-            result = 0x100;
-        }
+s32 func_801F2240(s32 arg0) {
+    BattleLevelEntry* temp_v1;
+    s32 var;
+
+    temp_v1 = &g_battleChars.levelEntries[arg0];
+
+    var = 0;
+    if (temp_v1->maxHp < 1) {
+        var = 1;
     }
-    return result;
+        
+    else if (temp_v1->maxHp < (temp_v1->hp >> 2)) {
+        var = 256;
+    }
+    return var;
 }
 
 /** @brief Get party presence bitmask. */
@@ -1079,7 +1077,7 @@ void func_801F22A8(void) {
     i = 0;
 
     for (; i < 3; i++) {
-        u8 val = g_gameState.mainData.party.party[i];
+        u8 val = g_gameState.mainData.party.partyMembers[i];
         if (val != PARTY_SLOT_EMPTY) {
             result |= (1 << val);
         }
@@ -1330,7 +1328,7 @@ s32 func_801F486C(u8 *a0, s32 a1) {
  */
 void func_801F4918(s32 a0, s32 a1, s32 a2) {
     s32 ret;
-    ret = func_801F6358(a1, a2, 0x22, 0xC6, (s32)D_8007737C);
+    ret = func_801F6358(a1, a2, 0x22, 0xC6, g_gameState.unk004);
     g_menuDisplayCfg.iconType = 0;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = 0x18;
@@ -1417,8 +1415,8 @@ void func_801F5300(void) {
     s32 i = 0;
 
     for (; i < 3; i++) {
-        D_801FABC4[i] = g_gameState.mainData.party.party[i];
-        g_gameState.mainData.party.party[i] = PARTY_SLOT_EMPTY;
+        D_801FABC4[i] = g_gameState.mainData.party.partyMembers[i];
+        g_gameState.mainData.party.partyMembers[i] = PARTY_SLOT_EMPTY;
     }
 }
 
@@ -1427,7 +1425,7 @@ void func_801F5340(void) {
     s32 i = 0;
 
     for (; i < 3; i++) {
-        g_gameState.mainData.party.party[i] = D_801FABC4[i];
+        g_gameState.mainData.party.partyMembers[i] = D_801FABC4[i];
     }
 }
 
@@ -2243,17 +2241,18 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F776C);
 /**
  * @brief Find ability slot by ID in character data.
  *
- * Searches 19 ability slots in g_characterAbilities for value a1.
+ * Searches 19 ability slots in g_gameState.chars[a0].junctions for value a1.
  * Returns the slot index if found, or a2 (default) if not.
  */
 s32 func_801F77F8(s32 a0, s32 a1, s32 a2) {
-    s32 offset = a0 * 152;
-    u8 *ptr = (u8 *)((s32)g_characterAbilities + offset);
+    u8 *junctionSlot = g_gameState.chars[a0].junctions;
     s32 i;
     for (i = 0; i < 19; i++) {
-        if (*ptr++ != a1) continue;
-        return i;
+        if (*junctionSlot++ == a1) {
+            return i;
+        }  
     }
+
     return a2;
 }
 
@@ -2270,14 +2269,13 @@ void func_801F784C(s32 a0, s32 a1, s32 a2) {
 
 /** @brief Remove ability a1 from character a0's junction slots. */
 void func_801F78D8(s32 a0, s32 a1) {
-    s32 offset = a0 * 152;
-    u8 *ptr = (u8 *)((s32)g_characterAbilities + offset);
+    u8 *junctionSlot = g_gameState.chars[a0].junctions;
     s32 i;
     for (i = 0; i < 19; i++) {
-        if (*ptr == a1) {
-            *ptr = 0;
+        if (*junctionSlot == a1) {
+            *junctionSlot = 0;
         }
-        ptr++;
+        junctionSlot++;
     }
 }
 
@@ -2285,16 +2283,16 @@ void func_801F78D8(s32 a0, s32 a1) {
 /* Misc/Utility                                                             */
 /* ======================================================================== */
 
-/** @brief Apply vibration config setting from g_configFlags bit 1. */
+/** @brief Apply vibration config setting from g_gameState.config.flags bit 1. */
 void func_801F7928(void) {
-    s32 val = g_configFlags & 2;
-    sndSelectMode(val != 0);
+    s32 flags = g_gameState.config.flags & 2;
+    sndSelectMode(flags != 0);
 }
 
 /** @brief Apply the Vibration option to pad port 0. */
 void func_801F7954(void) {
     s32 a1 = 0;
-    if (g_configFlags & CONFIG_VIBRATION) {
+    if (g_gameState.config.flags & CONFIG_VIBRATION) {
         a1 = 0xFF;
     }
     setPadVibration(0, a1);
@@ -2341,7 +2339,7 @@ void func_801F7A08(void) {
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F7A54);
 
 /**
- * @brief Scale a value by 100 and store it clamped to [100, 3100] in D_800780E8.
+ * @brief Scale a value by 100 and store it clamped to [100, 3100] in g_gameState.fieldVars.seedExp.
  *
  * @note Purpose uncertain — appears to set a percentage-derived global
  *       (e.g. a speed or magnification parameter).
@@ -2365,7 +2363,7 @@ void func_801F7AD4(s32 n) {
      * clamped takes v1 and val keeps a0 (allocation-order match). */
     clamped++;
     clamped--;
-    D_800780E8 = clamped;
+    g_gameState.fieldVars.seedExp = clamped;
 }
 
 /**
@@ -2375,15 +2373,13 @@ void func_801F7AD4(s32 n) {
  * quantity byte is 0, clears the magic ID byte to 0.
  */
 void func_801F7B10(s32 a0) {
-    s32 offset = a0 * 152;
-    s32 base = (s32)g_characterMagic;
-    u8 *ptr = (u8 *)(base + offset);
+    MagicSlot *slot = g_gameState.chars[a0].magic;
     s32 i;
     for (i = 0; i < 32; i++) {
-        if (ptr[1] == 0) {
-            ptr[0] = 0;
+        if (slot->quantity == 0) {
+            slot->magicId = 0;
         }
-        ptr += 2;
+        slot++;
     }
 }
 

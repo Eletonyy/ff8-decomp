@@ -3322,7 +3322,7 @@ s32 renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
  * Shown when the user is navigating junction to EL-A/D > Elemental attack.
  * Iterates the D_801EEC10 table (8 rows). Each row compares the preview
  * element flags/value (g_junctionPreview atkElem fields) against the current ones
- * (D_800788E4/D_800788E5) via a per-row bit test to pick the up/down change
+ * (g_battleChars.chars[0].atkElemBase/g_battleChars.chars[0].atkElemBonus) via a per-row bit test to pick the up/down change
  * indicator, then renders the label, indicator, and the numeric value.
  *
  * @param renderCtx Render context.
@@ -3350,7 +3350,7 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
     u8 buf[12];
 
     baseFlags = g_junctionPreview.atkElemBase;
-    currentFlags = D_800788E4;
+    currentFlags = g_battleChars.chars[0].atkElemBase;
 
     xBase += 0x88;
     yBase += 0x93;
@@ -3380,7 +3380,7 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         bit = 1 << i;
         tmp = bit;
         if (currentFlags & tmp) {
-            currentVal = D_800788E5;
+            currentVal = g_battleChars.chars[0].atkElemBonus;
         } else {
             currentVal = 0;
         }
@@ -5007,14 +5007,14 @@ s32 renderCharSwitchPanel(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 
             x2 += 0x180;
         }
         chr = ctx->prevCharIdx;
-        rec = &g_characters[chr];
+        rec = &g_gameState.chars[chr];
         info = &g_charMenuInfo[chr];
         cursorY = func_801F65F0(renderCtx, cursorY, x2, y2, rec, info);
         x2 = x + scale;
         y2 = y;
     }
     chr = ctx->charIdx;
-    rec = &g_characters[chr];
+    rec = &g_gameState.chars[chr];
     info = &g_charMenuInfo[chr];
     return func_801F65F0(renderCtx, cursorY, x2, y2, rec, info);
 }

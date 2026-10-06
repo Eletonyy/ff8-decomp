@@ -1,7 +1,7 @@
 #include "common.h"
 #include "menu.h"
 #include "menutest.h"
-
+#include "gamestate.h"
 /**
  * @brief Test menu task state, allocated by func_801F179C.
  *
@@ -64,7 +64,6 @@ extern u8 g_testQuestionText[];
 extern u8 g_testHeaderText[];
 extern TestChoiceMark g_testChoiceMarks[];
 extern u8 D_801FABD4;
-extern u8 g_gameState;
 extern u32 D_801E69B8;
 
 /** Center offset: maxW = width, tw = (maxW - tw) / 2 */
@@ -313,7 +312,7 @@ s32 func_801E6760(TestMenuState *state, s32 a1, s32 a2) {
  *
  * func_801E5D74 is the task's tick callback and func_801E6760 its draw
  * callback. Runs the level the player picked in the tutorial menu, or level
- * tutoEntryCount (D_800780AB) when none was picked (func_801E28D4() returns
+ * tutoEntryCount when none was picked (func_801E28D4() returns
  * 0xFF), and loads that level's questions.
  */
 void func_801E67F0(void) {
@@ -336,7 +335,7 @@ void func_801E67F0(void) {
     v0 = func_801E28D4();
     if (v0 == 0xFF) {
         state->levelPicked = 0;
-        state->level = D_800780AB;
+        state->level = g_gameState.mainData.tutoEntryCount;
         text = func_801E5800(0x11);
         func_801E59B4(text, g_testHeaderText, g_testChoiceMarks);
         text = func_801E5800(0x1A);

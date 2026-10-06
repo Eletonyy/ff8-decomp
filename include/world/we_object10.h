@@ -50,7 +50,6 @@ typedef struct {
     u8 ids[OBJ_SLOT_COUNT]; /* object ids present in this list */
 } WorldObjList;
 
-extern u8             g_chocoboWorld;   /* main-binary ChocoboWorldData (g_gameState + 0x1360) */
 extern u8             D_800DCE78[];
 extern s32            D_800C5DAC;
 extern LookupTarget  *D_800DDB00[];

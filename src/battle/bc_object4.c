@@ -441,7 +441,7 @@ s32 func_800A6C34(void) {
     var_s0 += func_800A6B6C(2, -20);
     var_s0 += func_8009B15C();
     
-    if (g_battleChars.levelEntries[15].abilityFlags & 1) {
+    if (g_battleChars.abilityFlags & 1) {
         var_s0 -= 20;
     }
     
@@ -453,7 +453,7 @@ s32 func_800A6C34(void) {
         }
     }
     
-    if ((g_battleChars.levelEntries[15].abilityFlags & 1) && (var_s1 == 2)) {
+    if ((g_battleChars.abilityFlags & 1) && (var_s1 == 2)) {
         var_s1 = 1;
     }
     
@@ -919,7 +919,7 @@ void func_800A7884(void) {
     }
 
     func_800A77E8();
-    g_battleChars.levelEntries[15].abilityFlags = 0;
+    g_battleChars.abilityFlags = 0;
 
     for (i = 0; i < 3; i++) {
         func_80022E08(g_gameState.mainData.party.party[i], i);
@@ -1905,7 +1905,7 @@ void func_800A94E0(void) {
 
 
     for (i = 0; i < 8; i++) {
-        g_battleChars.gfEntries[0].unk0[i] = 255;
+        g_battleChars.unk610[i] = 255;
     }
 }
 

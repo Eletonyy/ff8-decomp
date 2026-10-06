@@ -169,7 +169,7 @@ void updateSeedLevel(void) {
  * Identical body to @c func_800C48C0 in we_object13. Iterates the 16
  * GF save entries; for each unlocked GF (@c exists bit 0) with
  * non-zero HP, if the current HP is below the GF's battle max (at
- * @c g_battleChars.gfEntries[i].hp), increments it by 1. Runs once
+ * @c g_battleChars.levelEntries[i].hp), increments it by 1. Runs once
  * per field step to slowly regenerate GF HP while walking.
  */
 void func_800BD5E0(void) {
@@ -179,8 +179,8 @@ void func_800BD5E0(void) {
         if (g_gameState.gfs[i].exists & 1) {
             u16 hp = g_gameState.gfs[i].hp;
             if (hp != 0) {
-                if (g_gameState.gfs[i].hp < (s16)g_battleChars.gfEntries[i].hp) {
-                    g_gameState.gfs[i].hp = g_gameState.gfs[i].hp + 1;
+                if (g_gameState.gfs[i].hp < g_battleChars.levelEntries[i].hp) {
+                    g_gameState.gfs[i].hp++;
                 }
             }
         }
@@ -200,15 +200,15 @@ void func_800BD64C(void) {
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        u8 charIdx = g_gameState.mainData.party.party[i];
+        u8 charIdx = g_gameState.mainData.party.partyMembers[i];
         if (charIdx != 0xFF) {
             if (g_battleChars.chars[i].fieldStatusByte & 1) {
-                u16 hp = g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp;
+                u16 hp = g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp;
                 if (hp != 0) {
-                    if ((s32)g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp <
+                    if ((s32)g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp <
                         (s32)g_battleChars.chars[i].hpRegenCap) {
-                        g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp =
-                            g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp + 1;
+                        g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp =
+                            g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp + 1;
                     }
                 }
             }

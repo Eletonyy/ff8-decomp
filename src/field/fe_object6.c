@@ -1828,7 +1828,7 @@ s32 opHandler_ADDMAGIC(ScriptContext *context) {
     if (slot != 0xFF) {
         s32 i;
         for (i = 0; i < count; i++) {
-            if (func_800211B4(g_gameState.mainData.party.party[slot], val2) != 0) {
+            if (func_800211B4(g_gameState.mainData.party.partyMembers[slot], val2) != 0) {
                 return 2;
             }
         }

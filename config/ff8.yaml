@@ -40,7 +40,8 @@ defaults:
     subalign: 4
     o_as_suffix: true
     generate_asm_macros_files: false
-
+    global_vram_start: 0x80010000
+    global_vram_end: 0x801A0000
 binaries:
 - name: battle
   sha1: fa3b045925c0cc8855b321f5dd22ff196f9d51b0

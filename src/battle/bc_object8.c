@@ -3,6 +3,7 @@
 #include "battle.h"
 #include "battle/bc_object8.h"
 #include "gamestate.h"
+#include "kernel.h"
 
 void func_800B3164(void);
 void func_800B2F3C(void);
@@ -12,7 +13,6 @@ s32 func_800AA4E0(void);
 u16 func_800A97FC(s32);
 
 extern u8 *D_800EEED8;
-extern u8 D_8007DADB[];
 extern u8 D_800EE42C[];
 extern u8 D_800EEEC4;
 extern u8 D_800E3D0C;
@@ -252,10 +252,10 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B1D4C);
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B1DFC);
 
 /**
- * @brief Copy a byte from D_8007DADB to D_800EE42C as a halfword.
+ * @brief Copy a byte from g_kernel.misc.summonInterval to D_800ED148.unk12E4 as a halfword.
  */
 void func_800B2024(void) {
-    D_800ED148.unk12E4 = *(u8 *)D_8007DADB;
+    D_800ED148.unk12E4 = g_kernel.misc.summonInterval;
 }
 
 /**
@@ -360,7 +360,7 @@ void func_800B21B4(void) {
     s32 i;
     
     for (i = 0; i < 3; i++) {
-        D_800EE9E8.subEntries[i].array0[0].unk3 = g_gameState.mainData.party.party[i];
+        D_800EE9E8.subEntries[i].array0[0].unk3 = g_gameState.mainData.party.partyMembers[i];
     }
 }
 
@@ -630,10 +630,10 @@ void func_800B330C(s32 a0) {
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object8", func_800B3330);
 
 /**
- * @brief Initialize sound data pointer based on D_80082C11 flag.
+ * @brief Initialize sound data pointer based on g_battleConfig.unk9 flag.
  *
  * Clears D_800EEEC4 and D_800EEED4, then sets D_800EEED0 to either
- * D_8005F388 (if D_80082C11 is zero) or D_80063388 (if non-zero).
+ * D_8005F388 (if g_battleConfig.unk9 is zero) or D_80063388 (if non-zero).
  */
 void func_800B3470(void) {
     D_800EEEC4 = 0;

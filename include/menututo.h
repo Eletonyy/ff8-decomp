@@ -48,7 +48,7 @@ typedef struct {
     /* 0x30 */ u8 targetPage;        /**< Target page after scroll-page transition. */
     /* 0x31 */ u8 prevPage;          /**< Page before scroll-page transition. */
     /* 0x32 */ s8 entryIndex;        /**< Currently selected entry (page * 10 + slot). */
-    /* 0x33 */ s8 pageCount;         /**< Total page count (computed from D_800780AB). */
+    /* 0x33 */ s8 pageCount;         /**< Total page count (computed from g_gameState.mainData.tutoEntryCount). */
     /* 0x34 */ u8 sectionIndex;      /**< Currently selected section index. */
     /* 0x35 */ u8 cursorPos;         /**< Cursor position within section list. */
     /* 0x36 */ u8 availCount;        /**< Number of available section entries. */

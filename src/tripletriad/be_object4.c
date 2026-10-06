@@ -340,7 +340,7 @@ void playTriadSfxParam(s32 sfxId, s32 param) {
  *       @c sndCmd11(0) and advance to state 1.
  *  - 1: copy the Triple Triad sound region @c [D_801A1B88, g_tripleTriadActiveList)
  *       into the inactive bank buffer (@c D_8005F388 / @c D_80063388, chosen by
- *       @c D_80082C11), flip the bank selector @c g_battleConfig.unk9, then play the
+ *       @c g_battleConfig.unk9), flip the bank selector @c g_battleConfig.unk9, then play the
  *       uploaded bank via @c sndCmd10 / @c sndCmdC0.
  *
  * @param node Task node.
@@ -359,7 +359,7 @@ s32 func_800A238C(SndTaskNode *node) {
         }
         return 0;
     case 1:
-        if (D_80082C11 == 0) {
+        if (g_battleConfig.unk9 == 0) {
             buf = D_8005F388;
         } else {
             buf = D_80063388;

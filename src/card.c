@@ -6,13 +6,7 @@
 #include "ability_list.h"
 #include "character.h"
 #include "card.h"
-
-/* @c g_kernel is declared in kernel.h as a Kernel; this unit walks it by the
- * byte offsets in its ability-category table instead. */
-extern u8 g_kernel[];
-extern CharacterData g_characters[];
-extern u16 D_80078894;
-extern u8 D_800780B0[];
+#include "kernel.h"
 
 /**
  * @brief Initialize 128 ability slots to empty.
@@ -75,7 +69,7 @@ s32 func_80036710(s32 index, u8 *dest, s32 count) {
  */
 s32 func_8003678C(s32 gfIndex, u8 *dest, s32 count) {
     s32 i;
-    GfLearnData *learnData = &D_80079D78[gfIndex];
+    JunctionableGfEntry *learnData = &g_kernel.junctionableGfs[gfIndex];
     u32 learnedMask;
     s32 level;
 
@@ -85,7 +79,7 @@ s32 func_8003678C(s32 gfIndex, u8 *dest, s32 count) {
 
     for (i = 0; i < 21; i++) {
         u8 reqLevel = learnData->abilities[i].levelReq;
-        u8 slot = learnData->abilities[i].slot;
+        u8 slot = learnData->abilities[i].abilityId;
 
         if (reqLevel == 0xFF) continue;
         if (reqLevel >= 101) continue;
@@ -117,17 +111,17 @@ s32 func_8003678C(s32 gfIndex, u8 *dest, s32 count) {
  */
 s32 func_8003685C(s32 gfIndex, u8 *dest, s32 count) {
     u32 learnedMask;
-    GfLearnData *learnData;
+    JunctionableGfEntry *learnData;
     s32 i;
 
     learnedMask = *(u32 *)&g_gameState.gfs[gfIndex].learning; /* learning + forgotten packed */
-    learnData = &D_80079D78[gfIndex];
+    learnData = &g_kernel.junctionableGfs[gfIndex];
     learnedMask >>= 8;
 
     for (i = 0; i < 21; i++) {
         s32 levelReq = learnData->abilities[i].levelReq;
         u8 prereq = learnData->abilities[i].prereq;
-        u8 slot = learnData->abilities[i].slot;
+        u8 slot = learnData->abilities[i].abilityId;
         u8 reqSlot;
         u8 reqState;
 
@@ -137,10 +131,10 @@ s32 func_8003685C(s32 gfIndex, u8 *dest, s32 count) {
         if (count >= 22) return count;
 
         reqState = levelReq;
-        reqState = learnData->abilities[(u8)reqState].slot;
+        reqState = learnData->abilities[reqState].abilityId;
         reqSlot = reqState;
         if (prereq != 0xFF) {
-            prereq = learnData->abilities[prereq].slot;
+            prereq = learnData->abilities[prereq].abilityId;
         }
 
         reqState = dest[reqSlot * 2];
@@ -231,7 +225,7 @@ s32 func_800369CC(s32 gfIndex, AbilityListEntry *output, s32 includeJunction) {
 
             if (output->abilityIndex < 0xFF) {
                 AbilityCategoryInfo *info = &D_80053C3C[output->category];
-                u8 *entry = g_kernel;
+                u8 *entry = (u8*)&g_kernel;
                 entry = (u8 *)(info->dataOffset + (s32)entry);
                 entry += info->stride * (slotIndex - info->startIndex);
                 output->gfDataValue = entry[4];
@@ -253,7 +247,7 @@ s32 func_800369CC(s32 gfIndex, AbilityListEntry *output, s32 includeJunction) {
  * Clears junctioned GFs, commands, abilities, and junction slots for the
  * given character. Temporarily sets the character as party leader to trigger
  * stat recalculation, clears status (preserving bit 7), sets HP from
- * D_80078894, then restores the original party slot.
+ * g_battleChars.chars[0].hpRegenCap, then restores the original party slot.
  *
  * @param charIndex Character index (clamped to 0-7).
  */
@@ -273,7 +267,7 @@ clamp_zero:
     clamped = 0;
 clamped_done:
     charIndex = clamped;
-    chr = &g_characters[charIndex];
+    chr = &g_gameState.chars[charIndex];
     chr->junctedGfs = 0;
 
     for (i = 0; i < 4; i++) {
@@ -289,17 +283,17 @@ clamped_done:
         }
     }
 
-    savedSlot = g_gameState.mainData.party.party[0];
-    g_gameState.mainData.party.party[0] = charIndex;
+    savedSlot = g_gameState.mainData.party.partyMembers[0];
+    g_gameState.mainData.party.partyMembers[0] = charIndex;
     recalcPartyStats();
 
     do {
         chr->statusFlags &= 0x80;
     } while (0);
 
-    chr->currentHp = D_80078894;
+    chr->currentHp = g_battleChars.chars[0].hpRegenCap;
 
-    g_gameState.mainData.party.party[0] = savedSlot;
+    g_gameState.mainData.party.partyMembers[0] = savedSlot;
     recalcPartyStats();
 }
 
@@ -317,28 +311,28 @@ void func_80036C74(void) {
     u8 tmp;
 
     for (i = 0; i < 3; i++) {
-        if (g_gameState.mainData.party.party[i] == 0xFF) {
+        if (g_gameState.mainData.party.partyMembers[i] == 0xFF) {
             return;
         }
     }
 
     for (i = 0; i < 3; i++) {
-        if (g_gameState.mainData.party.party[i] != 0) {
+        if (g_gameState.mainData.party.partyMembers[i] != 0) {
             first = i;
             break;
         }
     }
 
     for (i = 0; i < 3; i++) {
-        if ((g_gameState.mainData.party.party[i] != 0) && (first != i)) {
+        if ((g_gameState.mainData.party.partyMembers[i] != 0) && (first != i)) {
             second = i;
             break;
         }
     }
 
-    tmp = g_gameState.mainData.party.party[second];
-    g_gameState.mainData.party.party[second] = g_gameState.mainData.party.party[first];
-    g_gameState.mainData.party.party[first] = tmp;
+    tmp = g_gameState.mainData.party.partyMembers[second];
+    g_gameState.mainData.party.partyMembers[second] = g_gameState.mainData.party.partyMembers[first];
+    g_gameState.mainData.party.partyMembers[first] = tmp;
 }
 
 
@@ -348,7 +342,7 @@ void func_80036C74(void) {
  * Clears and rebuilds the party slot assignments. For each non-empty,
  * non-Squall party member, checks if they have the required flag (bit 3
  * of exists). Eligible members whose bit is set in @p mask stay;
- * others are removed. Copies the result to D_800780B0 and recalculates.
+ * others are removed. Copies the result to g_gameState.battleParty and recalculates.
  *
  * @param mask Bitmask of characters allowed to remain in the party.
  */
@@ -378,7 +372,7 @@ void func_80036D44(s32 mask) {
     g_gameState.chars[0].characterId = 8;
     newSlots[0] = 8;
     for (i = 0; i < 3; i++) {
-        u8 slot = g_gameState.mainData.party.party[i];
+        u8 slot = g_gameState.mainData.party.partyMembers[i];
         if (slot == 0xFF) {
             continue;
         }
@@ -393,23 +387,23 @@ void func_80036D44(s32 mask) {
                 newSlots[slotCount] = abilityId;
                 slotCount++;
             } else {
-                g_gameState.mainData.party.party[i] = 0xFF;
+                g_gameState.mainData.party.partyMembers[i] = 0xFF;
             }
             abilityId++;
         } else {
-            g_gameState.mainData.party.party[i] = 0xFF;
+            g_gameState.mainData.party.partyMembers[i] = 0xFF;
         }
     }
 
     {
-        u8 *p = D_800780B0;
+        u8 *p = g_gameState.battleParty;
         u8 val = new_var2;
         for (i = 2; i >= 0; i--) {
             *(p++) = val;
         }
     }
     {
-        u8 *dst = D_800780B0;
+        u8 *dst = g_gameState.battleParty;
         u8 *src = (u8 *)((u32)newSlots + (u32)dst - (u32)dst);
         for (i = 0; i < 3; i++) {
             *dst++ = *src++;
@@ -429,9 +423,9 @@ void func_80036D44(s32 mask) {
  * @param charId Character ID for the party leader.
  */
 void setPartyLeader(s32 charId) {
-    g_gameState.mainData.party.party[0] = charId;
-    g_gameState.mainData.party.party[1] = 0xFF;
-    g_gameState.mainData.party.party[2] = 0xFF;
+    g_gameState.mainData.party.partyMembers[0] = charId;
+    g_gameState.mainData.party.partyMembers[1] = 0xFF;
+    g_gameState.mainData.party.partyMembers[2] = 0xFF;
     recalcPartyStats();
 }
 
@@ -453,7 +447,7 @@ s32 func_80036EC0(void) {
     if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
         partyMask = 0;
         for (i = 0; i < 3; i++) {
-            u8 slot = g_gameState.mainData.party.party[i];
+            u8 slot = g_gameState.mainData.party.partyMembers[i];
             if (slot != 0xFF) {
                 partyMask |= (1 << slot);
             }
@@ -499,7 +493,7 @@ u16 getGfAvailabilityMask(void) {
  * @param gfIdx GF index (0-15).
  */
 void copyGfHpToSave(s32 gfIdx) {
-    g_gameState.gfs[gfIdx].hp = g_battleChars.gfEntries[gfIdx].hp;
+    g_gameState.gfs[gfIdx].hp = g_battleChars.levelEntries[gfIdx].hp;
 }
 
 
@@ -508,7 +502,7 @@ void copyGfHpToSave(s32 gfIdx) {
  *        then restore original party slots.
  *
  * Saves the current party, clears it, sets the leader to trigger
- * stat recalculation, then writes D_80078894 to the character's
+ * stat recalculation, then writes g_battleChars.chars[0].hpRegenCap to the character's
  * currentHp and clears all status flags except bit 7. Finally
  * restores the saved party and recalculates stats.
  *
@@ -519,17 +513,17 @@ void func_80036FE0(s32 charIdx) {
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        saved[i] = g_gameState.mainData.party.party[i];
-        g_gameState.mainData.party.party[i] = 0xFF;
+        saved[i] = g_gameState.mainData.party.partyMembers[i];
+        g_gameState.mainData.party.partyMembers[i] = 0xFF;
     }
 
     setPartyLeader(charIdx);
 
-    g_gameState.chars[charIdx].currentHp = D_80078894;
+    g_gameState.chars[charIdx].currentHp = g_battleChars.chars[0].hpRegenCap;
     g_gameState.chars[charIdx].statusFlags &= 0x80;
 
     for (i = 0; i < 3; i++) {
-        g_gameState.mainData.party.party[i] = saved[i];
+        g_gameState.mainData.party.partyMembers[i] = saved[i];
     }
 
     recalcPartyStats();

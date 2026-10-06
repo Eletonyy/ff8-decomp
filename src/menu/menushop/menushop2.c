@@ -10,6 +10,7 @@
 #include "ui/dialog.h"
 #include "ui/text.h"
 #include "game.h"
+#include "kernel.h"
 
 #define SYMBOL_PERCENT 20 // Passed as argument to func_801F6AFC
 
@@ -111,7 +112,7 @@ static void func_801E81A4(JunkShopMenuState *s) {
         if (btnFlags & PADLup) {
             sendSpuCommand(1);
             s->selCharacterIndex--;
-            if (s->selCharacterIndex << 0x18 < 0) {
+            if (s->selCharacterIndex < 0) {
                 s->selCharacterIndex = s->characterCount - 1;
             }
         }
@@ -635,8 +636,10 @@ static void func_801E9020(s32 weaponId) {
     BattleCharData charData;
     u8 charId;
     u8 currentWeaponId;
+    WeaponEntry* weapon;
 
-    charId = D_8007C3B8[weaponId].characterId;
+    weapon = g_kernel.weapons;
+    charId = weapon[weaponId].characterId;
     currentWeaponId = g_gameState.chars[charId].weaponId;
     g_gameState.chars[charId].weaponId = weaponId;
     func_801F537C(charId, &charData);
@@ -676,15 +679,15 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
     s32 newWeaponId;
     s32 oldWeaponStrength;
     s32 newWeaponStrength;
-    s32 oldWeaponHit;
-    s32 newWeaponHit;
+    s32 oldWeaponHitRate;
+    s32 newWeaponHitRate;
     s32 color;
     s32 x;
     s32 y;
     s32 y2;
     s32 tmp;
     u8 *text;
-    WeaponInfo *weapons;
+    WeaponEntry *weapons;
 
     color = COLOR_WHITE;
 
@@ -692,9 +695,9 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
 
     oldWeaponId = s->equippedWeapons[s->selCharacterIndex];
 
-    weapons = D_8007C3B8;
+    weapons = g_kernel.weapons;
     oldWeaponStrength = D_801EB260[oldWeaponId];
-    oldWeaponHit = weapons[oldWeaponId].hit;
+    oldWeaponHitRate = weapons[oldWeaponId].hitRate;
 
     text = func_801F6AA4(STRING_MONEY);
     x = arg3 + 249;
@@ -728,7 +731,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
 
     x = arg3 + 184;
     y = arg4 + 21;
-    arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), func_801F7BE4(oldWeaponHit), color);
+    arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), func_801F7BE4(oldWeaponHitRate), color);
 
     // Dead code added to match with the original game binary.
     if (color == COLOR_RED) {
@@ -756,7 +759,7 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
         }
 
         newWeaponStrength = D_801EB260[newWeaponId];
-        newWeaponHit = weapons[newWeaponId].hit;
+        newWeaponHitRate = weapons[newWeaponId].hitRate;
 
         color = func_801E8FF8(oldWeaponStrength, newWeaponStrength);
     
@@ -777,11 +780,11 @@ static s32 func_801E90F8(JunkShopMenuState *s, s32 arg1, s32 arg2, s32 arg3, s32
             arg2 = (s32)drawIconClut((void *)arg1, (TSPRT *)arg2, tmp, x, y, g_menuTint[MENU_TINT_NORMAL], (color * 64) + 2);
         }
 
-        color = func_801E8FF8(oldWeaponHit, newWeaponHit);
+        color = func_801E8FF8(oldWeaponHitRate, newWeaponHitRate);
     
         y = arg4 + 21;
         x = arg3 + 232;
-        tmp = func_801F7BE4(newWeaponHit);
+        tmp = func_801F7BE4(newWeaponHitRate);
         arg2 = drawNumberMenuTint(arg1, arg2, (y << 0x10) | (x & 0xFFFF), tmp, color);
 
         tmp = func_801F6AFC(SYMBOL_PERCENT);

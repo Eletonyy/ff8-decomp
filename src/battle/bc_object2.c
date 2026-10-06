@@ -692,7 +692,7 @@ s32 func_8009CF38(s32 attackerIdx, s32 targetIdx, s32 power, u32 type) {
 
             case 16:
                 if (targetIdx < 3) {
-                    dmg = g_gameState.chars[g_gameState.mainData.party.party[targetIdx]].kills * power;
+                    dmg = g_gameState.chars[g_gameState.mainData.party.partyMembers[targetIdx]].kills * power;
                 } 
                 
                 else {
@@ -1167,7 +1167,7 @@ s32 func_8009E33C(s32 arg0, s32 arg1, s32 arg2) {
         return 0;
     }
     
-    if (D_80082C10 & CTRL_FLAG_40) {
+    if (g_battleConfig.unk8 & CTRL_FLAG_40) {
         D_800EE4C0.flags6 |= 5;
     }
     
@@ -1396,7 +1396,7 @@ void func_8009EAEC(s32 charIdx) {
 
     if (count != 0) {
         for (i = 0; i < count; i++) {
-            g_gameState.gfs[sp10[i]].hp += (D_800ED148.effectMult * g_battleChars.gfEntries[sp10[i]].hp) / 100;
+            g_gameState.gfs[sp10[i]].hp += (D_800ED148.effectMult * g_battleChars.levelEntries[sp10[i]].hp) / 100;
 
             func_8002363C(sp10[i]);
 
@@ -1410,7 +1410,7 @@ void func_8009EAEC(s32 charIdx) {
 
         if (D_800ED148.entities[charIdx].flags & 0x80000000) {
             id = g_battleChars.chars[charIdx].unk1D - 64;
-            g_battleChars.chars[charIdx].currentHp = g_battleChars.gfEntries[id].maxHp;
+            g_battleChars.chars[charIdx].currentHp = g_battleChars.levelEntries[id].maxHp;
             D_800ED148.entities[charIdx].hpDisplay = g_battleChars.chars[charIdx].currentHp;
         }
     }
@@ -2096,7 +2096,7 @@ void func_8009FE14(s32 arg0) {
             break;
 
         case 254:
-            D_800EEBC0 = g_battleChars.levelEntries[D_800EE4C0.statusCode - 64].unk1;
+            D_800EEBC0 = g_battleChars.levelEntries[D_800EE4C0.statusCode - 64].unk9;
             D_800EEBB9 = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].element;
             D_800EEBBA = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].statusAccuracy;
             D_800EEBC2 = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].status1;
@@ -2598,7 +2598,7 @@ void func_800A09D0(s32 arg0) {
             break;
 
         case 251:       
-            var_s3 = g_kernel.characters[g_gameState.chars[g_gameState.mainData.party.party[temp_s4]].characterId].limitBreakParam;
+            var_s3 = g_kernel.characters[g_gameState.chars[g_gameState.mainData.party.partyMembers[temp_s4]].characterId].limitBreakParam;
             goto wait_oh_god_make_it_stop;
 
         case 243:       

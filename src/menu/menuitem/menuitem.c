@@ -278,17 +278,7 @@ INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem", func_801E37A4);
 /**
  * @brief Set ability bit flag in character's ability table.
  *
- * Searches character a0's ability list (at D_80079D78 + a0*132) for
- * ability a1. If found at index i, sets bit (1 << (i+8)) in the
- * corresponding word at D_80077408 + a0*68.
- *
- * @param a0 Character index.
- * @param a1 Ability ID to search for.
- */
-/**
- * @brief Set ability bit flag in character's ability table.
- *
- * Searches character a0's ability list (at D_80079D78 + a0*132) for
+ * Searches character a0's ability list (at g_kernel.junctionableGfs[a0]) for
  * ability a1. If found at index i, sets bit (1 << (i+8)) in the
  * corresponding word at D_80077408 + a0*68.
  *
@@ -300,7 +290,7 @@ INCLUDE_ASM("asm/ovl/menuitem/nonmatchings/menuitem", func_801E3854);
 /**
  * @brief Clear ability bit flag in character's ability table.
  *
- * Searches character a0's ability list (at D_80079D78 + a0*132) for
+ * Searches character a0's ability list (at g_kernel.junctionableGfs[a0]) for
  * ability a1. If found at index i, clears bit (1 << (i+8)) in the
  * corresponding word at D_80077408 + a0*68.
  *

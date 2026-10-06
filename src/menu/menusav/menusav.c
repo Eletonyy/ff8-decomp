@@ -1,16 +1,15 @@
 #include "common.h"
 #include "menu_tint.h"
 #include "menusav.h"
+#include "gamestate.h"
 
 extern u8 D_801EC294;
 extern u8 D_801EC301;
 extern s32 D_8005620C;
 extern u8 D_80097424[];
-extern u8 D_800773C8[];
 extern u8 D_801EBD5C[];
 extern u16 D_801EBD24[];
 extern s32 D_801EC2E4;
-extern u8 g_gameState[];
 extern u16 g_menuDisplayCfg[];
 
 /**
@@ -82,7 +81,7 @@ void func_801E2860(void) {
     {
         s32 base = D_80097424;
         s32 entry = *(s32 *)(base + idx * 8);
-        btlMemcpyForward(0x801D1000, D_800773C8, entry);
+        btlMemcpyForward(0x801D1000, g_gameState.gfs, entry);
     }
 }
 
@@ -501,7 +500,7 @@ INCLUDE_ASM("asm/ovl/menusav/nonmatchings/menusav", func_801E7268); /* 0x158 */
 
 /** @brief Call memzero16 with g_gameState and 0x13A. */
 void func_801E73C0(void) {
-    memzero16(g_gameState, 0x13A);
+    memzero16(&g_gameState, 0x13A);
 }
 
 /**
@@ -604,14 +603,10 @@ s32 func_801E7524(s32 a0) {
  * @return XOR checksum value.
  */
 s32 func_801E7550(void) {
-    s32 base = g_gameState;
-    s32 s0 = *(s32 *)(base + 0xCD0);
-    s32 v1 = *(s32 *)(base + 0xB0C);
-    s32 v0 = *(s32 *)(base + 0xCDC);
-    s0 ^= v1;
-    s0 ^= v0 << 16;
-    v0 = func_801E74BC();
-    return s0 ^ v0;
+    s32 result;
+
+    result = g_gameState.mainData.playTimeSeconds ^ g_gameState.mainData.party.gil ^ (g_gameState.mainData.fieldCDC << 0x10);
+    return result ^ func_801E74BC();
 }
 
 /**

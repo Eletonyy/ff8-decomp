@@ -15,7 +15,7 @@
 #define MENUABL_H
 
 #include "common.h"
-
+#include "kernel.h"
 /* ======================================================================== */
 /* Types                                                                    */
 /* ======================================================================== */
@@ -25,13 +25,6 @@ typedef struct {
     u8  pad00[0x2E];
     s16 angle;
 } MenuSlot;
-
-/** @brief 8-byte ability-menu entry record. */
-typedef struct {
-    u8 pad00[5];
-    u8 status;     /**< 0xFF = empty, 0x80/0x81 = state-specific (see @c func_801E36AC). */
-    u8 pad06[2];
-} AbilityEntry; /* 0x8 bytes */
 
 /**
  * @brief Context passed to the ability-list panel configurators.

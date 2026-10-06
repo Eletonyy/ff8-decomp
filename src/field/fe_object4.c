@@ -6,7 +6,7 @@
 #include "cd.h"
 #include "field/fe_object3.h"
 #include "field/fe_object4.h"
-
+#include "battle.h"
 /**
  * @brief Drain the @c D_800DE7B0 CD-load command queue.
  *
@@ -37,10 +37,10 @@ void func_800ADB68(u8 *buf, s32 arg) {
 void func_800ADC04(void) {
     s32 i;
     for (i = 0; i < PARTY_SLOT_COUNT; i++) {
-        if (g_gameState.mainData.party.party[i] != PARTY_SLOT_EMPTY
-            && g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp == 0) {
-            g_gameState.chars[g_gameState.mainData.party.party[i]].currentHp = 1;
-            g_gameState.chars[g_gameState.mainData.party.party[i]].statusFlags &= ~1u;
+        if (g_gameState.mainData.party.partyMembers[i] != PARTY_SLOT_EMPTY
+            && g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp == 0) {
+            g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp = 1;
+            g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].statusFlags &= ~1u;
         }
     }
 }
@@ -502,37 +502,37 @@ s32 opHandler_PSHM_B(ScriptContext *context, s32 a1) {
     return 2;
 }
 
-/** @brief Load halfword from D_800780D8+a1, call func_800AE3A4 with mode 6, push result. Returns 2. */
+/** @brief Load halfword from g_gameState.fieldVars.initTag[a1], call func_800AE3A4 with mode 6, push result. Returns 2. */
 s32 opHandler_PSHM_W(ScriptContext *context, s32 a1) {
-    s32 result = func_800AE3A4(*(u16 *)&D_800780D8[a1], 6);
+    s32 result = func_800AE3A4(*(u16 *)&g_gameState.fieldVars.initTag[a1], 6);
     PUSH(context, result);
     return 2;
 }
 
-/** @brief Load word from D_800780D8+a1, call func_800AE3A4 with mode 7, push result. Returns 2. */
+/** @brief Load word from g_gameState.fieldVars.initTag[a1], call func_800AE3A4 with mode 7, push result. Returns 2. */
 s32 opHandler_PSHM_L(ScriptContext *context, s32 a1) {
-    s32 result = func_800AE3A4(*(s32 *)&D_800780D8[a1], 7);
+    s32 result = func_800AE3A4(*(s32 *)&g_gameState.fieldVars.initTag[a1], 7);
     PUSH(context, result);
     return 2;
 }
 
-/** @brief Load signed byte from D_800780D8+a1, call func_800AE3A4 with mode 2, push result. Returns 2. */
+/** @brief Load signed byte from g_gameState.fieldVars.initTag[a1], call func_800AE3A4 with mode 2, push result. Returns 2. */
 s32 opHandler_PSHSM_B(ScriptContext *context, s32 a1) {
-    s32 result = func_800AE3A4(*(s8 *)&D_800780D8[a1], 2);
+    s32 result = func_800AE3A4(*(s8 *)&g_gameState.fieldVars.initTag[a1], 2);
     PUSH(context, result);
     return 2;
 }
 
-/** @brief Load signed halfword from D_800780D8+a1, call func_800AE3A4 with mode 3, push result. Returns 2. */
+/** @brief Load signed halfword from g_gameState.fieldVars.initTag[a1], call func_800AE3A4 with mode 3, push result. Returns 2. */
 s32 opHandler_PSHSM_W(ScriptContext *context, s32 a1) {
-    s32 result = func_800AE3A4(*(s16 *)&D_800780D8[a1], 3);
+    s32 result = func_800AE3A4(*(s16 *)&g_gameState.fieldVars.initTag[a1], 3);
     PUSH(context, result);
     return 2;
 }
 
-/** @brief Load word from D_800780D8+a1, call func_800AE3A4 with mode 4, push result. Returns 2. */
+/** @brief Load word from g_gameState.fieldVars.initTag[a1], call func_800AE3A4 with mode 4, push result. Returns 2. */
 s32 opHandler_PSHSM_L(ScriptContext *context, s32 a1) {
-    s32 result = func_800AE3A4(*(s32 *)&D_800780D8[a1], 4);
+    s32 result = func_800AE3A4(*(s32 *)&g_gameState.fieldVars.initTag[a1], 4);
     PUSH(context, result);
     return 2;
 }
@@ -564,15 +564,15 @@ s32 opHandler_POPM_B(ScriptContext *context, s32 a1) {
     return 2;
 }
 
-/** @brief Pop halfword from stack and store to D_800780D8[a1]. Returns 2. */
+/** @brief Pop halfword from stack and store to g_gameState.fieldVars.initTag[a1]. Returns 2. */
 s32 opHandler_POPM_W(ScriptContext *context, s32 a1) {
-    *(u16 *)&D_800780D8[a1] = POP(context);
+    *(u16 *)&g_gameState.fieldVars.initTag[a1] = POP(context);
     return 2;
 }
 
-/** @brief Pop word from stack and store to D_800780D8[a1]. Returns 2. */
+/** @brief Pop word from stack and store to g_gameState.fieldVars.initTag[a1]. Returns 2. */
 s32 opHandler_POPM_L(ScriptContext *context, s32 a1) {
-    *(s32 *)&D_800780D8[a1] = POP(context);
+    *(s32 *)&g_gameState.fieldVars.initTag[a1] = POP(context);
     return 2;
 }
 
@@ -1376,7 +1376,7 @@ s32 opHandler_ADDPARTY(ScriptContext *context) {
     if (newSlot != first) {
         g_gameState.battleParty[newSlot] = popped;
         partySlot = (newSlot = findPartySlot(0xFF));
-        g_gameState.mainData.party.party[partySlot] = findCharacterSlot(popped);
+        g_gameState.mainData.party.partyMembers[partySlot] = findCharacterSlot(popped);
     }
 
     if (popped >= 8) {
@@ -1412,9 +1412,9 @@ s32 opHandler_SUBPARTY(ScriptContext *context) {
     slot = func_80037C6C(charId);
     if (slot != PARTY_SLOT_EMPTY) {
         if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
-            func_80036B90(g_gameState.mainData.party.party[slot]);
+            func_80036B90(g_gameState.mainData.party.partyMembers[slot]);
         }
-        g_gameState.mainData.party.party[slot] = PARTY_SLOT_EMPTY;
+        g_gameState.mainData.party.partyMembers[slot] = PARTY_SLOT_EMPTY;
     }
     recalcPartyStats();
     func_800ADC04();
@@ -1460,7 +1460,7 @@ s32 opHandler_CHANGEPARTY(ScriptContext *context) {
         }
     }
 
-    g_gameState.mainData.party.party[slot] = findCharacterSlot(popped1);
+    g_gameState.mainData.party.partyMembers[slot] = findCharacterSlot(popped1);
     g_gameState.battleParty[popped2] = popped1;
     recalcPartyStats();
     return 2;
@@ -1502,17 +1502,17 @@ s32 opHandler_SETPARTY(ScriptContext *context) {
         g_gameState.battleParty[0] = slot0;
         g_gameState.battleParty[1] = slot1;
 
-        g_gameState.mainData.party.party[2] = findCharacterSlot(g_gameState.battleParty[2]);
-        g_gameState.mainData.party.party[1] = findCharacterSlot(g_gameState.battleParty[0]);
-        g_gameState.mainData.party.party[0] = findCharacterSlot(g_gameState.battleParty[1]);
+        g_gameState.mainData.party.partyMembers[2] = findCharacterSlot(g_gameState.battleParty[2]);
+        g_gameState.mainData.party.partyMembers[1] = findCharacterSlot(g_gameState.battleParty[0]);
+        g_gameState.mainData.party.partyMembers[0] = findCharacterSlot(g_gameState.battleParty[1]);
     } else {
         g_gameState.battleParty[0] = slot0;
         g_gameState.battleParty[1] = slot1;
         g_gameState.battleParty[2] = slot2;
 
-        g_gameState.mainData.party.party[2] = slot2;
-        g_gameState.mainData.party.party[1] = slot0;
-        g_gameState.mainData.party.party[0] = slot1;
+        g_gameState.mainData.party.partyMembers[2] = slot2;
+        g_gameState.mainData.party.partyMembers[1] = slot0;
+        g_gameState.mainData.party.partyMembers[0] = slot1;
     }
 
     recalcPartyStats();
@@ -1704,9 +1704,9 @@ s32 opHandler_SWAP(ScriptContext *context) {
     s32 i;
     for (i = 0; i < 3; i++) {
         savedBattle[i]                = g_gameState.battleParty[i];
-        savedParty[i]                 = g_gameState.mainData.party.party[i];
+        savedParty[i]                 = g_gameState.mainData.party.partyMembers[i];
         g_gameState.battleParty[i]    = g_fieldVars->partyOrderA[i];
-        g_gameState.mainData.party.party[i] = g_fieldVars->partyOrderB[i];
+        g_gameState.mainData.party.partyMembers[i] = g_fieldVars->partyOrderB[i];
         g_fieldVars->partyOrderA[i]   = savedBattle[i];
         g_fieldVars->partyOrderB[i]   = savedParty[i];
     }
@@ -1716,7 +1716,7 @@ s32 opHandler_SWAP(ScriptContext *context) {
 
 /**
  * @brief Set @ref FIELD_STATE_PARTY_OVERRIDE, then if popped value is nonzero
- *        force fieldF3 to 0xFF; mirror fieldF3 into @c D_80082C10 and
+ *        force fieldF3 to 0xFF; mirror fieldF3 into @c g_battleConfig.unk8 and
  *        @c GameConfig.sealedFeatures, then tail into @c opHandler_SETPARTY2.
  *
  * @return 2 (VM continue).
@@ -1726,7 +1726,7 @@ s32 opHandler_LASTIN(Actor *actor, s32 a1) {
     if (POP(&actor->context) != 0) {
         g_fieldVars->fieldF3 = 0xFF;
     }
-    D_80082C10 = g_fieldVars->fieldF3;
+    g_battleConfig.unk8 = g_fieldVars->fieldF3;
     g_gameState.config.sealedFeatures = g_fieldVars->fieldF3;
     opHandler_SETPARTY2(&actor->context, a1);
     return 2;
@@ -1734,7 +1734,7 @@ s32 opHandler_LASTIN(Actor *actor, s32 a1) {
 
 /**
  * Clears bit 0x800 in entity flags at g_fieldVars+0x68, clears
- * D_80082C10 and @c GameConfig.sealedFeatures, then calls recalcPartyStats.
+ * g_battleConfig.unk8 and @c GameConfig.sealedFeatures, then calls recalcPartyStats.
  *
  * @param actor Unused.
  * @return 2 (continue processing).
@@ -1742,10 +1742,10 @@ s32 opHandler_LASTIN(Actor *actor, s32 a1) {
 s32 opHandler_LASTOUT(ScriptContext *context) {
     /* Take the address of stateFlags so gcc materializes the read & write
      * through one register — keeps the seedState updates together
-     * (before D_80082C10/sealedFeatures + recalcPartyStats() in the schedule). */
+     * (before g_battleConfig.unk8/sealedFeatures + recalcPartyStats() in the schedule). */
     s32 *p = &g_fieldVars->stateFlags;
     *p = *p & ~0x800;
-    D_80082C10 = 0;
+    g_battleConfig.unk8 = 0;
     g_gameState.config.sealedFeatures = 0;
     recalcPartyStats();
     return 2;

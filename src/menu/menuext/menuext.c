@@ -4,6 +4,7 @@
 #include "menumain.h"
 #include "character.h"
 #include "menuext.h"
+#include "gamestate.h"
 
 extern u8 D_801E8C10[];
 extern u8 D_801E8C20[];
@@ -161,7 +162,7 @@ void func_801E5EF0(u8 *a0) {
 /**
  * @brief Search a 152-byte entry for a matching id, return its value.
  *
- * Computes the entry address as g_characterMagic + a0 * 152, then searches
+ * Computes the entry address as g_gameState.chars[a0].magic, then searches
  * up to 32 byte-pairs for a match with a1. Returns the value byte
  * following the matched id, or 0 if not found.
  *
@@ -170,24 +171,20 @@ void func_801E5EF0(u8 *a0) {
  * @return Value byte after matched id, or 0 if not found
  */
 s32 func_801E5F48(s32 a0, s32 a1) {
-    u8 *ptr = g_characterMagic + a0 * 152;
-    s32 i = 0;
-top:
-    {
-        s32 id = ptr[0];
-        ptr++;
-        if (a1 != id) goto skip;
-        {
-            s32 val = ptr[0];
-            if (val != 0) {
-                return val;
+    u8 *slot = &g_gameState.chars[a0].magic[0].magicId;
+    s32 i;
+
+    for (i = 0; i < 32; i++, slot++) {
+        s32 id = *slot++;
+        
+        if (a1 == id) {
+            s32 quantity = *slot; 
+            if (quantity != 0) {
+                return quantity;
             }
         }
     }
-skip:
-    i++;
-    ptr++;
-    if (i < 0x20) goto top;
+    
     return 0;
 }
 
@@ -431,26 +428,15 @@ void func_801E7E38(u8 *a0, s32 a1, s32 a2, s32 a3, s32 arg5) {
     }
 }
 
-/** @brief Per-character cached menu data (stride 0x98, 8 entries). */
-typedef struct {
-    /* 0x00 */ u8 pad00[8];
-    /* 0x08 */ u8 charId;        /**< Character id (input to getCharName). */
-    /* 0x09 */ u8 pad09[0x8B];
-    /* 0x94 */ u16 status;        /**< Character status flags (bit 1 = ready, bit 2 = available). */
-    /* 0x96 */ u8 pad96[2];
-} CharRecord;  /* 0x98 = 152 bytes */
-
 /** @brief Extension menu context — character/magic IDs plus state byte. */
 typedef struct {
     /* 0x00 */ u8 pad00[0x48];
-    /* 0x48 */ u8 charIdx;        /**< Character index into g_characters. */
+    /* 0x48 */ u8 charIdx;        /**< Character index into g_gameState.chars. */
     /* 0x49 */ u8 pad49[2];
     /* 0x4B */ u8 magicId;        /**< Magic id (input to getMagicNamePtr). */
     /* 0x4C */ u8 pad4C[7];
     /* 0x53 */ u8 state;          /**< Render state (0xFF = inactive). */
 } ExtMenuCtx;
-
-extern CharRecord g_characters[];
 
 extern u8 *getCharName(s32 charId);
 extern u8 *getMagicNamePtr(s32 magicId);
@@ -475,7 +461,7 @@ s32 func_801E7EB4(ExtMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
 
     if (ctx->state < 0xFF) {
-        CharRecord *charEntry;
+        CharacterData *charEntry;
         s32 byteVal;
         s32 textY;
         s32 textX;
@@ -484,9 +470,9 @@ s32 func_801E7EB4(ExtMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s32 y) {
         textAttr = func_801F3FB4(func_801F57A4(ctx->charIdx) & 0xFFFF);
         textX = x + 8;
         textY = y + 8;
-        charEntry = &g_characters[ctx->charIdx];
+        charEntry = &g_gameState.chars[ctx->charIdx];
         cursorY = func_801F0FEC(renderCtx, cursorY, textX, textY,
-                                getCharName(charEntry->charId), textAttr);
+                                getCharName(charEntry->characterId), textAttr);
 
         textAttr = 7;
         textX = x + 0x22;

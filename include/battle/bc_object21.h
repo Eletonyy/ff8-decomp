@@ -12,17 +12,17 @@ extern void func_800DF794(void);
 extern void func_800DF7C8(s32 a0, s32 a1);
 
 /*
- * Wrappers of dialog functions, defined without parameters: each forwards
- * whatever $a0-$a3 hold, and callers pass the arguments of the function it wraps.
- */
-extern void func_800DF804(void);
-extern void func_800DF824(void);
-extern void func_800DF844(void);
-extern void func_800DF864(void);
-extern void func_800DF884(void);
-extern void func_800DF8A4(void);
-extern void func_800DF8C4(void);
-extern void func_800DF8E4(void);
+ * Wrappers of dialog functions
+*/
+
+extern void func_800DF804(s32, s32, s32);
+extern void func_800DF824(s32, u8*);
+extern void func_800DF844(s32);
+extern void func_800DF864(s32);
+extern void func_800DF884(s32, RECT*);
+extern void func_800DF8A4(s32, s32);
+extern void func_800DF8C4(s32, s32);
+extern void func_800DF8E4(s32, s32);
 extern void func_800DF904(void);
 
 #endif /* BC_OBJECT21_H */

@@ -234,7 +234,7 @@ typedef struct {
 
 /* Shared world-overlay state referenced by more than one we_object*.c.
  * Consolidated here so each symbol has a single canonical declaration.
- * (Cross-overlay main-binary symbols D_800780D8 and g_fieldVars are owned
+ * (Cross-overlay main-binary symbols g_gameState.fieldVars and g_fieldVars are owned
  * by field.h / gamestate.h respectively and are not redeclared here.) */
 extern s32            D_8005F138;        /**< Active display-env window (holds a DISPENV*). */
 extern s32            D_800C4D20;

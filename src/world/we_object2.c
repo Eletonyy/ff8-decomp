@@ -105,7 +105,7 @@ s32 lookupScrollBounds(s8 cmd, s32 *outBase, s32 *outLimit, s32 *outSpan, s32 *o
  *        the matching data table, distributing the results to out-params.
  *
  * Derives a bank-selector flag (@c outBankSel) from the scene: for scene mode
- * @c 2 it's @c D_80082C11, otherwise it's @c (g_fieldVars->soundBankSelector
+ * @c 2 it's @c g_battleConfig.unk9, otherwise it's @c (g_fieldVars->soundBankSelector
  * == 0). It then runs @ref lookupScrollBounds for the (base, limit, span, set)
  * tuple; on a hit it selects a data table (@c D_80063388 when the bank flag is
  * set, else @c D_8005F388). Each non-NULL out-param receives its value and the
@@ -131,7 +131,7 @@ s32 getScrollState(s8 cmd, s32 *outBankSel, s32 *outReady, s32 *outLimit,
     set = 0;
 
     if (D_80082C8C.mode == 2) {
-        bankSel = D_80082C11;
+        bankSel = g_battleConfig.unk9;
     } else {
         bankSel = (g_fieldVars->soundBankSelector == 0);
     }
@@ -452,6 +452,7 @@ s32 func_8009D7D8(s32 a0) {
 
 /** Clears bit 0x40 on two related flag bytes. */
 void func_8009D814(void) {
+    u8 *D_800780D8 = (u8*)&g_gameState.fieldVars;
     D_800780D8[0x108] &= ~0x40;
     D_800D23D8[0x66] &= ~0x40;
 }
@@ -461,7 +462,7 @@ void func_8009D814(void) {
  * @param a0 Entity slot index offset.
  */
 void func_8009D840(s32 a0) {
-    u8 *base1 = D_800780D8;
+    u8 *base1 = (u8*)&g_gameState.fieldVars;
     u8 *base2 = D_800D23D8;
 
     *(u8 *)(a0 + (s32)base1 + 0x10D) = 0;

@@ -1,5 +1,8 @@
-D_800EE4C0 = 0x800EE4C0; // size:0x64
+D_800E3CF0 = 0x800E3CF0;
+D_800E3CF1 = 0x800E3CF1;
+D_800EE4C0 = 0x800EE4C0; // size:0x78
 D_800ED148 = 0x800ED148; // size:0x133C
+D_800EE9E8 = 0x800EE9E8; // size:0x178
 startVibration = 0x8003093C; // type:func
 func_80099D30 = 0x80099D30; // type:func
 func_80099FA0 = 0x80099FA0; // type:func
