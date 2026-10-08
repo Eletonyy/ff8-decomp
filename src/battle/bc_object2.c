@@ -15,6 +15,8 @@
 #include "battle/bc_object6.h"
 #include "battle/bc_object7.h"
 
+static void func_800A1760(s32 arg0, BattleCharData* arg1);
+
 /**
  * @brief Look up entity ability flags with index-based table lookup.
  *
@@ -2641,44 +2643,50 @@ void func_800A09D0(s32 arg0) {
     }
 }
 
-void func_800A1760(s32 arg0, BattleCharData* arg1) {
+/**
+ * @brief Grey out or restore a party member's Magic, GF and Draw lines.
+ *
+ * @param arg0 Nonzero to grey them out; zero to restore the ones the battle hasn't turned off.
+ * @param arg1 The party member's battle data.
+ */
+static void func_800A1760(s32 arg0, BattleCharData* arg1) {
     s32 i;
     
     for (i = 0; i < 4; i++) {
-        switch (arg1->cmdSlots[i].cmdType) {
-            case 2:
+        switch (arg1->cmdSlots[i].commandId) {
+            case BATTLE_CMD_MAGIC:
                 if (arg0 == 0) {
-                    if (!(g_battleConfig.unk8 & 2)) {
-                        arg1->cmdSlots[i].flags &= ~2;
+                    if (!(g_battleConfig.unk8 & BATTLE_CMDS_OFF_MAGIC)) {
+                        arg1->cmdSlots[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 
                 
                 else {
-                    arg1->cmdSlots[i].flags |= 2;
+                    arg1->cmdSlots[i].flags |= BTL_CMD_UNAVAILABLE;
                 }
             break;
 
-            case 3:
+            case BATTLE_CMD_GF:
                 if (arg0 == 0) {
-                    if (!(g_battleConfig.unk8 & 4)) {
-                        arg1->cmdSlots[i].flags &= ~2;
+                    if (!(g_battleConfig.unk8 & BATTLE_CMDS_OFF_GF)) {
+                        arg1->cmdSlots[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 
                 
                 else {
-                    arg1->cmdSlots[i].flags |= 2;
+                    arg1->cmdSlots[i].flags |= BTL_CMD_UNAVAILABLE;
                 }
             break;
 
-            case 6:
+            case BATTLE_CMD_DRAW:
                 if (arg0 == 0) {
-                    if (!(g_battleConfig.unk8 & 8)) {
-                        arg1->cmdSlots[i].flags &= ~2;
+                    if (!(g_battleConfig.unk8 & BATTLE_CMDS_OFF_DRAW)) {
+                        arg1->cmdSlots[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 
                 
                 else {
-                    arg1->cmdSlots[i].flags |= 2;
+                    arg1->cmdSlots[i].flags |= BTL_CMD_UNAVAILABLE;
                 }
             break;
         }

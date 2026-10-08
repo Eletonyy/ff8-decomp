@@ -21,7 +21,7 @@
 #define GF_ABILITY_BONUS_GFHP 1
 #define GF_ABILITY_BONUS_NONE 0xFF
 
-static void initCommandSlot(BattleCharData *bc, s32 index, s32 cmdType);
+static void initCommandSlot(BattleCharData *bc, s32 index, s32 commandId);
 static s32 getCharAbilityFlags(s32 charIdx);
 static s32 hasDrawCommand(BattleCharData *charData);
 static s32 getFieldStatusFlags(BattleCharData *charData);
@@ -41,10 +41,10 @@ void func_800229FC(s32 slot) {
     for (i = 0; i < 32; i++) {
         bc->magicSlots[i].flags = 0;
         if (g_kernel.magic[bc->magicSlots[i].id].attackFlags & ATTACK_FLAG_TARGET_KO) {
-            bc->magicSlots[i].flags = MENU_ENTRY_TARGETS_KO;
+            bc->magicSlots[i].flags = BTL_CMD_ARG_TARGETS_KO;
         }
         if (hasJunctionedAbility(slot, bc->magicSlots[i].id)) {
-            bc->magicSlots[i].flags |= MENU_ENTRY_JUNCTIONED;
+            bc->magicSlots[i].flags |= BTL_CMD_ARG_JUNCTIONED;
         }
         bc->magicSlots[i].targetInfo = g_kernel.magic[bc->magicSlots[i].id].targetInfo;
         bc->magicSlots[i].statusWindowFlags = g_kernel.magic[bc->magicSlots[i].id].statusWindowFlags;
@@ -57,13 +57,13 @@ void func_800229FC(s32 slot) {
  *
  * @param bc The party member's battle data.
  * @param index Command slot (0-3).
- * @param cmdType Battle command ID.
+ * @param commandId Battle command ID.
  */
-static void initCommandSlot(BattleCharData *bc, s32 index, s32 cmdType) {
-    bc->cmdSlots[index].cmdType = cmdType;
-    bc->cmdSlots[index].menuFlags = g_kernel.battleCommands[bc->cmdSlots[index].cmdType].menuFlags;
+static void initCommandSlot(BattleCharData *bc, s32 index, s32 commandId) {
+    bc->cmdSlots[index].commandId = commandId;
+    bc->cmdSlots[index].subMenuFlags = g_kernel.battleCommands[bc->cmdSlots[index].commandId].subMenuFlags;
     bc->cmdSlots[index].flags = 0;
-    bc->cmdSlots[index].targetInfo = g_kernel.battleCommands[bc->cmdSlots[index].cmdType].targetInfo;
+    bc->cmdSlots[index].targetInfo = g_kernel.battleCommands[bc->cmdSlots[index].commandId].targetInfo;
 }
 
 
@@ -100,7 +100,7 @@ static s32 getCharAbilityFlags(s32 charIdx) {
 static s32 hasDrawCommand(BattleCharData *charData) {
     s32 i;
     for (i = 0; i < 4; i++) {
-        if (charData->cmdSlots[i].cmdType == BATTLE_CMD_DRAW) return 1;
+        if (charData->cmdSlots[i].commandId == BATTLE_CMD_DRAW) return 1;
     }
     return 0;
 }
@@ -211,8 +211,8 @@ static void clearCharSlotData(BattleCharData *charData) {
     for (i = 0; i < 4; i++) {
         charData->cmdSlots[i].targetInfo = 0;
         charData->cmdSlots[i].flags = 0;
-        charData->cmdSlots[i].menuFlags = 0;
-        charData->cmdSlots[i].cmdType = 0;
+        charData->cmdSlots[i].subMenuFlags = 0;
+        charData->cmdSlots[i].commandId = 0;
     }
 
     charData->unk1C = 0;
@@ -261,7 +261,7 @@ void func_80022E08(s32 charIdx, s32 slot) {
             bc->gfSlots[j].count = 1;
             bc->gfSlots[j].flags = 0;
             if (g_gameState.gfs[i].hp == 0) {
-                bc->gfSlots[j].flags = MENU_ENTRY_UNAVAILABLE;
+                bc->gfSlots[j].flags = BTL_CMD_ARG_UNAVAILABLE;
             }
             bc->gfSlots[j].targetInfo = g_kernel.junctionableGfs[i].targetInfo;
             bc->gfSlots[j].statusWindowFlags = g_kernel.junctionableGfs[i].statusWindowFlags;
@@ -275,19 +275,19 @@ void func_80022E08(s32 charIdx, s32 slot) {
 
     for (i = 1, j = 0; i < 4; i++, j++) {
         if (cd->commands[j] >= COMMAND_ABILITY_FIRST && cd->commands[j] < COMMAND_ABILITY_END) {
-            bc->cmdSlots[i].cmdType = g_kernel.commandAbilities[cd->commands[j] - COMMAND_ABILITY_FIRST].typeField;
-            bc->cmdSlots[i].menuFlags = g_kernel.battleCommands[bc->cmdSlots[i].cmdType].menuFlags;
+            bc->cmdSlots[i].commandId = g_kernel.commandAbilities[cd->commands[j] - COMMAND_ABILITY_FIRST].typeField;
+            bc->cmdSlots[i].subMenuFlags = g_kernel.battleCommands[bc->cmdSlots[i].commandId].subMenuFlags;
             bc->cmdSlots[i].flags = 0;
-            bc->cmdSlots[i].targetInfo = g_kernel.battleCommands[bc->cmdSlots[i].cmdType].targetInfo;
-            if (bc->cmdSlots[i].cmdType == BATTLE_CMD_UNK13) {
-                bc->cmdSlots[i].flags |= CMD_SLOT_UNK08;
+            bc->cmdSlots[i].targetInfo = g_kernel.battleCommands[bc->cmdSlots[i].commandId].targetInfo;
+            if (bc->cmdSlots[i].commandId == BATTLE_CMD_UNK13) {
+                bc->cmdSlots[i].flags |= BTL_CMD_SINGLE_OR_DOUBLE;
             }
-            data = g_kernel.battleCommands[bc->cmdSlots[i].cmdType].abilityDataId;
+            data = g_kernel.battleCommands[bc->cmdSlots[i].commandId].abilityDataId;
             if (data != 0xFF && (g_kernel.commandAbilityData[data].attackFlags & ATTACK_FLAG_TARGET_KO)) {
-                bc->cmdSlots[i].flags |= MENU_ENTRY_TARGETS_KO;
+                bc->cmdSlots[i].flags |= BTL_CMD_TARGETS_KO;
             }
-            if (isCommandOff(bc->cmdSlots[i].cmdType)) {
-                bc->cmdSlots[i].flags |= MENU_ENTRY_UNAVAILABLE;
+            if (isCommandOff(bc->cmdSlots[i].commandId)) {
+                bc->cmdSlots[i].flags |= BTL_CMD_UNAVAILABLE;
             }
         }
     }
@@ -298,9 +298,9 @@ void func_80022E08(s32 charIdx, s32 slot) {
     }
     initCommandSlot(bc, 0, i);
 
-    bc->limitCmdSlot.cmdType = g_kernel.characters[bc->characterId].limitBreakId;
-    bc->limitCmdSlot.targetInfo = g_kernel.battleCommands[bc->limitCmdSlot.cmdType].targetInfo;
-    bc->limitCmdSlot.menuFlags = g_kernel.battleCommands[bc->limitCmdSlot.cmdType].menuFlags;
+    bc->limitCmdSlot.commandId = g_kernel.characters[bc->characterId].limitBreakId;
+    bc->limitCmdSlot.targetInfo = g_kernel.battleCommands[bc->limitCmdSlot.commandId].targetInfo;
+    bc->limitCmdSlot.subMenuFlags = g_kernel.battleCommands[bc->limitCmdSlot.commandId].subMenuFlags;
     bc->limitCmdSlot.flags = 0;
 
     for (i = 0; i < 9; i++) {
@@ -314,13 +314,13 @@ void func_80022E08(s32 charIdx, s32 slot) {
  * @brief Find which of a party member's command slots holds a command.
  *
  * @param bc The party member's battle data.
- * @param cmdType Battle command ID.
+ * @param commandId Battle command ID.
  * @return The slot (0-3), or 0xFF if none holds it.
  */
-s32 findCommandSlot(BattleCharData *bc, s32 cmdType) {
+s32 findCommandSlot(BattleCharData *bc, s32 commandId) {
     s32 i;
     for (i = 0; i < 4; i++) {
-        if (bc->cmdSlots[i].cmdType == cmdType) return i;
+        if (bc->cmdSlots[i].commandId == commandId) return i;
     }
     return 0xFF;
 }
@@ -414,12 +414,12 @@ void func_800231E0(s32 charIdx, s32 battleSlot) {
         s32 idx;
         if (findCommandSlot(bc, BATTLE_CMD_MAGIC) == 0xFF) return;
         idx = findCommandSlot(bc, BATTLE_CMD_MAGIC);
-        bc->cmdSlots[idx].flags |= CMD_SLOT_MULTICAST;
+        bc->cmdSlots[idx].flags |= BTL_CMD_MULTICAST;
     } else {
         s32 idx;
         if (findCommandSlot(bc, BATTLE_CMD_MAGIC) == 0xFF) return;
         idx = findCommandSlot(bc, BATTLE_CMD_MAGIC);
-        bc->cmdSlots[idx].flags &= ~CMD_SLOT_MULTICAST;
+        bc->cmdSlots[idx].flags &= ~BTL_CMD_MULTICAST;
     }
 }
 

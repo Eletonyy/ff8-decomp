@@ -608,7 +608,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object18", func_800D69BC);
  * @param index Entity index.
  * @return Pointer to entity data.
  */
-BattleMenuEntry* func_800D6AC8(s32 index) {
+BattleCommandArgument* func_800D6AC8(s32 index) {
     return g_battleChars.chars[index].gfSlots;
 }
 

@@ -497,51 +497,55 @@ typedef struct {
 typedef struct {
     /** 0x0 */ u8 id; // A magic ID, a GF's battle ID, or a limit break entry such as a Blue Magic
     /** 0x1 */ s8 count; // The spell's stock or the ammo Irvine holds; 1 for anything else
-    /** 0x2 */ u8 statusWindowFlags;
-    /** 0x3 */ u8 targetInfo;
-    /** 0x4 */ u8 flags; // MENU_ENTRY_* bits
-} BattleMenuEntry;
+    /** 0x2 */ u8 statusWindowFlags; // See @c StatusWindowFlag for bit functions
+    /** 0x3 */ u8 targetInfo; // See @c TargetInfoFlag for bit functions
+    /** 0x4 */ u8 flags; // See @c BattleCommandArgumentFlag for bit functions
+} BattleCommandArgument;
 
 typedef struct {
-    /** 0x0 */ u8 cmdType; // Index into g_kernel.battleCommands
-    /** 0x1 */ u8 menuFlags;
-    /** 0x2 */ u8 targetInfo;
-    /** 0x3 */ u8 flags; // MENU_ENTRY_* and CMD_SLOT_* bits
-} BattleCmdSlot;
+    /** 0x0 */ u8 commandId; // Index into g_kernel.battleCommands
+    /** 0x1 */ u8 subMenuFlags; // See @c SubMenuFlag for bit functions
+    /** 0x2 */ u8 targetInfo; // See @c TargetInfoFlag for bit functions
+    /** 0x3 */ u8 flags; // See @c BattleCommandFlag for bit functions
+} BattleCommand;
 
-// Bits of both BattleMenuEntry.flags and BattleCmdSlot.flags
-#define MENU_ENTRY_TARGETS_KO 0x01
-#define MENU_ENTRY_UNAVAILABLE 0x02
+// Bits of BattleCommandArgument.flags
+enum BattleCommandArgumentFlag {
+    BTL_CMD_ARG_TARGETS_KO = 0x01, // the cursor can land on KO'd allies
+    BTL_CMD_ARG_UNAVAILABLE = 0x02, // greyed out, and picking it sounds the buzzer
+    BTL_CMD_ARG_JUNCTIONED = 0x04, // the spell is junctioned to a stat
+    BTL_CMD_ARG_EMPTY = 0x10 // an unused limit break entry
+};
 
-// Bits of BattleMenuEntry.flags only
-#define MENU_ENTRY_JUNCTIONED 0x04
-#define MENU_ENTRY_EMPTY 0x10
-
-// Bits of BattleCmdSlot.flags only
-#define CMD_SLOT_LIMIT_READY 0x04
-#define CMD_SLOT_UNK08 0x08
-#define CMD_SLOT_MULTICAST 0x10
+// Bits of BattleCommand.flags
+enum BattleCommandFlag {
+    BTL_CMD_TARGETS_KO = 0x01, // the cursor can land on KO'd allies
+    BTL_CMD_UNAVAILABLE = 0x02, // greyed out, and picking it sounds the buzzer
+    BTL_CMD_LIMIT_READY = 0x04, // show limit arrow on command if set
+    BTL_CMD_SINGLE_OR_DOUBLE = 0x08, // asks single or double before showing the commands submenu
+    BTL_CMD_MULTICAST = 0x10, // asks single, double or triple if the double or triple bit is set
+    BTL_CMD_FLASH = 0x20 // the line flashes
+};
 
 /** @brief Battle ID of GF 0; GF n is BATTLE_GF_ID_BASE + n. */
 #define BATTLE_GF_ID_BASE 0x40
 
-/** @brief Battle character render data (g_battleChars, stride 0x1D0 = 464 bytes). */
 typedef struct {
-    /* 0x000 */ u8 pad0[0x008 - 0x000];
-    /* 0x008 */ BattleCmdSlot subCmdSlots[3];
+    /* 0x000 */ BattleCommand drawChoices[2]; // stock/cast
+    /* 0x008 */ BattleCommand multicastChoices[3]; // single/double/triple
     /* 0x014 */ u16 unk14;
     /* 0x016 */ u16 unk16;
     /* 0x018 */ s16 currentHp;          /**< Current HP in battle. */
     /* 0x01A */ u16 unk1A;
     /* 0x01C */ u8 unk1C;
     /* 0x01D */ u8 unk1D;
-    /* 0x01E */ BattleCmdSlot cmdSlots[4];
-    /* 0x02E */ BattleCmdSlot limitCmdSlot; /**< The limit break command, beside the four in cmdSlots. */
-    /* 0x032 */ BattleMenuEntry limitSlots[16]; /**< What the limit break lists, e.g. Quistis' Blue Magic or Irvine's ammo. */
-    /* 0x082 */ BattleMenuEntry magicSlots[32];
-    /* 0x122 */ BattleMenuEntry gfSlots[16]; /**< The junctioned GFs. */
+    /* 0x01E */ BattleCommand cmdSlots[4]; // Attack/Mug + whatever abilities the character has equipped
+    /* 0x02E */ BattleCommand limitCmdSlot; /**< The limit break command, beside the four in cmdSlots. */
+    /* 0x032 */ BattleCommandArgument limitSlots[16]; /**< What the limit break lists, e.g. Quistis' Blue Magic or Irvine's ammo. */
+    /* 0x082 */ BattleCommandArgument magicSlots[32];
+    /* 0x122 */ BattleCommandArgument gfSlots[16]; /**< The junctioned GFs. */
     /* 0x172 */ s16 unk172;          /**< Mirrored HP cap (set with hpRegenCap when battle HP is reduced). */
-    /* 0x174 */ s16 hpRegenCap;        /**< HP regen cap (field-walk tick stops when currentHp reaches this). */
+    /* 0x174 */ s16 hpRegenCap; // The cap for when Move-HP is "equipped"
     /* 0x176 */ u8 pad176[0x178 - 0x176];
     /* 0x178 */ u32 exp; /**< Total EXP. */
     /* 0x17C */ s32 xpToNext;          /**< XP needed to reach next level. */
@@ -823,7 +827,6 @@ void func_800B3128(u8 *a0);
 u16 func_800B0F9C(s32 stat);
 
 /** @brief Resolve battle scene context pointer. */
-void func_800A1760(s32 arg0, BattleCharData* arg1);
 
 /** @brief Apply a stat-effect probe; outputs (a1=stat, a2=count). */
 

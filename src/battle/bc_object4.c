@@ -5,6 +5,8 @@
 #include "battle/bc_object4.h"
 #include "battle/bc_object22.h"
 
+static s32 func_800A9284(BattleCharData* arg0);
+
 
 void func_800A6184(s32 arg0, s32 arg1, s32 arg2, u16 arg3) {
     func_800A5A7C(arg0, arg1, arg2, 0, arg3, 0, &D_800ED148.unk1244[arg0].unk0);
@@ -1479,17 +1481,17 @@ s32 func_800A89B8(s32 arg0, s32 arg1) {
  * @param arg3 Nonzero to copy from the Magic slot.
  */
 void func_800A8A48(BattleCharData* arg0, s32 arg1, u8 arg2, s32 arg3) {
-    arg0->subCmdSlots[arg1].cmdType = arg2;
-    arg0->subCmdSlots[arg1].targetInfo = g_kernel.battleCommands[arg0->subCmdSlots[arg1].cmdType].targetInfo;
+    arg0->multicastChoices[arg1].commandId = arg2;
+    arg0->multicastChoices[arg1].targetInfo = g_kernel.battleCommands[arg0->multicastChoices[arg1].commandId].targetInfo;
     
     if (arg3 == 0) {
-        arg0->subCmdSlots[arg1].menuFlags = arg0->cmdSlots[findCommandSlot(arg0, 13)].menuFlags;
-        arg0->subCmdSlots[arg1].flags = arg0->cmdSlots[findCommandSlot(arg0, 13)].flags;
+        arg0->multicastChoices[arg1].subMenuFlags = arg0->cmdSlots[findCommandSlot(arg0, 13)].subMenuFlags;
+        arg0->multicastChoices[arg1].flags = arg0->cmdSlots[findCommandSlot(arg0, 13)].flags;
     }
     
     else {
-        arg0->subCmdSlots[arg1].menuFlags = arg0->cmdSlots[findCommandSlot(arg0, 2)].menuFlags;
-        arg0->subCmdSlots[arg1].flags = arg0->cmdSlots[findCommandSlot(arg0, 2)].flags;
+        arg0->multicastChoices[arg1].subMenuFlags = arg0->cmdSlots[findCommandSlot(arg0, 2)].subMenuFlags;
+        arg0->multicastChoices[arg1].flags = arg0->cmdSlots[findCommandSlot(arg0, 2)].flags;
     }
 }
 
@@ -1566,34 +1568,34 @@ void func_800A8D7C(s32 arg0, s32 arg1) {
     BattleCharData* temp_s0;
 
     temp_s0 = &g_battleChars.chars[arg0];
-    temp_s0->pad0[0] = BATTLE_CMD_STOCK;
-    temp_s0->pad0[1] = g_kernel.battleCommands[BATTLE_CMD_STOCK].menuFlags;
-    temp_s0->pad0[2] = g_kernel.battleCommands[BATTLE_CMD_STOCK].targetInfo;
-    temp_s0->pad0[3] = 0;
-    if (arg1 < 64) {
-        temp_s0->pad0[4] = BATTLE_CMD_CAST;
-        temp_s0->pad0[5] = g_kernel.magic[arg1].statusWindowFlags;
-        temp_s0->pad0[6] = g_kernel.magic[arg1].targetInfo;
-        temp_s0->pad0[7] = 0;
+    temp_s0->drawChoices[0].commandId = BATTLE_CMD_STOCK;
+    temp_s0->drawChoices[0].subMenuFlags = g_kernel.battleCommands[BATTLE_CMD_STOCK].subMenuFlags;
+    temp_s0->drawChoices[0].targetInfo = g_kernel.battleCommands[BATTLE_CMD_STOCK].targetInfo;
+    temp_s0->drawChoices[0].flags = 0;
+    if (arg1 < BATTLE_GF_ID_BASE) {
+        temp_s0->drawChoices[1].commandId = BATTLE_CMD_CAST;
+        temp_s0->drawChoices[1].subMenuFlags = g_kernel.magic[arg1].statusWindowFlags;
+        temp_s0->drawChoices[1].targetInfo = g_kernel.magic[arg1].targetInfo;
+        temp_s0->drawChoices[1].flags = 0;
         
         if (g_kernel.magic[arg1].attackFlags & ATTACK_FLAG_TARGET_KO) {
-            temp_s0->pad0[7] = 1;
+            temp_s0->drawChoices[1].flags = BTL_CMD_TARGETS_KO;
             
             if (g_kernel.magic[arg1].attackFlags & ATTACK_FLAG_TARGET_KO) {
-                temp_s0->pad0[3] |= 1;
+                temp_s0->drawChoices[0].flags |= BTL_CMD_TARGETS_KO;
             }
         }
         
         if (func_800A89B8(arg0, arg1) != 0) {
-            temp_s0->pad0[3] |= 2;
+            temp_s0->drawChoices[0].flags |= BTL_CMD_UNAVAILABLE;
         }
     } 
     
     else {
-        temp_s0->pad0[4] = BATTLE_CMD_CAST;
-        temp_s0->pad0[5] = 0;
-        temp_s0->pad0[6] = 0;
-        temp_s0->pad0[7] = 2;
+        temp_s0->drawChoices[1].commandId = BATTLE_CMD_CAST;
+        temp_s0->drawChoices[1].subMenuFlags = 0;
+        temp_s0->drawChoices[1].targetInfo = 0;
+        temp_s0->drawChoices[1].flags = BTL_CMD_UNAVAILABLE;
     }
 }
 
@@ -1636,7 +1638,7 @@ s32 func_800A8EFC(BattleCharData* arg0) {
             arg0->limitSlots[val].targetInfo = g_kernel.blueMagic[i].targetInfo;
             arg0->limitSlots[val].flags = 0;
             arg0->limitSlots[val].count = 1;
-            arg0->limitSlots[val].flags &= ~MENU_ENTRY_EMPTY;
+            arg0->limitSlots[val].flags &= ~BTL_CMD_ARG_EMPTY;
             
             if (g_kernel.blueMagic[i].attackFlags & ATTACK_FLAG_TARGET_KO) {
                 arg0->limitSlots[val].flags |= 1;
@@ -1785,7 +1787,7 @@ s32 func_800A9240(s32 arg0) {
  * @param arg0 Party member's battle data.
  * @return Number of slots filled.
  */
-s32 func_800A9284(BattleCharData* arg0) {
+static s32 func_800A9284(BattleCharData* arg0) {
     s32 i;
     u16 mask;
     s32 val;
@@ -1800,14 +1802,14 @@ s32 func_800A9284(BattleCharData* arg0) {
         temp_a0 = func_800A9240(var_s1);
         if ((g_gameState.mainData.limitBreaks.irvineLimits & mask) || (temp_a0 != 0)) {
             arg0->limitSlots[val].id = var_s1;
-            arg0->limitSlots[val].statusWindowFlags = 128;
+            arg0->limitSlots[val].statusWindowFlags = STATUS_WINDOW_NO_PARTY_BOX;
             arg0->limitSlots[val].targetInfo = g_kernel.battleCommands[BATTLE_CMD_SHOT].targetInfo;
             arg0->limitSlots[val].flags = 0;
             arg0->limitSlots[val].count = temp_a0;
-            arg0->limitSlots[val].flags &= ~MENU_ENTRY_EMPTY;
+            arg0->limitSlots[val].flags &= ~BTL_CMD_ARG_EMPTY;
             
             if (temp_a0 == 0) {
-                arg0->limitSlots[val].flags |= 2;
+                arg0->limitSlots[val].flags |= BTL_CMD_ARG_UNAVAILABLE;
             }
           
             val++;
@@ -1832,7 +1834,7 @@ s32 func_800A9370(s32 arg0) {
         temp_a0->limitSlots[i].targetInfo = 0;
         temp_a0->limitSlots[i].statusWindowFlags = 0;
         temp_a0->limitSlots[i].id = 0;
-        temp_a0->limitSlots[i].flags |= MENU_ENTRY_EMPTY;
+        temp_a0->limitSlots[i].flags |= BTL_CMD_ARG_EMPTY;
     }
     
     switch (temp_a0->characterId) {

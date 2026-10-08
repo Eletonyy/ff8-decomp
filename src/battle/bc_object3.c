@@ -8,6 +8,7 @@
 #include "battle/bc_object7.h"
 
 SoundCmd* func_8009B134(s32 arg0, s32 arg1, void* unused); // cant include bc_object1.h
+static void func_800A4350(s32 arg0, s32 arg1);
 
 
 /**
@@ -336,11 +337,11 @@ void func_800A2360(s32 arg0) {
     D_800ED148.entities[arg0].crisisLevel = temp_v0;
     
     if (temp_v0 != 0) {
-        g_battleChars.chars[arg0].cmdSlots[0].flags |= CMD_SLOT_LIMIT_READY;
+        g_battleChars.chars[arg0].cmdSlots[0].flags |= BTL_CMD_LIMIT_READY;
     }
     
     else {
-        g_battleChars.chars[arg0].cmdSlots[0].flags &= ~CMD_SLOT_LIMIT_READY;
+        g_battleChars.chars[arg0].cmdSlots[0].flags &= ~BTL_CMD_LIMIT_READY;
     }
 }
 
@@ -1372,7 +1373,13 @@ void func_800A432C(s32 a0) {
     D_800ED148.unk12DC = getMenuString(a0);
 }
 
-void func_800A4350(s32 arg0, s32 arg1) {
+/**
+ * @brief Grey out GF @p arg1 in a party member's GF list if their summoned GF's HP is 0.
+ *
+ * @param arg0 Party slot.
+ * @param arg1 The GF's battle ID.
+ */
+static void func_800A4350(s32 arg0, s32 arg1) {
     BattleCharData* var_v1;
     s32 i;
 
@@ -1380,7 +1387,7 @@ void func_800A4350(s32 arg0, s32 arg1) {
     if (var_v1->currentHp == 0) {
         for(i = 0; i < 16; i++){
             if (var_v1->gfSlots[i].id == arg1) {
-                var_v1->gfSlots[i].flags |= 2;
+                var_v1->gfSlots[i].flags |= BTL_CMD_ARG_UNAVAILABLE;
                 return;
             }
         }

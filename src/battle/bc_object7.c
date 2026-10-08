@@ -603,7 +603,7 @@ u16 func_800B1104(s32 a0) {
  */
 s32 func_800B115C(s32 selfIdx, s32 cmdIdx, s32 *outId, u16 *outFlags) {
     u8 m = func_8009B15C() % 3;
-    s32 cmd = g_battleChars.chars[selfIdx].cmdSlots[cmdIdx].cmdType;
+    s32 cmd = g_battleChars.chars[selfIdx].cmdSlots[cmdIdx].commandId;
     s32 a;
     u16 v1;
 
