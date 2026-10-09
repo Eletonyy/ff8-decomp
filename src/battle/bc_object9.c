@@ -1,19 +1,17 @@
 #include "common.h"
 #include "battle.h"
-#include "psxsdk/libgte.h"
-#include "battle/bc_object8.h"
 #include "battle/bc_object9.h"
-#include "battle/bc_object10.h"
 
 
 extern u8 D_800EF72C[];
 extern u8 D_800F05C8[];
 extern u8 D_800F0290[];
-void func_800B5B48(void);
 extern u8 D_800F02F8[];
 extern u8 D_800F0308[];
 extern u8 D_800F0408[];
 extern u8 D_800F0578[];
+
+void func_800B5B48(void);
 void func_800B8314(void);
 s32 func_8013E000(s32);
 void func_800C2B88(u8 *);

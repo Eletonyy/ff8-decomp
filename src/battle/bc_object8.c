@@ -1,20 +1,21 @@
 #include "common.h"
 #include "psxsdk/libetc.h"
 #include "battle.h"
-#include "battle/bc_object8.h"
+#include "game.h"
 #include "gamestate.h"
 #include "kernel.h"
+#include "battle/bc_object8.h"
 
-u8* getMenuString(s32);
+
 void func_800B3164(void);
 void func_800B2F3C(void);
 void func_800B304C(void);
 s32 func_800AE788(void);
 s32 func_800AA4E0(void);
 u16 func_800A97FC(s32);
+
 extern u8 D_800EE490[];
 extern u8 D_800EEBE8[];
-
 extern u8 *D_800EEED8;
 extern u8 D_800EE42C[];
 extern u8 D_800EEEC4;
@@ -336,7 +337,7 @@ void func_800B08AC(s32 arg0, s32 arg1) {
     s32 var_s0;
     
     if (arg0 < 3) {
-        var_s0 = getBattleCharName();
+        var_s0 = getBattleCharName(arg0);
     } 
     
     else {
