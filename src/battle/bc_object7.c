@@ -1,11 +1,9 @@
 #include "common.h"
 #include "battle.h"
+#include "game.h"
 #include "gamestate.h"
 #include "kernel.h"
-#include "psxsdk/libetc.h"
 #include "battle/bc_object7.h"
-u8* getMenuString(s32);
-
 
 
 void func_800AF254(void) {
