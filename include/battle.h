@@ -767,7 +767,7 @@ extern u8              D_800EEBD0;
 extern s32             D_800EEBD8;
 extern s32             D_800EEBDC;
 extern u8              D_800EEBE0[7];
-
+extern u8              D_800EEBE8[];
 /* ---------------------------------------------------------------- *
  *  Battle-overlay function prototypes (battle internals).
  * ---------------------------------------------------------------- */

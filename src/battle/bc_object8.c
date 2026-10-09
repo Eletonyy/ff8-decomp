@@ -6,8 +6,6 @@
 #include "kernel.h"
 #include "battle/bc_object8.h"
 
-extern u8 D_800EEBE8[];
-
 // returns 1-A as a string value
 u8 func_800B00E8(s32 arg0) {
     switch (arg0) {
