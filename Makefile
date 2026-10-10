@@ -22,7 +22,7 @@ SRC_DIR    := src
 MAIN       := SLUS_008.92
 SPLAT_CONF := config/ff8.yaml
 SPLAT_GEN  := build/splat
-ROM        := rom/ff8-disc1.bin
+ROM        := $(firstword $(wildcard rom/*.bin))
 # Path template for the generated splat configs; {name} is the binary's name.
 SPLAT_YAML_TMPL := $(SPLAT_GEN)/{name}.yaml
 BINARIES_MK     := $(SPLAT_GEN)/binaries.mk
@@ -217,7 +217,7 @@ setup:
 	python3 -m venv $(VENV)
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install -r requirements.txt
-	@if [ ! -f "$(ROM)" ]; then \
+	@if [ -z "$(ROM)" ] || [ ! -f "$(ROM)" ]; then \
 		echo "BIN file not found in $(ROM)."; \
 		exit 1; \
 	fi
