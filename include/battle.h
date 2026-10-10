@@ -722,6 +722,10 @@ typedef struct {
     /* 0x20 */ u8  pad20[0x38];      /**< Working pointer + remaining unmapped fields. */
 } BattleEffectPrim; /* 0x58 */
 
+typedef struct{
+    u8 unk0;
+    u8 pad[0x4F];
+}D_800ECC48_Struct;
 
 /* ---------------------------------------------------------------- *
  *  Battle data symbols (battle overlay region).
@@ -746,6 +750,9 @@ extern u8              D_800E3CC6;
 extern u8              D_800E3CE8;
 extern u8              D_800E3CEC[];
 extern u8              D_800E3CF0;
+extern u8              D_800E3CF1;
+extern D_800ECC48_Struct D_800ECC48[];
+extern D_800ECC48_Struct D_800EE4E8[];
 extern BattleSystem    D_800ED148;
 extern BattleCmdBuf    D_800EE4C0;
 extern BattleAnimTable D_800EE9E8; // (D_800EE9B3 = D_800EE9E8-3)
@@ -768,6 +775,7 @@ extern s32             D_800EEBD8;
 extern s32             D_800EEBDC;
 extern u8              D_800EEBE0[7];
 extern u8              D_800EEBE8[];
+
 /* ---------------------------------------------------------------- *
  *  Battle-overlay function prototypes (battle internals).
  * ---------------------------------------------------------------- */
@@ -796,7 +804,7 @@ u8 *func_800B04A0(u32 a0, u8 *buf);
 /** @brief Concatenate two parts into the @c D_800EEBE8 message buffer. */
 
 /** @brief Finalize the @c D_800EEBE8 message buffer. */
-u8 *func_800B02AC(u8 *buf);
+//u8 *func_800B02AC(u8 *buf);
 
 /* --- Battle animation lifecycle --- */
 void requestPadSetup(s32 idx);

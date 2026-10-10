@@ -1,11 +1,75 @@
-#ifndef BATTLE_BC_OBJECT9_H
-#define BATTLE_BC_OBJECT9_H
+#ifndef BC_OBJECT9_H
+#define BC_OBJECT9_H
 
 
-/**
- * @file
- * @brief Battle task pools and the scratchpad allocator.
- */
+void* func_800B02AC(u8*);
+
+u8* func_800B0328(u8*);
+
+u8* func_800B0360(s32);
+
+void* func_800B0398(u8*);
+
+u8 func_800B0414(u32, u8*);
+
+u8* func_800B04A0(u32, u8*);
+
+static s32 func_800B054C(u32);
+
+void func_800B0574(s32, u32);
+
+void func_800B0600(s32, s32);
+
+s32 func_800B0668(s32, s32);
+
+void func_800B06DC(u16);
+
+void func_800B0754(s32, s32, s32, u16);
+
+s32 func_800B0794(s32, s32);
+
+void func_800B0808(s32, u8*);
+
+void func_800B08AC(s32, s32);
+
+void func_800B095C(s32);
+
+void func_800B0980(s32, s16, s32, s16);
+
+void func_800B09F0(s32);
+
+void func_800B0C08(void);
+
+s8 func_800B0C68(s32, s32);
+
+s32 func_800B0CC4(s32, s32);
+
+s32 func_800B0D8C(s32, s32);
+
+s32 func_800B0DDC(s32);
+
+s32 func_800B0E30(s32);
+
+s32 func_800B0F3C(s32);
+
+s32 func_800B0F7C(s32);
+
+u16 func_800B0F9C(s32);
+
+u16 func_800B1050(s32);
+
+u16 func_800B1104(s32);
+
+s32 func_800B115C(s32, s32, s32*, u16*);
+
+void func_800B13A0(s32, s32*, s32*, u16*);
+
+s32 func_800B1438(s32);
+
+void func_800B1564(s32, s32*, s32*, s16*);
+
+
+
 
 /** @brief Build a task pool of @p count entries of @p stride bytes. */
 void func_800B2A00(void *header, void *data, s32 stride, s32 count);
@@ -44,5 +108,4 @@ void func_800B3650(MATRIX *m);
  */
 void func_800B3960(void *slot, s32 id, s32 arg2, SVECTOR *out);
 
-void func_800B0754(s32 a0, s32 a1, s32 a2, u16 a3);
-#endif /* BATTLE_BC_OBJECT9_H */
+#endif /* BC_OBJECT9_H */

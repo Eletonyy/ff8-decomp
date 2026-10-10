@@ -1,9 +1,6 @@
 #include "common.h"
-#include "psxsdk/libetc.h"
 #include "battle.h"
 #include "game.h"
-#include "gamestate.h"
-#include "kernel.h"
 #include "battle/bc_object8.h"
 
 // returns 1-A as a string value
@@ -11,22 +8,31 @@ u8 func_800B00E8(s32 arg0) {
     switch (arg0) {
         case 0:
             return getMenuString(0xB)[1];
+
         case 1:
             return getMenuString(0xB)[2];
+            
         case 2:
             return getMenuString(0xB)[3];
+
         case 3:
             return getMenuString(0xB)[4];
+            
         case 4:
             return getMenuString(0xB)[5];
+
         case 5:
             return getMenuString(0xB)[6];
+
         case 6:
             return getMenuString(0xB)[7];
+
         case 7:
             return getMenuString(0xB)[8];
+
         case 8:
             return getMenuString(0xB)[9];
+            
         case 9:
             return getMenuString(0xB)[10];
     }

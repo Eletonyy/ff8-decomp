@@ -4,7 +4,7 @@
 #include "game.h"
 #include "gamestate.h"
 #include "kernel.h"
-#include "battle/bc_object8.h"
+#include "battle/bc_object9.h"
 
 
 void func_800B3164(void);
@@ -35,7 +35,11 @@ extern u8* D_800EEED0;
 extern u8 D_800EEED4;
 
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B02AC);
+void* func_800B02AC(u8* arg0) {
+    D_800E3CF0 %= 16;
+    func_800B01E8(&D_800EE4C0.something[D_800E3CF0], arg0);
+    return &D_800EE4C0.something[D_800E3CF0++]; // fix return value
+}
 
 /**
  * @brief Copy a string to D_800EE490 and return the buffer pointer.
@@ -58,7 +62,11 @@ u8* func_800B0360(s32 a0) {
     return resolveKernelPtr(g_kernel.rinoaLimitBreaks1[a0].descOffset, g_kernel.rinoaLimitBreaks1Text);
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B0398);
+void* func_800B0398(u8* arg0) {
+    D_800E3CF1 %= 16;
+    func_800B01E8(&D_800ECC48[D_800E3CF1].unk0, arg0);
+    return &D_800ECC48[D_800E3CF1++];
+}
 
 u8 func_800B0414(u32 arg0, u8* arg1) {
     s32 i;
