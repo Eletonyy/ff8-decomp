@@ -180,7 +180,7 @@ The following distributions have been tested:
 1. **Prerequisites**. This "guide" is for devs using debian/ubuntu on Windows using **WSL 2**
    ```bash
    sudo apt update
-   sudo apt install git make cpp binutils-mipsel-linux-gnu python3 python3-venv
+   sudo apt install git make cpp gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu binutils-mips-linux-gnu python3 python3-venv
    ```
 
 

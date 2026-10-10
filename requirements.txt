@@ -1,3 +1,4 @@
 -e ./tools/splat[mips]
 spimdisasm==1.40.0
 pyyaml
+toml
