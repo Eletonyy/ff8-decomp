@@ -206,6 +206,7 @@ The following distributions have been tested:
    This runs `clean`, `split` (runs splat on the executable + overlays),
    `build-assets` (converts binary assets to C source), and `verify`
    (assembles, links, and checks that each output matches the original SHA1).
+   
    At the end of the command, you should see a list of overlays all with the State `Match`.
    
    For incremental work, the individual targets are also available:
@@ -216,7 +217,7 @@ The following distributions have been tested:
    make verify EFFECTS=all   # ... including all 343 battle effect overlays
    ```
 
-5. **objdiff GUI** (optional). To diff against the original in
+6. **objdiff GUI** (optional). To diff against the original in
    [objdiff](https://github.com/encounter/objdiff):
    ```bash
    make expected       # builds the target objects, on a verified tree
