@@ -22,7 +22,7 @@ SRC_DIR    := src
 MAIN       := SLUS_008.92
 SPLAT_CONF := config/ff8.yaml
 SPLAT_GEN  := build/splat
-ROM        := $(firstword $(wildcard rom/*.bin))
+ROM        := $(shell find rom -name "*.bin" -print -quit)
 # Path template for the generated splat configs; {name} is the binary's name.
 SPLAT_YAML_TMPL := $(SPLAT_GEN)/{name}.yaml
 BINARIES_MK     := $(SPLAT_GEN)/binaries.mk
@@ -218,10 +218,10 @@ setup:
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install -r requirements.txt
 	@if [ -z "$(ROM)" ] || [ ! -f "$(ROM)" ]; then \
-		echo "BIN file not found in $(ROM)."; \
+		echo "BIN file not found in rom/"; \
 		exit 1; \
 	fi
-	$(EXTRACT) $(ROM)
+	$(EXTRACT) "$(ROM)"
 	$(MAKE) split
 	$(MAKE) expected
 	$(MAKE) report
