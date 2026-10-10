@@ -222,11 +222,11 @@ setup:
 		exit 1; \
 	fi
 	$(EXTRACT) "$(ROM)"
-	$(MAKE) split
+	$(MAKE) full
 	$(MAKE) expected
 	$(MAKE) report
-	$(MAKE) full
-
+	$(MAKE) verify
+	
 # Expand the compact binary map into full splat configs.
 splat-config:
 	$(PYTHON) tools/gen_splat_config.py $(SPLAT_CONF) --out '$(SPLAT_YAML_TMPL)' --make $(BINARIES_MK)
