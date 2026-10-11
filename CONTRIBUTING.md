@@ -139,7 +139,7 @@ void MaxPartyLevel(void) {
 }
 ```
 
-* Prefer function and variable names that say what they do over a comment block explaining them. A name is read everywhere the function or variable is used, a comment only where it's written.
+* Prefer function and variable names that say what they do over a comment block explaining them. A name is read everywhere the function or variable is used, a comment only where it's written. A comment should only be needed when the code itself can't express its intent.
 
 * Comments should say what the code itself can't, e.g. what a value means, or why code is written in an odd way because the match needs it.
 ** No comments that repeat the code.
