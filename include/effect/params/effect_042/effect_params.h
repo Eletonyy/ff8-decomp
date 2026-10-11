@@ -7,7 +7,7 @@
  */
 
 /** @brief Highest index each ring reaches before it wraps. */
-#define EFFECT_EMITTER_COUNT 0x9
-#define EFFECT_PARTICLE_COUNT 0x1D
+#define EFFECT_EMITTER_COUNT 9
+#define EFFECT_PARTICLE_COUNT 29
 
 #endif /* EFFECT_PARAMS_H */
