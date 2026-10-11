@@ -3,29 +3,6 @@
 
 #include "common.h"
 
-/**
- * @file ability.h
- * @brief GF ability IDs and types.
- *
- * All GF-learnable abilities share a single ID space (0–120).
- * The ID determines what type of ability it is:
- *   - Junction (1–19): stat junction slots
- *   - Command (20–38): battle menu commands
- *   - Character (39–77): passive character abilities
- *   - Party (78–82): passive party-wide abilities
- *   - GF (83–91): GF enhancement abilities
- *   - Menu (92–120): refinement and shop abilities
- *
- * These IDs are stored in:
- *   - CharacterData.commands[3]: equipped command abilities
- *   - CharacterData.abilities[4]: equipped character/party abilities
- *   - GfSaveData.learning: currently learning ability
- *   - GfSaveData.completeAbilities[]: learned ability bitfield
- *
- * Ability names verified against the Hyne save editor (src/Data.cpp):
- *   https://github.com/myst6re/hyne
- */
-
 /** @brief GF ability IDs (shared across all ability types). */
 enum AbilityId {
     ABILITY_NONE           = 0,
@@ -167,6 +144,29 @@ enum AbilityId {
 #define ABILITY_TYPE_PARTY     3  /**< IDs 78–82: passive party abilities. */
 #define ABILITY_TYPE_GF        4  /**< IDs 83–91: GF enhancement abilities. */
 #define ABILITY_TYPE_MENU      5  /**< IDs 92–120: refinement/shop abilities. */
+
+enum CharacterAbilityFlag {
+    CHAR_ABILITY_MUG = 0x01,
+    CHAR_ABILITY_MED_DATA = 0x02,
+    CHAR_ABILITY_COUNTER = 0x04,
+    CHAR_ABILITY_RETURN_DAMAGE = 0x08,
+    CHAR_ABILITY_COVER = 0x10,
+    CHAR_ABILITY_EXPENDX2_1 = 0x20,
+    CHAR_ABILITY_EXPENDX3_1 = 0x40,
+    CHAR_ABILITY_HP_BONUS = 0x80,
+    CHAR_ABILITY_STR_BONUS = 0x100,
+    CHAR_ABILITY_VIT_BONUS = 0x200,
+    CHAR_ABILITY_MAG_BONUS = 0x400,
+    CHAR_ABILITY_SPR_BONUS = 0x800,
+    CHAR_ABILITY_AUTO_REFLECT = 0x1000,
+    CHAR_ABILITY_AUTO_SHELL = 0x2000,
+    CHAR_ABILITY_AUTO_PROTECT = 0x4000,
+    CHAR_ABILITY_AUTO_HASTE = 0x8000,
+    CHAR_ABILITY_INITIATIVE = 0x10000,
+    CHAR_ABILITY_MOVE_HP_UP = 0x20000,
+    CHAR_ABILITY_AUTO_POTION = 0x40000,
+    CHAR_ABILITY_RIBBON = 0x80000
+};
 
 /** @brief Give @p amount AP to GF @p gfIdx's learning ability; returns it once its AP is full, else 0. */
 s32 AddAbilityExp(s32 gfIdx, s32 amount);

@@ -189,7 +189,6 @@ void func_800A0978(s32);
 
 void func_800A09D0(s32);
 
-void func_800A1760(s32, BattleCharData*);
 
 void func_800A184C(s32, u16, s32);
 

@@ -13,15 +13,12 @@
 #include "ui/text.h"
 #include "game.h"
 #include "gamestate.h"
-#include "gf_anim.h"
+#include "party_stats.h"
 #include "gf_curve.h"
 #include "thread.h"
 #include "kernel.h"
 
 extern u8 D_80083928;
-
-/** displayStatus bit: HP below a quarter of max (func_800A240C sets it with 0x200). */
-#define STATUS_HP_CRITICAL 0x100
 
 /* --- Private functions --- */
 
@@ -266,9 +263,9 @@ void startBattleResults(void) {
     stack = getThreadStackTop();
     for (i = 0; i < 3; i++) {
         ctx->noExpPopup[i] = 0;
-        if (g_battleChars.chars[i].characterId != 0xFF) {
-            level = g_battleChars.chars[i].level;
-            status = g_battleChars.chars[i].displayStatus;
+        if (g_battleChars.chars[i].characterId != PARTY_SLOT_EMPTY) {
+            level = g_battleChars.chars[i].currentLevel;
+            status = g_battleChars.chars[i].persistentStatus;
             ctx->nameColor[i] = 7;
             if (status & STATUS_HP_CRITICAL) {
                 ctx->nameColor[i] = 2;
@@ -285,7 +282,7 @@ void startBattleResults(void) {
                 prev = evalEntityXpCurve(i, level - 1);
                 next = evalEntityXpCurve(i, level);
                 ctx->expAcquired[i] = g_battleChars.unk574[i] + g_battleChars.unk57A[i];
-                ctx->nextLevelExp[i] = g_battleChars.chars[i].xpToNext;
+                ctx->nextLevelExp[i] = g_battleChars.chars[i].expToNextLevel;
                 if (ctx->expAcquired[i] == 0) {
                     ctx->noExpPopup[i] = 0x41;
                     ctx->noExpRows |= 1 << i;
@@ -297,8 +294,8 @@ void startBattleResults(void) {
                 ctx->expStep[i] = next;
             }
             ctx->names[i] = getBattleCharName(i);
-            ctx->currentExp[i] = g_battleChars.chars[i].exp;
-            ctx->level[i] = g_battleChars.chars[i].level;
+            ctx->currentExp[i] = g_battleChars.chars[i].currentExp;
+            ctx->level[i] = g_battleChars.chars[i].currentLevel;
         } else {
             ctx->names[i] = NULL;
             ctx->expStep[i] = 0;

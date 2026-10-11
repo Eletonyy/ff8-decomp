@@ -298,15 +298,7 @@ void func_800C4688(void) {
 }
 
 /**
- * @brief Tick all active GFs' HP up by 1 toward their battle max.
- *
- * Iterates the 16 GF save entries. For each unlocked GF (@c exists bit 0)
- * with non-zero HP, if the current HP is below the GF's battle max (at
- * @c g_battleChars.levelEntries[i].hp), it's incremented by 1. Likely runs
- * once per field step to slowly regenerate GF HP while walking.
- *
- * @note Match requires reading @c g_gameState.gfs[i].hp directly at the
- *       compare AND increment — not through the cached @c hp local.
+ * @brief Add 1 HP to every owned GF that has HP left, up to its max HP.
  */
 void func_800C48C0(void) {
     s32 i;
@@ -315,7 +307,8 @@ void func_800C48C0(void) {
         if (g_gameState.gfs[i].exists & 1) {
             u16 hp = g_gameState.gfs[i].hp;
             if (hp != 0) {
-                if (g_gameState.gfs[i].hp < g_battleChars.levelEntries[i].hp) {
+                // The match needs gfs[i].hp read again here, not the hp local
+                if (g_gameState.gfs[i].hp < g_battleChars.levelEntries[i].maxHp) {
                     g_gameState.gfs[i].hp++;
                 }
             }
@@ -328,7 +321,7 @@ void func_800C48C0(void) {
  *
  * Iterates the 3 party slots. For each occupied slot with its field-status
  * bit 0 set, increments the character's @c currentHp by 1 as long as it
- * stays below the slot's @c hpRegenCap (stored in the BattleCharData at
+ * stays below the slot's @c maxHp (stored in the BattleCharData at
  * offset 0x174). Paired with @c func_800C48C0 which does the same for GF HP.
  *
  * @note Match requires reading @c g_gameState.mainData.party.partyMembers[i] and
@@ -341,11 +334,11 @@ void func_800C492C(void) {
     for (i = 0; i < 3; i++) {
         u8 charIdx = g_gameState.mainData.party.partyMembers[i];
         if (charIdx != 0xFF) {
-            if (g_battleChars.chars[i].fieldStatusByte & 1) {
+            if (g_battleChars.chars[i].fieldAbilities & FIELD_ABILITY_MOVE_HP_UP) {
                 u16 hp = g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp;
                 if (hp != 0) {
                     if ((s32)g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp <
-                        (s32)g_battleChars.chars[i].hpRegenCap) {
+                        (s32)g_battleChars.chars[i].maxHp) {
                         g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp =
                             g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp + 1;
                     }

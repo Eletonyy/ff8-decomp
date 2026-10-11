@@ -247,7 +247,7 @@ s32 func_800369CC(s32 gfIndex, AbilityListEntry *output, s32 includeJunction) {
  * Clears junctioned GFs, commands, abilities, and junction slots for the
  * given character. Temporarily sets the character as party leader to trigger
  * stat recalculation, clears status (preserving bit 7), sets HP from
- * g_battleChars.chars[0].hpRegenCap, then restores the original party slot.
+ * g_battleChars.chars[0].maxHp, then restores the original party slot.
  *
  * @param charIndex Character index (clamped to 0-7).
  */
@@ -291,7 +291,7 @@ clamped_done:
         chr->statusFlags &= 0x80;
     } while (0);
 
-    chr->currentHp = g_battleChars.chars[0].hpRegenCap;
+    chr->currentHp = g_battleChars.chars[0].maxHp;
 
     g_gameState.mainData.party.partyMembers[0] = savedSlot;
     recalcPartyStats();
@@ -488,12 +488,12 @@ u16 getGfAvailabilityMask(void) {
 
 
 /**
- * @brief Copy a GF's current HP from the battle character table to the save data.
+ * @brief Set a GF's saved HP to its max HP.
  *
  * @param gfIdx GF index (0-15).
  */
 void copyGfHpToSave(s32 gfIdx) {
-    g_gameState.gfs[gfIdx].hp = g_battleChars.levelEntries[gfIdx].hp;
+    g_gameState.gfs[gfIdx].hp = g_battleChars.levelEntries[gfIdx].maxHp;
 }
 
 
@@ -502,7 +502,7 @@ void copyGfHpToSave(s32 gfIdx) {
  *        then restore original party slots.
  *
  * Saves the current party, clears it, sets the leader to trigger
- * stat recalculation, then writes g_battleChars.chars[0].hpRegenCap to the character's
+ * stat recalculation, then writes g_battleChars.chars[0].maxHp to the character's
  * currentHp and clears all status flags except bit 7. Finally
  * restores the saved party and recalculates stats.
  *
@@ -519,7 +519,7 @@ void func_80036FE0(s32 charIdx) {
 
     setPartyLeader(charIdx);
 
-    g_gameState.chars[charIdx].currentHp = g_battleChars.chars[0].hpRegenCap;
+    g_gameState.chars[charIdx].currentHp = g_battleChars.chars[0].maxHp;
     g_gameState.chars[charIdx].statusFlags &= 0x80;
 
     for (i = 0; i < 3; i++) {

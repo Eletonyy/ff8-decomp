@@ -25,7 +25,7 @@ typedef struct {
     u16 unk2;            // Flags?, when first bit is set, escape it not possible
     u8  unk4[3];         // Post battle command queue?
     u8  result;          /**< Battle result (BATTLE_RESULT_*). */
-    u8  unk8;
+    u8 sealedAbilities; // see @c SealedAbilityFlag
     u8  unk9;            /**< Bit 0 toggles the @c FieldVars.soundBankSelector at field-VM init. */
 } BattleConfig;
 
@@ -83,8 +83,9 @@ typedef enum {
     CTRL_FLAG_30    = 0x30,
     CTRL_FLAG_40    = 0x40,
     CTRL_FLAG_80    = 0x80,
-    CTRL_FLAG_100   = 0x100,
-    CTRL_FLAG_400   = 0x400
+    CTRL_FEMALE     = 0x100,
+    CTRL_FLAG_400   = 0x400,
+    CTRL_MELEE_WEAPON = 0x1000
 } ControlFlags;
 
 typedef struct {
@@ -174,7 +175,7 @@ typedef struct {
     /* 0x7C */ ControlFlags volatile controlFlags;
     /* 0x80 */ u16 status;
     /* 0x82 */ u16 statusBackup;
-    /* 0x84 */ s16 hpDisplay;     /* 0x84: HP value mirrored from BattleCharData.currentHp. */
+    /* 0x84 */ s16 hpDisplay;     /* 0x84: HP value mirrored from BattleCharData.summoningCurrentHp. */
     /* 0x86 */ u16 hitStatus1;
     /* 0x88 */ u8 unk88;
     /* 0x89 */ u8 unk89;
@@ -486,102 +487,111 @@ typedef struct {
     u8 freeSpace[4];
 } BattleOtBuf;
 
-/** @brief Battle magic slot entry (5 bytes). */
 typedef struct {
-    u8 unk0;
-    s8 unk1;
-    u8 unk2;
-    u8 unk3;
-    u8 unk4;
-} BattleMagicSlot;
-
-/** @brief Battle item slot entry (5 bytes). */
-typedef struct {
-    u8 unk0;
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-    u8 unk4;
-} BattleItemSlot;
-
-/** @brief Battle command slot entry (4 bytes). */
-typedef struct {
-    u8 cmdType;
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-} BattleCmdSlot;
+    /** 0x0 */ u8 id; // A magic ID, a GF's battle ID, or a limit break entry such as a Blue Magic
+    /** 0x1 */ s8 count; // The spell's stock or the ammo Irvine holds; 1 for anything else
+    /** 0x2 */ u8 statusWindowFlags; // See @c StatusWindowFlag for bit functions
+    /** 0x3 */ u8 targetInfo; // See @c TargetInfoFlag for bit functions
+    /** 0x4 */ u8 flags; // See @c BattleCommandArgumentFlag for bit functions
+} BattleCommandArgument;
 
 typedef struct {
-    u8 unk0;
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-} BattleUnkSlot;
+    /** 0x0 */ u8 commandId; // Index into g_kernel.battleCommands
+    /** 0x1 */ u8 subMenuFlags; // See @c SubMenuFlag for bit functions
+    /** 0x2 */ u8 targetInfo; // See @c TargetInfoFlag for bit functions
+    /** 0x3 */ u8 flags; // See @c BattleCommandFlag for bit functions
+} BattleCommand;
 
-typedef struct{
-    u8 unk0;
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-    u8 unk4;
-} BattleTestSlot;
+enum BattleCommandArgumentFlag {
+    BTL_CMD_ARG_TARGETS_KO = 0x01, // the cursor can land on KO'd allies
+    BTL_CMD_ARG_UNAVAILABLE = 0x02, // greyed out, and picking it sounds the buzzer
+    BTL_CMD_ARG_JUNCTIONED = 0x04, // the spell is junctioned to a stat
+    BTL_CMD_ARG_EMPTY = 0x10 // an unused limit break entry
+};
 
-/** @brief Battle character render data (g_battleChars, stride 0x1D0 = 464 bytes). */
+enum BattleCommandFlag {
+    BTL_CMD_TARGETS_KO = 0x01, // the cursor can land on KO'd allies
+    BTL_CMD_UNAVAILABLE = 0x02, // greyed out, and picking it sounds the buzzer
+    BTL_CMD_LIMIT_READY = 0x04, // show limit arrow on command if set
+    BTL_CMD_SINGLE_OR_DOUBLE = 0x08, // asks single or double before showing the commands submenu
+    BTL_CMD_MULTICAST = 0x10, // asks single, double or triple if the double or triple bit is set
+    BTL_CMD_FLASH = 0x20 // the line flashes
+};
+
+/** @brief Battle ID of GF 0; GF n is BATTLE_GF_ID_BASE + n. */
+#define BATTLE_GF_ID_BASE 0x40
+
+enum BattleStat {
+    BATTLE_STAT_STR = 0,
+    BATTLE_STAT_VIT = 1,
+    BATTLE_STAT_MAG = 2,
+    BATTLE_STAT_SPR = 3,
+    BATTLE_STAT_SPD = 4,
+    BATTLE_STAT_LCK = 5,
+    BATTLE_STAT_EVA = 6, // out of 256, the menu shows value * 100 / 256 as a percentage
+    BATTLE_STAT_HIT = 7
+};
+
 typedef struct {
-    /* 0x000 */ u8 pad0[0x008 - 0x000];
-    /* 0x008 */ BattleUnkSlot unkSlots[3];
-    /* 0x014 */ u16 unk14;
-    /* 0x016 */ u16 unk16;
-    /* 0x018 */ s16 currentHp;          /**< Current HP in battle. */
-    /* 0x01A */ u16 unk1A;
-    /* 0x01C */ u8 unk1C;
-    /* 0x01D */ u8 unk1D;
-    /* 0x01E */ BattleCmdSlot cmdSlots[4];
-    /* 0x02E */ u8 pad2E[4];
-    /* 0x032 */ BattleTestSlot testSlots[16];
-    /* 0x082 */ BattleMagicSlot magicSlots[32];
-    /* 0x122 */ BattleItemSlot itemSlots[16];
-    /* 0x172 */ s16 unk172;          /**< Mirrored HP cap (set with hpRegenCap when battle HP is reduced). */
-    /* 0x174 */ s16 hpRegenCap;        /**< HP regen cap (field-walk tick stops when currentHp reaches this). */
-    /* 0x176 */ u8 pad176[0x178 - 0x176];
-    /* 0x178 */ u32 exp; /**< Total EXP. */
-    /* 0x17C */ s32 xpToNext;          /**< XP needed to reach next level. */
-    /* 0x180 */ u32 unk180;
-    /* 0x184 */ u32 unk184;
-    /* 0x188 */ u32 unk188;          /**< Status/ability mask checked for bit 0x60000. */
-    /* 0x18C */ s32 abilityFlags;
-    /* 0x190 */ s32 statusFlags;
-    /* 0x194 */ u16 elemResistances[8];/**< Element resistance values (8 × s16). */
-    /* 0x1A4 */ u8 statusResistances[13];/**< Status resistance values (13 × u8). */
-    /* 0x1B1 */ u8 pad1B1;
-    /* 0x1B2 */ u16 displayStatus;       /**< Mirror of BattleEntity.status; bit-flag display state. */
-    /* 0x1B4 */ u16 abilityValue;
-    /* 0x1B6 */ u16 atkStatusHit;      /**< Attack status hit chance. */
-    /* 0x1B8 */ u8 level;              /**< Battle level (from findCharXpLevel). */
-    /* 0x1B9 */ u8 unk1B9;
-    /* 0x1BA */ u8 classId;            /**< Equipped weapon ID, an index into @c g_kernel.weapons. */
-    /* 0x1BB */ u8 stats[8];           /**< Battle stats: STR, VIT, MAG, SPR, SPD, ?, hit (0x1C0), eva (0x1C1). 0x1C2 = ? */
-    /* 0x1C3 */ u8 characterId;
-    /* 0x1C4 */ u8 atkElemBase;        /**< Attack element base. */
-    /* 0x1C5 */ u8 atkElemBonus;       /**< Attack element bonus. */
-    /* 0x1C6 */ u8 fieldStatusByte;    /**< Status byte checked by field script (bit 1 = greyed out). */
-    /* 0x1C7 */ u8 statCoefs[9];       /**< Stat coefficient table (HP, str, vit, mag, spr, spd, ?, eva, hit). */
+    /* 0x000 */ BattleCommand drawChoices[2]; // stock/cast
+    /* 0x008 */ BattleCommand multicastChoices[3]; // single/double/triple
+    /* 0x014 */ u16 summoningTimeLeft;
+    /* 0x016 */ u16 summoningTime;
+    /* 0x018 */ s16 summoningCurrentHp;
+    /* 0x01A */ u16 summoningMaxHp;
+    /* 0x01C */ u8 summoningCountDownInProgress;
+    /* 0x01D */ u8 summoningGfId;
+    /* 0x01E */ BattleCommand abilityCommands[4]; // Attack/Mug + whatever abilities the character has equipped
+    /* 0x02E */ BattleCommand limitBreakCommand;
+    /* 0x032 */ BattleCommandArgument limitBreakArgs[16]; // e.g. irvines ammo type and quistis's limit break variants
+    /* 0x082 */ BattleCommandArgument magicArgs[32];
+    /* 0x122 */ BattleCommandArgument gfArgs[16]; 
+    /* 0x172 */ s16 currentHp;
+    /* 0x174 */ s16 maxHp;
+    /* 0x176 */ s16 pad176; // alignment pad, this can be removed.
+    /* 0x178 */ u32 currentExp;
+    /* 0x17C */ s32 expToNextLevel;
+    /* 0x180 */ u32 maxAtb;
+    /* 0x184 */ u32 currentAtb;
+    /* 0x188 */ u32 battleStatus; // battle statuses currently inflicted on the character, see @c BattleStatusFlag
+    /* 0x18C */ s32 atkBattleStatus; // battle statuses the character has a % chance of inflicting on attack, see @c BattleStatusFlag
+    /* 0x190 */ s32 characterAbilities; // equipped character abilities, see @c CharacterAbilityFlag
+    /* 0x194 */ u16 elemResistances[8]; // indexed by the @c JunctionElement enum
+    /* 0x1A4 */ u8 statusResistances[13]; // indexed by the @c JunctionStatus enum
+    /* 0x1B1 */ u8 pad1B1; // alignment pad, can be removed
+    /* 0x1B2 */ u16 persistentStatus; // persistent statuses currently inflicted on the character, see @c PersistentStatusFlag
+    /* 0x1B4 */ u16 atkPersistentStatus; // persistent statuses the character has a % chance of inflicting on attack, see @c PersistentStatusFlag
+    /* 0x1B6 */ u16 atkStatusHitChance; // applies to atkBattleStatus and atkPersistentStatus
+    /* 0x1B8 */ u8 currentLevel;
+    /* 0x1B9 */ u8 modelVariant; // default, seed uniform, galbadia suit etc
+    /* 0x1BA */ u8 weaponId; // currently equipped weapon, index into @c g_kernel.weapons
+    /* 0x1BB */ u8 stats[8]; // indexed by the @c BattleStat enum
+    /* 0x1C3 */ u8 characterId; // see @c CharacterId enum
+    /* 0x1C4 */ u8 atkElements; // one bit per element, in @c JunctionElement order
+    /* 0x1C5 */ u8 atkElementPercent;
+    /* 0x1C6 */ u8 fieldAbilities; // abilities usable outside battle, see @c FieldAbilityFlag
+    /* 0x1C7 */ u8 statMultipliers[9]; // in percent, indexed by the @c JunctionType enum
 } BattleCharData;    /* 0x1D0: 464 bytes */
+
+enum FieldAbilityFlag {
+    FIELD_ABILITY_MOVE_HP_UP = 0x01, // recovers HP while walking
+    FIELD_ABILITY_DRAW = 0x02 // can draw from draw points
+};
 
 /** @brief GF battle level entry (12 bytes). */
 typedef struct {
-    s16 maxHp;
-    s16 hp;
-    u8 pad4;
-    u8 pad5;
-    u8 pad6;
-    u8 pad7;
-    u8 level;
-    u8 unk9;
-    u8 padA;
-    u8 unkB;
+    /** 0x0 */ s16 hp;
+    /** 0x2 */ s16 maxHp;
+    /** 0x4 */ u32 exp;
+    /** 0x8 */ u8 level;
+    /** 0x9 */ u8 sumMagBonus; // Summon magic bonus, in percent
+    /** 0xA */ u8 hpPercent; // Max HP as a percentage of the level's curve value
+    /** 0xB */ u8 flags;
 } BattleLevelEntry;
+
+// Bits of BattleLevelEntry.flags
+#define GF_STATS_BOOST 0x01
+#define GF_STATS_LOW_HP 0x80 // HP is below a quarter of max HP
 
 typedef struct{
     u8 unk0;
@@ -786,7 +796,6 @@ void func_800B3128(u8 *a0);
 u16 func_800B0F9C(s32 stat);
 
 /** @brief Resolve battle scene context pointer. */
-void func_800A1760(s32 arg0, BattleCharData* arg1);
 
 /** @brief Apply a stat-effect probe; outputs (a1=stat, a2=count). */
 

@@ -13,14 +13,10 @@
  *
  * Field layout verified against the Hyne save editor (PERSONNAGES struct):
  *   https://github.com/myst6re/hyne  (src/SaveData.h)
- *
- * @note Decomped code typically accesses these fields via raw pointer
- *       arithmetic (e.g. `*(u16 *)(base + a0 * 152 + 0x490)`) to preserve
- *       codegen matching. The struct definition here is for documentation
- *       and future use where struct access doesn't break matching.
  */
 
 #include "common.h"
+#include "status.h"
 
 /** @brief Character IDs (index into CharacterData array). */
 typedef enum {
@@ -31,16 +27,17 @@ typedef enum {
     CHAR_RINOA   = 4,
     CHAR_SELPHIE = 5,
     CHAR_SEIFER  = 6,
-    CHAR_EDEA    = 7
+    CHAR_EDEA    = 7,
+    CHAR_LAGUNA = 8,
+    CHAR_KIROS = 9,
+    CHAR_WARD = 10
 } CharacterId;
 
 /**
  * @brief Weapon IDs stored in CharacterData.weaponId.
- *
- * IDs 0x00-0x06 are Squall's gunblades, 0x07+ are other characters' weapons.
  */
 enum WeaponId {
-    /* Squall (Gunblades) */
+    // Squall
     WEAPON_REVOLVER        = 0x00,
     WEAPON_SHEAR_TRIGGER   = 0x01,
     WEAPON_CUTTING_TRIGGER = 0x02,
@@ -48,35 +45,35 @@ enum WeaponId {
     WEAPON_TWIN_LANCE      = 0x04,
     WEAPON_PUNISHMENT      = 0x05,
     WEAPON_LION_HEART      = 0x06,
-    /* Zell (Gloves) */
+    // Zell
     WEAPON_METAL_KNUCKLE   = 0x07,
     WEAPON_MAVERICK        = 0x08,
     WEAPON_GAUNTLET        = 0x09,
     WEAPON_EHRGEIZ         = 0x0A,
-    /* Irvine (Guns) */
+    // Irvine
     WEAPON_VALIANT         = 0x0B,
     WEAPON_ULYSSES         = 0x0C,
     WEAPON_BISMARCK        = 0x0D,
     WEAPON_EXETER          = 0x0E,
-    /* Quistis (Whips) */
+    // Quistis
     WEAPON_CHAIN_WHIP      = 0x0F,
     WEAPON_SLAYING_TAIL    = 0x10,
     WEAPON_RED_SCORPION    = 0x11,
     WEAPON_SAVE_THE_QUEEN  = 0x12,
-    /* Rinoa (Blaster Edge) */
+    // Rinoa
     WEAPON_PINWHEEL        = 0x13,
     WEAPON_VALKYRIE        = 0x14,
     WEAPON_RISING_SUN      = 0x15,
     WEAPON_CARDINAL        = 0x16,
     WEAPON_SHOOTING_STAR   = 0x17,
-    /* Selphie (Nunchaku) */
+    // Selphie
     WEAPON_FLAIL           = 0x18,
     WEAPON_MORNING_STAR    = 0x19,
     WEAPON_CRESCENT_WISH   = 0x1A,
     WEAPON_STRANGE_VISION  = 0x1B,
-    /* Seifer (Gunblade) */
+    // Seifer
     WEAPON_HYPERION        = 0x1C,
-    /* Edea (no upgrades) */
+    // Edea
     WEAPON_EDEA            = 0x1D
 };
 
@@ -109,21 +106,6 @@ enum JunctionType {
 };
 
 #define JUNCTION_SLOT_SIZE 20  /**< Size of junctions array (19 slots + 1 reserved). */
-
-/**
- * @brief Persistent status effect flags (CharacterData.statusFlags).
- *
- * These are status effects that persist outside of battle and are
- * saved to the save file. Battle-only statuses (Haste, Slow, etc.)
- * are tracked separately.
- */
-#define STATUS_KO       0x01  /**< Knocked out (dead). */
-#define STATUS_POISON   0x02  /**< Poisoned. */
-#define STATUS_PETRIFY  0x04  /**< Petrified. */
-#define STATUS_DARKNESS 0x08  /**< Darkness (blind). */
-#define STATUS_SILENCE  0x10  /**< Silenced. */
-#define STATUS_BERSERK  0x20  /**< Berserk. */
-#define STATUS_ZOMBIE   0x40  /**< Zombie. */
 
 /**
  * @brief Magic spell IDs (stored in MagicSlot.magicId).
@@ -216,7 +198,7 @@ typedef struct {
  */
 typedef struct {
     /* 0x00 */ u16 currentHp;          /**< Current HP. */
-    /* 0x02 */ u16 maxHp;              /**< Maximum HP. */
+    /* 0x02 */ u16 maxHpBonus; // accumulated from having HP Bonus equipped
     /* 0x04 */ u32 experience;         /**< Total experience points. */
     /* 0x08 */ u8 characterId;         /**< Character model/type ID. */
     /* 0x09 */ u8 weaponId;            /**< Current weapon ID (see WeaponId). */
@@ -232,7 +214,7 @@ typedef struct {
     /* 0x54 */ u8 abilities[4];        /**< Equipped character abilities. */
     /* 0x58 */ u16 junctedGfs;         /**< Bitfield of junctioned GFs (1 bit per GF). */
     /* 0x5A */ u8 unknown5A;           /**< Unknown (used). */
-    /* 0x5B */ u8 alternateModel;      /**< Alternate model (SeeD/Galbadia costume). */
+    /* 0x5B */ u8 modelVariant;      /**< Alternate model (SeeD/Galbadia costume). */
     /* 0x5C */ u8 junctions[20];        /**< Junction slots (indexed by JunctionType, last byte reserved). */
     /* 0x70 */ u16 gfCompatibility[16];/**< GF compatibility values (one per GF). */
     /* 0x90 */ u16 kills;              /**< Kill count. */
