@@ -27,7 +27,10 @@ typedef enum {
     CHAR_RINOA   = 4,
     CHAR_SELPHIE = 5,
     CHAR_SEIFER  = 6,
-    CHAR_EDEA    = 7
+    CHAR_EDEA    = 7,
+    CHAR_LAGUNA = 8,
+    CHAR_KIROS = 9,
+    CHAR_WARD = 10
 } CharacterId;
 
 /**
@@ -195,7 +198,7 @@ typedef struct {
  */
 typedef struct {
     /* 0x00 */ u16 currentHp;          /**< Current HP. */
-    /* 0x02 */ u16 maxHp;              /**< Maximum HP. */
+    /* 0x02 */ u16 maxHpBonus; // accumulated from having HP Bonus equipped
     /* 0x04 */ u32 experience;         /**< Total experience points. */
     /* 0x08 */ u8 characterId;         /**< Character model/type ID. */
     /* 0x09 */ u8 weaponId;            /**< Current weapon ID (see WeaponId). */
@@ -211,7 +214,7 @@ typedef struct {
     /* 0x54 */ u8 abilities[4];        /**< Equipped character abilities. */
     /* 0x58 */ u16 junctedGfs;         /**< Bitfield of junctioned GFs (1 bit per GF). */
     /* 0x5A */ u8 unknown5A;           /**< Unknown (used). */
-    /* 0x5B */ u8 alternateModel;      /**< Alternate model (SeeD/Galbadia costume). */
+    /* 0x5B */ u8 modelVariant;      /**< Alternate model (SeeD/Galbadia costume). */
     /* 0x5C */ u8 junctions[20];        /**< Junction slots (indexed by JunctionType, last byte reserved). */
     /* 0x70 */ u16 gfCompatibility[16];/**< GF compatibility values (one per GF). */
     /* 0x90 */ u16 kills;              /**< Kill count. */

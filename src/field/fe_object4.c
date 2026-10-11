@@ -949,7 +949,7 @@ s32 opHandler_SETMODEL(Actor *actor, s32 a1) {
 
 /**
  * @brief Pop two values: a u8 model id and a character index; store the
- *        model id into @c chars[findCharacterSlot(idx)].alternateModel.
+ *        model id into @c chars[findCharacterSlot(idx)].modelVariant.
  *
  * Counterpart to @c opHandler_GETDRESS (read-side). Used to set a character's
  * SeeD/Galbadia costume model from a script-VM stack pair.
@@ -972,8 +972,8 @@ s32 opHandler_SETDRESS(ScriptContext *context) {
  * @return 2 (continue processing).
  */
 s32 opHandler_GETDRESS(ScriptContext *context) {
-    /* g_gameState.chars[result].alternateModel — chars[] @ 0x490, stride
-     * 152 bytes (sizeof CharacterData), alternateModel @ +0x5B inside
+    /* g_gameState.chars[result].modelVariant — chars[] @ 0x490, stride
+     * 152 bytes (sizeof CharacterData), modelVariant @ +0x5B inside
      * each => absolute byte offset 0x4EB for chars[0].  Split base from
      * index so gcc keeps 0x4EB as the lbu's immediate offset. */
     s32 result = findCharacterSlot(POP(context));

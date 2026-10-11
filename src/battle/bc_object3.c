@@ -90,7 +90,7 @@ void func_800A1AB8(s32 arg0, u16 arg1, s32 arg2) {
         func_800AF6BC(arg0);
         func_800A1940(arg0);
         func_800A84CC(arg0);
-        g_battleChars.chars[arg0].characterId = 255;
+        g_battleChars.chars[arg0].characterId = PARTY_SLOT_EMPTY;
         func_800AE6C0();
         func_800D0530();
         func_800B243C(arg0);
@@ -1168,7 +1168,7 @@ s32 func_800A30F8(s32 arg0, u8 arg1, u16 arg2, u8 arg3, u8 arg4, u16 arg5, u8 ar
                 D_800ED148.unk1303 = 1;
                 D_800ED148.unk1304 = 1;
                 arg2 = 65534;
-                temp_v0_5 = func_800A2EB8(func_8009B7BC(4), g_kernel.weapons[g_battleChars.chars[arg0].classId].renzokukenFinishers);
+                temp_v0_5 = func_800A2EB8(func_8009B7BC(4), g_kernel.weapons[g_battleChars.chars[arg0].weaponId].renzokukenFinishers);
                 func_800A3054(arg0, 250, 65535, temp_v0_5, func_8009BAC4(temp_v0_5, arg5));
             }
             break;

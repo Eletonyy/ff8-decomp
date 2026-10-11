@@ -3180,7 +3180,7 @@ s32 renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         /* Preview stat value when ability slot i is junctioned (else 0). */
         bit = 1 << i;
         if (baseFlags & bit) {
-            baseVal = g_junctionPreview.atkStatusHit - 100;
+            baseVal = g_junctionPreview.atkStatusHitChance - 100;
             currentVal = baseVal;
         } else {
             baseVal = 0;
@@ -3189,7 +3189,7 @@ s32 renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         bit = 1 << i;
         tmp = bit;
         if (currentFlags & tmp) {
-            currentVal = ((BattleCharData *)&g_battleChars)->atkStatusHit - 100;
+            currentVal = ((BattleCharData *)&g_battleChars)->atkStatusHitChance - 100;
         } else {
             currentVal = 0;
         }
@@ -3322,7 +3322,7 @@ s32 renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
  * Shown when the user is navigating junction to EL-A/D > Elemental attack.
  * Iterates the D_801EEC10 table (8 rows). Each row compares the preview
  * element flags/value (g_junctionPreview atkElem fields) against the current ones
- * (g_battleChars.chars[0].atkElemBase/g_battleChars.chars[0].atkElemBonus) via a per-row bit test to pick the up/down change
+ * (g_battleChars.chars[0].atkElements/g_battleChars.chars[0].atkElementPercent) via a per-row bit test to pick the up/down change
  * indicator, then renders the label, indicator, and the numeric value.
  *
  * @param renderCtx Render context.
@@ -3349,8 +3349,8 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
     u8 fmtParam;
     u8 buf[12];
 
-    baseFlags = g_junctionPreview.atkElemBase;
-    currentFlags = g_battleChars.chars[0].atkElemBase;
+    baseFlags = g_junctionPreview.atkElements;
+    currentFlags = g_battleChars.chars[0].atkElements;
 
     xBase += 0x88;
     yBase += 0x93;
@@ -3372,7 +3372,7 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         y = tmp + yBase;
         bit = 1 << i;
         if (baseFlags & bit) {
-            baseVal = g_junctionPreview.atkElemBonus;
+            baseVal = g_junctionPreview.atkElementPercent;
             currentVal = baseVal;
         } else {
             baseVal = 0;
@@ -3380,7 +3380,7 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         bit = 1 << i;
         tmp = bit;
         if (currentFlags & tmp) {
-            currentVal = g_battleChars.chars[0].atkElemBonus;
+            currentVal = g_battleChars.chars[0].atkElementPercent;
         } else {
             currentVal = 0;
         }

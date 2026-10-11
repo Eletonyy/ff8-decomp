@@ -194,7 +194,7 @@ u8 *func_800B57E8(s32 maxCount, s32 abilityId) {
             case 6:
                 charId = func_80037C6C(base[0xD38 + memberIdx]) & 0xFF;
                 if (!func_80021108(base[0xAF4 + charId], abilityId)) {
-                    if (g_battleChars.chars[charId].fieldStatusByte & 2) {
+                    if (g_battleChars.chars[charId].fieldAbilities & FIELD_ABILITY_DRAW) {
                         ptr++;
                         *ptr = 0x27;
                     }
@@ -211,12 +211,12 @@ u8 *func_800B57E8(s32 maxCount, s32 abilityId) {
 }
 
 /**
- * @brief Recalculate party stats and check if any member has fieldStatusByte bit 1 set.
+ * @brief Recalculate party stats and check if any member has FIELD_ABILITY_DRAW set.
  *
  * Sets g_battleConfig.unk8 from WorldContext field_0xF3 (if flag 0x800 is active),
  * calls recalcPartyStats(), then checks each party slot.
  *
- * @return 1 if any active party member has fieldStatusByte bit 1 set, 0 otherwise.
+ * @return 1 if any active party member has FIELD_ABILITY_DRAW set, 0 otherwise.
  */
 s32 func_800B5990(void) {
     s32 i;
@@ -231,7 +231,7 @@ s32 func_800B5990(void) {
 
     for (i = 0; i < 3; i++) {
         if (g_gameState.mainData.party.partyMembers[i] != 0xFF) {
-            if (g_battleChars.chars[i].fieldStatusByte & 2) {
+            if (g_battleChars.chars[i].fieldAbilities & FIELD_ABILITY_DRAW) {
                 return 1;
             }
         }
@@ -378,7 +378,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
             return 1;
         }
 
-        if (g_battleChars.chars[D_800DE4D3].fieldStatusByte & 2) {
+        if (g_battleChars.chars[D_800DE4D3].fieldAbilities & FIELD_ABILITY_DRAW) {
             func_800A455C(g_fieldVars->memberSlot[D_800DE4D2]);
             sndPlaySfx(0x43, 0, 0x80, 0x7F);
             actor->field_0x204++;
@@ -396,7 +396,7 @@ s32 opHandler_DRAWPOINT(Actor *actor) {
         break;
 
     case 6:
-        if (g_battleChars.chars[D_800DE4D3].fieldStatusByte & 2) {
+        if (g_battleChars.chars[D_800DE4D3].fieldAbilities & FIELD_ABILITY_DRAW) {
             for (i = 0; i < D_800DE4D0; i++) {
                 if (func_800211B4(g_gameState.mainData.party.partyMembers[D_800DE4D3], tableResult & 0x3F)) {
                     break;

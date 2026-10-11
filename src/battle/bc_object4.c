@@ -695,21 +695,21 @@ void func_800A71C0(s32 idx) {
     temp_a3 = &g_battleChars.chars[idx];
     temp_a0 = &D_800ED148.entities[idx];
     
-    if (temp_a3->characterId == 255) {
+    if (temp_a3->characterId == PARTY_SLOT_EMPTY) {
         return;
     }
     
     temp_a0->maxHp = temp_a3->maxHp;
     temp_a0->currentHp = temp_a3->currentHp;
-    temp_a0->level = temp_a3->level;
-    temp_a0->unkBD[0] = temp_a3->stats[0];
-    temp_a0->unkBD[1] = temp_a3->stats[1];
-    temp_a0->unkBD[2] = temp_a3->stats[2];
-    temp_a0->unkBD[3] = temp_a3->stats[3];
-    temp_a0->unkBD[4] = temp_a3->stats[4];
-    temp_a0->unkBD[5] = temp_a3->stats[5];
-    temp_a0->unkBD[7] = temp_a3->stats[7];
-    temp_a0->unkBD[6] = temp_a3->stats[6];
+    temp_a0->level = temp_a3->currentLevel;
+    temp_a0->unkBD[0] = temp_a3->stats[BATTLE_STAT_STR];
+    temp_a0->unkBD[1] = temp_a3->stats[BATTLE_STAT_VIT];
+    temp_a0->unkBD[2] = temp_a3->stats[BATTLE_STAT_MAG];
+    temp_a0->unkBD[3] = temp_a3->stats[BATTLE_STAT_SPR];
+    temp_a0->unkBD[4] = temp_a3->stats[BATTLE_STAT_SPD];
+    temp_a0->unkBD[5] = temp_a3->stats[BATTLE_STAT_LCK];
+    temp_a0->unkBD[7] = temp_a3->stats[BATTLE_STAT_HIT];
+    temp_a0->unkBD[6] = temp_a3->stats[BATTLE_STAT_EVA];
     
     for (i = 0; i < 32; i++) {
         if (temp_a3->magicArgs[i].id != 0) {
@@ -744,9 +744,9 @@ void func_800A71C0(s32 idx) {
     temp_a0->mentalRes[23] = temp_a3->statusResistances[12];
     temp_a0->unk20 = temp_a3->atkBattleStatus;
     temp_a0->hitStatus1 = temp_a3->atkPersistentStatus;
-    temp_a0->unkB8[2] = temp_a3->atkStatusHit;
-    temp_a0->unkC5 = temp_a3->atkElemBase;
-    temp_a0->unkC6 = temp_a3->atkElemBonus;
+    temp_a0->unkB8[2] = temp_a3->atkStatusHitChance;
+    temp_a0->unkC5 = temp_a3->atkElements;
+    temp_a0->unkC6 = temp_a3->atkElementPercent;
     
     if (temp_a3->characterAbilities & CHAR_ABILITY_AUTO_HASTE) {
         temp_a0->mentalRes[11] = 200;
@@ -801,7 +801,7 @@ void func_800A7518(s32 arg0) {
     temp_s1 = &g_battleChars.chars[arg0];
     temp_s0 = &D_800ED148.entities[arg0];
     
-    if (temp_s1->characterId == 255) {
+    if (temp_s1->characterId == PARTY_SLOT_EMPTY) {
         temp_s0->controlFlags = 0;
         temp_s0->comFileId = 255;
         return;
@@ -811,7 +811,7 @@ void func_800A7518(s32 arg0) {
     temp_s0->status = temp_s1->persistentStatus;
     temp_s0->controlFlags = 34817;
 
-    if (g_kernel.weapons[temp_s1->classId].melee & WEAPON_MELEE) {
+    if (g_kernel.weapons[temp_s1->weaponId].melee & WEAPON_MELEE) {
         temp_s0->controlFlags |= CTRL_MELEE_WEAPON;
     }
 
@@ -969,14 +969,14 @@ void func_800A79A0(void) {
 /**
  * @brief Look up the tier of the weapon equipped by the entity at @p a0.
  *
- * Reads @c BattleCharData[a0].classId, then returns
- * @c g_kernel.weapons[classId].tier.
+ * Reads @c BattleCharData[a0].weaponId, then returns
+ * @c g_kernel.weapons[weaponId].tier.
  *
  * @param a0 Entity index (stride 0x1D0 in @c g_battleChars).
  * @return The weapon's tier.
  */
 u8 func_800A7A44(s32 arg0) {
-    return g_kernel.weapons[g_battleChars.chars[arg0].classId].tier;
+    return g_kernel.weapons[g_battleChars.chars[arg0].weaponId].tier;
 }
 
 /**
@@ -986,7 +986,7 @@ u8 func_800A7A44(s32 arg0) {
  * @return Byte at offset 0x1B9 within the entity entry.
  */
 u8 func_800A7A8C(s32 arg0) {
-    return g_battleChars.chars[arg0].unk1B9;
+    return g_battleChars.chars[arg0].modelVariant;
 }
 
 /**
@@ -1723,7 +1723,7 @@ void func_800A9084(u8* arg0, u8* arg1) {
     s32 idx;
     
     for (i = 0; i < 3; i++) {
-        if (g_battleChars.chars[i].characterId == 5) {
+        if (g_battleChars.chars[i].characterId == CHAR_SELPHIE) {
             break; 
         }
     }
@@ -1839,39 +1839,39 @@ s32 func_800A9370(s32 arg0) {
     }
     
     switch (temp_a0->characterId) {
-        case 0:
-        case 1:
+        case CHAR_SQUALL:
+        case CHAR_ZELL:
             return 0;
             
-        case 2:
+        case CHAR_IRVINE:
             return func_800A9284(temp_a0);
             
-        case 3:
+        case CHAR_QUISTIS:
             return func_800A8EFC(temp_a0);
             
-        case 4:
+        case CHAR_RINOA:
             return func_800A8FDC(temp_a0);
             
-        case 5:
+        case CHAR_SELPHIE:
             return func_800A9064(temp_a0);
             
-        case 6:
+        case CHAR_SEIFER:
             func_800A8E90(temp_a0, 0);
             return 1;
             
-        case 7:         
+        case CHAR_EDEA:         
             func_800A8E90(temp_a0, 1);
             return 1;
             
-        case 8:         
+        case CHAR_LAGUNA:         
             func_800A8E90(temp_a0, 2);
             return 1;
             
-        case 9:   
+        case CHAR_KIROS:   
             func_800A8E90(temp_a0, 3);
             return 1;
             
-        case 10:
+        case CHAR_WARD:
             func_800A8E90(temp_a0, 4);
             return 1;
     }

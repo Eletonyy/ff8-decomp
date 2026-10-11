@@ -2226,7 +2226,7 @@ void func_8009FE14(s32 arg0) {
             D_800EEBC2 = D_800ED148.entities[arg0].hitStatus1;
             D_800EEBC4 = D_800ED148.entities[arg0].unk20;
             D_800EEBBB = D_800ED148.entities[arg0].unkBD[7];
-            D_800EEBBC = g_kernel.weapons[g_battleChars.chars[arg0].classId].critBonus;
+            D_800EEBBC = g_kernel.weapons[g_battleChars.chars[arg0].weaponId].critBonus;
             break;
     }
 }
@@ -2419,9 +2419,9 @@ void func_800A09D0(s32 arg0) {
         case 28:
             if (D_800ED148.entities[temp_s4].comFileId != 0 && D_800ED148.entities[temp_s4].comFileId != 6) {
                 func_8009FCF4(0);
-                var_s3 = g_kernel.weapons[g_battleChars.chars[temp_s4].classId].power;
+                var_s3 = g_kernel.weapons[g_battleChars.chars[temp_s4].weaponId].power;
                 D_800EE4C0.unk4 = 4;
-                var_a0 = g_kernel.weapons[g_battleChars.chars[temp_s4].classId].attackType;
+                var_a0 = g_kernel.weapons[g_battleChars.chars[temp_s4].weaponId].attackType;
                 D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
             } 
 
@@ -2607,7 +2607,7 @@ void func_800A09D0(s32 arg0) {
         case 243:       
         case 248:       
         case 253:       
-            var_s3 = g_kernel.weapons[g_battleChars.chars[temp_s4].classId].power;
+            var_s3 = g_kernel.weapons[g_battleChars.chars[temp_s4].weaponId].power;
             wait_oh_god_make_it_stop:
             func_8009FCF4(0);
             D_800EE4C0.unk4 = 4;

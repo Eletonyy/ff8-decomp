@@ -263,8 +263,8 @@ void startBattleResults(void) {
     stack = getThreadStackTop();
     for (i = 0; i < 3; i++) {
         ctx->noExpPopup[i] = 0;
-        if (g_battleChars.chars[i].characterId != 0xFF) {
-            level = g_battleChars.chars[i].level;
+        if (g_battleChars.chars[i].characterId != PARTY_SLOT_EMPTY) {
+            level = g_battleChars.chars[i].currentLevel;
             status = g_battleChars.chars[i].persistentStatus;
             ctx->nameColor[i] = 7;
             if (status & STATUS_HP_CRITICAL) {
@@ -295,7 +295,7 @@ void startBattleResults(void) {
             }
             ctx->names[i] = getBattleCharName(i);
             ctx->currentExp[i] = g_battleChars.chars[i].currentExp;
-            ctx->level[i] = g_battleChars.chars[i].level;
+            ctx->level[i] = g_battleChars.chars[i].currentLevel;
         } else {
             ctx->names[i] = NULL;
             ctx->expStep[i] = 0;

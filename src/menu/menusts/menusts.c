@@ -182,7 +182,7 @@ s32 func_801E72D8(s32 displayList, s32 ot, s32 x, s32 y, s32 mode) {
             ot = drawIcon(displayList, ot, entry->statusId, x + 0xA, yPos, g_menuTint[MENU_TINT_NORMAL]);
             drawn++;
             yPos += 4;
-            intToDecStringShort(D_801E9EE4.atkStatusHit - 100, strBuf, digitBase);
+            intToDecStringShort(D_801E9EE4.atkStatusHitChance - 100, strBuf, digitBase);
             replaceLeadingZeros(strBuf2, 2, digitBase, *getMenuString(0xB));
             ot = func_8002C56C(displayList, ot, x + 0x5A, yPos, strBuf2, 7);
             ot = func_8002C56C(displayList, ot, x + 0x72, yPos + 1, bgBuf, 7);

@@ -43,6 +43,33 @@ enum SubMenuFlag {
     SUB_MENU_NO_PARTY_BOX = 0x80 // no party box while targeting
 };
 
+enum JunctionElement {
+    JUNCTION_ELEMENT_FIRE = 0,
+    JUNCTION_ELEMENT_ICE = 1,
+    JUNCTION_ELEMENT_THUNDER = 2,
+    JUNCTION_ELEMENT_EARTH = 3,
+    JUNCTION_ELEMENT_POISON = 4,
+    JUNCTION_ELEMENT_WIND = 5,
+    JUNCTION_ELEMENT_WATER = 6,
+    JUNCTION_ELEMENT_HOLY = 7
+};
+
+enum JunctionStatus {
+    JUNCTION_STATUS_DEATH = 0,
+    JUNCTION_STATUS_POISON = 1,
+    JUNCTION_STATUS_PETRIFY = 2,
+    JUNCTION_STATUS_DARKNESS = 3,
+    JUNCTION_STATUS_SILENCE = 4,
+    JUNCTION_STATUS_BERSERK = 5,
+    JUNCTION_STATUS_ZOMBIE = 6,
+    JUNCTION_STATUS_SLEEP = 7,
+    JUNCTION_STATUS_SLOW = 8,
+    JUNCTION_STATUS_STOP = 9,
+    JUNCTION_STATUS_CURSE = 10,
+    JUNCTION_STATUS_CONFUSE = 11,
+    JUNCTION_STATUS_DRAIN = 12
+};
+
 // Bits of a statusWindowFlags byte: the party box while targeting
 enum StatusWindowFlag {
     STATUS_WINDOW_UNK20 = 0x20, // no visible effect found on a spell or on Rinoa's Combine

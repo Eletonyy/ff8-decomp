@@ -196,7 +196,7 @@ void func_800BD64C(void) {
     for (i = 0; i < 3; i++) {
         u8 charIdx = g_gameState.mainData.party.partyMembers[i];
         if (charIdx != 0xFF) {
-            if (g_battleChars.chars[i].fieldStatusByte & 1) {
+            if (g_battleChars.chars[i].fieldAbilities & FIELD_ABILITY_MOVE_HP_UP) {
                 u16 hp = g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp;
                 if (hp != 0) {
                     if ((s32)g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp <

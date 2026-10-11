@@ -531,6 +531,17 @@ enum BattleCommandFlag {
 /** @brief Battle ID of GF 0; GF n is BATTLE_GF_ID_BASE + n. */
 #define BATTLE_GF_ID_BASE 0x40
 
+enum BattleStat {
+    BATTLE_STAT_STR = 0,
+    BATTLE_STAT_VIT = 1,
+    BATTLE_STAT_MAG = 2,
+    BATTLE_STAT_SPR = 3,
+    BATTLE_STAT_SPD = 4,
+    BATTLE_STAT_LCK = 5,
+    BATTLE_STAT_EVA = 6, // out of 256, the menu shows value * 100 / 256 as a percentage
+    BATTLE_STAT_HIT = 7
+};
+
 typedef struct {
     /* 0x000 */ BattleCommand drawChoices[2]; // stock/cast
     /* 0x008 */ BattleCommand multicastChoices[3]; // single/double/triple
@@ -542,7 +553,7 @@ typedef struct {
     /* 0x01D */ u8 summoningGfId;
     /* 0x01E */ BattleCommand abilityCommands[4]; // Attack/Mug + whatever abilities the character has equipped
     /* 0x02E */ BattleCommand limitBreakCommand;
-    /* 0x032 */ BattleCommandArgument limitBreakArgs[16]; // e.g. irvines ammo type
+    /* 0x032 */ BattleCommandArgument limitBreakArgs[16]; // e.g. irvines ammo type and quistis's limit break variants
     /* 0x082 */ BattleCommandArgument magicArgs[32];
     /* 0x122 */ BattleCommandArgument gfArgs[16]; 
     /* 0x172 */ s16 currentHp;
@@ -555,26 +566,27 @@ typedef struct {
     /* 0x188 */ u32 battleStatus; // battle statuses currently inflicted on the character, see @c BattleStatusFlag
     /* 0x18C */ s32 atkBattleStatus; // battle statuses the character has a % chance of inflicting on attack, see @c BattleStatusFlag
     /* 0x190 */ s32 characterAbilities; // equipped character abilities, see @c CharacterAbilityFlag
-    /* 0x194 */ u16 elemResistances[8];/**< Element resistance values (8 × s16). */
-    /* 0x1A4 */ u8 statusResistances[13];/**< Status resistance values (13 × u8). */
-    /* 0x1B1 */ u8 pad1B1;
+    /* 0x194 */ u16 elemResistances[8]; // indexed by the @c JunctionElement enum
+    /* 0x1A4 */ u8 statusResistances[13]; // indexed by the @c JunctionStatus enum
+    /* 0x1B1 */ u8 pad1B1; // alignment pad, can be removed
     /* 0x1B2 */ u16 persistentStatus; // persistent statuses currently inflicted on the character, see @c PersistentStatusFlag
     /* 0x1B4 */ u16 atkPersistentStatus; // persistent statuses the character has a % chance of inflicting on attack, see @c PersistentStatusFlag
-    /* 0x1B6 */ u16 atkStatusHit;      /**< Attack status hit chance. */
-    /* 0x1B8 */ u8 level;              /**< Battle level (from findCharXpLevel). */
-    /* 0x1B9 */ u8 unk1B9;
-    /* 0x1BA */ u8 classId;            /**< Equipped weapon ID, an index into @c g_kernel.weapons. */
-    /* 0x1BB */ u8 stats[8];           /**< Battle stats: STR, VIT, MAG, SPR, SPD, ?, hit (0x1C0), eva (0x1C1). 0x1C2 = ? */
-    /* 0x1C3 */ u8 characterId;
-    /* 0x1C4 */ u8 atkElemBase;        /**< Attack element base. */
-    /* 0x1C5 */ u8 atkElemBonus;       /**< Attack element bonus. */
-    /* 0x1C6 */ u8 fieldStatusByte;    /**< Status byte checked by field script (bit 1 = greyed out). */
-    /* 0x1C7 */ u8 statCoefs[9];       /**< Stat coefficient table (HP, str, vit, mag, spr, spd, ?, eva, hit). */
+    /* 0x1B6 */ u16 atkStatusHitChance; // applies to atkBattleStatus and atkPersistentStatus
+    /* 0x1B8 */ u8 currentLevel;
+    /* 0x1B9 */ u8 modelVariant; // default, seed uniform, galbadia suit etc
+    /* 0x1BA */ u8 weaponId; // currently equipped weapon, index into @c g_kernel.weapons
+    /* 0x1BB */ u8 stats[8]; // indexed by the @c BattleStat enum
+    /* 0x1C3 */ u8 characterId; // see @c CharacterId enum
+    /* 0x1C4 */ u8 atkElements; // one bit per element, in @c JunctionElement order
+    /* 0x1C5 */ u8 atkElementPercent;
+    /* 0x1C6 */ u8 fieldAbilities; // abilities usable outside battle, see @c FieldAbilityFlag
+    /* 0x1C7 */ u8 statMultipliers[9]; // in percent, indexed by the @c JunctionType enum
 } BattleCharData;    /* 0x1D0: 464 bytes */
 
-// Bits of BattleCharData.fieldStatusByte
-#define FIELD_STATUS_MOVE_HP_UP 0x01
-#define FIELD_STATUS_DRAW 0x02
+enum FieldAbilityFlag {
+    FIELD_ABILITY_MOVE_HP_UP = 0x01, // recovers HP while walking
+    FIELD_ABILITY_DRAW = 0x02 // can draw from draw points
+};
 
 /** @brief GF battle level entry (12 bytes). */
 typedef struct {

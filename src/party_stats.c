@@ -25,7 +25,7 @@
 static void initCommandSlot(BattleCharData *bc, s32 index, s32 commandId);
 static s32 getCharAbilityFlags(s32 charIdx);
 static s32 hasDrawCommand(BattleCharData *charData);
-static s32 getFieldStatusFlags(BattleCharData *charData);
+static s32 getFieldAbilities(BattleCharData *charData);
 static void applyPartyAbilityFlags(s32 charIdx);
 static s32 isCommandOff(s32 cmd);
 static void clearCharSlotData(BattleCharData *charData);
@@ -110,20 +110,20 @@ static s32 hasDrawCommand(BattleCharData *charData) {
 
 
 /**
- * @brief Work out a party member's fieldStatusByte.
+ * @brief Work out a party member's fieldAbilities.
  *
  * @param charData The party member's battle data.
- * @return FIELD_STATUS_* bits.
+ * @return @c FieldAbilityFlag bits.
  */
-static s32 getFieldStatusFlags(BattleCharData *charData) {
+static s32 getFieldAbilities(BattleCharData *charData) {
     s32 val = charData->characterAbilities;
     s32 masked = val & CHAR_ABILITY_MOVE_HP_UP;
-    s32 flag = masked ? FIELD_STATUS_MOVE_HP_UP : 0;
+    s32 flag = masked ? FIELD_ABILITY_MOVE_HP_UP : 0;
     if (hasDrawCommand(charData)) {
         if (g_battleConfig.unk8 & BATTLE_CMDS_OFF_DRAW) {
             return flag;
         }
-        flag |= FIELD_STATUS_DRAW;
+        flag |= FIELD_ABILITY_DRAW;
     }
     return flag;
 }
@@ -246,10 +246,10 @@ void func_80022E08(s32 charIdx, s32 slot) {
     bc->currentHp = cd->currentHp;
     bc->currentExp = cd->experience;
     bc->expToNextLevel = getXpToNextLevel(cd->experience, charIdx);
-    bc->level = findCharXpLevel(cd->experience, charIdx);
-    bc->unk1B9 = cd->alternateModel;
+    bc->currentLevel = findCharXpLevel(cd->experience, charIdx);
+    bc->modelVariant = cd->modelVariant;
     // The original passes no fallback, so func_80021B58 reads whatever is left in a1
-    bc->classId = ((s32 (*)())func_80021B58)(charIdx);
+    bc->weaponId = ((s32 (*)())func_80021B58)(charIdx);
     bc->persistentStatus = cd->statusFlags;
     bc->battleStatus = 0;
     bc->characterAbilities = getCharAbilityFlags(charIdx);
@@ -307,9 +307,9 @@ void func_80022E08(s32 charIdx, s32 slot) {
     bc->limitBreakCommand.flags = 0;
 
     for (i = 0; i < 9; i++) {
-        bc->statCoefs[i] = getAbilityModifier(charIdx, i);
+        bc->statMultipliers[i] = getStatMultiplier(charIdx, i);
     }
-    bc->fieldStatusByte = getFieldStatusFlags(bc);
+    bc->fieldAbilities = getFieldAbilities(bc);
 }
 
 
@@ -379,27 +379,27 @@ void func_800231E0(s32 charIdx, s32 battleSlot) {
     func_800229FC(battleSlot);
 
     bc->expToNextLevel = getXpToNextLevel(cd->experience, charIdx);
-    bc->level = findCharXpLevel(cd->experience, charIdx);
+    bc->currentLevel = findCharXpLevel(cd->experience, charIdx);
 
-    hp = clampToMaxHp(bc->statCoefs[JUNCTION_HP] * calcHpFromLevel(bc->level, charIdx) / 100);
+    hp = clampToMaxHp(bc->statMultipliers[JUNCTION_HP] * calcHpFromLevel(bc->currentLevel, charIdx) / 100);
     bc->maxHp = hp;
     if (bc->maxHp < cd->currentHp) {
         cd->currentHp = hp;
         bc->currentHp = hp;
     }
 
-    bc->stats[0] = clampToByte(bc->statCoefs[JUNCTION_STR] * func_80021C10(bc->level, charIdx, JUNCTION_STR) / 100);
-    bc->stats[1] = clampToByte(bc->statCoefs[JUNCTION_VIT] * func_80021C10(bc->level, charIdx, JUNCTION_VIT) / 100);
-    bc->stats[2] = clampToByte(bc->statCoefs[JUNCTION_MAG] * func_80021C10(bc->level, charIdx, JUNCTION_MAG) / 100);
-    bc->stats[3] = clampToByte(bc->statCoefs[JUNCTION_SPR] * func_80021C10(bc->level, charIdx, JUNCTION_SPR) / 100);
-    bc->stats[4] = clampToByte(bc->statCoefs[JUNCTION_SPD] * func_80021C10(bc->level, charIdx, JUNCTION_SPD) / 100);
-    bc->stats[5] = clampToByte(bc->statCoefs[JUNCTION_LCK] * func_80021C10(bc->level, charIdx, JUNCTION_LCK) / 100);
+    bc->stats[BATTLE_STAT_STR] = clampToByte(bc->statMultipliers[JUNCTION_STR] * func_80021C10(bc->currentLevel, charIdx, JUNCTION_STR) / 100);
+    bc->stats[BATTLE_STAT_VIT] = clampToByte(bc->statMultipliers[JUNCTION_VIT] * func_80021C10(bc->currentLevel, charIdx, JUNCTION_VIT) / 100);
+    bc->stats[BATTLE_STAT_MAG] = clampToByte(bc->statMultipliers[JUNCTION_MAG] * func_80021C10(bc->currentLevel, charIdx, JUNCTION_MAG) / 100);
+    bc->stats[BATTLE_STAT_SPR] = clampToByte(bc->statMultipliers[JUNCTION_SPR] * func_80021C10(bc->currentLevel, charIdx, JUNCTION_SPR) / 100);
+    bc->stats[BATTLE_STAT_SPD] = clampToByte(bc->statMultipliers[JUNCTION_SPD] * func_80021C10(bc->currentLevel, charIdx, JUNCTION_SPD) / 100);
+    bc->stats[BATTLE_STAT_LCK] = clampToByte(bc->statMultipliers[JUNCTION_LCK] * func_80021C10(bc->currentLevel, charIdx, JUNCTION_LCK) / 100);
     // The original passes calcHitStat one argument, so the call can't go through its prototype
-    bc->stats[7] = clampToByte(bc->statCoefs[JUNCTION_HIT] * ((s32 (*)())calcHitStat)(charIdx) / 100);
-    bc->stats[6] = clampToByte(bc->statCoefs[JUNCTION_EVA] * calcEvaStat(charIdx, bc->stats[4]) / 100);
+    bc->stats[BATTLE_STAT_HIT] = clampToByte(bc->statMultipliers[JUNCTION_HIT] * ((s32 (*)())calcHitStat)(charIdx) / 100);
+    bc->stats[BATTLE_STAT_EVA] = clampToByte(bc->statMultipliers[JUNCTION_EVA] * calcEvaStat(charIdx, bc->stats[BATTLE_STAT_SPD]) / 100);
 
-    bc->atkElemBase = getAtkElemBase(charIdx);
-    bc->atkElemBonus = getAtkElemBonus(charIdx);
+    bc->atkElements = getAtkElements(charIdx);
+    bc->atkElementPercent = getAtkElementPercent(charIdx);
 
     for (i = 0; i < 8; i++) {
         bc->elemResistances[i] = getElemResistance(charIdx, i);
@@ -407,7 +407,7 @@ void func_800231E0(s32 charIdx, s32 battleSlot) {
 
     bc->atkBattleStatus = decodeAtkStatusMask(charIdx);
     bc->atkPersistentStatus = getAtkStatusFlags(charIdx);
-    bc->atkStatusHit = calcAtkStatusHit(charIdx);
+    bc->atkStatusHitChance = calcAtkStatusHit(charIdx);
 
     for (i = 0; i < 13; i++) {
         bc->statusResistances[i] = getStatusResistance(charIdx, i);
