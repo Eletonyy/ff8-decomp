@@ -4,7 +4,6 @@
  */
 #include "common.h"
 #include "effect.h"
-#include "effect/effect_066.h"
 
 #define GRIEVER_DETACH_ORDER_RANGE 320
 #define GRIEVER_DETACH_HEIGHT -6000
