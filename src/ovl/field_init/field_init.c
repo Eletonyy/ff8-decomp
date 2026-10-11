@@ -55,7 +55,7 @@ void loadKernel(void) {
 
     g_battleConfig.battleSceneId = 0;
     g_battleConfig.unk2 = 0;
-    g_battleConfig.unk8 = 0;
+    g_battleConfig.sealedAbilities = 0;
     D_8005F170 = 0;
 
     for (i = 0; i < 3; i++) {

@@ -132,22 +132,19 @@ typedef struct {
                                         bit5=controller, bit6=vibration, bit7=analog,
                                         bit8=scan mode. */
     /* 0x06 */ u8 camera;          /**< Camera mode. */
-    /* 0x07 */ u8 sealedFeatures;  /**< Ultimecia's-Castle sealed-features mask — mirror of
-                                        @c FieldVars.fieldF3 (all-sealed = 0xFF via LASTIN,
-                                        bits cleared by SEALEDOFF). Menus and battle-render
-                                        gate features on these bits (see SEALED_FLAG_*). */
+    /* 0x07 */ u8 sealedAbilities; // abilities sealed in Ultimecia's Castle, see @c SealedAbilityFlag
     /* 0x08 */ u8 buttons[12];      /**< Button remapping table (L2,R2,L1,R1,Tri,Cir,X,Sq,Sel,?,?,Start). */
 } GameConfig; /* 0x14 = 20 bytes */
 
-/* GameConfig.sealedFeatures bits. Bit -> feature mapping not yet identified
- * (placeholder names); battle_render decodes each into a per-feature byte. */
-#define SEALED_FLAG_01 0x01
-#define SEALED_FLAG_02 0x02
-#define SEALED_FLAG_04 0x04
-#define SEALED_FLAG_08 0x08
-#define SEALED_FLAG_10 0x10
-#define SEALED_FLAG_20 0x20
-#define SEALED_FLAG_40 0x40
+enum SealedAbilityFlag {
+    SEALED_ITEM = 0x01, // Item and command 13
+    SEALED_MAGIC = 0x02,
+    SEALED_GF = 0x04,
+    SEALED_DRAW = 0x08,
+    SEALED_COMMAND_ABILITIES = 0x10, // every other junctioned command
+    SEALED_LIMIT_BREAK = 0x20,
+    SEALED_RESURRECTION = 0x40
+};
 
 /** @brief GameConfig.flags bitfield. */
 #define CONFIG_ATB        0x001  /**< ATB mode (0=active, 1=wait). */

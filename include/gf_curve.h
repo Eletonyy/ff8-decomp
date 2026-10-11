@@ -46,8 +46,7 @@ s32 multiply(s32 a0, s32 a1);
 /** @brief Multiply then scale down by 100 (percentage application). */
 s32 multiplyDiv100(s32 a0, s32 a1);
 
-/** @brief Junctioned-ability modifier for character @p charIdx. */
-s32 getAbilityModifier(s32 charIdx, s32 a1);
+s32 getStatMultiplier(s32 charIdx, s32 a1);
 
 /** @brief Character HP at @p level. */
 s32 calcHpFromLevel(s32 level, s32 charIdx);
@@ -58,11 +57,9 @@ s32 calcHitStat(s32 charIdx, s32 a1);
 /** @brief Evade stat for character @p charIdx. */
 s32 calcEvaStat(s32 charIdx, s32 a1);
 
-/** @brief Base elemental-attack value for character @p charIdx. */
-s32 getAtkElemBase(s32 charIdx);
+s32 getAtkElements(s32 charIdx);
 
-/** @brief Elemental-attack bonus for character @p charIdx. */
-s32 getAtkElemBonus(s32 charIdx);
+s32 getAtkElementPercent(s32 charIdx);
 
 /** @brief Elemental resistance for the element selected by @p shiftBit. */
 s32 getElemResistance(s32 charIdx, s32 shiftBit);
@@ -80,6 +77,8 @@ s32 calcAtkStatusHit(s32 charIdx);
 s32 getStatusResistance(s32 charIdx, s32 shiftBit);
 
 s32 func_80021B58(s32 charIdx, s32 fallback);
+// Character charIdx's stat at the given level, where kind is the stat's JunctionType
+s32 func_80021C10(s32 level, s32 charIdx, s32 kind);
 s32 func_8002274C(s32 gfIdx, u16 delta);
 
 #endif /* GF_CURVE_H */

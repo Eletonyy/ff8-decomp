@@ -3115,8 +3115,8 @@ dispatch:
  * @return Composed ability flags word.
  */
 s32 encodeBattleAbilityFlags(BattleCharData *charData) {
-    s32 result = charData->abilityValue & 0x7F;
-    s32 flags = charData->abilityFlags;
+    s32 result = charData->atkPersistentStatus & 0x7F;
+    s32 flags = charData->atkBattleStatus;
 
     if (flags & BTL_ABL_HIT_J)      result |= JNC_AVAIL_HIT;
     if (flags & BTL_ABL_LCK_J)      result |= JNC_AVAIL_LCK;
@@ -3180,7 +3180,7 @@ s32 renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         /* Preview stat value when ability slot i is junctioned (else 0). */
         bit = 1 << i;
         if (baseFlags & bit) {
-            baseVal = g_junctionPreview.atkStatusHit - 100;
+            baseVal = g_junctionPreview.atkStatusHitChance - 100;
             currentVal = baseVal;
         } else {
             baseVal = 0;
@@ -3189,7 +3189,7 @@ s32 renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         bit = 1 << i;
         tmp = bit;
         if (currentFlags & tmp) {
-            currentVal = ((BattleCharData *)&g_battleChars)->atkStatusHit - 100;
+            currentVal = ((BattleCharData *)&g_battleChars)->atkStatusHitChance - 100;
         } else {
             currentVal = 0;
         }
@@ -3322,7 +3322,7 @@ s32 renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
  * Shown when the user is navigating junction to EL-A/D > Elemental attack.
  * Iterates the D_801EEC10 table (8 rows). Each row compares the preview
  * element flags/value (g_junctionPreview atkElem fields) against the current ones
- * (g_battleChars.chars[0].atkElemBase/g_battleChars.chars[0].atkElemBonus) via a per-row bit test to pick the up/down change
+ * (g_battleChars.chars[0].atkElements/g_battleChars.chars[0].atkElementPercent) via a per-row bit test to pick the up/down change
  * indicator, then renders the label, indicator, and the numeric value.
  *
  * @param renderCtx Render context.
@@ -3349,8 +3349,8 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
     u8 fmtParam;
     u8 buf[12];
 
-    baseFlags = g_junctionPreview.atkElemBase;
-    currentFlags = g_battleChars.chars[0].atkElemBase;
+    baseFlags = g_junctionPreview.atkElements;
+    currentFlags = g_battleChars.chars[0].atkElements;
 
     xBase += 0x88;
     yBase += 0x93;
@@ -3372,7 +3372,7 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         y = tmp + yBase;
         bit = 1 << i;
         if (baseFlags & bit) {
-            baseVal = g_junctionPreview.atkElemBonus;
+            baseVal = g_junctionPreview.atkElementPercent;
             currentVal = baseVal;
         } else {
             baseVal = 0;
@@ -3380,7 +3380,7 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         bit = 1 << i;
         tmp = bit;
         if (currentFlags & tmp) {
-            currentVal = g_battleChars.chars[0].atkElemBonus;
+            currentVal = g_battleChars.chars[0].atkElementPercent;
         } else {
             currentVal = 0;
         }
@@ -4719,7 +4719,7 @@ s32 renderAbilityListEntry(s32 ctx, s32 cursorY, s32 row, s32 col, s32 panelX) {
             }
             textY = cfgY + 0xA;
             textY = textY + colY;
-            if (func_801F79F8(1) != 0) {
+            if (func_801F79F8(SEALED_ITEM) != 0) {
                 if (abilityId == 0x18) {
                     highlight = 1;
                 }
@@ -4727,22 +4727,22 @@ s32 renderAbilityListEntry(s32 ctx, s32 cursorY, s32 row, s32 col, s32 panelX) {
                     highlight = 1;
                 }
             }
-            if (func_801F79F8(2) != 0) {
+            if (func_801F79F8(SEALED_MAGIC) != 0) {
                 if (abilityId == 0x14) {
                     highlight = 1;
                 }
             }
-            if (func_801F79F8(4) != 0) {
+            if (func_801F79F8(SEALED_GF) != 0) {
                 if (abilityId == 0x15) {
                     highlight = 1;
                 }
             }
-            if (func_801F79F8(8) != 0) {
+            if (func_801F79F8(SEALED_DRAW) != 0) {
                 if (abilityId == 0x16) {
                     highlight = 1;
                 }
             }
-            if (func_801F79F8(0x10) != 0) {
+            if (func_801F79F8(SEALED_COMMAND_ABILITIES) != 0) {
                 s32 d = abilityId - 0x14;
                 if (((u32)d) < 0x13) {
                     if (((u32)d) >= 3) {
@@ -4853,7 +4853,7 @@ s32 renderStatRowGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s
     s32 yPos;
     s32 tmp;
 
-    func_801F79F8(0x10);
+    func_801F79F8(SEALED_COMMAND_ABILITIES);
     x += 0x18;
     y += 0x48;
     xPos = x + 0x21;
@@ -4867,18 +4867,18 @@ s32 renderStatRowGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s
         yPos = (y + 0x16) + (i * 0xD);
         cmdId = g_gameState.chars[ctx->charIdx].commands[i];
 
-        tmp = func_801F79F8(2);
+        tmp = func_801F79F8(SEALED_MAGIC);
         if (tmp && cmdId == 0x14) highlight = 1;
-        tmp = func_801F79F8(4);
+        tmp = func_801F79F8(SEALED_GF);
         if (tmp && cmdId == 0x15) highlight = 1;
-        tmp = func_801F79F8(8);
+        tmp = func_801F79F8(SEALED_DRAW);
         if (tmp && cmdId == 0x16) highlight = 1;
-        tmp = func_801F79F8(1);
+        tmp = func_801F79F8(SEALED_ITEM);
         if (tmp) {
             if (cmdId == 0x18) highlight = 1;
             if (cmdId == 0x17) highlight = 1;
         }
-        tmp = func_801F79F8(0x10);
+        tmp = func_801F79F8(SEALED_COMMAND_ABILITIES);
         if (tmp && (u32)(cmdId - 0x14) >= 3 && cmdId != 0x18 && cmdId != 0x17) highlight = 1;
 
         if (cmdId != 0) {

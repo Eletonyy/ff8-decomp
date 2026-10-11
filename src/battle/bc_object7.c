@@ -100,7 +100,7 @@ void func_800AF6BC(s32 arg0) {
  * Walks @c D_800ED148.entities[0..2] (BattleSystem block) — for any slot whose
  * @c comFileId is not 0xFF, calls @c func_800AF6BC(i) (which copies the
  * entity's animation halfwords into the per-character anim cache) and then
- * mirrors @c entity->status into @c g_battleChars.chars[i].displayStatus.
+ * mirrors @c entity->status into @c g_battleChars.chars[i].persistentStatus.
  * Finishes by calling @c func_800AF654 to rebuild the global anim list.
  */
 void func_800AF740(void) {
@@ -109,7 +109,7 @@ void func_800AF740(void) {
     for (i = 0; i < 3; i++) {
         if (D_800ED148.entities[i].comFileId != 255) {
             func_800AF6BC(i);
-            g_battleChars.chars[i].displayStatus = D_800ED148.entities[i].status;
+            g_battleChars.chars[i].persistentStatus = D_800ED148.entities[i].status;
         }
     }
     
@@ -501,9 +501,9 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0CC4);
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0D8C);
 
 /**
- * @brief Dispatch call based on @ref SEALED_FLAG_02 in D_80082C10.
+ * @brief Dispatch call based on @ref SEALED_MAGIC in g_battleConfig.sealedAbilities.
  *
- * If @ref SEALED_FLAG_02 is set, passes 0xFF to func_800B0CC4.
+ * If @ref SEALED_MAGIC is set, passes 0xFF to func_800B0CC4.
  * Otherwise calls func_800B0D8C with a0 and mode 2, then passes
  * the result to func_800B0CC4.
  *
@@ -511,7 +511,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0D8C);
  */
 s32 func_800B0DDC(s32 a0) {
     s32 val;
-    if (g_battleConfig.unk8 & SEALED_FLAG_02) {
+    if (g_battleConfig.sealedAbilities & SEALED_MAGIC) {
         val = 0xFF;
     } else {
         val = func_800B0D8C(a0, 2);
@@ -522,9 +522,9 @@ s32 func_800B0DDC(s32 a0) {
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0E30);
 
 /**
- * @brief Dispatch call based on @ref SEALED_FLAG_01 in g_battleConfig.unk8.
+ * @brief Dispatch call based on @ref SEALED_ITEM in g_battleConfig.sealedAbilities.
  *
- * If @ref SEALED_FLAG_01 is set, passes 0xFF to func_800B0E30.
+ * If @ref SEALED_ITEM is set, passes 0xFF to func_800B0E30.
  * Otherwise calls func_800B0D8C with a0 and mode 4, then passes
  * the result to func_800B0E30.
  *
@@ -532,7 +532,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0E30);
  */
 s32 func_800B0F3C(s32 a0) {
     s32 val;
-    if (g_battleConfig.unk8 & SEALED_FLAG_01) {
+    if (g_battleConfig.sealedAbilities & SEALED_ITEM) {
         val = 0xFF;
     } else {
         val = func_800B0D8C(a0, 4);
@@ -586,7 +586,7 @@ u16 func_800B1104(s32 a0) {
  * @brief Resolve the action ID and flags for one of the player's command slots.
  *
  * Picks a deterministic-but-pseudorandom variant via func_8009B15C() % 3 and
- * dispatches on the command type stored at g_battleChars.chars[selfIdx].cmdSlots[cmdIdx].
+ * dispatches on the command type stored at g_battleChars.chars[selfIdx].abilityCommands[cmdIdx].
  *
  * - cmd 1 / 12 (Attack-like): writes only *outFlags (no ID resolved).
  * - cmd 2 (Magic): resolves a spell ID via func_800B0DDC; combined element/status flags
@@ -603,7 +603,7 @@ u16 func_800B1104(s32 a0) {
  */
 s32 func_800B115C(s32 selfIdx, s32 cmdIdx, s32 *outId, u16 *outFlags) {
     u8 m = func_8009B15C() % 3;
-    s32 cmd = g_battleChars.chars[selfIdx].cmdSlots[cmdIdx].cmdType;
+    s32 cmd = g_battleChars.chars[selfIdx].abilityCommands[cmdIdx].commandId;
     s32 a;
     u16 v1;
 

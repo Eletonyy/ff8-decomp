@@ -20,7 +20,7 @@ typedef struct {
 } SomeMainStruct;
 
 // Public prototypes
-SomeMainStruct *doSomething(void);
+SomeMainStruct *DoSomething(void);
 
 #endif
 ```
@@ -36,13 +36,13 @@ typedef struct {
 } PrivateStruct;
 
 // Private prototypes
-static void doSomethingInternal(PrivateStruct *arg0);
+static void DoSomethingInternal(PrivateStruct *arg0);
 
-SomeMainStruct *doSomething(void) {
+SomeMainStruct *DoSomething(void) {
     ...
 }
 
-static void doSomethingInternal(PrivateStruct *arg0) {
+static void DoSomethingInternal(PrivateStruct *arg0) {
     ...
 }
 ```
@@ -77,7 +77,7 @@ extern Player g_player; // at 0x800E1000
 
 Bad:
 ```
-void setLevel(s32 level) {
+void SetLevel(s32 level) {
     *(s32 *)((u8 *)&g_player + 0x8) = level; // BAD! Wrong as soon as a field is added before level
     *(s32 *)0x800E1008 = level;              // BAD! Wrong as soon as g_player moves
 }
@@ -85,7 +85,7 @@ void setLevel(s32 level) {
 
 Good:
 ```
-void setLevel(s32 level) {
+void SetLevel(s32 level) {
     g_player.level = level; // GOOD! The compiler works out the offset and the linker the address
 }
 ```
@@ -100,6 +100,8 @@ A raw offset or a hard-coded address is never acceptable, not even when it's the
 ** A cast that survives review has to earn it. Either it changes the generated code and a comment says so, or it is a genuine reinterpretation of memory that no single type can express (a packed word copied across a pair of s16 fields, one buffer doing double duty on a path where its first use is dead).
 ** Casting at a call site to silence a type mismatch is the common mistake. If the callee's prototype disagrees with every caller, the prototype is what's wrong.
 
+* Function names use PascalCase, e.g. `SetLevel` or `IsKnockedOut`, not `setLevel` or `set_level`. This goes for private `static` functions too.
+
 * Write code the way a developer in 1998 would have written it, not a line-by-line translation of the assembly.
 ** Use simple loops that index arrays. The compiler usually turns an indexed loop into pointer walking by itself, so pointer walking in the assembly doesn't always mean the source did it.
 ** Use decimal for counts, sizes and game values (`100`, `9999`). Use hex where a programmer would have: bit masks and addresses (`0xFF`, `0x8000`).
@@ -111,7 +113,7 @@ Example: `g_party` is an array of three `Player`s (the struct from above), and e
 
 Bad:
 ```
-void maxPartyLevel(void) {
+void MaxPartyLevel(void) {
     Player *p = g_party;
     s32 i = 0;
 
@@ -128,7 +130,7 @@ Good:
 #define PARTY_SIZE 3
 #define MAX_LEVEL 100
 
-void maxPartyLevel(void) {
+void MaxPartyLevel(void) {
     s32 i;
 
     for (i = 0; i < PARTY_SIZE; i++) {
@@ -137,20 +139,7 @@ void maxPartyLevel(void) {
 }
 ```
 
-* Documenting functions with Doxygen is encouraged, but not required. A `/** ... */` block saying what the function does, what its parameters are and what it returns helps the next person. If you're not sure, write your best guess and say that it is a guess.
-
-Example:
-```
-/**
- * @brief Checks whether a party member is knocked out.
- * @param index Party slot, 0 to 2.
- * @return 1 if the member has 0 HP, otherwise 0.
- * @note Unsure whether this also counts Petrify.
- */
-s32 isKnockedOut(s32 index) {
-    ...
-}
-```
+* Prefer function and variable names that say what they do over a comment block explaining them. A name is read everywhere the function or variable is used, a comment only where it's written. A comment should only be needed when the code itself can't express its intent.
 
 * Comments should say what the code itself can't, e.g. what a value means, or why code is written in an odd way because the match needs it.
 ** No comments that repeat the code.
@@ -162,7 +151,7 @@ Bad:
 #include "battle.h" // for g_party
 
 // the caller hasn't been decompiled yet
-void maxPartyLevel(void) {
+void MaxPartyLevel(void) {
     s32 unused;
     s32 i;
 
@@ -183,7 +172,7 @@ Good:
 ```
 #include "battle.h"
 
-void maxPartyLevel(void) {
+void MaxPartyLevel(void) {
     s32 unused; // never used, but the compiled code only matches the original with it
     s32 i;
 

@@ -199,7 +199,7 @@ void func_80098920(s32 idx, s32 flag) {
 /**
  * @brief Decode input flags into battle render configuration bytes.
  *
- * Reads bits from D_8007809A, @c GameConfig.sealedFeatures, and D_80077E92 and writes
+ * Reads bits from D_8007809A, @c GameConfig.sealedAbilities, and D_80077E92 and writes
  * corresponding flag bytes to the D_800D3C30 region. Then iterates
  * through 0x1D name table slots calling func_80098920 with values
  * from D_800D3C30.
@@ -225,43 +225,43 @@ void func_80098958(void) {
         D_800D3C38 = 0;
     }
 
-    if (g_gameState.config.sealedFeatures & SEALED_FLAG_01) {
+    if (g_gameState.config.sealedAbilities & SEALED_ITEM) {
         D_800D3C39 = 1;
     } else {
         D_800D3C39 = 0;
     }
 
-    if (g_gameState.config.sealedFeatures & SEALED_FLAG_02) {
+    if (g_gameState.config.sealedAbilities & SEALED_MAGIC) {
         D_800D3C3A = 1;
     } else {
         D_800D3C3A = 0;
     }
 
-    if (g_gameState.config.sealedFeatures & SEALED_FLAG_04) {
+    if (g_gameState.config.sealedAbilities & SEALED_GF) {
         D_800D3C3B = 1;
     } else {
         D_800D3C3B = 0;
     }
 
-    if (g_gameState.config.sealedFeatures & SEALED_FLAG_08) {
+    if (g_gameState.config.sealedAbilities & SEALED_DRAW) {
         D_800D3C3C = 1;
     } else {
         D_800D3C3C = 0;
     }
 
-    if (g_gameState.config.sealedFeatures & SEALED_FLAG_10) {
+    if (g_gameState.config.sealedAbilities & SEALED_COMMAND_ABILITIES) {
         D_800D3C3D = 1;
     } else {
         D_800D3C3D = 0;
     }
 
-    if (g_gameState.config.sealedFeatures & SEALED_FLAG_20) {
+    if (g_gameState.config.sealedAbilities & SEALED_LIMIT_BREAK) {
         D_800D3C3E = 1;
     } else {
         D_800D3C3E = 0;
     }
 
-    if (g_gameState.config.sealedFeatures & SEALED_FLAG_40) {
+    if (g_gameState.config.sealedAbilities & SEALED_RESURRECTION) {
         D_800D3C3F = 1;
     } else {
         D_800D3C3F = 0;

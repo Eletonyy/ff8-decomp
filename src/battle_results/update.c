@@ -218,7 +218,7 @@ static void finishExpRows(void) {
             level = func_8002257C(i, g_battleChars.unk574[i] + g_battleChars.unk57A[i]);
             next = evalEntityXpCurve(i, level);
             ctx->level[i] = level;
-            exp = ch->exp;
+            exp = ch->currentExp;
             ctx->expAcquired[i] = 0;
             ctx->expStep[i] = 0;
             ctx->nextLevelExp[i] = next - exp;

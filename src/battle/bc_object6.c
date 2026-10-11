@@ -1,4 +1,5 @@
 #include "common.h"
+#include "ability.h"
 #include "battle.h"
 #include "gamestate.h"
 #include "kernel.h"
@@ -606,11 +607,11 @@ s32 func_800ADF08(s32 arg0, s32 arg1) {
                 D_800ED148.unk12F0++;
                 
                 if (!(D_800ED148.entities[temp_s0->link.fwd].flags & 0x02000000) && (D_800EE4C0.unk1 == 2) && (D_800ED148.unk12F4 == 0)) {
-                    if ((g_battleChars.chars[temp_s0->link.fwd].statusFlags & 0x20) && (result == 2)) {
+                    if ((g_battleChars.chars[temp_s0->link.fwd].characterAbilities & CHAR_ABILITY_EXPENDX2_1) && (result == 2)) {
                         var_s4 = 1;
                     } 
                         
-                    else if ((g_battleChars.chars[temp_s0->link.fwd].statusFlags & 0x40) && (result == 3)) {
+                    else if ((g_battleChars.chars[temp_s0->link.fwd].characterAbilities & CHAR_ABILITY_EXPENDX3_1) && (result == 3)) {
                         var_s4 = 1;
                     }
                         

@@ -31,8 +31,8 @@
  *    disables reverb, resets the sound-bank selector, and marks all
  *    three audio channel states and both sound handles inactive (-1).
  *  - Mirrors @c fieldB6 into @c g_battleConfig.unk2; when
- *    @ref FIELD_STATE_PARTY_OVERRIDE is set, also mirrors @c fieldF3 into @c g_battleConfig.unk8
- *    and @c GameConfig.sealedFeatures and replays @c opHandler_SETPARTY2.
+ *    @ref FIELD_STATE_PARTY_OVERRIDE is set, also mirrors @c fieldF3 into @c g_battleConfig.sealedAbilities
+ *    and @c GameConfig.sealedAbilities and replays @c opHandler_SETPARTY2.
  *  - Publishes @c field56 to @c D_80082C8D, pushes the expected disc to
  *    the CD layer (@c setDiscNumber, @c g_gameState.unk048 = disc - 1), derives
  *    the salary-enabled flag from @ref FIELD_STATE_TRANSITION, and installs the
@@ -97,12 +97,12 @@ void SmInitEventAll(s32 fullReset)
 
     g_battleConfig.unk2 = g_fieldVars->fieldB6;
     if (g_fieldVars->stateFlags & FIELD_STATE_PARTY_OVERRIDE) {
-        g_battleConfig.unk8 = g_fieldVars->fieldF3;
-        g_gameState.config.sealedFeatures = g_fieldVars->fieldF3;
+        g_battleConfig.sealedAbilities = g_fieldVars->fieldF3;
+        g_gameState.config.sealedAbilities = g_fieldVars->fieldF3;
         opHandler_SETPARTY2(NULL, 0);
     } else {
-        g_battleConfig.unk8 = 0;
-        g_gameState.config.sealedFeatures = 0;
+        g_battleConfig.sealedAbilities = 0;
+        g_gameState.config.sealedAbilities = 0;
     }
 
     D_80082C8D = g_fieldVars->field56;

@@ -296,7 +296,7 @@ typedef struct {
 #define FIELD_STATE_COUNTDOWN 0x40 /**< Bit 6: the countdown timer is shown (DISPTIMER sets it, KILLTIMER clears it); the field tick tail shows it again. */
 #define FIELD_STATE_FLAG_200       0x200 /**< Bit 9: toggled by the fe_object6 music/state helper. @note Purpose unknown. */
 #define FIELD_STATE_FLAG_400       0x400 /**< Bit 10: staged from @c fieldCF by the music-state machine, then cleared. @note Purpose unknown. */
-#define FIELD_STATE_PARTY_OVERRIDE 0x800 /**< Bit 11: while set, @c fieldF3 mirrors into @c g_battleConfig.unk8 / @c GameConfig.sealedFeatures and SETPARTY2 replays at field init. */
+#define FIELD_STATE_PARTY_OVERRIDE 0x800 /**< Bit 11: while set, @c fieldF3 mirrors into @c g_battleConfig.sealedAbilities / @c GameConfig.sealedAbilities and SETPARTY2 replays at field init. */
 #define FIELD_STATE_FLAG_1000      0x1000 /**< Bit 12: set/cleared around the fe_object5 sound-bank swap. @note Purpose unknown. */
 
 /** @brief Field-engine variable block (canonical extern also in gamestate.h). */

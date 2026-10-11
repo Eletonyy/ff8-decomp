@@ -6,8 +6,76 @@
 // kernel.bin, loaded whole at g_kernel. Section layout per the FF8 Modding Wiki
 // (technical-reference/main/kernel/header); offsets match the disc's kernel.bin.
 
-/** @brief targetInfo bit: one unit of the chosen side. */
-#define TARGET_INFO_SINGLE 0x10
+// Bits of a targetInfo byte: how the cursor picks the targets
+enum TargetInfoFlag {
+    TARGET_INFO_KO = 0x01, // can target KO'd units
+    TARGET_INFO_RANDOM = 0x02, // hits one random target from those the cursor covers
+    TARGET_INFO_SWITCH_SIDES = 0x04, // the cursor can move between the enemies and the party
+    TARGET_INFO_FIXED = 0x08, // the cursor stays on the default target
+    TARGET_INFO_COUNT_MASK = 0x30, // how many targets, a TargetCount
+    TARGET_INFO_ENEMY_SIDE = 0x40, // the cursor starts on the enemy side
+    TARGET_INFO_NO_CURSOR = 0x80 // acts at once on the default target
+};
+
+// How many targets: the TARGET_INFO_COUNT_MASK bits of targetInfo
+enum TargetCount {
+    TARGET_INFO_ONE_SIDE = 0x00, // everyone on one side
+    TARGET_INFO_SINGLE = 0x10, // a single target
+    TARGET_INFO_EVERYONE = 0x20 // everyone on both sides
+};
+
+enum SubMenu {
+    SUB_MENU_MAGIC = 0,
+    SUB_MENU_GF = 1,
+    SUB_MENU_ITEM = 2,
+    SUB_MENU_DRAW = 3, // the enemy's spells
+    SUB_MENU_SHOT = 4,
+    SUB_MENU_SLOT = 5,
+    SUB_MENU_BLUE_MAGIC = 6,
+    SUB_MENU_LIMIT = 7, // special character limits, Seifer, Edea, Lagunas party
+    SUB_MENU_COMBINE = 8
+};
+
+enum SubMenuFlag {
+    SUB_MENU_MASK = 0x1F, // the submenu number to open
+    SUB_MENU_NONE = 0x20, // don't open a submenu, straight to targeting
+    SUB_MENU_STATUS_BOX = 0x40, // the party box shows ailments instead of HP
+    SUB_MENU_NO_PARTY_BOX = 0x80 // no party box while targeting
+};
+
+enum JunctionElement {
+    JUNCTION_ELEMENT_FIRE = 0,
+    JUNCTION_ELEMENT_ICE = 1,
+    JUNCTION_ELEMENT_THUNDER = 2,
+    JUNCTION_ELEMENT_EARTH = 3,
+    JUNCTION_ELEMENT_POISON = 4,
+    JUNCTION_ELEMENT_WIND = 5,
+    JUNCTION_ELEMENT_WATER = 6,
+    JUNCTION_ELEMENT_HOLY = 7
+};
+
+enum JunctionStatus {
+    JUNCTION_STATUS_DEATH = 0,
+    JUNCTION_STATUS_POISON = 1,
+    JUNCTION_STATUS_PETRIFY = 2,
+    JUNCTION_STATUS_DARKNESS = 3,
+    JUNCTION_STATUS_SILENCE = 4,
+    JUNCTION_STATUS_BERSERK = 5,
+    JUNCTION_STATUS_ZOMBIE = 6,
+    JUNCTION_STATUS_SLEEP = 7,
+    JUNCTION_STATUS_SLOW = 8,
+    JUNCTION_STATUS_STOP = 9,
+    JUNCTION_STATUS_CURSE = 10,
+    JUNCTION_STATUS_CONFUSE = 11,
+    JUNCTION_STATUS_DRAIN = 12
+};
+
+// Bits of a statusWindowFlags byte: the party box while targeting
+enum StatusWindowFlag {
+    STATUS_WINDOW_UNK20 = 0x20, // no visible effect found on a spell or on Rinoa's Combine
+    STATUS_WINDOW_STATUS_BOX = 0x40, // the party box shows ailments instead of HP
+    STATUS_WINDOW_NO_PARTY_BOX = 0x80 // no party box while targeting
+};
 
 /** @brief attackFlags bits 0-1: the damage type. */
 #define ATTACK_DAMAGE_TYPE 0x03
@@ -31,15 +99,53 @@ typedef struct {
     u16 nameOffset;     /**< +0x00: Name text offset. */
     u16 descOffset;     /**< +0x02: Description text offset. */
     u8 abilityDataId;   /**< +0x04 */
-    u8 menuFlags;       /**< +0x05 */
+    u8 subMenuFlags;    /**< +0x05 */
     u8 targetInfo;      /**< +0x06 */
     u8 pad07;
 } BattleCommandEntry; /* 8 bytes */
 
 /** @brief Battle command IDs, indexing Kernel.battleCommands. */
-#define BATTLE_CMD_CAST  9
-#define BATTLE_CMD_STOCK 10
-#define BATTLE_CMD_SHOT  14
+enum BattleCommandId {
+    BATTLE_CMD_NONE = 0,
+    BATTLE_CMD_ATTACK = 1,
+    BATTLE_CMD_MAGIC = 2,
+    BATTLE_CMD_GF = 3,
+    BATTLE_CMD_ITEM = 4,
+    BATTLE_CMD_RENZOKUKEN = 5,
+    BATTLE_CMD_DRAW = 6,
+    BATTLE_CMD_DEVOUR = 7,
+    BATTLE_CMD_UNK8 = 8,
+    BATTLE_CMD_CAST = 9,
+    BATTLE_CMD_STOCK = 10,
+    BATTLE_CMD_DUEL = 11,
+    BATTLE_CMD_MUG = 12,
+    BATTLE_CMD_UNK13 = 13,
+    BATTLE_CMD_SHOT = 14,
+    BATTLE_CMD_BLUE_MAGIC = 15,
+    BATTLE_CMD_SLOT = 16,
+    BATTLE_CMD_FIRE_CROSS = 17,
+    BATTLE_CMD_SORCERY = 18,
+    BATTLE_CMD_COMBINE = 19,
+    BATTLE_CMD_LIMIT_20 = 20,
+    BATTLE_CMD_LIMIT_21 = 21,
+    BATTLE_CMD_LIMIT_22 = 22,
+    BATTLE_CMD_DEFEND = 23,
+    BATTLE_CMD_MAD_RUSH = 24,
+    BATTLE_CMD_TREATMENT = 25,
+    BATTLE_CMD_RECOVER = 26,
+    BATTLE_CMD_REVIVE = 27,
+    BATTLE_CMD_DARKSIDE = 28,
+    BATTLE_CMD_CARD = 29,
+    BATTLE_CMD_DOOM = 30,
+    BATTLE_CMD_KAMIKAZE = 31,
+    BATTLE_CMD_ABSORB = 32,
+    BATTLE_CMD_LV_DOWN = 33,
+    BATTLE_CMD_LV_UP = 34,
+    BATTLE_CMD_SINGLE = 35,
+    BATTLE_CMD_DOUBLE = 36,
+    BATTLE_CMD_TRIPLE = 37,
+    BATTLE_CMD_MINIMOG = 38
+};
 
 /** @brief Magic entry (60 bytes). */
 typedef struct {

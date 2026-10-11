@@ -6,6 +6,7 @@
  * damage computation, and entity flag management for the battle system.
  */
 #include "common.h"
+#include "ability.h"
 #include "battle.h"
 #include "kernel.h"
 #include "gamestate.h"
@@ -14,6 +15,8 @@
 #include "battle/bc_object2.h"
 #include "battle/bc_object6.h"
 #include "battle/bc_object7.h"
+
+static void func_800A1760(s32 arg0, BattleCharData* arg1);
 
 /**
  * @brief Look up entity ability flags with index-based table lookup.
@@ -1131,12 +1134,12 @@ s32 func_8009E110(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
                 break;
 
             case 9:
-                var_s1 = D_800ED148.entities[arg0].maxHp - g_battleChars.chars[arg0].unk172;
+                var_s1 = D_800ED148.entities[arg0].maxHp - g_battleChars.chars[arg0].currentHp;
                 break;
         }
 
         if (((D_800ED148.unk130E & 3) == 2) && (arg0 < 3)) {
-            if (g_battleChars.chars[arg0].statusFlags & 2) {
+            if (g_battleChars.chars[arg0].characterAbilities & CHAR_ABILITY_MED_DATA) {
                 var_s1 *= 2;
             }
         }
@@ -1167,7 +1170,7 @@ s32 func_8009E33C(s32 arg0, s32 arg1, s32 arg2) {
         return 0;
     }
     
-    if (g_battleConfig.unk8 & CTRL_FLAG_40) {
+    if (g_battleConfig.sealedAbilities & SEALED_RESURRECTION) {
         D_800EE4C0.flags6 |= 5;
     }
     
@@ -1194,7 +1197,7 @@ s32 func_8009E418(s32 arg0, s32 arg1, s32 arg2) {
     
 
     var_a1 = D_800ED148.entities[arg1].maxHp / 8;
-    if ((D_800EE4C0.unk1 == 4 || D_800EE4C0.unk1 == 13) && arg0 < 3 && g_battleChars.chars[arg0].statusFlags & 2) {
+    if ((D_800EE4C0.unk1 == 4 || D_800EE4C0.unk1 == 13) && arg0 < 3 && g_battleChars.chars[arg0].characterAbilities & CHAR_ABILITY_MED_DATA) {
         var_a1 = D_800ED148.entities[arg1].maxHp / 4;
     }
     
@@ -1396,22 +1399,22 @@ void func_8009EAEC(s32 charIdx) {
 
     if (count != 0) {
         for (i = 0; i < count; i++) {
-            g_gameState.gfs[sp10[i]].hp += (D_800ED148.effectMult * g_battleChars.levelEntries[sp10[i]].hp) / 100;
+            g_gameState.gfs[sp10[i]].hp += (D_800ED148.effectMult * g_battleChars.levelEntries[sp10[i]].maxHp) / 100;
 
             func_8002363C(sp10[i]);
 
             for (j = 0; j < 16; j++) {
-                if (g_battleChars.chars[charIdx].itemSlots[j].unk0 == sp10[i] + 64) {
-                    g_battleChars.chars[charIdx].itemSlots[j].unk4 &= 253;
+                if (g_battleChars.chars[charIdx].gfArgs[j].id == sp10[i] + 64) {
+                    g_battleChars.chars[charIdx].gfArgs[j].flags &= 253;
                     break;
                 }
             }
         }
 
         if (D_800ED148.entities[charIdx].flags & 0x80000000) {
-            id = g_battleChars.chars[charIdx].unk1D - 64;
-            g_battleChars.chars[charIdx].currentHp = g_battleChars.levelEntries[id].maxHp;
-            D_800ED148.entities[charIdx].hpDisplay = g_battleChars.chars[charIdx].currentHp;
+            id = g_battleChars.chars[charIdx].summoningGfId - 64;
+            g_battleChars.chars[charIdx].summoningCurrentHp = g_battleChars.levelEntries[id].hp;
+            D_800ED148.entities[charIdx].hpDisplay = g_battleChars.chars[charIdx].summoningCurrentHp;
         }
     }
     
@@ -2096,7 +2099,7 @@ void func_8009FE14(s32 arg0) {
             break;
 
         case 254:
-            D_800EEBC0 = g_battleChars.levelEntries[D_800EE4C0.statusCode - 64].unk9;
+            D_800EEBC0 = g_battleChars.levelEntries[D_800EE4C0.statusCode - 64].sumMagBonus;
             D_800EEBB9 = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].element;
             D_800EEBBA = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].statusAccuracy;
             D_800EEBC2 = g_kernel.junctionableGfs[D_800EE4C0.statusCode - 64].status1;
@@ -2223,7 +2226,7 @@ void func_8009FE14(s32 arg0) {
             D_800EEBC2 = D_800ED148.entities[arg0].hitStatus1;
             D_800EEBC4 = D_800ED148.entities[arg0].unk20;
             D_800EEBBB = D_800ED148.entities[arg0].unkBD[7];
-            D_800EEBBC = g_kernel.weapons[g_battleChars.chars[arg0].classId].critBonus;
+            D_800EEBBC = g_kernel.weapons[g_battleChars.chars[arg0].weaponId].critBonus;
             break;
     }
 }
@@ -2416,9 +2419,9 @@ void func_800A09D0(s32 arg0) {
         case 28:
             if (D_800ED148.entities[temp_s4].comFileId != 0 && D_800ED148.entities[temp_s4].comFileId != 6) {
                 func_8009FCF4(0);
-                var_s3 = g_kernel.weapons[g_battleChars.chars[temp_s4].classId].power;
+                var_s3 = g_kernel.weapons[g_battleChars.chars[temp_s4].weaponId].power;
                 D_800EE4C0.unk4 = 4;
-                var_a0 = g_kernel.weapons[g_battleChars.chars[temp_s4].classId].attackType;
+                var_a0 = g_kernel.weapons[g_battleChars.chars[temp_s4].weaponId].attackType;
                 D_800EE4C0.unkC = func_8009F930(var_a0, temp_s4, arg0, var_s3);
             } 
 
@@ -2604,7 +2607,7 @@ void func_800A09D0(s32 arg0) {
         case 243:       
         case 248:       
         case 253:       
-            var_s3 = g_kernel.weapons[g_battleChars.chars[temp_s4].classId].power;
+            var_s3 = g_kernel.weapons[g_battleChars.chars[temp_s4].weaponId].power;
             wait_oh_god_make_it_stop:
             func_8009FCF4(0);
             D_800EE4C0.unk4 = 4;
@@ -2641,44 +2644,50 @@ void func_800A09D0(s32 arg0) {
     }
 }
 
-void func_800A1760(s32 arg0, BattleCharData* arg1) {
+/**
+ * @brief Grey out or restore a party member's Magic, GF and Draw lines.
+ *
+ * @param arg0 Nonzero to grey them out; zero to restore the ones the battle hasn't turned off.
+ * @param arg1 The party member's battle data.
+ */
+static void func_800A1760(s32 arg0, BattleCharData* arg1) {
     s32 i;
     
     for (i = 0; i < 4; i++) {
-        switch (arg1->cmdSlots[i].cmdType) {
-            case 2:
+        switch (arg1->abilityCommands[i].commandId) {
+            case BATTLE_CMD_MAGIC:
                 if (arg0 == 0) {
-                    if (!(g_battleConfig.unk8 & 2)) {
-                        arg1->cmdSlots[i].unk3 &= ~2;
+                    if (!(g_battleConfig.sealedAbilities & SEALED_MAGIC)) {
+                        arg1->abilityCommands[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 
                 
                 else {
-                    arg1->cmdSlots[i].unk3 |= 2;
+                    arg1->abilityCommands[i].flags |= BTL_CMD_UNAVAILABLE;
                 }
             break;
 
-            case 3:
+            case BATTLE_CMD_GF:
                 if (arg0 == 0) {
-                    if (!(g_battleConfig.unk8 & 4)) {
-                        arg1->cmdSlots[i].unk3 &= ~2;
+                    if (!(g_battleConfig.sealedAbilities & SEALED_GF)) {
+                        arg1->abilityCommands[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 
                 
                 else {
-                    arg1->cmdSlots[i].unk3 |= 2;
+                    arg1->abilityCommands[i].flags |= BTL_CMD_UNAVAILABLE;
                 }
             break;
 
-            case 6:
+            case BATTLE_CMD_DRAW:
                 if (arg0 == 0) {
-                    if (!(g_battleConfig.unk8 & 8)) {
-                        arg1->cmdSlots[i].unk3 &= ~2;
+                    if (!(g_battleConfig.sealedAbilities & SEALED_DRAW)) {
+                        arg1->abilityCommands[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 
                 
                 else {
-                    arg1->cmdSlots[i].unk3 |= 2;
+                    arg1->abilityCommands[i].flags |= BTL_CMD_UNAVAILABLE;
                 }
             break;
         }
@@ -2699,8 +2708,8 @@ void func_800A184C(s32 arg0, u16 arg1, s32 arg2) {
     BattleCharData* temp_v1;
 
     temp_v1 = &g_battleChars.chars[arg0];
-    temp_v1->displayStatus = arg1 & 127;
-    temp_v1->unk188 = arg2 & 0x030E7FFF;
+    temp_v1->persistentStatus = arg1 & 127;
+    temp_v1->battleStatus = arg2 & 0x030E7FFF;
 }
 
 /**
@@ -2715,7 +2724,7 @@ void func_800A184C(s32 arg0, u16 arg1, s32 arg2) {
 void func_800A1888(s32 arg0) {
     BattleCharData* temp_a1 = &g_battleChars.chars[arg0];
     
-    if (temp_a1->displayStatus & CTRL_FLAG_10) {
+    if (temp_a1->persistentStatus & STATUS_SILENCE) {
         func_800A1760(1, temp_a1);
     }
         
