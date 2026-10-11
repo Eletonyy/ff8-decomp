@@ -224,7 +224,6 @@ setup:
 	$(EXTRACT) "$(ROM)"
 	$(MAKE) full
 	$(MAKE) expected
-	$(MAKE) report
 	$(MAKE) verify
 	
 # Expand the compact binary map into full splat configs.
