@@ -1,4 +1,0 @@
-#ifndef EFFECT_EFFECT_042_H
-#define EFFECT_EFFECT_042_H
-
-#endif /* EFFECT_EFFECT_042_H */

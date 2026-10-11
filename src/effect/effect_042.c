@@ -3,7 +3,6 @@
  * @brief Shoot
  */
 #include "common.h"
-#include "effect/effect_042.h"
 
 INCLUDE_ASM("asm/ovl/effect_042/nonmatchings/effect_042", func_801AD6C8);
 

@@ -3,7 +3,6 @@
  * @brief Shoot: its own draw-script runner and frame handlers.
  */
 #include "common.h"
-#include "effect/effect_042_script.h"
 
 INCLUDE_ASM("asm/ovl/effect_042/nonmatchings/effect_042_script", func_801A8E7C);
 

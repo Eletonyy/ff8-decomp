@@ -6,7 +6,6 @@
 #include "effect.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/inline_c.h"
-#include "effect/effect_042_warp.h"
 #include "effect/lib/common.h"
 
 /** @brief A posed vertex and the projected coordinates reused by its faces. */
