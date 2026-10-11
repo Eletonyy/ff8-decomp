@@ -385,8 +385,8 @@ s8 func_800B0C68(s32 arg0, s32 arg1) {
     
     for (i = 0; i < 32; i++) {
         var_v1 = &g_battleChars.chars[arg0];
-        if (var_v1->magicSlots[i].unk0 == arg1) {
-            return var_v1->magicSlots[i].unk1;
+        if (var_v1->magicArgs[i].id == arg1) {
+            return var_v1->magicArgs[i].count;
         }
     }
     
@@ -403,7 +403,7 @@ s32 func_800B0CC4(s32 arg0, s32 arg1) {
     
     if (arg1 == 0) {
         for (i = 0; i < 32; i++) {
-            if (character->magicSlots[i].unk0 != 0) {
+            if (character->magicArgs[i].id != 0) {
                 count++;
             }
         }
@@ -416,8 +416,8 @@ s32 func_800B0CC4(s32 arg0, s32 arg1) {
             arg1 = func_8009B15C() % count;
             
             while(1) {
-                if (character->magicSlots[arg1].unk0 != 0) {
-                    arg1 = character->magicSlots[arg1].unk0;
+                if (character->magicArgs[arg1].id != 0) {
+                    arg1 = character->magicArgs[arg1].id;
                     break;
                     
                 }
@@ -437,7 +437,7 @@ s32 func_800B0D8C(s32 arg0, s32 arg1) {
 
     for (i = 0; i < 4; i++) {
         var_v1 = &g_battleChars.chars[arg0];
-        if (var_v1->cmdSlots[i].cmdType == arg1) {
+        if (var_v1->abilityCommands[i].commandId == arg1) {
             return 0;
         }
     }
@@ -446,9 +446,9 @@ s32 func_800B0D8C(s32 arg0, s32 arg1) {
 }
 
 /**
- * @brief Dispatch call based on @ref SEALED_FLAG_02 in g_battleConfig.unk8.
+ * @brief Dispatch call based on @ref SEALED_MAGIC in g_battleConfig.unk8.
  *
- * If @ref SEALED_FLAG_02 is set, passes 0xFF to func_800B0CC4.
+ * If @ref SEALED_MAGIC is set, passes 0xFF to func_800B0CC4.
  * Otherwise calls func_800B0D8C with a0 and mode 2, then passes
  * the result to func_800B0CC4.
  *
@@ -456,7 +456,7 @@ s32 func_800B0D8C(s32 arg0, s32 arg1) {
  */
 s32 func_800B0DDC(s32 a0) {
     s32 val;
-    if (g_battleConfig.unk8 & SEALED_FLAG_02) {
+    if (g_battleConfig.sealedAbilities & SEALED_MAGIC) {
         val = 255;
     } 
     
@@ -501,9 +501,9 @@ s32 func_800B0E30(s32 arg0) {
 }
 
 /**
- * @brief Dispatch call based on @ref SEALED_FLAG_01 in g_battleConfig.unk8.
+ * @brief Dispatch call based on @ref SEALED_ITEM in g_battleConfig.unk8.
  *
- * If @ref SEALED_FLAG_01 is set, passes 0xFF to func_800B0E30.
+ * If @ref SEALED_ITEM is set, passes 0xFF to func_800B0E30.
  * Otherwise calls func_800B0D8C with a0 and mode 4, then passes
  * the result to func_800B0E30.
  *
@@ -511,7 +511,7 @@ s32 func_800B0E30(s32 arg0) {
  */
 s32 func_800B0F3C(s32 a0) {
     s32 val;
-    if (g_battleConfig.unk8 & SEALED_FLAG_01) {
+    if (g_battleConfig.sealedAbilities & SEALED_ITEM) {
         val = 255;
     } 
     
@@ -602,7 +602,7 @@ u16 func_800B1104(s32 a0) {
  * @brief Resolve the action ID and flags for one of the player's command slots.
  *
  * Picks a deterministic-but-pseudorandom variant via func_8009B15C() % 3 and
- * dispatches on the command type stored at g_battleChars.chars[selfIdx].cmdSlots[cmdIdx].
+ * dispatches on the command type stored at g_battleChars.chars[selfIdx].abilityCommands[cmdIdx].
  *
  * - cmd 1 / 12 (Attack-like): writes only *outFlags (no ID resolved).
  * - cmd 2 (Magic): resolves a spell ID via func_800B0DDC; combined element/status flags
@@ -619,7 +619,7 @@ u16 func_800B1104(s32 a0) {
  */
 s32 func_800B115C(s32 selfIdx, s32 cmdIdx, s32 *outId, u16 *outFlags) {
     u8 var = func_8009B15C() % 3;
-    s32 cmd = g_battleChars.chars[selfIdx].cmdSlots[cmdIdx].cmdType;
+    s32 cmd = g_battleChars.chars[selfIdx].abilityCommands[cmdIdx].commandId;
     s32 result;
 
     *outId = 0;
@@ -693,7 +693,7 @@ s32 func_800B1438(s32 arg0) {
     character = &g_battleChars.chars[arg0];
     
     for (i = 0; i < 32; i++) {
-        if ((character->magicSlots[i].unk0 != 0) && (g_kernel.magic[character->magicSlots[i].unk0].targetInfo & 0x40)) {
+        if ((character->magicArgs[i].id != 0) && (g_kernel.magic[character->magicArgs[i].id].targetInfo & 0x40)) {
             count++;
         }
     }
@@ -705,8 +705,8 @@ s32 func_800B1438(s32 arg0) {
     else {
         result = func_8009B15C() % 32;
         while (1) {            
-            if ((character->magicSlots[result].unk0 != 0) && (g_kernel.magic[character->magicSlots[result].unk0].targetInfo & 0x40)) {
-                result = character->magicSlots[result].unk0;
+            if ((character->magicArgs[result].id != 0) && (g_kernel.magic[character->magicArgs[result].id].targetInfo & 0x40)) {
+                result = character->magicArgs[result].id;
                 break;
             }
             

@@ -54,9 +54,9 @@ s32 func_800AF358(s32 arg0, s32 arg1, s32 arg2) {
 
     if (arg2 == 0) {
         for (i = 0; i < 32; i++) {
-            if (g_battleChars.chars[arg0].magicSlots[i].unk0 == arg1) {
-                if (g_battleChars.chars[arg0].magicSlots[i].unk1 < 100) {
-                    g_battleChars.chars[arg0].magicSlots[i].unk1++;
+            if (g_battleChars.chars[arg0].magicArgs[i].id == arg1) {
+                if (g_battleChars.chars[arg0].magicArgs[i].count < 100) {
+                    g_battleChars.chars[arg0].magicArgs[i].count++;
                     return 0;
                 }
                 
@@ -65,9 +65,9 @@ s32 func_800AF358(s32 arg0, s32 arg1, s32 arg2) {
         }
         
         for (i = 0; i < 32; i++) {
-            if (g_battleChars.chars[arg0].magicSlots[i].unk0 == 0) {
-                g_battleChars.chars[arg0].magicSlots[i].unk0 = arg1;
-                g_battleChars.chars[arg0].magicSlots[i].unk1++;
+            if (g_battleChars.chars[arg0].magicArgs[i].id == 0) {
+                g_battleChars.chars[arg0].magicArgs[i].id = arg1;
+                g_battleChars.chars[arg0].magicArgs[i].count++;
                 func_800229FC(arg0);
                 return 0;
             }
@@ -77,12 +77,12 @@ s32 func_800AF358(s32 arg0, s32 arg1, s32 arg2) {
     }
     
     for (i = 0; i < 32; i++) {
-        if (g_battleChars.chars[arg0].magicSlots[i].unk0 == arg1) {
-            if (g_battleChars.chars[arg0].magicSlots[i].unk1 != 0) {
-                g_battleChars.chars[arg0].magicSlots[i].unk1--;
+        if (g_battleChars.chars[arg0].magicArgs[i].id == arg1) {
+            if (g_battleChars.chars[arg0].magicArgs[i].count != 0) {
+                g_battleChars.chars[arg0].magicArgs[i].count--;
                 
-                if (g_battleChars.chars[arg0].magicSlots[i].unk1 == 0) {
-                    g_battleChars.chars[arg0].magicSlots[i].unk0 = 0;
+                if (g_battleChars.chars[arg0].magicArgs[i].count == 0) {
+                    g_battleChars.chars[arg0].magicArgs[i].id = 0;
                     func_800229FC(arg0);
                     return 255;
                 }
@@ -252,8 +252,8 @@ void func_800AF7C4(void) {
         character = &g_battleChars.chars[i];
         
         for (j = 0; j < 32; j++) {
-            temp_a3->magic[j].magicId  = character->magicSlots[j].unk0;
-            temp_a3->magic[j].quantity = character->magicSlots[j].unk1;
+            temp_a3->magic[j].magicId  = character->magicArgs[j].id;
+            temp_a3->magic[j].quantity = character->magicArgs[j].count;
         }
         
         for (k = 0; k < 20; k++) {
