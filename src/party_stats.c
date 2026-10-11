@@ -30,12 +30,7 @@ static void applyPartyAbilityFlags(s32 charIdx);
 static s32 isCommandOff(s32 cmd);
 static void clearCharSlotData(BattleCharData *charData);
 
-/**
- * @brief Makes sure any magic that is junctioned has the "is junctioned"-flag and all that isn't doesn't. 
- *
- * @param slot Party slot (0-2).
- */
-// Something like refreshJunctionedMagicsForMember()
+
 void func_800229FC(s32 slot) {
     BattleCharData *bc = &g_battleChars.chars[slot];
     s32 i;
@@ -55,13 +50,6 @@ void func_800229FC(s32 slot) {
 }
 
 
-/**
- * @brief Fill in one of a party member's battle command slots.
- *
- * @param bc The party member's battle data.
- * @param index Command slot (0-3).
- * @param commandId Battle command ID.
- */
 static void initCommandSlot(BattleCharData *bc, s32 index, s32 commandId) {
     bc->abilityCommands[index].commandId = commandId;
     bc->abilityCommands[index].subMenuFlags = g_kernel.battleCommands[bc->abilityCommands[index].commandId].subMenuFlags;
@@ -70,12 +58,6 @@ static void initCommandSlot(BattleCharData *bc, s32 index, s32 commandId) {
 }
 
 
-/**
- * @brief Combine the flags of the character abilities a character has equipped.
- *
- * @param charIdx Character ID (0-7).
- * @return CHAR_ABILITY_* bits.
- */
 static s32 getCharAbilityFlags(s32 charIdx) {
     s32 result = 0;
     s32 i;
@@ -94,12 +76,6 @@ static s32 getCharAbilityFlags(s32 charIdx) {
 }
 
 
-/**
- * @brief Check whether a party member has the Draw command.
- *
- * @param charData The party member's battle data.
- * @return 1 if one of their command slots holds Draw, 0 otherwise.
- */
 static s32 hasDrawCommand(BattleCharData *charData) {
     s32 i;
     for (i = 0; i < 4; i++) {
@@ -109,12 +85,6 @@ static s32 hasDrawCommand(BattleCharData *charData) {
 }
 
 
-/**
- * @brief Work out a party member's fieldAbilities.
- *
- * @param charData The party member's battle data.
- * @return @c FieldAbilityFlag bits.
- */
 static s32 getFieldAbilities(BattleCharData *charData) {
     s32 val = charData->characterAbilities;
     s32 masked = val & CHAR_ABILITY_MOVE_HP_UP;
@@ -129,11 +99,6 @@ static s32 getFieldAbilities(BattleCharData *charData) {
 }
 
 
-/**
- * @brief Add the flags of a character's equipped party abilities to the party's ability flags.
- *
- * @param charIdx Character ID (0-7).
- */
 static void applyPartyAbilityFlags(s32 charIdx) {
     s32 i;
     for (i = 0; i < 4; i++) {
@@ -146,12 +111,6 @@ static void applyPartyAbilityFlags(s32 charIdx) {
 }
 
 
-/**
- * @brief Check whether a battle command is turned off.
- *
- * @param cmd Battle command ID.
- * @return 1 if it's turned off, 0 otherwise.
- */
 static s32 isCommandOff(s32 cmd) {
     switch (cmd) {
     case BATTLE_CMD_MAGIC:
@@ -187,11 +146,6 @@ static s32 isCommandOff(s32 cmd) {
 }
 
 
-/**
- * @brief Clear a party member's battle magic list, GF list and command slots.
- *
- * @param charData The party member's battle data.
- */
 static void clearCharSlotData(BattleCharData *charData) {
     s32 i;
 
@@ -224,12 +178,6 @@ static void clearCharSlotData(BattleCharData *charData) {
 }
 
 
-/**
- * @brief Set up a party member's battle data and battle menus from their save data.
- *
- * @param charIdx Character ID (0-7), or PARTY_SLOT_EMPTY.
- * @param slot Party slot (0-2).
- */
 void func_80022E08(s32 charIdx, s32 slot) {
     CharacterData *cd = &g_gameState.chars[charIdx];
     BattleCharData *bc = &g_battleChars.chars[slot];
@@ -313,13 +261,6 @@ void func_80022E08(s32 charIdx, s32 slot) {
 }
 
 
-/**
- * @brief Find which of a party member's command slots holds a command.
- *
- * @param bc The party member's battle data.
- * @param commandId Battle command ID.
- * @return The slot (0-3), or 0xFF if none holds it.
- */
 s32 findCommandSlot(BattleCharData *bc, s32 commandId) {
     s32 i;
     for (i = 0; i < 4; i++) {
@@ -329,12 +270,6 @@ s32 findCommandSlot(BattleCharData *bc, s32 commandId) {
 }
 
 
-/**
- * @brief Cap a value at 255.
- *
- * @param value Value to cap.
- * @return @p value, or 255 if it's larger.
- */
 s32 clampToByte(s32 value) {
     if (value >= 0x100) {
         return 0xFF;
@@ -343,12 +278,6 @@ s32 clampToByte(s32 value) {
 }
 
 
-/**
- * @brief Cap a value at 9999.
- *
- * @param value Value to cap.
- * @return @p value truncated to 16 bits, or 9999 if it's larger.
- */
 s32 clampToMaxHp(s32 value) {
     if (value >= 10000) {
         return 9999;
@@ -357,12 +286,6 @@ s32 clampToMaxHp(s32 value) {
 }
 
 
-/**
- * @brief Recalculate a party member's battle stats from their save data.
- *
- * @param charIdx Character ID (0-7), or PARTY_SLOT_EMPTY.
- * @param battleSlot Party slot (0-2).
- */
 void func_800231E0(s32 charIdx, s32 battleSlot) {
     CharacterData *cd = &g_gameState.chars[charIdx];
     BattleCharData *bc = &g_battleChars.chars[battleSlot];
@@ -427,11 +350,6 @@ void func_800231E0(s32 charIdx, s32 battleSlot) {
 }
 
 
-/**
- * @brief Recalculate a GF's battle stats from its save data.
- *
- * @param gfIdx GF index (0-15).
- */
 void func_8002363C(s32 gfIdx) {
     BattleLevelEntry *gs = &g_battleChars.levelEntries[gfIdx];
     GfSaveData *save = &g_gameState.gfs[gfIdx];
@@ -475,9 +393,6 @@ void func_8002363C(s32 gfIdx) {
 }
 
 
-/**
- * @brief Recalculate the battle stats of every GF the player owns.
- */
 void recalcAllGfStats(void) {
     s32 i;
     for (i = 0; i < GF_COUNT; i++) {
@@ -488,9 +403,6 @@ void recalcAllGfStats(void) {
 }
 
 
-/**
- * @brief Recalculate the battle data of the three party members and of every GF the player owns.
- */
 void recalcPartyStats(void) {
     s32 i;
 
