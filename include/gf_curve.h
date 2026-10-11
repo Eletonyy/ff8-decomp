@@ -15,6 +15,7 @@
 
 /** @brief Evaluate the shared quadratic stat curve. */
 s32 evalQuadraticCurve(s32 a0, s32 a1, s32 a2);
+void func_8002153C(s32 partySlot, s32 stat);
 
 /** @brief Evaluate an ability-growth curve for @p a1. */
 s32 evalAbilityCurve(s32 a0, s32 a1);
