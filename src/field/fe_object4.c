@@ -1716,8 +1716,8 @@ s32 opHandler_SWAP(ScriptContext *context) {
 
 /**
  * @brief Set @ref FIELD_STATE_PARTY_OVERRIDE, then if popped value is nonzero
- *        force fieldF3 to 0xFF; mirror fieldF3 into @c g_battleConfig.unk8 and
- *        @c GameConfig.sealedFeatures, then tail into @c opHandler_SETPARTY2.
+ *        force fieldF3 to 0xFF; mirror fieldF3 into @c g_battleConfig.sealedAbilities and
+ *        @c GameConfig.sealedAbilities, then tail into @c opHandler_SETPARTY2.
  *
  * @return 2 (VM continue).
  */
@@ -1726,15 +1726,15 @@ s32 opHandler_LASTIN(Actor *actor, s32 a1) {
     if (POP(&actor->context) != 0) {
         g_fieldVars->fieldF3 = 0xFF;
     }
-    g_battleConfig.unk8 = g_fieldVars->fieldF3;
-    g_gameState.config.sealedFeatures = g_fieldVars->fieldF3;
+    g_battleConfig.sealedAbilities = g_fieldVars->fieldF3;
+    g_gameState.config.sealedAbilities = g_fieldVars->fieldF3;
     opHandler_SETPARTY2(&actor->context, a1);
     return 2;
 }
 
 /**
  * Clears bit 0x800 in entity flags at g_fieldVars+0x68, clears
- * g_battleConfig.unk8 and @c GameConfig.sealedFeatures, then calls recalcPartyStats.
+ * g_battleConfig.sealedAbilities and @c GameConfig.sealedAbilities, then calls recalcPartyStats.
  *
  * @param actor Unused.
  * @return 2 (continue processing).
@@ -1742,11 +1742,11 @@ s32 opHandler_LASTIN(Actor *actor, s32 a1) {
 s32 opHandler_LASTOUT(ScriptContext *context) {
     /* Take the address of stateFlags so gcc materializes the read & write
      * through one register — keeps the seedState updates together
-     * (before g_battleConfig.unk8/sealedFeatures + recalcPartyStats() in the schedule). */
+     * (before the two sealedAbilities stores + recalcPartyStats() in the schedule). */
     s32 *p = &g_fieldVars->stateFlags;
     *p = *p & ~0x800;
-    g_battleConfig.unk8 = 0;
-    g_gameState.config.sealedFeatures = 0;
+    g_battleConfig.sealedAbilities = 0;
+    g_gameState.config.sealedAbilities = 0;
     recalcPartyStats();
     return 2;
 }

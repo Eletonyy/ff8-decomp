@@ -2322,9 +2322,9 @@ void func_801F798C(void) {
     setPadAnalogFlag(0, v);
 }
 
-/** @brief Test sealed-features bits (@c GameConfig.sealedFeatures & @p a0). */
+/** @brief Test sealed-ability bits (@c GameConfig.sealedAbilities & @p a0). */
 s32 func_801F79F8(s32 a0) {
-    return g_gameState.config.sealedFeatures & a0;
+    return g_gameState.config.sealedAbilities & a0;
 }
 
 /** @brief Copy pad port 0's vibration setting back into the Vibration option. */

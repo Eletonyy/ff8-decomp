@@ -4719,7 +4719,7 @@ s32 renderAbilityListEntry(s32 ctx, s32 cursorY, s32 row, s32 col, s32 panelX) {
             }
             textY = cfgY + 0xA;
             textY = textY + colY;
-            if (func_801F79F8(1) != 0) {
+            if (func_801F79F8(SEALED_ITEM) != 0) {
                 if (abilityId == 0x18) {
                     highlight = 1;
                 }
@@ -4727,22 +4727,22 @@ s32 renderAbilityListEntry(s32 ctx, s32 cursorY, s32 row, s32 col, s32 panelX) {
                     highlight = 1;
                 }
             }
-            if (func_801F79F8(2) != 0) {
+            if (func_801F79F8(SEALED_MAGIC) != 0) {
                 if (abilityId == 0x14) {
                     highlight = 1;
                 }
             }
-            if (func_801F79F8(4) != 0) {
+            if (func_801F79F8(SEALED_GF) != 0) {
                 if (abilityId == 0x15) {
                     highlight = 1;
                 }
             }
-            if (func_801F79F8(8) != 0) {
+            if (func_801F79F8(SEALED_DRAW) != 0) {
                 if (abilityId == 0x16) {
                     highlight = 1;
                 }
             }
-            if (func_801F79F8(0x10) != 0) {
+            if (func_801F79F8(SEALED_COMMAND_ABILITIES) != 0) {
                 s32 d = abilityId - 0x14;
                 if (((u32)d) < 0x13) {
                     if (((u32)d) >= 3) {
@@ -4853,7 +4853,7 @@ s32 renderStatRowGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s
     s32 yPos;
     s32 tmp;
 
-    func_801F79F8(0x10);
+    func_801F79F8(SEALED_COMMAND_ABILITIES);
     x += 0x18;
     y += 0x48;
     xPos = x + 0x21;
@@ -4867,18 +4867,18 @@ s32 renderStatRowGrid(JunctionMenuCtx *ctx, s32 renderCtx, s32 cursorY, s32 x, s
         yPos = (y + 0x16) + (i * 0xD);
         cmdId = g_gameState.chars[ctx->charIdx].commands[i];
 
-        tmp = func_801F79F8(2);
+        tmp = func_801F79F8(SEALED_MAGIC);
         if (tmp && cmdId == 0x14) highlight = 1;
-        tmp = func_801F79F8(4);
+        tmp = func_801F79F8(SEALED_GF);
         if (tmp && cmdId == 0x15) highlight = 1;
-        tmp = func_801F79F8(8);
+        tmp = func_801F79F8(SEALED_DRAW);
         if (tmp && cmdId == 0x16) highlight = 1;
-        tmp = func_801F79F8(1);
+        tmp = func_801F79F8(SEALED_ITEM);
         if (tmp) {
             if (cmdId == 0x18) highlight = 1;
             if (cmdId == 0x17) highlight = 1;
         }
-        tmp = func_801F79F8(0x10);
+        tmp = func_801F79F8(SEALED_COMMAND_ABILITIES);
         if (tmp && (u32)(cmdId - 0x14) >= 3 && cmdId != 0x18 && cmdId != 0x17) highlight = 1;
 
         if (cmdId != 0) {

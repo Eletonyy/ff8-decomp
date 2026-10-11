@@ -25,16 +25,9 @@ typedef struct {
     u16 unk2;            // Flags?, when first bit is set, escape it not possible
     u8  unk4[3];         // Post battle command queue?
     u8  result;          /**< Battle result (BATTLE_RESULT_*). */
-    u8  unk8;
+    u8 sealedAbilities; // see @c SealedAbilityFlag
     u8  unk9;            /**< Bit 0 toggles the @c FieldVars.soundBankSelector at field-VM init. */
 } BattleConfig;
-
-/** @brief Bits of BattleConfig.unk8 (D_80082C10) that turn battle commands off. */
-#define BATTLE_CMDS_OFF_ITEM 0x01 // Item and command 13
-#define BATTLE_CMDS_OFF_MAGIC 0x02
-#define BATTLE_CMDS_OFF_GF 0x04
-#define BATTLE_CMDS_OFF_DRAW 0x08
-#define BATTLE_CMDS_OFF_OTHER 0x10 /**< Every other command except 0. */
 
 /** @brief Clipped rectangle result: the clipped rect + saved pre-clip position. */
 typedef struct {
@@ -494,7 +487,6 @@ typedef struct {
     u8 freeSpace[4];
 } BattleOtBuf;
 
-// Arguments passed to a BattleCommand. E.g. a specific magic to the Magic command
 typedef struct {
     /** 0x0 */ u8 id; // A magic ID, a GF's battle ID, or a limit break entry such as a Blue Magic
     /** 0x1 */ s8 count; // The spell's stock or the ammo Irvine holds; 1 for anything else
@@ -510,7 +502,6 @@ typedef struct {
     /** 0x3 */ u8 flags; // See @c BattleCommandFlag for bit functions
 } BattleCommand;
 
-// Bits of BattleCommandArgument.flags
 enum BattleCommandArgumentFlag {
     BTL_CMD_ARG_TARGETS_KO = 0x01, // the cursor can land on KO'd allies
     BTL_CMD_ARG_UNAVAILABLE = 0x02, // greyed out, and picking it sounds the buzzer
@@ -518,7 +509,6 @@ enum BattleCommandArgumentFlag {
     BTL_CMD_ARG_EMPTY = 0x10 // an unused limit break entry
 };
 
-// Bits of BattleCommand.flags
 enum BattleCommandFlag {
     BTL_CMD_TARGETS_KO = 0x01, // the cursor can land on KO'd allies
     BTL_CMD_UNAVAILABLE = 0x02, // greyed out, and picking it sounds the buzzer

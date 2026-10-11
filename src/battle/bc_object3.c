@@ -297,7 +297,7 @@ s32 func_800A21B0(s32 arg0) {
     temp_s3 = &g_battleChars.chars[arg0];
     temp_s2 = g_kernel.characters[D_800ED148.entities[arg0].comFileId].crisisLevelHpMultiplier;
 
-    if (!(g_battleConfig.unk8 & 0x20)) {
+    if (!(g_battleConfig.sealedAbilities & SEALED_LIMIT_BREAK)) {
         if (!(temp_s3->battleStatus & BATTLE_STATUS_CURSE)) {      
             temp_a0 = ((((func_800A20AC(arg0) * 10) + 1600) + (func_800A2150() * 200)) - 
                        ((temp_s3->currentHp * 10 * temp_s2) / temp_s3->maxHp)) / 

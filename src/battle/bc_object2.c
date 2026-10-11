@@ -1170,7 +1170,7 @@ s32 func_8009E33C(s32 arg0, s32 arg1, s32 arg2) {
         return 0;
     }
     
-    if (g_battleConfig.unk8 & CTRL_FLAG_40) {
+    if (g_battleConfig.sealedAbilities & SEALED_RESURRECTION) {
         D_800EE4C0.flags6 |= 5;
     }
     
@@ -2657,7 +2657,7 @@ static void func_800A1760(s32 arg0, BattleCharData* arg1) {
         switch (arg1->abilityCommands[i].commandId) {
             case BATTLE_CMD_MAGIC:
                 if (arg0 == 0) {
-                    if (!(g_battleConfig.unk8 & BATTLE_CMDS_OFF_MAGIC)) {
+                    if (!(g_battleConfig.sealedAbilities & SEALED_MAGIC)) {
                         arg1->abilityCommands[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 
@@ -2669,7 +2669,7 @@ static void func_800A1760(s32 arg0, BattleCharData* arg1) {
 
             case BATTLE_CMD_GF:
                 if (arg0 == 0) {
-                    if (!(g_battleConfig.unk8 & BATTLE_CMDS_OFF_GF)) {
+                    if (!(g_battleConfig.sealedAbilities & SEALED_GF)) {
                         arg1->abilityCommands[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 
@@ -2681,7 +2681,7 @@ static void func_800A1760(s32 arg0, BattleCharData* arg1) {
 
             case BATTLE_CMD_DRAW:
                 if (arg0 == 0) {
-                    if (!(g_battleConfig.unk8 & BATTLE_CMDS_OFF_DRAW)) {
+                    if (!(g_battleConfig.sealedAbilities & SEALED_DRAW)) {
                         arg1->abilityCommands[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 

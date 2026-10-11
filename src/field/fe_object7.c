@@ -213,7 +213,7 @@ u8 *func_800B57E8(s32 maxCount, s32 abilityId) {
 /**
  * @brief Recalculate party stats and check if any member has FIELD_ABILITY_DRAW set.
  *
- * Sets g_battleConfig.unk8 from WorldContext field_0xF3 (if flag 0x800 is active),
+ * Sets g_battleConfig.sealedAbilities from WorldContext field_0xF3 (if flag 0x800 is active),
  * calls recalcPartyStats(), then checks each party slot.
  *
  * @return 1 if any active party member has FIELD_ABILITY_DRAW set, 0 otherwise.
@@ -222,9 +222,9 @@ s32 func_800B5990(void) {
     s32 i;
 
     if (g_fieldVars->stateFlags & FIELD_STATE_PARTY_OVERRIDE) {
-        g_battleConfig.unk8 = g_fieldVars->fieldF3;
+        g_battleConfig.sealedAbilities = g_fieldVars->fieldF3;
     } else {
-        g_battleConfig.unk8 = 0;
+        g_battleConfig.sealedAbilities = 0;
     }
 
     recalcPartyStats();

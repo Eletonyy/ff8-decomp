@@ -501,9 +501,9 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0CC4);
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0D8C);
 
 /**
- * @brief Dispatch call based on @ref SEALED_FLAG_02 in D_80082C10.
+ * @brief Dispatch call based on @ref SEALED_MAGIC in g_battleConfig.sealedAbilities.
  *
- * If @ref SEALED_FLAG_02 is set, passes 0xFF to func_800B0CC4.
+ * If @ref SEALED_MAGIC is set, passes 0xFF to func_800B0CC4.
  * Otherwise calls func_800B0D8C with a0 and mode 2, then passes
  * the result to func_800B0CC4.
  *
@@ -511,7 +511,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0D8C);
  */
 s32 func_800B0DDC(s32 a0) {
     s32 val;
-    if (g_battleConfig.unk8 & SEALED_FLAG_02) {
+    if (g_battleConfig.sealedAbilities & SEALED_MAGIC) {
         val = 0xFF;
     } else {
         val = func_800B0D8C(a0, 2);
@@ -522,9 +522,9 @@ s32 func_800B0DDC(s32 a0) {
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0E30);
 
 /**
- * @brief Dispatch call based on @ref SEALED_FLAG_01 in g_battleConfig.unk8.
+ * @brief Dispatch call based on @ref SEALED_ITEM in g_battleConfig.sealedAbilities.
  *
- * If @ref SEALED_FLAG_01 is set, passes 0xFF to func_800B0E30.
+ * If @ref SEALED_ITEM is set, passes 0xFF to func_800B0E30.
  * Otherwise calls func_800B0D8C with a0 and mode 4, then passes
  * the result to func_800B0E30.
  *
@@ -532,7 +532,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object7", func_800B0E30);
  */
 s32 func_800B0F3C(s32 a0) {
     s32 val;
-    if (g_battleConfig.unk8 & SEALED_FLAG_01) {
+    if (g_battleConfig.sealedAbilities & SEALED_ITEM) {
         val = 0xFF;
     } else {
         val = func_800B0D8C(a0, 4);

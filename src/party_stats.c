@@ -120,7 +120,7 @@ static s32 getFieldAbilities(BattleCharData *charData) {
     s32 masked = val & CHAR_ABILITY_MOVE_HP_UP;
     s32 flag = masked ? FIELD_ABILITY_MOVE_HP_UP : 0;
     if (hasDrawCommand(charData)) {
-        if (g_battleConfig.unk8 & BATTLE_CMDS_OFF_DRAW) {
+        if (g_battleConfig.sealedAbilities & SEALED_DRAW) {
             return flag;
         }
         flag |= FIELD_ABILITY_DRAW;
@@ -155,30 +155,30 @@ static void applyPartyAbilityFlags(s32 charIdx) {
 static s32 isCommandOff(s32 cmd) {
     switch (cmd) {
     case BATTLE_CMD_MAGIC:
-        if (g_battleConfig.unk8 & BATTLE_CMDS_OFF_MAGIC) {
+        if (g_battleConfig.sealedAbilities & SEALED_MAGIC) {
             return 1;
         }
         break;
     case BATTLE_CMD_GF:
-        if (g_battleConfig.unk8 & BATTLE_CMDS_OFF_GF) {
+        if (g_battleConfig.sealedAbilities & SEALED_GF) {
             return 1;
         }
         break;
     case BATTLE_CMD_DRAW:
-        if (g_battleConfig.unk8 & BATTLE_CMDS_OFF_DRAW) {
+        if (g_battleConfig.sealedAbilities & SEALED_DRAW) {
             return 1;
         }
         break;
     case BATTLE_CMD_ITEM:
     case BATTLE_CMD_UNK13:
-        if (g_battleConfig.unk8 & BATTLE_CMDS_OFF_ITEM) {
+        if (g_battleConfig.sealedAbilities & SEALED_ITEM) {
             return 1;
         }
         break;
     case BATTLE_CMD_NONE:
         break;
     default:
-        if (g_battleConfig.unk8 & BATTLE_CMDS_OFF_OTHER) {
+        if (g_battleConfig.sealedAbilities & SEALED_COMMAND_ABILITIES) {
             return 1;
         }
         break;
