@@ -693,7 +693,7 @@ default_case:
 void addCharMaxHp(s32 partyIdx, s32 amount) {
     u8 idx = g_gameState.mainData.party.partyMembers[partyIdx];
     CharacterData *ch = &g_gameState.chars[idx];
-    ch->maxHp = clampToMaxHp(ch->maxHp + amount);
+    ch->maxHpBonus = clampToMaxHp(ch->maxHpBonus + amount);
 }
 
 

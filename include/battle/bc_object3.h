@@ -88,7 +88,6 @@ void func_800A4320(u8*);
 
 void func_800A432C(s32);
 
-void func_800A4350(s32, s32);
 
 void func_800A43C0(s32);
 

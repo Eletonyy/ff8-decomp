@@ -220,7 +220,7 @@ void func_800AF6BC(s32 arg0) {
  * Walks @c D_800ED148.entities[0..2] (BattleSystem block) — for any slot whose
  * @c comFileId is not 0xFF, calls @c func_800AF6BC(i) (which copies the
  * entity's animation halfwords into the per-character anim cache) and then
- * mirrors @c entity->status into @c g_battleChars.chars[i].displayStatus.
+ * mirrors @c entity->status into @c g_battleChars.chars[i].persistentStatus.
  * Finishes by calling @c func_800AF654 to rebuild the global anim list.
  */
 void func_800AF740(void) {
@@ -229,7 +229,7 @@ void func_800AF740(void) {
     for (i = 0; i < 3; i++) {
         if (D_800ED148.entities[i].comFileId != 255) {
             func_800AF6BC(i);
-            g_battleChars.chars[i].displayStatus = D_800ED148.entities[i].status;
+            g_battleChars.chars[i].persistentStatus = D_800ED148.entities[i].status;
         }
     }
     

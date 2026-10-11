@@ -167,15 +167,7 @@ s32 multiplyDiv100(s32 a0, s32 a1) {
 }
 
 
-/**
- * @brief Compute an elemental or status modifier percentage from a character's equipped abilities.
- * @param a0 Character slot index (stride 152 in g_gameState).
- * @param a1 Element or status type to match against.
- * @return Base value of 100 plus any matching ability bonuses from g_kernel table.
- * @note Checks 4 ability slots (offsets 0x4E4..0x4E7). Abilities in range 0x27..0x39 are looked up
- *       in g_kernel (stride 8, offset 0x421D for type, 0x421E for bonus).
- */
-s32 getAbilityModifier(s32 charIdx, s32 a1) {
+s32 getStatMultiplier(s32 charIdx, s32 a1) {
     s32 result = 100;
     s32 i;
     for (i = 0; i < 4; i++) {
@@ -218,7 +210,7 @@ s32 calcHpFromLevel(s32 level, s32 charIdx) {
     _div = g_kernel.characters[charId].pad09[0];
     coef = g_kernel.characters[charId].constant;
     addBase = g_kernel.characters[charId].pad09[1];
-    maxHp = g_gameState.chars[charIdx].maxHp;
+    maxHp = g_gameState.chars[charIdx].maxHpBonus;
     result = level * coef - (level * level * 10) / _div + addBase + maxHp + juncMult;
     return result;
 }
@@ -290,25 +282,13 @@ s32 calcEvaStat(s32 charIdx, s32 a1) {
 }
 
 
-/**
- * @brief Get a base stat value for a character's junctioned GF.
- * @param a0 Character slot index (stride 152 in g_gameState).
- * @return u8 value from g_kernel at stride 60, offset 0x23C for the character's GF index at slot 0x4F5.
- * @note Purpose uncertain -- appears to retrieve a GF compatibility or stat modifier base value.
- */
-s32 getAtkElemBase(s32 charIdx) {
+s32 getAtkElements(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_ELEM];
     return g_kernel.magic[idx].atkElement;
 }
 
 
-/**
- * @brief Compute a junction-scaled stat bonus for a character.
- * @param a0 Character slot index (stride 152 in g_gameState).
- * @return Product of a GF multiplier (from g_kernel offset 0x23D) and the junction quantity.
- * @note Reads GF index from offset 0x4F5, then computes multiplier * getMagicQuantity(a0, idx).
- */
-s32 getAtkElemBonus(s32 charIdx) {
+s32 getAtkElementPercent(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_ATK_ELEM];
     u8 val = g_kernel.magic[idx].atkElementValue;
     return multiplyDiv100(val, getMagicQuantity(charIdx, idx));

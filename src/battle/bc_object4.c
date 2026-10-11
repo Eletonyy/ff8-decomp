@@ -1,9 +1,13 @@
 #include "common.h"
+#include "ability.h"
 #include "battle.h"
 #include "gf.h"
 #include "gamestate.h"
 #include "battle/bc_object4.h"
 #include "battle/bc_object22.h"
+
+static s32 func_800A9284(BattleCharData* arg0);
+
 
 void func_800A6184(s32 arg0, s32 arg1, s32 arg2, u16 arg3) {
     func_800A5A7C(arg0, arg1, arg2, 0, arg3, 0, &D_800ED148.unk1244[arg0].unk0);
@@ -252,7 +256,7 @@ void func_800A67FC(s32 arg0) {
         for (i = 0; i < 3; i++) {
             if (!(D_800ED148.entities[i].status & 1)) {
                 D_800ED148.entities[i].flags |= 0x800000;
-                g_battleChars.chars[i].unk188 = D_800ED148.entities[i].flags;
+                g_battleChars.chars[i].battleStatus = D_800ED148.entities[i].flags;
             }
         }
     }
@@ -278,7 +282,7 @@ void func_800A68AC(s32 arg0) {
 
         case 1:
             for (i = 0; i < 3; i++) {
-                if (!(g_battleChars.chars[i].statusFlags & 0x10000)) {
+                if (!(g_battleChars.chars[i].characterAbilities & CHAR_ABILITY_INITIATIVE)) {
                     D_800ED148.entities[i].curAtb = 0;
                 }
             }
@@ -691,24 +695,24 @@ void func_800A71C0(s32 idx) {
     temp_a3 = &g_battleChars.chars[idx];
     temp_a0 = &D_800ED148.entities[idx];
     
-    if (temp_a3->characterId == 255) {
+    if (temp_a3->characterId == PARTY_SLOT_EMPTY) {
         return;
     }
     
-    temp_a0->maxHp = temp_a3->hpRegenCap;
-    temp_a0->currentHp = temp_a3->unk172;
-    temp_a0->level = temp_a3->level;
-    temp_a0->unkBD[0] = temp_a3->stats[0];
-    temp_a0->unkBD[1] = temp_a3->stats[1];
-    temp_a0->unkBD[2] = temp_a3->stats[2];
-    temp_a0->unkBD[3] = temp_a3->stats[3];
-    temp_a0->unkBD[4] = temp_a3->stats[4];
-    temp_a0->unkBD[5] = temp_a3->stats[5];
-    temp_a0->unkBD[7] = temp_a3->stats[7];
-    temp_a0->unkBD[6] = temp_a3->stats[6];
+    temp_a0->maxHp = temp_a3->maxHp;
+    temp_a0->currentHp = temp_a3->currentHp;
+    temp_a0->level = temp_a3->currentLevel;
+    temp_a0->unkBD[0] = temp_a3->stats[BATTLE_STAT_STR];
+    temp_a0->unkBD[1] = temp_a3->stats[BATTLE_STAT_VIT];
+    temp_a0->unkBD[2] = temp_a3->stats[BATTLE_STAT_MAG];
+    temp_a0->unkBD[3] = temp_a3->stats[BATTLE_STAT_SPR];
+    temp_a0->unkBD[4] = temp_a3->stats[BATTLE_STAT_SPD];
+    temp_a0->unkBD[5] = temp_a3->stats[BATTLE_STAT_LCK];
+    temp_a0->unkBD[7] = temp_a3->stats[BATTLE_STAT_HIT];
+    temp_a0->unkBD[6] = temp_a3->stats[BATTLE_STAT_EVA];
     
     for (i = 0; i < 32; i++) {
-        if (temp_a3->magicSlots[i].unk0 != 0) {
+        if (temp_a3->magicArgs[i].id != 0) {
             temp_a0->flags |= 0x40000000;
             goto found;
         }
@@ -738,18 +742,18 @@ void func_800A71C0(s32 idx) {
     temp_a0->mentalRes[11] = temp_a3->statusResistances[9];
     temp_a0->mentalRes[17] = temp_a3->statusResistances[10];
     temp_a0->mentalRes[23] = temp_a3->statusResistances[12];
-    temp_a0->unk20 = temp_a3->abilityFlags;
-    temp_a0->hitStatus1 = temp_a3->abilityValue;
-    temp_a0->unkB8[2] = temp_a3->atkStatusHit;
-    temp_a0->unkC5 = temp_a3->atkElemBase;
-    temp_a0->unkC6 = temp_a3->atkElemBonus;
+    temp_a0->unk20 = temp_a3->atkBattleStatus;
+    temp_a0->hitStatus1 = temp_a3->atkPersistentStatus;
+    temp_a0->unkB8[2] = temp_a3->atkStatusHitChance;
+    temp_a0->unkC5 = temp_a3->atkElements;
+    temp_a0->unkC6 = temp_a3->atkElementPercent;
     
-    if (temp_a3->statusFlags & 0x8000) {
+    if (temp_a3->characterAbilities & CHAR_ABILITY_AUTO_HASTE) {
         temp_a0->mentalRes[11] = 200;
         temp_a0->mentalRes[10] = 200;
     }
     
-    if (temp_a3->statusFlags & 0x80000) {
+    if (temp_a3->characterAbilities & CHAR_ABILITY_RIBBON) {
         temp_a0->mentalRes[24] = 200;
         temp_a0->mentalRes[32] = 200;
         temp_a0->mentalRes[23] = 200;
@@ -784,8 +788,8 @@ void func_800A71C0(s32 idx) {
 /**
  * @brief Initialise a party member's battle entity data.
  *
- * Copies the character and its statuses, flags a melee weapon (0x1000) and
- * a female character (0x100) in unk7C, and starts the ATB gauge.
+ * Copies the character and its statuses, flags a melee weapon and a female
+ * character in its control flags, and starts the ATB gauge.
  *
  * @param arg0 Party slot.
  */
@@ -797,47 +801,47 @@ void func_800A7518(s32 arg0) {
     temp_s1 = &g_battleChars.chars[arg0];
     temp_s0 = &D_800ED148.entities[arg0];
     
-    if (temp_s1->characterId == 255) {
+    if (temp_s1->characterId == PARTY_SLOT_EMPTY) {
         temp_s0->controlFlags = 0;
         temp_s0->comFileId = 255;
         return;
     }
     
     temp_s0->comFileId = temp_s1->characterId;
-    temp_s0->status = temp_s1->displayStatus;
+    temp_s0->status = temp_s1->persistentStatus;
     temp_s0->controlFlags = 34817;
 
-    if (g_kernel.weapons[temp_s1->classId].melee & WEAPON_MELEE) {
-        temp_s0->controlFlags |= 0x1000;
+    if (g_kernel.weapons[temp_s1->weaponId].melee & WEAPON_MELEE) {
+        temp_s0->controlFlags |= CTRL_MELEE_WEAPON;
     }
 
     if (g_kernel.characters[temp_s0->comFileId].gender & GENDER_FEMALE) {
-        temp_s0->controlFlags |= 0x100;
+        temp_s0->controlFlags |= CTRL_FEMALE;
     }
 
     temp_s0->flags = 0;
-    if (temp_s1->statusFlags & 0x1000) {
-        temp_s0->flags = 0x80;
+    if (temp_s1->characterAbilities & CHAR_ABILITY_AUTO_REFLECT) {
+        temp_s0->flags = BATTLE_STATUS_REFLECT;
     }
 
-    if (temp_s1->statusFlags & 0x4000) {
-        temp_s0->flags |= 0x20;
+    if (temp_s1->characterAbilities & CHAR_ABILITY_AUTO_PROTECT) {
+        temp_s0->flags |= BATTLE_STATUS_PROTECT;
     }
 
-    if (temp_s1->statusFlags & 0x2000) {
-        temp_s0->flags |= 0x40;
+    if (temp_s1->characterAbilities & CHAR_ABILITY_AUTO_SHELL) {
+        temp_s0->flags |= BATTLE_STATUS_SHELL;
     }
 
-    if (temp_s1->statusFlags & 0x8000) {
-        temp_s0->flags |= 2;
+    if (temp_s1->characterAbilities & CHAR_ABILITY_AUTO_HASTE) {
+        temp_s0->flags |= BATTLE_STATUS_HASTE;
     }
     
     func_800A7188(temp_s0);
     func_800A71A0(temp_s0);
     func_800A554C(arg0);
 
-    if (!(temp_s0->status & 4) && !(temp_s0->status & 1)) {
-        if (temp_s1->statusFlags & 0x10000) {
+    if (!(temp_s0->status & STATUS_PETRIFY) && !(temp_s0->status & STATUS_KO)) {
+        if (temp_s1->characterAbilities & CHAR_ABILITY_INITIATIVE) {
             D_800ED148.entities[arg0].curAtb = D_800ED148.entities[arg0].maxAtb;
         }
         
@@ -913,8 +917,8 @@ void func_800A7884(void) {
     s32 i;
 
     for (i = 0; i < 3; i++) {
-        g_battleChars.chars[i].unk180 = 0;
-        g_battleChars.chars[i].unk184 = 0;
+        g_battleChars.chars[i].maxAtb = 0;
+        g_battleChars.chars[i].currentAtb = 0;
     }
 
     func_800A77E8();
@@ -965,14 +969,14 @@ void func_800A79A0(void) {
 /**
  * @brief Look up the tier of the weapon equipped by the entity at @p a0.
  *
- * Reads @c BattleCharData[a0].classId, then returns
- * @c g_kernel.weapons[classId].tier.
+ * Reads @c BattleCharData[a0].weaponId, then returns
+ * @c g_kernel.weapons[weaponId].tier.
  *
  * @param a0 Entity index (stride 0x1D0 in @c g_battleChars).
  * @return The weapon's tier.
  */
 u8 func_800A7A44(s32 arg0) {
-    return g_kernel.weapons[g_battleChars.chars[arg0].classId].tier;
+    return g_kernel.weapons[g_battleChars.chars[arg0].weaponId].tier;
 }
 
 /**
@@ -982,7 +986,7 @@ u8 func_800A7A44(s32 arg0) {
  * @return Byte at offset 0x1B9 within the entity entry.
  */
 u8 func_800A7A8C(s32 arg0) {
-    return g_battleChars.chars[arg0].unk1B9;
+    return g_battleChars.chars[arg0].modelVariant;
 }
 
 /**
@@ -1452,13 +1456,13 @@ s32 func_800A89B8(s32 arg0, s32 arg1) {
     temp_a0 = &g_battleChars.chars[arg0];
   
     for (i = 0; i < 32; i++) {
-        if (temp_a0->magicSlots[i].unk0 == arg1) {
-            return temp_a0->magicSlots[i].unk1 == 100;
+        if (temp_a0->magicArgs[i].id == arg1) {
+            return temp_a0->magicArgs[i].count == 100;
         }
     }
   
     for (i = 0; i < 32; i++) {
-        if (temp_a0->magicSlots[i].unk0 == 0) {
+        if (temp_a0->magicArgs[i].id == 0) {
             return 0;
         }
     }
@@ -1478,26 +1482,26 @@ s32 func_800A89B8(s32 arg0, s32 arg1) {
  * @param arg3 Nonzero to copy from the Magic slot.
  */
 void func_800A8A48(BattleCharData* arg0, s32 arg1, u8 arg2, s32 arg3) {
-    arg0->unkSlots[arg1].unk0 = arg2;
-    arg0->unkSlots[arg1].unk2 = g_kernel.battleCommands[arg0->unkSlots[arg1].unk0].targetInfo;
+    arg0->multicastChoices[arg1].commandId = arg2;
+    arg0->multicastChoices[arg1].targetInfo = g_kernel.battleCommands[arg0->multicastChoices[arg1].commandId].targetInfo;
     
     if (arg3 == 0) {
-        arg0->unkSlots[arg1].unk1 = arg0->cmdSlots[findCommandSlot(arg0, 13)].unk1;
-        arg0->unkSlots[arg1].unk3 = arg0->cmdSlots[findCommandSlot(arg0, 13)].unk3;
+        arg0->multicastChoices[arg1].subMenuFlags = arg0->abilityCommands[findCommandSlot(arg0, 13)].subMenuFlags;
+        arg0->multicastChoices[arg1].flags = arg0->abilityCommands[findCommandSlot(arg0, 13)].flags;
     }
     
     else {
-        arg0->unkSlots[arg1].unk1 = arg0->cmdSlots[findCommandSlot(arg0, 2)].unk1;
-        arg0->unkSlots[arg1].unk3 = arg0->cmdSlots[findCommandSlot(arg0, 2)].unk3;
+        arg0->multicastChoices[arg1].subMenuFlags = arg0->abilityCommands[findCommandSlot(arg0, 2)].subMenuFlags;
+        arg0->multicastChoices[arg1].flags = arg0->abilityCommands[findCommandSlot(arg0, 2)].flags;
     }
 }
 
 s32 func_800A8AFC(s32 arg0) {
     BattleCharData* ptr = &g_battleChars.chars[arg0];
 
-    func_800A8A48(ptr, 0, 35, 0);
-    func_800A8A48(ptr, 1, 36, 0);
-    func_800A8A48(ptr, 2, 0, 0);
+    func_800A8A48(ptr, 0, BATTLE_CMD_SINGLE, 0);
+    func_800A8A48(ptr, 1, BATTLE_CMD_DOUBLE, 0);
+    func_800A8A48(ptr, 2, BATTLE_CMD_NONE, 0);
     
     return 2;
 }
@@ -1508,26 +1512,26 @@ s32 func_800A8B7C(s32 arg0) {
     BattleCharData* temp_s0;
 
     temp_s0 = &g_battleChars.chars[arg0];
-    func_800A8A48(temp_s0, 2, 0, 1);
+    func_800A8A48(temp_s0, 2, BATTLE_CMD_NONE, 1);
 
-    switch (temp_s0->unk188 & 0x60000) {
+    switch (temp_s0->battleStatus & (BATTLE_STATUS_DOUBLE | BATTLE_STATUS_TRIPLE)) {
         case 0:
             return 0;
         
-         case 0x60000:
-            func_800A8A48(temp_s0, 0, 35, 1);
-            func_800A8A48(temp_s0, 1, 36, 1);
-            func_800A8A48(temp_s0, 2, 37, 1);
+         case BATTLE_STATUS_DOUBLE | BATTLE_STATUS_TRIPLE:
+            func_800A8A48(temp_s0, 0, BATTLE_CMD_SINGLE, 1);
+            func_800A8A48(temp_s0, 1, BATTLE_CMD_DOUBLE, 1);
+            func_800A8A48(temp_s0, 2, BATTLE_CMD_TRIPLE, 1);
             return 3;
             
-         case 0x20000:
-            func_800A8A48(temp_s0, 0, 35, 1);
-            func_800A8A48(temp_s0, 1, 36, 1);
+         case BATTLE_STATUS_DOUBLE:
+            func_800A8A48(temp_s0, 0, BATTLE_CMD_SINGLE, 1);
+            func_800A8A48(temp_s0, 1, BATTLE_CMD_DOUBLE, 1);
             return 2;
             
-         case 0x40000:
-            func_800A8A48(temp_s0, 0, 35, 1);
-            func_800A8A48(temp_s0, 1, 37, 1);
+         case BATTLE_STATUS_TRIPLE:
+            func_800A8A48(temp_s0, 0, BATTLE_CMD_SINGLE, 1);
+            func_800A8A48(temp_s0, 1, BATTLE_CMD_TRIPLE, 1);
             return 2;
     }
 }
@@ -1565,34 +1569,34 @@ void func_800A8D7C(s32 arg0, s32 arg1) {
     BattleCharData* temp_s0;
 
     temp_s0 = &g_battleChars.chars[arg0];
-    temp_s0->pad0[0] = BATTLE_CMD_STOCK;
-    temp_s0->pad0[1] = g_kernel.battleCommands[BATTLE_CMD_STOCK].menuFlags;
-    temp_s0->pad0[2] = g_kernel.battleCommands[BATTLE_CMD_STOCK].targetInfo;
-    temp_s0->pad0[3] = 0;
-    if (arg1 < 64) {
-        temp_s0->pad0[4] = BATTLE_CMD_CAST;
-        temp_s0->pad0[5] = g_kernel.magic[arg1].statusWindowFlags;
-        temp_s0->pad0[6] = g_kernel.magic[arg1].targetInfo;
-        temp_s0->pad0[7] = 0;
+    temp_s0->drawChoices[0].commandId = BATTLE_CMD_STOCK;
+    temp_s0->drawChoices[0].subMenuFlags = g_kernel.battleCommands[BATTLE_CMD_STOCK].subMenuFlags;
+    temp_s0->drawChoices[0].targetInfo = g_kernel.battleCommands[BATTLE_CMD_STOCK].targetInfo;
+    temp_s0->drawChoices[0].flags = 0;
+    if (arg1 < BATTLE_GF_ID_BASE) {
+        temp_s0->drawChoices[1].commandId = BATTLE_CMD_CAST;
+        temp_s0->drawChoices[1].subMenuFlags = g_kernel.magic[arg1].statusWindowFlags;
+        temp_s0->drawChoices[1].targetInfo = g_kernel.magic[arg1].targetInfo;
+        temp_s0->drawChoices[1].flags = 0;
         
         if (g_kernel.magic[arg1].attackFlags & ATTACK_FLAG_TARGET_KO) {
-            temp_s0->pad0[7] = 1;
+            temp_s0->drawChoices[1].flags = BTL_CMD_TARGETS_KO;
             
             if (g_kernel.magic[arg1].attackFlags & ATTACK_FLAG_TARGET_KO) {
-                temp_s0->pad0[3] |= 1;
+                temp_s0->drawChoices[0].flags |= BTL_CMD_TARGETS_KO;
             }
         }
         
         if (func_800A89B8(arg0, arg1) != 0) {
-            temp_s0->pad0[3] |= 2;
+            temp_s0->drawChoices[0].flags |= BTL_CMD_UNAVAILABLE;
         }
     } 
     
     else {
-        temp_s0->pad0[4] = BATTLE_CMD_CAST;
-        temp_s0->pad0[5] = 0;
-        temp_s0->pad0[6] = 0;
-        temp_s0->pad0[7] = 2;
+        temp_s0->drawChoices[1].commandId = BATTLE_CMD_CAST;
+        temp_s0->drawChoices[1].subMenuFlags = 0;
+        temp_s0->drawChoices[1].targetInfo = 0;
+        temp_s0->drawChoices[1].flags = BTL_CMD_UNAVAILABLE;
     }
 }
 
@@ -1603,14 +1607,14 @@ void func_800A8D7C(s32 arg0, s32 arg1) {
  * @param arg1 Temporary limit break index.
  */
 void func_800A8E90(BattleCharData* arg0, s32 arg1) {
-    arg0->testSlots[0].unk0 = arg1;
-    arg0->testSlots[0].unk2 = g_kernel.tempLimitBreaks[arg1].statusWindowFlags;
-    arg0->testSlots[0].unk3 = g_kernel.tempLimitBreaks[arg1].targetInfo;
-    arg0->testSlots[0].unk4 = 0;
-    arg0->testSlots[0].unk1 = 1;
+    arg0->limitBreakArgs[0].id = arg1;
+    arg0->limitBreakArgs[0].statusWindowFlags = g_kernel.tempLimitBreaks[arg1].statusWindowFlags;
+    arg0->limitBreakArgs[0].targetInfo = g_kernel.tempLimitBreaks[arg1].targetInfo;
+    arg0->limitBreakArgs[0].flags = 0;
+    arg0->limitBreakArgs[0].count = 1;
     
     if (g_kernel.tempLimitBreaks[arg1].attackFlags & ATTACK_FLAG_TARGET_KO) {
-        arg0->testSlots[0].unk4 |= 1;
+        arg0->limitBreakArgs[0].flags |= 1;
     }
 }
 
@@ -1630,15 +1634,15 @@ s32 func_800A8EFC(BattleCharData* arg0) {
 
     for (i = 0; i < 16; i++) {
         if (g_gameState.mainData.limitBreaks.quistisLimits & bit) {
-            arg0->testSlots[val].unk0 = i;
-            arg0->testSlots[val].unk2 = g_kernel.blueMagic[i].statusWindowFlags;
-            arg0->testSlots[val].unk3 = g_kernel.blueMagic[i].targetInfo;
-            arg0->testSlots[val].unk4 = 0;
-            arg0->testSlots[val].unk1 = 1;
-            arg0->testSlots[val].unk4 &= 0xEF;
+            arg0->limitBreakArgs[val].id = i;
+            arg0->limitBreakArgs[val].statusWindowFlags = g_kernel.blueMagic[i].statusWindowFlags;
+            arg0->limitBreakArgs[val].targetInfo = g_kernel.blueMagic[i].targetInfo;
+            arg0->limitBreakArgs[val].flags = 0;
+            arg0->limitBreakArgs[val].count = 1;
+            arg0->limitBreakArgs[val].flags &= ~BTL_CMD_ARG_EMPTY;
             
             if (g_kernel.blueMagic[i].attackFlags & ATTACK_FLAG_TARGET_KO) {
-                arg0->testSlots[val].unk4 |= 1;
+                arg0->limitBreakArgs[val].flags |= 1;
             }
             
             val++;
@@ -1664,11 +1668,11 @@ s32 func_800A8EFC(BattleCharData* arg0) {
 */
 
 void func_800A8F98(BattleCharData* arg0, s32 arg1, s32 arg2) {
-    arg0->testSlots[arg2].unk0 = arg1;
-    arg0->testSlots[arg2].unk2 = g_kernel.rinoaLimitBreaks1[arg1].statusWindowFlags;
-    arg0->testSlots[arg2].unk3 = g_kernel.rinoaLimitBreaks1[arg1].targetInfo;
-    arg0->testSlots[arg2].unk4 = 0;
-    arg0->testSlots[arg2].unk1 = 1;
+    arg0->limitBreakArgs[arg2].id = arg1;
+    arg0->limitBreakArgs[arg2].statusWindowFlags = g_kernel.rinoaLimitBreaks1[arg1].statusWindowFlags;
+    arg0->limitBreakArgs[arg2].targetInfo = g_kernel.rinoaLimitBreaks1[arg1].targetInfo;
+    arg0->limitBreakArgs[arg2].flags = 0;
+    arg0->limitBreakArgs[arg2].count = 1;
 }
 
 s32 func_800A8FDC(BattleCharData* arg0) {
@@ -1695,9 +1699,9 @@ s32 func_800A8FDC(BattleCharData* arg0) {
 */
 
 s32 func_800A9064(BattleCharData* arg0) {
-    arg0->testSlots[0].unk0 = 65;
-    arg0->testSlots[1].unk0 = 67;
-    arg0->testSlots[2].unk0 = 66;
+    arg0->limitBreakArgs[0].id = 65;
+    arg0->limitBreakArgs[1].id = 67;
+    arg0->limitBreakArgs[2].id = 66;
     
     return 3;
 }
@@ -1719,7 +1723,7 @@ void func_800A9084(u8* arg0, u8* arg1) {
     s32 idx;
     
     for (i = 0; i < 3; i++) {
-        if (g_battleChars.chars[i].characterId == 5) {
+        if (g_battleChars.chars[i].characterId == CHAR_SELPHIE) {
             break; 
         }
     }
@@ -1784,7 +1788,7 @@ s32 func_800A9240(s32 arg0) {
  * @param arg0 Party member's battle data.
  * @return Number of slots filled.
  */
-s32 func_800A9284(BattleCharData* arg0) {
+static s32 func_800A9284(BattleCharData* arg0) {
     s32 i;
     u16 mask;
     s32 val;
@@ -1798,15 +1802,15 @@ s32 func_800A9284(BattleCharData* arg0) {
     for (i = 0; i < 8; i++) {
         temp_a0 = func_800A9240(var_s1);
         if ((g_gameState.mainData.limitBreaks.irvineLimits & mask) || (temp_a0 != 0)) {
-            arg0->testSlots[val].unk0 = var_s1;
-            arg0->testSlots[val].unk2 = 128;
-            arg0->testSlots[val].unk3 = g_kernel.battleCommands[BATTLE_CMD_SHOT].targetInfo;
-            arg0->testSlots[val].unk4 = 0;
-            arg0->testSlots[val].unk1 = temp_a0;
-            arg0->testSlots[val].unk4 &= 0xEF;
+            arg0->limitBreakArgs[val].id = var_s1;
+            arg0->limitBreakArgs[val].statusWindowFlags = STATUS_WINDOW_NO_PARTY_BOX;
+            arg0->limitBreakArgs[val].targetInfo = g_kernel.battleCommands[BATTLE_CMD_SHOT].targetInfo;
+            arg0->limitBreakArgs[val].flags = 0;
+            arg0->limitBreakArgs[val].count = temp_a0;
+            arg0->limitBreakArgs[val].flags &= ~BTL_CMD_ARG_EMPTY;
             
             if (temp_a0 == 0) {
-                arg0->testSlots[val].unk4 |= 2;
+                arg0->limitBreakArgs[val].flags |= BTL_CMD_ARG_UNAVAILABLE;
             }
           
             val++;
@@ -1826,48 +1830,48 @@ s32 func_800A9370(s32 arg0) {
     temp_a0 = &g_battleChars.chars[arg0];
     
     for (i = 0; i < 16; i++) {
-        temp_a0->testSlots[i].unk4 = 0;
-        temp_a0->testSlots[i].unk1 = 0;
-        temp_a0->testSlots[i].unk3 = 0;
-        temp_a0->testSlots[i].unk2 = 0;
-        temp_a0->testSlots[i].unk0 = 0;
-        temp_a0->testSlots[i].unk4 |= 0x10;
+        temp_a0->limitBreakArgs[i].flags = 0;
+        temp_a0->limitBreakArgs[i].count = 0;
+        temp_a0->limitBreakArgs[i].targetInfo = 0;
+        temp_a0->limitBreakArgs[i].statusWindowFlags = 0;
+        temp_a0->limitBreakArgs[i].id = 0;
+        temp_a0->limitBreakArgs[i].flags |= BTL_CMD_ARG_EMPTY;
     }
     
     switch (temp_a0->characterId) {
-        case 0:
-        case 1:
+        case CHAR_SQUALL:
+        case CHAR_ZELL:
             return 0;
             
-        case 2:
+        case CHAR_IRVINE:
             return func_800A9284(temp_a0);
             
-        case 3:
+        case CHAR_QUISTIS:
             return func_800A8EFC(temp_a0);
             
-        case 4:
+        case CHAR_RINOA:
             return func_800A8FDC(temp_a0);
             
-        case 5:
+        case CHAR_SELPHIE:
             return func_800A9064(temp_a0);
             
-        case 6:
+        case CHAR_SEIFER:
             func_800A8E90(temp_a0, 0);
             return 1;
             
-        case 7:         
+        case CHAR_EDEA:         
             func_800A8E90(temp_a0, 1);
             return 1;
             
-        case 8:         
+        case CHAR_LAGUNA:         
             func_800A8E90(temp_a0, 2);
             return 1;
             
-        case 9:   
+        case CHAR_KIROS:   
             func_800A8E90(temp_a0, 3);
             return 1;
             
-        case 10:
+        case CHAR_WARD:
             func_800A8E90(temp_a0, 4);
             return 1;
     }
@@ -2152,7 +2156,7 @@ void func_800A9970(s32 arg0) {
     s32 i;
 
     for (i = 0; i < 7; i++) {
-        if (D_800ED148.entities[i].controlFlags & 0x100) {
+        if (D_800ED148.entities[i].controlFlags & CTRL_FEMALE) {
             D_800EEBE0[i] = 1;
         } 
         

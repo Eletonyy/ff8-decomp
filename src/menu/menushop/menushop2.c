@@ -643,7 +643,7 @@ static void func_801E9020(s32 weaponId) {
     currentWeaponId = g_gameState.chars[charId].weaponId;
     g_gameState.chars[charId].weaponId = weaponId;
     func_801F537C(charId, &charData);
-    D_801EB260[weaponId] = charData.stats[0];
+    D_801EB260[weaponId] = charData.stats[BATTLE_STAT_STR];
     g_gameState.chars[charId].weaponId = currentWeaponId;
 }
 
@@ -987,7 +987,7 @@ void func_801E9900(s32 arg0) {
         for (i = 0, ptr = s->equippedWeapons; i < 8; i++) {
             if ((s->availableCharactersMask >> i) & 1) {
                 func_801F537C(i, &charData);
-                *ptr = charData.classId;
+                *ptr = charData.weaponId;
                 ptr++;
             }
         }

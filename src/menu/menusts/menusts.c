@@ -124,8 +124,8 @@ INCLUDE_ASM("asm/ovl/menusts/nonmatchings/menusts", func_801E709C);
 
 /** @brief Build status bitfield from character data flags. */
 s32 func_801E7278(BattleCharData *cd) {
-    s32 result = cd->abilityValue & 0x7F;
-    s32 flags = cd->abilityFlags;
+    s32 result = cd->atkPersistentStatus & 0x7F;
+    s32 flags = cd->atkBattleStatus;
 
     if (flags & 0x1) result |= 0x80;
     if (flags & 0x4) result |= 0x100;
@@ -182,7 +182,7 @@ s32 func_801E72D8(s32 displayList, s32 ot, s32 x, s32 y, s32 mode) {
             ot = drawIcon(displayList, ot, entry->statusId, x + 0xA, yPos, g_menuTint[MENU_TINT_NORMAL]);
             drawn++;
             yPos += 4;
-            intToDecStringShort(D_801E9EE4.atkStatusHit - 100, strBuf, digitBase);
+            intToDecStringShort(D_801E9EE4.atkStatusHitChance - 100, strBuf, digitBase);
             replaceLeadingZeros(strBuf2, 2, digitBase, *getMenuString(0xB));
             ot = func_8002C56C(displayList, ot, x + 0x5A, yPos, strBuf2, 7);
             ot = func_8002C56C(displayList, ot, x + 0x72, yPos + 1, bgBuf, 7);
