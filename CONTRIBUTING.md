@@ -139,20 +139,7 @@ void MaxPartyLevel(void) {
 }
 ```
 
-* Documenting functions with Doxygen is encouraged, but not required. A `/** ... */` block saying what the function does, what its parameters are and what it returns helps the next person. If you're not sure, write your best guess and say that it is a guess.
-
-Example:
-```
-/**
- * @brief Checks whether a party member is knocked out.
- * @param index Party slot, 0 to 2.
- * @return 1 if the member has 0 HP, otherwise 0.
- * @note Unsure whether this also counts Petrify.
- */
-s32 IsKnockedOut(s32 index) {
-    ...
-}
-```
+* Prefer function and variable names that say what they do over a comment block explaining them. A name is read everywhere the function or variable is used, a comment only where it's written.
 
 * Comments should say what the code itself can't, e.g. what a value means, or why code is written in an odd way because the match needs it.
 ** No comments that repeat the code.
