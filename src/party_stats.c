@@ -1,4 +1,5 @@
 #include "common.h"
+#include "ability.h"
 #include "battle.h"
 #include "gamestate.h"
 #include "gf.h"
@@ -30,24 +31,26 @@ static s32 isCommandOff(s32 cmd);
 static void clearCharSlotData(BattleCharData *charData);
 
 /**
- * @brief Refresh the flags and kernel data of a party member's battle magic list.
+ * @brief Makes sure any magic that is junctioned has the "is junctioned"-flag and all that isn't doesn't. 
  *
  * @param slot Party slot (0-2).
  */
+// Something like refreshJunctionedMagicsForMember()
 void func_800229FC(s32 slot) {
     BattleCharData *bc = &g_battleChars.chars[slot];
     s32 i;
 
     for (i = 0; i < 32; i++) {
-        bc->magicSlots[i].flags = 0;
-        if (g_kernel.magic[bc->magicSlots[i].id].attackFlags & ATTACK_FLAG_TARGET_KO) {
-            bc->magicSlots[i].flags = BTL_CMD_ARG_TARGETS_KO;
+        bc->magicArgs[i].flags = 0;
+        if (g_kernel.magic[bc->magicArgs[i].id].attackFlags & ATTACK_FLAG_TARGET_KO) {
+            bc->magicArgs[i].flags = BTL_CMD_ARG_TARGETS_KO;
         }
-        if (hasJunctionedAbility(slot, bc->magicSlots[i].id)) {
-            bc->magicSlots[i].flags |= BTL_CMD_ARG_JUNCTIONED;
+	// Should this be called isMagicJunctioned()?
+        if (hasJunctionedAbility(slot, bc->magicArgs[i].id)) {
+            bc->magicArgs[i].flags |= BTL_CMD_ARG_JUNCTIONED;
         }
-        bc->magicSlots[i].targetInfo = g_kernel.magic[bc->magicSlots[i].id].targetInfo;
-        bc->magicSlots[i].statusWindowFlags = g_kernel.magic[bc->magicSlots[i].id].statusWindowFlags;
+        bc->magicArgs[i].targetInfo = g_kernel.magic[bc->magicArgs[i].id].targetInfo;
+        bc->magicArgs[i].statusWindowFlags = g_kernel.magic[bc->magicArgs[i].id].statusWindowFlags;
     }
 }
 
@@ -60,10 +63,10 @@ void func_800229FC(s32 slot) {
  * @param commandId Battle command ID.
  */
 static void initCommandSlot(BattleCharData *bc, s32 index, s32 commandId) {
-    bc->cmdSlots[index].commandId = commandId;
-    bc->cmdSlots[index].subMenuFlags = g_kernel.battleCommands[bc->cmdSlots[index].commandId].subMenuFlags;
-    bc->cmdSlots[index].flags = 0;
-    bc->cmdSlots[index].targetInfo = g_kernel.battleCommands[bc->cmdSlots[index].commandId].targetInfo;
+    bc->abilityCommands[index].commandId = commandId;
+    bc->abilityCommands[index].subMenuFlags = g_kernel.battleCommands[bc->abilityCommands[index].commandId].subMenuFlags;
+    bc->abilityCommands[index].flags = 0;
+    bc->abilityCommands[index].targetInfo = g_kernel.battleCommands[bc->abilityCommands[index].commandId].targetInfo;
 }
 
 
@@ -100,7 +103,7 @@ static s32 getCharAbilityFlags(s32 charIdx) {
 static s32 hasDrawCommand(BattleCharData *charData) {
     s32 i;
     for (i = 0; i < 4; i++) {
-        if (charData->cmdSlots[i].commandId == BATTLE_CMD_DRAW) return 1;
+        if (charData->abilityCommands[i].commandId == BATTLE_CMD_DRAW) return 1;
     }
     return 0;
 }
@@ -113,7 +116,7 @@ static s32 hasDrawCommand(BattleCharData *charData) {
  * @return FIELD_STATUS_* bits.
  */
 static s32 getFieldStatusFlags(BattleCharData *charData) {
-    s32 val = charData->statusFlags;
+    s32 val = charData->characterAbilities;
     s32 masked = val & CHAR_ABILITY_MOVE_HP_UP;
     s32 flag = masked ? FIELD_STATUS_MOVE_HP_UP : 0;
     if (hasDrawCommand(charData)) {
@@ -193,31 +196,31 @@ static void clearCharSlotData(BattleCharData *charData) {
     s32 i;
 
     for (i = 0; i < 32; i++) {
-        charData->magicSlots[i].statusWindowFlags = 0;
-        charData->magicSlots[i].targetInfo = 0;
-        charData->magicSlots[i].flags = 0;
-        charData->magicSlots[i].count = 0;
-        charData->magicSlots[i].id = 0;
+        charData->magicArgs[i].statusWindowFlags = 0;
+        charData->magicArgs[i].targetInfo = 0;
+        charData->magicArgs[i].flags = 0;
+        charData->magicArgs[i].count = 0;
+        charData->magicArgs[i].id = 0;
     }
 
     for (i = 0; i < 16; i++) {
-        charData->gfSlots[i].statusWindowFlags = 0;
-        charData->gfSlots[i].targetInfo = 0;
-        charData->gfSlots[i].flags = 0;
-        charData->gfSlots[i].count = 0;
-        charData->gfSlots[i].id = 0;
+        charData->gfArgs[i].statusWindowFlags = 0;
+        charData->gfArgs[i].targetInfo = 0;
+        charData->gfArgs[i].flags = 0;
+        charData->gfArgs[i].count = 0;
+        charData->gfArgs[i].id = 0;
     }
 
     for (i = 0; i < 4; i++) {
-        charData->cmdSlots[i].targetInfo = 0;
-        charData->cmdSlots[i].flags = 0;
-        charData->cmdSlots[i].subMenuFlags = 0;
-        charData->cmdSlots[i].commandId = 0;
+        charData->abilityCommands[i].targetInfo = 0;
+        charData->abilityCommands[i].flags = 0;
+        charData->abilityCommands[i].subMenuFlags = 0;
+        charData->abilityCommands[i].commandId = 0;
     }
 
-    charData->unk1C = 0;
-    charData->unk1D = 0;
-    charData->unk14 = 0;
+    charData->summoningCountDownInProgress = 0;
+    charData->summoningGfId = 0;
+    charData->summoningTimeLeft = 0;
 }
 
 
@@ -240,16 +243,16 @@ void func_80022E08(s32 charIdx, s32 slot) {
         bc->characterId = PARTY_SLOT_EMPTY;
         return;
     }
-    bc->unk172 = cd->currentHp;
-    bc->exp = cd->experience;
-    bc->xpToNext = getXpToNextLevel(cd->experience, charIdx);
+    bc->currentHp = cd->currentHp;
+    bc->currentExp = cd->experience;
+    bc->expToNextLevel = getXpToNextLevel(cd->experience, charIdx);
     bc->level = findCharXpLevel(cd->experience, charIdx);
     bc->unk1B9 = cd->alternateModel;
     // The original passes no fallback, so func_80021B58 reads whatever is left in a1
     bc->classId = ((s32 (*)())func_80021B58)(charIdx);
-    bc->displayStatus = cd->statusFlags;
-    bc->unk188 = 0;
-    bc->statusFlags = getCharAbilityFlags(charIdx);
+    bc->persistentStatus = cd->statusFlags;
+    bc->battleStatus = 0;
+    bc->characterAbilities = getCharAbilityFlags(charIdx);
     applyPartyAbilityFlags(charIdx);
     clearCharSlotData(bc);
 
@@ -257,14 +260,14 @@ void func_80022E08(s32 charIdx, s32 slot) {
     gfBits = cd->junctedGfs;
     for (i = 0; i < GF_COUNT; i++) {
         if (gfBits & 1) {
-            bc->gfSlots[j].id = BATTLE_GF_ID_BASE + i;
-            bc->gfSlots[j].count = 1;
-            bc->gfSlots[j].flags = 0;
+            bc->gfArgs[j].id = BATTLE_GF_ID_BASE + i;
+            bc->gfArgs[j].count = 1;
+            bc->gfArgs[j].flags = 0;
             if (g_gameState.gfs[i].hp == 0) {
-                bc->gfSlots[j].flags = BTL_CMD_ARG_UNAVAILABLE;
+                bc->gfArgs[j].flags = BTL_CMD_ARG_UNAVAILABLE;
             }
-            bc->gfSlots[j].targetInfo = g_kernel.junctionableGfs[i].targetInfo;
-            bc->gfSlots[j].statusWindowFlags = g_kernel.junctionableGfs[i].statusWindowFlags;
+            bc->gfArgs[j].targetInfo = g_kernel.junctionableGfs[i].targetInfo;
+            bc->gfArgs[j].statusWindowFlags = g_kernel.junctionableGfs[i].statusWindowFlags;
             j++;
         }
         // Without the do/while the register allocator swaps gfBits and the kernel entry pointer
@@ -275,33 +278,33 @@ void func_80022E08(s32 charIdx, s32 slot) {
 
     for (i = 1, j = 0; i < 4; i++, j++) {
         if (cd->commands[j] >= COMMAND_ABILITY_FIRST && cd->commands[j] < COMMAND_ABILITY_END) {
-            bc->cmdSlots[i].commandId = g_kernel.commandAbilities[cd->commands[j] - COMMAND_ABILITY_FIRST].typeField;
-            bc->cmdSlots[i].subMenuFlags = g_kernel.battleCommands[bc->cmdSlots[i].commandId].subMenuFlags;
-            bc->cmdSlots[i].flags = 0;
-            bc->cmdSlots[i].targetInfo = g_kernel.battleCommands[bc->cmdSlots[i].commandId].targetInfo;
-            if (bc->cmdSlots[i].commandId == BATTLE_CMD_UNK13) {
-                bc->cmdSlots[i].flags |= BTL_CMD_SINGLE_OR_DOUBLE;
+            bc->abilityCommands[i].commandId = g_kernel.commandAbilities[cd->commands[j] - COMMAND_ABILITY_FIRST].typeField;
+            bc->abilityCommands[i].subMenuFlags = g_kernel.battleCommands[bc->abilityCommands[i].commandId].subMenuFlags;
+            bc->abilityCommands[i].flags = 0;
+            bc->abilityCommands[i].targetInfo = g_kernel.battleCommands[bc->abilityCommands[i].commandId].targetInfo;
+            if (bc->abilityCommands[i].commandId == BATTLE_CMD_UNK13) {
+                bc->abilityCommands[i].flags |= BTL_CMD_SINGLE_OR_DOUBLE;
             }
-            data = g_kernel.battleCommands[bc->cmdSlots[i].commandId].abilityDataId;
+            data = g_kernel.battleCommands[bc->abilityCommands[i].commandId].abilityDataId;
             if (data != 0xFF && (g_kernel.commandAbilityData[data].attackFlags & ATTACK_FLAG_TARGET_KO)) {
-                bc->cmdSlots[i].flags |= BTL_CMD_TARGETS_KO;
+                bc->abilityCommands[i].flags |= BTL_CMD_TARGETS_KO;
             }
-            if (isCommandOff(bc->cmdSlots[i].commandId)) {
-                bc->cmdSlots[i].flags |= BTL_CMD_UNAVAILABLE;
+            if (isCommandOff(bc->abilityCommands[i].commandId)) {
+                bc->abilityCommands[i].flags |= BTL_CMD_UNAVAILABLE;
             }
         }
     }
 
     i = BATTLE_CMD_ATTACK;
-    if (bc->statusFlags & CHAR_ABILITY_MUG) {
+    if (bc->characterAbilities & CHAR_ABILITY_MUG) {
         i = BATTLE_CMD_MUG;
     }
     initCommandSlot(bc, 0, i);
 
-    bc->limitCmdSlot.commandId = g_kernel.characters[bc->characterId].limitBreakId;
-    bc->limitCmdSlot.targetInfo = g_kernel.battleCommands[bc->limitCmdSlot.commandId].targetInfo;
-    bc->limitCmdSlot.subMenuFlags = g_kernel.battleCommands[bc->limitCmdSlot.commandId].subMenuFlags;
-    bc->limitCmdSlot.flags = 0;
+    bc->limitBreakCommand.commandId = g_kernel.characters[bc->characterId].limitBreakId;
+    bc->limitBreakCommand.targetInfo = g_kernel.battleCommands[bc->limitBreakCommand.commandId].targetInfo;
+    bc->limitBreakCommand.subMenuFlags = g_kernel.battleCommands[bc->limitBreakCommand.commandId].subMenuFlags;
+    bc->limitBreakCommand.flags = 0;
 
     for (i = 0; i < 9; i++) {
         bc->statCoefs[i] = getAbilityModifier(charIdx, i);
@@ -320,7 +323,7 @@ void func_80022E08(s32 charIdx, s32 slot) {
 s32 findCommandSlot(BattleCharData *bc, s32 commandId) {
     s32 i;
     for (i = 0; i < 4; i++) {
-        if (bc->cmdSlots[i].commandId == commandId) return i;
+        if (bc->abilityCommands[i].commandId == commandId) return i;
     }
     return 0xFF;
 }
@@ -369,20 +372,20 @@ void func_800231E0(s32 charIdx, s32 battleSlot) {
     if (charIdx == PARTY_SLOT_EMPTY) return;
 
     for (i = 0; i < 32; i++) {
-        bc->magicSlots[i].id = cd->magic[i].magicId;
-        bc->magicSlots[i].count = cd->magic[i].quantity;
+        bc->magicArgs[i].id = cd->magic[i].magicId;
+        bc->magicArgs[i].count = cd->magic[i].quantity;
     }
 
     func_800229FC(battleSlot);
 
-    bc->xpToNext = getXpToNextLevel(cd->experience, charIdx);
+    bc->expToNextLevel = getXpToNextLevel(cd->experience, charIdx);
     bc->level = findCharXpLevel(cd->experience, charIdx);
 
     hp = clampToMaxHp(bc->statCoefs[JUNCTION_HP] * calcHpFromLevel(bc->level, charIdx) / 100);
-    bc->hpRegenCap = hp;
-    if (bc->hpRegenCap < cd->currentHp) {
+    bc->maxHp = hp;
+    if (bc->maxHp < cd->currentHp) {
         cd->currentHp = hp;
-        bc->unk172 = hp;
+        bc->currentHp = hp;
     }
 
     bc->stats[0] = clampToByte(bc->statCoefs[JUNCTION_STR] * func_80021C10(bc->level, charIdx, JUNCTION_STR) / 100);
@@ -402,24 +405,24 @@ void func_800231E0(s32 charIdx, s32 battleSlot) {
         bc->elemResistances[i] = getElemResistance(charIdx, i);
     }
 
-    bc->abilityFlags = decodeAtkStatusMask(charIdx);
-    bc->abilityValue = getAtkStatusFlags(charIdx);
+    bc->atkBattleStatus = decodeAtkStatusMask(charIdx);
+    bc->atkPersistentStatus = getAtkStatusFlags(charIdx);
     bc->atkStatusHit = calcAtkStatusHit(charIdx);
 
     for (i = 0; i < 13; i++) {
         bc->statusResistances[i] = getStatusResistance(charIdx, i);
     }
 
-    if (bc->unk188 & (BATTLE_STATUS_DOUBLE | BATTLE_STATUS_TRIPLE)) {
+    if (bc->battleStatus & (BATTLE_STATUS_DOUBLE | BATTLE_STATUS_TRIPLE)) {
         s32 idx;
         if (findCommandSlot(bc, BATTLE_CMD_MAGIC) == 0xFF) return;
         idx = findCommandSlot(bc, BATTLE_CMD_MAGIC);
-        bc->cmdSlots[idx].flags |= BTL_CMD_MULTICAST;
+        bc->abilityCommands[idx].flags |= BTL_CMD_MULTICAST;
     } else {
         s32 idx;
         if (findCommandSlot(bc, BATTLE_CMD_MAGIC) == 0xFF) return;
         idx = findCommandSlot(bc, BATTLE_CMD_MAGIC);
-        bc->cmdSlots[idx].flags &= ~BTL_CMD_MULTICAST;
+        bc->abilityCommands[idx].flags &= ~BTL_CMD_MULTICAST;
     }
 }
 

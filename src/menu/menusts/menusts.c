@@ -124,8 +124,8 @@ INCLUDE_ASM("asm/ovl/menusts/nonmatchings/menusts", func_801E709C);
 
 /** @brief Build status bitfield from character data flags. */
 s32 func_801E7278(BattleCharData *cd) {
-    s32 result = cd->abilityValue & 0x7F;
-    s32 flags = cd->abilityFlags;
+    s32 result = cd->atkPersistentStatus & 0x7F;
+    s32 flags = cd->atkBattleStatus;
 
     if (flags & 0x1) result |= 0x80;
     if (flags & 0x4) result |= 0x100;

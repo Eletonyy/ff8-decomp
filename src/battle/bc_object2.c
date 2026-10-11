@@ -6,6 +6,7 @@
  * damage computation, and entity flag management for the battle system.
  */
 #include "common.h"
+#include "ability.h"
 #include "battle.h"
 #include "kernel.h"
 #include "gamestate.h"
@@ -1133,12 +1134,12 @@ s32 func_8009E110(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
                 break;
 
             case 9:
-                var_s1 = D_800ED148.entities[arg0].maxHp - g_battleChars.chars[arg0].unk172;
+                var_s1 = D_800ED148.entities[arg0].maxHp - g_battleChars.chars[arg0].currentHp;
                 break;
         }
 
         if (((D_800ED148.unk130E & 3) == 2) && (arg0 < 3)) {
-            if (g_battleChars.chars[arg0].statusFlags & 2) {
+            if (g_battleChars.chars[arg0].characterAbilities & CHAR_ABILITY_MED_DATA) {
                 var_s1 *= 2;
             }
         }
@@ -1196,7 +1197,7 @@ s32 func_8009E418(s32 arg0, s32 arg1, s32 arg2) {
     
 
     var_a1 = D_800ED148.entities[arg1].maxHp / 8;
-    if ((D_800EE4C0.unk1 == 4 || D_800EE4C0.unk1 == 13) && arg0 < 3 && g_battleChars.chars[arg0].statusFlags & 2) {
+    if ((D_800EE4C0.unk1 == 4 || D_800EE4C0.unk1 == 13) && arg0 < 3 && g_battleChars.chars[arg0].characterAbilities & CHAR_ABILITY_MED_DATA) {
         var_a1 = D_800ED148.entities[arg1].maxHp / 4;
     }
     
@@ -1403,17 +1404,17 @@ void func_8009EAEC(s32 charIdx) {
             func_8002363C(sp10[i]);
 
             for (j = 0; j < 16; j++) {
-                if (g_battleChars.chars[charIdx].gfSlots[j].id == sp10[i] + 64) {
-                    g_battleChars.chars[charIdx].gfSlots[j].flags &= 253;
+                if (g_battleChars.chars[charIdx].gfArgs[j].id == sp10[i] + 64) {
+                    g_battleChars.chars[charIdx].gfArgs[j].flags &= 253;
                     break;
                 }
             }
         }
 
         if (D_800ED148.entities[charIdx].flags & 0x80000000) {
-            id = g_battleChars.chars[charIdx].unk1D - 64;
-            g_battleChars.chars[charIdx].currentHp = g_battleChars.levelEntries[id].hp;
-            D_800ED148.entities[charIdx].hpDisplay = g_battleChars.chars[charIdx].currentHp;
+            id = g_battleChars.chars[charIdx].summoningGfId - 64;
+            g_battleChars.chars[charIdx].summoningCurrentHp = g_battleChars.levelEntries[id].hp;
+            D_800ED148.entities[charIdx].hpDisplay = g_battleChars.chars[charIdx].summoningCurrentHp;
         }
     }
     
@@ -2653,40 +2654,40 @@ static void func_800A1760(s32 arg0, BattleCharData* arg1) {
     s32 i;
     
     for (i = 0; i < 4; i++) {
-        switch (arg1->cmdSlots[i].commandId) {
+        switch (arg1->abilityCommands[i].commandId) {
             case BATTLE_CMD_MAGIC:
                 if (arg0 == 0) {
                     if (!(g_battleConfig.unk8 & BATTLE_CMDS_OFF_MAGIC)) {
-                        arg1->cmdSlots[i].flags &= ~BTL_CMD_UNAVAILABLE;
+                        arg1->abilityCommands[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 
                 
                 else {
-                    arg1->cmdSlots[i].flags |= BTL_CMD_UNAVAILABLE;
+                    arg1->abilityCommands[i].flags |= BTL_CMD_UNAVAILABLE;
                 }
             break;
 
             case BATTLE_CMD_GF:
                 if (arg0 == 0) {
                     if (!(g_battleConfig.unk8 & BATTLE_CMDS_OFF_GF)) {
-                        arg1->cmdSlots[i].flags &= ~BTL_CMD_UNAVAILABLE;
+                        arg1->abilityCommands[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 
                 
                 else {
-                    arg1->cmdSlots[i].flags |= BTL_CMD_UNAVAILABLE;
+                    arg1->abilityCommands[i].flags |= BTL_CMD_UNAVAILABLE;
                 }
             break;
 
             case BATTLE_CMD_DRAW:
                 if (arg0 == 0) {
                     if (!(g_battleConfig.unk8 & BATTLE_CMDS_OFF_DRAW)) {
-                        arg1->cmdSlots[i].flags &= ~BTL_CMD_UNAVAILABLE;
+                        arg1->abilityCommands[i].flags &= ~BTL_CMD_UNAVAILABLE;
                     }
                 } 
                 
                 else {
-                    arg1->cmdSlots[i].flags |= BTL_CMD_UNAVAILABLE;
+                    arg1->abilityCommands[i].flags |= BTL_CMD_UNAVAILABLE;
                 }
             break;
         }
@@ -2707,8 +2708,8 @@ void func_800A184C(s32 arg0, u16 arg1, s32 arg2) {
     BattleCharData* temp_v1;
 
     temp_v1 = &g_battleChars.chars[arg0];
-    temp_v1->displayStatus = arg1 & 127;
-    temp_v1->unk188 = arg2 & 0x030E7FFF;
+    temp_v1->persistentStatus = arg1 & 127;
+    temp_v1->battleStatus = arg2 & 0x030E7FFF;
 }
 
 /**
@@ -2723,7 +2724,7 @@ void func_800A184C(s32 arg0, u16 arg1, s32 arg2) {
 void func_800A1888(s32 arg0) {
     BattleCharData* temp_a1 = &g_battleChars.chars[arg0];
     
-    if (temp_a1->displayStatus & CTRL_FLAG_10) {
+    if (temp_a1->persistentStatus & STATUS_SILENCE) {
         func_800A1760(1, temp_a1);
     }
         

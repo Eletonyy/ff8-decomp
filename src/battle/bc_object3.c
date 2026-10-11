@@ -1,4 +1,5 @@
 #include "common.h"
+#include "ability.h"
 #include "gamestate.h"
 #include "battle.h"
 #include "kernel.h"
@@ -39,12 +40,12 @@ void func_800A1940(s32 arg0) {
     func_800A589C(arg0);
 
     D_800ED148.entities[arg0].curAtb = 0;
-    g_battleChars.chars[arg0].unk184 = D_800ED148.entities[arg0].curAtb;
+    g_battleChars.chars[arg0].currentAtb = D_800ED148.entities[arg0].curAtb;
 }
 
 void func_800A19BC(s32 arg0, u16 arg1, s32 arg2) {
     if (arg2 < 0) {
-        if ((g_battleChars.chars[arg0].currentHp == 0) || (arg1 & 0x35) || (arg2 & 0x14000)) {
+        if ((g_battleChars.chars[arg0].summoningCurrentHp == 0) || (arg1 & 0x35) || (arg2 & 0x14000)) {
             D_800ED148.entities[arg0].flags &= ~(1 << 31);
             D_800ED148.entities[arg0].controlFlags &= ~0x400;
             return;
@@ -139,25 +140,25 @@ void func_800A1CFC(s32 arg0) {
 
 
 void func_800A1D78(s32 unused, s32 unused2, s32 arg2, BattleCharData* arg3, s32 unused3) {
-    arg3->currentHp -= arg2;
+    arg3->summoningCurrentHp -= arg2;
     
-    if (arg3->currentHp <= 0) {
-        arg3->currentHp = 0;
+    if (arg3->summoningCurrentHp <= 0) {
+        arg3->summoningCurrentHp = 0;
     }
 }
 
 void func_800A1DA0(s32 unused, s32 arg1, s32 arg2, BattleCharData* arg3, s32 unused2) {
     if (arg1 & 1) {
-        arg3->unk172 += arg2;
-        if (arg3->unk172 > arg3->hpRegenCap) {
-            arg3->unk172 = arg3->hpRegenCap;
+        arg3->currentHp += arg2;
+        if (arg3->currentHp > arg3->maxHp) {
+            arg3->currentHp = arg3->maxHp;
         }
     } 
     
     else {
-        arg3->unk172 -= arg2;
-        if (arg3->unk172 <= 0) {
-            arg3->unk172 = 0;
+        arg3->currentHp -= arg2;
+        if (arg3->currentHp <= 0) {
+            arg3->currentHp = 0;
         }
     }
 }
@@ -175,10 +176,10 @@ void func_800A1E04(s32 arg0, s32 arg1, u16 arg2, s32 arg3, s32 unused) {
     }
     
     if (arg3 & 1) {
-        temp_s0->unk172 = 0;
+        temp_s0->currentHp = 0;
     }
     
-    func_800A240C(arg0, temp_s0->unk172, &D_800ED148.entities[arg0].status);
+    func_800A240C(arg0, temp_s0->currentHp, &D_800ED148.entities[arg0].status);
 }
 
 void func_800A1EC8(s32 arg0, s32 arg1, s32 arg2, u16 arg3, s32 arg4, s32 arg5) {
@@ -238,7 +239,7 @@ s32 func_800A20AC(s32 arg0) {
     
     mask = 1;
     for (i = 0; i < 8; i++) {
-        if (temp_a0->displayStatus & mask) {
+        if (temp_a0->persistentStatus & mask) {
             result += g_kernel.misc.status1LimitEffects[i];
         }
         
@@ -247,7 +248,7 @@ s32 func_800A20AC(s32 arg0) {
     
     mask = 1;
     for (i = 0; i < 24; i++) {
-        if (temp_a0->unk188 & mask) {
+        if (temp_a0->battleStatus & mask) {
             result += g_kernel.misc.status2LimitEffects[i];
         }
 
@@ -271,7 +272,7 @@ s32 func_800A2150(void) {
     s32 val;
     
     for (i = val = 0; i < 3; i++) {
-        if ((D_800ED148.entities[i].controlFlags & 1) && (g_battleChars.chars[i].displayStatus & 1)) {
+        if ((D_800ED148.entities[i].controlFlags & 1) && (g_battleChars.chars[i].persistentStatus & STATUS_KO)) {
             val++;
         }
     }
@@ -297,9 +298,9 @@ s32 func_800A21B0(s32 arg0) {
     temp_s2 = g_kernel.characters[D_800ED148.entities[arg0].comFileId].crisisLevelHpMultiplier;
 
     if (!(g_battleConfig.unk8 & 0x20)) {
-        if (!(temp_s3->unk188 & 0x200)) {      
+        if (!(temp_s3->battleStatus & BATTLE_STATUS_CURSE)) {      
             temp_a0 = ((((func_800A20AC(arg0) * 10) + 1600) + (func_800A2150() * 200)) - 
-                       ((temp_s3->unk172 * 10 * temp_s2) / temp_s3->hpRegenCap)) / 
+                       ((temp_s3->currentHp * 10 * temp_s2) / temp_s3->maxHp)) / 
                       (func_8009B15C() + 160) - 4;
             if (temp_a0 > 0) {
                 if (temp_a0 > 4) {
@@ -337,26 +338,26 @@ void func_800A2360(s32 arg0) {
     D_800ED148.entities[arg0].crisisLevel = temp_v0;
     
     if (temp_v0 != 0) {
-        g_battleChars.chars[arg0].cmdSlots[0].flags |= BTL_CMD_LIMIT_READY;
+        g_battleChars.chars[arg0].abilityCommands[0].flags |= BTL_CMD_LIMIT_READY;
     }
     
     else {
-        g_battleChars.chars[arg0].cmdSlots[0].flags &= ~BTL_CMD_LIMIT_READY;
+        g_battleChars.chars[arg0].abilityCommands[0].flags &= ~BTL_CMD_LIMIT_READY;
     }
 }
 
 void func_800A240C(s32 arg0, s32 arg1, u16* status) {
     u16 temp_a3;
 
-    temp_a3 = *status & ~0x300;
-    *status &= ~0x300;
+    temp_a3 = *status & ~(STATUS_HP_LOW | STATUS_HP_CRITICAL);
+    *status &= ~(STATUS_HP_LOW | STATUS_HP_CRITICAL);
     
     if (arg1 != 0) {
         if (arg1 < (D_800ED148.entities[arg0].maxHp >> 1)) {
-            *status = temp_a3 | 0x200;
+            *status = temp_a3 | STATUS_HP_LOW;
             
             if (arg1 < (D_800ED148.entities[arg0].maxHp >> 2)) {
-                *status = temp_a3 | 0x300;
+                *status = temp_a3 | STATUS_HP_LOW | STATUS_HP_CRITICAL;
             }
         }
     }
@@ -454,7 +455,7 @@ void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u
     }
 
     var_s1 = D_800ED148.entities[arg0].currentHp;
-    if ((arg0 < 3) && (D_800ED148.entities[arg0].hpDisplay != 0) && (D_800ED148.entities[arg0].flags & 0x80000000) && !(*arg3 & 1) && (g_battleChars.chars[arg0].unk14 != 0) && !(*arg2 & 1)) {
+    if ((arg0 < 3) && (D_800ED148.entities[arg0].hpDisplay != 0) && (D_800ED148.entities[arg0].flags & 0x80000000) && !(*arg3 & 1) && (g_battleChars.chars[arg0].summoningTimeLeft != 0) && !(*arg2 & 1)) {
         var_a0 = D_800ED148.entities[arg0].hpDisplay - arg1;
         if (var_a0 < 0) {
             var_a0 = 0;
@@ -462,7 +463,7 @@ void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u
         
         D_800ED148.entities[arg0].hpDisplay = var_a0;
         if (var_a0 == 0) {
-            g_gameState.gfs[g_battleChars.chars[arg0].unk1D - 64].kos++;
+            g_gameState.gfs[g_battleChars.chars[arg0].summoningGfId - 64].kos++;
         }
         
         func_800A2480(arg0, D_800ED148.entities[arg0].currentHp, &D_800ED148.entities[arg0].status);
@@ -478,7 +479,7 @@ void func_800A2724(s32 arg0, s32 arg1, u8* arg2, u8* arg3, s32 arg4, s8* arg5, u
         }
         
         else {
-            if ((arg4 >= 3) && (arg1 != 0) && (g_battleChars.chars[arg0].statusFlags & 8)) {
+            if ((arg4 >= 3) && (arg1 != 0) && (g_battleChars.chars[arg0].characterAbilities & CHAR_ABILITY_RETURN_DAMAGE)) {
                 D_800ED148.entities[arg0].unkCC += arg1;
             }
             
@@ -670,7 +671,7 @@ s32 func_800A2EF8(s32 arg0, s32 arg1) {
     }
 
     for (i = 0; i < 32; i++) {
-        if (g_battleChars.chars[arg0].magicSlots[i].id == arg1) {
+        if (g_battleChars.chars[arg0].magicArgs[i].id == arg1) {
             return 1;
         }
     }
@@ -1384,10 +1385,10 @@ static void func_800A4350(s32 arg0, s32 arg1) {
     s32 i;
 
     var_v1 = &g_battleChars.chars[arg0];
-    if (var_v1->currentHp == 0) {
+    if (var_v1->summoningCurrentHp == 0) {
         for(i = 0; i < 16; i++){
-            if (var_v1->gfSlots[i].id == arg1) {
-                var_v1->gfSlots[i].flags |= BTL_CMD_ARG_UNAVAILABLE;
+            if (var_v1->gfArgs[i].id == arg1) {
+                var_v1->gfArgs[i].flags |= BTL_CMD_ARG_UNAVAILABLE;
                 return;
             }
         }
@@ -1414,9 +1415,9 @@ void func_800A43C0(s32 arg0) {
 }
 
 void func_800A4434(u32 arg0, s32 unused, TaskEntry* arg2, BattleCharData* arg3) {
-    func_800A4350(arg0, g_battleChars.chars[arg0].unk1D);
+    func_800A4350(arg0, g_battleChars.chars[arg0].summoningGfId);
     D_800ED148.entities[arg0].flags &= ~(1 << 31);
-    arg3->unk1C &= 0xFE;
+    arg3->summoningCountDownInProgress &= 0xFE;
     D_800ED148.entities[arg0].controlFlags &= ~CTRL_FLAG_400;
     recalcAllGfStats();
     arg2->done = 1;
@@ -1428,14 +1429,14 @@ void func_800A44FC(s32 arg0) {
 
     temp_s0 = &D_800ED148.taskData[arg0];
     temp_s1 = &g_battleChars.chars[temp_s0->unkC];
-    g_gameState.gfs[temp_s1->unk1D - 64].hp = temp_s1->currentHp;
+    g_gameState.gfs[temp_s1->summoningGfId - 64].hp = temp_s1->summoningCurrentHp;
 
-    if ((D_800ED148.entities[temp_s0->unkC].controlFlags & 0x400)) {
+    if ((D_800ED148.entities[temp_s0->unkC].controlFlags & CTRL_FLAG_400)) {
         return;
     }
     
     if (D_800ED148.entities[temp_s0->unkC].flags & 0x80000000) {
-        if (temp_s1->unk14 != 0) {
+        if (temp_s1->summoningTimeLeft != 0) {
             return;
         }
         
@@ -1446,7 +1447,7 @@ void func_800A44FC(s32 arg0) {
         func_800A43C0(temp_s0->unkC);
     }
     
-    func_800A4434(temp_s0->unkC, temp_s1->unk1D, temp_s0, temp_s1);
+    func_800A4434(temp_s0->unkC, temp_s1->summoningGfId, temp_s0, temp_s1);
 }
 
 void func_800A4618(s16 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
@@ -1461,16 +1462,16 @@ void func_800A4618(s16 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
     temp_v0->unkD = arg2;
     temp_v0->unkE = arg3;
     temp_v0->unkA = arg4;
-    temp_s0->unk1D = arg3;
-    temp_s0->unk16 = arg0 * 4;
-    temp_s0->unk14 = arg0 * 4;
+    temp_s0->summoningGfId = arg3;
+    temp_s0->summoningTime = arg0 * 4;
+    temp_s0->summoningTimeLeft = arg0 * 4;
     
     temp_v0_2 = g_gameState.gfs[arg3 - 64].hp;
-    temp_s0->currentHp = temp_v0_2;
+    temp_s0->summoningCurrentHp = temp_v0_2;
     D_800ED148.entities[arg1].hpDisplay = temp_v0_2;
-    temp_s0->unk1A = g_battleChars.levelEntries[arg3 - 64].maxHp; 
+    temp_s0->summoningMaxHp = g_battleChars.levelEntries[arg3 - 64].maxHp; 
     D_800ED148.entities[arg1].flags |= 0x80000000;
-    temp_s0->unk1C |= 1;
+    temp_s0->summoningCountDownInProgress |= 1;
 }
 
 /**
@@ -1535,7 +1536,7 @@ s32 func_800A4844(s32 arg0) {
 
 s32 func_800A4898(s32 arg0) {
     if (D_800ED148.entities[arg0].comFileId != 255) {
-        if ((g_battleChars.chars[arg0].statusFlags & 0x10) && (func_800A4844(arg0) != 0)) {
+        if ((g_battleChars.chars[arg0].characterAbilities & CHAR_ABILITY_COVER) && (func_800A4844(arg0) != 0)) {
             return arg0;
         }
 
@@ -1974,10 +1975,10 @@ void func_800A53C4(void) {
     
     for (i = 0; i < 3; i++) {
         character = &g_battleChars.chars[i];
-        if (!(D_800ED148.entities[i].controlFlags & 0x400)) {
-            var_v1 = character->unk14;
+        if (!(D_800ED148.entities[i].controlFlags & CTRL_FLAG_400)) {
+            var_v1 = character->summoningTimeLeft;
             if (var_v1 != 0) {
-                if (character->unk188 & 2) {
+                if (character->battleStatus & BATTLE_STATUS_HASTE) {
                     var_a0 = 3;
                 } 
                 
@@ -1985,7 +1986,7 @@ void func_800A53C4(void) {
                     var_a0 = 2;
                 }
                 
-                if (character->unk188 & 4) {
+                if (character->battleStatus & BATTLE_STATUS_SLOW) {
                     var_a0 = 1;
                 }
                 
@@ -1994,7 +1995,7 @@ void func_800A53C4(void) {
                     var_v1 = 0;
                 }
                 
-                character->unk14 = var_v1;
+                character->summoningTimeLeft = var_v1;
             }
         }
     }
@@ -2123,8 +2124,8 @@ void func_800A5778(s32 arg0) {
     temp_v1 = &g_battleChars.chars[arg0];
     
     if (arg0 < 3) {
-        temp_v1->unk184 = temp_a1->curAtb;
-        temp_v1->unk180 = temp_a1->maxAtb;
+        temp_v1->currentAtb = temp_a1->curAtb;
+        temp_v1->maxAtb = temp_a1->maxAtb;
     }
 }
 
@@ -2232,7 +2233,7 @@ void func_800A5AF4(u32 arg0) {
     func_8009B134(0x6E, 0xF0, 0)->unk0 = arg0;
     func_8009B088(arg0, 1, 0x13, 0);
     func_8009B088(arg0, 1, 0x17, 0);
-    g_battleChars.chars[arg0].unk188 = D_800ED148.entities[arg0].flags & 0x030E7FFF;
+    g_battleChars.chars[arg0].battleStatus = D_800ED148.entities[arg0].flags & 0x030E7FFF;
 }
 
 void func_800A5BC4(void) {

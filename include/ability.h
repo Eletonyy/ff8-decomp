@@ -168,6 +168,30 @@ enum AbilityId {
 #define ABILITY_TYPE_GF        4  /**< IDs 83–91: GF enhancement abilities. */
 #define ABILITY_TYPE_MENU      5  /**< IDs 92–120: refinement/shop abilities. */
 
+// Bits of BattleCharData.characterAbilities, one per equipped character ability
+enum CharacterAbilityFlag {
+    CHAR_ABILITY_MUG = 0x01,
+    CHAR_ABILITY_MED_DATA = 0x02,
+    CHAR_ABILITY_COUNTER = 0x04,
+    CHAR_ABILITY_RETURN_DAMAGE = 0x08,
+    CHAR_ABILITY_COVER = 0x10,
+    CHAR_ABILITY_EXPENDX2_1 = 0x20,
+    CHAR_ABILITY_EXPENDX3_1 = 0x40,
+    CHAR_ABILITY_HP_BONUS = 0x80,
+    CHAR_ABILITY_STR_BONUS = 0x100,
+    CHAR_ABILITY_VIT_BONUS = 0x200,
+    CHAR_ABILITY_MAG_BONUS = 0x400,
+    CHAR_ABILITY_SPR_BONUS = 0x800,
+    CHAR_ABILITY_AUTO_REFLECT = 0x1000,
+    CHAR_ABILITY_AUTO_SHELL = 0x2000,
+    CHAR_ABILITY_AUTO_PROTECT = 0x4000,
+    CHAR_ABILITY_AUTO_HASTE = 0x8000,
+    CHAR_ABILITY_INITIATIVE = 0x10000,
+    CHAR_ABILITY_MOVE_HP_UP = 0x20000,
+    CHAR_ABILITY_AUTO_POTION = 0x40000,
+    CHAR_ABILITY_RIBBON = 0x80000
+};
+
 /** @brief Give @p amount AP to GF @p gfIdx's learning ability; returns it once its AP is full, else 0. */
 s32 AddAbilityExp(s32 gfIdx, s32 amount);
 

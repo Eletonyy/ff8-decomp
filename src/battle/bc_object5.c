@@ -94,13 +94,13 @@ s32 func_800AA7B4(s32 unused, s32 arg1) {
     for (i = 0; i < 3; i++) {
         if ((D_800ED148.entities[i].controlFlags & 1) && !(D_800ED148.entities[i].status & 1)) {
             if (arg1 == 202) {
-                if (!(D_800ED148.entities[i].controlFlags & 0x100)) {
+                if (!(D_800ED148.entities[i].controlFlags & CTRL_FEMALE)) {
                     return i;
                 }
             }
                 
             else {
-                if ((D_800ED148.entities[i].controlFlags & 0x100)) {
+                if ((D_800ED148.entities[i].controlFlags & CTRL_FEMALE)) {
                      return i;
                 }
             }

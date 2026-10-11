@@ -187,7 +187,7 @@ void func_800BD5E0(void) {
  * Identical body to @c func_800C492C in we_object13. Iterates the 3
  * party slots. For each occupied slot with its field-status bit 0 set,
  * increments the character's @c currentHp by 1 as long as it stays
- * below the slot's @c hpRegenCap. Paired with @c func_800BD5E0 which
+ * below the slot's @c maxHp. Paired with @c func_800BD5E0 which
  * does the same for GF HP.
  */
 void func_800BD64C(void) {
@@ -200,7 +200,7 @@ void func_800BD64C(void) {
                 u16 hp = g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp;
                 if (hp != 0) {
                     if ((s32)g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp <
-                        (s32)g_battleChars.chars[i].hpRegenCap) {
+                        (s32)g_battleChars.chars[i].maxHp) {
                         g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp =
                             g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].currentHp + 1;
                     }

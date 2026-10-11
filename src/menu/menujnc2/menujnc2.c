@@ -3115,8 +3115,8 @@ dispatch:
  * @return Composed ability flags word.
  */
 s32 encodeBattleAbilityFlags(BattleCharData *charData) {
-    s32 result = charData->abilityValue & 0x7F;
-    s32 flags = charData->abilityFlags;
+    s32 result = charData->atkPersistentStatus & 0x7F;
+    s32 flags = charData->atkBattleStatus;
 
     if (flags & BTL_ABL_HIT_J)      result |= JNC_AVAIL_HIT;
     if (flags & BTL_ABL_LCK_J)      result |= JNC_AVAIL_LCK;

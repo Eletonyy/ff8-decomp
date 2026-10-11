@@ -90,8 +90,9 @@ typedef enum {
     CTRL_FLAG_30    = 0x30,
     CTRL_FLAG_40    = 0x40,
     CTRL_FLAG_80    = 0x80,
-    CTRL_FLAG_100   = 0x100,
-    CTRL_FLAG_400   = 0x400
+    CTRL_FEMALE     = 0x100,
+    CTRL_FLAG_400   = 0x400,
+    CTRL_MELEE_WEAPON = 0x1000
 } ControlFlags;
 
 typedef struct {
@@ -181,7 +182,7 @@ typedef struct {
     /* 0x7C */ ControlFlags volatile controlFlags;
     /* 0x80 */ u16 status;
     /* 0x82 */ u16 statusBackup;
-    /* 0x84 */ s16 hpDisplay;     /* 0x84: HP value mirrored from BattleCharData.currentHp. */
+    /* 0x84 */ s16 hpDisplay;     /* 0x84: HP value mirrored from BattleCharData.summoningCurrentHp. */
     /* 0x86 */ u16 hitStatus1;
     /* 0x88 */ u8 unk88;
     /* 0x89 */ u8 unk89;
@@ -493,7 +494,7 @@ typedef struct {
     u8 freeSpace[4];
 } BattleOtBuf;
 
-// An entry in a party member's battle magic, GF or limit break list
+// Arguments passed to a BattleCommand. E.g. a specific magic to the Magic command
 typedef struct {
     /** 0x0 */ u8 id; // A magic ID, a GF's battle ID, or a limit break entry such as a Blue Magic
     /** 0x1 */ s8 count; // The spell's stock or the ammo Irvine holds; 1 for anything else
@@ -533,32 +534,32 @@ enum BattleCommandFlag {
 typedef struct {
     /* 0x000 */ BattleCommand drawChoices[2]; // stock/cast
     /* 0x008 */ BattleCommand multicastChoices[3]; // single/double/triple
-    /* 0x014 */ u16 unk14;
-    /* 0x016 */ u16 unk16;
-    /* 0x018 */ s16 currentHp;          /**< Current HP in battle. */
-    /* 0x01A */ u16 unk1A;
-    /* 0x01C */ u8 unk1C;
-    /* 0x01D */ u8 unk1D;
-    /* 0x01E */ BattleCommand cmdSlots[4]; // Attack/Mug + whatever abilities the character has equipped
-    /* 0x02E */ BattleCommand limitCmdSlot; /**< The limit break command, beside the four in cmdSlots. */
-    /* 0x032 */ BattleCommandArgument limitSlots[16]; /**< What the limit break lists, e.g. Quistis' Blue Magic or Irvine's ammo. */
-    /* 0x082 */ BattleCommandArgument magicSlots[32];
-    /* 0x122 */ BattleCommandArgument gfSlots[16]; /**< The junctioned GFs. */
-    /* 0x172 */ s16 unk172;          /**< Mirrored HP cap (set with hpRegenCap when battle HP is reduced). */
-    /* 0x174 */ s16 hpRegenCap; // The cap for when Move-HP is "equipped"
-    /* 0x176 */ u8 pad176[0x178 - 0x176];
-    /* 0x178 */ u32 exp; /**< Total EXP. */
-    /* 0x17C */ s32 xpToNext;          /**< XP needed to reach next level. */
-    /* 0x180 */ u32 unk180;
-    /* 0x184 */ u32 unk184;
-    /* 0x188 */ u32 unk188;          /**< Status/ability mask checked for bit 0x60000. */
-    /* 0x18C */ s32 abilityFlags;
-    /* 0x190 */ s32 statusFlags;
+    /* 0x014 */ u16 summoningTimeLeft;
+    /* 0x016 */ u16 summoningTime;
+    /* 0x018 */ s16 summoningCurrentHp;
+    /* 0x01A */ u16 summoningMaxHp;
+    /* 0x01C */ u8 summoningCountDownInProgress;
+    /* 0x01D */ u8 summoningGfId;
+    /* 0x01E */ BattleCommand abilityCommands[4]; // Attack/Mug + whatever abilities the character has equipped
+    /* 0x02E */ BattleCommand limitBreakCommand;
+    /* 0x032 */ BattleCommandArgument limitBreakArgs[16]; // e.g. irvines ammo type
+    /* 0x082 */ BattleCommandArgument magicArgs[32];
+    /* 0x122 */ BattleCommandArgument gfArgs[16]; 
+    /* 0x172 */ s16 currentHp;
+    /* 0x174 */ s16 maxHp;
+    /* 0x176 */ s16 pad176; // alignment pad, this can be removed.
+    /* 0x178 */ u32 currentExp;
+    /* 0x17C */ s32 expToNextLevel;
+    /* 0x180 */ u32 maxAtb;
+    /* 0x184 */ u32 currentAtb;
+    /* 0x188 */ u32 battleStatus; // battle statuses currently inflicted on the character, see @c BattleStatusFlag
+    /* 0x18C */ s32 atkBattleStatus; // battle statuses the character has a % chance of inflicting on attack, see @c BattleStatusFlag
+    /* 0x190 */ s32 characterAbilities; // equipped character abilities, see @c CharacterAbilityFlag
     /* 0x194 */ u16 elemResistances[8];/**< Element resistance values (8 × s16). */
     /* 0x1A4 */ u8 statusResistances[13];/**< Status resistance values (13 × u8). */
     /* 0x1B1 */ u8 pad1B1;
-    /* 0x1B2 */ u16 displayStatus;       /**< Mirror of BattleEntity.status; bit-flag display state. */
-    /* 0x1B4 */ u16 abilityValue;
+    /* 0x1B2 */ u16 persistentStatus; // persistent statuses currently inflicted on the character, see @c PersistentStatusFlag
+    /* 0x1B4 */ u16 atkPersistentStatus; // persistent statuses the character has a % chance of inflicting on attack, see @c PersistentStatusFlag
     /* 0x1B6 */ u16 atkStatusHit;      /**< Attack status hit chance. */
     /* 0x1B8 */ u8 level;              /**< Battle level (from findCharXpLevel). */
     /* 0x1B9 */ u8 unk1B9;
@@ -570,40 +571,6 @@ typedef struct {
     /* 0x1C6 */ u8 fieldStatusByte;    /**< Status byte checked by field script (bit 1 = greyed out). */
     /* 0x1C7 */ u8 statCoefs[9];       /**< Stat coefficient table (HP, str, vit, mag, spr, spd, ?, eva, hit). */
 } BattleCharData;    /* 0x1D0: 464 bytes */
-
-// Bits of BattleCharData.statusFlags, one per equipped character ability
-#define CHAR_ABILITY_MUG 0x01
-#define CHAR_ABILITY_MED_DATA 0x02
-#define CHAR_ABILITY_COUNTER 0x04
-#define CHAR_ABILITY_RETURN_DAMAGE 0x08
-#define CHAR_ABILITY_COVER 0x10
-#define CHAR_ABILITY_EXPENDX2_1 0x20
-#define CHAR_ABILITY_EXPENDX3_1 0x40
-#define CHAR_ABILITY_HP_BONUS 0x80
-#define CHAR_ABILITY_STR_BONUS 0x100
-#define CHAR_ABILITY_VIT_BONUS 0x200
-#define CHAR_ABILITY_MAG_BONUS 0x400
-#define CHAR_ABILITY_SPR_BONUS 0x800
-#define CHAR_ABILITY_AUTO_REFLECT 0x1000
-#define CHAR_ABILITY_AUTO_SHELL 0x2000
-#define CHAR_ABILITY_AUTO_PROTECT 0x4000
-#define CHAR_ABILITY_AUTO_HASTE 0x8000
-#define CHAR_ABILITY_INITIATIVE 0x10000
-#define CHAR_ABILITY_MOVE_HP_UP 0x20000
-#define CHAR_ABILITY_AUTO_POTION 0x40000
-#define CHAR_ABILITY_RIBBON 0x80000
-
-// Bits of BattleCharData.unk188, the character's battle-only statuses
-#define BATTLE_STATUS_SLEEP 0x01
-#define BATTLE_STATUS_HASTE 0x02
-#define BATTLE_STATUS_SLOW 0x04
-#define BATTLE_STATUS_STOP 0x08
-#define BATTLE_STATUS_PROTECT 0x20
-#define BATTLE_STATUS_SHELL 0x40
-#define BATTLE_STATUS_REFLECT 0x80
-#define BATTLE_STATUS_CURSE 0x200
-#define BATTLE_STATUS_DOUBLE 0x20000
-#define BATTLE_STATUS_TRIPLE 0x40000
 
 // Bits of BattleCharData.fieldStatusByte
 #define FIELD_STATUS_MOVE_HP_UP 0x01
