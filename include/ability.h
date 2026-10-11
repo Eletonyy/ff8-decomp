@@ -3,29 +3,6 @@
 
 #include "common.h"
 
-/**
- * @file ability.h
- * @brief GF ability IDs and types.
- *
- * All GF-learnable abilities share a single ID space (0–120).
- * The ID determines what type of ability it is:
- *   - Junction (1–19): stat junction slots
- *   - Command (20–38): battle menu commands
- *   - Character (39–77): passive character abilities
- *   - Party (78–82): passive party-wide abilities
- *   - GF (83–91): GF enhancement abilities
- *   - Menu (92–120): refinement and shop abilities
- *
- * These IDs are stored in:
- *   - CharacterData.commands[3]: equipped command abilities
- *   - CharacterData.abilities[4]: equipped character/party abilities
- *   - GfSaveData.learning: currently learning ability
- *   - GfSaveData.completeAbilities[]: learned ability bitfield
- *
- * Ability names verified against the Hyne save editor (src/Data.cpp):
- *   https://github.com/myst6re/hyne
- */
-
 /** @brief GF ability IDs (shared across all ability types). */
 enum AbilityId {
     ABILITY_NONE           = 0,
@@ -168,7 +145,6 @@ enum AbilityId {
 #define ABILITY_TYPE_GF        4  /**< IDs 83–91: GF enhancement abilities. */
 #define ABILITY_TYPE_MENU      5  /**< IDs 92–120: refinement/shop abilities. */
 
-// Bits of BattleCharData.characterAbilities, one per equipped character ability
 enum CharacterAbilityFlag {
     CHAR_ABILITY_MUG = 0x01,
     CHAR_ABILITY_MED_DATA = 0x02,
