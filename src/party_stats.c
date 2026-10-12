@@ -196,8 +196,7 @@ void func_80022E08(s32 charIdx, s32 slot) {
     bc->expToNextLevel = getXpToNextLevel(cd->experience, charIdx);
     bc->currentLevel = findCharXpLevel(cd->experience, charIdx);
     bc->modelVariant = cd->modelVariant;
-    // The original passes no fallback, so func_80021B58 reads whatever is left in a1
-    bc->weaponId = ((s32 (*)())func_80021B58)(charIdx);
+    bc->weaponId = func_80021B58(charIdx);
     bc->persistentStatus = cd->statusFlags;
     bc->battleStatus = 0;
     bc->characterAbilities = getCharAbilityFlags(charIdx);
@@ -317,8 +316,7 @@ void func_800231E0(s32 charIdx, s32 battleSlot) {
     bc->stats[BATTLE_STAT_SPR] = clampToByte(bc->statMultipliers[JUNCTION_SPR] * func_80021C10(bc->currentLevel, charIdx, JUNCTION_SPR) / 100);
     bc->stats[BATTLE_STAT_SPD] = clampToByte(bc->statMultipliers[JUNCTION_SPD] * func_80021C10(bc->currentLevel, charIdx, JUNCTION_SPD) / 100);
     bc->stats[BATTLE_STAT_LCK] = clampToByte(bc->statMultipliers[JUNCTION_LCK] * func_80021C10(bc->currentLevel, charIdx, JUNCTION_LCK) / 100);
-    // The original passes calcHitStat one argument, so the call can't go through its prototype
-    bc->stats[BATTLE_STAT_HIT] = clampToByte(bc->statMultipliers[JUNCTION_HIT] * ((s32 (*)())calcHitStat)(charIdx) / 100);
+    bc->stats[BATTLE_STAT_HIT] = clampToByte(bc->statMultipliers[JUNCTION_HIT] * calcHitStat(charIdx) / 100);
     bc->stats[BATTLE_STAT_EVA] = clampToByte(bc->statMultipliers[JUNCTION_EVA] * calcEvaStat(charIdx, bc->stats[BATTLE_STAT_SPD]) / 100);
 
     bc->atkElements = getAtkElements(charIdx);

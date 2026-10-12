@@ -244,18 +244,16 @@ s32 calcHpFromLevel(s32 level, s32 charIdx) {
 /**
  * @brief Resolve GF index for a character (used by calcHitStat).
  * @param charIdx Character slot index (stride 152 in g_gameState).
- * @param fallback Fallback value returned when characterId is not 8, 9, or 10 in locked mode.
  * @return GF index from PartyData if party is locked and characterId is 8/9/10,
- *         weaponId if party is unlocked, or fallback otherwise.
+ *         weaponId if party is unlocked; otherwise val is left uninitialized.
  * @note When @ref PARTY_LOCK_LOCKED is set, maps characterId 8->gfIndex0, 9->gfIndex1, 10->gfIndex2.
  *       When party is unlocked, returns the character's weaponId.
  */
-s32 func_80021B58(s32 charIdx, s32 fallback) {
+s32 func_80021B58(s32 charIdx) {
     s32 val;
     s32 charId;
     if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
         charId = g_gameState.chars[charIdx].characterId;
-        val = fallback;
         switch (charId) {
             case 8:
                 val = g_gameState.mainData.party.gfIndex0;
@@ -288,7 +286,7 @@ s32 func_80021C10(s32 level, s32 charIdx, s32 kind) {
         magicId = g_gameState.chars[charIdx].junctions[JUNCTION_STR];
         bonus = g_gameState.chars[charIdx].str;
         jValue = g_kernel.magic[magicId].statJunction[JUNCTION_STR];
-        weaponStr = g_kernel.weapons[((s32 (*)())func_80021B58)(charIdx)].strBonus;
+        weaponStr = g_kernel.weapons[func_80021B58(charIdx)].strBonus;
         break;
     case JUNCTION_VIT:
         curve = g_kernel.characters[charId].vitCurve;
@@ -331,15 +329,14 @@ s32 func_80021C10(s32 level, s32 charIdx, s32 kind) {
 /**
  * @brief Compute a derived stat (likely magic power) for a character, clamped to 0-255.
  * @param a0 Character slot index (stride 152 in g_gameState).
- * @param a1 Modifier or stat type passed to func_80021B58.
  * @return Clamped u8 result combining a base value, a junction bonus, and a level-based lookup.
  * @note Reads GF/junction index from offset 0x4F3, looks up base value from g_kernel (stride 60),
  *       then adds a bonus from multiplyDiv100 scaled by junction quantity.
  */
-s32 calcHitStat(s32 charIdx, s32 a1) {
+s32 calcHitStat(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_HIT];
     u8 val = g_kernel.magic[idx].statJunction[JUNCTION_HIT];
-    s32 result1 = func_80021B58(charIdx, a1);
+    s32 result1 = func_80021B58(charIdx);
     return clampToByte(g_kernel.weapons[result1].hitRate + multiplyDiv100(val, getMagicQuantity(charIdx, idx)));
 }
 
