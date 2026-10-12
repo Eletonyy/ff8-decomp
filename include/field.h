@@ -2,7 +2,7 @@
 #define FIELD_H
 
 #include "common.h"
-#include "snd_cd.h"
+#include "lzs.h"
 #include "psxsdk/libgpu.h"
 
 /*

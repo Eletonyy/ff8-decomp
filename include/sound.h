@@ -202,39 +202,11 @@ typedef struct {
 } SndVoiceParam; /* 0x1C = 28 bytes */
 
 /**
- * @brief Sound voice/command structure used by CD sound functions.
+ * @brief Sound command parameter block.
  */
 typedef struct {
-    /* 0x00 */ u8 pad00[0x0C];
-    /* 0x0C */ s32 playCount;          /**< Play/repeat count. */
-    /* 0x10 */ u8 pad10[0x10];
-    /* 0x20 */ s32 dataAddr;
-    /* 0x24 */ u8 cmdData[4];        /**< Inline command data buffer. */
-    /* 0x28 */ s32 voiceDataPtr;
-    /* 0x2C */ s32 cmdDataPtr;
-    /* 0x30 */ u8 pad30[4];
-    /* 0x34 */ u8 paramByte;
-    /* 0x35 */ u8 pad35;
-    /* 0x36 */ u8 cmdSize;
-    /* 0x37 */ u8 cmdType;
-    /* 0x38 */ u8 cmdTypePrev;       /**< Archived (previous) command type. */
-    /* 0x39 */ u8 pad39[0x0D];
-    /* 0x46 */ u8 actionType;
-    /* 0x47 */ u8 actionParam;
-    /* 0x48 */ u8 actionMode;
-    /* 0x49 */ u8 pad49[8];
-    /* 0x51 */ u8 waveData;
-    /* 0x52 */ u8 pad52;
-    /* 0x53 */ u8 completionFlag;
-    /* 0x54 */ u8 pad54[9];
-    /* 0x5D */ u8 transferData;
-    /* 0x5E */ u8 pad5E[0x85];
-    /* 0xE3 */ u8 seqPartCount;
-    /* 0xE4 */ u8 program;
-    /* 0xE5 */ u8 padE5[4];
-    /* 0xE9 */ u8 seqEntryCount;
-    /* 0xEA */ u8 padEA[2];
-    /* 0xEC */ u16 seqDataSize;
+    /* 0x00 */ s32 params[3];
+    /* 0x0C */ s32 playCount;
 } SndVoice;
 
 /**

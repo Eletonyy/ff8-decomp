@@ -86,7 +86,7 @@ EXPAND_DIV_SRCS :=
 expand_div = $(if $(filter $(2),$(EXPAND_DIV_SRCS)),--expand-div,$(if $(filter effect_%,$(1)),$(if $(filter $(1),$(NO_EXPAND_DIV)),,--expand-div)))
 
 # Source files compiled with PsyQ 4.3 (default is PsyQ 4.1)
-PSYQ43_SRCS := src/snd_init.c src/snd_dma.c src/snd_voice.c src/snd_bank.c src/snd_param.c src/snd_note.c src/snd_track.c src/snd_cmd.c \
+PSYQ43_SRCS := src/snd_init.c src/snd_dma.c src/snd_voice.c src/snd_bank.c src/snd_param.c src/snd_note.c src/snd_track.c \
                src/world/we_object0.c \
                src/world/we_object1.c src/world/we_object2.c src/world/we_object3.c \
                src/world/we_object4.c src/world/we_object5.c src/world/we_object6.c \
@@ -95,7 +95,7 @@ PSYQ43_SRCS := src/snd_init.c src/snd_dma.c src/snd_voice.c src/snd_bank.c src/s
                src/field/fe_object1b.c src/field/fe_object2.c
 
 # Source files compiled without -G0 (default is -G0)
-NO_G0_SRCS := src/main.c src/snd_cmd.c
+NO_G0_SRCS := src/main.c
 
 # Source files compiled with -G4 (globals ≤4 bytes use assembler pseudo expansion)
 G4_SRCS := src/game.c

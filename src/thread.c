@@ -1,4 +1,5 @@
 #include "common.h"
+#include "psxsdk/libpad.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/kernel.h"
 #include "psxsdk/libapi.h"
@@ -111,7 +112,7 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_800270B0);
 /**
  * @brief Step a pad port's state machine.
  *
- * Queries the port's state via func_8003AC10 and stores it in
+ * Queries the port's state via PadGetState and stores it in
  * @c field1A, then dispatches on it:
  * - 1: flag the port active (field0A) and pending (field19).
  * - 2: same, but also clear vibrationMask.
@@ -129,7 +130,7 @@ INCLUDE_ASM("asm/nonmatchings/thread", func_800270B0);
 static void stepPadPort(s32 a0, PadPort *port, s32 a2) {
     s32 status;
     GetSr();
-    status = func_8003AC10(a2);
+    status = PadGetState(a2);
     port->field1A = status;
     switch (status) {
     case 1:
@@ -196,7 +197,7 @@ static void stepPadPort(s32 a0, PadPort *port, s32 a2) {
 s32 func_80027360(s32 a0) {
     s32 status;
     s32 ret;
-    status = func_8003AC10(a0);
+    status = PadGetState(a0);
     ret = 0;
     switch (status) {
     case 2:
@@ -241,7 +242,7 @@ static void stepPadPorts(s32 a0) {
  * @brief Step both pad ports until they settle.
  *
  * For each port: clears both motor levels, then repeatedly waits on
- * cdReadStatusWrapper and steps the port via stepPadPort until its state
+ * func_8003AB64 and steps the port via stepPadPort until its state
  * (field1A) is 0 or 2, or has read 6 twice.
  */
 void settlePadPorts(void) {
@@ -255,7 +256,7 @@ void settlePadPorts(void) {
     port->motor[0] = 0;
     port->motor[1] = 0;
     for (;;) {
-        while (cdReadStatusWrapper() == 0) {}
+        while (func_8003AB64() == 0) {}
         stepPadPort((s32)ports, port, 0);
         if (port->field1A == 0 || port->field1A == 2) {
             break;
@@ -272,7 +273,7 @@ void settlePadPorts(void) {
     port->motor[0] = 0;
     port->motor[1] = 0;
     for (;;) {
-        while (cdReadStatusWrapper() == 0) {}
+        while (func_8003AB64() == 0) {}
         stepPadPort((s32)ports, port, 0x10);
         if (port->field1A == 0 || port->field1A == 2) {
             break;

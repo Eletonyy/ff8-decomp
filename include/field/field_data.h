@@ -4,7 +4,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libgte.h"
-#include "snd_cd.h"
+#include "lzs.h"
 
 /** @brief @c FieldGateway::fieldId of an unused gateway slot. */
 #define FIELD_GATEWAY_UNUSED 0x7FFF

@@ -7,7 +7,7 @@
 #include "ui/seed_rank.h"
 #include "cdrom.h"
 #include "render.h"
-#include "snd_cd.h"
+#include "lzs.h"
 #include "snd_init.h"
 #include "psxsdk/libc.h"
 #include "psxsdk/libpress.h"
