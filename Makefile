@@ -222,7 +222,9 @@ setup:
 		exit 1; \
 	fi
 	$(EXTRACT) "$(ROM)"
-	$(MAKE) full
+	$(MAKE) split
+	$(MAKE) build
+	$(MAKE) build-assets
 	$(MAKE) expected
 	$(MAKE) verify
 	
