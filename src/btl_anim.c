@@ -262,13 +262,6 @@ void initPadInput(s32 idx) {
 }
 
 
-/**
- * @brief Initialize battle animation state and wait for completion.
- *
- * Sets g_animInitialized to 1, initializes both pad ports via resetPadInput,
- * triggers a fade via PadEnableCom(3), then polls func_80027360 up to 24
- * frames. Finishes with VSync(2).
- */
 void initAnimStateAndWait(void) {
     s32 i;
 
@@ -287,7 +280,6 @@ void initAnimStateAndWait(void) {
 }
 
 
-/** @brief Initializes g_animInitialized to 0, calls PadEnableCom(0), then loops twice calling resetPadInput(i, 0). */
 void resetAnimState(void) {
     s32 i;
     g_animInitialized = 0;
@@ -1793,7 +1785,6 @@ void shutdownCardSubsystem(void) {
 }
 
 
-/** @brief Calls settlePadPorts and func_8003ABA4 in sequence. */
 void initBattleSubsystems(void) {
     settlePadPorts();
     func_8003ABA4();
