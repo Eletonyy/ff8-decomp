@@ -349,7 +349,7 @@ OBJDIFF := tools/objdiff/objdiff
 # every binary from them. Run on a verified tree. objdiff.json is written to
 # point at them; `make report` writes it back to the built objects.
 expected:
-	$(PYTHON) tools/objdiff/build_expected.py --check
+	AS="$(AS)" LD="$(LD)" OBJCOPY="$(OBJCOPY)" $(PYTHON) tools/objdiff/build_expected.py --check
 	@$(PYTHON) tools/objdiff/objdiff_generate.py --expected
 
 objdiff-config:
