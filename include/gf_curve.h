@@ -15,6 +15,7 @@
 
 /** @brief Evaluate the shared quadratic stat curve. */
 s32 evalQuadraticCurve(s32 a0, s32 a1, s32 a2);
+void func_8002153C(s32 partySlot, s32 stat);
 
 /** @brief Evaluate an ability-growth curve for @p a1. */
 s32 evalAbilityCurve(s32 a0, s32 a1);
@@ -52,7 +53,7 @@ s32 getStatMultiplier(s32 charIdx, s32 a1);
 s32 calcHpFromLevel(s32 level, s32 charIdx);
 
 /** @brief Hit rate stat for character @p charIdx. */
-s32 calcHitStat(s32 charIdx, s32 a1);
+s32 calcHitStat(s32 charIdx);
 
 /** @brief Evade stat for character @p charIdx. */
 s32 calcEvaStat(s32 charIdx, s32 a1);
@@ -76,7 +77,7 @@ s32 calcAtkStatusHit(s32 charIdx);
 /** @brief Status resistance for the status selected by @p shiftBit. */
 s32 getStatusResistance(s32 charIdx, s32 shiftBit);
 
-s32 func_80021B58(s32 charIdx, s32 fallback);
+s32 func_80021B58(s32 charIdx);
 // Character charIdx's stat at the given level, where kind is the stat's JunctionType
 s32 func_80021C10(s32 level, s32 charIdx, s32 kind);
 s32 func_8002274C(s32 gfIdx, u16 delta);

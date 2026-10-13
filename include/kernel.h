@@ -180,21 +180,20 @@ typedef struct {
 
 /** @brief Character entry (36 bytes). */
 typedef struct {
-    u16 lookupParam;             /**< +0x00: Name text offset (getBattleCharName/getCharName). */
-    u8 crisisLevelHpMultiplier;  /**< +0x02 */
-    u8 gender;                   /**< +0x03: 0 = male, 1 = female. */
-    u8 limitBreakId;             /**< +0x04 */
-    u8 limitBreakParam;          /**< +0x05: Power of each Renzokuken hit before the finisher. */
-    u8 linearCoeff;              /**< +0x06: XP curve linear coefficient. */
-    u8 quadDivisor;              /**< +0x07: XP curve quadratic divisor. */
-    u8 constant;                 /**< +0x08: XP curve constant term. */
-    u8 pad09[3];                 /**< +0x09..+0x0B: Unknown. */
-    u8 field0C;                  /**< +0x0C: Unknown. */
-    u8 field0D;                  /**< +0x0D: Unknown. */
-    u8 subIdx;                   /**< +0x0E: calcHpFromLevel multiplier. */
-    u8 divisorField;             /**< +0x0F: calcHpFromLevel divisor. */
-    u8 addend;                   /**< +0x10: calcHpFromLevel addend. */
-    u8 pad11[0x13];              /**< +0x11..+0x23: Unknown. */
+    u16 nameOffset; // offset into the kernels character names text
+    u8 crisisLevelHpMultiplier;  // lower values allow limits at higher HP
+    u8 gender; // 0 = male, 1 = female
+    u8 limitBreakId; // battle command id for this characters limit break
+    u8 renzokukenHitPower; // seems to only be used by Squalls limit break. The higher this value the more damage each hit does
+    u8 expPerLevel; // these two fields are used to calculate the EXP/Level curve for the character,
+    u8 expGrowth; // formula is something like xpToLevel = expPerLevel·10·level + expGrowth·level² / 256
+    u8 hpCurve[4];
+    u8 strCurve[4];
+    u8 vitCurve[4];
+    u8 magCurve[4];
+    u8 sprCurve[4];
+    u8 spdCurve[4];
+    u8 lckCurve[4];
 } CharacterEntry; /* 36 bytes */
 
 /** @brief CharacterEntry.gender of a female character. */

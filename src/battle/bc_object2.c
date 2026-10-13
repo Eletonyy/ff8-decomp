@@ -2601,7 +2601,7 @@ void func_800A09D0(s32 arg0) {
             break;
 
         case 251:       
-            var_s3 = g_kernel.characters[g_gameState.chars[g_gameState.mainData.party.partyMembers[temp_s4]].characterId].limitBreakParam;
+            var_s3 = g_kernel.characters[g_gameState.chars[g_gameState.mainData.party.partyMembers[temp_s4]].characterId].renzokukenHitPower;
             goto wait_oh_god_make_it_stop;
 
         case 243:       
