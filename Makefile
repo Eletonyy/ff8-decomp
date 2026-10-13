@@ -9,6 +9,7 @@ AS         := mipsel-linux-gnu-as
 LD         := mipsel-linux-gnu-ld
 OBJCOPY    := mipsel-linux-gnu-objcopy
 MASPSX     := python3 tools/maspsx/maspsx.py
+EXTRACT    := python3 tools/extract.py
 
 ### Paths ###
 VENV       := .venv
@@ -21,9 +22,10 @@ SRC_DIR    := src
 MAIN       := SLUS_008.92
 SPLAT_CONF := config/ff8.yaml
 SPLAT_GEN  := build/splat
+ROM        := $(shell find rom -name "*.bin" -print -quit)
 # Path template for the generated splat configs; {name} is the binary's name.
 SPLAT_YAML_TMPL := $(SPLAT_GEN)/{name}.yaml
-BINARIES_MK := $(SPLAT_GEN)/binaries.mk
+BINARIES_MK     := $(SPLAT_GEN)/binaries.mk
 
 # Each binary's paths come from the binary map, so the Makefile and splat
 # always split and verify the same file. Make remakes this and restarts if
@@ -210,12 +212,22 @@ verify: $(BUILT_EXE) $(foreach ovl,$(OVERLAYS),build-$(ovl))
 	done < $(VERIFY_LIST); \
 	if [ "$$FAIL" = "1" ]; then exit 1; fi
 
-# First-time setup: create venv, install dependencies, run splat
+# First-time setup: create venv, install dependencies, runs full build
 setup:
 	python3 -m venv $(VENV)
+	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install -r requirements.txt
+	@if [ -z "$(ROM)" ] || [ ! -f "$(ROM)" ]; then \
+		echo "BIN file not found in rom/"; \
+		exit 1; \
+	fi
+	$(EXTRACT) "$(ROM)"
 	$(MAKE) split
-
+	$(MAKE) build
+	$(MAKE) build-assets
+	$(MAKE) expected
+	$(MAKE) verify
+	
 # Expand the compact binary map into full splat configs.
 splat-config:
 	$(PYTHON) tools/gen_splat_config.py $(SPLAT_CONF) --out '$(SPLAT_YAML_TMPL)' --make $(BINARIES_MK)
@@ -337,7 +349,7 @@ OBJDIFF := tools/objdiff/objdiff
 # every binary from them. Run on a verified tree. objdiff.json is written to
 # point at them; `make report` writes it back to the built objects.
 expected:
-	$(PYTHON) tools/objdiff/build_expected.py --check
+	AS="$(AS)" LD="$(LD)" OBJCOPY="$(OBJCOPY)" $(PYTHON) tools/objdiff/build_expected.py --check
 	@$(PYTHON) tools/objdiff/objdiff_generate.py --expected
 
 objdiff-config:

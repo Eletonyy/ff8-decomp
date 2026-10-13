@@ -31,16 +31,16 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-
+import os
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 SPLAT_GEN = ROOT / "build" / "splat"
 EXPECTED = ROOT / "expected"
 # The build's assembler flags, plus -W: splat's SDK stubs lack .end directives.
-AS = ["mipsel-linux-gnu-as", "-march=r3000", "-mabi=32", "-EL", "-no-pad-sections", "-O0", "-Iinclude", "-W"]
-OBJCOPY = "mipsel-linux-gnu-objcopy"
-LD = "mipsel-linux-gnu-ld"
+AS = [os.environ.get("AS", "mipsel-linux-gnu-as"), "-march=r3000", "-mabi=32", "-EL", "-no-pad-sections", "-O0", "-Iinclude", "-W"]
+OBJCOPY = os.environ.get("OBJCOPY", "mipsel-linux-gnu-objcopy")
+LD = os.environ.get("LD", "mipsel-linux-gnu-ld")
 DATA_SECTIONS = ("rodata", "data", "sdata", "bss", "sbss")
 
 ADDR_RE = re.compile(r"/\* [0-9A-Fa-f]+ ([0-9A-Fa-f]{8})(?: [0-9A-Fa-f]{8})? \*/")
