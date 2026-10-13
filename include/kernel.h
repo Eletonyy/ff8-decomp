@@ -180,13 +180,13 @@ typedef struct {
 
 /** @brief Character entry (36 bytes). */
 typedef struct {
-    u16 nameOffset;              /**< +0x00: Name text offset. */
-    u8 crisisLevelHpMultiplier;  /**< +0x02 */
-    u8 gender;                   /**< +0x03: 0 = male, 1 = female. */
-    u8 limitBreakId;             /**< +0x04 */
-    u8 limitBreakParam;          /**< +0x05: Power of each Renzokuken hit before the finisher. */
-    u8 linearCoeff;              /**< +0x06: XP curve linear coefficient. */
-    u8 quadCoeff;                /**< +0x07: XP curve quadratic coefficient. */
+    u16 nameOffset; // offset into the kernels character names text
+    u8 crisisLevelHpMultiplier;  // lower values allow limits at higher HP
+    u8 gender; // 0 = male, 1 = female
+    u8 limitBreakId; // battle command id for this characters limit break
+    u8 renzokukenHitPower; // seems to only be used by Squalls limit break. The higher this value the more damage each hit does
+    u8 expPerLevel; // these two fields are used to calculate the EXP/Level curve for the character,
+    u8 expGrowth; // formula is something like xpToLevel = expPerLevel·10·level + expGrowth·level² / 256
     u8 hpCurve[4];
     u8 strCurve[4];
     u8 vitCurve[4];

@@ -51,7 +51,7 @@ s32 evalQuadraticCurve(s32 a0, s32 a1, s32 a2) {
  * @brief Look up GF ability XP curve parameters and compute a value.
  * @param a0 GF index (stride 132 in g_kernel ability table).
  * @param a1 Level value passed through as first arg to evalQuadraticCurve.
- * @return Result of evalQuadraticCurve(a1, linearCoeff, quadDivisor).
+ * @return Result of evalQuadraticCurve(a1, xpParamB, xpParamC).
  */
 s32 evalAbilityCurve(s32 a0, s32 a1) {
     return evalQuadraticCurve(a1, g_kernel.junctionableGfs[a0].xpParamB, g_kernel.junctionableGfs[a0].xpParamC);
@@ -98,7 +98,7 @@ s32 evalStatCurve(s32 a0, s32 a1) {
  */
 s32 evalEntityXpCurve(s32 entityIdx, s32 a1) {
     u8 idx = g_battleChars.chars[entityIdx].characterId;
-    return evalQuadraticCurve(a1, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadCoeff);
+    return evalQuadraticCurve(a1, g_kernel.characters[idx].expPerLevel, g_kernel.characters[idx].expGrowth);
 }
 
 
@@ -112,7 +112,7 @@ s32 findCharXpLevel(s32 a0, s32 a1) {
     s32 i = 1;
     u8 idx = g_gameState.chars[a1].characterId;
     do {
-        if (a0 < evalQuadraticCurve(i, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadCoeff)) {
+        if (a0 < evalQuadraticCurve(i, g_kernel.characters[idx].expPerLevel, g_kernel.characters[idx].expGrowth)) {
             return i;
         }
         i++;
@@ -134,7 +134,7 @@ s32 getXpToNextLevel(s32 a0, s32 a1) {
     u8 idx = g_gameState.chars[a1].characterId;
     s32 curveVal;
     do {
-        curveVal = evalQuadraticCurve(i, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadCoeff);
+        curveVal = evalQuadraticCurve(i, g_kernel.characters[idx].expPerLevel, g_kernel.characters[idx].expGrowth);
         if (a0 < curveVal) {
             break;
         }
@@ -472,7 +472,7 @@ s32 func_8002257C(s32 partySlot, u16 exp) {
     level = findCharXpLevel(cd->experience, charIdx);
     if (level >= 100) {
         level = 100;
-        cd->experience = evalQuadraticCurve(99, g_kernel.characters[charIdx].linearCoeff, g_kernel.characters[charIdx].quadCoeff);
+        cd->experience = evalQuadraticCurve(99, g_kernel.characters[charIdx].expPerLevel, g_kernel.characters[charIdx].expGrowth);
         bc->currentExp = cd->experience;
     }
     if (oldLevel != 100) {
