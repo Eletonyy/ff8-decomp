@@ -684,7 +684,6 @@ binaries:
     - [0x23B4C, c, battle_results/draw]
     - [0x25918, c, battle_results/result]
     - [0x2626C, c, render]
-    - [0x264C0, c, psxsdk/libsnd_reverb]
     - [0x264E0, c, overlay]
     - [0x26EE8, c, card]
     - [0x278AC, c, gamestate]
