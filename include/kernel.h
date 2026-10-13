@@ -180,13 +180,13 @@ typedef struct {
 
 /** @brief Character entry (36 bytes). */
 typedef struct {
-    u16 lookupParam;             /**< +0x00: Name text offset (getBattleCharName/getCharName). */
+    u16 nameOffset;              /**< +0x00: Name text offset. */
     u8 crisisLevelHpMultiplier;  /**< +0x02 */
     u8 gender;                   /**< +0x03: 0 = male, 1 = female. */
     u8 limitBreakId;             /**< +0x04 */
     u8 limitBreakParam;          /**< +0x05: Power of each Renzokuken hit before the finisher. */
     u8 linearCoeff;              /**< +0x06: XP curve linear coefficient. */
-    u8 quadDivisor;              /**< +0x07: XP curve quadratic divisor. */
+    u8 quadCoeff;                /**< +0x07: XP curve quadratic coefficient. */
     u8 hpCurve[4];
     u8 strCurve[4];
     u8 vitCurve[4];

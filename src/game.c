@@ -361,7 +361,7 @@ u8 *getBattleCharName(s32 entityIdx) {
         return g_gameState.rinoaName;
     }
     return resolveKernelPtr(
-        g_kernel.characters[g_battleChars.chars[entityIdx].characterId].lookupParam,
+        g_kernel.characters[g_battleChars.chars[entityIdx].characterId].nameOffset,
         g_kernel.charactersText);
 }
 
@@ -384,7 +384,7 @@ u8 *getCharName(CharacterId charId) {
     if (charId == CHAR_RINOA) {
         return g_gameState.rinoaName;
     }
-    return resolveKernelPtr(g_kernel.characters[charId].lookupParam, g_kernel.charactersText);
+    return resolveKernelPtr(g_kernel.characters[charId].nameOffset, g_kernel.charactersText);
 }
 
 

@@ -95,26 +95,24 @@ s32 evalStatCurve(s32 a0, s32 a1) {
  * @param a0 Entity index into g_battleChars (stride 464 bytes).
  * @param a1 Level or modifier value passed to evalQuadraticCurve.
  * @return Result of evalQuadraticCurve using two u8 fields from g_kernel indexed by a secondary ID.
- * @note Reads a sub-index from g_battleChars offset 0x1C3, then looks up linearCoeff/quadDivisor in g_kernel.characters.
  */
 s32 evalEntityXpCurve(s32 entityIdx, s32 a1) {
     u8 idx = g_battleChars.chars[entityIdx].characterId;
-    return evalQuadraticCurve(a1, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadDivisor);
+    return evalQuadraticCurve(a1, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadCoeff);
 }
 
 
 /**
- * @brief Find the level at which a GF XP curve (via character slot) reaches a threshold.
+ * @brief Level of the character in slot a1 with a0 XP, from the character's kernel XP curve.
  * @param a0 XP threshold to check against.
  * @param a1 Character slot index (stride 152 in g_gameState).
  * @return Level (1–100) where the curve value first exceeds a0, or 100 if never exceeded.
- * @note Reads a GF index from g_gameState offset 0x498, then uses g_kernel.characters linearCoeff/quadDivisor.
  */
 s32 findCharXpLevel(s32 a0, s32 a1) {
     s32 i = 1;
     u8 idx = g_gameState.chars[a1].characterId;
     do {
-        if (a0 < evalQuadraticCurve(i, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadDivisor)) {
+        if (a0 < evalQuadraticCurve(i, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadCoeff)) {
             return i;
         }
         i++;
@@ -124,7 +122,7 @@ s32 findCharXpLevel(s32 a0, s32 a1) {
 
 
 /**
- * @brief Compute an XP-to-next-level value for a GF, via a character slot lookup.
+ * @brief XP the character in slot a1 still needs for the next level, given a0 XP.
  * @param a0 Current XP value.
  * @param a1 Character slot index (stride 152 in g_gameState).
  * @return XP needed to reach the next level, or 0 if at max level (100).
@@ -136,7 +134,7 @@ s32 getXpToNextLevel(s32 a0, s32 a1) {
     u8 idx = g_gameState.chars[a1].characterId;
     s32 curveVal;
     do {
-        curveVal = evalQuadraticCurve(i, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadDivisor);
+        curveVal = evalQuadraticCurve(i, g_kernel.characters[idx].linearCoeff, g_kernel.characters[idx].quadCoeff);
         if (a0 < curveVal) {
             break;
         }
@@ -242,12 +240,10 @@ s32 calcHpFromLevel(s32 level, s32 charIdx) {
 
 
 /**
- * @brief Resolve GF index for a character (used by calcHitStat).
- * @param charIdx Character slot index (stride 152 in g_gameState).
- * @return GF index from PartyData if party is locked and characterId is 8/9/10,
- *         weaponId if party is unlocked; otherwise val is left uninitialized.
- * @note When @ref PARTY_LOCK_LOCKED is set, maps characterId 8->gfIndex0, 9->gfIndex1, 10->gfIndex2.
- *       When party is unlocked, returns the character's weaponId.
+ * @brief Weapon ID of character @p charIdx.
+ * @return The character's weaponId. While the party is locked, characterIds 8, 9 and 10
+ *         take theirs from gfIndex0, gfIndex1 and gfIndex2, and any other characterId
+ *         returns an uninitialized value.
  */
 s32 func_80021B58(s32 charIdx) {
     s32 val;
@@ -327,11 +323,8 @@ s32 func_80021C10(s32 level, s32 charIdx, s32 kind) {
 
 
 /**
- * @brief Compute a derived stat (likely magic power) for a character, clamped to 0-255.
- * @param a0 Character slot index (stride 152 in g_gameState).
- * @return Clamped u8 result combining a base value, a junction bonus, and a level-based lookup.
- * @note Reads GF/junction index from offset 0x4F3, looks up base value from g_kernel (stride 60),
- *       then adds a bonus from multiplyDiv100 scaled by junction quantity.
+ * @brief Hit rate of character @p charIdx: the weapon's hit rate plus the Hit junction
+ *        bonus, clamped to 0-255.
  */
 s32 calcHitStat(s32 charIdx) {
     u8 idx = g_gameState.chars[charIdx].junctions[JUNCTION_HIT];
@@ -479,7 +472,7 @@ s32 func_8002257C(s32 partySlot, u16 exp) {
     level = findCharXpLevel(cd->experience, charIdx);
     if (level >= 100) {
         level = 100;
-        cd->experience = evalQuadraticCurve(99, g_kernel.characters[charIdx].linearCoeff, g_kernel.characters[charIdx].quadDivisor);
+        cd->experience = evalQuadraticCurve(99, g_kernel.characters[charIdx].linearCoeff, g_kernel.characters[charIdx].quadCoeff);
         bc->currentExp = cd->experience;
     }
     if (oldLevel != 100) {
