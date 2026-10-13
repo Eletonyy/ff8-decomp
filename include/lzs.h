@@ -1,5 +1,5 @@
-#ifndef SND_CD_H
-#define SND_CD_H
+#ifndef LZS_H
+#define LZS_H
 
 #include "common.h"
 
@@ -24,4 +24,4 @@ s32 func_80039444(u8 *src, u8 *dest);
 /** @brief Return entry @p idx of @p table: the table's address plus that entry's offset. */
 extern u8 *getOffsetTableEntry(OffsetTable *table, s32 idx);
 
-#endif /* SND_CD_H */
+#endif /* LZS_H */

@@ -201,3 +201,7 @@ void setModeData(s32 a0) {
     D_8008513C |= (a0 << 16);
     setModeBit(2);
 }
+
+void SetModeBit0(void) {
+    setModeBit(0);
+}

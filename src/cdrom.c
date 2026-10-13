@@ -4,7 +4,7 @@
 #include "overlay.h"
 #include "cd.h"
 #include "cdrom.h"
-#include "snd_cd.h"
+#include "lzs.h"
 
 
 /**
