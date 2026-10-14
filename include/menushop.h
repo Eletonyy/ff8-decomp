@@ -35,15 +35,6 @@ typedef enum {
     STRING_JUNK_SHOP_CANT_REMODEL_YOUR_WEAPON = 78,
 } StringCode;
 
-// FIXME: move to menu.h
-/** @brief Colors used to draw text in the menu. */
-typedef enum {
-    COLOR_GRAY = 1,
-    COLOR_YELLOW = 2,
-    COLOR_RED = 3,
-    COLOR_WHITE = 7,
-} Color;
-
 /** @brief @c iconType value for a window without a header icon. */
 #define ICON_NONE 0
 

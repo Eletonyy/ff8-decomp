@@ -10,6 +10,8 @@
 /** @brief Load address of the menus' image data (TIM files). */
 #define MENU_IMAGE_ADDR 0x801CD000
 
+#define MENU_UNK_801D5000_ADDR 0x801D5000
+
 /**
  * @brief Menu task callbacks registered with func_801F179C.
  *

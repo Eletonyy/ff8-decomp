@@ -1,18 +1,13 @@
 #include "common.h"
+#include "game.h"
 #include "gamestate.h"
 #include "menu.h"
 #include "menumain.h"
-#include "menuitem.h"
 #include "party_stats.h"
 #include "psxsdk/libetc.h"
 #include "snd_sfx.h"
 #include "ui/icon.h"
 #include "ui/text.h"
-
-/* Second translation unit of the item menu. splat's jumptable-alignment
- * heuristic placed the file boundary at 0x801E9F94, and the jump tables from
- * 0x801EB1A0 onward are used only by the functions below, which confirms it.
- */
 
 /** @brief Entity naming menu options. */
 enum {
@@ -30,9 +25,60 @@ enum {
     STRING_NAME_THE_CHARACTER = 7,
 };
 
+/**
+ * @brief Defines the layout and characters of a character selection grid.
+ *
+ * The strIds field points to a sequence of string IDs terminated by
+ * 0xFFFF. Each string ID represents a string of up to 7 characters
+ * to be displayed in the character grid.
+ */
+typedef struct {
+    u16 *strIds;        /**< 0x0: Pointer to the null-terminated sequence of string IDs. */
+    u16 strXOffset;     /**< 0x4: Horizontal offset applied to strings at odd indexes. */
+    u8 minRowIndex;     /**< 0x6: First character row index. */
+    u8 maxRowIndex;     /**< 0x7: Last character row index. */
+} CharacterGrid; /* 0x8 bytes */
+
+/**
+ * @brief Defines the naming configuration for an entity.
+ */
+typedef struct {
+    u8 nameMaxLength;       /**< 0x0: Maximum allowed name length. */
+    u8 portraitIdx;         /**< 0x1: Index of the entity's portrait sprite. */
+    u16 defaultNameIdx;     /**< 0x2: Index of the entity's default name. */
+    u16 assignedNameOffset; /**< 0x4: Offset to the entity's assigned name, relative to g_gameState. */
+    u8 pad6[2];
+} EntityNamingConfig; /* 0x8 bytes */
+
+/**
+ * @brief State for the entity naming menu.
+ */
+typedef struct {
+    u8 pad00[0x10];
+    u16 state;                      /**< 0x10: Current menu state (0-7). */
+    u8 pad12[0xE];
+    EntityNamingConfig *namingCfg;  /**< 0x20: Pointer to the entity naming configuration. */
+    u8 *namePtr;                    /**< 0x24: Pointer to the name being edited. */
+    s32 menuBrightness;             /**< 0x28: Menu brightness value (0-4096), used for fade-in/out effects. */
+    u8 charGridIndex;               /**< 0x2C: Selected character grid index: 0 = English, 1 = Symbols. */
+    u8 charGridCursorIndex;         /**< 0x2D: Cursor index within the selected character grid. */
+    u8 menuOptionCursorIndex;       /**< 0x2E: Cursor index within the menu options (0-5). */
+    u8 cursorPanelIndex;            /**< 0x2F: Index of the panel containing the cursor: 0 = menu options, 1 = character grid. */
+    u8 nameLength;                  /**< 0x30: Current name length. */
+} EntityNamingMenuState;
+
+#define CHARACTER_GRID_COUNT 2
+extern CharacterGrid D_801EB320[CHARACTER_GRID_COUNT]; /**< Character grid table. */
+
 #define ENTITY_NAMING_CONFIG_COUNT 21
 extern EntityNamingConfig D_801EB240[ENTITY_NAMING_CONFIG_COUNT]; /**< Entity naming config table. */
 
+static s32 func_801E9C90(u8 *, s32);
+static void func_801E9CD4(EntityNamingMenuState *);
+static void func_801E9DE4(u8 *);
+static s32 func_801E9E10(u8 *);
+static u8 *func_801E9E7C(s32);
+static void func_801E9EA8(EntityNamingMenuState *, s32);
 static void func_801E9F94(EntityNamingMenuState *);
 static void *func_801EA500(void *, void *, s32, s32, s32);
 static void *func_801EA538(EntityNamingMenuState *, void *, DR_TPAGE *, s32, s32);
@@ -44,6 +90,158 @@ static void *func_801EAB00(EntityNamingMenuState *, void *, void *, s32, s32);
 static void *func_801EAB8C(void *, void *, s32, s32);
 static void *func_801EAC54(EntityNamingMenuState *, void *, void *);
 static void func_801EAD64(void);
+
+/**
+ * @brief Returns the string length, capped at maxLen - 1.
+ *
+ * Counts consecutive non-null bytes until the null terminator or
+ * maxLen bytes have been examined. If the count reaches maxLen,
+ * returns maxLen - 1. For non-positive maxLen values, returns
+ * maxLength - 1.
+ *
+ * @param str Pointer to byte string.
+ * @param maxLen Maximum number of bytes to scan.
+ * @return Number of non-null bytes found, capped at maxLength - 1.
+ */
+static s32 func_801E9C90(u8 *str, s32 maxLen) {
+    s32 i;
+    s32 len = 0;
+
+    for (i = 0; i < maxLen; i++) {
+        if (*str++ == '\0') {
+            break;
+        }
+        len++;
+    }
+    if (len >= maxLen) {
+        len = maxLen - 1;
+    }
+
+    return len;
+}
+
+/**
+ * @brief Calculates the cursor position and renders it.
+ *
+ * If the cursor is on the character grid (cursorPanelIndex == 0), calculates
+ * its coordinates based on the current character index, accounting for the
+ * grid's column and row layout.
+ *
+ * Otherwise, positions the cursor at a fixed X coordinate and calculates
+ * its Y coordinate based on the currently selected menu option.
+ *
+ * Rendering is delegated to func_801F0994.
+ *
+ * @param s Pointer to the entity naming menu state.
+ */
+static void func_801E9CD4(EntityNamingMenuState *s) {
+    s32 x;
+    s32 y;
+    s32 col;
+    s32 row;
+    s32 div28;
+    s32 x1;
+    s32 x2;
+
+    if (s->cursorPanelIndex == 0) {
+        col = s->charGridCursorIndex % 14;
+        row = s->charGridCursorIndex / 14;
+        x1 = col / 7;
+        div28 = s->charGridCursorIndex / 28;
+        
+        y = row * 16;
+        y += div28 * 8;
+        y += 98;
+        
+        col = s->charGridCursorIndex % 7;
+        x2 = x1 * 63;
+        x = (col * 9 + x2) * 2;
+        x += 114;
+    } else {
+        x = 34;
+        y = s->menuOptionCursorIndex * 16;
+        y += 98;
+    }
+
+    func_801F0994(0, x, y);
+}
+
+/**
+ * @brief Removes the last character from a null-terminated string.
+ *
+ * If the string is not empty, replaces its last character with a null
+ * terminator, effectively shortening the string by one character.
+ *
+ * @param str Pointer to a null-terminated string.
+ */
+static void func_801E9DE4(u8 *str) {
+    if (*str++ == '\0') {
+        return;
+    }
+    while (*str++ != '\0') {
+    }
+    str[-2] = '\0';
+}
+
+/**
+ * @brief Checks whether the string contains any non-space characters.
+ *
+ * Returns 0 if the string is empty or consists entirely of space characters.
+ * Otherwise, returns 1 if any character differs from the space character
+ * obtained from the first byte of getMenuString(11).
+ *
+ * @param str Pointer to a null-terminated string.
+ * @return 1 if the string contains a non-space character, 0 otherwise.
+ */
+static s32 func_801E9E10(u8 *str) {
+    if (btlStrlen(str) != 0) {
+        while (1) {
+            s32 ch = *str++;
+            if (ch == '\0') {
+                break;
+            }
+            if (ch != getMenuString(11)[0]) {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+/** @brief Look up string @p strId in menu text category 5. */
+static u8 *func_801E9E7C(s32 strId) {
+    return func_801F08D4(1, 5, strId, 0);
+}
+
+/**
+ * @brief Appends a character or space to the name being edited.
+ * 
+ * Appends the character at the current grid cursor position if
+ * `isGridCharacter` is nonzero; otherwise, appends a space.
+ * 
+ * @param s Pointer to the entity naming menu state.
+ * @param isGridCharacter Nonzero to append a grid character, or zero to append a space.
+ */
+static void func_801E9EA8(EntityNamingMenuState *s, s32 isGridCharacter) {
+    u8* nextCharPtr;
+    u8* charPtr;
+    s32 row;
+    s32 col;
+
+    nextCharPtr = &s->namePtr[func_801E9C90(s->namePtr, s->namingCfg->nameMaxLength)];
+    col = s->charGridCursorIndex % 7;
+    row = s->charGridCursorIndex / 7;
+    if (isGridCharacter != 0) {
+        charPtr = &func_801E9E7C(D_801EB320[s->charGridIndex].strIds[row])[col];
+    } else {
+        charPtr = &getMenuString(11)[0];
+    }
+    *nextCharPtr++ = *charPtr;
+    *nextCharPtr = '\0';
+
+    // Dead code added to match with the original game binary.
+    if (nextCharPtr) { nextCharPtr++; nextCharPtr--; }
+}
 
 /**
  * @brief Updates the entity naming menu state machine.
@@ -372,7 +570,7 @@ static void *func_801EA538(EntityNamingMenuState *s, void *ot, DR_TPAGE *prim, s
 static void *func_801EA714(void *ot, void *prim, s32 x, s32 y) {
     s32 strX = x + 8;
     s32 strY = y + 8;
-    prim = func_801F0FEC(ot, prim, strX, strY, func_801E9E7C(STRING_NAME_THE_CHARACTER), MENU_TEXT_COLOR_WHITE);
+    prim = func_801F0FEC(ot, prim, strX, strY, func_801E9E7C(STRING_NAME_THE_CHARACTER), DIALOG_COLOR_WHITE);
     g_menuDisplayCfg.iconType = ICON_HELP;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = x;
@@ -403,9 +601,9 @@ static void *func_801EA7E0(EntityNamingMenuState *s, void *ot, void *prim, s32 x
     s32 i;
     s32 color;
     for (i = 0; i < 6; i++) {
-        color = MENU_TEXT_COLOR_WHITE;
+        color = DIALOG_COLOR_WHITE;
         if (i == s->charGridIndex) {
-            color = MENU_TEXT_COLOR_YELLOW;
+            color = DIALOG_COLOR_YELLOW;
         }
         prim = func_801F0FEC(ot, prim, strX, strY, func_801E9E7C(i), color);
         strY += 16;
@@ -557,7 +755,7 @@ static void *func_801EAB00(EntityNamingMenuState *s, void *ot, void *prim, s32 x
 static void *func_801EAB8C(void *ot, void *prim, s32 x, s32 y) {
     s32 strX = x + 7;
     s32 strY = y + 6;
-    prim = func_801F0FEC(ot, prim, strX, strY, func_801E9E7C(STRING_NAME_INPUT), MENU_TEXT_COLOR_WHITE);
+    prim = func_801F0FEC(ot, prim, strX, strY, func_801E9E7C(STRING_NAME_INPUT), DIALOG_COLOR_WHITE);
     g_menuDisplayCfg.iconType = 0;
     g_menuDisplayCfg.iconSubType = 0;
     g_menuDisplayCfg.x = x;

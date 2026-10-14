@@ -2054,7 +2054,7 @@ s32 func_801F6AFC(s32 a0) {
 
 /** @brief Map ability index to display category via double indirection. */
 s32 func_801F6B28(s32 a0) {
-    return D_801F7F98[D_801F889C[a0].b0];
+    return D_801F7F98[D_801F889C[a0].type];
 }
 
 INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F6B54);

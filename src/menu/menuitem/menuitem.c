@@ -12,7 +12,6 @@
 #include "kernel.h"
 #include "menu.h"
 #include "menumain.h"
-#include "menuitem.h"
 #include "numstr.h"
 #include "overlay.h"
 #include "party_stats.h"
@@ -28,6 +27,7 @@ enum {
     STRING_TO_SCROLL_TO_GO_TO_ITEM_SCREEN = 22,
 };
 
+/** @brief Item flags. */
 enum {
     ITEM_FLAG_USABLE_IN_MENU   = 0x01,
     ITEM_FLAG_TARGET_CHARA     = 0x02,
@@ -39,6 +39,7 @@ enum {
     ITEM_FLAG_GF_COMPAT_OTHERS = 0x80,
 };
 
+/** @brief Item types. */
 enum {
     ITEM_TYPE_HEAL_CHARA        = 0,
     ITEM_TYPE_REVIVE_CHARA      = 1,
@@ -64,6 +65,7 @@ enum {
     ITEM_TYPE_CURE_STATUS       = 21,
 };
 
+/** @brief Action item types (mapped through D_801EB1E4). */
 enum {
     ACTION_ITEM_TYPE_HEAL              = 1,
     ACTION_ITEM_TYPE_REVIVE            = 2,
@@ -85,7 +87,7 @@ typedef struct {
 } MagazinePageOverlay; /* 0x4 bytes */
 
 /**
- * @brief Weapon magazine page. Each entry repesents one page view (mmag.bin content).
+ * @brief Magazine page. Each entry repesents one page view (mmag.bin content).
  */
 typedef struct {
     u16 windowX; /**< 0x00: Window X. */
@@ -119,7 +121,7 @@ typedef struct {
 } MagazinePageEntry; /** 0x44 bytes */
 
 /**
- * @brief GPU composite primitive for weapon magazine paper mat.
+ * @brief GPU composite primitive for magazine paper mat.
  */
 typedef struct {
     DR_TPAGE tpage; /**< 0x00: Drawing texture page primitive. */
@@ -134,7 +136,7 @@ typedef struct {
 } PaperMatPrim; /* 0x14 bytes */
 
 /**
- * @brief GPU composite primitive representing a slice of a weapon magazine page.
+ * @brief GPU composite primitive representing a slice of a magazine page.
  */
 typedef struct {
     DR_TWIN twin; /**< 0x00: Drawing texture window primitive. */
@@ -379,7 +381,7 @@ static s32 func_801E2848(u8 *src, u8 *dst) {
     u8 *buf;
     s32 ret;
     u8* pos;
-    u8 pad[256];
+    u8 buffer[256];
 
     GP_SAVE_SCRATCH(tempGp);
     savedGp = tempGp;
@@ -404,7 +406,7 @@ static s32 func_801E2848(u8 *src, u8 *dst) {
 
                 if (ch == 10) {
                     ch = *pos++;
-                    name = pad;
+                    name = buffer;
                     switch (ch) {
                     case 39:
                         name = getCharName(g_gameState.chars[D_801ECE28].characterId);
@@ -535,7 +537,7 @@ static void func_801E2C0C(u8 *src, u8 *dst, s32 charId, s32 statId, s32 increase
  * @return 1 if a matching slot is found, 0 otherwise.
  */
 static s32 func_801E2C44(ItemSlot *itemSlots, s32 itemId, s32 itemCount) {
-    u8 *items = (u8 *)itemSlots;
+    u8 *items = &itemSlots->id;
     s32 i = 0;
     for (i = 0; i < ITEM_SLOT_COUNT; i++) {
         s32 id = *items++;
@@ -596,7 +598,7 @@ static void func_801E2CCC(s32 pageTextureCategory, s32 pageTexture) {
         pageTexture += 180;
         break;
     }
-    loadOverlayWithTimCallback(pageTexture, 0x801D1000);
+    loadOverlayWithTimCallback(pageTexture, MENU_SUBOVERLAY_ADDR);
 }
 
 /**
@@ -619,7 +621,7 @@ static void func_801E2D54(ItemSlot *itemSlots, u8 *battleItemOrder) {
         *pBuffer-- = 0;
     }
 
-    pItemSlots = (u8 *)itemSlots;
+    pItemSlots = &itemSlots->id;
     for (i = 0; i < ITEM_SLOT_COUNT; i++) {
         s32 id = *pItemSlots++;
         s32 quantity = *pItemSlots++;
@@ -652,22 +654,22 @@ static void func_801E2E04(u8 *battleItemOrder) {
 
 /** @brief Get the item type. */
 static u8 func_801E2E38(s32 itemId) {
-    return D_801F889C[itemId].b0;
+    return D_801F889C[itemId].type;
 }
 
 /** @brief Get the item flags. */
 static s32 func_801E2E54(s32 itemId) {
-    return D_801F889C[itemId].b1;
+    return D_801F889C[itemId].flags;
 }
 
 /** @brief Get the item first byte param. */
 static u8 func_801E2E70(s32 itemId) {
-    return D_801F889C[itemId].b2;
+    return D_801F889C[itemId].param1;
 }
 
 /** @brief Get the item second byte param. */
 static u8 func_801E2E8C(s32 itemId) {
-    return D_801F889C[itemId].b3;
+    return D_801F889C[itemId].param2;
 }
 
 /**
@@ -737,7 +739,7 @@ static u8 func_801E2EA8(s32 itemId) {
  * @return Nonzero if the item can be used, 0 otherwise.
  */
 static s32 func_801E2F88(s32 itemId) {
-    s32 type = D_801F889C[itemId].b0;
+    s32 type = D_801F889C[itemId].type;
 
     if (func_801F79F8(SEALED_RESURRECTION)) {
         if (type == ITEM_TYPE_REVIVE_CHARA) {
@@ -764,7 +766,7 @@ static s32 func_801E2F88(s32 itemId) {
 /**
  * @brief Restore HP and remove specified status ailments from a character or GF.
  *
- * Called when an item of type ACTION_ITEM_TYPE_HEAL_HP is used.
+ * Called when an item of type ACTION_ITEM_TYPE_HEAL is used.
  *
  * @param entityId Character or GF ID.
  * @param healAmount Base healing amount, scaled by 50.
@@ -906,7 +908,7 @@ static s32 func_801E3288(s32 entityId) {
 /**
  * @brief Fully restore the HP of a character or GF.
  *
- * Called when an item of type ACTION_ITEM_TYPE_REVIVE_FULL_HP is used.
+ * Called when an item of type ACTION_ITEM_TYPE_REVIVE_FULL is used.
  *
  * @param entityId Character or GF ID.
  * @return 1 if the entity was revived, 0 if it was not dead.
@@ -1013,7 +1015,7 @@ static s32 func_801E347C(s32 charId, s32 itemId) {
 /**
  * @brief Improve a character's compatibility with one or all GFs using an item.
  *
- * Called when an item of type ACTION_ITEM_TYPE_INCR_GF_COMPATIBILITY is used.
+ * Called when an item of type ACTION_ITEM_TYPE_GF_COMPATIBILITY is used.
  *
  * If the item targets all GFs (GF ID 255), delegates to func_801E347C().
  * Otherwise, checks whether the target GF exists and whether the character's
@@ -1053,7 +1055,7 @@ static s32 func_801E35B8(s32 charId, s32 itemId) {
     }
 
     decreaseAmount = 0;
-    if (itemFlags & 0x80) {
+    if (itemFlags & ITEM_FLAG_GF_COMPAT_OTHERS) {
         decreaseAmount = (u32)increaseAmount / 2;
     }
 
@@ -1099,7 +1101,7 @@ static s32 func_801E35B8(s32 charId, s32 itemId) {
 /**
  * @brief Fully restore HP and cure status ailments on a character or GF.
  *
- * Called when an item of type ACTION_ITEM_TYPE_REVIVE_FULL_HP_CURE_STATUS is used.
+ * Called when an item of type ACTION_ITEM_TYPE_FULL_RESTORE is used.
  *
  * @param entityId Character or GF ID.
  * @return 1 if HP or status flags changed, 0 otherwise.
@@ -1195,7 +1197,6 @@ static void func_801E38DC(s32 gfId, s32 abilityId) {
  */
 static void func_801E3968(s32 gfId, s32 abilityId) {
     u8 abilities[4];
-    u8 *abilitiesPtrReverse;
     u8 *abilitiesPtr;
     s32 i;
     s32 j;
@@ -1233,7 +1234,7 @@ static void func_801E3968(s32 gfId, s32 abilityId) {
         }
 
         junctionedGfAbilities /= 2;
-        junctionedGfAbilities &= 0x7FFFF;
+        junctionedGfAbilities &= (1 << 19) - 1;
         k = 2;
         if (junctionedGfAbilities & 0x20000) {
             k = 3;
@@ -1251,9 +1252,8 @@ static void func_801E3968(s32 gfId, s32 abilityId) {
             }
         }
 
-        abilitiesPtrReverse = &abilities[3];
-        for (j = 3; j >= 0; j--) {
-            *abilitiesPtrReverse-- = 0;
+        for (j = 0; j < 4; j++) {
+            abilities[j] = 0;
         }
         
         abilitiesPtr = &abilities[0];
@@ -1269,8 +1269,8 @@ static void func_801E3968(s32 gfId, s32 abilityId) {
             g_gameState.chars[i].abilities[j] = *abilitiesPtr++;
         }
 
-        for (; k < 4; k++) {
-            g_gameState.chars[i].abilities[k] = 0;
+        while (k < 4) {
+            g_gameState.chars[i].abilities[k++] = 0;
         }
 
         for (j = 0; j < 4; j++) {
@@ -1549,8 +1549,8 @@ static s32 func_801E4394(s32 itemId, s32 entityMask) {
     s32 mask;
     s32 actionItemType;
 
-    param1 = D_801F889C[itemId].b2;
-    param2 = D_801F889C[itemId].b3;
+    param1 = D_801F889C[itemId].param1;
+    param2 = D_801F889C[itemId].param2;
     actionItemType = func_801E2E38(itemId);
     actionItemType = D_801EB1E4[actionItemType];
     ret = 0;
@@ -1663,22 +1663,18 @@ static s32 func_801E457C(s32 itemId, ItemSlot *itemSlots, s32 index) {
  */
 static void func_801E45B4(ItemSlot *itemSlots, s32 itemId, s32 itemCount) {
     s32 i = 0;
-    u8 *idPtr = (u8 *)itemSlots;
-    u8 *qtyPtr = (u8 *)itemSlots + 1;
-    while (i < ITEM_SLOT_COUNT) {
-        s32 id = idPtr[0];
-        s32 qty = qtyPtr[0];
+    for (i = 0; i < ITEM_SLOT_COUNT; i++, itemSlots++) {
+        s32 id = itemSlots->id;
+        s32 qty = itemSlots->count;
+
         if (id != 0 && qty != 0 && id == itemId) {
             qty -= itemCount;
-            qtyPtr[0] = qty;
+            itemSlots->count = qty;
             if (qty == 0) {
-                idPtr[0] = 0;
+                itemSlots->id = 0;
             }
             return;
         }
-        i++;
-        qtyPtr += 2;
-        idPtr += 2;
     }
 }
 
@@ -1846,24 +1842,18 @@ static void func_801E4940(s32 availableEntities) {
     s32 counter;
     s32 x;
     s32 i;
-    s32 one;
-    s32 y;
     s32 mask;
 
     cfg = &g_menuDisplayCfg;
     counter = 0;
     x = 200;
-    i = 0;
-    one = 1;
-    y = 66;
 
-    for (; i < 8; i++) {
-        mask = one << i;
+    for (i = 0; i < 8; i++) {
+        mask = (1 << i);
         if (availableEntities & mask) {
             if ((counter + cfg->animCounter) & 1) {
-                func_801F0994(0, x, y);
+                func_801F0994(0, x, 66 + (counter * 13));
             }
-            y += 13;
             counter++;
         }
     }
@@ -2970,8 +2960,8 @@ restart:
 
     case 45:
         func_801E457C(s->itemId, s->itemSlots, s->primaryListIndex);
-        loadOverlayWithTimCallback(9, 0x801CD000);
-        loadOverlayWithTimCallback(10, 0x801D5000);
+        loadOverlayWithTimCallback(9, MENU_IMAGE_ADDR);
+        loadOverlayWithTimCallback(10, MENU_UNK_801D5000_ADDR);
         *statePtr = 46;
         break;
 
@@ -3001,7 +2991,7 @@ restart:
         s->statId = -1;
         s->confirmationOption = -1;
         func_801E4BB4(s);
-        loadOverlayWithTimCallback(12, 0x801D5000);
+        loadOverlayWithTimCallback(12, MENU_UNK_801D5000_ADDR);
         *statePtr = 49;
         break;
 
@@ -3432,8 +3422,8 @@ restart:
         magPage += func_801E2E70(s->itemId);
         s->pageStart = func_801E2E70(s->itemId);
         func_801E2CCC(magPage->pageTextureCategory, magPage->pageTexture);
-        loadSubOverlay(7, 0x801CD000);
-        loadSubOverlay(87, 0x801D1000);
+        loadSubOverlay(7, MENU_IMAGE_ADDR);
+        loadSubOverlay(87, MENU_SUBOVERLAY_ADDR);
         *statePtr = 81;
         break;
     }
@@ -3836,8 +3826,8 @@ restart:
         break;
 
     case 112:
-        loadOverlayWithTimCallback(9, 0x801CD000);
-        loadOverlayWithTimCallback(10, 0x801D5000);
+        loadOverlayWithTimCallback(9, MENU_IMAGE_ADDR);
+        loadOverlayWithTimCallback(10, MENU_UNK_801D5000_ADDR);
         *statePtr = 113;
         break;
 
@@ -3918,9 +3908,9 @@ static void *func_801E7D18(void *ot, void *prim, s32 page, s32 rowInPage, s32 x)
     tmp++; tmp--;
 
     if (func_801E2F88(id) != 0) {
-        color = MENU_TEXT_COLOR_WHITE;
+        color = DIALOG_COLOR_WHITE;
     } else {
-        color = MENU_TEXT_COLOR_GRAY;
+        color = DIALOG_COLOR_GRAY;
     }
 
     x3 = x2;
@@ -4116,7 +4106,7 @@ static void *func_801E84A4(void *ot, void *prim, s32 page, s32 rowInPage, s32 x)
     u8 *itemName;
 
     cfg = &g_menuDisplayCfg;
-    color = MENU_TEXT_COLOR_WHITE;
+    color = DIALOG_COLOR_WHITE;
 
     item = D_801ECB20;
     item += page * 4 + rowInPage;
@@ -4220,9 +4210,9 @@ static void *func_801E8780(void *ot, void *prim, s32 ablPage, s32 ablRowInPage, 
     abl = &D_801ECB60[ablListIndex];
     slot = abl->slotIndex;
 
-    color = MENU_TEXT_COLOR_WHITE;
+    color = DIALOG_COLOR_WHITE;
     if (abl->type == 1) {
-        color = MENU_TEXT_COLOR_GRAY;
+        color = DIALOG_COLOR_GRAY;
     }
 
     xCoord = cfg->x + x;
@@ -4271,7 +4261,7 @@ static void *func_801E88AC(ItemMenuState *s, void *ot, void *prim, s32 x, s32 y)
 }
 
 /**
- * @brief Look up sprite data address from table at 0x801D1000.
+ * @brief Look up sprite data address from table at MENU_SUBOVERLAY_ADDR.
  *
  * Reads halfword offset at index a0 from the table, adds to base.
  *
@@ -4279,7 +4269,7 @@ static void *func_801E88AC(ItemMenuState *s, void *ot, void *prim, s32 x, s32 y)
  * @return Base address + halfword offset from table entry.
  */
 static s32 func_801E89A4(s32 spriteId) {
-    s32 base = 0x801D1000;
+    s32 base = MENU_SUBOVERLAY_ADDR;
     return *(u16 *)(base + spriteId * 2 + 2) + base;
 }
 
@@ -4442,9 +4432,9 @@ static void *func_801E8C88(void *ot, PaperMatPrim *prim, MenuDisplayConfig *cfg,
     return prim + 1;
 }
 
-/** @brief Return base address of item sprite data (0x801CD000). */
+/** @brief Return base address of item sprite data (MENU_IMAGE_ADDR). */
 static s32 func_801E8DA4(void) {
-    return 0x801CD000;
+    return MENU_IMAGE_ADDR;
 }
 
 /**
@@ -4690,7 +4680,7 @@ static s32 func_801E9248(void *ot, void *prim, MagazinePageEntry *magPage) {
     x = (336 - width) / 2;
     x += 24;
     y = 200;
-    prim = func_801F0FEC(ot, prim, x, y, navigationHint, MENU_TEXT_COLOR_WHITE);
+    prim = func_801F0FEC(ot, prim, x, y, navigationHint, DIALOG_COLOR_WHITE);
     g_menuDisplayCfg.x = 24;
     g_menuDisplayCfg.y = 196;
     g_menuDisplayCfg.w = 336;
@@ -4887,7 +4877,7 @@ static void *func_801E95C4(ItemMenuState *s, void *ot, void *prim) {
             availableGfs = s->availableGfs;
 
             mask = s->availableCharacters;
-            if (func_801E2E54(s->itemId) & 0x40) {
+            if (func_801E2E54(s->itemId) & ITEM_FLAG_QUISTIS_ONLY) {
                 mask &= 8;
                 if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
                     mask = 0;
@@ -4974,173 +4964,10 @@ static void func_801E9B98(void) {
     func_801E3E94();
     if (s != NULL) {
         func_801E9AAC(s);
-        loadOverlayWithTimCallback(12, 0x801D5000);
+        loadOverlayWithTimCallback(12, MENU_UNK_801D5000_ADDR);
         s->brightness = 0;
         func_801E4EA4(s);
         s->menuColorIntensity = 0;
     }
     func_801F7B60();
-}
-
-/**
- * @brief Returns the string length, capped at maxLen - 1.
- *
- * Counts consecutive non-null bytes until the null terminator or
- * maxLen bytes have been examined. If the count reaches maxLen,
- * returns maxLen - 1. For non-positive maxLen values, returns
- * maxLength - 1.
- *
- * @param str Pointer to byte string.
- * @param maxLen Maximum number of bytes to scan.
- * @return Number of non-null bytes found, capped at maxLength - 1.
- */
-s32 func_801E9C90(u8 *str, s32 maxLen) {
-    s32 i = 0;
-    s32 len = 0;
-
-    if (maxLen > 0) {
-        while (1) {
-            if (*str++ == '\0') {
-                break;
-            }
-
-            i++;
-            len++;
-
-            if (i >= maxLen) {
-                break;
-            }
-        }
-
-        if (len >= maxLen) {
-            len = maxLen - 1;
-        }
-    } else {
-        len = maxLen - 1;
-    }
-
-    return len;
-}
-
-/**
- * @brief Calculates the cursor position and renders it.
- *
- * If the cursor is on the character grid (cursorPanelIndex == 0), calculates
- * its coordinates based on the current character index, accounting for the
- * grid's column and row layout.
- *
- * Otherwise, positions the cursor at a fixed X coordinate and calculates
- * its Y coordinate based on the currently selected menu option.
- *
- * Rendering is delegated to func_801F0994.
- *
- * @param s Pointer to the entity naming menu state.
- */
-void func_801E9CD4(EntityNamingMenuState *s) {
-    s32 x;
-    s32 y;
-    s32 col;
-    s32 row;
-    s32 div28;
-    s32 x1;
-    s32 x2;
-
-    if (s->cursorPanelIndex == 0) {
-        col = s->charGridCursorIndex % 14;
-        row = s->charGridCursorIndex / 14;
-        x1 = col / 7;
-        div28 = s->charGridCursorIndex / 28;
-        
-        y = row * 16;
-        y += div28 * 8;
-        y += 98;
-        
-        col = s->charGridCursorIndex % 7;
-        x2 = x1 * 63;
-        x = (col * 9 + x2) * 2;
-        x += 114;
-    } else {
-        x = 34;
-        y = s->menuOptionCursorIndex * 16;
-        y += 98;
-    }
-
-    func_801F0994(0, x, y);
-}
-
-/**
- * @brief Removes the last character from a null-terminated string.
- *
- * If the string is not empty, replaces its last character with a null
- * terminator, effectively shortening the string by one character.
- *
- * @param str Pointer to a null-terminated string.
- */
-void func_801E9DE4(u8 *str) {
-    if (*str++ == '\0') {
-        return;
-    }
-    while (*str++ != '\0') {
-    }
-    str[-2] = '\0';
-}
-
-/**
- * @brief Checks whether the string contains any non-space characters.
- *
- * Returns 0 if the string is empty or consists entirely of space characters.
- * Otherwise, returns 1 if any character differs from the space character
- * obtained from the first byte of getMenuString(11).
- *
- * @param str Pointer to a null-terminated string.
- * @return 1 if the string contains a non-space character, 0 otherwise.
- */
-s32 func_801E9E10(u8 *str) {
-    if (btlStrlen(str) != 0) {
-        while (1) {
-            s32 ch = *str++;
-            if (ch == '\0') {
-                break;
-            }
-            if (ch != getMenuString(11)[0]) {
-                return 1;
-            }
-        }
-    }
-    return 0;
-}
-
-/** @brief Look up string @p strId in menu text category 5. */
-u8 *func_801E9E7C(s32 strId) {
-    return func_801F08D4(1, 5, strId, 0);
-}
-
-/**
- * @brief Appends a character or space to the name being edited.
- * 
- * Appends the character at the current grid cursor position if
- * `isGridCharacter` is nonzero; otherwise, appends a space.
- * 
- * @param s Pointer to the entity naming menu state.
- * @param isGridCharacter Nonzero to append a grid character, or zero to append a space.
- */
-void func_801E9EA8(EntityNamingMenuState *s, s32 isGridCharacter) {
-    u8* nextCharPtr;
-    u8* charPtr;
-    s32 row;
-    s32 col;
-
-    nextCharPtr = &s->namePtr[func_801E9C90(s->namePtr, s->namingCfg->nameMaxLength)];
-    col = s->charGridCursorIndex % 7;
-    row = s->charGridCursorIndex / 7;
-    if (isGridCharacter != 0) {
-        charPtr = &func_801E9E7C(D_801EB320[s->charGridIndex].strIds[row])[col];
-    } else {
-        charPtr = &getMenuString(11)[0];
-    }
-    *nextCharPtr++ = *charPtr;
-    *nextCharPtr = '\0';
-
-    // Dead code added to match with the original game binary.
-    if (nextCharPtr) { nextCharPtr++; nextCharPtr--; }
 }
