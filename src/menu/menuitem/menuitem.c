@@ -23,6 +23,10 @@
 #include "ui/text.h"
 #include "ui/window.h"
 
+#define ALL_GFS 0xFF /**< Targets all GFs. */
+#define INVALID_ID 0xFF /**< Invalid or absent ID. */
+#define INVALID_BUTTON_ID 0xFFFF /** Invalid or absent button ID. */
+
 enum {
     STRING_TO_SCROLL_TO_GO_TO_ITEM_SCREEN = 22,
 };
@@ -683,7 +687,7 @@ static u8 func_801E2EA8(s32 itemId) {
     switch (func_801E2E38(itemId)) {
     case ITEM_TYPE_QUISTIS_LIMIT:
         if (!(func_80036EC0() & 8) || (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED)) {
-            ret = func_801E2E54(itemId) & 0xFE;
+            ret = func_801E2E54(itemId) & ~ITEM_FLAG_USABLE_IN_MENU;
         } else {
             ret = func_801E2E54(itemId);
         }
@@ -1050,7 +1054,7 @@ static s32 func_801E35B8(s32 charId, s32 itemId) {
     gfId = func_801E2E70(itemId);
     increaseAmount = func_801E2E8C(itemId);
     
-    if (gfId == 255) {
+    if (gfId == ALL_GFS) {
         return func_801E347C(charId, itemId);
     }
 
@@ -1070,7 +1074,7 @@ static s32 func_801E35B8(s32 charId, s32 itemId) {
         return 0;
     }
         
-    for (i = 0; i < 16; i++) {
+    for (i = 0; i < GF_COUNT; i++) {
         s32 tmp;
         s32 newGfCompatibility;
 
@@ -1217,11 +1221,11 @@ static void func_801E3968(s32 gfId, s32 abilityId) {
 
     func_801E3854(gfId, abilityId);
 
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < CHARACTER_COUNT; i++) {
         junctionedGfAbilities = 0;
         hasAbility = 0;
 
-        for (j = 0; j < 16; j++) {
+        for (j = 0; j < GF_COUNT; j++) {
             if ((g_gameState.chars[i].junctedGfs >> j) & 1) {
                 junctionedGfAbilities |= g_gameState.gfs[j].completeAbilities[0];
                 completeAbilities = g_gameState.gfs[j].completeAbilities;
@@ -1520,13 +1524,11 @@ static s32 func_801E42F8(s32 charId, s32 increaseAmount, u8 statMask) {
     s32 i;
 
     accum = 0;
-    i = 0;
-    while (i < 8) {
+    for (i = 0; i < 8; i++) {
         if ((statMask >> i) & 1) {
             func_801E3E94();
             accum |= func_801E3EBC(charId, increaseAmount, i);
         }
-        i++;
     }
     func_801E3E94();
     return accum;
@@ -1848,7 +1850,7 @@ static void func_801E4940(s32 availableEntities) {
     counter = 0;
     x = 200;
 
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < CHARACTER_COUNT; i++) {
         mask = (1 << i);
         if (availableEntities & mask) {
             if ((counter + cfg->animCounter) & 1) {
@@ -1897,7 +1899,7 @@ static void func_801E4A58(u32 availableEntities) {
     yBase = 64;
     availableEntities >>= 16;
     
-    for (i = 0; i < 16; i++) {
+    for (i = 0; i < GF_COUNT; i++) {
         mask = 1 << i;
         if (availableEntities & mask) {
             x = xBase + ((i & 1) * 82);
@@ -2066,7 +2068,7 @@ static void func_801E4D40(u8 *src, u8 *dst, s32 gfId, s32 abilityId, s32 ability
             prereqAbilityId = gf->abilities[j].levelReq;
             upgradedAbilityId = gf->abilities[j].abilityId;
 
-            if (prereqAbilityId == 255 || prereqAbilityId < 101) {
+            if (prereqAbilityId == INVALID_ID || prereqAbilityId < 101) {
                 continue;
             }
 
@@ -4034,7 +4036,7 @@ static void *menuitem_drawGfPanel(void *ot, void *prim, s32 x, s32 y, s32 arg4, 
     cfg = &g_menuDisplayCfg;
     gfX = x + 4;
     gfY = y + 10;
-    for (i = 0; i < 16; i++) {
+    for (i = 0; i < GF_COUNT; i++) {
         if ((availableGfs >> i) & 1) {
             prim = func_801E820C(ot, prim, gfX, gfY, i);
         }
@@ -4293,22 +4295,20 @@ static void *func_801E89C0(void *ot, void *prim, MenuDisplayConfig *cfg, s32 col
     s32 y;
     s32 i;
     u16 button;
-    if (magPage->duelId != 0xFF) {
-        i = 0;
+    if (magPage->duelId != INVALID_ID) {
         g_gameState.mainData.limitBreaks.zellLimits |= 1 << magPage->duelId;
         buttons = g_kernel.duel[magPage->duelId].buttons;
         x = cfg->x + magPage->duelComboX;
         y = cfg->y + magPage->duelComboY;
-        while (i < 5) {
+        for (i = 0; i < 5; i++) {
             button = *buttons++;
-            if (button == 0xFFFF) {
+            if (button == INVALID_BUTTON_ID) {
                 break;
             }
             prim = drawIcon(ot, prim, findNthSetBit(button & 0xF0FF, 0) + 128, x, y, color);
             if (i > 0) {
                 prim = drawIcon(ot, prim, ICON_DOT, x - 16, y, color);
             }
-            i++;
             x += 40;
         }
     }
@@ -4341,7 +4341,7 @@ static void *func_801E8AF0(void *ot, void *prim, MenuDisplayConfig *cfg, s32 col
     u8 *itemName;
     s32 iconId;
 
-    if (magPage->weaponId == 0xFF) {
+    if (magPage->weaponId == INVALID_ID) {
         return prim;
     }
 
@@ -4452,23 +4452,15 @@ static s32 func_801E8DA4(void) {
  */
 static void *func_801E8DB0(void *ot, void *prim, MenuDisplayConfig *cfg, u32 color, MagazinePageEntry *magPage) {
     s32 i;
-    u16* picOverlayXPtr;
-    u8* picOverlayIdPtr;
-    s32 x;
-    s32 y;
+    MagazinePageOverlay* picOverlay;
 
-    i = 0;
-    picOverlayXPtr = &magPage->pictureOverlays[0].x;
-    picOverlayIdPtr = &magPage->pictureOverlays[0].id;
-    while (i < 4) {
-        if (picOverlayIdPtr[0] != 0xFF) {
-            x = cfg->x + picOverlayXPtr[0];
-            y = cfg->y + picOverlayIdPtr[-1];
-            prim = func_800376A8(ot, prim, func_801E8DA4(), picOverlayIdPtr[0], x, y, color);
+    picOverlay = magPage->pictureOverlays;
+    for (i = 0; i < 4; i++, picOverlay++) {
+        if (picOverlay->id != INVALID_ID) {
+            s32 x = cfg->x + picOverlay->x;
+            s32 y = cfg->y + picOverlay->y;
+            prim = func_800376A8(ot, prim, func_801E8DA4(), picOverlay->id, x, y, color);
         }
-        i++;
-        picOverlayIdPtr += 4;
-        picOverlayXPtr += 2;
     }
     return prim;
 }
@@ -4488,36 +4480,24 @@ static void *func_801E8DB0(void *ot, void *prim, MenuDisplayConfig *cfg, u32 col
  */
 static void *func_801E8E98(void *ot, void *prim, MenuDisplayConfig *cfg, u32 color, MagazinePageEntry *magPage) {
     s32 i;
-    u16 *picOverlayXPtr;
-    u8 *picOverlayIdPtr;
-    s16 xBase;
-    s16 yBase;
-    s32 x;
-    s32 y;
     u32 pkt;
+    MagazinePageOverlay *textOverlay;
 
-    i = 0;
-    picOverlayXPtr = &magPage->textOverlays[0].x;
-    picOverlayIdPtr = &magPage->textOverlays[0].id;
-    while (i < 4) {
-        if (picOverlayIdPtr[0] != 0xFF) {
-            xBase = cfg->x;
-            yBase = cfg->y;
-            x = xBase + picOverlayXPtr[0];
-            y = yBase + picOverlayIdPtr[-1];
+    textOverlay = magPage->textOverlays;
+    for (i = 0; i < 4; i++, textOverlay++) {
+        if (textOverlay->id != INVALID_ID) {
+            s32 x = cfg->x + textOverlay->x;
+            s32 y = cfg->y + textOverlay->y;
             if (i & 1) {
                 pkt = getDisplayListHead();
                 storeGpuPacket(prim);
             }
-            drawMessageText(ot, x, y, func_801E89A4(picOverlayIdPtr[0]));
+            drawMessageText(ot, x, y, func_801E89A4(textOverlay->id));
             if (i & 1) {
                 prim = getDisplayListHead();
                 storeGpuPacket(pkt);
             }
         }
-        i++;
-        picOverlayIdPtr += 4;
-        picOverlayXPtr += 2;
     }
     return prim;
 }
@@ -4715,7 +4695,7 @@ static void *func_801E934C(void *ot, void *prim, s32 x, s32 y, s32 entityId, s32
     MenuDisplayConfig *cfg;
     s32 charStatVal;
     s32 level;
-    s32 statusMask;
+    u8 statusMask;
     u8 *msg;
 
     cfg = &g_menuDisplayCfg;
@@ -4748,7 +4728,7 @@ static void *func_801E934C(void *ot, void *prim, s32 x, s32 y, s32 entityId, s32
         }
         xCoord = x + 82;
         yCoord = y + 8;
-        statusMask = status & 0x7E;
+        statusMask = status & (STATUS_POISON | STATUS_PETRIFY | STATUS_DARKNESS | STATUS_SILENCE | STATUS_BERSERK | STATUS_ZOMBIE);
         for (i = 0; i < 16; i++) {
             if ((statusMask >> i) & 1) {
                 prim = drawIcon(ot, prim, i + 272, xCoord, yCoord, g_menuTint[MENU_TINT_NORMAL]);
@@ -4910,7 +4890,7 @@ static void func_801E9AAC(ItemMenuState *s) {
     s->availableCharacters = availableCharacters;
     s->availableGfs = availableGfs;
     availableCharCount = 0;
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < CHARACTER_COUNT; i++) {
         if ((availableCharacters >> i) & 1) {
             availableCharCount++;
         }
