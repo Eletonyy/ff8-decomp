@@ -85,9 +85,9 @@ enum {
  * @brief Picture/text overlay drawn in the magazine page.
  */
 typedef struct {
-    u16 x; /**< 0x01: X position. */
-    u8 y;/**< 0x03: Y position. */
-    u8 id; /**< 0x04: ID. */
+    u16 x; /**< 0x00: X position. */
+    u8 y;  /**< 0x02: Y position. */
+    u8 id; /**< 0x03: ID. */
 } MagazinePageOverlay; /* 0x4 bytes */
 
 /**
@@ -151,7 +151,7 @@ typedef struct {
     u8 pad00[0x10];
     u16 state;                      /**< 0x10: Current menu state. */
     u8 pad12[0x4];
-    u16 returnState;                /**< 0x1C: Previous menu state. */
+    u16 returnState;                /**< 0x16: Previous menu state. */
     u8 pad18[0x8];
     ItemSlot *itemSlots;            /**< 0x20: Item slots. */
     u8 *battleItemOrder;            /**< 0x24: Array defining the order of battle items. */
@@ -331,7 +331,7 @@ static void *func_801E859C(ItemMenuState *, void *, void *, s32, s32);
 static void *func_801E8684(ItemMenuState *, void *, void *);
 static void *func_801E8780(void *, void *, s32, s32, s32);
 static void *func_801E88AC(ItemMenuState *, void *, void *, s32, s32);
-static s32 func_801E89A4(s32);
+static u8 *func_801E89A4(s32);
 static void *func_801E89C0(void *, void *, MenuDisplayConfig *, s32, MagazinePageEntry *);
 static void *func_801E8AF0(void *, void *, MenuDisplayConfig *, s32, MagazinePageEntry *);
 static void *func_801E8C88(void *, PaperMatPrim *, MenuDisplayConfig *, u32, MagazinePageEntry *);
@@ -341,7 +341,7 @@ static void *func_801E8E98(void *, void *, MenuDisplayConfig *, u32, MagazinePag
 static void *func_801E8FA8(void *, PaperMatSlicePrim *, MenuDisplayConfig *, u32, MagazinePageEntry *);
 static void *func_801E90D8(void *, void *, MenuDisplayConfig *, u32, MagazinePageEntry *);
 static void *func_801E91E4(void *, void *, s32, s32, MagazinePageEntry *);
-static s32 func_801E9248(void *, void *, MagazinePageEntry *);
+static void *func_801E9248(void *, void *, MagazinePageEntry *);
 static void *func_801E934C(void *, void *, s32, s32, s32, s32);
 static void *func_801E95C4(ItemMenuState *, void *, void *);
 static void func_801E9AAC(ItemMenuState *);
@@ -360,7 +360,7 @@ static u8 *func_801E280C(void) {
 
 /** @brief Get the stat name for the given stat string ID. */
 static u8 *func_801E281C(s32 strId) {
-    return func_801F08D4(1, 0xB, strId, 0);
+    return func_801F08D4(1, 11, strId, 0);
 }
 
 /**
@@ -618,11 +618,10 @@ static void func_801E2CCC(s32 pageTextureCategory, s32 pageTexture) {
 static void func_801E2D54(ItemSlot *itemSlots, u8 *battleItemOrder) {
     u8 buffer[32];
     s32 i;
-    u8 *pBuffer;
     u8 *pItemSlots;
 
-    for (i = 31, pBuffer = buffer + i; i >= 0; i--) {
-        *pBuffer-- = 0;
+    for (i = 0; i < 32; i++) {
+        buffer[i] = 0;
     }
 
     pItemSlots = &itemSlots->id;
@@ -1488,13 +1487,13 @@ static s32 func_801E3EBC(s32 charId, s32 increaseAmount, s32 statId) {
             ret = 1;
 
             if (increaseAmount != 0) {
-                msg = func_801F08D4(1, 9, 0x1D, 0);
+                msg = func_801F08D4(1, 9, 29, 0);
                 func_801E2C0C(msg, D_801ECC20, charId, statUpItemData->statId, oldBonusStat);
                 func_801E2800(D_801ECC20);
             }
         } else {
             if (increaseAmount != 0) {
-                msg = func_801F08D4(1, 9, 0x1E, 0);
+                msg = func_801F08D4(1, 9, 30, 0);
                 func_801E2C0C(msg, D_801ECC20, charId, statUpItemData->statId, 0);
                 func_801E2800(D_801ECC20);
             }
@@ -1664,7 +1663,7 @@ static s32 func_801E457C(s32 itemId, ItemSlot *itemSlots, s32 index) {
  * @param itemCount Quantity to subtract.
  */
 static void func_801E45B4(ItemSlot *itemSlots, s32 itemId, s32 itemCount) {
-    s32 i = 0;
+    s32 i;
     for (i = 0; i < ITEM_SLOT_COUNT; i++, itemSlots++) {
         s32 id = itemSlots->id;
         s32 qty = itemSlots->count;
@@ -2188,7 +2187,7 @@ restart:
             u8 *item;
             s32 count;
             s32 itemFlags;
-            item = (u8 *)s->itemSlots;
+            item = &s->itemSlots->id;
             count = s->primaryListIndex;
             count *= 2;
             item += count;
@@ -2418,24 +2417,24 @@ restart:
         }
         s->availableEntities = availableEntities;
         if (itemFlags & ITEM_FLAG_TARGET_DEAD) {
-            s32 val3 = ~(func_801F22F4() | (func_801F2370() << 0x10)) & availableEntities;
-            if (val3 != 0) {
+            s32 deadEntities = ~(func_801F22F4() | (func_801F2370() << 0x10)) & availableEntities;
+            if (deadEntities != 0) {
                 if (s->targetGfsOnly != 0) {
-                    s->secondaryListIndex = findNthSetBit((u32)val3 >> 0x10, 0);
+                    s->secondaryListIndex = findNthSetBit((u32)deadEntities >> 0x10, 0);
                 } else {
-                    s->secondaryListIndex = getBitRank(availableEntities, findNthSetBit(val3, 0));
+                    s->secondaryListIndex = getBitRank(availableEntities, findNthSetBit(deadEntities, 0));
                 }
             }
         }
         if (s->targetGfsOnly != 0) {
-            s32 val4 = 0;
+            s32 entityId = 0;
             for (i = 16; i < 32; i++) {
                 s32 mask = 1 << i;
                 if (availableEntities & mask) {
-                    val4 = i;
+                    entityId = i;
                 }
             }
-            s->entityVerticalPositionCount = (s8)(val4 - 14) / 2;
+            s->entityVerticalPositionCount = (s8)(entityId - 14) / 2;
         } else {
             s->entityVerticalPositionCount = popcount(availableEntities);
         }
@@ -2457,18 +2456,11 @@ restart:
         func_801E4708(0, s->menuActionId);
         func_801E47E0(0, s->primaryListIndex);
         if (s->targetGfsOnly != 0) {
-            s32 gfListIndexU16;
-            s32 gfListIndexS16;
             s32 gfRow;
             s32 gfCol;
-            s32 newGfRow;
             s32 gfMask;
-            gfListIndexU16 = (u16)s->secondaryListIndex;
-            gfListIndexS16 = (s16)s->secondaryListIndex;
-            gfRow = gfListIndexS16 + ((u32)(gfListIndexU16 << 0x10) >> 0x1F);
-            gfRow >>= 1;
-            gfCol = (s16)(gfListIndexS16 - (gfRow * 2));
-            newGfRow = func_801F6768(btnFlags, s->entityVerticalPositionCount, gfRow);
+            gfCol = s->secondaryListIndex % 2;
+            gfRow = func_801F6768(btnFlags, s->entityVerticalPositionCount, s->secondaryListIndex / 2);
             if ((btnFlags & PADLleft) && gfCol != 0) {
                 sendSpuCommand(1);
                 gfCol = 0;
@@ -2477,7 +2469,7 @@ restart:
                 sendSpuCommand(1);
                 gfCol = 1;
             }
-            s->secondaryListIndex = gfCol + (newGfRow * 2);
+            s->secondaryListIndex = gfCol + (gfRow * 2);
             gfMask = 1 << s->secondaryListIndex;
             if (s->availableEntities & gfMask) {
                 s->entityId = s->secondaryListIndex;
@@ -2535,7 +2527,7 @@ restart:
         break;
 
     case 17: {
-        s32 val1;
+        s32 itemEffectApplied;
         func_801E2800(NULL);
         *statePtr = 11;
         cfgFlags = 0;
@@ -2555,7 +2547,7 @@ restart:
         case ITEM_TYPE_TEACH_GF_ABILITY:
         case ITEM_TYPE_STAT_UP:
         case ITEM_TYPE_CURE_STATUS:
-            val1 = func_801E4394(s->itemId, s->entityMask);
+            itemEffectApplied = func_801E4394(s->itemId, s->entityMask);
             break;
         case ITEM_TYPE_RENAME_CARD: 
             sendSpuCommand(2);
@@ -2570,7 +2562,7 @@ restart:
             state = 107;
             goto restart;
         }
-        if (val1 == 1 && func_801E457C(s->itemId, s->itemSlots, s->primaryListIndex) == 0) {
+        if (itemEffectApplied == 1 && func_801E457C(s->itemId, s->itemSlots, s->primaryListIndex) == 0) {
             if (func_801E280C() != NULL) {
                 s->returnState = 4;
                 *statePtr = 18;
@@ -3299,7 +3291,7 @@ restart:
         msg = func_801F08D4(1, 9, 17, 0);
         btlStrcat2(D_801ECC20, msg);
         width = measureMessage(D_801ECC20);
-        func_801F728C(D_801ECC20, 100 - ((width >> 16) - 26) / 2);
+        func_801F728C(D_801ECC20, 100 - ((width >> 0x10) - 26) / 2);
         s->confirmationOption = 1;
         *statePtr = 75;
         break;
@@ -3391,7 +3383,7 @@ restart:
         for (i = 0; i < 202; i++) {
             buffer2[i] = 0;
         }
-        item = (u8 *)s->itemSlots;
+        item = &s->itemSlots->id;
         for (i = 0; i < 198; i++) {
             id = *item++;
             count = *item++;
@@ -3399,12 +3391,12 @@ restart:
                 buffer2[id] = count;
             }
         }
-        item = (u8 *)s->itemSlots;
+        item = &s->itemSlots->id;
         for (i = 0; i < 198; i++) {
             *item++ = 0;
             *item++ = 0;
         }
-        item = (u8 *)s->itemSlots;
+        item = &s->itemSlots->id;
         for (i = 1; i < 199; i++) {
             if (buffer2[i] != 0) {
                 *item++ = i;
@@ -4262,17 +4254,11 @@ static void *func_801E88AC(ItemMenuState *s, void *ot, void *prim, s32 x, s32 y)
     return func_801EFBB4(ot, prim, func_801E8780);
 }
 
-/**
- * @brief Look up sprite data address from table at MENU_SUBOVERLAY_ADDR.
- *
- * Reads halfword offset at index a0 from the table, adds to base.
- *
- * @param spriteId Sprite index.
- * @return Base address + halfword offset from table entry.
- */
-static s32 func_801E89A4(s32 spriteId) {
-    s32 base = MENU_SUBOVERLAY_ADDR;
-    return *(u16 *)(base + spriteId * 2 + 2) + base;
+/** @brief Get the string for the given ID. */
+static u8 *func_801E89A4(s32 strId) {
+    u16 *base = (u16 *)MENU_SUBOVERLAY_ADDR;
+    s32 offset = base[strId + 1];
+    return (u8 *)base + offset;
 }
 
 /**
@@ -4364,10 +4350,10 @@ static void *func_801E8AF0(void *ot, void *prim, MenuDisplayConfig *cfg, s32 col
         if (id != 0) {
             x = xBase;
             y = yBase - 2;
-            iconId = func_801F6B28(id) + 0xDF;
+            iconId = func_801F6B28(id) + 223;
             prim = drawIcon(ot, prim, iconId, x, y, g_menuTint[MENU_TINT_NORMAL]);
             
-            x = xBase + 0xE;
+            x = xBase + 14;
             y = yBase;
             itemName = getItemName(id);
             prim = func_801F0FEC(ot, prim, x, y, itemName, 7);
@@ -4529,17 +4515,17 @@ static void *func_801E8FA8(void *ot, PaperMatSlicePrim *prim, MenuDisplayConfig 
     s32 xOffset;
 
     clut = 0x36E0;
-    winXRaw = (magPage->paperBgParamA + 0x380) * 4;
-    drawModeCmd = (((magPage->paperBgParamA + 0x380) & 0x3FF) >> 6) | 0xE1000480;
+    winXRaw = (magPage->paperBgParamA + 896) * 4;
+    drawModeCmd = (((magPage->paperBgParamA + 896) & 0x3FF) >> 6) | 0xE1000480;
     winXSignAdjust = winXRaw; 
     sliceXOffset = magPage->paperBgParamB;
     if (winXSignAdjust < 0) {
-        winXSignAdjust += 0xFF;
+        winXSignAdjust += 255;
     }
     winYSignAdjust = sliceXOffset;
     winXRaw = ((winXRaw - (winXSignAdjust & 0x3F00)) >> 3) << 0xA;
     if (winYSignAdjust < 0) {
-        winYSignAdjust += 0xFF;
+        winYSignAdjust += 255;
     }
     texWindowCmd = winXRaw | (((sliceXOffset - (winYSignAdjust & 0x100)) >> 3) << 0xF) | 0xE200039C;
     remainingWidth = magPage->windowWidth;
@@ -4644,7 +4630,7 @@ static void *func_801E91E4(void *ot, void *prim, s32 x, s32 y, MagazinePageEntry
  * @param magPage Pointer to the Weapons Monthly magazine page to be rendered.
  * @return Updated next free address in the primitive buffer.
  */
-static s32 func_801E9248(void *ot, void *prim, MagazinePageEntry *magPage) {
+static void *func_801E9248(void *ot, void *prim, MagazinePageEntry *magPage) {
     u8* navigationHint;
     s32 x;
     s32 y;

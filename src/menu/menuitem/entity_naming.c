@@ -533,8 +533,7 @@ static void *func_801EA538(EntityNamingMenuState *s, void *ot, DR_TPAGE *prim, s
             getAddrFast(ot, head);
             head2 = func_801F0F20(head, prim, ch - 32, 7, (charY << 0x10) | (charX & 0xFFFF));
             prim = (DR_TPAGE *)((u8 *)prim + primOffset);
-            setlen(prim, 1);
-            prim->code[0] = 0xE100041F;
+            setDrawTPage(prim, 1, 0, 0x1F);
 
             // Dead code added to match with the original game binary.
             if (head3) { head3++; head3--; }
@@ -656,8 +655,7 @@ static void *func_801EA8F0(void *ot, DR_TPAGE *prim, s32 x, s32 y, u16 strId, s3
         prim = (DR_TPAGE *)((s32)prim + 20);
         x += 18;
     }
-    setlen(prim, 1);
-    prim->code[0] = 0xE100041F;
+    setDrawTPage(prim, 1, 0, 0x1F);
 
     // Dead code added to match with the original game binary.
     if (head2) { head2++; head2--; }
