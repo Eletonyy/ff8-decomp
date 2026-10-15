@@ -2427,6 +2427,7 @@ restart:
             }
         }
         if (s->targetGfsOnly != 0) {
+            s8 result;
             s32 entityId = 0;
             for (i = 16; i < 32; i++) {
                 s32 mask = 1 << i;
@@ -2434,7 +2435,8 @@ restart:
                     entityId = i;
                 }
             }
-            s->entityVerticalPositionCount = (s8)(entityId - 14) / 2;
+            result = entityId - 14;
+            s->entityVerticalPositionCount = result / 2;
         } else {
             s->entityVerticalPositionCount = popcount(availableEntities);
         }
