@@ -2417,10 +2417,10 @@ restart:
         }
         s->availableEntities = availableEntities;
         if (itemFlags & ITEM_FLAG_TARGET_DEAD) {
-            s32 deadEntities = ~(func_801F22F4() | (func_801F2370() << 0x10)) & availableEntities;
+            u32 deadEntities = ~(func_801F22F4() | (func_801F2370() << 0x10)) & availableEntities;
             if (deadEntities != 0) {
                 if (s->targetGfsOnly != 0) {
-                    s->secondaryListIndex = findNthSetBit((u32)deadEntities >> 0x10, 0);
+                    s->secondaryListIndex = findNthSetBit(deadEntities >> 0x10, 0);
                 } else {
                     s->secondaryListIndex = getBitRank(availableEntities, findNthSetBit(deadEntities, 0));
                 }
