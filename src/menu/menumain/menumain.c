@@ -2074,7 +2074,7 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F6B54);
  * @param a4   Passed to func_801EF9AC (intensity/param).
  * @param mask Bitmask of rows to draw, bit index = entry index.
  */
-s32 func_801F6C9C(s32 ctx, s32 dl, s32 x, s32 y, s32 a4, u16 mask) {
+void *func_801F6C9C(s32 ctx, s32 dl, s32 x, s32 y, s32 a4, u16 mask) {
     MenuDisplayConfig *cfg = &g_menuDisplayCfg;
     s32 tx = x + 8;
     s32 ty = y + 0xA;

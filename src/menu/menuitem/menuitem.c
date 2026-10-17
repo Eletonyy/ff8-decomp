@@ -82,6 +82,17 @@ enum {
 };
 
 /**
+ * @brief Represents a string-location table (`strings_locationsXX.bin`) stored in `mngrp.bin`.
+ *
+ * The table contains offsets to strings relative to a common base address.
+ * The number of offsets is specified by the `count` field.
+ */
+typedef struct {
+    u16 count;      /**< 0x00: Number of strings. */
+    u16 offsets[1]; /**< 0x02: String offsets. */
+} Mngrp_string;
+
+/**
  * @brief Picture/text overlay drawn in the magazine page.
  */
 typedef struct {
@@ -4257,10 +4268,9 @@ static void *func_801E88AC(ItemMenuState *s, void *ot, void *prim, s32 x, s32 y)
 }
 
 /** @brief Get the string for the given ID. */
-static u8 *func_801E89A4(s32 strId) {
-    u16 *base = (u16 *)MENU_SUBOVERLAY_ADDR;
-    s32 offset = base[strId + 1];
-    return (u8 *)base + offset;
+static u8 *func_801E89A4(s32 textId) {
+    Mngrp_string *table = (Mngrp_string *)MENU_SUBOVERLAY_ADDR;
+    return (u8 *)table + table->offsets[textId];
 }
 
 /**
