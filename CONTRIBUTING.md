@@ -194,4 +194,6 @@ void MaxPartyLevel(void) {
 ** Reason: a patched build still matches the original binary, but the C no longer describes the game's code, and that is the whole point of the project.
 ** Building a file with the compiler version and flags it was originally built with is fine (e.g. PsyQ 4.3 instead of 4.1 for some files). That's how the original was built, not a hack.
 
+* You must understand the code you commit. If you can't explain what a change does and why, it isn't ready to be committed.
+
 * Run `make full` to verify that the whole pipeline still builds and that the code matches before creating a pull request.
