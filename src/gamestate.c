@@ -329,7 +329,17 @@ void func_80037308(NameFont *font, u8 *out)
     } while (0);
 }
 
-
+/**
+ * @brief Draw portrait sprite @p idx of the portrait table at a screen position.
+ *
+ * @param ot Ordering-table entry the packets are linked into.
+ * @param head Next free position in the packet buffer. One TSPRT is written there for each piece of the sprite.
+ * @param idx Portrait sprite to draw. An index past the end of the table draws nothing.
+ * @param x Screen x of the sprite's origin. Each piece is drawn at its own offset from it.
+ * @param y Screen y of the sprite's origin.
+ * @param color Colour that multiplies the texture: red, green and blue in the low three bytes, where 0x80 leaves it unchanged.
+ * @return Next free position in the packet buffer, after the packets written.
+ */
 void *DrawPortrait(void *ot, TSPRT *head, s32 idx, s32 x, s32 y, u32 color) {
     void *data = &g_portraitsTable;
 
@@ -350,25 +360,50 @@ void *DrawPortrait(void *ot, TSPRT *head, s32 idx, s32 x, s32 y, u32 color) {
     return head;
 }
 
-
+/**
+ * @brief Wrapper for DrawPortrait but always passes color 0x64808080.
+ */
 void *DrawPortraitNormalTint(void *ot, void *head, s32 idx, s32 x, s32 y) {
     return DrawPortrait(ot, head, idx, x, y, 0x64808080);
 }
 
+/**
+ * @brief Draw sprite @p idx of a sprite table at a screen position.
+ *
+ * @param ot Ordering-table entry the packets are linked into.
+ * @param head Next free position in the packet buffer. One TSPRT is written there for each piece of the sprite.
+ * @param table Sprite table to draw from.
+ * @param idx Sprite to draw. An index past the end of the table draws nothing.
+ * @param x Screen x of the sprite's origin. Each piece is drawn at its own offset from it.
+ * @param y Screen y of the sprite's origin.
+ * @param color Colour that multiplies the texture: red, green and blue in the low three bytes, where 0x80 leaves it unchanged.
+ * @return Next free position in the packet buffer, after the packets written.
+ */
+void *DrawSpriteFromTable(void *ot, TSPRT *head, SpriteTable *table, s32 idx, s32 x, s32 y, u32 color) {
+    void *data = table;
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_800376A8);
+    if (idx >= table->spriteCount) {
+        return head;
+    }
 
-
-// mc_xor_checksum
+    data += table->offsets[idx];
+    idx = ((Sprite *)data)->cellCount;
+    data = ((Sprite *)data)->cells;
+    while (idx > 0) {
+        setPortraitCell(head, (SpriteCell *)data, x, y, color);
+        addPrimFast(ot, head);
+        head++;
+        idx--;
+        data = (SpriteCell *)data + 1;
+    }
+    return head;
+}
 
 /**
- * @brief Call func_800376A8 with constant 7th arg (0x64808080).
- *
- * Passes through all 6 caller args and appends 0x64808080
- * as the 7th argument.
+ * @brief Wrapper for DrawSpriteFromTable but always passes color 0x64808080.
  */
-void drawSaveIconWithArgs(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4, s32 arg5) {
-    func_800376A8(a0, a1, a2, a3, arg4, arg5, 0x64808080);
+void *DrawSpriteFromTableNormalTint(void *ot, void *head, SpriteTable *table, s32 idx, s32 x, s32 y) {
+    return DrawSpriteFromTable(ot, head, table, idx, x, y, 0x64808080);
 }
 
 

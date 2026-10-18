@@ -468,5 +468,6 @@ extern s32 func_80037C6C(s32 charId);
 
 extern void *DrawPortrait(void *ot, TSPRT *head, s32 idx, s32 x, s32 y, u32 color);
 extern void *DrawPortraitNormalTint(void *ot, void *head, s32 idx, s32 x, s32 y);
+extern void *DrawSpriteFromTable(void *ot, TSPRT *head, SpriteTable *table, s32 idx, s32 x, s32 y, u32 color);
 
 #endif /* GAMESTATE_H */

@@ -53,6 +53,7 @@ func_801E8780 = 0x801E8780; // type:func
 func_801E88AC = 0x801E88AC; // type:func
 func_801E89C0 = 0x801E89C0; // type:func
 func_801E8AF0 = 0x801E8AF0; // type:func
+GetMenuImageBufferTable = 0x801E8DA4; // type:func
 func_801E8DB0 = 0x801E8DB0; // type:func
 func_801E8E98 = 0x801E8E98; // type:func
 func_801E90D8 = 0x801E90D8; // type:func

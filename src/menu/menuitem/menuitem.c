@@ -346,7 +346,7 @@ static u8 *func_801E89A4(s32);
 static void *func_801E89C0(void *, void *, MenuDisplayConfig *, s32, MagazinePageEntry *);
 static void *func_801E8AF0(void *, void *, MenuDisplayConfig *, s32, MagazinePageEntry *);
 static void *func_801E8C88(void *, PaperMatPrim *, MenuDisplayConfig *, u32, MagazinePageEntry *);
-static s32 func_801E8DA4(void);
+static SpriteTable *GetMenuImageBufferTable(void);
 static void *func_801E8DB0(void *, void *, MenuDisplayConfig *, u32, MagazinePageEntry *);
 static void *func_801E8E98(void *, void *, MenuDisplayConfig *, u32, MagazinePageEntry *);
 static void *func_801E8FA8(void *, PaperMatSlicePrim *, MenuDisplayConfig *, u32, MagazinePageEntry *);
@@ -4430,9 +4430,9 @@ static void *func_801E8C88(void *ot, PaperMatPrim *prim, MenuDisplayConfig *cfg,
     return prim + 1;
 }
 
-/** @brief Return base address of item sprite data (MENU_IMAGE_ADDR). */
-static s32 func_801E8DA4(void) {
-    return MENU_IMAGE_ADDR;
+/** @brief Return a SpriteTable pointer to whatever sprite table is currently loaded to the menu image buffer */
+static SpriteTable *GetMenuImageBufferTable(void) {
+    return (SpriteTable *)MENU_IMAGE_ADDR;
 }
 
 /**
@@ -4457,7 +4457,7 @@ static void *func_801E8DB0(void *ot, void *prim, MenuDisplayConfig *cfg, u32 col
         if (picOverlay->id != INVALID_ID) {
             s32 x = cfg->x + picOverlay->x;
             s32 y = cfg->y + picOverlay->y;
-            prim = func_800376A8(ot, prim, func_801E8DA4(), picOverlay->id, x, y, color);
+            prim = DrawSpriteFromTable(ot, prim, GetMenuImageBufferTable(), picOverlay->id, x, y, color);
         }
     }
     return prim;

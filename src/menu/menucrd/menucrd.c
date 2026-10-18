@@ -1,4 +1,5 @@
 #include "common.h"
+#include "gamestate.h"
 #include "menu.h"
 #include "menucrd.h"
 #include "overlay.h"
@@ -28,7 +29,7 @@ typedef struct {
 
 extern s16 D_801E7D64;
 extern s16 D_801E7D66;
-extern u8 D_801E7870;
+extern SpriteTable D_801E7870;
 
 extern s16 getGameStateS16(void);
 
@@ -230,10 +231,10 @@ INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E60E8);
  * @param a2 Y position
  * @param a3 Text index (passed as 5th arg to renderer)
  * @param stackArg Color/attribute (passed as 6th arg)
- * @return Result from func_800376A8
+ * @return Result from DrawSpriteFromTable
  */
-s32 func_801E6228(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
-    return func_800376A8(a1, a2, (s32)&D_801E7870, 0xB, a3, stackArg, g_menuTint[MENU_TINT_NORMAL]);
+void *func_801E6228(s32 a0, void *a1, void *a2, s32 a3, s32 stackArg) {
+    return DrawSpriteFromTable(a1, a2, &D_801E7870, 0xB, a3, stackArg, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -250,7 +251,7 @@ s32 func_801E6228(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
  * @param a2 Y position
  * @param a3 Text index
  * @param stackArg Color/attribute
- * @return Result from func_800376A8
+ * @return Result from DrawSpriteFromTable
  */
 INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E6270);
 
