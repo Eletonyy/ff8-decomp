@@ -21,6 +21,31 @@ extern u8 D_8005644B[];
 extern s32 D_800562D4;
 extern s32 findNthSetBit(s32, s32);
 
+extern SpriteTable g_portraitsTable;
+
+#define setRGBCWord(p, c) (*(u32 *)&(p)->r0 = (c))
+#define setUVClutWH(p, uv, wh) (*(u32 *)&(p)->u0 = (uv), *(u32 *)&(p)->w = (wh))
+
+#define setPortraitSprt(p, xyTpage, x, y, color) do { \
+    s32 dx_, dy_; \
+    dy_ = (s8)((xyTpage) >> 8); \
+    dx_ = (s8)(xyTpage); \
+    dx_ += (x); \
+    dy_ += (y); \
+    setXY0(p, dx_, dy_); \
+    (xyTpage) >>= 16; \
+    setRGBCWord(p, color); \
+    setTSprtFull(p, 0, 0, xyTpage); \
+} while (0)
+
+#define setPortraitCell(p, cell, x, y, color) { \
+    u32 uv_ = (cell)->uvClut; \
+    u32 wh_ = (cell)->wh; \
+    u32 xy_ = (cell)->xyTpage; \
+    setUVClutWH(p, uv_, wh_); \
+    setPortraitSprt(p, xy_, x, y, color); \
+}
+
 /** @brief 0x20-byte free-id table immediately before the D_80077EBC pair list. */
 typedef struct {
     /* 0x000 */ u8 freeIds[0x20];
@@ -305,20 +330,29 @@ void func_80037308(NameFont *font, u8 *out)
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_800375A0);
+void *DrawPortrait(void *ot, TSPRT *head, s32 idx, s32 x, s32 y, u32 color) {
+    void *data = &g_portraitsTable;
+
+    if (idx >= g_portraitsTable.spriteCount) {
+        return head;
+    }
+
+    data += g_portraitsTable.offsets[idx];
+    idx = ((Sprite *)data)->cellCount;
+    data = ((Sprite *)data)->cells;
+    while (idx > 0) {
+        setPortraitCell(head, (SpriteCell *)data, x, y, color);
+        addPrimFast(ot, head);
+        head++;
+        idx--;
+        data = (SpriteCell *)data + 1;
+    }
+    return head;
+}
 
 
-/**
- * Wrapper for func_800375A0 with fixed 6th argument 0x64808080.
- *
- * @param a0 First argument passed through
- * @param a1 Second argument passed through
- * @param a2 Third argument passed through
- * @param a3 Fourth argument passed through
- * @param arg4 Fifth argument passed through from caller's stack
- */
-void drawSaveIcon(s32 a0, s32 a1, s32 a2, s32 a3, s32 arg4) {
-    func_800375A0(a0, a1, a2, a3, arg4, 0x64808080);
+void *drawSaveIcon(void *ot, void *head, s32 idx, s32 x, s32 y) {
+    return DrawPortrait(ot, head, idx, x, y, 0x64808080);
 }
 
 

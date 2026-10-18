@@ -479,7 +479,7 @@ static void func_801E9F94(EntityNamingMenuState *s) {
  * @return Updated next free address in the primitive buffer.
  */
 static void *func_801EA500(void *ot, void *prim, s32 x, s32 y, s32 portraitIdx) {
-    return func_800375A0(ot, prim, portraitIdx, x, y, g_menuTint[MENU_TINT_NORMAL]);
+    return DrawPortrait(ot, prim, portraitIdx, x, y, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**

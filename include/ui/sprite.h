@@ -4,6 +4,22 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 
+typedef struct {
+    /** 0x00 */ u32 spriteCount;
+    /** 0x04 */ u32 offsets[1];
+} SpriteTable;
+
+typedef struct {
+    /** 0x00 */ u32 uvClut;
+    /** 0x04 */ u32 wh;
+    /** 0x08 */ u32 xyTpage;
+} SpriteCell;
+
+typedef struct {
+    /** 0x00 */ s32 cellCount;
+    /** 0x04 */ SpriteCell cells[1];
+} Sprite;
+
 // custom packet for drawing sprites. combines DR_TPAGE and SPRT into one primitive
 typedef struct {
     /** 0x00 */ u32 tag;
