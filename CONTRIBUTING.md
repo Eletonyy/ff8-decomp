@@ -4,6 +4,7 @@ This is a living and work-in-progress document so changes may and are likely to 
 
 * All .c files has a header file with the same name. E.g. src/battle/bc_object1.c has a corresponding include/battle/bc_object1.h.
   * The header file only holds the public interface of the unit; public typedefs/structs owned by the unit, and public prototypes.
+  * A header is only added if it actually holds something. A unit with no public typedefs/structs and no public prototypes has no header.
   * Private functions (functions only called from within the unit itself) are not declared in the header. They are declared `static` in a prototype block at the top of the .c file, and defined `static` further down. Private typedefs/structs used only by that unit live at the top of the .c file as well.
     * Reason: a symbol should have exactly one declaration, and a private symbol has no business being visible to other translation units. Keeping it `static` and file-local makes the unit boundary explicit and stops other files from growing a dependency on internals.
 
