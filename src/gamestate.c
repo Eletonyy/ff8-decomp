@@ -351,7 +351,7 @@ void *DrawPortrait(void *ot, TSPRT *head, s32 idx, s32 x, s32 y, u32 color) {
 }
 
 
-void *drawSaveIcon(void *ot, void *head, s32 idx, s32 x, s32 y) {
+void *DrawPortraitNormalTint(void *ot, void *head, s32 idx, s32 x, s32 y) {
     return DrawPortrait(ot, head, idx, x, y, 0x64808080);
 }
 

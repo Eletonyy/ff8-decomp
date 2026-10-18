@@ -1841,7 +1841,7 @@ s32 func_801F6358(s32 a0, s32 a1, s32 a2, s32 a3, s32 a4) {
 }
 
 /** @brief Draw icon/sprite at position (arg-reorder wrapper for DrawPortrait). */
-void *func_801F63DC(s32 idx, void *ot, void *head, s32 x, s32 y, u32 color) {
+void *MenuDrawPortrait(s32 idx, void *ot, void *head, s32 x, s32 y, u32 color) {
     return DrawPortrait(ot, head, idx, x, y, color);
 }
 

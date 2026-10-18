@@ -467,6 +467,6 @@ extern void enableChocoboWorld(void);
 extern s32 func_80037C6C(s32 charId);
 
 extern void *DrawPortrait(void *ot, TSPRT *head, s32 idx, s32 x, s32 y, u32 color);
-extern void *drawSaveIcon(void *ot, void *head, s32 idx, s32 x, s32 y);
+extern void *DrawPortraitNormalTint(void *ot, void *head, s32 idx, s32 x, s32 y);
 
 #endif /* GAMESTATE_H */
