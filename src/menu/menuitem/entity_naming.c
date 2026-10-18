@@ -80,7 +80,7 @@ static s32 func_801E9E10(u8 *);
 static u8 *func_801E9E7C(s32);
 static void func_801E9EA8(EntityNamingMenuState *, s32);
 static void func_801E9F94(EntityNamingMenuState *);
-static void *func_801EA500(void *, void *, s32, s32, s32);
+static void *MenuDrawPortraitNormalTint(void *, void *, s32, s32, s32);
 static void *func_801EA538(EntityNamingMenuState *, void *, DR_TPAGE *, s32, s32);
 static void *func_801EA714(void *, void *, s32, s32);
 static void *func_801EA7E0(EntityNamingMenuState *, void *, void *, s32, s32);
@@ -478,8 +478,8 @@ static void func_801E9F94(EntityNamingMenuState *s) {
  * @param portraitIdx Index of the entity's portrait sprite.
  * @return Updated next free address in the primitive buffer.
  */
-static void *func_801EA500(void *ot, void *prim, s32 x, s32 y, s32 portraitIdx) {
-    return func_800375A0(ot, prim, portraitIdx, x, y, g_menuTint[MENU_TINT_NORMAL]);
+static void *MenuDrawPortraitNormalTint(void *ot, void *prim, s32 x, s32 y, s32 portraitIdx) {
+    return DrawPortrait(ot, prim, portraitIdx, x, y, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -784,7 +784,7 @@ static void *func_801EAC54(EntityNamingMenuState *s, void *ot, void *prim) {
     if (func_801F0D84() != 15) {
         return prim;
     }
-    prim = func_801EA500(ot, prim, 48, 34, s->namingCfg->portraitIdx);
+    prim = MenuDrawPortraitNormalTint(ot, prim, 48, 34, s->namingCfg->portraitIdx);
     y = 55;
     prim = func_801EA538(s, ot, prim, 106, y);
     prim = func_801EA714(ot, prim, 106, 29);

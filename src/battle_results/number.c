@@ -30,8 +30,6 @@ void *drawNumber(P_TAG *ot, SPRT *sprt, s32 x, u32 value, u32 color, s32 clut) {
     s32 y;
     s32 i;
     s32 width;
-    u32 link1;
-    u32 link2;
 
     table = D_8008371C;
     table--;
@@ -83,14 +81,14 @@ void *drawNumber(P_TAG *ot, SPRT *sprt, s32 x, u32 value, u32 color, s32 clut) {
         sprt->clut = getClut(288, 224) + (clut << 6);
         *(u16 *)&sprt->u0 = uv;
         *(u32 *)&sprt->w = 0xC000C;
-        addPrimFastWithTempOperand(ot, sprt, link1);
+        addPrimFast(ot, sprt);
         sprt++;
         x += g->width & 0xF;
     }
 
     setlen(sprt, 1);
     ((DR_TPAGE *)sprt)->code[0] = _get_mode(1, 0, getTPage(0, 0, 960, 256));
-    addPrimFastWithTempOperand(ot, sprt, link2);
+    addPrimFast(ot, sprt);
     return (DR_TPAGE *)sprt + 1;
 }
 

@@ -25,6 +25,7 @@
 #include "character.h"
 #include "field.h"
 #include "psxsdk/libgpu.h"
+#include "ui/sprite.h"
 
 /**
  * @brief 4-byte scene-state block at D_80082C8C.
@@ -464,5 +465,8 @@ extern void enableChocoboWorld(void);
 
 /** @brief Resolve a character ID (e.g. party slot) to its global character code. */
 extern s32 func_80037C6C(s32 charId);
+
+extern void *DrawPortrait(void *ot, TSPRT *head, s32 idx, s32 x, s32 y, u32 color);
+extern void *DrawPortraitNormalTint(void *ot, void *head, s32 idx, s32 x, s32 y);
 
 #endif /* GAMESTATE_H */

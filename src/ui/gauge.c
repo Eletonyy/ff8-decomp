@@ -120,9 +120,6 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
     s32 flags;
     s32 originX;
     s32 originY;
-    u32 link; /* Regalloc: one link temp per addPrim, each live from entry; this one is spilled. */
-    u32 link2;
-    u32 link3;
     s32 x;
     s32 y;
     s32 n;
@@ -153,7 +150,7 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
         setlen(tw, 2);
         tw->code[0] = TEXWINDOW_OFF;
         tw->code[1] = 0;
-        addPrimFastWithTempOperand(ot, tw, link);
+        addPrimFast(ot, tw);
         p = (ModeSprt *)(tw + 1);
 
         x += 8;
@@ -172,7 +169,7 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
             setXY0(p, x, y);
             setWH(p, w, 8);
             *(u32 *)&p->u0 = getClut(ICON_CLUT_X, GAUGE_FILL_CLUT_Y) << 16;
-            addPrimFastWithTempOperand(ot, p, link2);
+            addPrimFast(ot, p);
             p++;
             x += GAUGE_SPRITE_WIDTH;
         }
@@ -193,7 +190,7 @@ static u8 *drawGauge(P_TAG *ot, void *pkt, s32 idx, u32 color) {
             setXY0(p, x, y);
             setWH(p, w, 16);
             *(u32 *)&p->u0 = getClut(ICON_CLUT_X, GAUGE_TRACK_CLUT_Y) << 16;
-            addPrimFastWithTempOperand(ot, p, link3);
+            addPrimFast(ot, p);
             p++;
             x += GAUGE_SPRITE_WIDTH;
         }

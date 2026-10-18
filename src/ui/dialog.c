@@ -361,7 +361,6 @@ static void drawNextPageMarker(P_TAG *ot, Dialog *entry) {
     IconCell *cell;
     TSPRT *p;
     s32 head;
-    u32 link;
     u32 flags;
     u32 word;
     s32 tpage;
@@ -420,7 +419,7 @@ static void drawNextPageMarker(P_TAG *ot, Dialog *entry) {
         word = (s8)(word >> 24); /* signed X offset, byte 1 */
         setXY0(p, x + word, y + val);
 
-        addPrimFastWithTempOperand(ot, p, link);
+        addPrimFast(ot, p);
     }
     head = (s32)p;
     storeGpuPacket(head);
@@ -446,8 +445,6 @@ static void drawDialogContents(s32 index, P_TAG *ot) {
     DR_AREA *area;
     DR_TPAGE *tpage;
     BattleDisplayEntity *ent;
-    u32 link;
-    u32 link2;
     s32 brightness;
     s32 colour;
     s32 y;
@@ -474,7 +471,7 @@ static void drawDialogContents(s32 index, P_TAG *ot) {
                 area = drawIcon(ot, area, ICON_CHOICE_CURSOR, DIALOG_CURSOR_X, y, colour);
             }
             SetDrawArea(area, &ent->clipBound.rect);
-            addPrimFastWithTempOperand(ot, area, link);
+            addPrimFast(ot, area);
             storeGpuPacket((u32)(area + 1));
         }
     }
@@ -484,7 +481,7 @@ static void drawDialogContents(s32 index, P_TAG *ot) {
     setlen(tpage, 1);
     val = _get_mode(1, 0, 0);
     tpage->code[0] = val;
-    addPrimFastWithTempOperand(ot, tpage, link2);
+    addPrimFast(ot, tpage);
     storeGpuPacket((u32)(tpage + 1));
 }
 

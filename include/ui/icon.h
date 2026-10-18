@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "psxsdk/libgpu.h"
+#include "ui/sprite.h"
 
 /* --- Icon table --- */
 

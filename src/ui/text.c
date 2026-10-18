@@ -58,7 +58,6 @@ static TSPRT *drawTextIcon(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
     IconTable *table;
     IconCell *cell;
     TSPRT *p;
-    u32 link;
     u32 word;
     s32 tpage;
     u32 val;
@@ -100,7 +99,7 @@ static TSPRT *drawTextIcon(P_TAG *ot, TSPRT *head, s32 idx, s32 x, s32 y) {
         word = (s8)(word >> 24); /* signed X offset, byte 1 */
         setXY0(p, x + word, y + val);
 
-        addPrimFastWithTempOperand(ot, p, link);
+        addPrimFast(ot, p);
     }
     head = p;
     return head;

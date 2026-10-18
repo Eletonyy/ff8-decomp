@@ -46,7 +46,7 @@ static DR_AREA *drawGfApWindow(P_TAG *ot, DR_AREA *prim, s32 t, s32 color, s32 a
  * Loads the current frame's drawing-area GP0 commands from the scratchpad
  * @c ResultsScreen staged by @c drawResultsFrame, packs them into the
  * @c DR_AREA primitive at @c prim, links @c prim into @c ot's slot chain
- * via @c addPrimFast (temp $a3), and returns the next packet cursor.
+ * via @c addPrimFast, and returns the next packet cursor.
  *
  * @param ot   OT slot pointer.
  * @param prim Storage for the new primitive (must have space for one DR_AREA).
@@ -59,7 +59,7 @@ static DR_AREA *resetDrawArea(P_TAG *ot, DR_AREA *prim) {
     setlen(prim, 2);
     prim->code[0] = c0;
     prim->code[1] = c1;
-    addPrimFast(ot, prim, a3);
+    addPrimFast(ot, prim);
     return prim + 1;
 }
 
@@ -115,7 +115,7 @@ void scaleWindowRect(s32 t, RECT *src, RECT *dst) {
  *
  * Offsets a copy of @p rect by the VRAM origin in the scratchpad
  * @c ResultsScreen, keeps it at least 2x2, packs it into @p prim with
- * @c SetDrawArea and links @p prim into @p ot via @c addPrimFast (temp $s1).
+ * @c SetDrawArea and links @p prim into @p ot via @c addPrimFast.
  *
  * @param ot OT slot pointer.
  * @param prim Storage for the new primitive.
@@ -136,7 +136,7 @@ static DR_AREA *setDrawAreaRect(P_TAG *ot, DR_AREA *prim, RECT *rect) {
         r.h = 2;
     }
     SetDrawArea(prim, &r);
-    addPrimFast(ot, prim, s1);
+    addPrimFast(ot, prim);
     return prim + 1;
 }
 

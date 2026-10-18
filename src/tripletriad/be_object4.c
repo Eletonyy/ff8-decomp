@@ -931,7 +931,7 @@ void *func_800A31B8(void *otBase, void *pkt, s32 pos, s32 w, s32 col, s32 value)
  *
  * Packs the @c SetDrawArea GP0 command for @c g_activeDrawEnv's clip rectangle
  * into the @c DR_AREA at @p prim, links @p prim into the ordering-table slot
- * @p ot via @c addPrimFast (hand-picked temp @c $s2), and returns the next
+ * @p ot via @c addPrimFast, and returns the next
  * packet slot.
  *
  * @param ot   Ordering-table slot to link the primitive into.
@@ -944,7 +944,7 @@ void *func_800A31B8(void *otBase, void *pkt, s32 pos, s32 w, s32 col, s32 value)
  */
 DR_AREA *func_800A31EC(P_TAG *ot, DR_AREA *prim) {
     SetDrawArea(prim, &g_activeDrawEnv->clip);
-    addPrimFast(ot, prim, s2);
+    addPrimFast(ot, prim);
     return ++prim;
 }
 
@@ -955,7 +955,7 @@ DR_AREA *func_800A31EC(P_TAG *ot, DR_AREA *prim) {
  * environment's clip origin, and clamps its width and height to a minimum of 2.
  * It then packs the @c SetDrawArea GP0 command for that rectangle into the
  * @c DR_AREA at @p prim, links @p prim into the ordering-table slot @p ot via
- * @c addPrimFast (hand-picked temp @c $s1), and returns the next packet slot.
+ * @c addPrimFast, and returns the next packet slot.
  *
  * Sibling of @c func_800A31EC, which packs the draw env's clip rectangle
  * directly; this one takes an explicit source rectangle to clamp and offset.
@@ -972,7 +972,7 @@ DR_AREA *func_800A3248(P_TAG *ot, DR_AREA *prim, RECT *srcRect) {
     if (local.w < 2) local.w = 2;
     if (local.h < 2) local.h = 2;
     SetDrawArea(prim, &local);
-    addPrimFast(ot, prim, s1);
+    addPrimFast(ot, prim);
     return prim + 1;
 }
 
