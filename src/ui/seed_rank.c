@@ -144,10 +144,6 @@ static void *drawSeedRankNotificationUnderlines(P_TAG *ot, LINE_F2 *line, s32 le
     u32 dim;
     s32 x; /* Regalloc: the intensity, then the left lines' x0. That later use keeps the / 128 rounding in a register of its own. */
     s32 c;
-    u32 link1; /* Regalloc: one link temp per prim, each live from entry, gives the retail $t5..$t8. */
-    u32 link2;
-    u32 link3;
-    u32 link4;
 
     x = g_engine.countdown.brightness;
     c = x / 32;
@@ -162,7 +158,7 @@ static void *drawSeedRankNotificationUnderlines(P_TAG *ot, LINE_F2 *line, s32 le
     line->x1 = leftWidth + 50;
     line->y0 = 209;
     line->y1 = 209;
-    addPrimFastWithTempOperand(ot, line, link1);
+    addPrimFast(ot, line);
     line++;
     setLineF2(line);
     *(u32 *)&line->r0 = dim;
@@ -170,7 +166,7 @@ static void *drawSeedRankNotificationUnderlines(P_TAG *ot, LINE_F2 *line, s32 le
     line->x1 = leftWidth + 50;
     line->y0 = 210;
     line->y1 = 210;
-    addPrimFastWithTempOperand(ot, line, link2);
+    addPrimFast(ot, line);
     line++;
     setLineF2(line);
     *(u32 *)&line->r0 = bright;
@@ -178,7 +174,7 @@ static void *drawSeedRankNotificationUnderlines(P_TAG *ot, LINE_F2 *line, s32 le
     line->x1 = 320;
     line->y0 = 209;
     line->y1 = 209;
-    addPrimFastWithTempOperand(ot, line, link3);
+    addPrimFast(ot, line);
     line++;
     setLineF2(line);
     *(u32 *)&line->r0 = dim;
@@ -186,7 +182,7 @@ static void *drawSeedRankNotificationUnderlines(P_TAG *ot, LINE_F2 *line, s32 le
     line->x1 = 320;
     line->y0 = 210;
     line->y1 = 210;
-    addPrimFastWithTempOperand(ot, line, link4);
+    addPrimFast(ot, line);
     line++;
     return line;
 }
@@ -223,7 +219,6 @@ u8 *drawSeedRankNotification(void *ot, u8 *pkt) {
     s32 rightShift;
     s32 rankLabelX;
     s32 yOff;
-    s32 link;
     u8 *next;
     u8 *pktAfterLines;
     s32 leftShift;
@@ -294,7 +289,7 @@ u8 *drawSeedRankNotification(void *ot, u8 *pkt) {
     rect.y += 0xC4;
 
     SetDrawArea((DR_AREA *)out, &rect);
-    addPrimFastWithTempOperand(ot, out, link);
+    addPrimFast(ot, out);
 
     pktAfterLines = drawSeedRankNotificationUnderlines(ot, (LINE_F2 *)((DR_AREA *)out + 1),
         rankLabelX, x + p->salaryBlanks * 9);

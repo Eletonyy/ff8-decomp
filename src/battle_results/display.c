@@ -101,7 +101,7 @@ void submitResultsDisplay(void) {
     env = buf->pktAlloc;
     ot = buf->ot;
     SetDrawEnv(env, &buf->draw);
-    addPrimFast(ot, env, s2);
+    addPrimFast(ot, env);
     env++;
     g_resultsDisplay->pktAlloc = env;
     for (i = 0; i < 500; i++) {
@@ -159,7 +159,7 @@ void clearResultsDisplay(void) {
     setRGB0(tile, 0, 0, 0);
     setXY0(tile, 0, 0);
     setWH(tile, 384, 224);
-    addPrimFast(ot, tile, s0);
+    addPrimFast(ot, tile);
     g_resultsDisplay->pktAlloc = tile + 1;
     submitResultsDisplay();
 }

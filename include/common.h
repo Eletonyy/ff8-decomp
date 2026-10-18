@@ -93,69 +93,22 @@ typedef union {
     asm volatile("addu %0, $gp, $zero" : "=r"(ret)); \
     asm volatile("addu $gp, %0, $zero" : : "r"(saved))
 
-/*
- * Hand-tuned addPrim — the 4-instruction sll/lwl/swl/swl sequence that
- * swaps the 24-bit P_TAG.addr field while leaving the adjacent len byte
- * untouched. Equivalent semantics to PsyQ's standard addPrim(ot, p), but
- * 4 instructions instead of 14.
- *
- * Universal asm shape (identical across all 94 occurrences in the FF8
- * binary):
- *   sll $at, prim, 8
- *   lwl tmp, 0x2(ot)
- *   swl $at, 0x2(ot)
- *   swl tmp, 0x2(prim)
- *
- * Only `tmp` varies per site, and it varies in ways no compiler-allocated
- * operand can reproduce (drawSeedRankNotificationUnderlines links four prims
- * with ascending $t5,$t6,$t7,$t8 where gcc coalesces any "=&r" temp into one
- * register; $v0 never appears — return-register etiquette; tiny leaves use
- * callee-saved temps). The original developers hand-picked the temp at
- * each call site, so the macro takes it as an explicit parameter.
+/**
+ * optimized version of PsyQ's addPrim macro that saves 10 instructions
  */
-
-/* Single parameterized form. The link temp register is named per call
- * site as a bare token, e.g. addPrimFast(ot, p, t4) — reading exactly
- * like the assembler-macro invocation the original almost certainly was.
- *
- * This mirrors how the original code demonstrably worked: the temp varies
- * per site in ways no compiler-allocated operand can reproduce (e.g.
- * drawSeedRankNotificationUnderlines links four prims with ascending
- * $t5,$t6,$t7,$t8 — gcc coalesces any allocated temp into one register
- * there), $v0 is never used (return-register etiquette), and tiny leaf
- * functions pick callee-saved temps an allocator would not. The devs
- * hand-picked the register at each site; the third argument reconstructs
- * that choice.
- * See docs/addprim-sites.md for the per-site register map. */
-#define addPrimFast(ot, p, treg) do {                    \
-    __asm__ __volatile__(                                \
-        ".set push\n"                                    \
-        ".set noat\n"                                    \
-        "sll $at, %1, 8\n"                               \
-        "lwl $" #treg ", 2(%0)\n"                         \
-        "swl $at, 2(%0)\n"                               \
-        "swl $" #treg ", 2(%1)\n"                         \
-        ".set pop\n"                                     \
-        :                                                \
-        : "r"(ot), "r"(p)                                \
-        : "memory", #treg);                               \
-} while (0)
-
-/* Variant used when the packet-link temporary must remain a read/write
- * compiler operand. This reproduces the retail reload immediately before
- * the link splice. */
-#define addPrimFastWithTempOperand(ot, p, tmp) {         \
-    __asm__ __volatile__(                                \
-        ".set push\n"                                    \
-        ".set noat\n"                                    \
-        "sll $at, %1, 8\n"                               \
-        "lwl %0, 2(%2)\n"                                \
-        "swl $at, 2(%2)\n"                               \
-        "swl %0, 2(%1)\n"                                \
-        ".set pop\n"                                     \
-        : "+r" (tmp)                                     \
-        : "r"(p), "r"(ot)                                \
-        : "at", "memory");                               \
+#define addPrimFast(ot, p) {                                 \
+    u32 t_;                                                  \
+    __asm__ __volatile__(                                    \
+        ".set push\n"                                        \
+        ".set noat\n"                                        \
+        "sll $at, %1, 8\n"                                   \
+        "lwl %0, 2(%2)\n"                                    \
+        "swl $at, 2(%2)\n"                                   \
+        "swl %0, 2(%1)\n"                                    \
+        ".set pop\n"                                         \
+        : "+r"(t_)                                           \
+        : "r"(p), "r"(ot)                                    \
+        : "at", "memory");                                   \
 }
 
 /* Read / write just the 24-bit P_TAG.addr field (the OT-next pointer) at offset 2 —

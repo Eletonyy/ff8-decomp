@@ -172,7 +172,6 @@ static inline SPRT *drawSprtIcon(void *ot, s32 clut, SPRT *p, s32 idx, s32 x, s3
     IconCell *cell;
     u32 word;
     s32 tpage;
-    u32 link;
     u32 val;
     s32 n;
 
@@ -217,7 +216,7 @@ static inline SPRT *drawSprtIcon(void *ot, s32 clut, SPRT *p, s32 idx, s32 x, s3
         word = (s8)(word >> 24); /* signed X offset, byte 1 */
         setXY0(p, x + word, y + val);
 
-        addPrimFastWithTempOperand(ot, p, link);
+        addPrimFast(ot, p);
     }
     return p;
 }
@@ -249,7 +248,6 @@ static inline SPRT *drawSprtIcon(void *ot, s32 clut, SPRT *p, s32 idx, s32 x, s3
 void *func_8002C56C(void *ot, void *prim, s32 x, s32 y, u8 *str, s32 row) {
     SPRT *p;
     DR_TPAGE *mode;
-    u32 link;
     u32 color;
     u32 c;
 
@@ -289,7 +287,7 @@ void *func_8002C56C(void *ot, void *prim, s32 x, s32 y, u8 *str, s32 row) {
     }
     mode = (DR_TPAGE *)p;
     setDrawTPage(mode, 1, 0, getTPage(0, 0, ICON_TPAGE_X, ICON_TPAGE_Y));
-    addPrimFastWithTempOperand(ot, mode, link);
+    addPrimFast(ot, mode);
     return mode + 1;
 }
 

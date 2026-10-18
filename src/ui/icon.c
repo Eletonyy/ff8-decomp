@@ -35,7 +35,6 @@ void *drawIcon(void *ot, void *head, s32 idx, s32 x, s32 y, s32 color) {
     IconTable *table;
     IconCell *cell;
     TSPRT *p;
-    u32 link;
     u32 word;
     s32 tpage;
     u32 val;
@@ -80,7 +79,7 @@ void *drawIcon(void *ot, void *head, s32 idx, s32 x, s32 y, s32 color) {
         word = (s8)(word >> 24); /* signed X offset, byte 1 */
         setXY0(p, x + word, y + val);
 
-        addPrimFastWithTempOperand(ot, p, link);
+        addPrimFast(ot, p);
     }
     return p;
 }
@@ -136,7 +135,6 @@ static void setNextPageMarkerColor(s32 r, s32 g, s32 b) {
 void *drawIconClut(void *ot, TSPRT *p, s32 idx, s32 x, s32 y, s32 color, s32 clut) {
     IconTable *table;
     IconCell *cell;
-    u32 link;
     u32 word;
     s32 tpage;
     u32 val;
@@ -176,7 +174,7 @@ void *drawIconClut(void *ot, TSPRT *p, s32 idx, s32 x, s32 y, s32 color, s32 clu
         word = (s8)(word >> 24); /* signed X offset, byte 1 */
         setXY0(p, x + word, y + val);
 
-        addPrimFastWithTempOperand(ot, p, link);
+        addPrimFast(ot, p);
     }
     return p;
 }

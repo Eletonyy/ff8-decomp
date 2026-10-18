@@ -72,7 +72,7 @@ static void func_801F1F98(MainMenuCtx *ctx);
  * Copies the (possibly unaligned) RECT at @p src, offsets its origin by the
  * active draw environment's clip origin, clamps width/height to at least 2,
  * packs the @c SetDrawArea GP0 command into @p prim, links it via
- * @c addPrimFast (hand-picked temp @c $s1), and returns the next packet slot.
+ * @c addPrimFast, and returns the next packet slot.
  *
  * @note @p src is a byte pointer and the copy is a builtin memcpy — the
  *       original's lwl/lwr pairs come from the unaligned 8-byte expansion.
@@ -98,7 +98,7 @@ DR_AREA *func_801EF800(P_TAG *ot, DR_AREA *prim, u8 *src) {
         r.h = 2;
     }
     SetDrawArea(prim, &r);
-    addPrimFast(ot, prim, s1);
+    addPrimFast(ot, prim);
     return ++prim;
 }
 
@@ -108,8 +108,8 @@ DR_AREA *func_801EF800(P_TAG *ot, DR_AREA *prim, u8 *src) {
  *
  * Same as func_801F03E8 but keeps the draw environment's own clip rectangle
  * (no size override): packs the @c SetDrawArea GP0 command for
- * @c g_activeDrawEnv->clip into @p prim, links it via @c addPrimFast
- * (hand-picked temp @c $s2), and returns the next packet slot.
+ * @c g_activeDrawEnv->clip into @p prim, links it via @c addPrimFast,
+ * and returns the next packet slot.
  *
  * @param ot   Ordering-table slot to link the primitive into.
  * @param prim Storage for the @c DR_AREA primitive.
@@ -117,7 +117,7 @@ DR_AREA *func_801EF800(P_TAG *ot, DR_AREA *prim, u8 *src) {
  */
 DR_AREA *func_801EF8D8(P_TAG *ot, DR_AREA *prim) {
     SetDrawArea(prim, &g_activeDrawEnv->clip);
-    addPrimFast(ot, prim, s2);
+    addPrimFast(ot, prim);
     return ++prim;
 }
 
@@ -298,7 +298,7 @@ INCLUDE_ASM("asm/ovl/menumain/nonmatchings/menumain", func_801F0274);
  * Copies the active draw environment's clip origin into a local RECT, forces
  * the 384x216 menu draw size, packs the @c SetDrawArea GP0 command for it
  * into the @c DR_AREA at @p prim, links @p prim into the ordering-table slot
- * @p tag via @c addPrimFast (hand-picked temp @c $s2), and returns the next
+ * @p tag via @c addPrimFast, and returns the next
  * packet slot.
  *
  * @param ot   Ordering-table slot to link the primitive into.
@@ -316,7 +316,7 @@ DR_AREA *func_801F03E8(P_TAG *ot, DR_AREA *prim) {
     r.y = *(u16 *)&env->clip.y;
     *(u32 *)&r.w = (216 << 16) | 384;
     SetDrawArea(prim, &r);
-    addPrimFast(ot, prim, s2);
+    addPrimFast(ot, prim);
     return ++prim;
 }
 

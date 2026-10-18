@@ -4425,7 +4425,7 @@ static void *func_801E8C88(void *ot, PaperMatPrim *prim, MenuDisplayConfig *cfg,
     prim->w = magPage->paperMatWidth;
     prim->h = magPage->paperMatHeight;
 
-    addPrimFast(ot, prim, t3);
+    addPrimFast(ot, prim);
 
     return prim + 1;
 }
@@ -4545,7 +4545,7 @@ static void *func_801E8FA8(void *ot, PaperMatSlicePrim *prim, MenuDisplayConfig 
     setlen(prim, 2);
     prim->twin.code[0] = 0xE2000000;
     prim->twin.code[1] = 0;
-    addPrimFast(ot, prim, t6);
+    addPrimFast(ot, prim);
     prim = (PaperMatSlicePrim *)&prim->sprt.tag;
 
     xOffset = 0;
@@ -4567,7 +4567,7 @@ static void *func_801E8FA8(void *ot, PaperMatSlicePrim *prim, MenuDisplayConfig 
         prim->sprt.u0 = 0;
         prim->sprt.v0 = 0;
         remainingWidth -= sliceWidth;
-        addPrimFast(ot, prim, t5);
+        addPrimFast(ot, prim);
         prim++;
         xOffset += 64;
     }
