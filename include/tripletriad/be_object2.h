@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "tripletriad.h"
+#include "ui/sprite.h"
 
 /* Declarations for be_object2.c (Triple Triad card objects, the rules engine,
    the menu/cursor sub-machine, and the AI move search). */

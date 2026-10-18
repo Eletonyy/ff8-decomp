@@ -4,6 +4,7 @@
 #include "common.h"
 #include "psxsdk/libgpu.h"
 #include "ui/dialog.h"
+#include "ui/sprite.h"
 
 /** @brief Characters of a decoded message that the text state machine acts on. */
 enum {
