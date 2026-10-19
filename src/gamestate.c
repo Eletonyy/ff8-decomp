@@ -26,7 +26,7 @@ extern SpriteTable g_portraitsTable;
 #define setRGBCWord(p, c) (*(u32 *)&(p)->r0 = (c))
 #define setUVClutWH(p, uv, wh) (*(u32 *)&(p)->u0 = (uv), *(u32 *)&(p)->w = (wh))
 
-#define setPortraitSprt(p, xyTpage, x, y, color) do { \
+#define setSpriteCellXYTpage(p, xyTpage, x, y, color) do { \
     s32 dx_, dy_; \
     dy_ = (s8)((xyTpage) >> 8); \
     dx_ = (s8)(xyTpage); \
@@ -38,12 +38,12 @@ extern SpriteTable g_portraitsTable;
     setTSprtFull(p, 0, 0, xyTpage); \
 } while (0)
 
-#define setPortraitCell(p, cell, x, y, color) { \
+#define setSpriteCell(p, cell, x, y, color) { \
     u32 uv_ = (cell)->uvClut; \
     u32 wh_ = (cell)->wh; \
     u32 xy_ = (cell)->xyTpage; \
     setUVClutWH(p, uv_, wh_); \
-    setPortraitSprt(p, xy_, x, y, color); \
+    setSpriteCellXYTpage(p, xy_, x, y, color); \
 }
 
 /** @brief 0x20-byte free-id table immediately before the D_80077EBC pair list. */
@@ -351,7 +351,7 @@ void *DrawPortrait(void *ot, TSPRT *head, s32 idx, s32 x, s32 y, u32 color) {
     idx = ((Sprite *)data)->cellCount;
     data = ((Sprite *)data)->cells;
     while (idx > 0) {
-        setPortraitCell(head, (SpriteCell *)data, x, y, color);
+        setSpriteCell(head, (SpriteCell *)data, x, y, color);
         addPrimFast(ot, head);
         head++;
         idx--;
@@ -390,7 +390,7 @@ void *DrawSpriteFromTable(void *ot, TSPRT *head, SpriteTable *table, s32 idx, s3
     idx = ((Sprite *)data)->cellCount;
     data = ((Sprite *)data)->cells;
     while (idx > 0) {
-        setPortraitCell(head, (SpriteCell *)data, x, y, color);
+        setSpriteCell(head, (SpriteCell *)data, x, y, color);
         addPrimFast(ot, head);
         head++;
         idx--;
