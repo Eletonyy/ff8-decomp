@@ -27,6 +27,8 @@ typedef struct {
     /* 0x42 */ u8 unk42;
 } CardMenuState;
 
+#define CARD_BACKSIDE_INDEX 11
+
 extern s16 D_801E7D64;
 extern s16 D_801E7D66;
 extern SpriteTable g_currentPageCardTable;
@@ -233,7 +235,7 @@ INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E60E8);
  * @return Next free position in the packet buffer, after the packet written.
  */
 static void *DrawCardBacksideSprite(s32 unused, void *ot, void *head, s32 x, s32 y) {
-    return DrawSpriteFromTable(ot, head, &g_currentPageCardTable, 11, x, y, g_menuTint[MENU_TINT_NORMAL]);
+    return DrawSpriteFromTable(ot, head, &g_currentPageCardTable, CARD_BACKSIDE_INDEX, x, y, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
