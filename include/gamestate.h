@@ -1,36 +1,6 @@
 #ifndef GAMESTATE_H
 #define GAMESTATE_H
 
-/**
- * @file gamestate.h
- * @brief Full game state layout (g_gameState at 0x80077378).
- *
- * The game state is a ~5000-byte block in BSS containing all persistent
- * save data: GF stats, character data, inventory, config, world state, etc.
- *
- * The first 0x50 bytes before MAIN are the save header region (not mapped here).
- * MAIN begins at g_gameState + 0x50 and contains all gameplay data.
- *
- * Layout verified against the Hyne save editor (src/SaveData.h):
- *   https://github.com/myst6re/hyne
- *
- * @note Prefer struct-based access (g_gameState.config.fieldMsgSpeed etc.);
- *       it emits the same symbol+offset bytes and carries the struct memory
- *       class the original codegen shows. Raw pointer arithmetic with an
- *       (s32)&g_gameState cast remains for the few sites where preventing
- *       CC1PSX symbol+constant folding is match-required.
- *
- * @note @c getGfAvailabilityMask is defined by this unit but declared in
- *       @c gf.h, and the widths deliberately differ. The definition must be
- *       @c u16 (its epilogue is @c "andi v0, a1, 0xffff"; an @c s32 definition
- *       breaks @c SLUS_008.92), while callers must see an int-width
- *       declaration (declaring @c u16 to them breaks @c menugf.ovl and
- *       @c menujnc2.ovl). That is faithful to the original build, in which
- *       @c gamestate.c did not include the header its callers used — which
- *       is also why @c menugf.c masks the result by hand with @c "& 0xFFFF".
- *       Do not "reconcile" the two.
- */
-
 #include "common.h"
 #include "character.h"
 #include "field.h"

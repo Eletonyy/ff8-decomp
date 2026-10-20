@@ -25,7 +25,7 @@ extern AbilityFlagSlot D_8007CEE4[];
 /** @brief Bitmask of GFs currently available (bit N = GF N unlocked).
  *  @note Defined in @c gamestate.c as @c u16, declared int-width here on purpose:
  *        callers were built against an int-width declaration and narrowing it
- *        breaks @c menugf.ovl / @c menujnc2.ovl. See the note in @c gamestate.h. */
+ *        breaks @c menugf.ovl / @c menujnc2.ovl. */
 s32 getGfAvailabilityMask(void);
 
 /**
