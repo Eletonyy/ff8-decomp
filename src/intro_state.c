@@ -7,7 +7,7 @@
  * stored in ROM, loaded into VRAM along with text and the asset table.
  */
 #include "common.h"
-#include "intro.h"
+#include "intro_state.h"
 
 DispCtx g_introDispCtx     = {0};   /* 0x800991D8 — double-buffer display context. */
 s32     g_introOdeLatch    = 0;     /* 0x8009928C — last-seen @c GetODE() < 1 parity. */
