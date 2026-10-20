@@ -4,7 +4,97 @@
 #include "overlay.h"
 #include "cd.h"
 #include "cdrom.h"
+#include "cdread.h"
 #include "lzs.h"
+
+typedef struct {
+    s32 payloadSize;
+    u8 payload[1];
+} LzssData;
+
+/* Taking the typed member address preserves the retail D_80039418+0x28
+ * relocation form with gcc 2.7.2; direct member access materializes the
+ * struct base and inserts an extra instruction. */
+#define LZSS_OUTPUT_SIZE (*(s32 *)&D_80039418.outputSize)
+
+void func_80038490(u8 *src, u8 *dst)
+{
+  LzssData *data;
+  u8 *src_ptr;
+  u8 *dst_start;
+  s32 bit_cnt;
+  s32 flags;
+  u8 *src_end;
+  u8 *dst_end;
+  int new_var;
+  u8 *copy_src;
+  s32 offset;
+  u8 *new_var2;
+  s32 temp;
+  s32 v0;
+  src_ptr = src;
+  data = (LzssData *)src;
+  bit_cnt = 0;
+  flags = bit_cnt;
+  dst_start = dst;
+  LZSS_OUTPUT_SIZE = 0;
+  src_end = src_ptr + data->payloadSize + sizeof(data->payloadSize);
+  src_ptr += sizeof(data->payloadSize);
+  new_var2 = dst_start;
+  while (1)
+  {
+    if (bit_cnt == 0)
+    {
+      if (src_ptr >= src_end)
+      {
+        return;
+      }
+      bit_cnt = 8;
+      flags = *(src_ptr++);
+    }
+    if (flags & 1)
+    {
+      if (src_ptr >= src_end)
+      {
+        return;
+      }
+      *(dst++) = *(src_ptr++);
+      LZSS_OUTPUT_SIZE++;
+    }
+    else
+    {
+      if (src_ptr >= src_end)
+      {
+        return;
+      }
+      new_var = (dst - new_var2) + 0xFEE;
+      offset = *(src_ptr++);
+      temp = *(src_ptr++);
+      offset |= (temp & 0xF0) << 4;
+      v0 = (new_var - offset) & 0xFFF;
+      copy_src = dst - v0;
+      dst_end = (dst + (temp & 0x0F)) + 3;
+      if (copy_src < new_var2)
+      {
+        do
+        {
+          *(dst++) = 0;
+          copy_src++;
+        }
+        while (copy_src < new_var2);
+      }
+      while (dst < dst_end)
+      {
+        *(dst++) = *(copy_src++);
+        LZSS_OUTPUT_SIZE++;
+      }
+
+    }
+    flags >>= 1;
+    bit_cnt--;
+  }
+
+}
 
 
 /**

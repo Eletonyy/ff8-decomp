@@ -273,9 +273,6 @@ typedef struct {
     /* 0x12 */ s16 field12;     /**< Sequence runtime state (cleared by stop helper). */
 } SeqEntry; /* 0x14 = 20 bytes */
 
-/** @brief Toggle the current sound-bank-selector flag and return a pointer to the new bank table. */
-extern u8 *toggleSoundBank(void);
-
 /** @brief Sound-bank A: the staging table @c toggleSoundBank returns when the selector reads as @c 0. */
 extern u8 D_8005F388[];
 

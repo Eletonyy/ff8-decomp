@@ -1,4 +1,5 @@
 #include "common.h"
+#include "283B0.h"
 #include "battle.h"
 #include "gamestate.h"
 #include "intro.h"

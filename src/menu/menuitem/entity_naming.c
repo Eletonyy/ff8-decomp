@@ -7,6 +7,7 @@
 #include "psxsdk/libetc.h"
 #include "snd_sfx.h"
 #include "ui/icon.h"
+#include "ui/sprite.h"
 #include "ui/text.h"
 
 /** @brief Entity naming menu options. */

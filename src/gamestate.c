@@ -1,55 +1,306 @@
 #include "common.h"
-#include "psxsdk/libgpu.h"
-#include "overlay.h"
 #include "gamestate.h"
-#include "character.h"
-#include "tim.h"
-#include "field.h"
-#include "card.h"
-#include "cdread.h"
 #include "battle.h"
-#include "game.h"
-#include "main.h"
-#include "sound.h"
+#include "party_stats.h"
 
-extern u8 D_80085218;
-extern FieldVars *g_fieldVars;
-extern u8 D_8005F388[];
-extern u8 D_80063388[];
-extern s32 D_80085220;
-extern u8 D_8005644B[];
-extern s32 D_800562D4;
 extern s32 findNthSetBit(s32, s32);
-
-extern SpriteTable g_portraitsTable;
-
-#define setRGBCWord(p, c) (*(u32 *)&(p)->r0 = (c))
-#define setUVClutWH(p, uv, wh) (*(u32 *)&(p)->u0 = (uv), *(u32 *)&(p)->w = (wh))
-
-#define setSpriteCellXYTpage(p, xyTpage, x, y, color) do { \
-    s32 dx_, dy_; \
-    dy_ = (s8)((xyTpage) >> 8); \
-    dx_ = (s8)(xyTpage); \
-    dx_ += (x); \
-    dy_ += (y); \
-    setXY0(p, dx_, dy_); \
-    (xyTpage) >>= 16; \
-    setRGBCWord(p, color); \
-    setTSprtFull(p, 0, 0, xyTpage); \
-} while (0)
-
-#define setSpriteCell(p, cell, x, y, color) { \
-    u32 uv_ = (cell)->uvClut; \
-    u32 wh_ = (cell)->wh; \
-    u32 xy_ = (cell)->xyTpage; \
-    setUVClutWH(p, uv_, wh_); \
-    setSpriteCellXYTpage(p, xy_, x, y, color); \
-}
 
 /** @brief 0x20-byte free-id table immediately before the D_80077EBC pair list. */
 typedef struct {
     /* 0x000 */ u8 freeIds[0x20];
 } FreeIdTable; /* sizeof == 0x20 */
+
+static void copyGfHpToSave(s32 gfIdx);
+static void func_80036FE0(s32 charIdx);
+
+/**
+ * @brief Reset a character's junctions and recalculate stats.
+ *
+ * Clears junctioned GFs, commands, abilities, and junction slots for the
+ * given character. Temporarily sets the character as party leader to trigger
+ * stat recalculation, clears status (preserving bit 7), sets HP from
+ * g_battleChars.chars[0].maxHp, then restores the original party slot.
+ *
+ * @param charIndex Character index (clamped to 0-7).
+ */
+void func_80036B90(s32 charIndex) {
+    CharacterData *chr;
+    s32 i;
+    u8 savedSlot;
+    s32 clamped;
+
+    if (charIndex < 0)
+        goto clamp_zero;
+    clamped = 7;
+    if (charIndex < 8)
+        clamped = charIndex;
+    goto clamped_done;
+clamp_zero:
+    clamped = 0;
+clamped_done:
+    charIndex = clamped;
+    chr = &g_gameState.chars[charIndex];
+    chr->junctedGfs = 0;
+
+    for (i = 0; i < 4; i++) {
+        chr->commands[i] = 0;
+        chr->abilities[i] = 0;
+    }
+
+    {
+        u8 *p = (u8 *)chr + 19;
+        for (i = 19; i >= 0; i--) {
+            p[0x5C] = 0;
+            p--;
+        }
+    }
+
+    savedSlot = g_gameState.mainData.party.partyMembers[0];
+    g_gameState.mainData.party.partyMembers[0] = charIndex;
+    recalcPartyStats();
+
+    do {
+        chr->statusFlags &= 0x80;
+    } while (0);
+
+    chr->currentHp = g_battleChars.chars[0].maxHp;
+
+    g_gameState.mainData.party.partyMembers[0] = savedSlot;
+    recalcPartyStats();
+}
+
+
+/**
+ * @brief Swap the first two non-zero party members.
+ *
+ * Returns early if any slot is empty (0xFF). Finds the first and second
+ * non-zero party members and swaps their positions.
+ */
+void func_80036C74(void) {
+    s32 i;
+    s32 second;
+    s32 first;
+    u8 tmp;
+
+    for (i = 0; i < 3; i++) {
+        if (g_gameState.mainData.party.partyMembers[i] == 0xFF) {
+            return;
+        }
+    }
+
+    for (i = 0; i < 3; i++) {
+        if (g_gameState.mainData.party.partyMembers[i] != 0) {
+            first = i;
+            break;
+        }
+    }
+
+    for (i = 0; i < 3; i++) {
+        if ((g_gameState.mainData.party.partyMembers[i] != 0) && (first != i)) {
+            second = i;
+            break;
+        }
+    }
+
+    tmp = g_gameState.mainData.party.partyMembers[second];
+    g_gameState.mainData.party.partyMembers[second] = g_gameState.mainData.party.partyMembers[first];
+    g_gameState.mainData.party.partyMembers[first] = tmp;
+}
+
+
+/**
+ * @brief Rebuild party slots based on a bitmask of eligible characters.
+ *
+ * Clears and rebuilds the party slot assignments. For each non-empty,
+ * non-Squall party member, checks if they have the required flag (bit 3
+ * of exists). Eligible members whose bit is set in @p mask stay;
+ * others are removed. Copies the result to g_gameState.battleParty and recalculates.
+ *
+ * @param mask Bitmask of characters allowed to remain in the party.
+ */
+void func_80036D44(s32 mask) {
+    u8 newSlots[3];
+    u8 val;
+    u8 *p;
+    s32 new_var;
+    s32 i;
+    s32 slotCount;
+    int new_var2;
+    s32 bit;
+    s32 abilityId;
+    CharacterData *chr;
+    new_var2 = 0xFF;
+
+    val = new_var2;
+    i = 2;
+    p = &newSlots[i];
+    for (i = 2; i >= 0; i--) {
+        *(p--) = val;
+    }
+
+    abilityId = 9;
+    slotCount = 1;
+    bit = slotCount;
+    g_gameState.chars[0].characterId = 8;
+    newSlots[0] = 8;
+    for (i = 0; i < 3; i++) {
+        u8 slot = g_gameState.mainData.party.partyMembers[i];
+        if (slot == 0xFF) {
+            continue;
+        }
+        if (0 == slot) {
+            continue;
+        }
+        chr = &g_gameState.chars[slot];
+        if (chr->exists & 0x8) {
+            chr->characterId = abilityId;
+            new_var = mask & (1 << (abilityId - 8));
+            if (new_var) {
+                newSlots[slotCount] = abilityId;
+                slotCount++;
+            } else {
+                g_gameState.mainData.party.partyMembers[i] = 0xFF;
+            }
+            abilityId++;
+        } else {
+            g_gameState.mainData.party.partyMembers[i] = 0xFF;
+        }
+    }
+
+    {
+        u8 *p = g_gameState.battleParty;
+        u8 val = new_var2;
+        for (i = 2; i >= 0; i--) {
+            *(p++) = val;
+        }
+    }
+    {
+        u8 *dst = g_gameState.battleParty;
+        u8 *src = (u8 *)((u32)newSlots + (u32)dst - (u32)dst);
+        for (i = 0; i < 3; i++) {
+            *dst++ = *src++;
+        }
+    }
+    func_80036C74();
+    recalcPartyStats();
+}
+
+
+/**
+ * @brief Set the active party leader and clear the other two party slots.
+ *
+ * Sets party slot 0 to the given character, empties slots 1 and 2,
+ * then calls recalcPartyStats to apply the change.
+ *
+ * @param charId Character ID for the party leader.
+ */
+void setPartyLeader(s32 charId) {
+    g_gameState.mainData.party.partyMembers[0] = charId;
+    g_gameState.mainData.party.partyMembers[1] = 0xFF;
+    g_gameState.mainData.party.partyMembers[2] = 0xFF;
+    recalcPartyStats();
+}
+
+
+/**
+ * @brief Build a bitmask of available characters, optionally filtered by party.
+ *
+ * If @ref PARTY_LOCK_LOCKED is set, only characters currently in the party
+ * are eligible. Otherwise all existing characters are included.
+ *
+ * @return Bitmask where bit N is set if character N is available.
+ */
+s32 func_80036EC0(void) {
+    s32 i;
+    u16 charMask;
+    u16 partyMask;
+
+    partyMask = 0xFFFF;
+    if (g_gameState.mainData.partyLockFlag & PARTY_LOCK_LOCKED) {
+        partyMask = 0;
+        for (i = 0; i < 3; i++) {
+            u8 slot = g_gameState.mainData.party.partyMembers[i];
+            if (slot != 0xFF) {
+                partyMask |= (1 << slot);
+            }
+        }
+    }
+
+    charMask = 0;
+    for (i = 0; i < 8; i++) {
+        if (g_gameState.chars[i].exists & 1) {
+            do { charMask |= 1 << i; } while (0);
+        }
+    }
+    charMask = charMask & partyMask;
+
+    return charMask;
+}
+
+
+/**
+ * @brief Build a 16-bit bitmask of GF availability flags.
+ *
+ * Iterates over 16 GFs, checking the exists flag. Sets the corresponding
+ * bit in the result mask for each available GF.
+ *
+ * @return Bitmask where bit N is set if GF N is available.
+ */
+u16 getGfAvailabilityMask(void) {
+    u16 mask = 0;
+    s32 i;
+
+    for (i = 0; i < GF_COUNT; i++) {
+        if (g_gameState.gfs[i].exists & 1) {
+            mask |= (1 << i);
+        }
+    }
+    return mask;
+}
+
+
+/**
+ * @brief Set a GF's saved HP to its max HP.
+ *
+ * @param gfIdx GF index (0-15).
+ */
+static void copyGfHpToSave(s32 gfIdx) {
+    g_gameState.gfs[gfIdx].hp = g_battleChars.levelEntries[gfIdx].maxHp;
+}
+
+
+/**
+ * @brief Set a character as party leader, reset their HP and status,
+ *        then restore original party slots.
+ *
+ * Saves the current party, clears it, sets the leader to trigger
+ * stat recalculation, then writes g_battleChars.chars[0].maxHp to the character's
+ * currentHp and clears all status flags except bit 7. Finally
+ * restores the saved party and recalculates stats.
+ *
+ * @param charIdx Character index.
+ */
+static void func_80036FE0(s32 charIdx) {
+    u8 saved[4];
+    s32 i;
+
+    for (i = 0; i < 3; i++) {
+        saved[i] = g_gameState.mainData.party.partyMembers[i];
+        g_gameState.mainData.party.partyMembers[i] = 0xFF;
+    }
+
+    setPartyLeader(charIdx);
+
+    g_gameState.chars[charIdx].currentHp = g_battleChars.chars[0].maxHp;
+    g_gameState.chars[charIdx].statusFlags &= 0x80;
+
+    for (i = 0; i < 3; i++) {
+        g_gameState.mainData.party.partyMembers[i] = saved[i];
+    }
+
+    recalcPartyStats();
+}
+
 
 void func_800370AC(s32 itemId) {
     s32 i;
@@ -171,873 +422,4 @@ u8 *getChocoboWorldPtr(void) {
 void enableChocoboWorld(void) {
     u8 *p = getChocoboWorldPtr();
     *p |= 0x1;
-}
-
-
-extern u8 *getCharName(CharacterId charId);
-
-#define STRIP_STRIDE   0x300
-#define STRIP_ROWS     12
-#define STRIP_PITCH    0x30
-
-#define SCRATCH_PITCH  0x60
-#define SCRATCH_MARGIN 0x0C
-#define SCRATCH_USED   (SCRATCH_MARGIN + STRIP_ROWS * SCRATCH_PITCH)
-
-#define GLYPHS_PER_ROW 21
-#define GLYPH_WIDTH    6
-#define GLYPH_HEIGHT   12
-#define SHEET_PITCH    512
-
-void func_80037308(NameFont *font, u8 *out)
-{
-    u8 scratch[0x490];
-    u8 *widths;
-    u8 *pixels;
-    u8 *dstSlot;
-    u8 *pen;
-    u8 *scratchPtr;
-    u8 *clear;
-    u8 *name;
-    u8 *src;
-    u8 *dst;
-    u8 *packSrc;
-    CharacterData *ch;
-    s32 penX;
-    s32 slot;
-    s32 width;
-    s32 rowOffset;
-    s32 colOffset;
-    s32 rows;
-    s32 count;
-    s32 row;
-    s32 col;
-    u32 code;
-    s32 charId;
-    u8 b;
-    u8 hi;
-    u8 lo;
-
-    dstSlot = out;
-    clear = dstSlot;
-
-    for (slot = PARTY_SLOT_COUNT * STRIP_STRIDE - 1; slot >= 0; slot--) {
-        *clear++ = 0;
-    }
-
-    do {
-        for (slot = 0; slot < PARTY_SLOT_COUNT; slot++, dstSlot += STRIP_STRIDE) {
-            scratchPtr = scratch;
-            pen = scratch + SCRATCH_MARGIN;
-
-            charId = g_gameState.mainData.party.partyMembers[slot];
-
-            if (charId == PARTY_SLOT_EMPTY) {
-                continue;
-            }
-
-            penX = 0;
-
-            pixels = (u8 *)font;
-            widths = pixels + ((NameFont *)pixels)->widthTableOffset;
-            pixels += ((NameFont *)pixels)->timOffset;
-            pixels += 8;
-            pixels += ((TimSection *)pixels)->len;
-            pixels += 0xC;
-
-            for (col = SCRATCH_USED - 1; col >= 0; col--) {
-                *scratchPtr++ = 0;
-            }
-
-            ch = g_gameState.chars;
-            ch += charId;
-            name = getCharName(ch->characterId);
-
-            while (1) {
-                code = *name++;
-
-                if (code == 0) {
-                    break;
-                }
-
-                if (code < 0x20) {
-                    code -= 0x19;
-                    code = code * 224;
-                    code += *name++;
-                }
-
-                code -= 0x20;
-
-                width = widths[code >> 1];
-
-                if (code & 1) {
-                    width >>= 4;
-                }
-
-                width &= 0xF;
-
-                if (width != 0) {
-                    width--;
-                }
-
-                dst = pen;
-                rows = STRIP_ROWS;
-
-                row = code / GLYPHS_PER_ROW;
-                col = code % GLYPHS_PER_ROW;
-
-                code = row * GLYPH_HEIGHT * (SHEET_PITCH / 4);
-                colOffset = col * GLYPH_WIDTH;
-                src = (pixels + colOffset) + code;
-
-                for (; rows > 0; rows--) {
-                    for (col = GLYPH_WIDTH; col > 0; col--) {
-                        b = *src++;
-
-                        *dst++ |= b & 0xF;
-                        *dst++ |= b >> 4;
-                    }
-
-                    dst += SCRATCH_PITCH - GLYPH_WIDTH * 2;
-                    src += (SHEET_PITCH / 4) - GLYPH_WIDTH;
-                }
-
-                pen += width;
-                penX += width;
-            }
-
-            pixels = dstSlot + STRIP_PITCH;
-            pen++;
-            penX = (penX + 2) / 2;
-
-            for (rows = STRIP_ROWS; rows > 0; rows--) {
-                packSrc = pen;
-                count = penX;
-                dst = pixels;
-
-                while (count > 0) {
-                    hi = *--packSrc;
-                    lo = *--packSrc;
-                    *--dst = (lo & 0xF) | (hi << 4);
-                    count--;
-                }
-
-                pen += SCRATCH_PITCH;
-                pixels += STRIP_PITCH;
-            }
-        }
-    } while (0);
-}
-
-/**
- * @brief Draw portrait sprite @p idx of the portrait table at a screen position.
- *
- * @param ot Ordering-table entry the packets are linked into.
- * @param head Next free position in the packet buffer. One TSPRT is written there for each piece of the sprite.
- * @param idx Portrait sprite to draw. An index past the end of the table draws nothing.
- * @param x Screen x of the sprite's origin. Each piece is drawn at its own offset from it.
- * @param y Screen y of the sprite's origin.
- * @param color Colour that multiplies the texture: red, green and blue in the low three bytes, where 0x80 leaves it unchanged.
- * @return Next free position in the packet buffer, after the packets written.
- */
-void *DrawPortrait(void *ot, TSPRT *head, s32 idx, s32 x, s32 y, u32 color) {
-    void *data = &g_portraitsTable;
-
-    if (idx >= g_portraitsTable.spriteCount) {
-        return head;
-    }
-
-    data += g_portraitsTable.offsets[idx];
-    idx = ((Sprite *)data)->cellCount;
-    data = ((Sprite *)data)->cells;
-    while (idx > 0) {
-        setSpriteCell(head, (SpriteCell *)data, x, y, color);
-        addPrimFast(ot, head);
-        head++;
-        idx--;
-        data = (SpriteCell *)data + 1;
-    }
-    return head;
-}
-
-/**
- * @brief Wrapper for DrawPortrait but always passes color 0x64808080.
- */
-void *DrawPortraitNormalTint(void *ot, void *head, s32 idx, s32 x, s32 y) {
-    return DrawPortrait(ot, head, idx, x, y, 0x64808080);
-}
-
-/**
- * @brief Draw sprite @p idx of a sprite table at a screen position.
- *
- * @param ot Ordering-table entry the packets are linked into.
- * @param head Next free position in the packet buffer. One TSPRT is written there for each piece of the sprite.
- * @param table Sprite table to draw from.
- * @param idx Sprite to draw. An index past the end of the table draws nothing.
- * @param x Screen x of the sprite's origin. Each piece is drawn at its own offset from it.
- * @param y Screen y of the sprite's origin.
- * @param color Colour that multiplies the texture: red, green and blue in the low three bytes, where 0x80 leaves it unchanged.
- * @return Next free position in the packet buffer, after the packets written.
- */
-void *DrawSpriteFromTable(void *ot, TSPRT *head, SpriteTable *table, s32 idx, s32 x, s32 y, u32 color) {
-    void *data = table;
-
-    if (idx >= table->spriteCount) {
-        return head;
-    }
-
-    data += table->offsets[idx];
-    idx = ((Sprite *)data)->cellCount;
-    data = ((Sprite *)data)->cells;
-    while (idx > 0) {
-        setSpriteCell(head, (SpriteCell *)data, x, y, color);
-        addPrimFast(ot, head);
-        head++;
-        idx--;
-        data = (SpriteCell *)data + 1;
-    }
-    return head;
-}
-
-/**
- * @brief Wrapper for DrawSpriteFromTable but always passes color 0x64808080.
- */
-void *DrawSpriteFromTableNormalTint(void *ot, void *head, SpriteTable *table, s32 idx, s32 x, s32 y) {
-    return DrawSpriteFromTable(ot, head, table, idx, x, y, 0x64808080);
-}
-
-
-u16 func_800377B4(s32 len, u8 *buf)
-{
-    u16 table[256];
-    u32 crc;
-    u32 i;
-    u32 val;
-    u32 j;
-    s32 ci;
-    ci = 0xFF;
-    do { table[ci] = 0; ci--; } while (ci >= 0);
-    crc = 0xFFFF;
-    i = 0;
-    do {
-        val = i << 8;
-        j = 0;
-        do {
-            if (val & 0x8000) val = (val << 1) ^ 0x1021;
-            else val <<= 1;
-            j++;
-            table[i] = val;
-        } while (j < 8);
-        i++;
-    } while (i < 0xFF);
-    if (len > 0) {
-        do {
-            u32 idx;
-            idx = *buf++;
-            len--;
-            idx ^= (crc & 0xFFFF) >> 8;
-            crc = table[idx] ^ (crc << 8);
-        } while (len > 0);
-    }
-    return ~crc & 0xFFFF;
-}
-
-
-/**
- * @brief Compute an XOR checksum over 127 bytes (memory card frame header).
- *
- * XORs each of the first 127 bytes together and returns the low 8 bits.
- * Used to compute byte 0x7F of a memory card block header.
- *
- * @param a0 Pointer to the 128-byte memory card frame.
- * @return XOR checksum (0-255).
- */
-u32 mcXorChecksum(u8 *frame) {
-    u32 acc = 0;
-    s32 i = 0;
-    do {
-        acc ^= *frame++;
-        i++;
-    } while ((u32)i < 0x7F);
-    return acc & 0xFF;
-}
-
-
-/**
- * @brief Zero 128 bytes of memory (memory card frame header size).
- * @param ptr Pointer to the buffer to clear.
- */
-void mcZeroFrame(u8 *ptr) {
-    s32 count = 128;
-    do {
-        *ptr++ = 0;
-    } while (--count > 0);
-}
-
-
-/**
- * @brief Initialize a memory card header frame (block 0, "MC" magic).
- *
- * Zeroes the 128-byte frame, sets bytes 0-1 to 'M','C' (0x4D, 0x43),
- * then computes and stores the XOR checksum at byte 0x7F.
- *
- * @param a0 Pointer to the 128-byte frame buffer.
- */
-void mcInitHeader(u8 *frame) {
-    mcZeroFrame(frame);
-    frame[0] = 0x4D;
-    frame[1] = 0x43;
-    frame[0x7F] = mcXorChecksum(frame);
-}
-
-
-/**
- * @brief Initialize a memory card directory frame (used save slot, type 0xA0).
- *
- * Zeroes the 128-byte frame, sets byte 0 to 0xA0 (in-use flag),
- * bytes 8-9 to 0xFF, then computes and stores the XOR checksum.
- *
- * @param a0 Pointer to the 128-byte frame buffer.
- */
-void mcInitDirUsed(u8 *frame) {
-    mcZeroFrame(frame);
-    frame[0] = 0xA0;
-    frame[8] = 0xFF;
-    frame[9] = 0xFF;
-    frame[0x7F] = mcXorChecksum(frame);
-}
-
-
-/**
- * @brief Initialize a memory card free/unused directory frame.
- *
- * Zeroes the 128-byte frame, sets bytes 0-3 and 8-9 to 0xFF
- * (marks the directory entry as free), then computes and stores
- * the XOR checksum.
- *
- * @param a0 Pointer to the 128-byte frame buffer.
- */
-void mcInitDirFree(u8 *frame) {
-    mcZeroFrame(frame);
-    frame[0] = 0xFF;
-    frame[1] = 0xFF;
-    frame[2] = 0xFF;
-    frame[3] = 0xFF;
-    frame[8] = 0xFF;
-    frame[9] = 0xFF;
-    frame[0x7F] = mcXorChecksum(frame);
-}
-
-
-/** @brief Fills 128 bytes at a0 with 0xFF.
- *  @param a0 Pointer to buffer.
- */
-void mcFillFF(u8 *buf) {
-    s32 i = 128;
-    do {
-        *buf++ = 0xFF;
-    } while (--i > 0);
-}
-
-
-s32 func_800379AC(void *arg0)
-{
-    u8 buffer[0x80];
-    s32 i;
-    if (pollCardReady() != 2)
-        return 0;
-    mcFillFF(buffer);
-    if (!writeCardBlock(arg0, buffer, 0))
-        return 0;
-    mcInitDirUsed(buffer);
-    for (i = 0; i < 0xF; i++)
-        if (!writeCardBlock(arg0, buffer, i + 1))
-            return 0;
-    mcInitDirFree(buffer);
-    for (i = 0; i < 0x14; i++)
-        if (!writeCardBlock(arg0, buffer, i + 0x10))
-            return 0;
-    mcFillFF(buffer);
-    for (i = 0; i < 0x1C; i++)
-        if (!writeCardBlock(arg0, buffer, i + 0x24))
-            return 0;
-    mcInitHeader(buffer);
-    if (!writeCardBlock(arg0, buffer, 0))
-        return 0;
-    markCardBusy(arg0);
-    return 1;
-}
-
-
-/** @brief Sets global D_80085218 to 1. */
-void setMcBusy(void) {
-    D_80085218 = 1;
-}
-
-
-/** @brief Returns the unsigned byte value of global D_80085218. */
-u32 isMcBusy(void) {
-    return D_80085218;
-}
-
-
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037AEC);
-
-
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037B44);
-
-INCLUDE_ASM("asm/nonmatchings/gamestate", func_80037B7C);
-
-/**
- * @brief Search battle party slots for a matching character ID.
- * @param characterId Character ID to search for.
- * @return Slot index (0-2) if found, 0xFF if not found.
- */
-u8 findBattlePartySlot(u8 characterId) {
-    s32 i;
-
-    for (i = 0; i < 3; i++) {
-        if (g_gameState.battleParty[i] == characterId) {
-            return i;
-        }
-    }
-
-    return 0xFF;
-}
-
-
-/**
- * @brief Search active party slots for a matching character ID.
- * @param characterId Character ID to search for.
- * @return Slot index (0-2) if found, 0xFF if not found.
- */
-u8 findPartySlot(u8 characterId) {
-    s32 i;
-
-    for (i = 0; i < 3; i++) {
-        if (g_gameState.mainData.party.partyMembers[i] == characterId) {
-            return i;
-        }
-    }
-
-    return 0xFF;
-}
-
-
-/**
- * @brief Search character slots for a matching character ID.
- * @param characterId Character ID to search for.
- * @return Slot index (0-7) if found, 0xFF if not found.
- */
-u8 findCharacterSlot(u8 characterId) {
-    s32 i;
-
-    for (i = 0; i < 8; i++) {
-        if (g_gameState.chars[i].characterId == characterId) {
-            return i;
-        }
-    }
-
-    return 0xFF;
-}
-
-
-s32 func_80037C6C(s32 charId) {
-    u8 id = charId;
-    s32 i;
-
-    for (i = 0; i < PARTY_SLOT_COUNT; i++) {
-        if (g_gameState.mainData.party.partyMembers[i] != PARTY_SLOT_EMPTY
-            && g_gameState.chars[g_gameState.mainData.party.partyMembers[i]].characterId == id) {
-            return (u8)i;
-        }
-    }
-    return PARTY_SLOT_EMPTY;
-}
-
-
-/**
- * @brief Stop all playing sound channels and reset sound state.
- *
- * Reads two sound handles from the entity pointer at g_fieldVars (offsets
- * 0x6C and 0x70), stops each via sndCmdC1. Then calls sndStopPlayback
- * to flush sound state and sndSetChannelVolume to reset channel 0.
- */
-void stopAllSounds(void) {
-    s32 val;
-    sndCmdC1(g_fieldVars->soundHandle0, 15, 0);
-    val = g_fieldVars->soundHandle1;
-    if (val != -1) {
-        sndCmdC1(val, 15, 0);
-    }
-    sndStopPlayback();
-    sndSetChannelVolume(0, 15);
-}
-
-
-void func_80037D40(void) {
-    s32 i;
-
-    sndCmdC1(g_fieldVars->soundHandle0, 15, g_fieldVars->musicVolume);
-    if (g_fieldVars->soundHandle1 != SND_HANDLE_NONE) {
-        sndCmdC1(g_fieldVars->soundHandle1, 15, g_fieldVars->sfxVolume);
-    }
-    for (i = 0; i < 12; i++) {
-        if (D_80074F20[i].cmd < 0) {
-            sndPlayBankSfx(D_80074F20[i].cmd, D_80074F20[i].arg1, D_80074F20[i].fieldC, D_80074F20[i].field8);
-        } else if (D_80074F20[i].cmd > 0) {
-            sndPlaySfx(D_80074F20[i].cmd - 1, D_80074F20[i].arg1, D_80074F20[i].fieldC, D_80074F20[i].field8);
-        }
-    }
-    sndCmd45();
-}
-
-
-/**
- * @brief Toggle the sound bank selector and return the corresponding bank table.
- *
- * XORs byte at g_fieldVars[0xC9] with 1, then reloads and checks:
- * returns D_80063388 if the toggled value is non-zero, D_8005F388 otherwise.
- *
- * @return Pointer to the selected sound bank table.
- */
-u8 *toggleSoundBank(void) {
-
-    g_fieldVars->soundBankSelector ^= 1;
-    if ((s8)g_fieldVars->soundBankSelector == 0) {
-        return D_8005F388;
-    }
-    return D_80063388;
-}
-
-
-/**
- * @brief Load and apply sound data from disc (variant A).
- *
- * Polls sndGetEngineState until it returns 0, then reads sound data from
- * D_80085220 using func_80039728 and plays it via sndProcessAudio.
- * Reads sound data a second time, selects a bank table (D_8005F388
- * or D_80063388) based on g_fieldVars field 0xC9, and calls
- * func_80039678. Sets the completion flag at g_fieldVars + 0xD6.
- */
-void loadSoundBankA(void) {
-    s32 size;
-    s32 result;
-    u8 *table;
-
-    do {
-    } while (sndGetEngineState() != 0);
-    result = func_80039728(D_80085220, 1, &size);
-    sndProcessAudio(result, 1);
-    result = func_80039728(D_80085220, 0, &size);
-    if ((s8)g_fieldVars->soundBankSelector != 0) {
-        table = D_8005F388;
-    } else {
-        table = D_80063388;
-    }
-    func_80039678((s32)table, result, size);
-    g_fieldVars->soundLoadComplete = 1;
-}
-
-
-/**
- * @brief Load and apply sound data from disc (variant B).
- *
- * Same as func_80037E60, but the bank table selection is inverted:
- * uses D_80063388 when g_fieldVars field 0xC9 is non-zero, and
- * D_8005F388 when it is zero.
- */
-void loadSoundBankB(void) {
-    s32 size;
-    s32 result;
-    u8 *table;
-
-    do {
-    } while (sndGetEngineState() != 0);
-    result = func_80039728(D_80085220, 1, &size);
-    sndProcessAudio(result, 1);
-    result = func_80039728(D_80085220, 0, &size);
-    if (g_fieldVars->soundBankSelector == 0) {
-        table = D_8005F388;
-    } else {
-        table = D_80063388;
-    }
-    func_80039678((s32)table, result, size);
-    g_fieldVars->soundLoadComplete = 1;
-}
-
-
-void func_80037FB0(s32 variant, s32 bank, s32 buf) {
-    D_80085220 = buf;
-    g_fieldVars->soundLoadComplete = 0;
-    if (variant == 0) {
-        cdRead(D_800974F0[bank * 2], D_800974F0[bank * 2 + 1], (u8 *)buf, loadSoundBankA);
-    } else {
-        cdRead(D_800974F0[bank * 2], D_800974F0[bank * 2 + 1], (u8 *)buf, loadSoundBankB);
-    }
-}
-
-
-void func_80038030(s32 arg0) {
-    FieldVars *ptr = &g_gameState.fieldVars;
-
-    if (!(g_battleConfig.unk2 & 0x10)) {
-        while (sndGetStatus() == 2) {
-            func_800393C8();
-        }
-
-        if (ptr->soundHandle0 == -1) {
-            sndCmd11(0);
-        }
-
-        sndCmd40();
-        D_80085220 = arg0;
-        func_80037FB0(0, ptr->battleMusicId, arg0);
-
-        if (ptr->soundLoadComplete == 0) {
-            do {
-                func_800393C8();
-            } while (ptr->soundLoadComplete == 0);
-        }
-
-        D_8005F11C = sndCmd10(toggleSoundBank());
-        sndCmdC0(0, 0x7F);
-    }
-
-    g_battleConfig.unk9 = (u8)ptr->soundBankSelector ^ 1;
-    sndStopPlayback();
-    sndCmdF1();
-    sndSetMasterVolume(0x7F);
-
-    if (isBossBattle() == 0) {
-        sndPlaySfx(0xA, 0, 0x80, 0x7F);
-        sndPlaySfx(0xB, 0, 0x80, 0x7F);
-        sndPlaySfx(0xC, 0, 0x80, 0x7F);
-    } else {
-        sndPlaySfx(0x84, 0, 0x80, 0x7F);
-        sndPlaySfx(0x85, 0, 0x80, 0x7F);
-        sndPlaySfx(0x86, 0, 0x80, 0x7F);
-    }
-}
-
-
-/**
- * @brief Refresh the active-party ↔ battle-entity slot mapping in field state.
- *
- * Part 1: For each of the 3 active party slots, search the battle field
- * entity table for one whose @c partyId matches and record its index in
- * both g_fieldEntity.entityIndex and g_fieldVars->memberSlot. Defaults to
- * 0xFF when no entity matches.
- *
- * Part 2: When the bench-list flag (stateFlags & FIELD_STATE_PARTY_OVERRIDE) is set, build the
- * list of character IDs *not* currently in the active battle party
- * (partyOrderA/B at 0xBC/0xBF — initialized identically here).
- */
-void func_800381BC(void) {
-    s32 i;
-    s32 j;
-    Actor *ent;
-
-    for (i = 0; i < 3; i++) {
-        g_fieldEntity.entityIndex[i] = 0xFF;
-        g_fieldVars->memberSlot[i] = 0xFF;
-
-        ent = D_80085224;
-        for (j = 0; j < D_80085388; j++) {
-            if (g_gameState.battleParty[i] == ent->field_0x255) {
-                g_fieldVars->memberSlot[i] = j;
-                g_fieldEntity.entityIndex[i] = j;
-                break;
-            }
-            ent++;
-        }
-    }
-
-    if (g_fieldVars->stateFlags & FIELD_STATE_PARTY_OVERRIDE) {
-        j = 0;
-        for (i = 0; i < 6; i++) {
-            if (findBattlePartySlot(i) == 0xFF) {
-                g_fieldVars->partyOrderA[j] = i;
-                g_fieldVars->partyOrderB[j] = i;
-                j++;
-            }
-        }
-    }
-}
-
-
-/**
- * @brief Clear entity flag bits 0x44 from active battle entities, then update.
- *
- * Iterates over D_80085388 entries at stride 0x264 (612 bytes) starting
- * from D_80085224 + 0x160, clearing bits 2 and 6 of the flags word at
- * each entry. Then calls func_800381BC to apply the changes.
- */
-void clearEntityFlags(void) {
-    s32 i;
-    Actor *ent = D_80085224;
-    u8 count = D_80085388;
-
-    for (i = 0; i < count; i++, ent++) {
-        ent->context.flags &= ~0x44;
-    }
-
-    func_800381BC();
-}
-
-
-/** @brief Returns the transition/ready bits of @c g_fieldVars->stateFlags
- *         (@ref FIELD_STATE_TRANSITION | @ref FIELD_STATE_FIELD_READY). */
-s32 getFieldStateFlags(void) {
-    return g_fieldVars->stateFlags & (FIELD_STATE_TRANSITION | FIELD_STATE_FIELD_READY);
-}
-
-
-/**
- * @brief Extract a 2-bit field from the packed bitfield array at g_fieldVars+0x74.
- *
- * Treats the byte array as a packed 2-bit-per-entry table. Computes byte
- * index (a0/4) and bit position ((a0%4)*2), then extracts and returns
- * the 2-bit value.
- *
- * @param a0 Entry index (low 8 bits used).
- * @return The 2-bit value (0-3) at the given index.
- */
-s32 getPackedField2Bit(s32 entryIdx) {
-    entryIdx &= 0xFF;
-    return (g_fieldVars->drawPointFlag[entryIdx / 4] >> ((entryIdx % 4) * 2)) & 3;
-}
-
-
-void func_800383B8(s32 key, s32 status) {
-    s32 shift;
-    s32 mask;
-
-    status &= 3;
-    key &= 0xFF;
-    shift = key % 4;
-    shift *= 2;
-    status <<= shift;
-    mask = 3 << shift;
-    g_fieldVars->drawPointFlag[key / 4] &= ~mask;
-    g_fieldVars->drawPointFlag[key / 4] |= status;
-}
-
-
-/** @brief Looks up byte from D_8005644B table at index a0 (masked to 8 bits).
- *  @param a0 Table index (only low 8 bits used).
- *  @return The byte value at D_8005644B[a0 & 0xFF].
- */
-u8 lookupFieldTable(s32 tableIdx) {
-    return D_8005644B[tableIdx & 0xFF];
-}
-
-
-/**
- * @brief Get the dialogs' text speed for the field message-speed setting.
- *
- * @c config.fieldMsgSpeed is the Config menu slider position; @c g_textSpeeds maps
- * it to a text speed, from 0x1C00 (1.75 characters a frame) down to 0x0C00.
- */
-u16 getFieldTextSpeed(void) {
-    return g_textSpeeds[g_gameState.config.fieldMsgSpeed];
-}
-
-
-/** @brief Linear congruential generator: D_800562D4 = D_800562D4 * 0x41C64E6D + 0x3039.
- *  @return Bits 16-30 of the new state (0-32767).
- */
-s32 fieldRandom(void) {
-    D_800562D4 = D_800562D4 * 0x41C64E6D + 0x3039;
-    return ((u32)D_800562D4 >> 16) & 0x7FFF;
-}
-
-
-typedef struct {
-    s32 payloadSize;
-    u8 payload[1];
-} LzssData;
-
-/* Taking the typed member address preserves the retail D_80039418+0x28
- * relocation form with gcc 2.7.2; direct member access materializes the
- * struct base and inserts an extra instruction. */
-#define LZSS_OUTPUT_SIZE (*(s32 *)&D_80039418.outputSize)
-
-void func_80038490(u8 *src, u8 *dst)
-{
-  LzssData *data;
-  u8 *src_ptr;
-  u8 *dst_start;
-  s32 bit_cnt;
-  s32 flags;
-  u8 *src_end;
-  u8 *dst_end;
-  int new_var;
-  u8 *copy_src;
-  s32 offset;
-  u8 *new_var2;
-  s32 temp;
-  s32 v0;
-  src_ptr = src;
-  data = (LzssData *)src;
-  bit_cnt = 0;
-  flags = bit_cnt;
-  dst_start = dst;
-  LZSS_OUTPUT_SIZE = 0;
-  src_end = src_ptr + data->payloadSize + sizeof(data->payloadSize);
-  src_ptr += sizeof(data->payloadSize);
-  new_var2 = dst_start;
-  while (1)
-  {
-    if (bit_cnt == 0)
-    {
-      if (src_ptr >= src_end)
-      {
-        return;
-      }
-      bit_cnt = 8;
-      flags = *(src_ptr++);
-    }
-    if (flags & 1)
-    {
-      if (src_ptr >= src_end)
-      {
-        return;
-      }
-      *(dst++) = *(src_ptr++);
-      LZSS_OUTPUT_SIZE++;
-    }
-    else
-    {
-      if (src_ptr >= src_end)
-      {
-        return;
-      }
-      new_var = (dst - new_var2) + 0xFEE;
-      offset = *(src_ptr++);
-      temp = *(src_ptr++);
-      offset |= (temp & 0xF0) << 4;
-      v0 = (new_var - offset) & 0xFFF;
-      copy_src = dst - v0;
-      dst_end = (dst + (temp & 0x0F)) + 3;
-      if (copy_src < new_var2)
-      {
-        do
-        {
-          *(dst++) = 0;
-          copy_src++;
-        }
-        while (copy_src < new_var2);
-      }
-      while (dst < dst_end)
-      {
-        *(dst++) = *(copy_src++);
-        LZSS_OUTPUT_SIZE++;
-      }
-
-    }
-    flags >>= 1;
-    bit_cnt--;
-  }
-
 }

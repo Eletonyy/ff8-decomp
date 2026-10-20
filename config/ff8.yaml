@@ -596,6 +596,7 @@ binaries:
     elf_path: build/slus_008.92.elf
     asm_path: asm
     src_path: src
+    hasm_in_src_path: true
     build_path: build
     ld_script_path: build/splat/slus_008.92.ld
     gp_value: 0x8005EC24
@@ -686,8 +687,12 @@ binaries:
     - [0x2626C, c, render]
     - [0x264E0, c, overlay]
     - [0x26EE8, c, card]
-    - [0x278AC, c, gamestate]
-    - [0x28DB0, c, cdrom]
+    - [0x27390, c, gamestate]
+    - [0x27B08, c, ui/sprite]
+    - [0x27FB4, c, memcard]
+    - [0x282EC, hasm, 282EC]
+    - [0x283B0, c, 283B0]
+    - [0x28C90, c, cdrom]
     - [0x2953C, c, cdread]
     - [0x29C18, pad, cdread_pad]
     - [0x29C44, c, lzs]
