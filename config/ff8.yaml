@@ -124,7 +124,7 @@ binaries:
     - [0x353C, bin]
   - [0x139F8]
 - name: field
-  sha1: 1787bc2d0ee08f2e0a29b78bd0f07a0bbcfe2bc8
+  sha1: ff84df55a00419a4a7a2b87ddeaf7cda5213b949
   options:
     target_path: original/field.bin
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.field.txt]
@@ -168,7 +168,7 @@ binaries:
     - [0x286A0, data, fe_object12_data]
     - [0x2B898, bin]
     - [0x2E760, c, opcodes]
-  - [0x2ED80]
+  - [0x2ED88]
 - name: field_init
   sha1: 5329562ba441198c113c83946dac3da94d5506ee
   options:
@@ -187,7 +187,7 @@ binaries:
     - [0x990, bin]
   - [0x992]
 - name: intro
-  sha1: f56613c381e68076b3da62c84574444c9d672a4e
+  sha1: d915f04fc7e93b99084bc6080e6c10a50992e686
   options:
     target_path: original/intro.bin
     elf_path: build/intro/intro.elf
@@ -202,16 +202,11 @@ binaries:
     type: code
     start: 0x0
     vram: 0x80098000
-    # g_introVSyncBase (s32) lives at 0x800992B0, immediately past the loaded
-    # image. Modelling it as NOLOAD bss lets splat define it, instead of a
-    # hand-written linker assignment.
-    bss_size: 0x4
     subsegments:
     - [0x0, c, intro]
     - [0x10B8, .data, intro_assets]
     - [0x11D8, .data, intro_state]
-    - [0x12B0, bss, intro_bss]
-  - [0x12B0]
+  - [0x12B4]
 - name: menuabl
   sha1: 919eb2f43bb652fbb89dff205dd304194681977e
   options:
@@ -544,7 +539,7 @@ binaries:
     - [0x10AC40, bss, tripletriad_bss]
   - [0x10AC40]
 - name: world
-  sha1: b421bf83a307dcd41536b14dc81a3aa03f7c9ed0
+  sha1: eb63f1c05a576b9634482411255b43142bfdee5d
   options:
     target_path: original/world.bin
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.world.txt]
