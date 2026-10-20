@@ -1,4 +1,5 @@
 #include "common.h"
+#include "memcard.h"
 #include "battle.h"
 #include "menu.h"
 #include "menumain.h"

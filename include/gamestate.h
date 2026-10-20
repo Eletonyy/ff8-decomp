@@ -19,13 +19,22 @@
  *       class the original codegen shows. Raw pointer arithmetic with an
  *       (s32)&g_gameState cast remains for the few sites where preventing
  *       CC1PSX symbol+constant folding is match-required.
+ *
+ * @note @c getGfAvailabilityMask is defined by this unit but declared in
+ *       @c gf.h, and the widths deliberately differ. The definition must be
+ *       @c u16 (its epilogue is @c "andi v0, a1, 0xffff"; an @c s32 definition
+ *       breaks @c SLUS_008.92), while callers must see an int-width
+ *       declaration (declaring @c u16 to them breaks @c menugf.ovl and
+ *       @c menujnc2.ovl). That is faithful to the original build, in which
+ *       @c gamestate.c did not include the header its callers used — which
+ *       is also why @c menugf.c masks the result by hand with @c "& 0xFFFF".
+ *       Do not "reconcile" the two.
  */
 
 #include "common.h"
 #include "character.h"
 #include "field.h"
 #include "psxsdk/libgpu.h"
-#include "ui/sprite.h"
 
 /**
  * @brief 4-byte scene-state block at D_80082C8C.
@@ -420,22 +429,10 @@ extern GameState g_gameState;
 /** @brief Pointer to the SeeD/world sub-region of @c g_gameState (@c &g_gameState.fieldVars). */
 extern FieldVars *g_fieldVars;
 
-/* --- Memory card busy flag (D_80085218) --- */
-extern void setMcBusy(void);
-extern u32  isMcBusy(void);
-
-
 /** @brief Dialog text speed for each Config "Message speed" slider position
  * (@c GameConfig.fieldMsgSpeed): 0x1C00 (1.75 characters a frame)
  * down to 0x0C00. */
 extern u16 g_textSpeeds[];
-
-/** @brief Stop all sound playback (gamestate.c); installed as the VSync
- *         callback during field-engine init. */
-extern void stopAllSounds(void);
-
-extern void func_80037D40(void);
-extern void func_80037FB0(s32 variant, s32 bank, s32 buf);
 
 /* Render dispatch mode + fade bytes (main-binary state shared across units). */
 extern volatile s16 g_renderMode; /**< Also the scene-transition handshake the field, world and battle engines spin on, each with its own value. */
@@ -456,18 +453,25 @@ extern u16 *D_800852F0;
 
 /* --- Save / GF / chocobo-world state setters --- */
 extern void setGfExists(s32 gfId);
-extern void clearEntityFlags(void);
+
+/** @brief Card / character refresh hook: invoked when a party member
+ *         changes; refreshes derived character data. */
+extern void func_80036B90(s32 charIndex);
+
+extern void func_80036C74(void);
+
+/** @brief Companion to @ref func_80036B90 — applies a bitmask of flags
+ *         to the active-party char records. */
+extern void func_80036D44(s32 mask);
+
+/** @brief Set the party leader to @p charId. */
+extern void setPartyLeader(s32 charId);
+
+/** @brief Bitmask of characters currently available to the party. */
+extern s32 func_80036EC0(void);
+
 extern void func_800370AC(s32 arg0);
-extern void func_80038030(s32 mapAddr);
-extern void func_80038490(u8 *src, u8 *dst);
 extern u8 *getChocoboWorldPtr(void);
 extern void enableChocoboWorld(void);
-
-/** @brief Resolve a character ID (e.g. party slot) to its global character code. */
-extern s32 func_80037C6C(s32 charId);
-
-extern void *DrawPortrait(void *ot, TSPRT *head, s32 idx, s32 x, s32 y, u32 color);
-extern void *DrawPortraitNormalTint(void *ot, void *head, s32 idx, s32 x, s32 y);
-extern void *DrawSpriteFromTable(void *ot, TSPRT *head, SpriteTable *table, s32 idx, s32 x, s32 y, u32 color);
 
 #endif /* GAMESTATE_H */

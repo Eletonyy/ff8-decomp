@@ -5,6 +5,7 @@
 
 // Public prototypes
 
+void func_80038490(u8 *src, u8 *dst);
 /** @brief Initialize the CD subsystem. */
 void initCdSubsystem(s32 mode);
 /** @brief Perform a synchronous (blocking) CD-ROM read. */

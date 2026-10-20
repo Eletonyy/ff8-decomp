@@ -3,6 +3,7 @@
 #include "menu.h"
 #include "menucrd.h"
 #include "overlay.h"
+#include "ui/sprite.h"
 #include "ui/text.h"
 
 /**

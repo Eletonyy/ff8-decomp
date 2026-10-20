@@ -1,4 +1,5 @@
 #include "common.h"
+#include "283B0.h"
 #include "field.h"
 #include "gamestate.h"
 #include "card.h"

@@ -1,4 +1,6 @@
 #include "common.h"
+#include "282EC.h"
+#include "283B0.h"
 #include "field.h"
 #include "field/opcodes.h"
 #include "gamestate.h"

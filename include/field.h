@@ -507,14 +507,8 @@ extern u16 g_seedSalaryTable[];
  * See @c src/field/opcodes.c for the full opcode-to-handler mapping.
  */
 
-/** @brief Read the 2-bit packed flag at the given key (256-entry table). */
-extern s32 getPackedField2Bit(s32 key);
-
 /** @brief Field-only party-member status predicate (used by dialog opcodes). */
 extern s32 func_800211B4(s32 partyMember, s32 code);
-
-/** @brief Field-engine PRNG; consumed by random encounter / step ticks. */
-extern s32 fieldRandom(void);
 
 /**
  * @brief Per-entity render slot (rotational/animation state).
@@ -738,7 +732,6 @@ extern s32 *D_80085380;
 /** @brief Field-engine bit-0 lock byte read by Block C of @c func_800BD9C4. */
 extern u8 D_800704BD;
 
-extern void func_80037B7C(s32 *base, s32 *outA, s32 *outB);
 extern s32  func_801E8B58(void);
 
 /**
@@ -812,9 +805,6 @@ typedef struct {
     /* 0x6538 */ FieldRibbonTPages ribbonTPages[8]; /**< Their tpage commands. */
 } FieldFrameBuf; /* 0x6638 = 26168 bytes */
 
-
-/** @brief Update one packed-flag table slot from a step tick. */
-extern void func_800383B8(s32 key, s32 status);
 
 /* ======================================================================== */
 /* Field-overlay dialog / gauge tables                                          */
@@ -967,9 +957,6 @@ extern u8  D_8007809A;
 
 /** @brief Mirror of @c g_fieldVars->stepCounter (s32). */
 extern u32 D_80082C14;
-
-/** @brief Pool sizer for entity/script tables; called from @c fe_object10. */
-extern s32 func_80037AEC(u8 *header, u16 *table, s32 **outBase);
 
 /** @brief Reset to 20 on field entry by @c func_8009AEC0 and scaled by
  *         134.8046875 (@c *69020>>9) in @c func_800B6738 to form the threshold

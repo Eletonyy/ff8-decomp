@@ -20,6 +20,7 @@
 #include "ui/dialog.h"
 #include "ui/font.h"
 #include "ui/icon.h"
+#include "ui/sprite.h"
 #include "ui/text.h"
 #include "ui/window.h"
 

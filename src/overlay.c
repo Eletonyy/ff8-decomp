@@ -1,4 +1,5 @@
 #include "common.h"
+#include "memcard.h"
 #include "psxsdk/libetc.h"
 #include "psxsdk/libgpu.h"
 #include "battle.h"
