@@ -33,7 +33,7 @@ typedef s32 (*OpcodeFn)();
  */
 #define FIELD_OPCODE_BASE 0x12
 
-/** @brief The 392-entry field script-VM dispatch table. */
-extern s32 (*g_fieldOpcodeTable[392])();
+/** @brief The 394-entry field script-VM dispatch table. */
+extern s32 (*g_fieldOpcodeTable[394])();
 
 #endif /* FIELD_OPCODES_H */

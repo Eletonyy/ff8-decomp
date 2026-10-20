@@ -1,6 +1,6 @@
 /* Field script-VM opcode dispatch table at 0x800C6760.
  *
- * Layout (392 function pointers = 0x620 bytes):
+ * Layout (394 function pointers = 0x628 bytes):
  *
  *   Indices 0x000-0x011 (18 entries) — stack arithmetic sub-table.
  *     Invoked via the CAL opcode (op001 @ table index 0x013), which is
@@ -9,12 +9,12 @@
  *     the actor's value stack at offset 0x184: ADD, SUB, MUL, DIV, MOD,
  *     NEG, EQ, GT, GE, LT, LE, NE, AND, OR, EOR, NOT, RSH, LSH.
  *
- *   Indices 0x012-0x187 (374 entries) — main field-VM opcode dispatch.
+ *   Indices 0x012-0x189 (376 entries) — main field-VM opcode dispatch.
  *     The runtime dispatcher (fe_object10 func_800BEBD0/func_800BD9C4)
  *     reads packed bytecode words (@c func_80037B7C extracts the
  *     high byte as the opcode and sign-extends the lower 24 bits as
  *     the arg) and indexes @c g_fieldOpcodeTable + 0x48 (i.e. our 0x012) by
- *     @c opcode * 4. So wiki opcode N (0x000-0x175) corresponds to
+ *     @c opcode * 4. So wiki opcode N (0x000-0x177) corresponds to
  *     our table index N + 0x12.
  *
  * Wiki opcode names below come from
@@ -40,7 +40,7 @@
 /* Handler forward declarations come from the per-unit fe_object*.h headers
  * included above; OpcodeFn and the table's extern live in opcodes.h. */
 
-s32 (*g_fieldOpcodeTable[392])() = {
+s32 (*g_fieldOpcodeTable[394])() = {
     /* 0x000  arith ADD              */ (OpcodeFn)opHandler_ADD,
     /* 0x001  arith SUB              */ (OpcodeFn)opHandler_SUB,
     /* 0x002  arith MUL              */ (OpcodeFn)opHandler_MUL,
@@ -433,4 +433,6 @@ s32 (*g_fieldOpcodeTable[392])() = {
     /* 0x185  op173  CLOCKWISETURN2 */ (OpcodeFn)opHandler_CLOCKWISETURN2,
     /* 0x186  op174  COUNTERCLOCKWISETURN2*/ (OpcodeFn)opHandler_COUNTERCLOCKWISETURN2,
     /* 0x187  op175  UNKNOWN10       */ (OpcodeFn)opHandler_UNKNOWN10,
+    /* 0x188  op176  ???             */ func_800B45CC,
+    /* 0x189  op177  ???             */ func_800B4D34,
 };
