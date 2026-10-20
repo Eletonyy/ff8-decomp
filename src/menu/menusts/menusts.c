@@ -194,7 +194,7 @@ s32 func_801E72D8(s32 displayList, s32 ot, s32 x, s32 y, s32 mode) {
     }
 
     if (drawn != 0) {
-        if (isMcBusy() == 4) {
+        if (GetGameVersion() == VERSION_SPAIN) {
             *(u8 *)((s32)cfgPtr + 0x10) = 0xFC;
         } else {
             *(u8 *)((s32)cfgPtr + 0x10) = 0xD0;

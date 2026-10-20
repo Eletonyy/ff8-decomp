@@ -3221,7 +3221,7 @@ s32 renderStatTableA(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         cursorY = func_8002C56C(renderCtx, cy2, x, y, &buf[2], color);
     }
 
-    if (isMcBusy() == 4) {
+    if (GetGameVersion() == VERSION_SPAIN) {
         cfg->iconType = 0xFC;
     } else {
         cfg->iconType = 0xD0;
@@ -3304,7 +3304,7 @@ s32 renderStatTableB(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
         cursorY = func_8002C56C(renderCtx, cy2, x, y, &buf[2], color);
     }
 
-    if (isMcBusy() == 4) {
+    if (GetGameVersion() == VERSION_SPAIN) {
         cfg->iconType = 0xFD;
     } else {
         cfg->iconType = 0xD1;
@@ -3409,7 +3409,7 @@ s32 renderStatTableC(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase, s32 junct
         cursorY = func_8002C56C(renderCtx, cy2, x, y, bufPtr, color);
     }
 
-    if (isMcBusy() == 4) {
+    if (GetGameVersion() == VERSION_SPAIN) {
         cfg->iconType = 0xFE;
     } else {
         cfg->iconType = 0xD2;
@@ -3506,7 +3506,7 @@ s32 renderStatTableD(s32 renderCtx, s32 cursorY, s32 xBase, s32 yBase) {
         cursorY = func_8002C56C(renderCtx, cy2, x, y, bufPtr, color);
     }
 
-    if (isMcBusy() == 4) {
+    if (GetGameVersion() == VERSION_SPAIN) {
         cfg->iconType = 0xFF;
     } else {
         cfg->iconType = 0xD3;

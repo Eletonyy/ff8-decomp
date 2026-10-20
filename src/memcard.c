@@ -1,7 +1,7 @@
 #include "common.h"
 #include "memcard.h"
 
-extern u8 D_80085218;
+extern u8 g_gameVersion;
 
 static u32 mcXorChecksum(u8 *frame);
 static void mcInitHeader(u8 *frame);
@@ -171,13 +171,13 @@ s32 func_800379AC(void *arg0)
 }
 
 
-/** @brief Sets global D_80085218 to 1. */
-void setMcBusy(void) {
-    D_80085218 = 1;
+/** @brief Sets global g_gameVersion to VERSION_USA. */
+void InitGameVersion(void) {
+    g_gameVersion = VERSION_USA;
 }
 
 
-/** @brief Returns the unsigned byte value of global D_80085218. */
-u32 isMcBusy(void) {
-    return D_80085218;
+/** @brief Returns the unsigned byte value of global g_gameVersion. */
+GameVersion GetGameVersion(void) {
+    return g_gameVersion;
 }
