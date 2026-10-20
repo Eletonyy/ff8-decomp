@@ -188,6 +188,18 @@ void MaxPartyLevel(void) {
 * `// never used, but ...` stops the next person from deleting the line.
 * `// level 0 means the slot is empty` says what the value means, which the code alone can't.
 
+* Always include the size of the symbol in the respective symbols.txt file.
+
+Bad:
+```
+g_currentPageCardTable = 0x801E7870;
+```
+
+Good:
+```
+g_currentPageCardTable = 0x801E7870; // size:0xF4
+```
+
 * No copyrighted material in the repository. There are some assets integrated into the binaries, such as .TIM files that are just byte arrays as symbols. These have to be extracted during the extraction step and the c code generated.
 
 * This one is obvious but perhaps more targeted towards llms: No hacks in the build. The build compiles the C, assembles and links it, nothing more. If the output doesn't match, fix the C, never the build.
