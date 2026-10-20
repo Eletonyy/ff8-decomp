@@ -7,7 +7,7 @@
  * stored in ROM, loaded into VRAM along with text and the asset table.
  */
 #include "common.h"
-#include "intro.h"
+#include "intro_state.h"
 
 DispCtx g_introDispCtx     = {0};   /* 0x800991D8 — double-buffer display context. */
 s32     g_introOdeLatch    = 0;     /* 0x8009928C — last-seen @c GetODE() < 1 parity. */
@@ -19,5 +19,4 @@ s32     g_introCtrl0       = 0;     /* 0x800992A0 — latest controller-0 sample
 s32     g_introCtrl1       = 0;     /* 0x800992A4 — latest controller-1 sample. */
 s32     g_introCtrl0Edge   = 0;     /* 0x800992A8 — controller-0 rising-edge mask (& 0xF0 = ABXY). */
 s32     g_introCtrl1Edge   = 0;     /* 0x800992AC — controller-1 rising-edge mask. */
-/* g_introVSyncBase lives PAST the end of the intro overlay (0x800992B0) and
- * is resolved by config/undefined_syms.intro.txt — it isn't defined here. */
+s32 g_introVSyncBase = 0;

@@ -163,6 +163,10 @@ def find_in_root(f, pvd, mode2, target_name):
 # LZSS decompression (matches func_80039520 in the game binary)
 # ---------------------------------------------------------------------------
 
+# An LZSS stream starts with a u32 holding the length of the payload after it.
+LZSS_HEADER_SIZE = 4
+
+
 def lzss_decompress(compressed):
     """LZSS decompression with 4096-byte sliding window.
 
@@ -306,6 +310,12 @@ def extract_overlays(f, mode2, pvd, output_dir):
         if sector == 0 or size == 0:
             print(f"  [{idx:2d}] {name}: empty entry, skipping")
             continue
+
+        if compression == "lzss":
+            # The table's size is short for some LZSS files (intro, field,
+            # world), so take the length from the stream's own header.
+            payload_size = struct.unpack_from("<I", read_sector(f, sector, mode2))[0]
+            size = LZSS_HEADER_SIZE + payload_size
 
         sector_count = (size + SECTOR_DATA_SIZE - 1) // SECTOR_DATA_SIZE
         raw = read_sectors(f, sector, sector_count, mode2)[:size]

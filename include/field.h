@@ -494,16 +494,16 @@ extern u16 g_seedSalaryTable[];
 /**
  * @brief Field script-VM opcode dispatch table.
  *
- * 392-entry function-pointer table at @c 0x800C6760. Indices 0-17
+ * 394-entry function-pointer table at @c 0x800C6760. Indices 0-17
  * are a 18-entry stack-arithmetic sub-table (ADD, SUB, MUL, DIV, MOD,
  * NEG, EQ, ..., AND, OR, XOR, ...) accessed by @c opHandler_CAL
  * (the "meta-dispatcher") which receives the sub-opcode in @c a1 and
  * tail-calls @c g_fieldOpcodeTable[a1].
  *
- * Indices 18-391 are the main opcode dispatch table. The runtime
+ * Indices 18-393 are the main opcode dispatch table. The runtime
  * dispatcher (@c func_800BEBD0 / @c func_800BD9C4) loads
  * @c g_fieldOpcodeTable + 0x48 (i.e. our index 18) as its base, so
- * wiki opcode @c N (0x000-0x175) corresponds to our index @c N + 0x12.
+ * wiki opcode @c N (0x000-0x177) corresponds to our index @c N + 0x12.
  * See @c src/field/opcodes.c for the full opcode-to-handler mapping.
  */
 
