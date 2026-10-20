@@ -1,4 +1,5 @@
 #include "common.h"
+#include "memcard.h"
 #include "psxsdk/libetc.h"
 #include "psxsdk/libgpu.h"
 #include "battle.h"
@@ -412,7 +413,7 @@ s32 func_8003646C(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     s32 savedBrightness;
     s32 savedEntityType;
 
-    setMcBusy();
+    InitGameVersion();
 
     saved250 = g_engine.dialogs.entries[0].textX;
     D_80085210 = arg0;

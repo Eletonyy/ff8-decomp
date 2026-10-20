@@ -1,4 +1,5 @@
 #include "common.h"
+#include "cdrom.h"
 #include "field.h"
 #include "gamestate.h"
 #include "main.h"

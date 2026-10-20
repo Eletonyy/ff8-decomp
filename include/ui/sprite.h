@@ -2,7 +2,9 @@
 #define UI_SPRITE_H
 
 #include "common.h"
+#include "character.h"
 #include "psxsdk/libgpu.h"
+#include "tim.h"
 
 typedef struct {
     /** 0x00 */ u32 spriteCount;
@@ -36,5 +38,15 @@ typedef struct {
     (setlen(p, 5), (p)->drawMode = _get_mode(dfe, dtd, tpage))
 
 #define setTSprtFull(p, dfe, dtd, tpage) (setTSprt(p, dfe, dtd, tpage), (p)->code = 0x64)
+
+typedef struct {
+    u8 rows[16][0x30];
+} NameStrip;
+
+extern void func_80037308(NameFont *font, NameStrip out[PARTY_SLOT_COUNT]);
+extern void *DrawPortrait(void *ot, TSPRT *head, s32 idx, s32 x, s32 y, u32 color);
+extern void *DrawPortraitNormalTint(void *ot, void *head, s32 idx, s32 x, s32 y);
+extern void *DrawSpriteFromTable(void *ot, TSPRT *head, SpriteTable *table, s32 idx, s32 x, s32 y, u32 color);
+extern void *DrawSpriteFromTableNormalTint(void *ot, void *head, SpriteTable *table, s32 idx, s32 x, s32 y);
 
 #endif

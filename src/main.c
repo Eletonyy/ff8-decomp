@@ -1,4 +1,5 @@
 #include "common.h"
+#include "283B0.h"
 #include "cd.h"
 #include "intro.h"
 #include "field/fe_object1.h"

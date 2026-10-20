@@ -14,6 +14,7 @@
 #include "thread.h"
 #include "ui/dialog.h"
 #include "ui/text.h"
+#include "ui/sprite.h"
 #include "numstr.h"
 #include "psxsdk/libgpu.h"
 #include "psxsdk/libetc.h"

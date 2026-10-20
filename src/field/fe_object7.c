@@ -1,4 +1,5 @@
 #include "common.h"
+#include "283B0.h"
 #include "battle.h"
 #include "ui/countdown.h"
 #include "ui/gauge.h"

@@ -1,7 +1,9 @@
 #include "common.h"
+#include "gamestate.h"
 #include "menu.h"
 #include "menucrd.h"
 #include "overlay.h"
+#include "ui/sprite.h"
 #include "ui/text.h"
 
 /**
@@ -26,9 +28,11 @@ typedef struct {
     /* 0x42 */ u8 unk42;
 } CardMenuState;
 
+#define CARD_BACKSIDE_INDEX 11
+
 extern s16 D_801E7D64;
 extern s16 D_801E7D66;
-extern u8 D_801E7870;
+extern SpriteTable g_currentPageCardTable;
 
 extern s16 getGameStateS16(void);
 
@@ -37,6 +41,7 @@ void func_801E5ABC(CardMenuState *state);
 s32 func_801E5F7C(s32, s32, s32, s32, s32);
 s32 func_801E67E4(s32, s32, s32, s32, s32);
 s32 func_801E69AC(CardMenuState *state, s32 a1, s32 a2);
+static void *DrawCardBacksideSprite(s32, void *, void *, s32, s32);
 
 /** @brief Look up string @p a0 in menu text category 0xD. */
 u8 *func_801E5800(s32 a0) {
@@ -222,18 +227,16 @@ s32 func_801E6058(CardMenuState *state, s32 a1, s32 a2, s32 a3, s32 stackArg) {
 INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E60E8);
 
 /**
- * Draws a text string at a given position with standard card palette.
- * Passes through coordinates and string data to the text renderer
- * with palette index 0xB and the shared string table.
- * @param a0 Unused
- * @param a1 X position
- * @param a2 Y position
- * @param a3 Text index (passed as 5th arg to renderer)
- * @param stackArg Color/attribute (passed as 6th arg)
- * @return Result from func_800376A8
+ * @brief Draw the card backside (sprite 11 of the card table) at a screen position.
+ *
+ * @param ot Ordering-table entry the packet is linked into.
+ * @param head Next free position in the packet buffer.
+ * @param x Screen x of the card back.
+ * @param y Screen y of the card back.
+ * @return Next free position in the packet buffer, after the packet written.
  */
-s32 func_801E6228(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
-    return func_800376A8(a1, a2, (s32)&D_801E7870, 0xB, a3, stackArg, g_menuTint[MENU_TINT_NORMAL]);
+static void *DrawCardBacksideSprite(s32 unused, void *ot, void *head, s32 x, s32 y) {
+    return DrawSpriteFromTable(ot, head, &g_currentPageCardTable, CARD_BACKSIDE_INDEX, x, y, g_menuTint[MENU_TINT_NORMAL]);
 }
 
 /**
@@ -250,7 +253,7 @@ s32 func_801E6228(s32 a0, s32 a1, s32 a2, s32 a3, s32 stackArg) {
  * @param a2 Y position
  * @param a3 Text index
  * @param stackArg Color/attribute
- * @return Result from func_800376A8
+ * @return Result from DrawSpriteFromTable
  */
 INCLUDE_ASM("asm/ovl/menucrd/nonmatchings/menucrd", func_801E6270);
 
