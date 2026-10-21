@@ -52,8 +52,7 @@ def main():
     if copy_raw:
         args.remove("--copy-raw")
     if len(args) < 2:
-        lines = __doc__.strip().splitlines()
-        print(lines[lines.index("Usage:") + 1].strip(), file=sys.stderr)
+        print(f"usage: {sys.argv[0]} [--copy-raw] <in>... <out>", file=sys.stderr)
         return 2
     sources, dest = args[:-1], args[-1]
     if len(sources) > 1 and not os.path.isdir(dest):
