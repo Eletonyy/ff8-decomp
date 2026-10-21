@@ -1,6 +1,3 @@
-# Binaries copied from the dumped disc 1 into original/bin.
-# src: path or glob in the dumped disc, dst: directory under original/bin,
-# lzs: the file is LZS-compressed on the disc and is decompressed on the way.
 files:
 - {src: SLUS_008.92, dst: ., lzs: false}
 - {src: data/eng/battle/ovl/battle.ovl, dst: battle, lzs: false}

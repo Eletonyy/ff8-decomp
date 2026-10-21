@@ -20,10 +20,8 @@ from unpackimg import sha1_of_file, unpack
 
 DUMPSXISO = "tools/mkpsxiso/build/Release/dumpsxiso"
 
-# Disc image suffixes worth hashing when looking for a release.
 IMAGE_SUFFIXES = (".bin", ".img", ".iso")
 
-# The four USA discs, by the SHA1 of their Redump-verified image.
 DISCS = [
     {"id": "SLUS-00892", "disc": 1, "sha1": "5028a4f815a50d6ffe16f9c3e44ec6235a81f3f5"},
     {"id": "SLUS-00908", "disc": 2, "sha1": "2af26ce916c1b5bbb74fbacb0a8ca1a5171dc510"},

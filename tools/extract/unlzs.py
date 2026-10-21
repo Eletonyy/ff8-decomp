@@ -1,19 +1,4 @@
 #!/usr/bin/env python3
-"""Decompress FF8 LZS files.
-
-Format: a u32 byte count of the compressed payload that follows, then groups
-of one flag byte and eight tokens, flag bits read LSB first. A set bit is a
-literal byte; a clear bit is a two-byte back-reference into a 4096-byte ring
-buffer: 12-bit position (low byte, then the high nibble of the second byte)
-and 4-bit length + 3. The ring starts zeroed with the write position at 0xFEE.
-
-Usage:
-    python3 tools/extract/unlzs.py [--copy-raw] <in>... <out>
-
-<out> is a file when there is one input, a directory otherwise. --copy-raw
-copies an input that carries no LZS header instead of failing, so a mixed
-directory of packed and stored files can go through one call.
-"""
 
 import os
 import shutil
