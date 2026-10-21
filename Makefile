@@ -212,6 +212,15 @@ verify: $(BUILT_EXE) $(foreach ovl,$(OVERLAYS),build-$(ovl))
 	done < $(VERIFY_LIST); \
 	if [ "$$FAIL" = "1" ]; then exit 1; fi
 
+MKPSXISO_DIR := tools/mkpsxiso
+
+# Build mkpsxiso/dumpsxiso (configures on first run)
+mkpsxiso:
+	cd $(MKPSXISO_DIR) && { [ -f build/CMakeCache.txt ] || cmake --preset release; } && cmake --build --preset release
+
+extract: mkpsxiso
+	$(PYTHON) tools/extract/extractdisc.py
+
 # First-time setup: create venv, install dependencies, runs full build
 setup:
 	python3 -m venv $(VENV)
@@ -359,6 +368,6 @@ report: objdiff-config
 	@$(OBJDIFF) report generate -p . -o $(BUILD_DIR)/report.json
 	@python3 tools/objdiff/progress_html.py $(BUILD_DIR)/report.json $(BUILD_DIR)/progress.html
 
-.PHONY: all full build verify check setup split splat-config clean permute build-overlays \
+.PHONY: all full build verify check setup extract mkpsxiso split splat-config clean permute build-overlays \
         expected objdiff-config report \
         $(foreach ovl,$(ALL_OVERLAYS),split-$(ovl) build-$(ovl) verify-$(ovl))

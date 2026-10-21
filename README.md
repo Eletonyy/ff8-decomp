@@ -180,7 +180,7 @@ The following distributions have been tested:
 1. **Prerequisites**. This "guide" is for devs using debian/ubuntu on Windows using **WSL 2**
    ```bash
    sudo apt update
-   sudo apt install git make cpp gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu binutils-mips-linux-gnu python3 python3-venv
+   sudo apt install git make cpp gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu binutils-mips-linux-gnu python3 python3-venv cmake g++
    ```
 
 
@@ -188,9 +188,10 @@ The following distributions have been tested:
    ```bash
    git clone --recursive https://github.com/roengstrom/ff8-decomp.git
    cd ff8-decomp
+   git submodule update --init --recursive
    ```
 
-3. **Provide your own disc image** — You need a BIN file of FF8 Disc 1 (USA, SLUS-00892). Once extracted from the disk, place it inside the "rom" folder. 
+3. **Provide your own disc image:** You need a BIN file of FF8 Disc 1 (USA, SLUS-00892). Once extracted from the disk, place it inside the "rom" folder. 
 
 4. **Run the setup**:
    ```bash
