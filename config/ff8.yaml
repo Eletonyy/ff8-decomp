@@ -46,7 +46,7 @@ binaries:
 - name: battle
   sha1: fa3b045925c0cc8855b321f5dd22ff196f9d51b0
   options:
-    target_path: original/battle.bin
+    target_path: original/bin/battle/battle.ovl
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt]
     section_order: [.rodata, .text, .data, .bss]
   segments:
@@ -108,7 +108,7 @@ binaries:
 - name: battle_render
   sha1: 035161ef7e9d3e7122649c3841f193e12c189589
   options:
-    target_path: original/battle_render.bin
+    target_path: original/bin/battle/battle_render.ovl
     src_path: src/ovl/battle_render
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle_render.txt]
     section_order: [.rodata, .text, .data, .bss]
@@ -126,7 +126,7 @@ binaries:
 - name: field
   sha1: ff84df55a00419a4a7a2b87ddeaf7cda5213b949
   options:
-    target_path: original/field.bin
+    target_path: original/bin/field/field.ovl
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.field.txt]
     elf_path: build/field/field.elf
     asm_path: asm/field
@@ -172,7 +172,7 @@ binaries:
 - name: field_init
   sha1: 5329562ba441198c113c83946dac3da94d5506ee
   options:
-    target_path: original/field_init.bin
+    target_path: original/bin/field/field_init.ovl
     src_path: src/ovl/field_init
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.field_init.txt]
   segments:
@@ -189,7 +189,7 @@ binaries:
 - name: intro
   sha1: d915f04fc7e93b99084bc6080e6c10a50992e686
   options:
-    target_path: original/intro.bin
+    target_path: original/bin/intro/intro.ovl
     elf_path: build/intro/intro.elf
     asm_path: asm/intro
     src_path: src
@@ -210,7 +210,7 @@ binaries:
 - name: menuabl
   sha1: 919eb2f43bb652fbb89dff205dd304194681977e
   options:
-    target_path: original/menuabl.ovl
+    target_path: original/bin/menu/menuabl.ovl
     src_path: src/menu/menuabl
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menuabl.txt]
   segments:
@@ -225,7 +225,7 @@ binaries:
 - name: menucfg
   sha1: 2a553ef68db3219eee28dfffef665909b8eeaf68
   options:
-    target_path: original/menucfg.ovl
+    target_path: original/bin/menu/menucfg.ovl
     src_path: src/menu/menucfg
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menucfg.txt]
   segments:
@@ -241,7 +241,7 @@ binaries:
 - name: menucrd
   sha1: e0dcfb6ced55dbeab770422f650dcf9f9103d661
   options:
-    target_path: original/menucrd.ovl
+    target_path: original/bin/menu/menucrd.ovl
     src_path: src/menu/menucrd
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menucrd.txt]
   segments:
@@ -258,7 +258,7 @@ binaries:
 - name: menuext
   sha1: 6f67e81fce1891f9b7d0db4dfd8c28bee155c7cb
   options:
-    target_path: original/menuext.ovl
+    target_path: original/bin/menu/menuext.ovl
     src_path: src/menu/menuext
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menuext.txt]
   segments:
@@ -273,7 +273,7 @@ binaries:
 - name: menugf
   sha1: 811ffe461aa34a437a4c4f7b46af8fc0d57ab78c
   options:
-    target_path: original/menugf.ovl
+    target_path: original/bin/menu/menugf.ovl
     src_path: src/menu/menugf
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menugf.txt]
   segments:
@@ -289,7 +289,7 @@ binaries:
 - name: menuitem
   sha1: a54f1c5ba8982d20e7a63287f632652a44a2a9b4
   options:
-    target_path: original/menuitem.ovl
+    target_path: original/bin/menu/menuitem.ovl
     src_path: src/menu/menuitem
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menuitem.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -311,7 +311,7 @@ binaries:
 - name: menujnc2
   sha1: 7f56b35f983faa8fa62d8003348913d74653ccd6
   options:
-    target_path: original/menujnc2.ovl
+    target_path: original/bin/menu/menujnc2.ovl
     src_path: src/menu/menujnc2
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menujnc2.txt]
     ld_bss_is_noload: true
@@ -335,7 +335,7 @@ binaries:
 - name: menumain
   sha1: c5c81139efd5e629cf1b3f80f90e8eb012c4dafa
   options:
-    target_path: original/menumain.ovl
+    target_path: original/bin/menu/menumain.ovl
     src_path: src/menu/menumain
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt]
   segments:
@@ -353,7 +353,7 @@ binaries:
 - name: menumgc
   sha1: 967125cc95317880d0c2e0d0f61f66a62c21125f
   options:
-    target_path: original/menumgc.ovl
+    target_path: original/bin/menu/menumgc.ovl
     src_path: src/menu/menumgc
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menumgc.txt]
   segments:
@@ -369,7 +369,7 @@ binaries:
 - name: menupty
   sha1: 17736cb92c8cb34e651e01ba01285b7a1a895159
   options:
-    target_path: original/menupty.ovl
+    target_path: original/bin/menu/menupty.ovl
     src_path: src/menu/menupty
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menupty.txt]
   segments:
@@ -384,7 +384,7 @@ binaries:
 - name: menusav
   sha1: 11db278b2b7d0bf82d49003a789c316c8db78517
   options:
-    target_path: original/menusav.ovl
+    target_path: original/bin/menu/menusav.ovl
     src_path: src/menu/menusav
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menusav.txt]
   segments:
@@ -399,7 +399,7 @@ binaries:
 - name: menushop
   sha1: b968bdd8b9335ffa5e998ea8ef985cfc1863c2db
   options:
-    target_path: original/menushop.ovl
+    target_path: original/bin/menu/menushop.ovl
     src_path: src/menu/menushop
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menushop.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -419,7 +419,7 @@ binaries:
 - name: menusts
   sha1: 113a79248329389c58a8b9174cefe914ae198a57
   options:
-    target_path: original/menusts.ovl
+    target_path: original/bin/menu/menusts.ovl
     src_path: src/menu/menusts
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menusts.txt]
   segments:
@@ -436,7 +436,7 @@ binaries:
 - name: menutest
   sha1: 087297e7c974731951746bb2d4392472be3cab4e
   options:
-    target_path: original/menutest.ovl
+    target_path: original/bin/menu/menutest.ovl
     src_path: src/menu/menutest
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menutest.txt]
   segments:
@@ -452,7 +452,7 @@ binaries:
 - name: menutips
   sha1: 0659afebe53fc060592eda101ec59bfac6997faa
   options:
-    target_path: original/menutips.ovl
+    target_path: original/bin/menu/menutips.ovl
     src_path: src/menu/menutips
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menutips.txt]
   segments:
@@ -468,7 +468,7 @@ binaries:
 - name: menutmag
   sha1: 9c3467b1cc10db163e33c7657bc7681850e9c243
   options:
-    target_path: original/menutmag.ovl
+    target_path: original/bin/menu/menutmag.ovl
     src_path: src/menu/menutmag
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menutmag.txt]
   segments:
@@ -484,7 +484,7 @@ binaries:
 - name: menututo
   sha1: b13208a2f10c733cdddd93aa056c82ca468bf7b3
   options:
-    target_path: original/menututo.ovl
+    target_path: original/bin/menu/menututo.ovl
     src_path: src/menu/menututo
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.menumain.txt, config/symbols.menututo.txt]
   segments:
@@ -500,7 +500,7 @@ binaries:
 - name: tripletriad
   sha1: accfe3831595f26c5d6de6f3891736521736f8ef
   options:
-    target_path: original/tripletriad.bin
+    target_path: original/bin/card/card.ovl
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.tripletriad.txt]
     section_order: [.rodata, .text, .data, .bss]
     ld_bss_is_noload: true
@@ -541,7 +541,7 @@ binaries:
 - name: world
   sha1: eb63f1c05a576b9634482411255b43142bfdee5d
   options:
-    target_path: original/world.bin
+    target_path: original/bin/world/world.ovl
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.world.txt]
     section_order: [.rodata, .text, .data, .bss]
     ld_bss_is_noload: true
@@ -587,7 +587,7 @@ binaries:
   sha1: 40706b4e0553fc6cbeb044ca1e0e9004d5ac2561
   options:
     basename: slus_008.92
-    target_path: original/SLUS_008.92
+    target_path: original/bin/SLUS_008.92
     elf_path: build/slus_008.92.elf
     asm_path: asm
     src_path: src
@@ -707,10 +707,24 @@ binaries:
     - [0x3E7F4, c, psxsdk/libsnd]
     - [0x41EE8, data]
   - [0x191000]
+- name: movie
+  sha1: 80ad32679374e6fd7d7360fd50ff8aba066bf0c7
+  options:
+    target_path: original/bin/movie/movie.ovl
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.field.txt]
+  segments:
+  - name: movie
+    type: code
+    start: 0x0
+    vram: 0x801E8000
+    subsegments:
+    - [0x0, c, movie]
+    - [0x13B4, data]
+  - [0x124F4]
 - name: effect_001
   sha1: d2269dde125f54b3f00c61eb318b58d3ca3c6f40
   options:
-    target_path: original/effect/effect_001.bin
+    target_path: original/bin/battle/mag/mag001.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_001.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -744,7 +758,7 @@ binaries:
 - name: effect_002
   sha1: 25c0a9960ba3926df3d8b37f58ae7ed430751beb
   options:
-    target_path: original/effect/effect_002.bin
+    target_path: original/bin/battle/mag/mag002.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_002.txt]
   segments:
@@ -759,7 +773,7 @@ binaries:
 - name: effect_003
   sha1: d6120b50fc86ecd7beac99a338aeb6fea97ac5a3
   options:
-    target_path: original/effect/effect_003.bin
+    target_path: original/bin/battle/mag/mag003.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_003.txt]
   segments:
@@ -774,7 +788,7 @@ binaries:
 - name: effect_004
   sha1: c791810c23d1124b6dd8335b87ee159cdf1947f9
   options:
-    target_path: original/effect/effect_004.bin
+    target_path: original/bin/battle/mag/mag004.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_004.txt]
   segments:
@@ -790,7 +804,7 @@ binaries:
 - name: effect_005
   sha1: 016f3d494f6770bb764f44dee8606e2f41ee4b42
   options:
-    target_path: original/effect/effect_005.bin
+    target_path: original/bin/battle/mag/mag005.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_005.txt]
   segments:
@@ -806,7 +820,7 @@ binaries:
 - name: effect_006
   sha1: ab664b734a6069ec95c846716ae047a126382992
   options:
-    target_path: original/effect/effect_006.bin
+    target_path: original/bin/battle/mag/mag006.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_006.txt]
   segments:
@@ -822,7 +836,7 @@ binaries:
 - name: effect_007
   sha1: 7edad0eff9c4f648a9934d3a12851ac600172f10
   options:
-    target_path: original/effect/effect_007.bin
+    target_path: original/bin/battle/mag/mag007.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_007.txt]
   segments:
@@ -838,7 +852,7 @@ binaries:
 - name: effect_008
   sha1: 5cba255514d63d99eebe123c311ae5f1ef1dec1a
   options:
-    target_path: original/effect/effect_008.bin
+    target_path: original/bin/battle/mag/mag008.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_008.txt]
   segments:
@@ -854,7 +868,7 @@ binaries:
 - name: effect_009
   sha1: 266caff2c6f3f8e45eca09dea4935724714b5eb2
   options:
-    target_path: original/effect/effect_009.bin
+    target_path: original/bin/battle/mag/mag009.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_009.txt]
   segments:
@@ -870,7 +884,7 @@ binaries:
 - name: effect_010
   sha1: 102f23cc4b0a820404033aef0f44281c87da7d1f
   options:
-    target_path: original/effect/effect_010.bin
+    target_path: original/bin/battle/mag/mag010.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_010.txt]
   segments:
@@ -885,7 +899,7 @@ binaries:
 - name: effect_011
   sha1: b0e049d9a8790bc6414fa497ca1ec2c095c52819
   options:
-    target_path: original/effect/effect_011.bin
+    target_path: original/bin/battle/mag/mag011.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_011.txt]
   segments:
@@ -900,7 +914,7 @@ binaries:
 - name: effect_012
   sha1: 1d1ed867f87f0da378216b96027912a99c92f03e
   options:
-    target_path: original/effect/effect_012.bin
+    target_path: original/bin/battle/mag/mag012.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_012.txt]
   segments:
@@ -915,7 +929,7 @@ binaries:
 - name: effect_013
   sha1: fc5c1a958db034dd9c10b8bd2088ed033bbcff50
   options:
-    target_path: original/effect/effect_013.bin
+    target_path: original/bin/battle/mag/mag013.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_013.txt]
   segments:
@@ -931,7 +945,7 @@ binaries:
 - name: effect_014
   sha1: b2c82547d421ebedf900366daa1ec5dcead1e972
   options:
-    target_path: original/effect/effect_014.bin
+    target_path: original/bin/battle/mag/mag014.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_014.txt]
   segments:
@@ -947,7 +961,7 @@ binaries:
 - name: effect_015
   sha1: 87756194aaad00815b2154cc357de77e2ab74db8
   options:
-    target_path: original/effect/effect_015.bin
+    target_path: original/bin/battle/mag/mag015.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_015.txt]
   segments:
@@ -963,7 +977,7 @@ binaries:
 - name: effect_016
   sha1: 7e8f8bbec8494c6281042b0b60e7598ce59cd245
   options:
-    target_path: original/effect/effect_016.bin
+    target_path: original/bin/battle/mag/mag016.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_016.txt]
   segments:
@@ -979,7 +993,7 @@ binaries:
 - name: effect_017
   sha1: 46ddad0ffd0c0faf04d852c4e4f60ec7922cd9e7
   options:
-    target_path: original/effect/effect_017.bin
+    target_path: original/bin/battle/mag/mag017.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_017.txt]
   segments:
@@ -994,7 +1008,7 @@ binaries:
 - name: effect_018
   sha1: 437400ddfee33c331d7227ebc803ff288df1bc1a
   options:
-    target_path: original/effect/effect_018.bin
+    target_path: original/bin/battle/mag/mag018.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_018.txt]
   segments:
@@ -1010,7 +1024,7 @@ binaries:
 - name: effect_019
   sha1: d69141dad4c733f10dcd3a27dccfbad3c62c8eea
   options:
-    target_path: original/effect/effect_019.bin
+    target_path: original/bin/battle/mag/mag019.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_019.txt]
   segments:
@@ -1026,7 +1040,7 @@ binaries:
 - name: effect_020
   sha1: 41819375ee682a69be583a69ce818fb61589c00c
   options:
-    target_path: original/effect/effect_020.bin
+    target_path: original/bin/battle/mag/mag020.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_020.txt]
   segments:
@@ -1042,7 +1056,7 @@ binaries:
 - name: effect_021
   sha1: 0b015f1bc4e2b212349f9b92e3f6e87f56d4da05
   options:
-    target_path: original/effect/effect_021.bin
+    target_path: original/bin/battle/mag/mag021.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_021.txt]
   segments:
@@ -1058,7 +1072,7 @@ binaries:
 - name: effect_022
   sha1: f6f34b460b7ef377ed510d4dc9114daf78b98116
   options:
-    target_path: original/effect/effect_022.bin
+    target_path: original/bin/battle/mag/mag022.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_022.txt]
   segments:
@@ -1074,7 +1088,7 @@ binaries:
 - name: effect_023
   sha1: 77449628c073c52aa3eddc5e0aabb31c3aa23e5d
   options:
-    target_path: original/effect/effect_023.bin
+    target_path: original/bin/battle/mag/mag023.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_023.txt]
   segments:
@@ -1090,7 +1104,7 @@ binaries:
 - name: effect_024
   sha1: eb16265bad98806252497c51d3e62781b08b89cd
   options:
-    target_path: original/effect/effect_024.bin
+    target_path: original/bin/battle/mag/mag024.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_024.txt]
   segments:
@@ -1106,7 +1120,7 @@ binaries:
 - name: effect_025
   sha1: 759122767c1509712ce1016d12c494df57d62392
   options:
-    target_path: original/effect/effect_025.bin
+    target_path: original/bin/battle/mag/mag025.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_025.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -1141,7 +1155,7 @@ binaries:
 - name: effect_026
   sha1: 4ba6ba81335793113254dabaca4229aa48c10473
   options:
-    target_path: original/effect/effect_026.bin
+    target_path: original/bin/battle/mag/mag026.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_026.txt]
   segments:
@@ -1157,7 +1171,7 @@ binaries:
 - name: effect_027
   sha1: a1158a7823e198616a952269d40755268266c76b
   options:
-    target_path: original/effect/effect_027.bin
+    target_path: original/bin/battle/mag/mag027.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_027.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -1197,7 +1211,7 @@ binaries:
 - name: effect_028
   sha1: eb8243db98aedc14e57e62c7b42d639c8171f9c5
   options:
-    target_path: original/effect/effect_028.bin
+    target_path: original/bin/battle/mag/mag028.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_028.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -1237,7 +1251,7 @@ binaries:
 - name: effect_029
   sha1: 2f817a2bd73ec621f623440889ade98973bd1131
   options:
-    target_path: original/effect/effect_029.bin
+    target_path: original/bin/battle/mag/mag029.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_029.txt]
   segments:
@@ -1253,7 +1267,7 @@ binaries:
 - name: effect_030
   sha1: 657aff70f8d134b11b82bac749abd43632956db4
   options:
-    target_path: original/effect/effect_030.bin
+    target_path: original/bin/battle/mag/mag030.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_030.txt]
   segments:
@@ -1269,7 +1283,7 @@ binaries:
 - name: effect_031
   sha1: 472090cb605a37f22457bfa550ed81d0bc9530f1
   options:
-    target_path: original/effect/effect_031.bin
+    target_path: original/bin/battle/mag/mag031.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_031.txt]
   segments:
@@ -1285,7 +1299,7 @@ binaries:
 - name: effect_032
   sha1: ca5e5991cb91eda61813c277b7cfb3cf0cf90e83
   options:
-    target_path: original/effect/effect_032.bin
+    target_path: original/bin/battle/mag/mag032.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_032.txt]
   segments:
@@ -1301,7 +1315,7 @@ binaries:
 - name: effect_033
   sha1: cf8ba894ced9298b62b781b4af48f796bc9b2e7b
   options:
-    target_path: original/effect/effect_033.bin
+    target_path: original/bin/battle/mag/mag033.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_033.txt]
   segments:
@@ -1317,7 +1331,7 @@ binaries:
 - name: effect_034
   sha1: 846fb8534b692bfa5b8cab3c1ea5d683f324b37e
   options:
-    target_path: original/effect/effect_034.bin
+    target_path: original/bin/battle/mag/mag034.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_034.txt]
   segments:
@@ -1333,7 +1347,7 @@ binaries:
 - name: effect_035
   sha1: 87f40b96c89284ef6d879ddf99e794cee2ccaae0
   options:
-    target_path: original/effect/effect_035.bin
+    target_path: original/bin/battle/mag/mag035.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_035.txt]
   segments:
@@ -1349,7 +1363,7 @@ binaries:
 - name: effect_036
   sha1: 1f0689c870a5fbc8cac4b9fda5d2ff6b5351f90f
   options:
-    target_path: original/effect/effect_036.bin
+    target_path: original/bin/battle/mag/mag036.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_036.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -1390,7 +1404,7 @@ binaries:
 - name: effect_037
   sha1: b612bceb1b012825e0742387b0c698f409303e42
   options:
-    target_path: original/effect/effect_037.bin
+    target_path: original/bin/battle/mag/mag037.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_037.txt]
   segments:
@@ -1406,7 +1420,7 @@ binaries:
 - name: effect_038
   sha1: f67484bc7f4238a677e2a34d21f5b91ee6bfa69c
   options:
-    target_path: original/effect/effect_038.bin
+    target_path: original/bin/battle/mag/mag038.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_038.txt]
   segments:
@@ -1422,7 +1436,7 @@ binaries:
 - name: effect_039
   sha1: ab104d01954e945e94619d48d4aed1b75c1f1ccb
   options:
-    target_path: original/effect/effect_039.bin
+    target_path: original/bin/battle/mag/mag039.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_039.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -1464,7 +1478,7 @@ binaries:
 - name: effect_040
   sha1: 71c17ed17dd7557405ab4a9ef1ca1eb46383dddf
   options:
-    target_path: original/effect/effect_040.bin
+    target_path: original/bin/battle/mag/mag040.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_040.txt]
   segments:
@@ -1480,7 +1494,7 @@ binaries:
 - name: effect_041
   sha1: db1e9412002655fb6f2991c44703b762679274af
   options:
-    target_path: original/effect/effect_041.bin
+    target_path: original/bin/battle/mag/mag041.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_041.txt]
   segments:
@@ -1496,7 +1510,7 @@ binaries:
 - name: effect_042
   sha1: c560c8343bde305260812182504c12c504045296
   options:
-    target_path: original/effect/effect_042.bin
+    target_path: original/bin/battle/mag/mag042.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_042.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -1541,7 +1555,7 @@ binaries:
 - name: effect_043
   sha1: d0bc38383514f26db82d199e58142355bdd21067
   options:
-    target_path: original/effect/effect_043.bin
+    target_path: original/bin/battle/mag/mag043.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_043.txt]
   segments:
@@ -1557,7 +1571,7 @@ binaries:
 - name: effect_044
   sha1: 35f4132376326338f61426abceda068b13102af1
   options:
-    target_path: original/effect/effect_044.bin
+    target_path: original/bin/battle/mag/mag044.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_044.txt]
   segments:
@@ -1573,7 +1587,7 @@ binaries:
 - name: effect_045
   sha1: 2a1d95c50ac5113a65d9f39e6972041f294cbe0e
   options:
-    target_path: original/effect/effect_045.bin
+    target_path: original/bin/battle/mag/mag045.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_045.txt]
   segments:
@@ -1589,7 +1603,7 @@ binaries:
 - name: effect_046
   sha1: 4910bfb5ba1aab911fd381ed97949dbc3a1f6533
   options:
-    target_path: original/effect/effect_046.bin
+    target_path: original/bin/battle/mag/mag046.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_046.txt]
   segments:
@@ -1605,7 +1619,7 @@ binaries:
 - name: effect_047
   sha1: 31d1c6307caad277665598f4c4ddb0c38a10dbb6
   options:
-    target_path: original/effect/effect_047.bin
+    target_path: original/bin/battle/mag/mag047.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_047.txt]
   segments:
@@ -1621,7 +1635,7 @@ binaries:
 - name: effect_048
   sha1: ec5bffbc63618c111342be0c39d9cec32351e04b
   options:
-    target_path: original/effect/effect_048.bin
+    target_path: original/bin/battle/mag/mag048.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_048.txt]
   segments:
@@ -1637,7 +1651,7 @@ binaries:
 - name: effect_049
   sha1: 026cb8a74083eb5dcacddf0f320d8546e70601e3
   options:
-    target_path: original/effect/effect_049.bin
+    target_path: original/bin/battle/mag/mag049.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_049.txt]
   segments:
@@ -1653,7 +1667,7 @@ binaries:
 - name: effect_050
   sha1: d2269dde125f54b3f00c61eb318b58d3ca3c6f40
   options:
-    target_path: original/effect/effect_050.bin
+    target_path: original/bin/battle/mag/mag050.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_050.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -1679,7 +1693,7 @@ binaries:
 - name: effect_051
   sha1: 759122767c1509712ce1016d12c494df57d62392
   options:
-    target_path: original/effect/effect_051.bin
+    target_path: original/bin/battle/mag/mag051.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_051.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -1715,7 +1729,7 @@ binaries:
 - name: effect_052
   sha1: 018066f1282c8db5bf22c8ec68b0d92fe329d9d0
   options:
-    target_path: original/effect/effect_052.bin
+    target_path: original/bin/battle/mag/mag052.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_052.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -1757,7 +1771,7 @@ binaries:
 - name: effect_053
   sha1: 738b1bb7de8b266db68995f925e9602f88fca51f
   options:
-    target_path: original/effect/effect_053.bin
+    target_path: original/bin/battle/mag/mag053.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_053.txt]
   segments:
@@ -1773,7 +1787,7 @@ binaries:
 - name: effect_054
   sha1: 8260bb65d383a92b02e7ed68c0548642943b5946
   options:
-    target_path: original/effect/effect_054.bin
+    target_path: original/bin/battle/mag/mag054.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_054.txt]
   segments:
@@ -1789,7 +1803,7 @@ binaries:
 - name: effect_055
   sha1: ba21e7c01873d2ebc4663da2bf6518984561d62a
   options:
-    target_path: original/effect/effect_055.bin
+    target_path: original/bin/battle/mag/mag055.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_055.txt]
   segments:
@@ -1805,7 +1819,7 @@ binaries:
 - name: effect_056
   sha1: ab104d01954e945e94619d48d4aed1b75c1f1ccb
   options:
-    target_path: original/effect/effect_056.bin
+    target_path: original/bin/battle/mag/mag056.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_056.txt]
     section_order: [.text, .rodata, .data, .bss]
@@ -1846,7 +1860,7 @@ binaries:
 - name: effect_057
   sha1: 1ae05f01dd5c2a348e1f11bfad13b9419ee00177
   options:
-    target_path: original/effect/effect_057.bin
+    target_path: original/bin/battle/mag/mag057.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_057.txt]
   segments:
@@ -1862,7 +1876,7 @@ binaries:
 - name: effect_058
   sha1: b807d61db177307a411f058cf26065b065982519
   options:
-    target_path: original/effect/effect_058.bin
+    target_path: original/bin/battle/mag/mag058.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_058.txt]
   segments:
@@ -1878,7 +1892,7 @@ binaries:
 - name: effect_059
   sha1: 52386daec49eb860d4cb5bdc93604dcca999b32f
   options:
-    target_path: original/effect/effect_059.bin
+    target_path: original/bin/battle/mag/mag059.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_059.txt]
   segments:
@@ -1894,7 +1908,7 @@ binaries:
 - name: effect_060
   sha1: be641d0c6499e1cc9a05eb07655676eb51e85829
   options:
-    target_path: original/effect/effect_060.bin
+    target_path: original/bin/battle/mag/mag060.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_060.txt]
   segments:
@@ -1910,7 +1924,7 @@ binaries:
 - name: effect_061
   sha1: b7cd64a3233ed17ad50592288289f955c5fa40f0
   options:
-    target_path: original/effect/effect_061.bin
+    target_path: original/bin/battle/mag/mag061.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_061.txt]
   segments:
@@ -1926,7 +1940,7 @@ binaries:
 - name: effect_062
   sha1: 43c71e90043acbb63acb908ec78809ca68724f8c
   options:
-    target_path: original/effect/effect_062.bin
+    target_path: original/bin/battle/mag/mag062.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_062.txt]
   segments:
@@ -1942,7 +1956,7 @@ binaries:
 - name: effect_063
   sha1: 1922af0cc9e8994881433b984967901168a0c675
   options:
-    target_path: original/effect/effect_063.bin
+    target_path: original/bin/battle/mag/mag063.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_063.txt]
   segments:
@@ -1957,7 +1971,7 @@ binaries:
 - name: effect_064
   sha1: 8a9284356590689697ec585172769cc587c3bdd9
   options:
-    target_path: original/effect/effect_064.bin
+    target_path: original/bin/battle/mag/mag064.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_064.txt]
   segments:
@@ -1972,7 +1986,7 @@ binaries:
 - name: effect_065
   sha1: d47ae9655e015557347e585a6d6e4ac2cba2acca
   options:
-    target_path: original/effect/effect_065.bin
+    target_path: original/bin/battle/mag/mag065.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_065.txt]
   segments:
@@ -1987,7 +2001,7 @@ binaries:
 - name: effect_066
   sha1: dacb2c5dc694a5e1f51fae0b416253d14d8fd904
   options:
-    target_path: original/effect/effect_066.bin
+    target_path: original/bin/battle/mag/mag066.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_066.txt]
   segments:
@@ -2003,7 +2017,7 @@ binaries:
 - name: effect_067
   sha1: eb16265bad98806252497c51d3e62781b08b89cd
   options:
-    target_path: original/effect/effect_067.bin
+    target_path: original/bin/battle/mag/mag067.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_067.txt]
   segments:
@@ -2019,7 +2033,7 @@ binaries:
 - name: effect_068
   sha1: 57bf952a57f3af5426080ce571a6f99d69a8ad7b
   options:
-    target_path: original/effect/effect_068.bin
+    target_path: original/bin/battle/mag/mag068.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_068.txt]
   segments:
@@ -2035,7 +2049,7 @@ binaries:
 - name: effect_069
   sha1: ae3181ce7d3e9ba4cf759bc4d940f1817057663f
   options:
-    target_path: original/effect/effect_069.bin
+    target_path: original/bin/battle/mag/mag069.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_069.txt]
   segments:
@@ -2050,7 +2064,7 @@ binaries:
 - name: effect_070
   sha1: 160deec78fb0466c26575dff22b162eaa17b5f8c
   options:
-    target_path: original/effect/effect_070.bin
+    target_path: original/bin/battle/mag/mag070.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_070.txt]
   segments:
@@ -2065,7 +2079,7 @@ binaries:
 - name: effect_071
   sha1: 9925563348a36377436b6261580cbbf139a19fef
   options:
-    target_path: original/effect/effect_071.bin
+    target_path: original/bin/battle/mag/mag071.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_071.txt]
   segments:
@@ -2081,7 +2095,7 @@ binaries:
 - name: effect_072
   sha1: bafaf0137b5a951c7af4a0eb0e84c16a562490fd
   options:
-    target_path: original/effect/effect_072.bin
+    target_path: original/bin/battle/mag/mag072.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_072.txt]
   segments:
@@ -2097,7 +2111,7 @@ binaries:
 - name: effect_073
   sha1: 4576c4bd2ae72b26592c07030f96701d8647dec8
   options:
-    target_path: original/effect/effect_073.bin
+    target_path: original/bin/battle/mag/mag073.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_073.txt]
   segments:
@@ -2113,7 +2127,7 @@ binaries:
 - name: effect_074
   sha1: bd0d2c7e998c8ebbd849fd6699f9d21f6956492d
   options:
-    target_path: original/effect/effect_074.bin
+    target_path: original/bin/battle/mag/mag074.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_074.txt]
   segments:
@@ -2129,7 +2143,7 @@ binaries:
 - name: effect_075
   sha1: a4509e68d50d54e5dee8790556b6f10c72557600
   options:
-    target_path: original/effect/effect_075.bin
+    target_path: original/bin/battle/mag/mag075.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_075.txt]
   segments:
@@ -2145,7 +2159,7 @@ binaries:
 - name: effect_076
   sha1: 47aefc3b3f0530f8fc59e3db123d2fd0d7154cc5
   options:
-    target_path: original/effect/effect_076.bin
+    target_path: original/bin/battle/mag/mag076.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_076.txt]
   segments:
@@ -2161,7 +2175,7 @@ binaries:
 - name: effect_077
   sha1: 1e47e2dcb8f0b936159264f0e0d87d4527288e94
   options:
-    target_path: original/effect/effect_077.bin
+    target_path: original/bin/battle/mag/mag077.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_077.txt]
   segments:
@@ -2177,7 +2191,7 @@ binaries:
 - name: effect_078
   sha1: a17ef38f3064a663ac929a7e0342e5aa3460b28e
   options:
-    target_path: original/effect/effect_078.bin
+    target_path: original/bin/battle/mag/mag078.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_078.txt]
   segments:
@@ -2193,7 +2207,7 @@ binaries:
 - name: effect_079
   sha1: cc6a8a839c9f4945ff97edf901453c6ec19f2002
   options:
-    target_path: original/effect/effect_079.bin
+    target_path: original/bin/battle/mag/mag079.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_079.txt]
   segments:
@@ -2209,7 +2223,7 @@ binaries:
 - name: effect_080
   sha1: 2ea7de60ea3e6125f7061213759fa035f4c38019
   options:
-    target_path: original/effect/effect_080.bin
+    target_path: original/bin/battle/mag/mag080.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_080.txt]
   segments:
@@ -2225,7 +2239,7 @@ binaries:
 - name: effect_081
   sha1: 38be461fdd919bc0ba72e7e254d9ff56794cc8db
   options:
-    target_path: original/effect/effect_081.bin
+    target_path: original/bin/battle/mag/mag081.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_081.txt]
   segments:
@@ -2241,7 +2255,7 @@ binaries:
 - name: effect_082
   sha1: ed0ef1ed1033f1f0689d8cf8178eaae347af3c59
   options:
-    target_path: original/effect/effect_082.bin
+    target_path: original/bin/battle/mag/mag082.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_082.txt]
   segments:
@@ -2257,7 +2271,7 @@ binaries:
 - name: effect_083
   sha1: ec842d1aa086c6f78f209adda3b1989adad73d23
   options:
-    target_path: original/effect/effect_083.bin
+    target_path: original/bin/battle/mag/mag083.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_083.txt]
   segments:
@@ -2273,7 +2287,7 @@ binaries:
 - name: effect_084
   sha1: f63bd6327aa8fd7ac71012fb3e653094fa5903ff
   options:
-    target_path: original/effect/effect_084.bin
+    target_path: original/bin/battle/mag/mag084.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_084.txt]
   segments:
@@ -2289,7 +2303,7 @@ binaries:
 - name: effect_085
   sha1: dcd2c7b2ac43389a895bd48488b452d2d8b7e08b
   options:
-    target_path: original/effect/effect_085.bin
+    target_path: original/bin/battle/mag/mag085.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_085.txt]
   segments:
@@ -2305,7 +2319,7 @@ binaries:
 - name: effect_086
   sha1: ef09a37a160c9f809f30b4c907cf0d57244ee6d4
   options:
-    target_path: original/effect/effect_086.bin
+    target_path: original/bin/battle/mag/mag086.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_086.txt]
   segments:
@@ -2321,7 +2335,7 @@ binaries:
 - name: effect_087
   sha1: 29325d6d03261fdc143799df4f68953882ddc484
   options:
-    target_path: original/effect/effect_087.bin
+    target_path: original/bin/battle/mag/mag087.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_087.txt]
   segments:
@@ -2337,7 +2351,7 @@ binaries:
 - name: effect_088
   sha1: c597a77e53c9ec8c10d886bf0fb9903590ec2593
   options:
-    target_path: original/effect/effect_088.bin
+    target_path: original/bin/battle/mag/mag088.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_088.txt]
   segments:
@@ -2353,7 +2367,7 @@ binaries:
 - name: effect_089
   sha1: 0cc6050e91cda6ce91564b4a318aaef6dc0bc73a
   options:
-    target_path: original/effect/effect_089.bin
+    target_path: original/bin/battle/mag/mag089.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_089.txt]
   segments:
@@ -2369,7 +2383,7 @@ binaries:
 - name: effect_090
   sha1: 0d4752cc5d3f9e16a147e8df06718281ccb31e09
   options:
-    target_path: original/effect/effect_090.bin
+    target_path: original/bin/battle/mag/mag090.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_090.txt]
   segments:
@@ -2385,7 +2399,7 @@ binaries:
 - name: effect_091
   sha1: 3b012eb26118bb409d93a6278293bc32e76f8065
   options:
-    target_path: original/effect/effect_091.bin
+    target_path: original/bin/battle/mag/mag091.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_091.txt]
   segments:
@@ -2401,7 +2415,7 @@ binaries:
 - name: effect_092
   sha1: 1ebfb1de0a9904448bf5f87fc03e4f9f3b4b8ea9
   options:
-    target_path: original/effect/effect_092.bin
+    target_path: original/bin/battle/mag/mag092.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_092.txt]
   segments:
@@ -2417,7 +2431,7 @@ binaries:
 - name: effect_093
   sha1: d0d23213f8d7019d5a15e9e855c3b05d0941d089
   options:
-    target_path: original/effect/effect_093.bin
+    target_path: original/bin/battle/mag/mag093.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_093.txt]
   segments:
@@ -2433,7 +2447,7 @@ binaries:
 - name: effect_094
   sha1: 62e6a833b327c70130688cb1894f6545d476fd1b
   options:
-    target_path: original/effect/effect_094.bin
+    target_path: original/bin/battle/mag/mag094.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_094.txt]
   segments:
@@ -2449,7 +2463,7 @@ binaries:
 - name: effect_095
   sha1: 4b14b93043d7c10fdc8cf4810a7c2449f9f8772a
   options:
-    target_path: original/effect/effect_095.bin
+    target_path: original/bin/battle/mag/mag095.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_095.txt]
   segments:
@@ -2465,7 +2479,7 @@ binaries:
 - name: effect_096
   sha1: 2c3c2f9042e37f288528aac98b2750decabe2a35
   options:
-    target_path: original/effect/effect_096.bin
+    target_path: original/bin/battle/mag/mag096.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_096.txt]
   segments:
@@ -2481,7 +2495,7 @@ binaries:
 - name: effect_097
   sha1: 32a3fb9c856c7c59c997882775bf4ee3d71fa938
   options:
-    target_path: original/effect/effect_097.bin
+    target_path: original/bin/battle/mag/mag097.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_097.txt]
   segments:
@@ -2497,7 +2511,7 @@ binaries:
 - name: effect_098
   sha1: 9f848850744026f0f70bf58e90981d05b4b97f38
   options:
-    target_path: original/effect/effect_098.bin
+    target_path: original/bin/battle/mag/mag098.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_098.txt]
   segments:
@@ -2513,7 +2527,7 @@ binaries:
 - name: effect_099
   sha1: 47a2ab83d49d37c3966275a18d5592214172d8dc
   options:
-    target_path: original/effect/effect_099.bin
+    target_path: original/bin/battle/mag/mag099.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_099.txt]
   segments:
@@ -2529,7 +2543,7 @@ binaries:
 - name: effect_100
   sha1: 3ac8c24a78eb01de47db1e15179a7ca5b6712627
   options:
-    target_path: original/effect/effect_100.bin
+    target_path: original/bin/battle/mag/mag100.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_100.txt]
   segments:
@@ -2545,7 +2559,7 @@ binaries:
 - name: effect_101
   sha1: 5d3a569d2c87131105ce3e9d2680def0a290c0d2
   options:
-    target_path: original/effect/effect_101.bin
+    target_path: original/bin/battle/mag/mag101.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_101.txt]
   segments:
@@ -2560,7 +2574,7 @@ binaries:
 - name: effect_102
   sha1: abd5f8c1be9b509675ba28ef160599367102246e
   options:
-    target_path: original/effect/effect_102.bin
+    target_path: original/bin/battle/mag/mag102.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_102.txt]
   segments:
@@ -2575,7 +2589,7 @@ binaries:
 - name: effect_103
   sha1: 89aa965532e1bfd53ab46b5e9ed61abe6cab5ecf
   options:
-    target_path: original/effect/effect_103.bin
+    target_path: original/bin/battle/mag/mag103.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_103.txt]
   segments:
@@ -2590,7 +2604,7 @@ binaries:
 - name: effect_104
   sha1: 775f63cf597190fd32d0e4500d0000af5b7e297d
   options:
-    target_path: original/effect/effect_104.bin
+    target_path: original/bin/battle/mag/mag104.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_104.txt]
   segments:
@@ -2605,7 +2619,7 @@ binaries:
 - name: effect_105
   sha1: ea0505c001eed34be0b681e1eb3c0fb3c6384344
   options:
-    target_path: original/effect/effect_105.bin
+    target_path: original/bin/battle/mag/mag105.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_105.txt]
   segments:
@@ -2620,7 +2634,7 @@ binaries:
 - name: effect_106
   sha1: 40324092f6922514208f679e727b7d4de0317acb
   options:
-    target_path: original/effect/effect_106.bin
+    target_path: original/bin/battle/mag/mag106.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_106.txt]
   segments:
@@ -2635,7 +2649,7 @@ binaries:
 - name: effect_107
   sha1: 25bbb320698d424f868460df16791a308eee8ba0
   options:
-    target_path: original/effect/effect_107.bin
+    target_path: original/bin/battle/mag/mag107.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_107.txt]
   segments:
@@ -2650,7 +2664,7 @@ binaries:
 - name: effect_108
   sha1: 3ea03bcdd50bc4570e9e745007e01845df792669
   options:
-    target_path: original/effect/effect_108.bin
+    target_path: original/bin/battle/mag/mag108.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_108.txt]
   segments:
@@ -2665,7 +2679,7 @@ binaries:
 - name: effect_109
   sha1: 023938e4e6c9041f6fd68b1eec0e9146cbfe87b8
   options:
-    target_path: original/effect/effect_109.bin
+    target_path: original/bin/battle/mag/mag109.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_109.txt]
   segments:
@@ -2680,7 +2694,7 @@ binaries:
 - name: effect_110
   sha1: 2477c8186db3e49cb5dc3b60bcb2b6456fd43095
   options:
-    target_path: original/effect/effect_110.bin
+    target_path: original/bin/battle/mag/mag110.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_110.txt]
   segments:
@@ -2695,7 +2709,7 @@ binaries:
 - name: effect_111
   sha1: 693a40a7b3e2c4c188412b1ff3b34027bc93b884
   options:
-    target_path: original/effect/effect_111.bin
+    target_path: original/bin/battle/mag/mag111.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_111.txt]
   segments:
@@ -2710,7 +2724,7 @@ binaries:
 - name: effect_112
   sha1: 7a9e16580f00b11612c792d0dd08ae272688cda4
   options:
-    target_path: original/effect/effect_112.bin
+    target_path: original/bin/battle/mag/mag112.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_112.txt]
   segments:
@@ -2725,7 +2739,7 @@ binaries:
 - name: effect_113
   sha1: 1d886da44535191bc4bdb6a142645ee51e9e407f
   options:
-    target_path: original/effect/effect_113.bin
+    target_path: original/bin/battle/mag/mag113.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_113.txt]
   segments:
@@ -2740,7 +2754,7 @@ binaries:
 - name: effect_114
   sha1: 4ac1c8a48ca17df2d8dad22e0e3b81c008a57e8e
   options:
-    target_path: original/effect/effect_114.bin
+    target_path: original/bin/battle/mag/mag114.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_114.txt]
   segments:
@@ -2755,7 +2769,7 @@ binaries:
 - name: effect_115
   sha1: cd8b2d2c34d5723270e8ef3cef68b79f8c3b0a80
   options:
-    target_path: original/effect/effect_115.bin
+    target_path: original/bin/battle/mag/mag115.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_115.txt]
   segments:
@@ -2770,7 +2784,7 @@ binaries:
 - name: effect_116
   sha1: 16c79f1be4083d853ae7f4db67869bc6b93211cf
   options:
-    target_path: original/effect/effect_116.bin
+    target_path: original/bin/battle/mag/mag116.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_116.txt]
   segments:
@@ -2785,7 +2799,7 @@ binaries:
 - name: effect_117
   sha1: 1dffb2c277dfeb0adb18bc28b3060beb885e4300
   options:
-    target_path: original/effect/effect_117.bin
+    target_path: original/bin/battle/mag/mag117.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_117.txt]
   segments:
@@ -2800,7 +2814,7 @@ binaries:
 - name: effect_118
   sha1: 3610adf7471f0172b14cab61cf8b4f19a3173cd1
   options:
-    target_path: original/effect/effect_118.bin
+    target_path: original/bin/battle/mag/mag118.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_118.txt]
   segments:
@@ -2815,7 +2829,7 @@ binaries:
 - name: effect_119
   sha1: 3b2bac99a786fb4968c7198528d0585fbd1c22f1
   options:
-    target_path: original/effect/effect_119.bin
+    target_path: original/bin/battle/mag/mag119.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_119.txt]
   segments:
@@ -2831,7 +2845,7 @@ binaries:
 - name: effect_120
   sha1: cfde3817235d061499ce17a0d7dddf98d30d01b4
   options:
-    target_path: original/effect/effect_120.bin
+    target_path: original/bin/battle/mag/mag120.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_120.txt]
   segments:
@@ -2846,7 +2860,7 @@ binaries:
 - name: effect_121
   sha1: c30c70a99899adc553852f70cee4d9232355d68d
   options:
-    target_path: original/effect/effect_121.bin
+    target_path: original/bin/battle/mag/mag121.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_121.txt]
   segments:
@@ -2861,7 +2875,7 @@ binaries:
 - name: effect_122
   sha1: fe75aa0d2c4470fd3c513c0650a94d6bf840a973
   options:
-    target_path: original/effect/effect_122.bin
+    target_path: original/bin/battle/mag/mag122.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_122.txt]
   segments:
@@ -2876,7 +2890,7 @@ binaries:
 - name: effect_123
   sha1: 39c6712df3e2845e9e7f07a3da588d6544a2baed
   options:
-    target_path: original/effect/effect_123.bin
+    target_path: original/bin/battle/mag/mag123.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_123.txt]
   segments:
@@ -2891,7 +2905,7 @@ binaries:
 - name: effect_124
   sha1: 756b5c0fee2c653afa183833c3fd8221bda3c4d0
   options:
-    target_path: original/effect/effect_124.bin
+    target_path: original/bin/battle/mag/mag124.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_124.txt]
   segments:
@@ -2906,7 +2920,7 @@ binaries:
 - name: effect_125
   sha1: 21c2fc1f496279d53e539035225dc8a29b96421d
   options:
-    target_path: original/effect/effect_125.bin
+    target_path: original/bin/battle/mag/mag125.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_125.txt]
   segments:
@@ -2921,7 +2935,7 @@ binaries:
 - name: effect_126
   sha1: de93cb4e3828a0922ac8a08943d43e11a407ff0a
   options:
-    target_path: original/effect/effect_126.bin
+    target_path: original/bin/battle/mag/mag126.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_126.txt]
   segments:
@@ -2936,7 +2950,7 @@ binaries:
 - name: effect_127
   sha1: 2e452260dd1e830ed20e3442385d5eb09ad8acbf
   options:
-    target_path: original/effect/effect_127.bin
+    target_path: original/bin/battle/mag/mag127.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_127.txt]
   segments:
@@ -2951,7 +2965,7 @@ binaries:
 - name: effect_128
   sha1: 1981621121cd6fff7596b3fafba866dde9d1912a
   options:
-    target_path: original/effect/effect_128.bin
+    target_path: original/bin/battle/mag/mag128.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_128.txt]
   segments:
@@ -2966,7 +2980,7 @@ binaries:
 - name: effect_129
   sha1: 3a8fc0fbbebb6052e2b4558cdd7162bb1add0fb1
   options:
-    target_path: original/effect/effect_129.bin
+    target_path: original/bin/battle/mag/mag129.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_129.txt]
   segments:
@@ -2981,7 +2995,7 @@ binaries:
 - name: effect_130
   sha1: 63731fa848c94d796a7e4af64bd66a2ff001c575
   options:
-    target_path: original/effect/effect_130.bin
+    target_path: original/bin/battle/mag/mag130.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_130.txt]
   segments:
@@ -2996,7 +3010,7 @@ binaries:
 - name: effect_131
   sha1: 1a69f9590de0bcdf9b4d9742ec77e886f22c8666
   options:
-    target_path: original/effect/effect_131.bin
+    target_path: original/bin/battle/mag/mag131.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_131.txt]
   segments:
@@ -3011,7 +3025,7 @@ binaries:
 - name: effect_132
   sha1: fbd843188c8a1f0f5d22e3d3094ca94f68d8cab5
   options:
-    target_path: original/effect/effect_132.bin
+    target_path: original/bin/battle/mag/mag132.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_132.txt]
   segments:
@@ -3026,7 +3040,7 @@ binaries:
 - name: effect_133
   sha1: 4610e8f9b966a51e0fb983a97f5a0e1efb779eb0
   options:
-    target_path: original/effect/effect_133.bin
+    target_path: original/bin/battle/mag/mag133.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_133.txt]
   segments:
@@ -3041,7 +3055,7 @@ binaries:
 - name: effect_134
   sha1: 9e1ce8e2fcfd9f2b99c78a1f639a9074f10a0b10
   options:
-    target_path: original/effect/effect_134.bin
+    target_path: original/bin/battle/mag/mag134.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_134.txt]
   segments:
@@ -3056,7 +3070,7 @@ binaries:
 - name: effect_135
   sha1: 1b84e46c67f2dc8f1a6c884d4285e7835bea74a0
   options:
-    target_path: original/effect/effect_135.bin
+    target_path: original/bin/battle/mag/mag135.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_135.txt]
   segments:
@@ -3071,7 +3085,7 @@ binaries:
 - name: effect_136
   sha1: 7b16cdfdc22ca541ee68664c6e6f65e65b293613
   options:
-    target_path: original/effect/effect_136.bin
+    target_path: original/bin/battle/mag/mag136.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_136.txt]
   segments:
@@ -3086,7 +3100,7 @@ binaries:
 - name: effect_137
   sha1: 62d466c27d683e6049d89ab1277317efa085c384
   options:
-    target_path: original/effect/effect_137.bin
+    target_path: original/bin/battle/mag/mag137.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_137.txt]
   segments:
@@ -3101,7 +3115,7 @@ binaries:
 - name: effect_138
   sha1: 5dff2a803cb7f344cbb3ab9b0a2971e7b6e0866d
   options:
-    target_path: original/effect/effect_138.bin
+    target_path: original/bin/battle/mag/mag138.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_138.txt]
   segments:
@@ -3116,7 +3130,7 @@ binaries:
 - name: effect_139
   sha1: 39aaddc9d579dfea7e3e164a6d93b597137521d9
   options:
-    target_path: original/effect/effect_139.bin
+    target_path: original/bin/battle/mag/mag139.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_139.txt]
   segments:
@@ -3131,7 +3145,7 @@ binaries:
 - name: effect_140
   sha1: ca7bd089df46faf539800aecb763110455cdc867
   options:
-    target_path: original/effect/effect_140.bin
+    target_path: original/bin/battle/mag/mag140.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_140.txt]
   segments:
@@ -3146,7 +3160,7 @@ binaries:
 - name: effect_141
   sha1: 73698eb8b9f55fbef879a4d80374a3ab3549240b
   options:
-    target_path: original/effect/effect_141.bin
+    target_path: original/bin/battle/mag/mag141.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_141.txt]
   segments:
@@ -3155,7 +3169,7 @@ binaries:
 - name: effect_142
   sha1: a52a2bef712edd99b7ac677514311d5528ba9182
   options:
-    target_path: original/effect/effect_142.bin
+    target_path: original/bin/battle/mag/mag142.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_142.txt]
   segments:
@@ -3164,7 +3178,7 @@ binaries:
 - name: effect_143
   sha1: 5902e17f49c878c9b5f8d2695a48743555691dd0
   options:
-    target_path: original/effect/effect_143.bin
+    target_path: original/bin/battle/mag/mag143.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_143.txt]
   segments:
@@ -3173,7 +3187,7 @@ binaries:
 - name: effect_144
   sha1: 532e6a2f2b3b9ae5e989c527c3319f10292969c3
   options:
-    target_path: original/effect/effect_144.bin
+    target_path: original/bin/battle/mag/mag144.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_144.txt]
   segments:
@@ -3188,7 +3202,7 @@ binaries:
 - name: effect_145
   sha1: ceed32a933c66a3a3d840bab905f91078efbf408
   options:
-    target_path: original/effect/effect_145.bin
+    target_path: original/bin/battle/mag/mag145.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_145.txt]
   segments:
@@ -3203,7 +3217,7 @@ binaries:
 - name: effect_146
   sha1: 786a24e514bc89ef9eddddf6165c9d26741adae0
   options:
-    target_path: original/effect/effect_146.bin
+    target_path: original/bin/battle/mag/mag146.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_146.txt]
   segments:
@@ -3218,7 +3232,7 @@ binaries:
 - name: effect_147
   sha1: 37742c24759991a07798339f5275d35cd0635328
   options:
-    target_path: original/effect/effect_147.bin
+    target_path: original/bin/battle/mag/mag147.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_147.txt]
   segments:
@@ -3227,7 +3241,7 @@ binaries:
 - name: effect_148
   sha1: 23d3c8a2e519b9c40c530f0aa0da3082171ec467
   options:
-    target_path: original/effect/effect_148.bin
+    target_path: original/bin/battle/mag/mag148.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_148.txt]
   segments:
@@ -3242,7 +3256,7 @@ binaries:
 - name: effect_149
   sha1: 512cc4af5af2cbcc7d911d6412a25c07ce8e09cc
   options:
-    target_path: original/effect/effect_149.bin
+    target_path: original/bin/battle/mag/mag149.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_149.txt]
   segments:
@@ -3257,7 +3271,7 @@ binaries:
 - name: effect_150
   sha1: bfe0a0df672549223e681194160da23104250b8a
   options:
-    target_path: original/effect/effect_150.bin
+    target_path: original/bin/battle/mag/mag150.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_150.txt]
   segments:
@@ -3266,7 +3280,7 @@ binaries:
 - name: effect_151
   sha1: 3f226d434fbf7e937625afc94a639ad556840a26
   options:
-    target_path: original/effect/effect_151.bin
+    target_path: original/bin/battle/mag/mag151.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_151.txt]
   segments:
@@ -3281,7 +3295,7 @@ binaries:
 - name: effect_152
   sha1: 29653990762dc5b324f56c1ba20d41d53d40fa47
   options:
-    target_path: original/effect/effect_152.bin
+    target_path: original/bin/battle/mag/mag152.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_152.txt]
   segments:
@@ -3296,7 +3310,7 @@ binaries:
 - name: effect_153
   sha1: 0575fad7531f1b980a5330e28aab87388e912f3e
   options:
-    target_path: original/effect/effect_153.bin
+    target_path: original/bin/battle/mag/mag153.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_153.txt]
   segments:
@@ -3312,7 +3326,7 @@ binaries:
 - name: effect_154
   sha1: 1255101a0924c5de3b7071b97d7fc47d05cfba41
   options:
-    target_path: original/effect/effect_154.bin
+    target_path: original/bin/battle/mag/mag154.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_154.txt]
   segments:
@@ -3327,7 +3341,7 @@ binaries:
 - name: effect_155
   sha1: e949c09578d45f5dd93f80944073a9e40894f583
   options:
-    target_path: original/effect/effect_155.bin
+    target_path: original/bin/battle/mag/mag155.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_155.txt]
   segments:
@@ -3342,7 +3356,7 @@ binaries:
 - name: effect_156
   sha1: ddf5ddea663496c5e7f94ade5a03ab94f85e6de5
   options:
-    target_path: original/effect/effect_156.bin
+    target_path: original/bin/battle/mag/mag156.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_156.txt]
   segments:
@@ -3357,7 +3371,7 @@ binaries:
 - name: effect_157
   sha1: d6e6eac3c1ed0311417749ab034df99bbecdd94a
   options:
-    target_path: original/effect/effect_157.bin
+    target_path: original/bin/battle/mag/mag157.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_157.txt]
   segments:
@@ -3366,7 +3380,7 @@ binaries:
 - name: effect_158
   sha1: 504550fd457e467c88b46635c05bff2514f9c670
   options:
-    target_path: original/effect/effect_158.bin
+    target_path: original/bin/battle/mag/mag158.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_158.txt]
   segments:
@@ -3375,7 +3389,7 @@ binaries:
 - name: effect_159
   sha1: b55b0fcf7ff61914e03919e2b88c1c6c9d7a7715
   options:
-    target_path: original/effect/effect_159.bin
+    target_path: original/bin/battle/mag/mag159.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_159.txt]
   segments:
@@ -3384,7 +3398,7 @@ binaries:
 - name: effect_160
   sha1: 22e0d0fa4077a8bdc92f65242b1dd5e7ef59eb83
   options:
-    target_path: original/effect/effect_160.bin
+    target_path: original/bin/battle/mag/mag160.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_160.txt]
   segments:
@@ -3393,7 +3407,7 @@ binaries:
 - name: effect_161
   sha1: 9df1e0d3b236f956afdc186d6ac1b4ed9fb90746
   options:
-    target_path: original/effect/effect_161.bin
+    target_path: original/bin/battle/mag/mag161.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_161.txt]
   segments:
@@ -3402,7 +3416,7 @@ binaries:
 - name: effect_162
   sha1: ad996de9361a3a041c7e99a420674c6dd6f120e9
   options:
-    target_path: original/effect/effect_162.bin
+    target_path: original/bin/battle/mag/mag162.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_162.txt]
   segments:
@@ -3417,7 +3431,7 @@ binaries:
 - name: effect_163
   sha1: c53a61b5aa2ad19bd80e762101e4104083f5c0df
   options:
-    target_path: original/effect/effect_163.bin
+    target_path: original/bin/battle/mag/mag163.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_163.txt]
   segments:
@@ -3432,7 +3446,7 @@ binaries:
 - name: effect_164
   sha1: b48e12067d4814573ee0fb005081867033d01f85
   options:
-    target_path: original/effect/effect_164.bin
+    target_path: original/bin/battle/mag/mag164.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_164.txt]
   segments:
@@ -3448,7 +3462,7 @@ binaries:
 - name: effect_165
   sha1: 7ce28a2f36fc01c76af53bb628a6ea1f757e83d5
   options:
-    target_path: original/effect/effect_165.bin
+    target_path: original/bin/battle/mag/mag165.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_165.txt]
   segments:
@@ -3464,7 +3478,7 @@ binaries:
 - name: effect_166
   sha1: e6367ed76bddb7847a8dcda2a61ef23808bcd531
   options:
-    target_path: original/effect/effect_166.bin
+    target_path: original/bin/battle/mag/mag166.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_166.txt]
   segments:
@@ -3479,7 +3493,7 @@ binaries:
 - name: effect_167
   sha1: f374fa685f803460eef3d8eb69f15d979cf9d87c
   options:
-    target_path: original/effect/effect_167.bin
+    target_path: original/bin/battle/mag/mag167.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_167.txt]
   segments:
@@ -3495,7 +3509,7 @@ binaries:
 - name: effect_168
   sha1: b8634723d963fa04e4512c4b88bd72e921b0684f
   options:
-    target_path: original/effect/effect_168.bin
+    target_path: original/bin/battle/mag/mag168.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_168.txt]
   segments:
@@ -3510,7 +3524,7 @@ binaries:
 - name: effect_169
   sha1: 8a64f63b95eb2f0ef7b3ef4820687e13ef50f4ef
   options:
-    target_path: original/effect/effect_169.bin
+    target_path: original/bin/battle/mag/mag169.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_169.txt]
   segments:
@@ -3525,7 +3539,7 @@ binaries:
 - name: effect_170
   sha1: 9477dda7b746eb4a58f08ebbf266f4cae481f562
   options:
-    target_path: original/effect/effect_170.bin
+    target_path: original/bin/battle/mag/mag170.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_170.txt]
   segments:
@@ -3540,7 +3554,7 @@ binaries:
 - name: effect_171
   sha1: cd0a5c05a48192e78332a6e3e4517b49e70d338a
   options:
-    target_path: original/effect/effect_171.bin
+    target_path: original/bin/battle/mag/mag171.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_171.txt]
   segments:
@@ -3555,7 +3569,7 @@ binaries:
 - name: effect_172
   sha1: b78db947c6c71ec8d8edfcf69f9d87fc564e525f
   options:
-    target_path: original/effect/effect_172.bin
+    target_path: original/bin/battle/mag/mag172.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_172.txt]
   segments:
@@ -3570,7 +3584,7 @@ binaries:
 - name: effect_173
   sha1: 27c28ca442655781f1403fa9b046321b0d722e32
   options:
-    target_path: original/effect/effect_173.bin
+    target_path: original/bin/battle/mag/mag173.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_173.txt]
   segments:
@@ -3585,7 +3599,7 @@ binaries:
 - name: effect_174
   sha1: 72be96c2e8c4e5a41783acb61757df5568194845
   options:
-    target_path: original/effect/effect_174.bin
+    target_path: original/bin/battle/mag/mag174.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_174.txt]
   segments:
@@ -3600,7 +3614,7 @@ binaries:
 - name: effect_175
   sha1: b377f66d049b30bd6e9b8cd84eef3216a91c8813
   options:
-    target_path: original/effect/effect_175.bin
+    target_path: original/bin/battle/mag/mag175.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_175.txt]
   segments:
@@ -3615,7 +3629,7 @@ binaries:
 - name: effect_176
   sha1: 273a6000af51977499c5f47708652ded2236cd51
   options:
-    target_path: original/effect/effect_176.bin
+    target_path: original/bin/battle/mag/mag176.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_176.txt]
   segments:
@@ -3630,7 +3644,7 @@ binaries:
 - name: effect_177
   sha1: 84c1c5635669782ef8e0319c9e3a7bacdf09bebb
   options:
-    target_path: original/effect/effect_177.bin
+    target_path: original/bin/battle/mag/mag177.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_177.txt]
   segments:
@@ -3645,7 +3659,7 @@ binaries:
 - name: effect_178
   sha1: 88722f2d740bf419819fe3c7105bf95299dedff5
   options:
-    target_path: original/effect/effect_178.bin
+    target_path: original/bin/battle/mag/mag178.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_178.txt]
   segments:
@@ -3660,7 +3674,7 @@ binaries:
 - name: effect_179
   sha1: 16481f5fd6cf9c276bf23ecab98e494462215408
   options:
-    target_path: original/effect/effect_179.bin
+    target_path: original/bin/battle/mag/mag179.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_179.txt]
   segments:
@@ -3675,7 +3689,7 @@ binaries:
 - name: effect_180
   sha1: 4d57a1bf14f5c23c38ded2691c31fb577bae2e46
   options:
-    target_path: original/effect/effect_180.bin
+    target_path: original/bin/battle/mag/mag180.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_180.txt]
   segments:
@@ -3690,7 +3704,7 @@ binaries:
 - name: effect_181
   sha1: a73afc1e41248efa696dbd395bced1ece319a314
   options:
-    target_path: original/effect/effect_181.bin
+    target_path: original/bin/battle/mag/mag181.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_181.txt]
   segments:
@@ -3705,7 +3719,7 @@ binaries:
 - name: effect_182
   sha1: a3fdb577bbd6b2f06e63f82c6848a713394b5569
   options:
-    target_path: original/effect/effect_182.bin
+    target_path: original/bin/battle/mag/mag182.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_182.txt]
   segments:
@@ -3714,7 +3728,7 @@ binaries:
 - name: effect_183
   sha1: 319cdbf5ac24ee6c770d60a794238156fa38a398
   options:
-    target_path: original/effect/effect_183.bin
+    target_path: original/bin/battle/mag/mag183.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_183.txt]
   segments:
@@ -3729,7 +3743,7 @@ binaries:
 - name: effect_184
   sha1: aa76a27750a401bc70ae9b08e00c4033f4758138
   options:
-    target_path: original/effect/effect_184.bin
+    target_path: original/bin/battle/mag/mag184.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_184.txt]
   segments:
@@ -3744,7 +3758,7 @@ binaries:
 - name: effect_185
   sha1: ac513d1515e7f9bc337e68364899ec3f486e0126
   options:
-    target_path: original/effect/effect_185.bin
+    target_path: original/bin/battle/mag/mag185.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_185.txt]
   segments:
@@ -3760,7 +3774,7 @@ binaries:
 - name: effect_186
   sha1: f253d6056276aae279652497cec80c411e7b14f7
   options:
-    target_path: original/effect/effect_186.bin
+    target_path: original/bin/battle/mag/mag186.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_186.txt]
   segments:
@@ -3775,7 +3789,7 @@ binaries:
 - name: effect_187
   sha1: 442b0655f7b64997ead5fbdef255508bb42126e7
   options:
-    target_path: original/effect/effect_187.bin
+    target_path: original/bin/battle/mag/mag187.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_187.txt]
   segments:
@@ -3791,7 +3805,7 @@ binaries:
 - name: effect_188
   sha1: 2448804135956eccf92821df786c4fbb684e185c
   options:
-    target_path: original/effect/effect_188.bin
+    target_path: original/bin/battle/mag/mag188.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_188.txt]
   segments:
@@ -3806,7 +3820,7 @@ binaries:
 - name: effect_189
   sha1: d725c7fd5595443d8b943e42b667d255410a529a
   options:
-    target_path: original/effect/effect_189.bin
+    target_path: original/bin/battle/mag/mag189.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_189.txt]
   segments:
@@ -3822,7 +3836,7 @@ binaries:
 - name: effect_190
   sha1: 3ab86c8ade80c735157761af2a8e75573d94278c
   options:
-    target_path: original/effect/effect_190.bin
+    target_path: original/bin/battle/mag/mag190.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_190.txt]
   segments:
@@ -3837,7 +3851,7 @@ binaries:
 - name: effect_191
   sha1: 795f488e17c13ead22e637095d3287b4ed7ac8de
   options:
-    target_path: original/effect/effect_191.bin
+    target_path: original/bin/battle/mag/mag191.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_191.txt]
   segments:
@@ -3853,7 +3867,7 @@ binaries:
 - name: effect_192
   sha1: 174dca062cf71bb73206dee851bd7c6136199abb
   options:
-    target_path: original/effect/effect_192.bin
+    target_path: original/bin/battle/mag/mag192.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_192.txt]
   segments:
@@ -3868,7 +3882,7 @@ binaries:
 - name: effect_193
   sha1: 7d31e65fdebb71efd5f60414c77d998245db1ca8
   options:
-    target_path: original/effect/effect_193.bin
+    target_path: original/bin/battle/mag/mag193.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_193.txt]
   segments:
@@ -3883,7 +3897,7 @@ binaries:
 - name: effect_194
   sha1: e482ff818e3d8b585da8aaa1a6a15732a02dbe3e
   options:
-    target_path: original/effect/effect_194.bin
+    target_path: original/bin/battle/mag/mag194.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_194.txt]
   segments:
@@ -3898,7 +3912,7 @@ binaries:
 - name: effect_195
   sha1: fdff4c77873dd6aee32c1ba048fce29cd62e5eba
   options:
-    target_path: original/effect/effect_195.bin
+    target_path: original/bin/battle/mag/mag195.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_195.txt]
   segments:
@@ -3913,7 +3927,7 @@ binaries:
 - name: effect_196
   sha1: b8acf684da4dd00c0cbf544b3e730cbebd24bc4a
   options:
-    target_path: original/effect/effect_196.bin
+    target_path: original/bin/battle/mag/mag196.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_196.txt]
   segments:
@@ -3928,7 +3942,7 @@ binaries:
 - name: effect_197
   sha1: d06bffd7135e2d4257453744fd1a326fd6025692
   options:
-    target_path: original/effect/effect_197.bin
+    target_path: original/bin/battle/mag/mag197.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_197.txt]
   segments:
@@ -3943,7 +3957,7 @@ binaries:
 - name: effect_198
   sha1: f0d8428e24cdd33013ad3fedd75296ab2706ce69
   options:
-    target_path: original/effect/effect_198.bin
+    target_path: original/bin/battle/mag/mag198.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_198.txt]
   segments:
@@ -3958,7 +3972,7 @@ binaries:
 - name: effect_199
   sha1: 80f55171edbe25c648f4a97d2006f3a99ea9458d
   options:
-    target_path: original/effect/effect_199.bin
+    target_path: original/bin/battle/mag/mag199.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_199.txt]
   segments:
@@ -3974,7 +3988,7 @@ binaries:
 - name: effect_200
   sha1: 6b5489e27506d63d7993dbe0025a68c576bd168a
   options:
-    target_path: original/effect/effect_200.bin
+    target_path: original/bin/battle/mag/mag200.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_200.txt]
   segments:
@@ -3990,7 +4004,7 @@ binaries:
 - name: effect_201
   sha1: e09f778f49b9519951d4023a80def475695b8552
   options:
-    target_path: original/effect/effect_201.bin
+    target_path: original/bin/battle/mag/mag201.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_201.txt]
   segments:
@@ -4006,7 +4020,7 @@ binaries:
 - name: effect_202
   sha1: d10e7f16b86c4a21ccde7de5f4cafdf831e35553
   options:
-    target_path: original/effect/effect_202.bin
+    target_path: original/bin/battle/mag/mag202.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_202.txt]
   segments:
@@ -4022,7 +4036,7 @@ binaries:
 - name: effect_203
   sha1: 2a8be1aa1bdd4fa6793b812a02ae2eb6f26a6dd4
   options:
-    target_path: original/effect/effect_203.bin
+    target_path: original/bin/battle/mag/mag203.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_203.txt]
   segments:
@@ -4038,7 +4052,7 @@ binaries:
 - name: effect_204
   sha1: 45b706e262eb5f235fa33ce8a00a70de1534ab90
   options:
-    target_path: original/effect/effect_204.bin
+    target_path: original/bin/battle/mag/mag204.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_204.txt]
   segments:
@@ -4054,7 +4068,7 @@ binaries:
 - name: effect_205
   sha1: 2ce135743d74928e04e07f082b4bfbccd615ab58
   options:
-    target_path: original/effect/effect_205.bin
+    target_path: original/bin/battle/mag/mag205.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_205.txt]
   segments:
@@ -4070,7 +4084,7 @@ binaries:
 - name: effect_206
   sha1: 42c934507e7963cc3c7ba786fc94509e1d9f0c29
   options:
-    target_path: original/effect/effect_206.bin
+    target_path: original/bin/battle/mag/mag206.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_206.txt]
   segments:
@@ -4086,7 +4100,7 @@ binaries:
 - name: effect_207
   sha1: 68eed8c5c08ec1a2a6e89f4213f5c6b1b3e4f971
   options:
-    target_path: original/effect/effect_207.bin
+    target_path: original/bin/battle/mag/mag207.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_207.txt]
   segments:
@@ -4101,7 +4115,7 @@ binaries:
 - name: effect_208
   sha1: ff60f9567bbb3e44b7ce5726507c505475304e0a
   options:
-    target_path: original/effect/effect_208.bin
+    target_path: original/bin/battle/mag/mag208.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_208.txt]
   segments:
@@ -4117,7 +4131,7 @@ binaries:
 - name: effect_209
   sha1: edcc63113fae3948969b12ed36a94a02c000532d
   options:
-    target_path: original/effect/effect_209.bin
+    target_path: original/bin/battle/mag/mag209.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_209.txt]
   segments:
@@ -4132,7 +4146,7 @@ binaries:
 - name: effect_210
   sha1: 65129145861e7061b505f32b5d2ac58b2547ff1a
   options:
-    target_path: original/effect/effect_210.bin
+    target_path: original/bin/battle/mag/mag210.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_210.txt]
   segments:
@@ -4148,7 +4162,7 @@ binaries:
 - name: effect_211
   sha1: d5f416104c94eabb0c5121a22e9b82180f58931f
   options:
-    target_path: original/effect/effect_211.bin
+    target_path: original/bin/battle/mag/mag211.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_211.txt]
   segments:
@@ -4164,7 +4178,7 @@ binaries:
 - name: effect_212
   sha1: 363afa61c218e1398d4b42b06a0927247bb72a41
   options:
-    target_path: original/effect/effect_212.bin
+    target_path: original/bin/battle/mag/mag212.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_212.txt]
   segments:
@@ -4179,7 +4193,7 @@ binaries:
 - name: effect_213
   sha1: 30c856007e8d28be5207cb757b47aae460e5affc
   options:
-    target_path: original/effect/effect_213.bin
+    target_path: original/bin/battle/mag/mag213.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_213.txt]
   segments:
@@ -4194,7 +4208,7 @@ binaries:
 - name: effect_214
   sha1: 314fd88d7505e94238fe8362d7f9b301b7e009cd
   options:
-    target_path: original/effect/effect_214.bin
+    target_path: original/bin/battle/mag/mag214.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_214.txt]
   segments:
@@ -4209,7 +4223,7 @@ binaries:
 - name: effect_215
   sha1: 737ee303ee041e77927267759c527a2789a230ab
   options:
-    target_path: original/effect/effect_215.bin
+    target_path: original/bin/battle/mag/mag215.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_215.txt]
   segments:
@@ -4225,7 +4239,7 @@ binaries:
 - name: effect_216
   sha1: 61fa72f113fe009b9c32c168b8faeac7ebeeabb3
   options:
-    target_path: original/effect/effect_216.bin
+    target_path: original/bin/battle/mag/mag216.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_216.txt]
   segments:
@@ -4241,7 +4255,7 @@ binaries:
 - name: effect_217
   sha1: 1542f5d0c59d2b92d22aadc7d7a3b86ec247236d
   options:
-    target_path: original/effect/effect_217.bin
+    target_path: original/bin/battle/mag/mag217.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_217.txt]
   segments:
@@ -4256,7 +4270,7 @@ binaries:
 - name: effect_218
   sha1: 24bc25268c2f12fa6f57d60c416978c313382fdc
   options:
-    target_path: original/effect/effect_218.bin
+    target_path: original/bin/battle/mag/mag218.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_218.txt]
   segments:
@@ -4272,7 +4286,7 @@ binaries:
 - name: effect_219
   sha1: 06a0d6d8319b2c1e355d652cd5e8d86d8aa13400
   options:
-    target_path: original/effect/effect_219.bin
+    target_path: original/bin/battle/mag/mag219.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_219.txt]
   segments:
@@ -4288,7 +4302,7 @@ binaries:
 - name: effect_220
   sha1: cd47a25f59a0c95b3dfc2be4a8651cce6d947261
   options:
-    target_path: original/effect/effect_220.bin
+    target_path: original/bin/battle/mag/mag220.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_220.txt]
   segments:
@@ -4304,7 +4318,7 @@ binaries:
 - name: effect_221
   sha1: 9b2b60d6401ad8158f3e0ddd7fb5d2080b04f27f
   options:
-    target_path: original/effect/effect_221.bin
+    target_path: original/bin/battle/mag/mag221.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_221.txt]
   segments:
@@ -4320,7 +4334,7 @@ binaries:
 - name: effect_222
   sha1: 98fe99c1961a5e02b65c3e3bb91fd215b9a4db19
   options:
-    target_path: original/effect/effect_222.bin
+    target_path: original/bin/battle/mag/mag222.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_222.txt]
   segments:
@@ -4336,7 +4350,7 @@ binaries:
 - name: effect_223
   sha1: 23ffdaaed9e68d00e3568cd3b989f03357bfe931
   options:
-    target_path: original/effect/effect_223.bin
+    target_path: original/bin/battle/mag/mag223.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_223.txt]
   segments:
@@ -4352,7 +4366,7 @@ binaries:
 - name: effect_226
   sha1: f435e2cfba85b1f7ff9c06685e6fd000a92970e2
   options:
-    target_path: original/effect/effect_226.bin
+    target_path: original/bin/battle/mag/mag226.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_226.txt]
   segments:
@@ -4367,7 +4381,7 @@ binaries:
 - name: effect_227
   sha1: b9739cb646ae4096ca92c530c99c8917a2b69dc0
   options:
-    target_path: original/effect/effect_227.bin
+    target_path: original/bin/battle/mag/mag227.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_227.txt]
   segments:
@@ -4382,7 +4396,7 @@ binaries:
 - name: effect_228
   sha1: 45e8e6aee4b8d710cb4d6e21b90f3186046b81d7
   options:
-    target_path: original/effect/effect_228.bin
+    target_path: original/bin/battle/mag/mag228.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_228.txt]
   segments:
@@ -4398,7 +4412,7 @@ binaries:
 - name: effect_229
   sha1: 90d1891065bc79d499e7c60346e0ad3cc12def10
   options:
-    target_path: original/effect/effect_229.bin
+    target_path: original/bin/battle/mag/mag229.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_229.txt]
   segments:
@@ -4414,7 +4428,7 @@ binaries:
 - name: effect_230
   sha1: 96e38bee06b60387f9e08b8d1a36857ca4a559d5
   options:
-    target_path: original/effect/effect_230.bin
+    target_path: original/bin/battle/mag/mag230.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_230.txt]
   segments:
@@ -4430,7 +4444,7 @@ binaries:
 - name: effect_231
   sha1: 78fa82e193366cd80321c221af006a63a72d2e5a
   options:
-    target_path: original/effect/effect_231.bin
+    target_path: original/bin/battle/mag/mag231.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_231.txt]
   segments:
@@ -4446,7 +4460,7 @@ binaries:
 - name: effect_232
   sha1: 2065d8a3a2655493378e2b414712d8e79743efd6
   options:
-    target_path: original/effect/effect_232.bin
+    target_path: original/bin/battle/mag/mag232.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_232.txt]
   segments:
@@ -4462,7 +4476,7 @@ binaries:
 - name: effect_233
   sha1: 9892fc5ce42442a071810d3be64c23570320080d
   options:
-    target_path: original/effect/effect_233.bin
+    target_path: original/bin/battle/mag/mag233.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_233.txt]
   segments:
@@ -4478,7 +4492,7 @@ binaries:
 - name: effect_234
   sha1: 139ebfa758a5f453eb8f98223725170516c0fe28
   options:
-    target_path: original/effect/effect_234.bin
+    target_path: original/bin/battle/mag/mag234.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_234.txt]
   segments:
@@ -4494,7 +4508,7 @@ binaries:
 - name: effect_235
   sha1: 720b29a341f1bc2c523ea89d9fa2b2df27f18fd5
   options:
-    target_path: original/effect/effect_235.bin
+    target_path: original/bin/battle/mag/mag235.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_235.txt]
   segments:
@@ -4510,7 +4524,7 @@ binaries:
 - name: effect_236
   sha1: 22c91e3dae1156d703e56805abae8560d6ae37a6
   options:
-    target_path: original/effect/effect_236.bin
+    target_path: original/bin/battle/mag/mag236.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_236.txt]
   segments:
@@ -4526,7 +4540,7 @@ binaries:
 - name: effect_237
   sha1: e6e7ae00fc50fe9a43a85911ba60b340bacab7fa
   options:
-    target_path: original/effect/effect_237.bin
+    target_path: original/bin/battle/mag/mag237.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_237.txt]
   segments:
@@ -4542,7 +4556,7 @@ binaries:
 - name: effect_238
   sha1: 592f8d53225b1a477d48af131e49b436c87cd137
   options:
-    target_path: original/effect/effect_238.bin
+    target_path: original/bin/battle/mag/mag238.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_238.txt]
   segments:
@@ -4558,7 +4572,7 @@ binaries:
 - name: effect_239
   sha1: b3d4b2664a0b7764ae15c74e7bec389a4cdc54cd
   options:
-    target_path: original/effect/effect_239.bin
+    target_path: original/bin/battle/mag/mag239.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_239.txt]
   segments:
@@ -4574,7 +4588,7 @@ binaries:
 - name: effect_240
   sha1: dbc9c65cbba92c51c797077b7c25bd4562496a07
   options:
-    target_path: original/effect/effect_240.bin
+    target_path: original/bin/battle/mag/mag240.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_240.txt]
   segments:
@@ -4590,7 +4604,7 @@ binaries:
 - name: effect_241
   sha1: 452e982699427508246c8d2bbc9ada6c7d17ae57
   options:
-    target_path: original/effect/effect_241.bin
+    target_path: original/bin/battle/mag/mag241.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_241.txt]
   segments:
@@ -4606,7 +4620,7 @@ binaries:
 - name: effect_242
   sha1: 81cbbfb3065e6ff4875067c4309a8e77e0a266d9
   options:
-    target_path: original/effect/effect_242.bin
+    target_path: original/bin/battle/mag/mag242.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_242.txt]
   segments:
@@ -4622,7 +4636,7 @@ binaries:
 - name: effect_243
   sha1: af3c3c2973fc187eb09a142fc9ea942d985afbb4
   options:
-    target_path: original/effect/effect_243.bin
+    target_path: original/bin/battle/mag/mag243.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_243.txt]
   segments:
@@ -4638,7 +4652,7 @@ binaries:
 - name: effect_244
   sha1: b7b7bb1b726871a4a29271c1c2b4a92c108651ad
   options:
-    target_path: original/effect/effect_244.bin
+    target_path: original/bin/battle/mag/mag244.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_244.txt]
   segments:
@@ -4654,7 +4668,7 @@ binaries:
 - name: effect_245
   sha1: b0e7bbc7db6f9bac10c0978461e939a7a70d64a7
   options:
-    target_path: original/effect/effect_245.bin
+    target_path: original/bin/battle/mag/mag245.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_245.txt]
   segments:
@@ -4670,7 +4684,7 @@ binaries:
 - name: effect_246
   sha1: 003e1bbfbe2dffe74984a9326f43fb872579d8c0
   options:
-    target_path: original/effect/effect_246.bin
+    target_path: original/bin/battle/mag/mag246.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_246.txt]
   segments:
@@ -4686,7 +4700,7 @@ binaries:
 - name: effect_247
   sha1: 0a6dbca45f6249031ee7da4195a8079589f74ae3
   options:
-    target_path: original/effect/effect_247.bin
+    target_path: original/bin/battle/mag/mag247.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_247.txt]
   segments:
@@ -4702,7 +4716,7 @@ binaries:
 - name: effect_248
   sha1: e21c1054a66eaf4e7a886abfe4c796bcad3763bc
   options:
-    target_path: original/effect/effect_248.bin
+    target_path: original/bin/battle/mag/mag248.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_248.txt]
   segments:
@@ -4718,7 +4732,7 @@ binaries:
 - name: effect_249
   sha1: 2849a97be4ec689b588b4013b45180d6f5e41325
   options:
-    target_path: original/effect/effect_249.bin
+    target_path: original/bin/battle/mag/mag249.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_249.txt]
   segments:
@@ -4734,7 +4748,7 @@ binaries:
 - name: effect_250
   sha1: 1dea50d3719f80ae2e547b421b52cafb23b58e15
   options:
-    target_path: original/effect/effect_250.bin
+    target_path: original/bin/battle/mag/mag250.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_250.txt]
   segments:
@@ -4750,7 +4764,7 @@ binaries:
 - name: effect_251
   sha1: 9b40bada558d40fc79789286f8ecb5345cd09704
   options:
-    target_path: original/effect/effect_251.bin
+    target_path: original/bin/battle/mag/mag251.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_251.txt]
   segments:
@@ -4765,7 +4779,7 @@ binaries:
 - name: effect_252
   sha1: e4243f9c960f2ea5f1e572c9dacaea3dc6cff3a0
   options:
-    target_path: original/effect/effect_252.bin
+    target_path: original/bin/battle/mag/mag252.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_252.txt]
   segments:
@@ -4781,7 +4795,7 @@ binaries:
 - name: effect_253
   sha1: 3a2ec4d5416886c8c5e0144860ace1330d6bae45
   options:
-    target_path: original/effect/effect_253.bin
+    target_path: original/bin/battle/mag/mag253.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_253.txt]
   segments:
@@ -4797,7 +4811,7 @@ binaries:
 - name: effect_254
   sha1: d5a30fb520704033ef742e93a691c4a046b1419c
   options:
-    target_path: original/effect/effect_254.bin
+    target_path: original/bin/battle/mag/mag254.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_254.txt]
   segments:
@@ -4813,7 +4827,7 @@ binaries:
 - name: effect_255
   sha1: 9c2774fdb4e591dd29008b9d784fa2e4e3a1d3bf
   options:
-    target_path: original/effect/effect_255.bin
+    target_path: original/bin/battle/mag/mag255.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_255.txt]
   segments:
@@ -4829,7 +4843,7 @@ binaries:
 - name: effect_256
   sha1: 47430879efc387e0b4fbd4cb7ba3925b9d87e1b9
   options:
-    target_path: original/effect/effect_256.bin
+    target_path: original/bin/battle/mag/mag256.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_256.txt]
   segments:
@@ -4845,7 +4859,7 @@ binaries:
 - name: effect_257
   sha1: d3378d74d3d60baa6ca7148bf25c04e9480f3401
   options:
-    target_path: original/effect/effect_257.bin
+    target_path: original/bin/battle/mag/mag257.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_257.txt]
   segments:
@@ -4861,7 +4875,7 @@ binaries:
 - name: effect_258
   sha1: fff44f411899bc467877465fbac354b1eac3e280
   options:
-    target_path: original/effect/effect_258.bin
+    target_path: original/bin/battle/mag/mag258.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_258.txt]
   segments:
@@ -4877,7 +4891,7 @@ binaries:
 - name: effect_259
   sha1: 5e870cc0720ee49e53f74815cd4d1495ea571d37
   options:
-    target_path: original/effect/effect_259.bin
+    target_path: original/bin/battle/mag/mag259.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_259.txt]
   segments:
@@ -4886,7 +4900,7 @@ binaries:
 - name: effect_260
   sha1: f8d395c3202dc077e5d21829c75fbeccf51007ef
   options:
-    target_path: original/effect/effect_260.bin
+    target_path: original/bin/battle/mag/mag260.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_260.txt]
   segments:
@@ -4901,7 +4915,7 @@ binaries:
 - name: effect_261
   sha1: 645148864bc6d2edb4662d148e76a35e5719e51f
   options:
-    target_path: original/effect/effect_261.bin
+    target_path: original/bin/battle/mag/mag261.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_261.txt]
   segments:
@@ -4917,7 +4931,7 @@ binaries:
 - name: effect_262
   sha1: 4261279f03b5a5b2e5e6f152b0f330db49bc5521
   options:
-    target_path: original/effect/effect_262.bin
+    target_path: original/bin/battle/mag/mag262.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_262.txt]
   segments:
@@ -4933,7 +4947,7 @@ binaries:
 - name: effect_263
   sha1: dd574ea180c74fd483de1cffdb0be04167da18ba
   options:
-    target_path: original/effect/effect_263.bin
+    target_path: original/bin/battle/mag/mag263.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_263.txt]
   segments:
@@ -4949,7 +4963,7 @@ binaries:
 - name: effect_264
   sha1: 56a139b4e254eeec005003e4eadc9f0cd2b8e00a
   options:
-    target_path: original/effect/effect_264.bin
+    target_path: original/bin/battle/mag/mag264.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_264.txt]
   segments:
@@ -4965,7 +4979,7 @@ binaries:
 - name: effect_265
   sha1: 88912fb96f1fc599412dc2aee3c8335181d07d78
   options:
-    target_path: original/effect/effect_265.bin
+    target_path: original/bin/battle/mag/mag265.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_265.txt]
   segments:
@@ -4981,7 +4995,7 @@ binaries:
 - name: effect_266
   sha1: 073d537443663cb54d1216d0795276a0273bbc7f
   options:
-    target_path: original/effect/effect_266.bin
+    target_path: original/bin/battle/mag/mag266.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_266.txt]
   segments:
@@ -4997,7 +5011,7 @@ binaries:
 - name: effect_267
   sha1: d1b792124915621d521c1aaa19a0268fdc08ddb1
   options:
-    target_path: original/effect/effect_267.bin
+    target_path: original/bin/battle/mag/mag267.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_267.txt]
   segments:
@@ -5013,7 +5027,7 @@ binaries:
 - name: effect_268
   sha1: 9ec0267445196076d1d75ceda19f7242ba5eb4d8
   options:
-    target_path: original/effect/effect_268.bin
+    target_path: original/bin/battle/mag/mag268.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_268.txt]
   segments:
@@ -5029,7 +5043,7 @@ binaries:
 - name: effect_269
   sha1: e41711fc2406aa9ca6dc742b0add8b650bdcf1c0
   options:
-    target_path: original/effect/effect_269.bin
+    target_path: original/bin/battle/mag/mag269.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_269.txt]
   segments:
@@ -5045,7 +5059,7 @@ binaries:
 - name: effect_270
   sha1: 6f27e792bb28ab908a0d9b3e959129d635b8f6cd
   options:
-    target_path: original/effect/effect_270.bin
+    target_path: original/bin/battle/mag/mag270.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_270.txt]
   segments:
@@ -5061,7 +5075,7 @@ binaries:
 - name: effect_271
   sha1: 4864e598032fb618396a0fa34562889ef2419c75
   options:
-    target_path: original/effect/effect_271.bin
+    target_path: original/bin/battle/mag/mag271.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_271.txt]
   segments:
@@ -5076,7 +5090,7 @@ binaries:
 - name: effect_272
   sha1: 709dbf6337b37cffdf47954ef686a807068f938a
   options:
-    target_path: original/effect/effect_272.bin
+    target_path: original/bin/battle/mag/mag272.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_272.txt]
   segments:
@@ -5091,7 +5105,7 @@ binaries:
 - name: effect_273
   sha1: c3384564031fbbb819a9d69cefffc47ad55205f2
   options:
-    target_path: original/effect/effect_273.bin
+    target_path: original/bin/battle/mag/mag273.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_273.txt]
   segments:
@@ -5106,7 +5120,7 @@ binaries:
 - name: effect_274
   sha1: d0bc84c820338e4e86b51db18dc98b98a6bd637a
   options:
-    target_path: original/effect/effect_274.bin
+    target_path: original/bin/battle/mag/mag274.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_274.txt]
   segments:
@@ -5122,7 +5136,7 @@ binaries:
 - name: effect_275
   sha1: badc08c574ce03e3cd26eb52dcba8639394abad4
   options:
-    target_path: original/effect/effect_275.bin
+    target_path: original/bin/battle/mag/mag275.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_275.txt]
   segments:
@@ -5137,7 +5151,7 @@ binaries:
 - name: effect_276
   sha1: c1f1b958638bc731b1485e964d68b337117ed1ff
   options:
-    target_path: original/effect/effect_276.bin
+    target_path: original/bin/battle/mag/mag276.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_276.txt]
   segments:
@@ -5152,7 +5166,7 @@ binaries:
 - name: effect_277
   sha1: de98351094ec47a99b6d2fc870cf1ff25640cdcc
   options:
-    target_path: original/effect/effect_277.bin
+    target_path: original/bin/battle/mag/mag277.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_277.txt]
   segments:
@@ -5167,7 +5181,7 @@ binaries:
 - name: effect_278
   sha1: 6cba0118f869c7e3e85e288502155c4f3c20f839
   options:
-    target_path: original/effect/effect_278.bin
+    target_path: original/bin/battle/mag/mag278.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_278.txt]
   segments:
@@ -5182,7 +5196,7 @@ binaries:
 - name: effect_279
   sha1: 0b5a30ffe9bbb3f5fdb2f619e3c062683d42758f
   options:
-    target_path: original/effect/effect_279.bin
+    target_path: original/bin/battle/mag/mag279.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_279.txt]
   segments:
@@ -5197,7 +5211,7 @@ binaries:
 - name: effect_280
   sha1: 845a63fd65cb4269cccacd2323966482132866c9
   options:
-    target_path: original/effect/effect_280.bin
+    target_path: original/bin/battle/mag/mag280.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_280.txt]
   segments:
@@ -5212,7 +5226,7 @@ binaries:
 - name: effect_281
   sha1: d322638a7079cd45538d3ad960acba6588c0d11a
   options:
-    target_path: original/effect/effect_281.bin
+    target_path: original/bin/battle/mag/mag281.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_281.txt]
   segments:
@@ -5227,7 +5241,7 @@ binaries:
 - name: effect_282
   sha1: 55d7506bb85839e4958f4d44c95052ba0ddc6c3c
   options:
-    target_path: original/effect/effect_282.bin
+    target_path: original/bin/battle/mag/mag282.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_282.txt]
   segments:
@@ -5242,7 +5256,7 @@ binaries:
 - name: effect_283
   sha1: c3b80d75fca0c0de3899028bd584b71892d4136a
   options:
-    target_path: original/effect/effect_283.bin
+    target_path: original/bin/battle/mag/mag283.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_283.txt]
   segments:
@@ -5257,7 +5271,7 @@ binaries:
 - name: effect_284
   sha1: 0ccba356df005859ff4130786e17650f5a65f3b2
   options:
-    target_path: original/effect/effect_284.bin
+    target_path: original/bin/battle/mag/mag284.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_284.txt]
   segments:
@@ -5272,7 +5286,7 @@ binaries:
 - name: effect_285
   sha1: 33321bc77d57aa13f8eae11b4536dfde1812da0e
   options:
-    target_path: original/effect/effect_285.bin
+    target_path: original/bin/battle/mag/mag285.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_285.txt]
   segments:
@@ -5287,7 +5301,7 @@ binaries:
 - name: effect_286
   sha1: 54589fd7b42ec8553940902491627c676d663229
   options:
-    target_path: original/effect/effect_286.bin
+    target_path: original/bin/battle/mag/mag286.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_286.txt]
   segments:
@@ -5302,7 +5316,7 @@ binaries:
 - name: effect_287
   sha1: 7cfd2a304ba3966f0323ab24519bfa4107fbd14a
   options:
-    target_path: original/effect/effect_287.bin
+    target_path: original/bin/battle/mag/mag287.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_287.txt]
   segments:
@@ -5317,7 +5331,7 @@ binaries:
 - name: effect_288
   sha1: 2482c617ce3f59add28046fb03f28cb139e3be86
   options:
-    target_path: original/effect/effect_288.bin
+    target_path: original/bin/battle/mag/mag288.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_288.txt]
   segments:
@@ -5332,7 +5346,7 @@ binaries:
 - name: effect_289
   sha1: 3d5fa2c0a30070cfb015e9bd6e91d7d682a8ca02
   options:
-    target_path: original/effect/effect_289.bin
+    target_path: original/bin/battle/mag/mag289.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_289.txt]
   segments:
@@ -5347,7 +5361,7 @@ binaries:
 - name: effect_290
   sha1: 6e39c6414dfe9ff48788fe70f6db28586485629e
   options:
-    target_path: original/effect/effect_290.bin
+    target_path: original/bin/battle/mag/mag290.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_290.txt]
   segments:
@@ -5362,7 +5376,7 @@ binaries:
 - name: effect_291
   sha1: 18127527896118e31ff4d627351016f74fb6d2f2
   options:
-    target_path: original/effect/effect_291.bin
+    target_path: original/bin/battle/mag/mag291.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_291.txt]
   segments:
@@ -5378,7 +5392,7 @@ binaries:
 - name: effect_292
   sha1: 90f66ce4097a4af908761060d0c8fd855c164303
   options:
-    target_path: original/effect/effect_292.bin
+    target_path: original/bin/battle/mag/mag292.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_292.txt]
   segments:
@@ -5393,7 +5407,7 @@ binaries:
 - name: effect_293
   sha1: e339eae2f0b6c46a39a4eebbfc144b4d7edf3c8d
   options:
-    target_path: original/effect/effect_293.bin
+    target_path: original/bin/battle/mag/mag293.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_293.txt]
   segments:
@@ -5408,7 +5422,7 @@ binaries:
 - name: effect_294
   sha1: 63c13076694f7fa43fba1af88ced4d21e4366ee8
   options:
-    target_path: original/effect/effect_294.bin
+    target_path: original/bin/battle/mag/mag294.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_294.txt]
   segments:
@@ -5423,7 +5437,7 @@ binaries:
 - name: effect_295
   sha1: 38b5ce75a88363c18d0e52ab5e6657a1633c0dd6
   options:
-    target_path: original/effect/effect_295.bin
+    target_path: original/bin/battle/mag/mag295.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_295.txt]
   segments:
@@ -5438,7 +5452,7 @@ binaries:
 - name: effect_296
   sha1: 8cfa757ca36e2cc52fda1c88e93dd68ffa3f5981
   options:
-    target_path: original/effect/effect_296.bin
+    target_path: original/bin/battle/mag/mag296.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_296.txt]
   segments:
@@ -5453,7 +5467,7 @@ binaries:
 - name: effect_297
   sha1: 559e675cdda14c7f95978c15459945a7f6a9c286
   options:
-    target_path: original/effect/effect_297.bin
+    target_path: original/bin/battle/mag/mag297.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_297.txt]
   segments:
@@ -5468,7 +5482,7 @@ binaries:
 - name: effect_298
   sha1: cf9bbb510b24130e6595fc11e9f67ad34b1b1fc7
   options:
-    target_path: original/effect/effect_298.bin
+    target_path: original/bin/battle/mag/mag298.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_298.txt]
   segments:
@@ -5483,7 +5497,7 @@ binaries:
 - name: effect_299
   sha1: cd653e8c5934c08f87934868f11a513bed6c3268
   options:
-    target_path: original/effect/effect_299.bin
+    target_path: original/bin/battle/mag/mag299.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_299.txt]
   segments:
@@ -5498,7 +5512,7 @@ binaries:
 - name: effect_300
   sha1: e599757b83879ddaf167ec47a18f9d512195e050
   options:
-    target_path: original/effect/effect_300.bin
+    target_path: original/bin/battle/mag/mag300.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_300.txt]
   segments:
@@ -5513,7 +5527,7 @@ binaries:
 - name: effect_301
   sha1: ba15983cbca477bac061360bdc7db7644cc93c57
   options:
-    target_path: original/effect/effect_301.bin
+    target_path: original/bin/battle/mag/mag301.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_301.txt]
   segments:
@@ -5528,7 +5542,7 @@ binaries:
 - name: effect_302
   sha1: 54439c1029d6aaeecadf8c81bd32d062d9be094c
   options:
-    target_path: original/effect/effect_302.bin
+    target_path: original/bin/battle/mag/mag302.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_302.txt]
   segments:
@@ -5543,7 +5557,7 @@ binaries:
 - name: effect_303
   sha1: 3a9297a419463bdbf61f90427fe23ff681a8cfa1
   options:
-    target_path: original/effect/effect_303.bin
+    target_path: original/bin/battle/mag/mag303.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_303.txt]
   segments:
@@ -5558,7 +5572,7 @@ binaries:
 - name: effect_304
   sha1: c9f75a2b346efb196d828fbd633a3137f46287f3
   options:
-    target_path: original/effect/effect_304.bin
+    target_path: original/bin/battle/mag/mag304.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_304.txt]
   segments:
@@ -5573,7 +5587,7 @@ binaries:
 - name: effect_305
   sha1: bc030956fd940c807571d28f1ca5a38674076bb8
   options:
-    target_path: original/effect/effect_305.bin
+    target_path: original/bin/battle/mag/mag305.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_305.txt]
   segments:
@@ -5582,7 +5596,7 @@ binaries:
 - name: effect_306
   sha1: 59690fe5087e02d2e7b43be61bd3729d77611abc
   options:
-    target_path: original/effect/effect_306.bin
+    target_path: original/bin/battle/mag/mag306.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_306.txt]
   segments:
@@ -5597,7 +5611,7 @@ binaries:
 - name: effect_307
   sha1: 33a415c2b42dadd9c6af23d3a5d145d437948b7a
   options:
-    target_path: original/effect/effect_307.bin
+    target_path: original/bin/battle/mag/mag307.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_307.txt]
   segments:
@@ -5612,7 +5626,7 @@ binaries:
 - name: effect_308
   sha1: 00b0d95480a08bab8d7562da0ce4ba194e892841
   options:
-    target_path: original/effect/effect_308.bin
+    target_path: original/bin/battle/mag/mag308.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_308.txt]
   segments:
@@ -5627,7 +5641,7 @@ binaries:
 - name: effect_309
   sha1: c3bcb588dc891adfb189f96fa112ffb0d36913fc
   options:
-    target_path: original/effect/effect_309.bin
+    target_path: original/bin/battle/mag/mag309.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_309.txt]
   segments:
@@ -5642,7 +5656,7 @@ binaries:
 - name: effect_310
   sha1: 99591220e7e1b692fd2caa93f0b3c8b37e0a1fbc
   options:
-    target_path: original/effect/effect_310.bin
+    target_path: original/bin/battle/mag/mag310.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_310.txt]
   segments:
@@ -5657,7 +5671,7 @@ binaries:
 - name: effect_311
   sha1: 45c72cf23f6239bb2967e9bb94d6ede69a4ea55a
   options:
-    target_path: original/effect/effect_311.bin
+    target_path: original/bin/battle/mag/mag311.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_311.txt]
   segments:
@@ -5672,7 +5686,7 @@ binaries:
 - name: effect_312
   sha1: fecadb15181a7f7e91be7c3517e355602353f613
   options:
-    target_path: original/effect/effect_312.bin
+    target_path: original/bin/battle/mag/mag312.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_312.txt]
   segments:
@@ -5687,7 +5701,7 @@ binaries:
 - name: effect_313
   sha1: e3ca649c05d12103871378c8458ee4be0bc6872a
   options:
-    target_path: original/effect/effect_313.bin
+    target_path: original/bin/battle/mag/mag313.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_313.txt]
   segments:
@@ -5702,7 +5716,7 @@ binaries:
 - name: effect_314
   sha1: 1b15518e8e286d0575f54b8bb7c389c19820031f
   options:
-    target_path: original/effect/effect_314.bin
+    target_path: original/bin/battle/mag/mag314.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_314.txt]
   segments:
@@ -5717,7 +5731,7 @@ binaries:
 - name: effect_315
   sha1: e8c65fc380ff458940e84e1a431c51afc49b2a90
   options:
-    target_path: original/effect/effect_315.bin
+    target_path: original/bin/battle/mag/mag315.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_315.txt]
   segments:
@@ -5732,7 +5746,7 @@ binaries:
 - name: effect_316
   sha1: 09255fb6e5450f07d0082807080cf73be133fe79
   options:
-    target_path: original/effect/effect_316.bin
+    target_path: original/bin/battle/mag/mag316.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_316.txt]
   segments:
@@ -5747,7 +5761,7 @@ binaries:
 - name: effect_317
   sha1: 05a1b0a245772e2c26faaf2401bdd3fafe366804
   options:
-    target_path: original/effect/effect_317.bin
+    target_path: original/bin/battle/mag/mag317.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_317.txt]
   segments:
@@ -5762,7 +5776,7 @@ binaries:
 - name: effect_318
   sha1: c72fc1d71e71891f5c8b3546f84bf94e30ac7ecd
   options:
-    target_path: original/effect/effect_318.bin
+    target_path: original/bin/battle/mag/mag318.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_318.txt]
   segments:
@@ -5777,7 +5791,7 @@ binaries:
 - name: effect_319
   sha1: 58ec8df5f950c01fe431831f72a82e3c3ce79e0a
   options:
-    target_path: original/effect/effect_319.bin
+    target_path: original/bin/battle/mag/mag319.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_319.txt]
   segments:
@@ -5792,7 +5806,7 @@ binaries:
 - name: effect_320
   sha1: 5e855b3b8cd60cda489d86128ef96fd2bed0e0d9
   options:
-    target_path: original/effect/effect_320.bin
+    target_path: original/bin/battle/mag/mag320.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_320.txt]
   segments:
@@ -5807,7 +5821,7 @@ binaries:
 - name: effect_321
   sha1: caa2711a827204a04021b43cd1fadecc010664e4
   options:
-    target_path: original/effect/effect_321.bin
+    target_path: original/bin/battle/mag/mag321.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_321.txt]
   segments:
@@ -5816,7 +5830,7 @@ binaries:
 - name: effect_322
   sha1: ece7d2e027b40c2a9c600edb5810706180ec2f08
   options:
-    target_path: original/effect/effect_322.bin
+    target_path: original/bin/battle/mag/mag322.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_322.txt]
   segments:
@@ -5831,7 +5845,7 @@ binaries:
 - name: effect_323
   sha1: 850bb796a9dba9783a26a8cfe49fca2b4c23561f
   options:
-    target_path: original/effect/effect_323.bin
+    target_path: original/bin/battle/mag/mag323.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_323.txt]
   segments:
@@ -5846,7 +5860,7 @@ binaries:
 - name: effect_324
   sha1: fd43c3835f30adeec80f5c9de1c082b6132f482b
   options:
-    target_path: original/effect/effect_324.bin
+    target_path: original/bin/battle/mag/mag324.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_324.txt]
   segments:
@@ -5861,7 +5875,7 @@ binaries:
 - name: effect_325
   sha1: 35be1a1417318454aa151ee7db1328a5680d95d7
   options:
-    target_path: original/effect/effect_325.bin
+    target_path: original/bin/battle/mag/mag325.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_325.txt]
   segments:
@@ -5876,7 +5890,7 @@ binaries:
 - name: effect_326
   sha1: 0652cd8bd97ce3fc98bec4f6835530fdc353965e
   options:
-    target_path: original/effect/effect_326.bin
+    target_path: original/bin/battle/mag/mag326.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_326.txt]
   segments:
@@ -5892,7 +5906,7 @@ binaries:
 - name: effect_327
   sha1: 383bcc254841ccab7576e64e3d58395f8b83d4ee
   options:
-    target_path: original/effect/effect_327.bin
+    target_path: original/bin/battle/mag/mag327.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_327.txt]
   segments:
@@ -5908,7 +5922,7 @@ binaries:
 - name: effect_328
   sha1: 383bcc254841ccab7576e64e3d58395f8b83d4ee
   options:
-    target_path: original/effect/effect_328.bin
+    target_path: original/bin/battle/mag/mag328.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_328.txt]
   segments:
@@ -5924,7 +5938,7 @@ binaries:
 - name: effect_329
   sha1: 383bcc254841ccab7576e64e3d58395f8b83d4ee
   options:
-    target_path: original/effect/effect_329.bin
+    target_path: original/bin/battle/mag/mag329.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_329.txt]
   segments:
@@ -5940,7 +5954,7 @@ binaries:
 - name: effect_330
   sha1: 383bcc254841ccab7576e64e3d58395f8b83d4ee
   options:
-    target_path: original/effect/effect_330.bin
+    target_path: original/bin/battle/mag/mag330.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_330.txt]
   segments:
@@ -5956,7 +5970,7 @@ binaries:
 - name: effect_331
   sha1: 3cb3d7e2b69746320dc14bc2e7bd1c1c29de62ed
   options:
-    target_path: original/effect/effect_331.bin
+    target_path: original/bin/battle/mag/mag331.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_331.txt]
   segments:
@@ -5972,7 +5986,7 @@ binaries:
 - name: effect_332
   sha1: b2d4970180b7568876154d905606389dfd0a6dd7
   options:
-    target_path: original/effect/effect_332.bin
+    target_path: original/bin/battle/mag/mag332.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_332.txt]
   segments:
@@ -5981,7 +5995,7 @@ binaries:
 - name: effect_333
   sha1: 8fba59f676f1c70e1d57c2e7ff7b5423be2a075c
   options:
-    target_path: original/effect/effect_333.bin
+    target_path: original/bin/battle/mag/mag333.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_333.txt]
   segments:
@@ -5990,7 +6004,7 @@ binaries:
 - name: effect_334
   sha1: 537dd6114eba2ca216d68a7bf0fa2003befd28e8
   options:
-    target_path: original/effect/effect_334.bin
+    target_path: original/bin/battle/mag/mag334.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_334.txt]
   segments:
@@ -5999,7 +6013,7 @@ binaries:
 - name: effect_335
   sha1: 9f111875f2419d9cd7344de468d044529e4eb76d
   options:
-    target_path: original/effect/effect_335.bin
+    target_path: original/bin/battle/mag/mag335.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_335.txt]
   segments:
@@ -6008,7 +6022,7 @@ binaries:
 - name: effect_336
   sha1: 21f425ec7ccd054fde4151a277ec4174ec477049
   options:
-    target_path: original/effect/effect_336.bin
+    target_path: original/bin/battle/mag/mag336.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_336.txt]
   segments:
@@ -6017,7 +6031,7 @@ binaries:
 - name: effect_337
   sha1: 4a512125f49de36d88412e575823efba58eb7192
   options:
-    target_path: original/effect/effect_337.bin
+    target_path: original/bin/battle/mag/mag337.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_337.txt]
   segments:
@@ -6026,7 +6040,7 @@ binaries:
 - name: effect_338
   sha1: 066996ca12d6dc916c81c09659e3601a42680986
   options:
-    target_path: original/effect/effect_338.bin
+    target_path: original/bin/battle/mag/mag338.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_338.txt]
   segments:
@@ -6042,7 +6056,7 @@ binaries:
 - name: effect_339
   sha1: d2a3b54d30cd2708846ec0bbf2bfb20e0ef00177
   options:
-    target_path: original/effect/effect_339.bin
+    target_path: original/bin/battle/mag/mag339.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_339.txt]
   segments:
@@ -6051,7 +6065,7 @@ binaries:
 - name: effect_340
   sha1: 6c10fdffc89d19149db4e08df8a6ea205ce76334
   options:
-    target_path: original/effect/effect_340.bin
+    target_path: original/bin/battle/mag/mag340.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_340.txt]
   segments:
@@ -6060,7 +6074,7 @@ binaries:
 - name: effect_341
   sha1: 4d0e47304d657829a5344586c2b011635f7de6ca
   options:
-    target_path: original/effect/effect_341.bin
+    target_path: original/bin/battle/mag/mag341.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_341.txt]
   segments:
@@ -6069,7 +6083,7 @@ binaries:
 - name: effect_342
   sha1: b74258b14be2cfea8dd9ce25cf103792f18035a6
   options:
-    target_path: original/effect/effect_342.bin
+    target_path: original/bin/battle/mag/mag342.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_342.txt]
   segments:
@@ -6078,7 +6092,7 @@ binaries:
 - name: effect_343
   sha1: 91634ed8e0e43d84606c1ca04fecca73b53878da
   options:
-    target_path: original/effect/effect_343.bin
+    target_path: original/bin/battle/mag/mag343.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_343.txt]
   segments:
@@ -6087,7 +6101,7 @@ binaries:
 - name: effect_344
   sha1: 4122549ddafdfe80e51311a9c534748b5b0fe32e
   options:
-    target_path: original/effect/effect_344.bin
+    target_path: original/bin/battle/mag/mag344.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_344.txt]
   segments:
@@ -6096,7 +6110,7 @@ binaries:
 - name: effect_345
   sha1: 98031fbaa8f7ba355ea868a748c66a01e7b85174
   options:
-    target_path: original/effect/effect_345.bin
+    target_path: original/bin/battle/mag/mag345.ovl
     src_path: src/effect
     symbol_addrs_path: [config/symbols.main.txt, config/symbols.battle.txt, config/symbols.effect_345.txt]
   segments:

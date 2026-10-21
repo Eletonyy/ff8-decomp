@@ -9,7 +9,6 @@ AS         := mipsel-linux-gnu-as
 LD         := mipsel-linux-gnu-ld
 OBJCOPY    := mipsel-linux-gnu-objcopy
 MASPSX     := python3 tools/maspsx/maspsx.py
-EXTRACT    := python3 tools/extract.py
 
 ### Paths ###
 VENV       := .venv
@@ -22,7 +21,6 @@ SRC_DIR    := src
 MAIN       := SLUS_008.92
 SPLAT_CONF := config/ff8.yaml
 SPLAT_GEN  := build/splat
-ROM        := $(shell find rom -name "*.bin" -print -quit)
 # Path template for the generated splat configs; {name} is the binary's name.
 SPLAT_YAML_TMPL := $(SPLAT_GEN)/{name}.yaml
 BINARIES_MK     := $(SPLAT_GEN)/binaries.mk
@@ -137,7 +135,7 @@ MENU_OVERLAYS := menumain menucfg menupty menusts menuabl menushop menuext \
                  menuitem menumgc menugf menujnc2 menusav menucrd menututo \
                  menutmag menutips menutest
 CODE_OVERLAYS := field_init intro field \
-                 tripletriad battle_render battle world
+                 tripletriad battle_render battle world movie
 
 ALL_EFFECT_OVERLAYS := $(filter effect_%,$(SPLAT_BINARIES))
 EFFECTS ?= effect_001 effect_025 effect_028 effect_052 effect_039 effect_056 effect_050 effect_051 effect_036 effect_027 effect_002
@@ -212,16 +210,21 @@ verify: $(BUILT_EXE) $(foreach ovl,$(OVERLAYS),build-$(ovl))
 	done < $(VERIFY_LIST); \
 	if [ "$$FAIL" = "1" ]; then exit 1; fi
 
-# First-time setup: create venv, install dependencies, runs full build
-setup:
+MKPSXISO_DIR := tools/mkpsxiso
+
+# Build mkpsxiso/dumpsxiso (configures on first run)
+mkpsxiso:
+	cd $(MKPSXISO_DIR) && { [ -f build/CMakeCache.txt ] || cmake --preset release; } && cmake --build --preset release
+
+extract:
+	$(PYTHON) tools/extract/extractdisc.py
+
+# First-time setup: build mkpsxiso, create venv, install dependencies, runs full build
+setup: mkpsxiso
 	python3 -m venv $(VENV)
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install -r requirements.txt
-	@if [ -z "$(ROM)" ] || [ ! -f "$(ROM)" ]; then \
-		echo "BIN file not found in rom/"; \
-		exit 1; \
-	fi
-	$(EXTRACT) "$(ROM)"
+	$(MAKE) extract
 	$(MAKE) split
 	$(MAKE) build
 	$(MAKE) build-assets
@@ -328,7 +331,7 @@ FIELD_INIT_TIM := assets/field_init_font.tim
 
 split-field_init: $(FIELD_INIT_TIM)
 
-$(FIELD_INIT_TIM): original/field_init.bin
+$(FIELD_INIT_TIM): $(field_init_TARGET)
 	dd if=$< of=$@ bs=1 skip=$$((0x500)) count=$$((0x460)) 2>/dev/null
 
 # Asset pipeline: convert binary assets to C source
@@ -359,6 +362,6 @@ report: objdiff-config
 	@$(OBJDIFF) report generate -p . -o $(BUILD_DIR)/report.json
 	@python3 tools/objdiff/progress_html.py $(BUILD_DIR)/report.json $(BUILD_DIR)/progress.html
 
-.PHONY: all full build verify check setup split splat-config clean permute build-overlays \
+.PHONY: all full build verify check setup extract mkpsxiso split splat-config clean permute build-overlays \
         expected objdiff-config report \
         $(foreach ovl,$(ALL_OVERLAYS),split-$(ovl) build-$(ovl) verify-$(ovl))

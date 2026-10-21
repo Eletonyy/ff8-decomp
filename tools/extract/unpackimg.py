@@ -5,7 +5,7 @@ The image SHA1 is checked against the lock before anything is written,
 and each file is checked against its own SHA1 as it is unpacked.
 
 Usage:
-    python3 tools/unpackimg.py <image> <lock> [-o out_dir] [--check]
+    python3 tools/extract/unpackimg.py <image> <lock> [-o out_dir] [--check]
 """
 
 import argparse
@@ -24,26 +24,18 @@ def sha1_of_file(path):
     return h.hexdigest()
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Unpack FF8DISC1.IMG using a lock file.")
-    parser.add_argument("image")
-    parser.add_argument("lock")
-    parser.add_argument("-o", "--out-dir", default="extracted")
-    parser.add_argument("--check", action="store_true", help="verify checksums, write nothing")
-    args = parser.parse_args()
-
-    with open(args.lock) as f:
+def unpack(image, lock_path, out_dir=None):
+    with open(lock_path) as f:
         lock = yaml.safe_load(f)
 
-    image_sha1 = sha1_of_file(args.image)
+    image_sha1 = sha1_of_file(image)
     if image_sha1 != lock["image"]["sha1"]:
-        print(f"{args.image}: SHA1 {image_sha1}, expected {lock['image']['sha1']}", file=sys.stderr)
-        return 1
+        raise ValueError(f"{image}: SHA1 {image_sha1}, expected {lock['image']['sha1']}")
 
     sector_size = lock["image"]["sector_size"]
     count = 0
     failed = 0
-    with open(args.image, "rb") as img:
+    with open(image, "rb") as img:
         for entry in lock["entries"]:
             img.seek(entry["sector"] * sector_size)
             data = img.read(entry["size"])
@@ -52,17 +44,33 @@ def main():
                 failed += 1
                 continue
             count += 1
-            if args.check:
+            if out_dir is None:
                 continue
-            path = os.path.join(args.out_dir, entry["path"])
+            path = os.path.join(out_dir, entry["path"])
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "wb") as f:
                 f.write(data)
 
-    if args.check:
+    if out_dir is None:
         print(f"{count} entries OK")
     else:
-        print(f"unpacked {count} entries to {args.out_dir}/")
+        print(f"unpacked {count} entries to {out_dir}")
+    return failed
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Unpack FF8DISC1.IMG using a lock file.")
+    parser.add_argument("image")
+    parser.add_argument("lock")
+    parser.add_argument("-o", "--out-dir", default="extracted")
+    parser.add_argument("--check", action="store_true", help="verify checksums, write nothing")
+    args = parser.parse_args()
+
+    try:
+        failed = unpack(args.image, args.lock, None if args.check else args.out_dir)
+    except ValueError as e:
+        print(e, file=sys.stderr)
+        return 1
     return 1 if failed else 0
 
 
