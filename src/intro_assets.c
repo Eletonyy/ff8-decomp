@@ -1,26 +1,3 @@
-/**
- * @file intro_assets.c
- * @brief CD asset index for the intro overlay.
- *
- * Each entry is a @c (sector, size) pair pointing at an LZSS-compressed
- * bitmap on the disc. After @c cdReadAsyncSync (mode 7, LZSS-decoded by
- * @c func_80039520) decompresses one into staging RAM:
- *
- *   - 0x80100000: 8-byte header (@c u16 @c hdr0, @c hdr1, then @c width and
- *     @c height as little-endian @c u16).
- *   - 0x80100008: raw 16bpp BGR555 pixels — 640×400 for entries fed to
- *     @c func_80098378 mode 0, 580×406 for mode 1.
- *
- * @c loadIntroSlide indexes this table by stage; @c loadWrongDiscWarning reads
- * entry 34 directly (offset 0x110 = 34 * 8) and loads it to a separate
- * staging area at @c 0x8017D000 for the mode-2 flash overlay.
- *
- * To dump the actual images from a disc image use
- * @c tools/extract_intro_images.py.
- *
- * In a CD-mastering pipeline this file would be regenerated from the
- * disc layout; for now the offsets are copied from the original ROM.
- */
 #include "intro_assets.h"
 
 u32 g_introAssetTable[] = {

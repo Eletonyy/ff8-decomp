@@ -1,0 +1,13 @@
+files:
+- {src: SLUS_008.92, dst: ., lzs: false}
+- {src: data/eng/battle/ovl/battle.ovl, dst: battle, lzs: false}
+- {src: data/eng/battle/ovl/battle_render.ovl, dst: battle, lzs: false}
+- {src: data/eng/battle/ovl/mag*.ovl, dst: battle/mag, lzs: true}
+- {src: data/eng/battle/a0stg*.x, dst: battle/stage, lzs: true}
+- {src: data/eng/card/ovl/card.ovl, dst: card, lzs: true}
+- {src: data/eng/field/ovl/field.ovl, dst: field, lzs: true}
+- {src: data/eng/field/ovl/field_init.ovl, dst: field, lzs: false}
+- {src: data/eng/intro/ovl/intro.ovl, dst: intro, lzs: true}
+- {src: data/eng/menu/ovl/menu*.ovl, dst: menu, lzs: false}
+- {src: data/eng/world/ovl/world.ovl, dst: world, lzs: true}
+- {src: data/movie/movie.ovl, dst: movie, lzs: true}
