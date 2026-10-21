@@ -216,7 +216,7 @@ MKPSXISO_DIR := tools/mkpsxiso
 mkpsxiso:
 	cd $(MKPSXISO_DIR) && { [ -f build/CMakeCache.txt ] || cmake --preset release; } && cmake --build --preset release
 
-extract: mkpsxiso
+extract:
 	$(PYTHON) tools/extract/extractdisc.py
 
 # First-time setup: build mkpsxiso, create venv, install dependencies, runs full build
