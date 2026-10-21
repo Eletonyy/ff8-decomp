@@ -1,6 +1,6 @@
 original/
 rom/*
-!rom/PUTDISCIMAGESHERE
+!rom/.gitkeep
 disc/
 build/
 asm/
