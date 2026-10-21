@@ -707,6 +707,20 @@ binaries:
     - [0x3E7F4, c, psxsdk/libsnd]
     - [0x41EE8, data]
   - [0x191000]
+- name: movie
+  sha1: 80ad32679374e6fd7d7360fd50ff8aba066bf0c7
+  options:
+    target_path: original/bin/movie/movie.ovl
+    symbol_addrs_path: [config/symbols.main.txt, config/symbols.field.txt]
+  segments:
+  - name: movie
+    type: code
+    start: 0x0
+    vram: 0x801E8000
+    subsegments:
+    - [0x0, c, movie]
+    - [0x13B4, data]
+  - [0x124F4]
 - name: effect_001
   sha1: d2269dde125f54b3f00c61eb318b58d3ca3c6f40
   options:

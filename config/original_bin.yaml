@@ -10,3 +10,4 @@ files:
 - {src: data/eng/intro/ovl/intro.ovl, dst: intro, lzs: true}
 - {src: data/eng/menu/ovl/menu*.ovl, dst: menu, lzs: false}
 - {src: data/eng/world/ovl/world.ovl, dst: world, lzs: true}
+- {src: data/movie/movie.ovl, dst: movie, lzs: true}
