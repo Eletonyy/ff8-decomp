@@ -33,7 +33,7 @@ extern u8 D_800F02F4[];
 extern u8 D_800F0290[];
 extern u8 D_800F1AA0[];
 extern u8 D_800F02E8[];
-extern u8 D_800EF724[];
+
 void func_800C372C(void);
 void func_800C3998(s16, s16);
 void func_800C39F8(void);
@@ -201,7 +201,7 @@ s32 func_800C3694(u8 *a0) {
 void func_800C3704(void) {
     *(u16 *)D_800F02F4 = 0;
     *(u16 *)D_800F02E8 = 0x1000;
-    *(u16 *)D_800EF724 &= 0x7FFF;
+    D_800EF724 &= 0x7FFF;
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object13", func_800C372C);

@@ -52,7 +52,7 @@ s32 func_800B0E30(s32);
 
 s32 func_800B0F3C(s32);
 
-s32 func_800B0F7C(s32);
+u16 func_800B0F7C(u8);
 
 u16 func_800B0F9C(s32);
 

@@ -9,7 +9,6 @@
 extern u8 D_800F16A4[];
 extern u8 D_800F16A8[];
 extern u8 D_800F16AC[];
-extern u8 D_800EF724[];
 extern u8 D_800F02F4[];
 extern u8 D_800F16B4[];
 extern u8 D_800F16BC[];
@@ -244,7 +243,7 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object11", func_800BD508);
  * @brief Set bit 15 of D_800EF724 halfword and clear D_800F02F4 halfword.
  */
 void func_800BD594(void) {
-    *(u16 *)D_800EF724 |= 0x8000;
+    D_800EF724 |= 0x8000;
     *(u16 *)D_800F02F4 = 0;
 }
 

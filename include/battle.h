@@ -780,7 +780,8 @@ extern s32             D_800EEBD8;
 extern s32             D_800EEBDC;
 extern u8              D_800EEBE0[7];
 extern u8              D_800EEBE8[];
-
+extern u16             D_800EEFB0;
+extern u16             D_800EF724;
 /* ---------------------------------------------------------------- *
  *  Battle-overlay function prototypes (battle internals).
  * ---------------------------------------------------------------- */
@@ -837,9 +838,12 @@ struct EffectAttachment {
  */
 typedef struct BattleEffectSlot {
     /* 0x00 */ u16 flags;          /**< See @c BATTLE_SLOT_FLAG_*. */
-    /* 0x02 */ u8 pad002[0xE - 0x2];
+    /* 0x02 */ u16 unk02;          // flags again?
+    /* 0x04 */ u8 pad04[0xC - 0x4];
+    /* 0x0C */ u16 unkC;
     /* 0x0E */ s16 facing;         /**< Angle the slot's model is turned to. */
-    /* 0x10 */ u8 pad010[0x1C - 0x10];
+    /* 0x10 */ u16 unk10;
+    /* 0x12 */ u8 pad12[0x1C - 0x12];
     /* 0x1C */ SVECTOR pos;        /**< Where the slot's model stands; @c vy is
                                         the origin a model's Y bounds are summed
                                         with. */
@@ -863,6 +867,9 @@ typedef struct BattleEffectSlot {
     /* 0x80 */ u8 pad080[0x9C - 0x80];
 } BattleEffectSlot; /* 0x9C */
 
+/** @brief Per-entity battle records the effect overlays pose their models from. */
+extern BattleEffectSlot D_800EF2D0[7];
+
 #define BATTLE_SLOT_FLAG_UNK02 0x2
 #define BATTLE_SLOT_FLAG_UNK04 0x4
 #define BATTLE_SLOT_FLAG_UNK20 0x20
@@ -879,9 +886,6 @@ typedef struct {
     /* 0x0044 */ u32 ot[(0x4040 - 0x44) / 4];   /**< Ordering table the effects link into. */
     /* 0x4040 */ u8 unk4040[4];
 } BattleGfx;
-
-/** @brief Per-entity battle records the effect overlays pose their models from. */
-extern BattleEffectSlot D_800EF2D0[];
 
 /**
  * @brief One of the four screen-tint entries battle steps every frame.

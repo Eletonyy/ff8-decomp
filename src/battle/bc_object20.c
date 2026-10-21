@@ -15,7 +15,6 @@ extern u8 D_80103070[];
 extern u8 D_801030F0[];
 extern u8 D_80103160[];
 extern u8 D_80103162[];
-extern u8 D_800EF724[];
 
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object20", func_800D8F90);
@@ -443,7 +442,7 @@ s32 func_800DC948(s32 a0) {
     BattleEffectSlot *slot = D_800EF2D0;
     s32 flags;
     slot += a0;
-    flags = *(u16 *)D_800EF724;
+    flags = D_800EF724;
     if ((flags >> a0) & 1) {
         if (slot->flags & BATTLE_SLOT_FLAG_UNK02) {
             return 1;

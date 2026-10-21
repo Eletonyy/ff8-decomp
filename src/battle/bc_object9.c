@@ -15,7 +15,6 @@ extern u8 D_800EE490[];
 extern u8 *D_800EEED8;
 extern u8 D_800EEEC4;
 extern u8 D_800E3D0C;
-extern u8 D_800EF4A4[];
 extern s32 D_800EEEC8;
 extern s32 D_800EEECC;
 extern u8 D_800EEEB8[];
@@ -27,9 +26,7 @@ extern u8 D_800EEDE8[];
 extern u8 D_800EE465[];
 extern u8 D_8005F388;
 extern u8 D_80063388;
-extern u8 D_800EF020[];
-extern u8 D_800EEFB0[];
-extern u8 D_800EF724[];
+extern u8 D_800EF020;
 extern u8 D_800EE454[];
 extern u8* D_800EEED0;
 extern u8 D_800EEED4;
@@ -463,6 +460,7 @@ s32 func_800B0DDC(s32 a0) {
     else {
         val = func_800B0D8C(a0, 2);
     }
+    
     return func_800B0CC4(a0, val);
 }
 
@@ -531,20 +529,16 @@ s32 func_800B0F3C(s32 a0) {
  * @param arg0 Ability flags.
  * @return Bitmask with bits 14 and/or 13 set.
  */
-s32 func_800B0F7C(s32 arg0) {
-    s32 temp_v1;
-    int new_var;
-    s32 var_v0;
+u16 func_800B0F7C(u8 arg0) {
+    u16 flags;
 
-    temp_v1 = (arg0 & 1) << 0xE;
-    new_var = arg0 & 2;
-    var_v0 = temp_v1;
-    if (new_var) {
-        var_v0 = temp_v1 | 0x2000;
-        var_v0 = temp_v1;
-        var_v0 = var_v0 | 0x2000;
+    flags = (arg0 & 1) << 0xE;
+    
+    if (arg0 & 2) {
+        flags |= 0x2000;
     }
-    return var_v0;
+    
+    return flags;
 }
 
 u16 func_800B0F9C(s32 arg0) {
@@ -804,7 +798,28 @@ void func_800B18A0(s32 arg0) {
     }
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B1930);
+s32 func_800B1930(s32 arg0) {
+    s32 val;
+
+    val = 0;
+    if ((D_800ED148.unk130C == 0) && !(D_800ED148.entities[arg0].status & 1)) {
+        if ((D_800EE4C0.unk1 == 28) || (D_800EE4C0.unk1 == 243)) {
+            func_800B0754(arg0, 0, 6, func_800A97FC(arg0));
+            val = 1;
+        }
+
+        if (!(D_800ED148.entities[arg0].status & 1) && (D_800ED148.entities[arg0].status & 2)) {
+            func_800B0754(arg0, 0, 2, func_800A97FC(arg0));
+            val++;
+        }
+    }
+    
+    if (val != 0) {
+        func_8009AE08(9);
+    }
+    
+    return val;
+}
 
 /**
  * @brief Get entity from func_800AE6F8 and call func_800A59AC with mode 7.
@@ -938,11 +953,23 @@ top:
  * @param a1 Becomes a2 in the callee.
  * @param a2 Masked to 16 bits, becomes a3 in the callee.
  */
-void func_800B1C3C(s32 a0, s32 a1, s32 a2) {
-    func_800B0754(a0, 0xF0, a1, (u16)a2);
+void func_800B1C3C(s32 a0, s32 a1, u16 a2) {
+    func_800B0754(a0, 240, a1, a2);
 }
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B1C68);
+void func_800B1C68(s32 arg0) {
+    if (g_gameState.mainData.partyLockFlag & 0x10) {
+        return;
+    }
+    
+    if ((g_gameState.mainData.limitBreaks.angeloCompleted & 2) && (D_800ED148.entities[arg0].status & 0x100) && func_8009B79C(16, 255) != 0) {
+        func_800B1C3C(arg0, 12, func_800A97FC(arg0));
+    }
+
+    else if ((g_gameState.mainData.limitBreaks.angeloCompleted & 1) && (func_8009B79C(16, 255) != 0)) {
+        func_800B1C3C(arg0, 11, func_800A9904(arg0));
+    }
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B1D4C);
 
@@ -1070,11 +1097,38 @@ void func_800B21B4(void) {
  * @param a0 Value to search for.
  * @return 0 if found, 1 if not found.
  */
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B21EC);
+s32 func_800B21EC(s32 arg0) {
+    s32 i;
+
+    for (i = 0; i < 3; i++) {
+        if (D_800EE9E8.subEntries[i].array0[0].unk3 == arg0) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B2224);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B228C);
+s32 func_800B228C(void) {
+    u8 sp10[8];
+    s32 idx;
+    s32 i;
+
+    idx = 0;
+    for (i = 0; i < 8; i++) {
+        if ((g_gameState.chars[i].exists & 1) && !(g_gameState.chars[i].statusFlags & 1) && (func_800B21EC(i) != 0)) {
+            sp10[idx++] = i;
+        }
+    }
+        
+    if (idx == 0) {
+        return 255;
+    }
+
+    return func_800B2224(&sp10, idx);
+}
 
 /**
  * @brief Process current battle entity: update effects and activate ability.
@@ -1393,24 +1447,36 @@ void func_800B36D8(void) {
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B36E8);
 
-INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B3738);
+void func_800B3738(void) {
+    s32 i;
+
+    D_800EF724 &= 0x8000;
+    for (i = 0; i < 7; i++) {
+        if ((D_800EF2D0[i].flags & 2) && !(D_800EF2D0[i].unk02 & 4) && !(D_800EF2D0[i].flags & 0x10)) {
+            D_800EF724 |= 1 << i;
+        }
+    }
+}
 
 /**
  * @brief Initialize SFX entry fields, setting pitch based on address range.
  *
- * If the entry pointer is below D_800EF4A4, pitch is cleared to 0.
+ * If the entry pointer is below D_800EF2D0[3], pitch is cleared to 0.
  * Otherwise pitch is set to 0x800. Both paths clear volume and rate fields.
  *
  * @param entry Pointer to SFX entry structure.
  */
-void func_800B37B4(u8 *entry) {
-    if ((u32)entry < (u32)D_800EF4A4) {
-        *(u16 *)(entry + 0xE) = 0;
-    } else {
-        *(u16 *)(entry + 0xE) = 0x800;
+void func_800B37B4(BattleEffectSlot* arg0) {
+    if (arg0 < &D_800EF2D0[3]) {
+        arg0->facing = 0;
+    } 
+    
+    else {
+        arg0->facing = 0x800;
     }
-    *(u16 *)(entry + 0xC) = 0;
-    *(u16 *)(entry + 0x10) = 0;
+    
+    arg0->unkC = 0;
+    arg0->unk10 = 0;
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B37E0);
@@ -1434,22 +1500,16 @@ INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B3E54);
  *
  * @return Pointer to D_800EF020.
  */
-u8 *func_800B4248(void) {
-    s32 i = 6;
-    /* The table address is materialised before the offset is added; as one
-       expression gcc folds both into a single addiu. */
-    s32 base = (s32)D_800EF2D0;
-    u8 *ptr = (u8 *)(base + 0x3A8);
-    u8 *buf;
-    top:
-    *(s16 *)ptr = 0;
-    i--;
-    ptr -= 0x9C;
-    if (i >= 0) goto top;
-    buf = D_800EF020;
-    func_800B2A00(buf, D_800EEFB0, 0x10, 0x7);
-    *(s16 *)D_800EF724 = 0;
-    return buf;
+u8* func_800B4248(void) {
+    s32 i;
+
+    for(i = 0; i < 7; i++) {
+        D_800EF2D0[i].flags = 0;
+    }
+    
+    func_800B2A00(&D_800EF020, &D_800EEFB0, 16, 7);
+    D_800EF724 = 0;
+    return &D_800EF020;
 }
 
 INCLUDE_ASM("asm/ovl/battle/nonmatchings/bc_object9", func_800B42B4);
